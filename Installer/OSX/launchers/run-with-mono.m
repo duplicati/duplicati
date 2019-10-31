@@ -113,6 +113,18 @@ void showDownloadMonoDialog(NSString *appName, int major, int minor) {
 	}
 }
 
+// Helper method to copy from source to target
+void copyStream(NSFileHandle *source, NSFileHandle* target) {
+ 	NSData *data;
+    do
+    {
+        data = [source availableData];
+        //NSLog(@"Read some data %d", source.fileDescriptor);
+        [target writeData: data];
+
+    } while ([data length] > 0);
+}
+
 // Top-level method, finds Mono with an appropriate version and launches the assembly
 int runAssemblyWithMono(NSString *appName, NSString *assembly, int major, int minor) {
 	NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -148,9 +160,49 @@ int runAssemblyWithMono(NSString *appName, NSString *assembly, int major, int mi
 	task.launchPath = currentMono;
 	task.arguments = arguments;
 
+	// Setup forwarding of stdout
+	NSPipe *stdout_pipe = [NSPipe pipe];
+	NSPipe *stderr_pipe = [NSPipe pipe];
+	NSPipe *stdin_pipe = [NSPipe pipe];
+
+    [task setStandardOutput:stdout_pipe];
+    [task setStandardError:stderr_pipe];
+    [task setStandardInput:stdin_pipe];
+
+    NSFileHandle *stdout_source = [stdout_pipe fileHandleForReading];
+    NSFileHandle *stderr_source = [stderr_pipe fileHandleForReading];
+    NSFileHandle *stdin_target = [stdin_pipe fileHandleForWriting];
+
+    NSFileHandle *stdout_target = [NSFileHandle fileHandleWithStandardOutput];
+    NSFileHandle *stderr_target = [NSFileHandle fileHandleWithStandardError];
+    NSFileHandle *stdin_source = [NSFileHandle fileHandleWithStandardInput];
+
 	[task launch];
+
+	if (D()) NSLog(@"Setting up stream forwards");
+	dispatch_queue_t bgQueue1 = dispatch_queue_create("bgQueue1", NULL);
+	dispatch_async(bgQueue1, ^{
+		copyStream(stdin_source, stdin_target);
+		[stdin_source closeFile];
+		[stdin_target closeFile];
+	});
+	dispatch_queue_t bgQueue2 = dispatch_queue_create("bgQueue2", NULL);
+	dispatch_async(bgQueue2, ^{
+		copyStream(stdout_source,  stdout_target);
+		[stdout_source closeFile];
+		[stdout_target closeFile];
+	});
+	dispatch_queue_t bgQueue3 = dispatch_queue_create("bgQueue3", NULL);
+	dispatch_async(bgQueue3, ^{
+		copyStream(stderr_source, stderr_target);
+		[stderr_source closeFile];
+		[stderr_target closeFile];
+	});
+
+	if (D()) NSLog(@"Waiting for exit");
 	[task waitUntilExit];
 
+	if (D()) NSLog(@"Returning status code");
 	return [task terminationStatus];
 }
 
