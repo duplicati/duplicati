@@ -1,3 +1,10 @@
+2019-11-01 - 2.0.4.33_canary_2019-11-01
+==========
+* Re-added support for buffering requests via the http module, thanks @tygill
+* Fixed an issue with invalid DateTimeOffset, thanks @warwickmm
+* Added new macOS launchers that play nice with Gatekeeper in macOS Catalina, thanks @kenkendk
+* Fixed an issue where `Exclude files whose names contains` would create invalid filters, thanks @kenkendk
+
 2019-10-24 - 2.0.4.32_canary_2019-10-24
 ==========
 * Code quality improvements, thanks @warwickmm
