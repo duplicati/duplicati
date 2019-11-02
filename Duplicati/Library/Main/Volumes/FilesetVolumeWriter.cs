@@ -20,16 +20,8 @@ namespace Duplicati.Library.Main.Volumes
         public FilesetVolumeWriter(Options options, DateTime timestamp)
             : base(options, timestamp)
         {
-            if (options.CacheFilesetOnDisk)
-            {
-                m_tempFile = new Library.Utility.TempFile();
-                m_tempStream = File.Open(m_tempFile, FileMode.Create, FileAccess.ReadWrite);
-            }
-            else
-            {
-                m_tempStream = new MemoryStream();
-            }
-
+            m_tempFile = new Library.Utility.TempFile();
+            m_tempStream = File.Open(m_tempFile, FileMode.Create, FileAccess.ReadWrite);
             m_streamwriter = new StreamWriter(m_tempStream, ENCODING);
             m_writer = new JsonTextWriter(m_streamwriter);
             m_writer.WriteStartArray();
@@ -148,9 +140,13 @@ namespace Duplicati.Library.Main.Volumes
                 m_streamwriter = null;
             }
 
-            if (m_tempFile != null)
+            if (m_tempStream != null)
             {
                 m_tempStream.Dispose();
+            }
+
+            if (m_tempFile != null)
+            {
                 m_tempFile.Dispose();
             }
 

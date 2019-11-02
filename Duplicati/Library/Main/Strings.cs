@@ -97,8 +97,6 @@ namespace Duplicati.Library.Main.Strings
         public static string AsynchronousuploadlimitShort { get { return LC.L(@"The number of volumes to create ahead of time"); } }
         public static string AsynchronousconcurrentuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, the maximum number of concurrent uploads allowed. Set to zero to disable the limit."); } }
         public static string AsynchronousconcurrentuploadlimitShort { get { return LC.L(@"The number of concurrent uploads allowed"); } }
-        public static string CachefilesetondiskLong { get { return LC.L(@"Causes fileset writer to hold data on the disk instead of holding it in memory. May be useful on devices with limited memory."); } }
-        public static string CachefilesetondiskShort { get { return LC.L(@"Hold fileset data on disk instead of in memory"); } }
         public static string DebugoutputLong { get { return LC.L(@"Activating this option will make some error messages more verbose, which may help you track down a particular issue"); } }
         public static string DebugoutputShort { get { return LC.L(@"Enables debugging output"); } }
         public static string LogfileShort { get { return LC.L(@"Log internal information to a file"); } }
