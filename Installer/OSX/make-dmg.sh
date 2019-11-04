@@ -234,23 +234,4 @@ else
     echo "No codesign identity supplied, skipping DMG signing"
 fi
 
-if [ "x${NOTARIZE_USERNAME}" != "x" ]; then
-    echo "Notarizing pkg package for MacOS Gatekeeper"
-    xcrun altool --notarize-app --primary-bundle-id "com.duplicati.app" --username "${NOTARIZE_USERNAME}" --password "${NOTARIZE_PASSWORD}" --file "${OUTPUT_PKG}"
-    echo "Notarizing dmg package for MacOS Gatekeeper"
-    xcrun altool --notarize-app --primary-bundle-id "com.duplicati.app" --username "${NOTARIZE_USERNAME}" --password "${NOTARIZE_PASSWORD}" --file "${OUTPUT_DMG}"
-
-    # We want to staple the notarized builds, but the delay is more than one hour,
-    # so we would need to wait for the signing to complete before we
-    # can staple and compute the hash/signature of the archive
-    
-    #echo "Stapling the notarized document to the pkg package"
-    #xcrun stapler staple "{OUTPUT_PKG}"
-    #echo "Stapling the notarized document to the dmg package"
-    #xcrun stapler staple "{OUTPUT_DMG}"
-
-else
-    echo "No notarizer credentials supplied, skipping MacOS notarizing"
-fi
-
 echo "Done, created ${OUTPUT_DMG}"

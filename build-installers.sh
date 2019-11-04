@@ -97,6 +97,13 @@ cd "Installer/OSX"
 bash "make-dmg.sh" "../../$1"
 mv "Duplicati.dmg" "../../${UPDATE_TARGET}/${DMGNAME}"
 mv "Duplicati.pkg" "../../${UPDATE_TARGET}/${PKGNAME}"
+
+# Notarize and staple in the background
+bash notarize-and-staple.sh "../../${UPDATE_TARGET}/${DMGNAME}" &
+MACOS_NOTA1=$!
+bash notarize-and-staple.sh "../../${UPDATE_TARGET}/${PKGNAME}" &
+MACOS_NOTA2=$!
+
 cd "../.."
 
 echo ""
@@ -214,6 +221,12 @@ if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 else
 	echo "Skipped authenticode signing as files are missing"
 fi
+
+echo ""
+echo ""
+echo "Waiting for macOS notarizer ..."
+wait MACOS_NOTA1
+wait MACOS_NOTA2
 
 echo ""
 echo ""
