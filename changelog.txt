@@ -1,3 +1,10 @@
+2019-11-05 - 2.0.4.34_canary_2019-11-05
+==========
+* Stapling macOS notarization to bundles, thanks @kenkendk
+* Removed option to store fileset in memory, thanks @tygill
+* Fixed failure on password-protected servers introduced in 2.0.4.32, thanks @warwickmm
+* Improved progress reporting, thanks @ltfish
+
 2019-11-01 - 2.0.4.33_canary_2019-11-01
 ==========
 * Re-added support for buffering requests via the http module, thanks @tygill
