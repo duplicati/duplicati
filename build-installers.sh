@@ -98,11 +98,6 @@ bash "make-dmg.sh" "../../$1"
 mv "Duplicati.dmg" "../../${UPDATE_TARGET}/${DMGNAME}"
 mv "Duplicati.pkg" "../../${UPDATE_TARGET}/${PKGNAME}"
 
-# Notarize and staple in the background
-bash notarize-and-staple.sh "../../${UPDATE_TARGET}/${DMGNAME}" &
-MACOS_NOTA1=$!
-bash notarize-and-staple.sh "../../${UPDATE_TARGET}/${PKGNAME}" &
-MACOS_NOTA2=$!
 
 cd "../.."
 
@@ -224,9 +219,11 @@ fi
 
 echo ""
 echo ""
-echo "Waiting for macOS notarizer ..."
-wait MACOS_NOTA1
-wait MACOS_NOTA2
+echo "Performing macOS notarization ..."
+
+# Notarize and staple, cannot run in parallel but takes a while
+bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${DMGNAME}"
+bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${PKGNAME}"
 
 echo ""
 echo ""
