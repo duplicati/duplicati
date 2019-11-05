@@ -25,7 +25,8 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         FileStarted,
         FileProgressUpdate,
-        FileClosed
+        FileClosed,
+        FileSkipped
     }
 
     /// <summary>

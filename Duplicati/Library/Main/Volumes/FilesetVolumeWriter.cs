@@ -8,7 +8,8 @@ namespace Duplicati.Library.Main.Volumes
 {
     public class FilesetVolumeWriter : VolumeWriterBase
     {
-        private readonly MemoryStream m_memorystream;
+        private readonly Library.Utility.TempFile m_tempFile;
+        private readonly Stream m_tempStream;
         private StreamWriter m_streamwriter;
         private readonly JsonWriter m_writer;
         private long m_filecount;
@@ -19,8 +20,9 @@ namespace Duplicati.Library.Main.Volumes
         public FilesetVolumeWriter(Options options, DateTime timestamp)
             : base(options, timestamp)
         {
-            m_memorystream = new MemoryStream();
-            m_streamwriter = new StreamWriter(m_memorystream, ENCODING);
+            m_tempFile = new Library.Utility.TempFile();
+            m_tempStream = File.Open(m_tempFile, FileMode.Create, FileAccess.ReadWrite);
+            m_streamwriter = new StreamWriter(m_tempStream, ENCODING);
             m_writer = new JsonTextWriter(m_streamwriter);
             m_writer.WriteStartArray();
         }
@@ -138,6 +140,16 @@ namespace Duplicati.Library.Main.Volumes
                 m_streamwriter = null;
             }
 
+            if (m_tempStream != null)
+            {
+                m_tempStream.Dispose();
+            }
+
+            if (m_tempFile != null)
+            {
+                m_tempFile.Dispose();
+            }
+
             base.Close();
         }
 
@@ -149,8 +161,8 @@ namespace Duplicati.Library.Main.Volumes
 
             using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
             {
-                m_memorystream.Seek(0, SeekOrigin.Begin);
-                m_memorystream.CopyTo(sr);
+                m_tempStream.Seek(0, SeekOrigin.Begin);
+                m_tempStream.CopyTo(sr);
                 sr.Flush();
             }
         }

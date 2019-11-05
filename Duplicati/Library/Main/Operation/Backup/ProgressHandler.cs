@@ -73,6 +73,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                             filesStarted.Remove(t.Filepath);
                             fileProgress.Remove(t.Filepath);
                             break;
+                        case EventType.FileSkipped:
+
+                            processedFileCount += 1;
+                            processedFileSize += t.Length;
+
+                            stat.OperationProgressUpdater.UpdatefilesProcessed(processedFileCount, processedFileSize);
+                            break;
                     }
 
                     if (current == null)
