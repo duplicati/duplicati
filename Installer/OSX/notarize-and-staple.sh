@@ -37,10 +37,30 @@ if [ "x${NOTARIZE_USERNAME}" != "x" ]; then
         # Don't hammer the server
         sleep 5
 
-        # Query
+        # Query the history to avoid failures with the --notarization-info not being able to find the REQID
         NOTARESP=$(xcrun altool --notarization-history 0 --username "${NOTARIZE_USERNAME}" --password "${NOTARIZE_PASSWORD}")
         ITEMLINES=$(echo "${NOTARESP}" | grep "${REQID}" | wc -l)
         if [ "${ITEMLINES}" -eq "1" ]; then
+            echo "Item ${REQID} found, waiting for completion ..."
+
+            # Extra step: we use the history to check for completion,
+            # so we can delay the call to --notarization-info as it tends to give errors
+            # We could rely on just a TMPRES == "status" check
+            # if the --notarization-info operation is giving random errors
+            while : 
+            do
+                # Don't hammer the server
+                sleep 5
+                NOTARESP=$(xcrun altool --notarization-history 0 --username "${NOTARIZE_USERNAME}" --password "${NOTARIZE_PASSWORD}")
+                TMPRESP=$(echo "${NOTARESP}" | grep "${REQID}" | cut -d " " -f 5,6)
+                if [ "x${TMPRESP}" != "xin progress" ]; then
+
+                    TMPRESP=$(echo "${NOTARESP}" | grep "${REQID}" | cut -d " " -f 5)
+                    echo "Status is ${TMPRESP}"
+                    break
+                fi
+            done
+
             break
         elif [ "${ITEMLINES}" -ne "0" ]; then
             echo "Failed to notarize file, response:"
@@ -54,9 +74,6 @@ if [ "x${NOTARIZE_USERNAME}" != "x" ]; then
     echo "Waiting for notarization on ${REQID}..."
     while :
     do
-        # Don't hammer the server
-        sleep 5
-
         NOTARESP=$(xcrun altool --notarization-info "${REQID}" --username "${NOTARIZE_USERNAME}" --password "${NOTARIZE_PASSWORD}")
         NOTACODE=$?
         NOTASTATUS=$(echo "${NOTARESP}" | grep "Status:" | cut -d ":" -f 2)
@@ -71,6 +88,9 @@ if [ "x${NOTARIZE_USERNAME}" != "x" ]; then
             echo "${NOTASTATUS}"
             exit 1
         fi
+
+        # Don't hammer the server
+        sleep 5
     done
 
     echo "Stapling the notarized document to \"$1\" "
