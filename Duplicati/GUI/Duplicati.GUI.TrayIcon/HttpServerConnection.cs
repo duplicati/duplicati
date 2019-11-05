@@ -226,8 +226,13 @@ namespace Duplicati.GUI.TrayIcon
 
         private class SaltAndNonce
         {
-            public readonly string Salt = null;
-            public readonly string Nonce = null;
+            // ReSharper disable once FieldCanBeMadeReadOnly.Local
+            // This cannot be made readonly as its value is set by a deserializer.
+            public string Salt = null;
+            
+            // ReSharper disable once FieldCanBeMadeReadOnly.Local
+            // This cannot be made readonly as its value is set by a deserializer.
+            public string Nonce = null;
         }
 
         private SaltAndNonce GetSaltAndNonce()
