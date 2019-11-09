@@ -58,6 +58,13 @@ body.theme-dark form.styled input, body.theme-dark form.styled textarea, body.th
   color: #000000;
 }
 
-body.theme-dark form.styled input[type="file"] {
+body.theme-dark form.styled input[type="file"] 
+{
   color: #8f8f8f;
+}
+
+body.theme-dark form.styled input[type="password"] 
+{
+  color: #8f8f8f;
+  background-color: #1a1a1a;
 }
