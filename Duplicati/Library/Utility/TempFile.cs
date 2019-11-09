@@ -19,7 +19,6 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
@@ -27,34 +26,34 @@ namespace Duplicati.Library.Utility
     /// <summary>
     /// This class represents a temporary file that will be automatically deleted when disposed
     /// </summary>
-    public class TempFile : IDisposable 
+    public class TempFile : IDisposable
     {
         /// <summary>
         /// The prefix applied to all temporary files
         /// </summary>
         public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower(System.Globalization.CultureInfo.InvariantCulture) + "-";
-        
+
         private string m_path;
         private bool m_protect;
 
 #if DEBUG
         //In debug mode, we track the creation of temporary files, and encode the generating method into the name
         private static readonly object m_lock = new object();
-        private static Dictionary<string, System.Diagnostics.StackTrace> m_fileTrace = new Dictionary<string, System.Diagnostics.StackTrace>();
-        
+        private static readonly Dictionary<string, System.Diagnostics.StackTrace> m_fileTrace = new Dictionary<string, System.Diagnostics.StackTrace>();
+
         public static System.Diagnostics.StackTrace GetStackTraceForTempFile(string filename)
         {
-            lock(m_lock)
+            lock (m_lock)
                 if (m_fileTrace.ContainsKey(filename))
                     return m_fileTrace[filename];
                 else
                     return null;
         }
-        
+
         private static string GenerateUniqueName()
         {
             var st = new System.Diagnostics.StackTrace();
-            foreach(var f in st.GetFrames())
+            foreach (var f in st.GetFrames())
                 if (f.GetMethod().DeclaringType.Assembly != typeof(TempFile).Assembly)
                 {
                     var n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow), Guid.NewGuid().ToString().Substring(0, 8));
@@ -62,16 +61,16 @@ namespace Duplicati.Library.Utility
                         n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.Name, f.GetMethod().Name, Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow), Guid.NewGuid().ToString().Substring(0, 8));
                     if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0)
                     {
-                        lock(m_lock)
+                        lock (m_lock)
                             m_fileTrace.Add(n, st);
                         return n;
                     }
                 }
-                
+
             var s = Guid.NewGuid().ToString();
-            lock(m_lock)
+            lock (m_lock)
                 m_fileTrace.Add(s, st);
-            return s;            
+            return s;
         }
 #else
         private static string GenerateUniqueName()
@@ -90,17 +89,11 @@ namespace Duplicati.Library.Utility
         /// <returns>The application temp files.</returns>
         private static IEnumerable<string> GetApplicationTempFiles()
         {
+#if DEBUG
+            return SystemIO.IO_OS.GetFiles(TempFolder.SystemTempPath, "Duplicati*");
+#else
             return SystemIO.IO_OS.GetFiles(TempFolder.SystemTempPath, APPLICATION_PREFIX + "*");
-        }
-        
-        /// <summary>
-        /// Attempts to delete all temporary files for this application
-        /// </summary>
-        public static void RemoveAllApplicationTempFiles()
-        {
-            foreach(var s in GetApplicationTempFiles())
-                try { System.IO.File.Delete(s); }
-                catch { }
+#endif
         }
 
         /// <summary>
@@ -109,20 +102,27 @@ namespace Duplicati.Library.Utility
         /// <param name="errorcallback">An optional callback method for logging errors</param>
         public static void RemoveOldApplicationTempFiles(Action<string, Exception> errorcallback = null)
         {
+#if DEBUG
+            var expires = TimeSpan.FromHours(3);
+#else
             var expires = TimeSpan.FromDays(30);
-            foreach(var e in GetApplicationTempFiles())
+#endif
+            foreach (string e in GetApplicationTempFiles())
+            {
                 try
                 {
-                    if (DateTime.Now > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
+                    if (DateTime.UtcNow > (System.IO.File.GetLastWriteTimeUtc(e) + expires))
+                    {
                         System.IO.File.Delete(e);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    if (errorcallback != null)
-                        errorcallback(e, ex);
+                    errorcallback?.Invoke(e, ex);
                 }
+            }
         }
-        
+
         public TempFile()
             : this(System.IO.Path.Combine(TempFolder.SystemTempPath, GenerateUniqueName()))
         {
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Utility
             m_protect = false;
             if (!System.IO.File.Exists(m_path))
                 using (System.IO.File.Create(m_path))
-                { /*Dispose it immediately*/ } 
+                { /*Dispose it immediately*/ }
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace Duplicati.Library.Utility
         {
             return new TempFile(path);
         }
-        
+
         public static TempFile WrapExistingFile(string path)
         {
             return new TempFile(path);
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Utility
         {
             if (disposing)
                 GC.SuppressFinalize(this);
-                
+
             try
             {
                 if (!m_protect && m_path != null && System.IO.File.Exists(m_path))
@@ -190,7 +190,7 @@ namespace Duplicati.Library.Utility
             {
             }
         }
-        
+
         #region IDisposable Members
 
         public void Dispose()
@@ -199,7 +199,7 @@ namespace Duplicati.Library.Utility
         }
 
         #endregion
-        
+
         ~TempFile()
         {
             Dispose(false);

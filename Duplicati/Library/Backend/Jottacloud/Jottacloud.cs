@@ -22,10 +22,13 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 namespace Duplicati.Library.Backend
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class Jottacloud : IBackend, IStreamingBackend
     {
         private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
@@ -208,7 +211,7 @@ namespace Duplicati.Library.Backend
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FolderMissingException(wex);
                 throw;
             }
@@ -284,7 +287,7 @@ namespace Duplicati.Library.Backend
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 throw;
             }
@@ -391,13 +394,6 @@ namespace Duplicati.Library.Backend
         {
             var url = (upload ? m_url_upload : m_url) + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20");
             return CreateRequest(method, url, queryparams);
-        }
-
-        #region IStreamingBackend Members
-
-        public bool SupportsStreaming
-        {
-            get { return true; }
         }
 
         public string[] DNSName
@@ -580,7 +576,5 @@ namespace Duplicati.Library.Backend
                 catch { }
             }
         }
-
-        #endregion
     }
 }

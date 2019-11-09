@@ -66,12 +66,12 @@ namespace Duplicati.Server
         /// <summary>
         /// List of completed task results
         /// </summary>
-        public static List<KeyValuePair<long, Exception>> TaskResultCache = new List<KeyValuePair<long, Exception>>();
+        public static readonly List<KeyValuePair<long, Exception>> TaskResultCache = new List<KeyValuePair<long, Exception>>();
 
         /// <summary>
         /// The maximum number of completed task results to keep in memory
         /// </summary>
-        private static int MAX_TASK_RESULT_CACHE_SIZE = 100;
+        private static readonly int MAX_TASK_RESULT_CACHE_SIZE = 100;
 
         /// <summary>
         /// The thread running the ping-pong handler
@@ -106,12 +106,12 @@ namespace Duplicati.Server
         /// <summary>
         /// An event that is set once the server is ready to respond to requests
         /// </summary>
-        public static System.Threading.ManualResetEvent ServerStartedEvent = new System.Threading.ManualResetEvent(false);
+        public static readonly System.Threading.ManualResetEvent ServerStartedEvent = new System.Threading.ManualResetEvent(false);
 
         /// <summary>
         /// The status event signaler, used to controll long polling of status updates
         /// </summary>
-        public static EventPollNotify StatusEventNotifyer = new EventPollNotify();
+        public static readonly EventPollNotify StatusEventNotifyer = new EventPollNotify();
 
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
@@ -131,7 +131,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The log redirect handler
         /// </summary>
-        public static LogWriteHandler LogHandler = new LogWriteHandler();
+        public static readonly LogWriteHandler LogHandler = new LogWriteHandler();
 
         /// <summary>
         /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
@@ -244,9 +244,9 @@ namespace Duplicati.Server
                 {
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
-
-                UpdatePoller = new UpdatePollThread();
                 
+                UpdatePoller = new UpdatePollThread();
+
                 SetPurgeTempFilesTimer(commandlineOptions);
 
                 SetLiveControls();
@@ -379,8 +379,17 @@ namespace Duplicati.Server
             {
                 try
                 {
-                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
+#if DEBUG
+                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 1)
+                    {
                         return;
+                    }
+#else
+                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
+                    {
+                        return;
+                    }
+#endif
 
                     lastPurge = DateTime.Now;
 
@@ -420,8 +429,13 @@ namespace Duplicati.Server
 
             try
             {
+#if DEBUG
+                PurgeTempFilesTimer =
+                    new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromSeconds(10), TimeSpan.FromHours(1));
+#else
                 PurgeTempFilesTimer =
                     new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
+#endif
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -748,7 +762,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The default log retention
         /// </summary>
-        private static string DEFAULT_LOG_RETENTION = "30D";
+        private static readonly string DEFAULT_LOG_RETENTION = "30D";
 
         /// <summary>
         /// Gets a list of all supported commandline options

@@ -30,9 +30,9 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<CompactHandler>();
-        protected string m_backendurl;
-        protected Options m_options;
-        protected CompactResults m_result;
+        protected readonly string m_backendurl;
+        protected readonly Options m_options;
+        protected readonly CompactResults m_result;
         
         public CompactHandler(string backend, Options options, CompactResults result)
         {
@@ -69,7 +69,8 @@ namespace Duplicati.Library.Main.Operation
                             db.WriteResults();
                             if (m_options.AutoVacuum)
                             {
-                                db.Vacuum();
+                                m_result.VacuumResults = new VacuumResults(m_result);
+                                new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults).Run();
                             }
                         }
                     }

@@ -74,23 +74,60 @@ namespace Duplicati.UnitTest
         }
 
         [OneTimeSetUp]
-        public virtual void PrepareSourceData()
+        public virtual void OneTimeSetUp()
         {
             if (DEBUG_OUTPUT)
+            {
                 Console.SetOut(TestContext.Progress);
+            }
 
-            ProgressWriteLine("Deleting backup data and log...");
-            if (Directory.Exists(DATAFOLDER))
-                Directory.Delete(DATAFOLDER, true);
-            if (File.Exists(LOGFILE))
-                File.Delete(LOGFILE);
-            ProgressWriteLine("Deleting older data");
-            if (File.Exists(DBFILE))
-                File.Delete(DBFILE);
-            if (Directory.Exists(TARGETFOLDER))
-                Directory.Delete(TARGETFOLDER, true);
+            Directory.CreateDirectory(BASEFOLDER);
+            this.TearDown();
+            this.OneTimeTearDown();
         }
 
+        [OneTimeTearDown]
+        public virtual void OneTimeTearDown()
+        {
+            // No-op by default.
+        }
+
+        [SetUp]
+        public virtual void SetUp()
+        {
+            Directory.CreateDirectory(this.DATAFOLDER);
+            Directory.CreateDirectory(this.TARGETFOLDER);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
+        }
+
+        [TearDown]
+        public virtual void TearDown()
+        {
+            if (Directory.Exists(this.DATAFOLDER))
+            {
+                Directory.Delete(this.DATAFOLDER, true);
+            }
+            if (Directory.Exists(this.TARGETFOLDER))
+            {
+                Directory.Delete(this.TARGETFOLDER, true);
+            }
+            if (Directory.Exists(this.RESTOREFOLDER))
+            {
+                Directory.Delete(this.RESTOREFOLDER, true);
+            }
+            if (File.Exists(this.LOGFILE))
+            {
+                File.Delete(this.LOGFILE);
+            }
+            if (File.Exists(this.DBFILE))
+            {
+                File.Delete(this.DBFILE);
+            }
+            if (File.Exists($"{this.DBFILE}-journal"))
+            {
+                File.Delete($"{this.DBFILE}-journal");
+            }
+        }
 
         protected virtual Dictionary<string, string> TestOptions
         {

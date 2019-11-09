@@ -198,9 +198,9 @@ namespace Duplicati.Library.Main
         /// </summary>
         protected readonly object m_lock = new object();
 
-        protected Dictionary<string, string> m_options;
+        protected readonly Dictionary<string, string> m_options;
 
-        protected List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
+        protected readonly List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
 
         /// <summary>
         /// Lookup table for compression hints
@@ -291,7 +291,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-concurrent-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
-
+                    
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
                     new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
@@ -346,11 +346,11 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
-                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb"),
+                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb", null, null, @"The ""file-read-buffer-size"" option is no longer used and has been deprecated."),
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
-                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true", null, null, Strings.Options.VerboseDeprecated),
+                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true", null, null, @"The ""disable-filepath-cache"" option is no longer used and has been deprecated."),
                     new CommandLineArgument("use-block-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UseblockcacheShort, Strings.Options.UseblockcacheLong, "false"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
@@ -388,6 +388,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
+                    new CommandLineArgument("force-actual-date", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ForceActualDateShort, Strings.Options.ForceActualDateLong, "false"),
 
                     new CommandLineArgument("disable-piped-streaming", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablepipingShort, Strings.Options.DisablepipingLong, "false"),
 
@@ -405,6 +406,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                     new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
 
+                    new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
+                    new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
                 });
 
                 return lst;
@@ -594,7 +597,6 @@ namespace Duplicati.Library.Main
                 return m_options["tempdir"];
             }
         }
-
 
         /// <summary>
         /// Gets a value indicating whether the user has forced the locale
@@ -1095,7 +1097,7 @@ namespace Duplicati.Library.Main
                     return value;
             }
         }
-
+        
         /// <summary>
         /// Gets the logfile filename
         /// </summary>
@@ -1367,22 +1369,6 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the size the read-ahead buffer
-        /// </summary>
-        public long FileReadBufferSize
-        {
-            get
-            {
-                string tmp;
-                if (!m_options.TryGetValue("file-read-buffer-size", out tmp))
-                    tmp = DEFAULT_READ_BUFFER_SIZE;
-
-                long t = Library.Utility.Sizeparser.ParseSize(tmp, "mb");                
-                return (int)t;
-            }
-        }
-
-        /// <summary>
         /// Gets a flag indicating if metadata for files and folders should be ignored
         /// </summary>
         public bool SkipMetadata
@@ -1399,7 +1385,8 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if empty folders should be ignored
+        /// Gets a flag indicating if during restores metadata should be applied to the symlink target.
+        /// Setting this to true can result in errors if the target no longer exists.
         /// </summary>
         public bool RestoreSymlinkMetadata
         {
@@ -1635,6 +1622,20 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the minimum time that must elapse after last compaction before running next automatic compaction
+        /// </summary>
+        public TimeSpan AutoCompactInterval
+        {
+            get
+            {
+                if (!m_options.ContainsKey("auto-compact-interval") || string.IsNullOrEmpty(m_options["auto-compact-interval"]))
+                    return TimeSpan.Zero;
+                else
+                    return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-compact-interval"]);
+            }
+        }
+
+        /// <summary>
         /// Gets a flag indicating if compacting should not be done automatically
         /// </summary>
         public bool AllowMissingSource
@@ -1788,6 +1789,20 @@ namespace Duplicati.Library.Main
         public bool AutoVacuum
         {
             get { return GetBool("auto-vacuum"); }
+        }
+
+        /// <summary>
+        /// Gets the minimum time that must elapse after last vacuum before running next automatic vacuum
+        /// </summary>
+        public TimeSpan AutoVacuumInterval
+        {
+            get
+            {
+                if (!m_options.ContainsKey("auto-vacuum-interval") || string.IsNullOrEmpty(m_options["auto-vacuum-interval"]))
+                    return TimeSpan.Zero;
+                else
+                    return Library.Utility.Timeparser.ParseTimeSpan(m_options["auto-vacuum-interval"]);
+            }
         }
 
         /// <summary>

@@ -60,8 +60,8 @@ namespace Duplicati.Library.Utility
                 return first;
             else
             {
-                if (first is FilterExpression && second is FilterExpression && ((FilterExpression)first).Result == ((FilterExpression)second).Result)
-                    return FilterExpression.Combine((FilterExpression)first, (FilterExpression)second);
+                if (first is FilterExpression expression && second is FilterExpression filterExpression && expression.Result == filterExpression.Result)
+                    return FilterExpression.Combine(expression, filterExpression);
                 
                 return new JoinedFilterExpression(first, second);
             }

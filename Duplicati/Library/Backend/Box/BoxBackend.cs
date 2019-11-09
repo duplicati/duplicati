@@ -60,10 +60,9 @@ namespace Duplicati.Library.Backend.Box
                 Exception newex = null;
                 try
                 {
-                    if (ex is WebException && (ex as WebException).Response is HttpWebResponse)
+                    if (ex is WebException exception && exception.Response is HttpWebResponse hs)
                     {
                         string rawdata = null;
-                        var hs = (ex as WebException).Response as HttpWebResponse;
                         using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
                         using(var sr = new System.IO.StreamReader(rs))
                             rawdata = sr.ReadToEnd();

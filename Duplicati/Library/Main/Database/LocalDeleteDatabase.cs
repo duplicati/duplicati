@@ -64,11 +64,21 @@ namespace Duplicati.Library.Main.Database
             {
                 cmd.Transaction = transaction;
 
-                string q = String.Join(",", Enumerable.Repeat("?", toDelete.Length));
-                        
-                //First we remove unwanted entries
-                var deleted = cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Select(x => NormalizeDateTimeToEpochSeconds(x)).Cast<object>().ToArray());
-    
+                var deleted = 0;
+
+                //Process array in slices to prevent exceeding SQLITE_MAX_VARIABLE_NUMBER (default 999)
+                const int SLICE_SIZE = 128;
+                for (int sliceStart = 0; sliceStart < toDelete.Length; sliceStart += SLICE_SIZE)
+                {
+                    int sliceEnd = Math.Min(toDelete.Length, sliceStart + SLICE_SIZE) - 1;
+                    int sliceLen = sliceEnd - sliceStart + 1;
+
+                    string q = string.Join(",", Enumerable.Repeat("?", sliceLen));
+
+                    //First we remove unwanted entries
+                    deleted += cmd.ExecuteNonQuery(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (" + q + @") ", toDelete.Skip(sliceStart).Take(sliceLen).Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds).Cast<object>().ToArray());
+                }
+
                 if (deleted != toDelete.Length)
                     throw new Exception(string.Format("Unexpected number of deleted filesets {0} vs {1}", deleted, toDelete.Length));
     
@@ -99,10 +109,10 @@ namespace Duplicati.Library.Main.Database
 
         private struct VolumeUsage
         {
-            public string Name;
-            public long DataSize;
-            public long WastedSize;
-            public long CompressedSize;
+            public readonly string Name;
+            public readonly long DataSize;
+            public readonly long WastedSize;
+            public readonly long CompressedSize;
             
             public VolumeUsage(string name, long datasize, long wastedsize, long compressedsize)
             {
@@ -123,7 +133,7 @@ namespace Duplicati.Library.Main.Database
         {
             var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             
-            var usedBlocks = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Block"".""ID"" NOT IN (SELECT ""Block"".""ID"" FROM ""Block"",""DeletedBlock"" WHERE ""Block"".""Hash"" = ""DeletedBlock"".""Hash"" AND ""Block"".""Size"" = ""DeletedBlock"".""Size"") GROUP BY ""Block"".""VolumeID"" ";
+            var usedBlocks = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Block"".""ID"" NOT IN (SELECT ""Block"".""ID"" FROM ""Block"",""DeletedBlock"" WHERE ""Block"".""Hash"" = ""DeletedBlock"".""Hash"" AND ""Block"".""Size"" = ""DeletedBlock"".""Size"" AND ""Block"".""VolumeID"" = ""DeletedBlock"".""VolumeID"") GROUP BY ""Block"".""VolumeID"" ";
             var lastmodifiedFile = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""Fileset"".""Timestamp"" AS ""Sorttime"" FROM ""Fileset"", ""FilesetEntry"", ""FileLookup"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""FileLookup"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" ";
             var lastmodifiedMetadata = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""Fileset"".""Timestamp"" AS ""Sorttime"" FROM ""Fileset"", ""FilesetEntry"", ""FileLookup"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" ";
             var scantime = @"SELECT ""VolumeID"" AS ""VolumeID"", MIN(""Sorttime"") AS ""Sorttime"" FROM (" + lastmodifiedFile + @" UNION " + lastmodifiedMetadata + @") GROUP BY ""VolumeID"" ";

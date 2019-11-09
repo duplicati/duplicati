@@ -176,7 +176,7 @@
                                     </div>
                                 </span>
                                 <span ng-show="StopReqId == activeTaskID">
-                                    <strong translate>Stopping after upload:</strong> {{activeBackup.Backup.Name}}
+                                    <strong translate>Stopping after the current file:</strong> {{activeBackup.Backup.Name}}
                                 </span>
                             </span>
                             <span ng-show="activeBackup == null">
@@ -191,7 +191,7 @@
                             <strong translate>Next task:</strong> {{nextTask.Backup.Name}}
                         </div>
 
-                        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong translate>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | moment: 'calendar'}}</span></div>
+                        <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong translate>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | parseDate:forceActualDate }}</span></div>
 
                         <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null" translate>No scheduled tasks</div>
                     </div>
@@ -271,9 +271,6 @@
                     <li>
                         <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank" rel="external"><img src="img/social/facebook.png" alt="Facebook" title="Facebook" /></a>
                     </li>
-                    <li>
-                        <a href="https://plus.google.com/105271984558189185842" target="_blank" rel="external"><img src="img/social/google.png" alt="Google Plus" title="Google Plus" /></a>
-                    </li>
                     <!-- <li>
                         <a href="http://www.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
                     </li> -->
@@ -316,7 +313,7 @@
                 The connection to the server is lost, attempting again in {{time}} ...
             </div>
             <div class="content" translate ng-hide="state.connectionState !='connecting'">
-                Connecting to server ...
+                Connecting to server …
             </div>
             <div class="content buttons">
                 <a href ng-show="state.connectionState != 'connecting'" ng-click="doReconnect()" class="button" translate>Connect now</a>
@@ -329,7 +326,7 @@
 
     <div ng-show="false" class="connection-lost" ng-click="">
         <div class="info">
-            <div class="title">Not loaded ...</div>
+            <div class="title">Not loaded …</div>
             <div class="content">
                 The page is not yet loaded, this can be caused by a defective install, a browser issue or a slow connection.
             </div>

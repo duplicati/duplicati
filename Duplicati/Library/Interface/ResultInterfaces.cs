@@ -91,6 +91,7 @@ namespace Duplicati.Library.Interface
     public interface IListResultFileset
     {
         long Version { get; }
+        int IsFullBackup { get; }
         DateTime Time { get; }
         long FileCount { get; }
         long FileSizes { get; }
@@ -142,6 +143,7 @@ namespace Duplicati.Library.Interface
         bool Dryrun { get; }
         
         ICompactResults CompactResults { get; }
+        IVacuumResults VacuumResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
     }
@@ -178,6 +180,8 @@ namespace Duplicati.Library.Interface
         long DownloadedFileSize { get; }
         long UploadedFileSize { get; }
         bool Dryrun { get; }
+
+        IVacuumResults VacuumResults { get; }
     }
     
     public interface ICreateLogDatabaseResults : IBasicResults

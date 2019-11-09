@@ -307,7 +307,7 @@ namespace Duplicati.Library.Main
         /// <param name="filename">Filename.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="fileoffset">Fileoffset.</param>
-        void UpdateFile(out string filename, out long filesize, out long fileoffset);
+        void UpdateFile(out string filename, out long filesize, out long fileoffset, out bool filecomplete);
         
         /// <summary>
         /// Occurs when the phase has changed
@@ -341,6 +341,7 @@ namespace Duplicati.Library.Main
         private string m_curfilename;
         private long m_curfilesize;
         private long m_curfileoffset;
+        private bool m_curfilecomplete;
         
         private long m_filesprocessed;
         private long m_filesizeprocessed;
@@ -361,6 +362,7 @@ namespace Duplicati.Library.Main
                 m_curfilename = null;
                 m_curfilesize = 0;
                 m_curfileoffset = 0;
+                m_curfilecomplete = false;
             }
             
             if (prev_phase != phase && PhaseChanged != null)
@@ -380,6 +382,7 @@ namespace Duplicati.Library.Main
                 m_curfilename = filename;
                 m_curfilesize = size;
                 m_curfileoffset = 0;
+                m_curfilecomplete = false;
             }
         }
         
@@ -405,6 +408,7 @@ namespace Duplicati.Library.Main
             {
                 m_filesprocessed = count;
                 m_filesizeprocessed = size;
+                m_curfilecomplete = true;
             }
         }
         
@@ -438,13 +442,14 @@ namespace Duplicati.Library.Main
         /// <param name="filename">Filename.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="fileoffset">Fileoffset.</param>
-        public void UpdateFile(out string filename, out long filesize, out long fileoffset)
+        public void UpdateFile(out string filename, out long filesize, out long fileoffset, out bool filecomplete)
         {
             lock(m_lock)
             {
                 filename = m_curfilename;
                 filesize = m_curfilesize;
                 fileoffset = m_curfileoffset;
+                filecomplete = m_curfilecomplete;
             }
         }
     }

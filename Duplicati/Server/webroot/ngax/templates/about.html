@@ -34,26 +34,26 @@
         </div>
 
         <a ng-show="state.updaterState == 'Waiting'" href ng-click="doCheckForUpdates()" translate>Check for updates now</a>
-        <div ng-show="state.updaterState == 'Checking'"  translate>Checking for updates ...</div>
+        <div ng-show="state.updaterState == 'Checking'"  translate>Checking for updates …</div>
 
-        <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update ...'", ng-progress="state.updateDownloadProgress">
+        <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update …'", ng-progress="state.updateDownloadProgress">
         </progress-bar>
 
         <div>&nbsp;</div>
 
         <div class="prewrapped-text" ng-show="Acknowledgements">{{Acknowledgements}}</div>
-        <div class="prewrapped-text" ng-hide="Acknowledgements" translate="">Loading ...</div>
+        <div class="prewrapped-text" ng-hide="Acknowledgements" translate="">Loading …</div>
     </div>
 
     <div ng-show="Page == 'changelog'">
         <div class="prewrapped-text fixed-width-font" ng-show="ChangeLog">{{ChangeLog}}</div>
-        <div class="prewrapped-text fixed-width-font" ng-hide="ChangeLog" translate="">Loading ...</div>
+        <div class="prewrapped-text fixed-width-font" ng-hide="ChangeLog" translate="">Loading …</div>
     </div>
 
     <div ng-show="Page == 'licenses'" class="licenses">
         {{brandingService.appName}} is using the following third party libraries:
         <ul>
-            <li ng-show="Licenses == null" translate>Loading ...</li>
+            <li ng-show="Licenses == null" translate>Loading …</li>
             <li ng-repeat="item in Licenses" class="licenseentry">
                 <external-link class="itemlink" link="item.link">{{item.name}}</external-link>: {{item.description}}. <external-link class="licenselink" link="item.licenselink">{{item.license}} licensed</external-link>
             </li>

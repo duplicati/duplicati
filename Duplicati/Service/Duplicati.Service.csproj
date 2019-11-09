@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <Prefer32Bit>False</Prefer32Bit>    
+    <Prefer32Bit>False</Prefer32Bit>
     <RootNamespace>Duplicati.Service</RootNamespace>
     <AssemblyName>Duplicati.Service</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
     <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

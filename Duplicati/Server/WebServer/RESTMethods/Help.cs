@@ -35,8 +35,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         continue;
 
                     var desc = mod.GetType().Name;
-                    if (mod is IRESTMethodDocumented)
-                        desc = ((IRESTMethodDocumented)mod).Description;
+                    if (mod is IRESTMethodDocumented documented)
+                        desc = documented.Description;
                     sb.AppendFormat(ITEM_TEMPLATE, RESTHandler.API_URI_PATH, m, mod.GetType().Name, desc);
                 }
 
@@ -60,9 +60,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 else
                 {
                     var desc = "";
-                    if (m is IRESTMethodDocumented)
+                    if (m is IRESTMethodDocumented doc)
                     {
-                        var doc = m as IRESTMethodDocumented;
                         desc = doc.Description;
                         foreach(var t in doc.Types)
                             sb.AppendFormat(METHOD_TEMPLATE, t.Key, JsonConvert.SerializeObject(t.Value)); //TODO: Format the type

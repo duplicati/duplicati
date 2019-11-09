@@ -32,7 +32,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// The cache of services
         /// </summary>
-        private static Dictionary<CultureInfo, ILocalizationService> Services = new Dictionary<CultureInfo, ILocalizationService>();
+        private static readonly Dictionary<CultureInfo, ILocalizationService> Services = new Dictionary<CultureInfo, ILocalizationService>();
 
         /// <summary>
         /// The key for accessing logical context
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// A non-translating service
         /// </summary>
-        private static ILocalizationService InvariantService = new MockLocalizationService();
+        private static readonly ILocalizationService InvariantService = new MockLocalizationService();
 
         /// <summary>
         /// Gets a localization provider with the default language

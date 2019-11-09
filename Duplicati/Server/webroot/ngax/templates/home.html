@@ -23,29 +23,29 @@
                     <dt translate>Operations:</dt>
                     <dd>
                         <p ng-click="doRun(item.Backup.ID)" translate>Run now</p>
-                        <p ng-click="doRestore(item.Backup.ID)" translate>Restore files ...</p>
+                        <p ng-click="doRestore(item.Backup.ID)" translate>Restore files …</p>
                     </dd>
 
                     <dt translate>Configuration:</dt>
                     <dd>
-                        <p ng-click="doEdit(item.Backup.ID)" translate>Edit ...</p>
-                        <p ng-click="doExport(item.Backup.ID)" translate>Export ...</p>
-                        <p ng-click="doDelete(item.Backup.ID, item.Backup.Name)" translate>Delete ...</p>
+                        <p ng-click="doEdit(item.Backup.ID)" translate>Edit …</p>
+                        <p ng-click="doExport(item.Backup.ID)" translate>Export …</p>
+                        <p ng-click="doDelete(item.Backup.ID, item.Backup.Name)" translate>Delete …</p>
                         
                     </dd>
 
                     <dt translate>Advanced:</dt>
                     <dd>
-                        <p ng-click="doLocalDb(item.Backup.ID)" translate>Database ...</p>
+                        <p ng-click="doLocalDb(item.Backup.ID)" translate>Database …</p>
                         <p ng-click="doVerifyRemote(item.Backup.ID)" translate>Verify files</p>
                         <p ng-click="doCompact(item.Backup.ID)" translate>Compact now</p>
-                        <p ng-click="doCommandLine(item.Backup.ID)" translate>Commandline ...</p>
+                        <p ng-click="doCommandLine(item.Backup.ID)" translate>Commandline …</p>
                     </dd>
 
                     <dt translate>Reporting:</dt>
                     <dd>
-                        <p ng-click="doShowLog(item.Backup.ID)" translate>Show log ...</p>
-                        <p ng-click="doCreateBugReport(item.Backup.ID)" translate>Create bug report ...</p>
+                        <p ng-click="doShowLog(item.Backup.ID)" translate>Show log …</p>
+                        <p ng-click="doCreateBugReport(item.Backup.ID)" translate>Create bug report …</p>
                     </dd>
                 </dl>
 
@@ -53,7 +53,7 @@
                     <dt translate>Last successful backup:</dt>
                     <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"
                         title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}"
-                        translate translate-params-time="item.Backup.Metadata.LastBackupFinished | moment: 'calendar'"
+                        translate translate-params-time="item.Backup.Metadata.LastBackupFinished | parseDate:forceActualDate"
                         translate-params-duration="formatDuration(item.Backup.Metadata.LastBackupDuration || item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})
                     </dd>
                     <dd>
@@ -62,7 +62,7 @@
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">
                         <dt translate>Next scheduled run:</dt>
-                        <dd title="{{item.Backup.Metadata.NextScheduledRun | parsetimestamp }}">{{item.Backup.Metadata.NextScheduledRun | moment: 'calendar'}}</dd>
+                        <dd title="{{item.Backup.Metadata.NextScheduledRun | parsetimestamp }}">{{item.Backup.Metadata.NextScheduledRun | parseDate:forceActualDate }}</dd>
                     </div>
                     <div ng-hide="item.Backup.Metadata == null">
                         <div ng-hide="item.Backup.Metadata.SourceSizeString == null">

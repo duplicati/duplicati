@@ -188,13 +188,18 @@ namespace Duplicati.Library.Main.Operation
                                 backend.WaitForComplete(restoredb, null);
                                 m_result.EndTime = DateTime.UtcNow;
                                 return;
-                            }    
-                        
+                            }
+
                             progress++;
                             if (filelistWork.Count == 1 && m_options.RepairOnlyPaths)
+                            {
                                 m_result.OperationProgressUpdater.UpdateProgress(0.5f);
+                            }
                             else
+                            {
                                 m_result.OperationProgressUpdater.UpdateProgress(((float)progress / filelistWork.Count()) * (m_options.RepairOnlyPaths ? 1f : 0.2f));
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingFilelistVolumes", "Processing filelist volume {0} of {1}", progress, filelistWork.Count);
+                            }
 
                             using(var tmpfile = entry.TempFile)
                             {
@@ -214,9 +219,15 @@ namespace Duplicati.Library.Main.Operation
                                     hashes_pr_block = blocksize / m_options.BlockhashSize;
                                 }
 
-
                                 // Create timestamped operations based on the file timestamp
                                 var filesetid = restoredb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
+                                
+                                // retrieve fileset data from dlist
+                                var filesetData = VolumeReaderBase.GetFilesetData(parsed.CompressionModule, tmpfile, m_options);
+                                
+                                // update fileset using filesetData
+                                restoredb.UpdateFullBackupStateInFileset(filesetid, filesetData.IsFullBackup);
+
                                 using(var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
                                     foreach(var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path)))
                                     {
@@ -341,6 +352,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 progress++;
                                 m_result.OperationProgressUpdater.UpdateProgress((((float)progress / indexfiles.Count) * 0.5f) + 0.2f);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingIndexlistVolumes", "Processing indexlist volume {0} of {1}", progress, indexfiles.Count);
 
                                 using(var tmpfile = sf.TempFile)
                                 {
@@ -456,6 +468,7 @@ namespace Duplicati.Library.Main.Operation
 
                                     progress++;
                                     m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingBlocklistVolumes", "Pass {0} of 3, processing blocklist volume {1} of {2}", (i + 1), progress, lst.Count);
 
                                     var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
 

@@ -22,10 +22,14 @@ namespace Duplicati.Library.Backend.Sia
         private readonly float m_redundancy;
         private readonly string m_authorization;
 
-        public Sia() {
-
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
+        public Sia()
+        {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public Sia(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -384,7 +388,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw new Exception(getResponseBodyOnError(endpoint, wex));
@@ -415,7 +419,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw new Exception(getResponseBodyOnError(endpoint, wex));

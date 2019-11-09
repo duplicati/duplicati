@@ -88,7 +88,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 var prevId = prevs.Length == 0 ? -1 : prevs.Last();
 
-                    FilesetVolumeWriter fsw = null;
                     try
                     {
                         var s = 1;
@@ -104,38 +103,33 @@ namespace Duplicati.Library.Main.Operation.Backup
                             fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
                         }
 
-                        fsw = new FilesetVolumeWriter(options, fileTime);
-                        fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
+                        using (FilesetVolumeWriter fsw = new FilesetVolumeWriter(options, fileTime))
+                        {
+                            fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
 
-                        if (!string.IsNullOrEmpty(options.ControlFiles))
-                            foreach(var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                                fsw.AddControlFile(p, options.GetCompressionHintFromFilename(p));
+                            if (!string.IsNullOrEmpty(options.ControlFiles))
+                                foreach (var p in options.ControlFiles.Split(new char[] {System.IO.Path.PathSeparator}, StringSplitOptions.RemoveEmptyEntries))
+                                    fsw.AddControlFile(p, options.GetCompressionHintFromFilename(p));
 
-                        var newFilesetID = await database.CreateFilesetAsync(fsw.VolumeID, fileTime);
-                        await database.LinkFilesetToVolumeAsync(newFilesetID, fsw.VolumeID);
-                        await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime);
+                            var newFilesetID = await database.CreateFilesetAsync(fsw.VolumeID, fileTime);
+                            await database.LinkFilesetToVolumeAsync(newFilesetID, fsw.VolumeID);
+                            await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime);
 
-                        await database.WriteFilesetAsync(fsw, newFilesetID);
+                            await database.WriteFilesetAsync(fsw, newFilesetID);
 
-                        if (!await taskreader.ProgressAsync)
-                            return;
-                        
-                        await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                        await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
-                        await self.UploadChannel.WriteAsync(new FilesetUploadRequest(fsw));
-                        fsw = null;
+                            if (!await taskreader.ProgressAsync)
+                                return;
+
+                            await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                            await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
+                            await self.UploadChannel.WriteAsync(new FilesetUploadRequest(fsw));
+                        }
                     }
                     catch
                     {
                         await database.RollbackTransactionAsync();
                         throw;
                     }
-                    finally
-                    {
-                        if (fsw != null)
-                            try { fsw.Dispose(); }
-                        catch { fsw = null; }
-                    }                          
                 }
             );
         }

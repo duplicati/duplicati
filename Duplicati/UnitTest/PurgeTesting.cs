@@ -26,20 +26,10 @@ namespace Duplicati.UnitTest
 {
     public class PurgeTesting : BasicSetupHelper
     {
-        public override void PrepareSourceData()
-        {
-            base.PrepareSourceData();
-
-            Directory.CreateDirectory(DATAFOLDER);
-            Directory.CreateDirectory(TARGETFOLDER);
-        }
-
         [Test]
         [Category("Purge")]
         public void PurgeTest()
         {
-            PrepareSourceData();
-
             var blocksize = 1024 * 10;
             var basedatasize = 0;
 
@@ -102,7 +92,7 @@ namespace Duplicati.UnitTest
             {
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = i }), null))
                 {
-                    var res = c.PurgeFiles(new Library.Utility.FilterExpression("*" + Path.DirectorySeparatorChar + single_version_candidate));
+                    var res = c.PurgeFiles(new Library.Utility.FilterExpression(Path.Combine(this.DATAFOLDER, single_version_candidate)));
                     Assert.AreEqual(1, res.RewrittenFileLists, "Incorrect number of rewritten filesets after single-versions purge");
                     Assert.AreEqual(1, res.RemovedFileCount, "Incorrect number of removed files after single-versions purge");
                 }
@@ -165,8 +155,6 @@ namespace Duplicati.UnitTest
         [Category("Purge")]
         public void PurgeBrokenFilesTest()
         {
-            PrepareSourceData();
-
             var blocksize = 1024 * 10;
             var basedatasize = 0;
 

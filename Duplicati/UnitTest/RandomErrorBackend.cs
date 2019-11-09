@@ -27,7 +27,7 @@ namespace Duplicati.UnitTest
     {
         static RandomErrorBackend() { WrappedBackend = "file"; }
 
-        private static Random random = new Random(42);
+        private static readonly Random random = new Random(42);
 
         public static string WrappedBackend { get; set; }
 

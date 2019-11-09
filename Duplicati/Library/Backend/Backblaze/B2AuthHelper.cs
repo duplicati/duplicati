@@ -106,9 +106,9 @@ namespace Duplicati.Library.Backend.Backblaze
                             try
                             {
                                 // Only retry once on client errors
-                                if (ex is WebException && (ex as WebException).Response is HttpWebResponse)
+                                if (ex is WebException exception && exception.Response is HttpWebResponse response)
                                 {
-                                    var sc = (int)((ex as WebException).Response as HttpWebResponse).StatusCode;
+                                    var sc = (int)response.StatusCode;
                                     clienterror = (sc >= 400 && sc <= 499);
                                 }
                             }
@@ -137,10 +137,9 @@ namespace Duplicati.Library.Backend.Backblaze
             Exception newex = null;
             try
             {
-                if (ex is WebException && (ex as WebException).Response is HttpWebResponse)
+                if (ex is WebException exception && exception.Response is HttpWebResponse hs)
                 {
                     string rawdata = null;
-                    var hs = (ex as WebException).Response as HttpWebResponse;
                     using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
                     using(var sr = new System.IO.StreamReader(rs))
                         rawdata = sr.ReadToEnd();
@@ -166,8 +165,8 @@ namespace Duplicati.Library.Backend.Backblaze
 
         public static HttpStatusCode GetExceptionStatusCode(Exception ex)
         {
-            if (ex is WebException && (ex as WebException).Response is HttpWebResponse)
-                return ((ex as WebException).Response as HttpWebResponse).StatusCode;
+            if (ex is WebException exception && exception.Response is HttpWebResponse response)
+                return response.StatusCode;
             else
                 return default(HttpStatusCode);
         }

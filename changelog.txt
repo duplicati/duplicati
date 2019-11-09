@@ -1,3 +1,199 @@
+2019-11-05 - 2.0.4.34_canary_2019-11-05
+==========
+* Stapling macOS notarization to bundles, thanks @kenkendk
+* Removed option to store fileset in memory, thanks @tygill
+* Fixed failure on password-protected servers introduced in 2.0.4.32, thanks @warwickmm
+* Improved progress reporting, thanks @ltfish
+
+2019-11-01 - 2.0.4.33_canary_2019-11-01
+==========
+* Re-added support for buffering requests via the http module, thanks @tygill
+* Fixed an issue with invalid DateTimeOffset, thanks @warwickmm
+* Added new macOS launchers that play nice with Gatekeeper in macOS Catalina, thanks @kenkendk
+* Fixed an issue where `Exclude files whose names contains` would create invalid filters, thanks @kenkendk
+
+2019-10-24 - 2.0.4.32_canary_2019-10-24
+==========
+* Code quality improvements, thanks @warwickmm
+* Fixes to the `Alternative FTP` backend, thanks @kenkendk
+
+2019-10-19 - 2.0.4.31_canary_2019-10-19
+==========
+* Updated translations, thanks all translators!
+* Improved computing EPOCH style timestamps, thanks @kylestanfield
+* Cleanup for removing deleted volumes with incorrect timestamps, thanks @BlueBlock
+* Improved progress when deleting volumes, thanks @drwtsn32x
+* Fixed an issue with ignoring the `--tempdir` option, thanks @drwtsn32x
+* Fixed an issue restoring from a single-file backup, thanks @drwtsn32x
+* Fixed filename color in dark theme, thanks @mithileshz
+* Improved documentation and help texts, thanks @warwickmm
+* Fixed parsing `%u`-style encoded unicode in URLs, thanks @warwickmm
+* Fixed cases where a filelists could be omitted from `dindex` files, thanks @warwickmm
+* Added a new tray-icon for the warning state, thanks @drwtsn32x
+* Fixed a retry error where uploaded `dindex`-files would reference non-existing `dblock` files, thanks @warwickmm
+* Code quality improvements, thanks @warwickmm
+* Fixed a case where purging a single file would purge all *other* files, if the filesystem is case-sensitive, thanks @warwickmm
+
+2019-09-20 - 2.0.4.30_canary_2019-09-20
+==========
+* Updated builds scripts to automatically notarize all packages for MacOS
+* Updated all string using ... to us the ellipsis character, thanks @leela52452
+* Code quality improvements and more tests, thanks @warwickmm
+* Removed escaping of pipe characters on Linux, thanks @kenkendk
+* Updated CoCoL to avoid excessive CPU usage, thanks @kenkendk
+* Updated translations, thanks to all translators!
+* Fixed a crash when connecting to a password protected server instance from the trayicon, thanks @kenkendk
+
+2019-09-17 - 2.0.4.29_canary_2019-09-17
+==========
+* Added workaround for bug in Mono 6.0, thanks @warwickmm
+* Extra logging during database recreates, thanks @drwtsn32x
+* Added options to MSI installer for parameterized installs, thanks @BlueBlock
+* Improved debug building, thanks @BlueBlock
+* Updated packages: FluentFTP, CoCoL, Microsoft.Azure, AWSSDK, MailKit, MimeKit, thanks @BlueBlock
+* Improved progress bar status, thanks @drwtsn32x
+* Fixed a parsing issue when reading the server path in the UI, thanks @FlyingFox333
+* Code quality improvements, thanks @warwickmm
+* Added code to actually remove purged volumes, thanks @BlueBlock
+* Updated bundled GPG and checking for user-installed GPG on Windows, thanks @BlueBlock
+* Improved handling of the "Stop after current file" method, thnaks @BlueBlock
+* Updated list of S3 locations and storage classes, thanks @kenkendk
+
+2019-09-05 - 2.0.4.28_canary_2019-09-05
+==========
+* Updated CoCoL and WiX to fix rollback and upgrade errors, thanks @BlueBlock
+
+2019-09-03 - 2.0.4.27_canary_2019-09-03
+==========
+* Fixed issues with the MSI packages not upgrading correctly, thanks @BlueBlock
+* Fixed some assembly redirects and package references, thanks @BlueBlock
+* Code cleanup for EPOCH times, thanks @warwickmm
+
+2019-09-02 - 2.0.4.26_canary_2019-09-02
+==========
+== This is a rebuild of 2.0.4.24 with MSI packages and **new** assembly redirect fixes ==
+
+Change list from 2.0.4.24:
+* Code cleanup, thanks @warwickmm
+* Removed extra console output, thanks @wjansenw
+* Fixed disposing backends after job completion, thanks @warwickmm
+* Fixed an issue with throttled write, thanks @warwickmm
+* Spelling fix, thanks @BlueBlock
+* Fixed documetation in `run-script` examples, thanks @beppo-dd
+* Improved unittests, thanks @BlueBlock
+* Improved auto-compact and auto-vacuum, thanks @drwtsn32x
+* Fixed problem with exceeeding the number of parameters supported by SQLite, thanks @drwtsn32x
+* Improved status display, thanks @drwtsn32x
+* Improved bugreport database scrubbing, thanks @drwtsn32x
+* Removed GoogleDrive trash items in listing, thanks @BlueBlock
+* Fixed the rename method in the GoogleDrive backend, thanks @BlueBlock
+* Improved GCS storage class text, thanks @warwickmm
+* Improved unittests for easier local testing, thanks @warwickmm
+* Added workaround for AFTP upload delay, thanks @BlueBlock
+* Fixed issue with reading the largest path prefix, thanks @BlueBlock
+* Added conditional download of unittest data zip files, thanks @BlueBlock
+* CI testing improvements, thanks @BlueBlock
+* Fixed sporadic issue with backups of files being written, thanks @BlueBlock
+* Updated to .Net Framework 4.6.2
+* Fixed issue with temporary files not being deleted as expected, thanks @BlueBlock
+* Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
+
+2019-09-02 - 2.0.4.25_canary_2019-09-02
+==========
+== This is a rebuild of 2.0.4.24 with MSI packages and assembly redirect fixes ==
+
+Change list from 2.0.4.24:
+* Code cleanup, thanks @warwickmm
+* Removed extra console output, thanks @wjansenw
+* Fixed disposing backends after job completion, thanks @warwickmm
+* Fixed an issue with throttled write, thanks @warwickmm
+* Spelling fix, thanks @BlueBlock
+* Fixed documetation in `run-script` examples, thanks @beppo-dd
+* Improved unittests, thanks @BlueBlock
+* Improved auto-compact and auto-vacuum, thanks @drwtsn32x
+* Fixed problem with exceeeding the number of parameters supported by SQLite, thanks @drwtsn32x
+* Improved status display, thanks @drwtsn32x
+* Improved bugreport database scrubbing, thanks @drwtsn32x
+* Removed GoogleDrive trash items in listing, thanks @BlueBlock
+* Fixed the rename method in the GoogleDrive backend, thanks @BlueBlock
+* Improved GCS storage class text, thanks @warwickmm
+* Improved unittests for easier local testing, thanks @warwickmm
+* Added workaround for AFTP upload delay, thanks @BlueBlock
+* Fixed issue with reading the largest path prefix, thanks @BlueBlock
+* Added conditional download of unittest data zip files, thanks @BlueBlock
+* CI testing improvements, thanks @BlueBlock
+* Fixed sporadic issue with backups of files being written, thanks @BlueBlock
+* Updated to .Net Framework 4.6.2
+* Fixed issue with temporary files not being deleted as expected, thanks @BlueBlock
+* Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
+
+2019-09-02 - 2.0.4.24_canary_2019-09-02
+==========
+* Code cleanup, thanks @warwickmm
+* Removed extra console output, thanks @wjansenw
+* Fixed disposing backends after job completion, thanks @warwickmm
+* Fixed an issue with throttled write, thanks @warwickmm
+* Spelling fix, thanks @BlueBlock
+* Fixed documetation in `run-script` examples, thanks @beppo-dd
+* Improved unittests, thanks @BlueBlock
+* Improved auto-compact and auto-vacuum, thanks @drwtsn32x
+* Fixed problem with exceeeding the number of parameters supported by SQLite, thanks @drwtsn32x
+* Improved status display, thanks @drwtsn32x
+* Improved bugreport database scrubbing, thanks @drwtsn32x
+* Removed GoogleDrive trash items in listing, thanks @BlueBlock
+* Fixed the rename method in the GoogleDrive backend, thanks @BlueBlock
+* Improved GCS storage class text, thanks @warwickmm
+* Improved unittests for easier local testing, thanks @warwickmm
+* Added workaround for AFTP upload delay, thanks @BlueBlock
+* Fixed issue with reading the largest path prefix, thanks @BlueBlock
+* Added conditional download of unittest data zip files, thanks @BlueBlock
+* CI testing improvements, thanks @BlueBlock
+* Fixed sporadic issue with backups of files being written, thanks @BlueBlock
+* Updated to .Net Framework 4.6.2
+* Fixed issue with temporary files not being deleted as expected, thanks @BlueBlock
+* Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
+
+2019-07-14 - 2.0.4.23_beta_2019-07-14
+==========
+This update only contains warnings to inform users on Amazon Cloud Drive that the service is discontinued.
+The update will warn users running or configuring a backup stored on Amazon Cloud Drive.
+
+This does **NOT** affect other Amazon services such as S3.
+If you do not use Amazon Cloud Drive, you can skip this update.
+
+For more information on the changes, please see:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
+2019-06-30 - 2.0.4.22_canary_2019-06-30
+==========
+* Fixed link to usage reporter, thanks @warwickmm
+* Fixed using the B2 prefix, thanks @drwtsn32x
+* Fixed data corruption caused by upload throttling, thanks @ts678
+* Fixed data corruption caused by compacting, thanks @ts678 and @warwickmm
+
+2019-06-28 - 2.0.4.21_experimental_2019-06-28
+==========
+This is a cumulative release for more than 6 months of hard work.
+Most of these are speedup improvements, error handling and general quality fixes.
+
+This release will give a warning for all users of the Amazon Cloud Drive backen, as it is being discontinued by Amazon:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
+2019-06-25 - 2.0.4.20_canary_2019-06-25
+==========
+* Added warnings about AmzCD closing
+
+2019-06-17 - 2.0.4.19_canary_2019-06-17
+==========
+* Show vacuum operation in status, thanks @drwtsn32x
+* Remove deprectated options and code from backends, thanks @warwickmm
+* Improved timeout handling for OAuth login, thanks @warwickmm
+* Improved names of backup databases, thanks @drwtsn32x
+* Removed the Google Plus icon, thanks @locked-fg
+
 2019-05-12 - 2.0.4.18_canary_2019-05-12
 ==========
 * Improved UI progress to show the VACUUM step, thanks @drwtsn32x

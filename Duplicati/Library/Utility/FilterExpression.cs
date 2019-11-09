@@ -93,7 +93,7 @@ namespace Duplicati.Library.Utility
             // Since we might need to get the regex for a particular filter group multiple times
             // (e.g., when combining multiple FilterExpressions together, which discards the existing FilterEntries and recreates them from the Filter representations),
             // and since they don't change (and compiling them isn't a super cheap operation), we keep a cache of the ones we've built for re-use.
-            private static Dictionary<FilterGroup, Regex> filterGroupRegexCache = new Dictionary<FilterGroup, Regex>();
+            private static readonly Dictionary<FilterGroup, Regex> filterGroupRegexCache = new Dictionary<FilterGroup, Regex>();
 
             /// <summary>
             /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.FilterEntry"/> struct.
@@ -469,7 +469,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A cache for computing the fallback strategy for a filter
         /// </summary>
-        private static Dictionary<IFilter, Tuple<bool, bool>> _matchFallbackLookup = new Dictionary<IFilter, Tuple<bool, bool>>();
+        private static readonly Dictionary<IFilter, Tuple<bool, bool>> _matchFallbackLookup = new Dictionary<IFilter, Tuple<bool, bool>>();
 
         /// <summary>
         /// The lock object for protecting access to the lookup table
@@ -519,17 +519,17 @@ namespace Duplicati.Library.Utility
                     var p = q.Dequeue();
                     if (p == null || p.Empty)
                         continue;
-                    else if (p is FilterExpression)
+                    else if (p is FilterExpression expression)
                     {
-                        if (((FilterExpression)p).Result)
+                        if (expression.Result)
                             includes = true;
                         else
                             excludes = true;
                     }
-                    else if (p is JoinedFilterExpression)
+                    else if (p is JoinedFilterExpression filterExpression)
                     {
-                        q.Enqueue(((JoinedFilterExpression)p).First);
-                        q.Enqueue(((JoinedFilterExpression)p).Second);
+                        q.Enqueue(filterExpression.First);
+                        q.Enqueue(filterExpression.Second);
                     }
                 }
 
@@ -609,8 +609,8 @@ namespace Duplicati.Library.Utility
             if (first == null || first.Empty)
                 return second;
 
-            if (first is FilterExpression && second is FilterExpression && ((FilterExpression)first).Result == ((FilterExpression)second).Result)
-                return Combine((FilterExpression)first, (FilterExpression)second);
+            if (first is FilterExpression expression && second is FilterExpression filterExpression && expression.Result == filterExpression.Result)
+                return Combine(expression, filterExpression);
 
             return new JoinedFilterExpression(first, second);
         }
@@ -665,12 +665,12 @@ namespace Duplicati.Library.Utility
             {
                 var f = work.Pop();
 
-                if (f is FilterExpression)
-                    res = res.Union(((FilterExpression)f).Serialize());
-                else if (f is JoinedFilterExpression)
+                if (f is FilterExpression expression)
+                    res = res.Union(expression.Serialize());
+                else if (f is JoinedFilterExpression filterExpression)
                 {
-                    work.Push(((JoinedFilterExpression)f).Second);
-                    work.Push(((JoinedFilterExpression)f).First);
+                    work.Push(filterExpression.Second);
+                    work.Push(filterExpression.First);
                 }
                 else
                     throw new Exception(string.Format("Cannot serialize filter instance of type: {0}", f.GetType()));

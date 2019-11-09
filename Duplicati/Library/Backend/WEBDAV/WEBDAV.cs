@@ -21,6 +21,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -286,7 +287,7 @@ namespace Duplicati.Library.Backend
             } 
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw;

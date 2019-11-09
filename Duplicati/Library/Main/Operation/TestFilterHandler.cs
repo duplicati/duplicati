@@ -1,24 +1,25 @@
-//  Copyright (C) 2015, The Duplicati Team
-
-//  http://www.duplicati.com, info@duplicati.com
+#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 //
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
 //
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#endregion
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using Duplicati.Library.Snapshots;
 using CoCoL;
 
@@ -40,17 +41,22 @@ namespace Duplicati.Library.Main.Operation
             m_result = results;
         }
 
-        public void Run(string[] sources, Library.Utility.IFilter filter)
+        public void Run(string[] sources, Library.Utility.IFilter filter, CancellationToken token)
         {
             var sourcefilter = new Library.Utility.FilterExpression(sources, true);
 
-            using(var snapshot = BackupHandler.GetSnapshot(sources, m_options))
-            using(new IsolatedChannelScope())
+            using (var snapshot = BackupHandler.GetSnapshot(sources, m_options))
+            using (new IsolatedChannelScope())
             {
-                var source = Operation.Backup.FileEnumerationProcess.Run(sources, snapshot, null, m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy, m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames, null, m_result.TaskReader);
+                var source = Operation.Backup.FileEnumerationProcess.Run(sources, snapshot, null,
+                    m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy,
+                    m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames, null,
+                    m_result.TaskReader, token);
+
                 var sink = CoCoL.AutomationExtensions.RunTask(
                     new { source = Operation.Backup.Channels.SourcePaths.ForRead },
-                    async self => {
+                    async self =>
+                    {
                         while (true)
                         {
                             var path = await self.source.ReadAsync();
@@ -110,7 +116,7 @@ namespace Duplicati.Library.Main.Operation
                 System.Threading.Tasks.Task.WhenAll(source, sink).WaitForTaskOrThrow();
             }
         }
-        
+
         #region IDisposable implementation
         public void Dispose()
         {

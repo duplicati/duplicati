@@ -96,6 +96,9 @@ if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
 	exit 0
 fi
 
+echo "Activating sudo rights for building the installers later, please enter sudo password:"
+sudo echo "Sudo activated"
+
 RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
 
 git stash save "${GIT_STASH_NAME}"
@@ -125,7 +128,8 @@ fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
+"${NUGET}" restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
+"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
 "${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
@@ -374,9 +378,11 @@ ${RELEASE_CHANGEINFO_NEWS}
 	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
 
 	curl -X POST "https://forum.duplicati.com/posts" \
+		-H "Content-Type: multipart/form-data" \
+		-H "Accept: application/json" \
 		-F "api_key=${DISCOURSE_APIKEY}" \
 		-F "api_username=${DISCOURSE_USERNAME}" \
-		-F "category=Releases" \
+		-F "category=10" \
 		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
 		-F "raw=${body}"
 fi
