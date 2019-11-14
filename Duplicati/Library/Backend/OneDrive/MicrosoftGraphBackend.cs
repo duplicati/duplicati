@@ -330,7 +330,7 @@ namespace Duplicati.Library.Backend
         {
             using (FileStream fileStream = File.OpenRead(filename))
             {
-                await PutAsync(remotename, fileStream, cancelToken);
+                await PutAsync(remotename, fileStream, cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -342,7 +342,7 @@ namespace Duplicati.Library.Backend
                 using (StreamContent streamContent = new StreamContent(stream))
                 {
                     streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    using (var response = await m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent, cancelToken))
+                    using (var response = await m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent, cancelToken).ConfigureAwait(false))
                     {
                         // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
                         this.ParseResponse<DriveItem>(response);
@@ -360,7 +360,7 @@ namespace Duplicati.Library.Backend
                 /* Indicate that we want to replace any existing content with this new data we're uploading */
                 using (createSessionRequest.Content = this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } }))
                 {
-                    using (HttpResponseMessage createSessionResponse = await m_client.SendAsync(createSessionRequest, cancelToken))
+                    using (HttpResponseMessage createSessionResponse = await m_client.SendAsync(createSessionRequest, cancelToken).ConfigureAwait(false))
                     {
                         UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
@@ -387,7 +387,7 @@ namespace Duplicati.Library.Backend
                                     try
                                     {
                                         // The uploaded put requests will error if they are authenticated
-                                        using (HttpResponseMessage response = await m_client.SendAsync(request, false, cancelToken))
+                                        using (HttpResponseMessage response = await m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
                                         {
                                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
                                             this.ParseResponse<UploadSession>(response);
