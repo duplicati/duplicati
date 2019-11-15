@@ -30,6 +30,7 @@ using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Operation.Backup;
 using Duplicati.Library.Main.Operation.Common;
 
@@ -244,6 +245,7 @@ namespace Duplicati.Library.Main.Operation
                 if (token.IsCancellationRequested)
                 {
                     result.PartialBackup = true;
+                    Log.WriteWarningMessage(LOGTAG, "CancellationRequested", null, "Cancellation was requested by user.");
                 }
                 else
                 {
