@@ -399,13 +399,8 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
-                                if (!dict.ContainsKey(id))
-                                {
-                                    continue;
-                                }
                                 var isFullBackup = rd.GetInt32(1);
                                 var e = dict[id];
-
                                 var filecount = rd.ConvertValueToInt64(2, -1L);
                                 var filesizes = rd.ConvertValueToInt64(3, -1L);
 
