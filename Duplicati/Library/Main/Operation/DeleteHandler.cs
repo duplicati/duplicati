@@ -221,34 +221,41 @@ namespace Duplicati.Library.Main.Operation
             var fullVersionsKeptCount = 0;
             if (fullVersionsToKeep > 0 && fullVersionsToKeep < backupsRemaining.Count)
             {
-                // keep the number of full backups specified in fullVersionsToKeep.
-                // once the last full backup t okeep is found, also keep the partials immediately after it the full backup.
-                // add the remainder of full and partial backups to toDelete
-                bool foundLastFullBackupToKeep = false;
+                ISet<DateTime> intermediatePartials = new HashSet<DateTime>();
+                bool haveFullBackup = false;
+
+                // Keep the number of full backups specified in fullVersionsToKeep.
+                // Remove partial backups that are surrounded by full backups.
+                // Once enough versions are kept, delete all older backups.
                 foreach (var backup in backupsRemaining)
                 {
-                    bool isFullBackup;
+                    bool isFullBackup = db.IsFilesetFullBackup(backup);
+                    if (isFullBackup)
+                    {
+                        if (haveFullBackup)
+                        {
+                            toDelete.AddRange(intermediatePartials);
+                            intermediatePartials.Clear();
+                        }
+                        haveFullBackup = true;
+                    }
+                    else
+                    {
+                        intermediatePartials.Add(backup);
+                    }
+
                     if (fullVersionsKeptCount < fullVersionsToKeep)
                     {
-                        isFullBackup = db.IsFilesetFullBackup(backup);
                         // count only a full backup
                         if (fullVersionsKeptCount < fullVersionsToKeep && isFullBackup)
                         {
                             fullVersionsKeptCount++;
                         }
-                        continue;
                     }
-                    // do not include any partial backup that precedes the last full backup
-                    if (!foundLastFullBackupToKeep)
+                    else
                     {
-                        isFullBackup = db.IsFilesetFullBackup(backup);
-                        if (!isFullBackup)
-                        {
-                            continue;
-                        }
-                        foundLastFullBackupToKeep = true;
+                        toDelete.Add(backup);
                     }
-                    toDelete.Add(backup);
                 }
             }
 
