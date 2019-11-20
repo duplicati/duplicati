@@ -94,12 +94,13 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
-            // Run a complete backup.  Listing the Filesets should omit the previous partial backup.
+            // Run a complete backup.  Listing the Filesets should include both full and partial backups.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 c.Backup(new[] {this.DATAFOLDER});
-                Assert.AreEqual(2, c.List().Filesets.Count());
-                Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(3, c.List().Filesets.Count());
+                Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 2).IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 

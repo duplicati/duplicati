@@ -363,36 +363,14 @@ namespace Duplicati.Library.Main.Database
 
                     using (var cmd = m_connection.CreateCommand())
                     {
-                        using (var rd =
-                            cmd.ExecuteReader(
-                                @"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC ")
-                        )
+                        using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                         {
-                            // partial backup sets are only included until the first full backup is encountered
-                            var isFullBackupEncountered = false;
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
-
-                                if (!dict.ContainsKey(id))
-                                {
-                                    continue;
-                                }
-
                                 var backupType = rd.GetInt32(1);
                                 var e = dict[id];
-
-                                if (isFullBackupEncountered && backupType != BackupType.FULL_BACKUP)
-                                {
-                                    continue;
-                                }
-
                                 yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
-
-                                if (!isFullBackupEncountered && backupType == BackupType.FULL_BACKUP)
-                                {
-                                    isFullBackupEncountered = true;
-                                }
                             }
                         }
                     }
@@ -421,13 +399,8 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 var id = rd.GetInt64(0);
-                                if (!dict.ContainsKey(id))
-                                {
-                                    continue;
-                                }
                                 var isFullBackup = rd.GetInt32(1);
                                 var e = dict[id];
-
                                 var filecount = rd.ConvertValueToInt64(2, -1L);
                                 var filesizes = rd.ConvertValueToInt64(3, -1L);
 
