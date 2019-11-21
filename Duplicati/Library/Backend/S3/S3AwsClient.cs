@@ -31,7 +31,7 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// Helper class that fixes long list support and injects location headers, includes using directives etc.
     /// </summary>
-    public class S3Wrapper : IDisposable
+    public class AwsS3Wrapper : IDisposable, S3Wrapper
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3Wrapper>();
         private const int ITEM_LIST_LIMIT = 1000;
@@ -48,9 +48,9 @@ namespace Duplicati.Library.Backend
             {
                 UseHttp = !useSSL,
                 ServiceURL = (useSSL ? "https://" : "http://") + servername,
-                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE
+                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
             };
-
+            
             foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
                 var prop = cfg.GetType().GetProperties().FirstOrDefault(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
@@ -83,7 +83,7 @@ namespace Duplicati.Library.Backend
         {
             var request = new PutBucketRequest
             {
-                BucketName = bucketName
+                BucketName = bucketName,
             };
 
             if (!string.IsNullOrEmpty(m_locationConstraint))
