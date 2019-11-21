@@ -230,15 +230,18 @@ namespace Duplicati.Library.Main.Operation
                         return false;
                     });
 
-                    // store journal data in database
-                    var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
-                    if (data.Any())
+                    // store journal data in database, unless job is being canceled
+                    if (!token.IsCancellationRequested)
                     {
-                        // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
-                        await database.CreateChangeJournalDataAsync(data);
+                        var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
+                        if (data.Any())
+                        {
+                            // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
+                            await database.CreateChangeJournalDataAsync(data);
 
-                        // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
-                        await database.UpdateChangeJournalDataAsync(data, lastfilesetid);
+                            // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
+                            await database.UpdateChangeJournalDataAsync(data, lastfilesetid);
+                        }
                     }
                 }
 
