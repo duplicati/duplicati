@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -109,7 +110,7 @@ namespace Duplicati.Library.Main.Operation
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 
-                var numberSeq = CreateResultSequence(filteredList);
+                var numberSeq = CreateResultSequence(filteredList, backend, m_options);
                 if (filter.Empty)
                 {
                     m_result.SetResult(numberSeq, null);
@@ -203,9 +204,20 @@ namespace Duplicati.Library.Main.Operation
             return filelistFilter(parsedlist).ToList();
         }
 
-        public static IEnumerable<Library.Interface.IListResultFileset> CreateResultSequence(IEnumerable<KeyValuePair<long, Volumes.IParsedVolume>> filteredList)
+        private static IEnumerable<IListResultFileset> CreateResultSequence(IEnumerable<KeyValuePair<long, IParsedVolume>> filteredList, BackendManager backendManager, Options options)
         {
-            return (from n in filteredList select (Library.Interface.IListResultFileset)(new ListResultFileset(n.Key, BackupType.PARTIAL_BACKUP, n.Value.Time.ToLocalTime(), -1, -1))).ToArray();
+            List<IListResultFileset> list = new List<IListResultFileset>();
+            foreach (KeyValuePair<long, IParsedVolume> entry in filteredList)
+            {
+                AsyncDownloader downloader = new AsyncDownloader(new IRemoteVolume[] {new RemoteVolume(entry.Value.File)}, backendManager);
+                foreach (IAsyncDownloadedFile file in downloader)
+                {
+                    VolumeBase.FilesetData filesetData = VolumeReaderBase.GetFilesetData(entry.Value.CompressionModule, file.TempFile, options);
+                    list.Add(new ListResultFileset(entry.Key, filesetData.IsFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP, entry.Value.Time.ToLocalTime(), -1, -1));
+                }
+            }
+
+            return list.ToArray();
         }
     }
 }
