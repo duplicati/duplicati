@@ -160,9 +160,8 @@ namespace Duplicati.Library.Backend
 
         private Dictionary<string, string> m_options;
 
-        private S3Wrapper m_wrapper;
-
-
+        private S3Client s3Client;
+        
         public S3()
         {
         }
@@ -178,11 +177,15 @@ namespace Duplicati.Library.Backend
 
             string awsID = null;
             string awsKey = null;
+            var s3ClientOption = "aws";
 
             if (options.ContainsKey("auth-username"))
                 awsID = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 awsKey = options["auth-password"];
+
+            if (options.ContainsKey("s3-client"))
+                s3ClientOption = options["s3-client"];
 
             if (options.ContainsKey("aws_access_key_id"))
                 awsID = options["aws_access_key_id"];
@@ -287,7 +290,14 @@ namespace Duplicati.Library.Backend
             if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
-            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            if (s3ClientOption == "aws")
+            {
+                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            }
+            else
+            {
+                s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            }
         }
 
         public static bool IsValidHostname(string bucketname)
@@ -484,23 +494,23 @@ namespace Duplicati.Library.Backend
         {
             if (m_options != null)
                 m_options = null;
-            if (m_wrapper != null)
+            if (s3Client != null)
             {
-                m_wrapper.Dispose();
-                m_wrapper = null;
+                s3Client.Dispose();
+                s3Client = null;
             }
         }
 
         #endregion
 
-        private S3Wrapper Connection
+        private S3Client Connection
         {
-            get { return m_wrapper; }
+            get { return s3Client; }
         }
 
         public string[] DNSName
         {
-            get { return new string[] { m_wrapper.DNSHost }; }
+            get { return new[] { s3Client.GetDnsHost() }; }
         }
 
         private string GetFullKey(string name)

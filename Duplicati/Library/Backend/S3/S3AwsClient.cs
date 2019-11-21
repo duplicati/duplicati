@@ -1,4 +1,5 @@
 #region Disclaimer / License
+
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -16,7 +17,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+
 #endregion
+
 using Amazon.S3;
 using Amazon.S3.Model;
 using Duplicati.Library.Interface;
@@ -31,18 +34,19 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// Helper class that fixes long list support and injects location headers, includes using directives etc.
     /// </summary>
-    public class AwsS3Wrapper : IDisposable, S3Wrapper
+    public class S3AwsClient : S3Client
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3Wrapper>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
         private const int ITEM_LIST_LIMIT = 1000;
 
         protected readonly string m_locationConstraint;
         protected readonly string m_storageClass;
         protected AmazonS3Client m_client;
 
-        public readonly string DNSHost;
+        private readonly string DNSHost;
 
-        public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
+        public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
+            string storageClass, bool useSSL, Dictionary<string, string> options)
         {
             var cfg = new AmazonS3Config
             {
@@ -50,10 +54,11 @@ namespace Duplicati.Library.Backend
                 ServiceURL = (useSSL ? "https://" : "http://") + servername,
                 BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
             };
-            
+
             foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
-                var prop = cfg.GetType().GetProperties().FirstOrDefault(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
+                var prop = cfg.GetType().GetProperties().FirstOrDefault(x =>
+                    string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
                 if (prop != null && prop.CanWrite)
                 {
                     if (prop.PropertyType == typeof(bool))
@@ -101,24 +106,36 @@ namespace Duplicati.Library.Backend
             };
 
             using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
-            using(System.IO.Stream s = objectGetResponse.ResponseStream)
+            using (System.IO.Stream s = objectGetResponse.ResponseStream)
             {
-                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
-                catch { }
+                try
+                {
+                    s.ReadTimeout = (int) TimeSpan.FromMinutes(1).TotalMilliseconds;
+                }
+                catch
+                {
+                }
 
                 Utility.Utility.CopyStream(s, target);
             }
         }
 
+        public string GetDnsHost()
+        {
+            return DNSHost;
+        }
+
         public void GetFileObject(string bucketName, string keyName, string localfile)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Create,
+                System.IO.FileAccess.Write, System.IO.FileShare.None))
                 GetFileStream(bucketName, keyName, fs);
         }
 
         public void AddFileObject(string bucketName, string keyName, string localfile)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Open,
+                System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 AddFileStream(bucketName, keyName, fs);
         }
 
@@ -136,7 +153,8 @@ namespace Duplicati.Library.Backend
             m_client.PutObject(objectAddRequest);
         }
 
-        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source, CancellationToken cancelToken)
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source,
+            CancellationToken cancelToken)
         {
             var objectAddRequest = new PutObjectRequest
             {
