@@ -6,7 +6,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public interface S3Client : IDisposable
+    public interface IS3Client : IDisposable
     {
         IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix);
 

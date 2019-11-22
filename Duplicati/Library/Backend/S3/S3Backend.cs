@@ -160,7 +160,7 @@ namespace Duplicati.Library.Backend
 
         private Dictionary<string, string> m_options;
 
-        private S3Client s3Client;
+        private IS3Client s3Client;
         
         public S3()
         {
@@ -302,10 +302,7 @@ namespace Duplicati.Library.Backend
 
         public static bool IsValidHostname(string bucketname)
         {
-            if (string.IsNullOrEmpty(bucketname))
-                return false;
-            else
-                return Amazon.S3.Util.AmazonS3Util.ValidateV2Bucket(bucketname);
+            return !string.IsNullOrEmpty(bucketname) && Amazon.S3.Util.AmazonS3Util.ValidateV2Bucket(bucketname);
         }
 
         #region IBackend Members
@@ -329,7 +326,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                return ListWithouExceptionCatch();
+                return ListWithoutExceptionCatch();
             }
             catch (Exception ex)
             {
@@ -342,7 +339,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private IEnumerable<IFileEntry> ListWithouExceptionCatch()
+        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
         {
             foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
             {
@@ -503,7 +500,7 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private S3Client Connection
+        private IS3Client Connection
         {
             get { return s3Client; }
         }

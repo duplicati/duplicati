@@ -34,14 +34,14 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// Helper class that fixes long list support and injects location headers, includes using directives etc.
     /// </summary>
-    public class S3AwsClient : S3Client
+    public class S3AwsClient : IS3Client
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
         private const int ITEM_LIST_LIMIT = 1000;
 
         protected readonly string m_locationConstraint;
         protected readonly string m_storageClass;
-        protected AmazonS3Client m_client;
+        private AmazonS3Client m_client;
 
         private readonly string DNSHost;
 

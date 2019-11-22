@@ -72,7 +72,7 @@
     <Compile Include="S3MinioClient.cs" />
     <Compile Include="S3Backend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="S3Client.cs" />
+    <Compile Include="IS3Client.cs" />
     <Compile Include="S3AwsClient.cs" />
     <Compile Include="S3Config.cs" />
     <Compile Include="Strings.cs" />

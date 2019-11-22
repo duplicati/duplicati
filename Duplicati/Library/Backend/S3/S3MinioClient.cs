@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -9,30 +11,46 @@ using Minio.DataModel;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3MinioClient : S3Client
+    public class S3MinioClient : IS3Client
     {
-        protected MinioClient m_client;
+        private readonly MinioClient m_client;
 
         public S3MinioClient(string awsID, string awsKey, string locationConstraint, 
                 string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {
-            
+
             m_client = new MinioClient(
-                (useSSL ? "https://" : "http://") + servername,
+                servername,
                 awsID,
                 awsKey,
                 locationConstraint
-            ).WithSSL();
+            );
+
+            if (useSSL)
+            {
+                m_client = m_client.WithSSL();
+            }
         }
 
         public void Dispose()
         {
-            throw new System.NotImplementedException();
+            return;
         }
 
         public IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
         {
-            throw new System.NotImplementedException();
+            var observable = m_client.ListObjectsAsync(bucketName, prefix, true);
+
+            // TODO: add exception handling
+            foreach (var obj in observable.ToEnumerable())
+            {
+                yield return new Common.IO.FileEntry(
+                    obj.Key,
+                    (long) obj.Size,
+                    Convert.ToDateTime(obj.LastModified),
+                    Convert.ToDateTime(obj.LastModified)
+                );
+            }
         }
 
         public void AddBucket(string bucketName)
