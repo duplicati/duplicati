@@ -237,7 +237,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Expose all filesystem attributes
         /// </summary>
-        private void ExposeAllFilesystemAttributes()
+        private static void ExposeAllFilesystemAttributes()
         {
             // Starting with Windows 10 1803, the operating system may mask the process's view of some
             // file attributes such as reparse, offline, and sparse.
