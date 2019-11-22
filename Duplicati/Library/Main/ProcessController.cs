@@ -235,6 +235,35 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Expose all filesystem attributes
+        /// </summary>
+        private void ExposeAllFilesystemAttributes()
+        {
+            // Starting with Windows 10 1803, the operating system may mask the process's view of some
+            // file attributes such as reparse, offline, and sparse.
+            //
+            // This function will turn off such masking.
+            //
+            // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-rtlqueryprocessplaceholdercompatibilitymode
+
+            if (Platform.IsClientWindows)
+            {
+                try
+                {
+                    var currentPcm = Win32.RtlQueryProcessPlaceholderCompatibilityMode();
+                    if (currentPcm == Win32.PHCM_VALUES.PHCM_DISGUISE_PLACEHOLDER)
+                    {
+                        Win32.RtlSetProcessPlaceholderCompatibilityMode(Win32.PHCM_VALUES.PHCM_EXPOSE_PLACEHOLDERS);
+                    }
+                }
+                catch
+                {
+                    // Ignore exceptions - not supported on this version of Windows
+                }
+            }
+        }
+
+        /// <summary>
         /// Starts the process controller
         /// </summary>
         /// <param name="options">The options to use</param>
@@ -245,6 +274,8 @@ namespace Duplicati.Library.Main
 
             if (options.UseBackgroundIOPriority)
                 ActivateBackgroundIOPriority();
+
+            ExposeAllFilesystemAttributes();
         }
 
         /// <summary>
