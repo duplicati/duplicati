@@ -39,8 +39,8 @@ namespace Duplicati.Library.Backend
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
         private const int ITEM_LIST_LIMIT = 1000;
 
-        protected readonly string m_locationConstraint;
-        protected readonly string m_storageClass;
+        private readonly string m_locationConstraint;
+        private readonly string m_storageClass;
         private AmazonS3Client m_client;
 
         private readonly string DNSHost;

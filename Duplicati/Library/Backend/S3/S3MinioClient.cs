@@ -13,12 +13,16 @@ namespace Duplicati.Library.Backend
 {
     public class S3MinioClient : IS3Client
     {
+        private static readonly string Logtag = Logging.Log.LogTagFromType<S3MinioClient>();
+
         private readonly MinioClient m_client;
+        private readonly string m_locationConstraint;        
 
         public S3MinioClient(string awsID, string awsKey, string locationConstraint, 
                 string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {
 
+            m_locationConstraint = locationConstraint;
             m_client = new MinioClient(
                 servername,
                 awsID,
@@ -55,7 +59,15 @@ namespace Duplicati.Library.Backend
 
         public void AddBucket(string bucketName)
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                m_client.MakeBucketAsync(bucketName, m_locationConstraint);
+            }
+            catch (MinioException e)
+            {
+                Logging.Log.WriteErrorMessage(Logtag, "ErrorMakingBucketMinio", null,
+                    "Error making bucket {0} using Minio: {1}", bucketName, e.ToString());
+            }
         }
 
         public void DeleteObject(string bucketName, string keyName)
