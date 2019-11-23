@@ -204,11 +204,18 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            // Remove backups that are older than date specified via option
+            // Remove backups that are older than date specified via option while ensuring
+            // that we always have at least one full backup.
             var keepTime = m_options.KeepTime;
             if (keepTime.Ticks > 0)
             {
-                toDelete.AddRange(sortedAllBackups.SkipWhile(x => x >= keepTime));
+                bool haveFullBackup = false;
+                toDelete.AddRange(sortedAllBackups.SkipWhile(x =>
+                {
+                    bool keepBackup = (x >= keepTime) || !haveFullBackup;
+                    haveFullBackup = haveFullBackup || db.IsFilesetFullBackup(x);
+                    return keepBackup;
+                }));
             }
 
             // Remove backups via retention policy option
