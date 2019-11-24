@@ -90,9 +90,22 @@ namespace Duplicati.Library.Backend
             throw new System.NotImplementedException();
         }
 
-        public Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken)
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken)
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                await m_client.PutObjectAsync(bucketName,
+                    keyName,
+                    source,
+                    source.Length,
+                    "application/octet-stream", cancellationToken: cancelToken);
+            }
+            catch(MinioException e)
+            {
+                Logging.Log.WriteErrorMessage(Logtag, "ErrorPuttingObjectMinio", null,
+                    "Error putting object {0} to {1} using Minio: {2}",
+                    keyName ,bucketName, e.ToString());
+            }
         }
     }
 }
