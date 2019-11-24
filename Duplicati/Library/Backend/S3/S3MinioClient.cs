@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Minio;
 using Minio.Exceptions;
 using Minio.DataModel;
@@ -82,7 +84,28 @@ namespace Duplicati.Library.Backend
 
         public void GetFileStream(string bucketName, string keyName, Stream target)
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                // Check whether the object exists using statObject().
+                // If the object is not found, statObject() throws an exception,
+                // else it means that the object exists.
+                // Execution is successful.
+                m_client.StatObjectAsync(bucketName, keyName).Await();
+
+                // Get input stream to have content of 'my-objectname' from 'my-bucketname'
+                m_client.GetObjectAsync(bucketName, keyName,
+                    (stream) =>
+                    {
+                        Utility.Utility.CopyStream(stream, target);
+                    }).Await();
+            }
+            catch (MinioException e)
+            {
+                Logging.Log.WriteErrorMessage(Logtag, "ErrorGettingObjectMinio", null,
+                    "Error getting object {0} to {1} using Minio: {2}",
+                    keyName ,bucketName, e.ToString());
+            }
+            
         }
 
         public string GetDnsHost()
