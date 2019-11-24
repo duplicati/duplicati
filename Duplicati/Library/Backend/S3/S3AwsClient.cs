@@ -132,27 +132,6 @@ namespace Duplicati.Library.Backend
                 GetFileStream(bucketName, keyName, fs);
         }
 
-        public void AddFileObject(string bucketName, string keyName, string localfile)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Open,
-                System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                AddFileStream(bucketName, keyName, fs);
-        }
-
-        public virtual void AddFileStream(string bucketName, string keyName, System.IO.Stream source)
-        {
-            var objectAddRequest = new PutObjectRequest
-            {
-                BucketName = bucketName,
-                Key = keyName,
-                InputStream = source
-            };
-            if (!string.IsNullOrWhiteSpace(m_storageClass))
-                objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
-
-            m_client.PutObject(objectAddRequest);
-        }
-
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source,
             CancellationToken cancelToken)
         {
