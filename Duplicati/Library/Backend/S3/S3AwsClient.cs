@@ -125,13 +125,6 @@ namespace Duplicati.Library.Backend
             return DNSHost;
         }
 
-        public void GetFileObject(string bucketName, string keyName, string localfile)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Create,
-                System.IO.FileAccess.Write, System.IO.FileShare.None))
-                GetFileStream(bucketName, keyName, fs);
-        }
-
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source,
             CancellationToken cancelToken)
         {
