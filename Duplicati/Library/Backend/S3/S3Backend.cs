@@ -34,12 +34,13 @@ namespace Duplicati.Library.Backend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
 
-        public const string RRS_OPTION = "s3-use-rrs";
-        public const string STORAGECLASS_OPTION = "s3-storage-class";
-        public const string EU_BUCKETS_OPTION = "s3-european-buckets";
-        public const string SERVER_NAME = "s3-server-name";
-        public const string LOCATION_OPTION = "s3-location-constraint";
-        public const string SSL_OPTION = "use-ssl";
+        private const string RRS_OPTION = "s3-use-rrs";
+        private const string STORAGECLASS_OPTION = "s3-storage-class";
+        private const string EU_BUCKETS_OPTION = "s3-european-buckets";
+        private const string SERVER_NAME = "s3-server-name";
+        private const string LOCATION_OPTION = "s3-location-constraint";
+        private const string SSL_OPTION = "use-ssl";
+        private const string S3_CLIENT_OPTION = "s3-client";
 
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -177,16 +178,12 @@ namespace Duplicati.Library.Backend
 
             string awsID = null;
             string awsKey = null;
-            var s3ClientOption = "aws";
 
             if (options.ContainsKey("auth-username"))
                 awsID = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 awsKey = options["auth-password"];
-
-            if (options.ContainsKey("s3-client"))
-                s3ClientOption = options["s3-client"];
-
+            
             if (options.ContainsKey("aws_access_key_id"))
                 awsID = options["aws_access_key_id"];
             if (options.ContainsKey("aws_secret_access_key"))
@@ -290,7 +287,10 @@ namespace Duplicati.Library.Backend
             if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
-            if (s3ClientOption == "aws")
+
+            options.TryGetValue(S3_CLIENT_OPTION, out var s3ClientOptionValue);
+
+            if (s3ClientOptionValue == "aws" || s3ClientOptionValue == null)
             {
                 s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
             }
@@ -446,6 +446,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
+                    new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.DescriptionS3ClientLong),
+
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };
