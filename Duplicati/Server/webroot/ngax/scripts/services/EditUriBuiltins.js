@@ -149,8 +149,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                     DialogService.dialog(gettextCatalog.getString('AWS IAM Policy'), data.data.Result.doc);
                 }, AppUtils.connectionError);
             });
-
         };
+        
+        scope.s3_client = s3_client_options[0];
+        scope.s3_client_options = s3_client_options;
     };
 
     EditUriBackendConfig.loaders['oauth-base'] = function (scope) {
@@ -317,6 +319,16 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
     };
 
+    var s3_client_options = [{
+        "name": "aws",
+        "label": "Amazon AWS SDK"
+    },
+        {
+            "name" : "minio",
+            "label": "Minio SDK"
+        }
+    ];
+
     EditUriBackendConfig.parsers['s3'] = function (scope, module, server, port, path, options) {
         if (options['--aws_access_key_id'])
             scope.Username = options['--aws_access_key_id'];
@@ -342,7 +354,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         ];
 
         if ('--s3-client' in options) {
-            var index = scope.s3_client_options.map(function(e) {return e.name}).indexOf(options['--s3-client']);
+            var index = s3_client_options.map(function(e) {return e.name}).indexOf(options['--s3-client']);
             scope.s3_client = scope.s3_client_options[index];
         } else {
             scope.s3_client = scope.s3_client_options[0];
