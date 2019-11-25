@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -18,12 +17,12 @@ namespace Duplicati.Library.Backend
         private static readonly string Logtag = Logging.Log.LogTagFromType<S3MinioClient>();
 
         private readonly MinioClient m_client;
-        private readonly string m_locationConstraint;        
+        private readonly string m_locationConstraint;
+        private readonly string m_dnsHost;
 
-        public S3MinioClient(string awsID, string awsKey, string locationConstraint, 
-                string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
+        public S3MinioClient(string awsID, string awsKey, string locationConstraint,
+            string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
         {
-
             m_locationConstraint = locationConstraint;
             m_client = new MinioClient(
                 servername,
@@ -36,6 +35,8 @@ namespace Duplicati.Library.Backend
             {
                 m_client = m_client.WithSSL();
             }
+
+            m_dnsHost = servername;
         }
 
         public void Dispose()
@@ -74,12 +75,32 @@ namespace Duplicati.Library.Backend
 
         public void DeleteObject(string bucketName, string keyName)
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                m_client.RemoveObjectAsync(bucketName, keyName).Await();
+            }
+            catch (MinioException e)
+            {
+                Logging.Log.WriteErrorMessage(Logtag, "ErrorRemovingObjectMinio", null,
+                    "Error removing from bucket {0} object {1} using Minio: {1}",
+                    bucketName, keyName, e.ToString());
+            }
         }
 
         public void RenameFile(string bucketName, string source, string target)
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                m_client.CopyObjectAsync(bucketName,  source,
+                    bucketName, target).Await();
+            }
+            catch(MinioException e)
+            {
+                Logging.Log.WriteErrorMessage(Logtag, "ErrorCopyingObjectMinio", null,
+                    "Error copying object {0} to {1} in bucket {2} using Minio: {3}",
+                    source, target, bucketName, e.ToString());            }
+            
+            DeleteObject(bucketName, source);
         }
 
         public void GetFileStream(string bucketName, string keyName, Stream target)
@@ -94,26 +115,23 @@ namespace Duplicati.Library.Backend
 
                 // Get input stream to have content of 'my-objectname' from 'my-bucketname'
                 m_client.GetObjectAsync(bucketName, keyName,
-                    (stream) =>
-                    {
-                        Utility.Utility.CopyStream(stream, target);
-                    }).Await();
+                    (stream) => { Utility.Utility.CopyStream(stream, target); }).Await();
             }
             catch (MinioException e)
             {
                 Logging.Log.WriteErrorMessage(Logtag, "ErrorGettingObjectMinio", null,
                     "Error getting object {0} to {1} using Minio: {2}",
-                    keyName ,bucketName, e.ToString());
+                    keyName, bucketName, e.ToString());
             }
-            
         }
 
         public string GetDnsHost()
         {
-            throw new System.NotImplementedException();
+            return m_dnsHost;
         }
 
-        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken)
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
+            CancellationToken cancelToken)
         {
             try
             {
@@ -123,11 +141,11 @@ namespace Duplicati.Library.Backend
                     source.Length,
                     "application/octet-stream", cancellationToken: cancelToken);
             }
-            catch(MinioException e)
+            catch (MinioException e)
             {
                 Logging.Log.WriteErrorMessage(Logtag, "ErrorPuttingObjectMinio", null,
                     "Error putting object {0} to {1} using Minio: {2}",
-                    keyName ,bucketName, e.ToString());
+                    keyName, bucketName, e.ToString());
             }
         }
     }

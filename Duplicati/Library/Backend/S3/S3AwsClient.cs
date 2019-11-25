@@ -43,7 +43,7 @@ namespace Duplicati.Library.Backend
         private readonly string m_storageClass;
         private AmazonS3Client m_client;
 
-        private readonly string DNSHost;
+        private readonly string m_dnsHost;
 
         public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
             string storageClass, bool useSSL, Dictionary<string, string> options)
@@ -81,7 +81,7 @@ namespace Duplicati.Library.Backend
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
-            DNSHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
+            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
         }
 
         public void AddBucket(string bucketName)
@@ -122,7 +122,7 @@ namespace Duplicati.Library.Backend
 
         public string GetDnsHost()
         {
-            return DNSHost;
+            return m_dnsHost;
         }
 
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source,
