@@ -151,18 +151,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             });
 
         };
-
-        scope.s3_client_options = [{
-            "name": "aws",
-            "label": "Amazon AWS SDK"
-        },
-        {
-            "name" : "minio",
-            "label": "Minio SDK"
-        }
-        ];
-        
-        scope.s3_client = scope.s3_client_options[0];
     };
 
     EditUriBackendConfig.loaders['oauth-base'] = function (scope) {
@@ -342,9 +330,27 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         scope.s3_server = scope.s3_server_custom = options['--s3-server-name'];
         scope.s3_region = scope.s3_region_custom = options['--s3-location-constraint'];
+
+        scope.s3_client_options = [{
+            "name": "aws",
+            "label": "Amazon AWS SDK"
+        },
+            {
+                "name" : "minio",
+                "label": "Minio SDK"
+            }
+        ];
+
+        if ('--s3-client' in options) {
+            var index = scope.s3_client_options.map(function(e) {return e.name}).indexOf(options['--s3-client']);
+            scope.s3_client = scope.s3_client_options[index];
+        } else {
+            scope.s3_client = scope.s3_client_options[0];
+        }
+        
         scope.s3_storageclass = scope.s3_storageclass_custom = options['--s3-storage-class'];
 
-        var nukeopts = ['--aws_access_key_id', '--aws_secret_access_key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint', '--s3-storage-class'];
+        var nukeopts = ['--aws_access_key_id', '--aws_secret_access_key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint', '--s3-storage-class', '--s3-client'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
