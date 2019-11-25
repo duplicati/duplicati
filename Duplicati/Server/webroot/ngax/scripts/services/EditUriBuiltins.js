@@ -485,8 +485,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             's3-server-name': AppUtils.contains_value(scope.s3_providers, scope.s3_server) ? scope.s3_server : scope.s3_server_custom
         };
 
-        if (scope.s3_region != null)
-            opts['s3-location-constraint'] = AppUtils.contains_value(scope.s3_regions, scope.s3_region) ? scope.s3_region : scope.s3_region_custom;
+        if (scope.s3_region != null) {
+            opts['s3-location-constraint'] = AppUtils.contains_value(scope.s3_regions, scope.s3_region) ? scope.s3_region : scope.s3_region_custom;}
+        else if (scope.s3_region_custom != null) {
+            opts['s3-location-constraint'] = scope.s3_region_custom;
+        }
+        
         if (scope.s3_storageclass != null)
             opts['s3-storage-class'] = AppUtils.contains_value(scope.s3_storageclasses, scope.s3_storageclass) ? scope.s3_storageclass : scope.s3_storageclass_custom;
 
