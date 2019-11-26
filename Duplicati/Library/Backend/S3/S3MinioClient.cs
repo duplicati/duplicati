@@ -46,9 +46,10 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
         {
+            ThrowExceptionIfBucketDoesNotExist(bucketName);
+
             var observable = m_client.ListObjectsAsync(bucketName, prefix, true);
 
-            // TODO: add exception handling
             foreach (var obj in observable.ToEnumerable())
             {
                 yield return new Common.IO.FileEntry(
@@ -133,6 +134,8 @@ namespace Duplicati.Library.Backend
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
             CancellationToken cancelToken)
         {
+            ThrowExceptionIfBucketDoesNotExist(bucketName);
+            
             try
             {
                 await m_client.PutObjectAsync(bucketName,
@@ -146,6 +149,14 @@ namespace Duplicati.Library.Backend
                 Logging.Log.WriteErrorMessage(Logtag, "ErrorPuttingObjectMinio", null,
                     "Error putting object {0} to {1} using Minio: {2}",
                     keyName, bucketName, e.ToString());
+            }
+        }
+
+        private void ThrowExceptionIfBucketDoesNotExist(string bucketName)
+        {
+            if (!m_client.BucketExistsAsync(bucketName).Await())
+            {
+                throw new FolderMissingException($"Bucket {bucketName} does not exist.");
             }
         }
     }

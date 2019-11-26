@@ -321,25 +321,9 @@ namespace Duplicati.Library.Backend
         {
             get { return true; }
         }
-
+        
+        
         public IEnumerable<IFileEntry> List()
-        {
-            try
-            {
-                return ListWithoutExceptionCatch();
-            }
-            catch (Exception ex)
-            {
-                //Catch "non-existing" buckets
-                Amazon.S3.AmazonS3Exception s3ex = ex as Amazon.S3.AmazonS3Exception;
-                if (s3ex != null && (s3ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchBucket".Equals(s3ex.ErrorCode)))
-                    throw new Interface.FolderMissingException(ex);
-
-                throw;
-            }
-        }
-
-        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
         {
             foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
             {
@@ -361,24 +345,12 @@ namespace Duplicati.Library.Backend
 
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            try
-            {
-                await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
-            }
-            catch (Exception ex)
-            {
-                //Catch "non-existing" buckets
-                Amazon.S3.AmazonS3Exception s3ex = ex as Amazon.S3.AmazonS3Exception;
-                if (s3ex != null && (s3ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchBucket".Equals(s3ex.ErrorCode)))
-                    throw new FolderMissingException(ex);
-
-                throw;
-            }
+            await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
         public void Get(string remotename, string localname)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using (var fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 Get(remotename, fs);
         }
 
@@ -491,13 +463,10 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (m_options != null)
-                m_options = null;
-            if (s3Client != null)
-            {
-                s3Client.Dispose();
-                s3Client = null;
-            }
+            m_options = null;
+            if (s3Client == null) return;
+            s3Client.Dispose();
+            s3Client = null;
         }
 
         #endregion

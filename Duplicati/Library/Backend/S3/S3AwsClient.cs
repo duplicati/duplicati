@@ -136,8 +136,20 @@ namespace Duplicati.Library.Backend
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
+            
+            try
+            {
+                await m_client.PutObjectAsync(objectAddRequest, cancelToken);
+            }
+            catch (AmazonS3Exception e)
+            {
+                //Catch "non-existing" buckets
+                if (e.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                    "NoSuchBucket".Equals(e.ErrorCode))
+                    throw new FolderMissingException(e);
 
-            await m_client.PutObjectAsync(objectAddRequest, cancelToken);
+                throw;
+            }
         }
 
         public void DeleteObject(string bucketName, string keyName)
@@ -164,8 +176,7 @@ namespace Duplicati.Library.Backend
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
-                ListObjectsRequest listRequest = new ListObjectsRequest();
-                listRequest.BucketName = bucketName;
+                var listRequest = new ListObjectsRequest {BucketName = bucketName};
 
                 if (!string.IsNullOrEmpty(filename))
                     listRequest.Marker = filename;
@@ -174,21 +185,31 @@ namespace Duplicati.Library.Backend
                 if (!string.IsNullOrEmpty(prefix))
                     listRequest.Prefix = prefix;
 
-                ListObjectsResponse listResponse = m_client.ListObjects(listRequest);
+                ListObjectsResponse listResponse;
+                try
+                {
+                    listResponse = m_client.ListObjects(listRequest);
+                }
+                catch (AmazonS3Exception e)
+                {
+                    if (e.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                                         "NoSuchBucket".Equals(e.ErrorCode))
+                        throw new FolderMissingException(e);
+
+                    throw;
+                }
+
                 isTruncated = listResponse.IsTruncated;
                 filename = listResponse.NextMarker;
 
-                foreach (S3Object obj in listResponse.S3Objects)
+                foreach (var obj in listResponse.S3Objects.Where(obj => alreadyReturned.Add(obj.Key)))
                 {
-                    if (alreadyReturned.Add(obj.Key))
-                    {
-                        yield return new Common.IO.FileEntry(
-                            obj.Key,
-                            obj.Size,
-                            obj.LastModified,
-                            obj.LastModified
-                        );
-                    }
+                    yield return new Common.IO.FileEntry(
+                        obj.Key,
+                        obj.Size,
+                        obj.LastModified,
+                        obj.LastModified
+                    );
                 }
             }
         }
