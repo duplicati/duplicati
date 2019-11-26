@@ -12,25 +12,25 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     // All backends with a custom UI must register here
-    EditUriBackendConfig.templates['file'] = 'templates/backends/file.html';
-    EditUriBackendConfig.templates['s3'] = 'templates/backends/s3.html';
-    EditUriBackendConfig.templates['googledrive'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['hubic'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['onedrive'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['onedrivev2'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['sharepoint'] = 'templates/backends/sharepoint.html';
-    EditUriBackendConfig.templates['msgroup'] = 'templates/backends/msgroup.html';
-    EditUriBackendConfig.templates['amzcd'] = 'templates/backends/amzcd.html';
-    EditUriBackendConfig.templates['openstack'] = 'templates/backends/openstack.html';
-    EditUriBackendConfig.templates['azure'] = 'templates/backends/azure.html';
-    EditUriBackendConfig.templates['gcs'] = 'templates/backends/gcs.html';
-    EditUriBackendConfig.templates['b2'] = 'templates/backends/b2.html';
-    EditUriBackendConfig.templates['mega'] = 'templates/backends/mega.html';
-    EditUriBackendConfig.templates['jottacloud'] = 'templates/backends/jottacloud.html';
-    EditUriBackendConfig.templates['box'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['sia'] = 'templates/backends/sia.html';
-    EditUriBackendConfig.templates['rclone'] = 'templates/backends/rclone.html';
+    EditUriBackendConfig.templates["file"] = "templates/backends/file.html";
+    EditUriBackendConfig.templates["s3"] = "templates/backends/s3.html";
+    EditUriBackendConfig.templates["googledrive"] = "templates/backends/oauth.html";
+    EditUriBackendConfig.templates["hubic"] = "templates/backends/oauth.html";
+    EditUriBackendConfig.templates["onedrive"] = "templates/backends/oauth.html";
+    EditUriBackendConfig.templates["onedrivev2"] = "templates/backends/oauth.html";
+    EditUriBackendConfig.templates["sharepoint"] = "templates/backends/sharepoint.html";
+    EditUriBackendConfig.templates["msgroup"] = "templates/backends/msgroup.html";
+    EditUriBackendConfig.templates["amzcd"] = "templates/backends/amzcd.html";
+    EditUriBackendConfig.templates["openstack"] = "templates/backends/openstack.html";
+    EditUriBackendConfig.templates["azure"] = "templates/backends/azure.html";
+    EditUriBackendConfig.templates["gcs"] = "templates/backends/gcs.html";
+    EditUriBackendConfig.templates["b2"] = "templates/backends/b2.html";
+    EditUriBackendConfig.templates["mega"] = "templates/backends/mega.html";
+    EditUriBackendConfig.templates["jottacloud"] = "templates/backends/jottacloud.html";
+    EditUriBackendConfig.templates["box"] = "templates/backends/oauth.html";
+    EditUriBackendConfig.templates["dropbox"] = "templates/backends/oauth.html";
+    EditUriBackendConfig.templates["sia"] = "templates/backends/sia.html";
+    EditUriBackendConfig.templates["rclone"] = "templates/backends/rclone.html";
 
     EditUriBackendConfig.testers['s3'] = function (scope, callback) {
 

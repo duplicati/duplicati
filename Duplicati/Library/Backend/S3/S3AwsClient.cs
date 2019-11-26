@@ -114,6 +114,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch
                 {
+                    // We don't care about this timeout
                 }
 
                 Utility.Utility.CopyStream(s, target);

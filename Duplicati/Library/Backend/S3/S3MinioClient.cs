@@ -16,7 +16,7 @@ namespace Duplicati.Library.Backend
     {
         private static readonly string Logtag = Logging.Log.LogTagFromType<S3MinioClient>();
 
-        private readonly MinioClient m_client;
+        private MinioClient m_client;
         private readonly string m_locationConstraint;
         private readonly string m_dnsHost;
 
@@ -37,11 +37,6 @@ namespace Duplicati.Library.Backend
             }
 
             m_dnsHost = servername;
-        }
-
-        public void Dispose()
-        {
-            return;
         }
 
         public IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -159,5 +154,16 @@ namespace Duplicati.Library.Backend
                 throw new FolderMissingException($"Bucket {bucketName} does not exist.");
             }
         }
+        
+                
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            m_client = null;
+        }
+        
+        #endregion
+
     }
 }

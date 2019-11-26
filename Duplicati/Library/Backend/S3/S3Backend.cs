@@ -155,18 +155,15 @@ namespace Duplicati.Library.Backend
         private readonly string m_bucket;
         private readonly string m_prefix;
 
-        public const string DEFAULT_S3_HOST = "s3.amazonaws.com";
-        public const string S3_EU_REGION_NAME = "eu-west-1";
-        public const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
-
-        private Dictionary<string, string> m_options;
-
+        private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
+        private const string S3_EU_REGION_NAME = "eu-west-1";
+        private const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
+        
         private IS3Client s3Client;
         
         public S3()
         {
         }
-
 
         public S3(string url, Dictionary<string, string> options)
         {
