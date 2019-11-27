@@ -250,15 +250,11 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    var currentPcm = Win32.RtlQueryProcessPlaceholderCompatibilityMode();
-                    if (currentPcm == Win32.PHCM_VALUES.PHCM_DISGUISE_PLACEHOLDER)
-                    {
-                        Win32.RtlSetProcessPlaceholderCompatibilityMode(Win32.PHCM_VALUES.PHCM_EXPOSE_PLACEHOLDERS);
-                    }
+                    Win32.RtlSetProcessPlaceholderCompatibilityMode(Win32.PHCM_VALUES.PHCM_EXPOSE_PLACEHOLDERS);
                 }
                 catch
                 {
-                    // Ignore exceptions - not supported on this version of Windows
+                    // Ignore exceptions - not applicable on this version of Windows
                 }
             }
         }

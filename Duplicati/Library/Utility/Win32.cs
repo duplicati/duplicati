@@ -242,13 +242,6 @@ namespace Duplicati.Library.Utility
         public static extern PROCESS_PRIORITY_CLASS GetPriorityClass(IntPtr handle);
 
         /// <summary>
-        /// Gets the current placeholder compatibility mode for the process.
-        /// </summary>
-        /// <returns>The <see cref="PHCM_VALUES"/> value.</returns>
-        [DllImport("ntdll.dll")]
-        public static extern PHCM_VALUES RtlQueryProcessPlaceholderCompatibilityMode();
-
-        /// <summary>
         /// Sets the current placeholder compatibility mode for the process.
         /// </summary>
         /// <returns>The previous <see cref="PHCM_VALUES"/> value.</returns>
