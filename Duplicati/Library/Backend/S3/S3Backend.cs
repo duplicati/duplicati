@@ -272,7 +272,6 @@ namespace Duplicati.Library.Backend
                 host = s3host;
             }
 
-            m_options = options;
             m_prefix = m_prefix.Trim();
             if (m_prefix.Length != 0)
             {
@@ -460,7 +459,6 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            m_options = null;
             if (s3Client == null) return;
             s3Client.Dispose();
             s3Client = null;
