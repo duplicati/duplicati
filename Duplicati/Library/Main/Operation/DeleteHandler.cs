@@ -254,8 +254,7 @@ namespace Duplicati.Library.Main.Operation
 
                     if (fullVersionsKeptCount < fullVersionsToKeep)
                     {
-                        // count only a full backup
-                        if (fullVersionsKeptCount < fullVersionsToKeep && isFullBackup)
+                        if (isFullBackup)
                         {
                             fullVersionsKeptCount++;
                         }
