@@ -58,39 +58,44 @@ namespace Duplicati.UnitTest
 
             // First, run two complete backups followed by a partial backup.  We will then set the keep-time
             // option so that the threshold lies between the first and second backups.
+            DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 c.Backup(new[] {this.DATAFOLDER});
+                firstBackupTime = c.List().Filesets.First().Time;
             }
 
             // Wait before the second backup so that we can more easily define the keep-time threshold
             // to lie between the first and second backups.
             Thread.Sleep(5000);
+            DateTime secondBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
                 c.Backup(new[] {this.DATAFOLDER});
+                secondBackupTime = c.List().Filesets.First().Time;
             }
 
             // Run a partial backup.
+            DateTime thirdBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 await this.RunPartialBackup(c).ConfigureAwait(false);
+                thirdBackupTime = c.List().Filesets.First().Time;
             }
 
             // Set the keep-time option so that the threshold lies between the first and second backups
             // and run the delete operation.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                List<IListResultFileset> filesets = c.List().Filesets.ToList();
-                DateTime firstBackupTime = filesets[filesets.Count - 1].Time;
-                DateTime secondBackupTime = filesets[filesets.Count - 2].Time;
                 options["keep-time"] = $"{(DateTime.Now - firstBackupTime).Seconds - (secondBackupTime - firstBackupTime).Seconds / 2}s";
                 c.Delete();
 
-                filesets = c.List().Filesets.ToList();
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(secondBackupTime, filesets[1].Time);
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(thirdBackupTime, filesets[0].Time);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
 
@@ -99,6 +104,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 await this.RunPartialBackup(c).ConfigureAwait(false);
+                DateTime fourthBackupTime = c.List().Filesets.First().Time;
 
                 // Set the keep-time option so that the threshold lies after the most recent full backup
                 // and run the delete operation.
@@ -107,8 +113,11 @@ namespace Duplicati.UnitTest
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(3, filesets.Count);
+                Assert.AreEqual(secondBackupTime, filesets[2].Time);
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[2].IsFullBackup);
+                Assert.AreEqual(thirdBackupTime, filesets[1].Time);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(fourthBackupTime, filesets[0].Time);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
         }
@@ -121,9 +130,11 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
 
             // Run a full backup.
+            DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 c.Backup(new[] {this.DATAFOLDER});
+                firstBackupTime = c.List().Filesets.First().Time;
             }
 
             // Run a partial backup.
@@ -139,10 +150,12 @@ namespace Duplicati.UnitTest
             }
 
             // Run a full backup.
+            DateTime fourthBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
                 c.Backup(new[] {this.DATAFOLDER});
+                fourthBackupTime = c.List().Filesets.First().Time;
             }
 
             // Run a partial backup.
@@ -150,12 +163,16 @@ namespace Duplicati.UnitTest
             {
                 options["keep-versions"] = "2";
                 await this.RunPartialBackup(c).ConfigureAwait(false);
+                DateTime fifthBackupTime = c.List().Filesets.First().Time;
 
                 // Partial backups that are followed by a full backup can be deleted.
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(3, filesets.Count);
+                Assert.AreEqual(firstBackupTime, filesets[2].Time);
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[2].IsFullBackup);
+                Assert.AreEqual(fourthBackupTime, filesets[1].Time);
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(fifthBackupTime, filesets[0].Time);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
         }
