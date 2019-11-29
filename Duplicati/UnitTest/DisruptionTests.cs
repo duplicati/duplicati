@@ -55,24 +55,33 @@ namespace Duplicati.UnitTest
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
-            
+
+            // First, run two complete backups followed by a partial backup.  We will then set the keep-time
+            // option so that the threshold lies between the first and second backups.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                // First, run two complete backups followed by a partial backup.  We will then set the keep-time
-                // option so that the threshold lies between the first and second backups.
                 c.Backup(new[] {this.DATAFOLDER});
+            }
 
-                // Wait before the second backup so that we can more easily define the keep-time threshold
-                // to lie between the first and second backups.
-                Thread.Sleep(5000);
+            // Wait before the second backup so that we can more easily define the keep-time threshold
+            // to lie between the first and second backups.
+            Thread.Sleep(5000);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
                 this.ModifySourceFiles();
                 c.Backup(new[] {this.DATAFOLDER});
+            }
 
-                // Run a partial backup.
+            // Run a partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
                 await this.RunPartialBackup(c);
+            }
 
-                // Set the keep-time option so that the threshold lies between the first and second backups
-                // and run the delete operation.
+            // Set the keep-time option so that the threshold lies between the first and second backups
+            // and run the delete operation.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 DateTime firstBackupTime = filesets[filesets.Count - 1].Time;
                 DateTime secondBackupTime = filesets[filesets.Count - 2].Time;
@@ -83,9 +92,12 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(2, filesets.Count);
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
+            }
 
-                // Run another partial backup.  We will then verify that a full backup is retained
-                // even when all the "recent" backups are partial.
+            // Run another partial backup.  We will then verify that a full backup is retained
+            // even when all the "recent" backups are partial.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
                 await this.RunPartialBackup(c);
 
                 // Set the keep-time option so that the threshold lies after the most recent full backup
@@ -93,10 +105,57 @@ namespace Duplicati.UnitTest
                 options["keep-time"] = "1s";
                 c.Delete();
 
-                filesets = c.List().Filesets.ToList();
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(3, filesets.Count);
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[2].IsFullBackup);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public async Task KeepVersionsRetention()
+        {
+            // Choose a dblock size that is small enough so that more than one volume is needed.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
+
+            // Run a full backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+            }
+
+            // Run a partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                await this.RunPartialBackup(c);
+            }
+
+            // Run a partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                await this.RunPartialBackup(c);
+            }
+
+            // Run a full backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                this.ModifySourceFiles();
+                c.Backup(new[] {this.DATAFOLDER});
+            }
+
+            // Run a partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                options["keep-versions"] = "2";
+                await this.RunPartialBackup(c);
+
+                // Partial backups that are followed by a full backup can be deleted.
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(3, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[2].IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
         }
