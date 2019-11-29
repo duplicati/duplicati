@@ -212,6 +212,12 @@ namespace Duplicati.Library.Main.Operation
                 AsyncDownloader downloader = new AsyncDownloader(new IRemoteVolume[] {new RemoteVolume(entry.Value.File)}, backendManager);
                 foreach (IAsyncDownloadedFile file in downloader)
                 {
+                    // We must obtain the partial/full status from the fileset file in the dlist files.
+                    // Without this, the restore dialog will show all versions as full, or all versions
+                    // as partial.  While the dlist files are already downloaded elsewhere, doing so again
+                    // here is the most direct way to obtain the partial/full status without a major
+                    // refactoring.  Since restoring directly from the backend files should be a relatively
+                    // rare event, we can work on improving the performance later.
                     VolumeBase.FilesetData filesetData = VolumeReaderBase.GetFilesetData(entry.Value.CompressionModule, file.TempFile, options);
                     list.Add(new ListResultFileset(entry.Key, filesetData.IsFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP, entry.Value.Time.ToLocalTime(), -1, -1));
                 }
