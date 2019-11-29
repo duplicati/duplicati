@@ -51,6 +51,58 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption")]
+        public async Task KeepTimeRetention()
+        {
+            // Choose a dblock size that is small enough so that more than one volume is needed.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
+            
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                // First, run two complete backups followed by a partial backup.  We will then set the keep-time
+                // option so that the threshold lies between the first and second backups.
+                c.Backup(new[] {this.DATAFOLDER});
+
+                // Wait before the second backup so that we can more easily define the keep-time threshold
+                // to lie between the first and second backups.
+                Thread.Sleep(5000);
+                this.ModifySourceFiles();
+                c.Backup(new[] {this.DATAFOLDER});
+
+                // Run a partial backup.
+                await this.RunPartialBackup(c);
+
+                // Set the keep-time option so that the threshold lies between the first and second backups
+                // and run the delete operation.
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                DateTime firstBackupTime = filesets[filesets.Count - 1].Time;
+                DateTime secondBackupTime = filesets[filesets.Count - 2].Time;
+                options["keep-time"] = $"{(DateTime.Now - firstBackupTime).Seconds - (secondBackupTime - firstBackupTime).Seconds / 2}s";
+                c.Delete();
+
+                filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
+
+                // Run another partial backup.  We will then verify that a full backup is retained
+                // even when all the "recent" backups are partial.
+                await this.RunPartialBackup(c);
+
+                // Set the keep-time option so that the threshold lies after the most recent full backup
+                // and run the delete operation.
+                options["keep-time"] = "1s";
+                c.Delete();
+
+                filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(3, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[2].IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
         public async Task StopAfterCurrentFile()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.

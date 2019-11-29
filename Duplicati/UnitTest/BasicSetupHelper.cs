@@ -147,7 +147,6 @@ namespace Duplicati.UnitTest
                 opts["dbpath"] = DBFILE;
                 opts["blocksize"] = "10kb";
                 opts["backup-test-samples"] = "0";
-                opts["keep-versions"] = "100";
                 opts["unittest-mode"] = "true";
 
                 return opts;
