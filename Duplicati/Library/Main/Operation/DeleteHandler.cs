@@ -239,16 +239,17 @@ namespace Duplicati.Library.Main.Operation
                     bool isFullBackup = db.IsFilesetFullBackup(backup);
                     if (isFullBackup)
                     {
-                        if (haveFullBackup)
-                        {
-                            toDelete.AddRange(intermediatePartials);
-                            intermediatePartials.Clear();
-                        }
+                        toDelete.AddRange(intermediatePartials);
+                        intermediatePartials.Clear();
                         haveFullBackup = true;
                     }
                     else
                     {
-                        intermediatePartials.Add(backup);
+                        // Only consider a partial backup for deletion if we have already encountered a full backup.
+                        if (haveFullBackup)
+                        {
+                            intermediatePartials.Add(backup);
+                        }
                     }
 
                     if (fullVersionsKeptCount < fullVersionsToKeep)
