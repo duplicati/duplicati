@@ -175,6 +175,22 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(fifthBackupTime, filesets[0].Time);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
+
+            // Run a full backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                this.ModifySourceFiles();
+                c.Backup(new[] {this.DATAFOLDER});
+                DateTime sixthBackupTime = c.List().Filesets.First().Time;
+
+                // Since the last backup was full, we can now expect to have just the 2 most recent full backups.
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(fourthBackupTime, filesets[1].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(sixthBackupTime, filesets[0].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
         }
 
         [Test]
