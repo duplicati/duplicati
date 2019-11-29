@@ -75,7 +75,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                await this.RunPartialBackup(c);
+                await this.RunPartialBackup(c).ConfigureAwait(false);
             }
 
             // Set the keep-time option so that the threshold lies between the first and second backups
@@ -98,7 +98,7 @@ namespace Duplicati.UnitTest
             // even when all the "recent" backups are partial.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                await this.RunPartialBackup(c);
+                await this.RunPartialBackup(c).ConfigureAwait(false);
 
                 // Set the keep-time option so that the threshold lies after the most recent full backup
                 // and run the delete operation.
@@ -129,13 +129,13 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                await this.RunPartialBackup(c);
+                await this.RunPartialBackup(c).ConfigureAwait(false);
             }
 
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                await this.RunPartialBackup(c);
+                await this.RunPartialBackup(c).ConfigureAwait(false);
             }
 
             // Run a full backup.
@@ -149,7 +149,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 options["keep-versions"] = "2";
-                await this.RunPartialBackup(c);
+                await this.RunPartialBackup(c).ConfigureAwait(false);
 
                 // Partial backups that are followed by a full backup can be deleted.
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
@@ -178,7 +178,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                await this.RunPartialBackup(c);
+                await this.RunPartialBackup(c).ConfigureAwait(false);
 
                 // If we interrupt the backup, the most recent Fileset should be marked as partial.
                 Assert.AreEqual(2, c.List().Filesets.Count());
