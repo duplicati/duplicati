@@ -28,6 +28,21 @@ namespace Duplicati.UnitTest
             }
         }
 
+        private async Task RunPartialBackup(Controller controller)
+        {
+            this.ModifySourceFiles();
+
+            // ReSharper disable once AccessToDisposedClosure
+            Task backupTask = Task.Run(() => controller.Backup(new[] {this.DATAFOLDER}));
+
+            // Block for a small amount of time to allow the ITaskControl to be associated
+            // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
+            Thread.Sleep(1000);
+
+            controller.Stop(true);
+            await backupTask.ConfigureAwait(false);
+        }
+
         public override void SetUp()
         {
             base.SetUp();
@@ -49,20 +64,12 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
-            // Modify the source files and interrupt a backup.
-            this.ModifySourceFiles();
+            // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                // ReSharper disable once AccessToDisposedClosure
-                Task<IBackupResults> backupTask = Task.Run(() => c.Backup(new[] {this.DATAFOLDER}));
-
-                // Block for a small amount of time to allow the ITaskControl to be associated
-                // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
-                Thread.Sleep(1000);
+                await this.RunPartialBackup(c);
 
                 // If we interrupt the backup, the most recent Fileset should be marked as partial.
-                c.Stop(true);
-                await backupTask.ConfigureAwait(false);
                 Assert.AreEqual(2, c.List().Filesets.Count());
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
