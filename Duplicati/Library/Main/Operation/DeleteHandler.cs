@@ -232,7 +232,7 @@ namespace Duplicati.Library.Main.Operation
                 bool haveFullBackup = false;
 
                 // Keep the number of full backups specified in fullVersionsToKeep.
-                // Remove partial backups that are surrounded by full backups.
+                // Remove partial backups that are followed by full backups.
                 // Once enough versions are kept, delete all older backups.
                 foreach (var backup in backupsRemaining)
                 {
