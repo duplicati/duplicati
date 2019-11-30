@@ -459,8 +459,7 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (s3Client == null) return;
-            s3Client.Dispose();
+            s3Client?.Dispose();
             s3Client = null;
         }
 

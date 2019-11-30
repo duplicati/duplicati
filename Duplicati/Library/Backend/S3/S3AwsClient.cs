@@ -137,7 +137,7 @@ namespace Duplicati.Library.Backend
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
-            
+
             try
             {
                 await m_client.PutObjectAsync(objectAddRequest, cancelToken);
@@ -194,8 +194,10 @@ namespace Duplicati.Library.Backend
                 catch (AmazonS3Exception e)
                 {
                     if (e.StatusCode == System.Net.HttpStatusCode.NotFound ||
-                                         "NoSuchBucket".Equals(e.ErrorCode))
+                        "NoSuchBucket".Equals(e.ErrorCode))
+                    {
                         throw new FolderMissingException(e);
+                    }
 
                     throw;
                 }
