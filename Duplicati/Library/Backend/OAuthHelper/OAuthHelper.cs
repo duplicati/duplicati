@@ -76,7 +76,7 @@ namespace Duplicati.Library
         }
 
         /// <summary>
-        /// Set to true to automatically add the Authorization header to requets
+        /// Set to true to automatically add the Authorization header to requests
         /// </summary>
         public bool AutoAuthHeader { get; set; }
         /// <summary>

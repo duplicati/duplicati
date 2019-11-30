@@ -29,7 +29,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             if (info.LongPollCheck(Program.StatusEventNotifyer, ref id, out isError))
             {
-                //Make sure we do not report a higher number than the eventnotifyer says
+                //Make sure we do not report a higher number than the eventnotifier says
                 var st = new Serializable.ServerStatus();
                 st.LastEventID = id;
                 info.OutputOK(st);

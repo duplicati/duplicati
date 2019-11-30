@@ -499,7 +499,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="stream">The stream to read</param>
         /// <param name="buf">The buffer to read into</param>
-        /// <param name="count">The amout of bytes to read</param>
+        /// <param name="count">The amount of bytes to read</param>
         /// <returns>The actual number of bytes read</returns>
         public static int ForceStreamRead(Stream stream, byte[] buf, int count)
         {
@@ -522,7 +522,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="stream">The stream to read.</param>
         /// <param name="buf">The buffer to read into.</param>
-        /// <param name="count">The amout of bytes to read.</param>
+        /// <param name="count">The amount of bytes to read.</param>
         /// <returns>The number of bytes read</returns>
         public static async Task<int> ForceStreamReadAsync(this System.IO.Stream stream, byte[] buf, int count)
         {
@@ -833,7 +833,7 @@ namespace Duplicati.Library.Utility
                     var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
 
                     // TODO: This should probably be determined by filesystem rather than OS,
-                    // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
+                    // OSX can actually have the disks formatted as Case Sensitive, but insensitive is default
                     CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientPosix && !Platform.IsClientOSX);
                 }
 
@@ -1147,7 +1147,7 @@ namespace Duplicati.Library.Utility
         /// <param name="filter">A filter applied to properties to decide if they are omitted or not</param>
         /// <param name="recurseobjects">A value indicating if non-primitive values are recursed</param>
         /// <param name="indentation">The string indentation</param>
-        /// <param name="visited">A lookup table with visited objects, used to avoid inifinite recursion</param>
+        /// <param name="visited">A lookup table with visited objects, used to avoid infinite recursion</param>
         /// <param name="collectionlimit">The maximum number of items to report from an IEnumerable instance</param>
         public static void PrintSerializeObject(object item, TextWriter writer, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 0, Dictionary<object, object> visited = null)
         {

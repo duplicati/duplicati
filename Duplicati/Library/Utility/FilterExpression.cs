@@ -177,7 +177,7 @@ namespace Duplicati.Library.Utility
             }
             
             /// <summary>
-            /// Tests whether specified string can be matched agains provided pattern string. Pattern may contain single- and multiple-replacing
+            /// Tests whether specified string can be matched against provided pattern string. Pattern may contain single- and multiple-replacing
             /// wildcard characters.
             /// </summary>
             /// <param name="input">String which is matched against the pattern.</param>

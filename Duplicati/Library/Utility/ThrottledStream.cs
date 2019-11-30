@@ -29,7 +29,7 @@ namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// This class throttles the rate data can be read or written to the underlying stream.
-    /// This creates a bandwith throttle option for any stream, including a network stream.
+    /// This creates a bandwidth throttle option for any stream, including a network stream.
     /// </summary>
     public class ThrottledStream : OverrideableStream
     {
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Utility
 				if (target_delay.Ticks > 1000)
 				{
 					// With large changes, we avoid sleeping for several minutes
-					// This makes the throttling more resposive when increasing the
+					// This makes the throttling more responsive when increasing the
 					// throughput, even with large changes
 					var ms = (int)Math.Min(target_delay.TotalMilliseconds, 2 * 1000);
 					System.Threading.Thread.Sleep(ms);

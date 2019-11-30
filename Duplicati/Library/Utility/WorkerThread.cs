@@ -83,7 +83,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         public event Action<WorkerThread<Tx>, Tx, Exception> OnError;
         /// <summary>
-        /// An evnet that occurs when a new task is added to the queue or an existing one is removed
+        /// An event that occurs when a new task is added to the queue or an existing one is removed
         /// </summary>
         public event Action<WorkerThread<Tx>> WorkQueueChanged;
 

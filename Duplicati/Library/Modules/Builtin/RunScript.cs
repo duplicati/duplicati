@@ -314,7 +314,7 @@ namespace Duplicati.Library.Modules.Builtin
                     {
                         string line = rawline.Trim();
                         if (!line.StartsWith("--", StringComparison.Ordinal))
-                            continue; //Ingore anything that does not start with --
+                            continue; //Ignore anything that does not start with --
 
                         line = line.Substring(2);
                         int lix = line.IndexOf('=');

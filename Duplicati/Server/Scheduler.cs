@@ -53,7 +53,7 @@ namespace Duplicati.Server
         /// </summary>
         private readonly AutoResetEvent m_event;
         /// <summary>
-        /// The data syncronization lock
+        /// The data synchronization lock
         /// </summary>
         private readonly object m_lock = new object();
 
@@ -151,7 +151,7 @@ namespace Duplicati.Server
             while (res < firstdate && i-- > 0)
                 res = Timeparser.ParseTimeInterval(repetition, res);
 
-            // If we arived somewhere after the first allowed date
+            // If we arrived somewhere after the first allowed date
             if (res >= firstdate)
             {
                 var ts = Timeparser.ParseTimeSpan(repetition);
@@ -295,7 +295,7 @@ namespace Duplicati.Server
                                 }
                             }
 
-                            //Caluclate next time, by finding the first entry later than now
+                            // Calculate next time, by finding the first entry later than now
                             try
                             {
                                 start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);

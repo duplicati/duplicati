@@ -182,7 +182,7 @@ namespace Duplicati.Library.Utility
         }
             
         /// <summary>
-        /// Wrapper class for getting request and respone objects in a async manner
+        /// Wrapper class for getting request and response objects in a async manner
         /// </summary>
         private class AsyncWrapper
         {

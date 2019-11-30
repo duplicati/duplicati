@@ -218,7 +218,7 @@ namespace Duplicati.Library.Backend
             // Handle XML response. Since we in the constructor demand a folder below the mount point we know the root
             // element must be a "folder", else it could also have been a "mountPoint" (which has a very similar structure).
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
-            // so we treat them as non-existant here.
+            // so we treat them as non-existent here.
             var xRoot = doc.DocumentElement;
             if (xRoot.Attributes["deleted"] != null)
             {
@@ -294,7 +294,7 @@ namespace Duplicati.Library.Backend
             // Handle XML response. Since we in the constructor demand a folder below the mount point we know the root
             // element must be a "folder", else it could also have been a "mountPoint" (which has a very similar structure).
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
-            // so we treat them as non-existant here.
+            // so we treat them as non-existent here.
             var xFile = doc.DocumentElement;
             if (xFile.Attributes["deleted"] != null)
             {

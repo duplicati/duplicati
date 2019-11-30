@@ -22,7 +22,7 @@ using Duplicati.Library.Logging;
 namespace Duplicati.Library.Main
 {
     /// <summary>
-    /// Interface for recieving messages from the Duplicati operations
+    /// Interface for receiving messages from the Duplicati operations
     /// </summary>
     public interface IMessageSink : Logging.ILogDestination
     {

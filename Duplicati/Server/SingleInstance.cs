@@ -87,7 +87,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The delegate that is used to inform the first instance of the second invocation
         /// </summary>
-        /// <param name="commandlineargs">The commandlinearguments for the second invocation</param>
+        /// <param name="commandlineargs">The command-line arguments for the second invocation</param>
         public delegate void SecondInstanceDelegate(string[] commandlineargs);
 
         /// <summary>

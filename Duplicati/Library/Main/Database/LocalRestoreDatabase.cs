@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Database
         /// It is intended to be used for fast identification of fully restored files to trigger their verification.
         /// It should be read after a commit and truncated after putting the files to a verification queue.
         /// Note: If a file is done once and then set back to a none restored state, the file is not automatically removed.
-        ///       But if it reaches a restored state later, it will be readded (trigger will fire)
+        ///       But if it reaches a restored state later, it will be re-added (trigger will fire)
         /// </remarks>
         public void CreateProgressTracker(bool createFilesNewlyDoneTracker)
         {
@@ -96,7 +96,7 @@ namespace Duplicati.Library.Main.Database
                         + @" SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""), 0)"
                         + @"        , IFNULL(COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END), 0) "
                         + @"        , IFNULL(SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END), 0) "
-                        + @"   FROM ""{1}"" ""F"" LEFT JOIN ""{2}"" ""B""" // allow for emtpy files (no data Blocks)
+                        + @"   FROM ""{1}"" ""F"" LEFT JOIN ""{2}"" ""B""" // allow for empty files (no data Blocks)
                         + @"        ON  ""B"".""FileID"" = ""F"".""ID"" "
                         + @"  WHERE ""B"".""Metadata"" IS NOT 1 " // Use "IS" because of Left Join
                         + @"  GROUP BY ""F"".""ID"" "
@@ -717,9 +717,9 @@ namespace Duplicati.Library.Main.Database
                 // Return order from SQLite-DISTINCT is likely to be sorted by Name, which is bad for restore.
                 // If the end of very large files (e.g. iso's) is restored before the beginning, most OS write out zeros to fill the file.
                 // If we manage to get the volumes in an order restoring front blocks first, this can save time.
-                // An optimal algorithm would build a depency net with cycle resolution to find the best near topological
+                // An optimal algorithm would build a dependency net with cycle resolution to find the best near topological
                 // order of volumes, but this is a bit too fancy here.
-                // We will just put a very simlpe heuristic to work, that will try to prefer volumes containing lower block indexes:
+                // We will just put a very simple heuristic to work, that will try to prefer volumes containing lower block indexes:
                 // We just order all volumes by the maximum block index they contain. This query is slow, but should be worth the effort.
                 // Now it is likely to restore all files from front to back. Large files will always be done last.
                 // One could also use like the average block number in a volume, that needs to be measured.

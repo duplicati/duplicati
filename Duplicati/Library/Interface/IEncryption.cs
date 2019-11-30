@@ -28,7 +28,7 @@ namespace Duplicati.Library.Interface
     /// Public interface for an encryption method.
     /// All modules that implements encryption must implement this interface.
     /// The classes that implements this interface MUST also 
-    /// implement a default constructor and a construtor that
+    /// implement a default constructor and a constructor that
     /// has the signature new(string passphrase, Dictionary&lt;string, string&gt; options).
     /// The default constructor is used to construct an instance
     /// so the DisplayName and other values can be read.
@@ -59,7 +59,7 @@ namespace Duplicati.Library.Interface
         void Decrypt(string inputfile, string outputfile);
 
         /// <summary>
-        /// Dencrypts the contents of the input stream, and writes the result to the output stream.
+        /// Decrypts the contents of the input stream, and writes the result to the output stream.
         /// </summary>
         /// <param name="input">The stream to decrypt</param>
         /// <param name="output">The decrypted stream</param>
