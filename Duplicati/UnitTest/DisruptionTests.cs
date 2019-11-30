@@ -195,6 +195,127 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption")]
+        public async Task RetentionPolicyRetention()
+        {
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            {
+                // Choose a dblock size that is small enough so that more than one volume is needed.
+                ["dblock-size"] = "10mb",
+
+                // This test assumes that we can perform 3 backups within 1 minute.
+                ["retention-policy"] = "1m:59s,U:1m",
+                ["no-backend-verification"] = "true"
+            };
+
+            DateTime firstBackupTime;
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+                firstBackupTime = c.List().Filesets.First().Time;
+
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(1, filesets.Count);
+
+                this.ModifySourceFiles();
+                c.Backup(new[] {this.DATAFOLDER});
+                DateTime secondBackupTime = c.List().Filesets.First().Time;
+
+                // Since the most recent backup is not considered in the retention logic, the only backup in the first time frame
+                // is the initial one.  As a result, we should have 2 backups.
+                filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(firstBackupTime, filesets[1].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(secondBackupTime, filesets[0].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+
+            // Wait so that the next backups fall in the next retention interval.
+            Thread.Sleep(new TimeSpan(0, 0, 1, 0));
+
+            DateTime thirdBackupTime;
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                await this.RunPartialBackup(c).ConfigureAwait(false);
+                thirdBackupTime = c.List().Filesets.First().Time;
+
+                // Since the most recent backup is not considered in the retention logic, there are no backups in the first time
+                // frame.  The original 2 backups have now spilled over to the U:1m specification.  Since we keep the first
+                // backup in the interval, we should be left with the first backup, as well as the third partial one.
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(firstBackupTime, filesets[1].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(thirdBackupTime, filesets[0].Time);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
+            }
+
+            DateTime fourthBackupTime;
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                this.ModifySourceFiles();
+                c.Backup(new[] {this.DATAFOLDER});
+                fourthBackupTime = c.List().Filesets.First().Time;
+
+                // Since the most recent backup is not considered in the retention logic, the third backup is the only backup
+                // in the first time frame.  There is no further spillover, so we simply add the fourth backup to the
+                // collection of retained backups.
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(3, filesets.Count);
+                Assert.AreEqual(firstBackupTime, filesets[2].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[2].IsFullBackup);
+                Assert.AreEqual(thirdBackupTime, filesets[1].Time);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(fourthBackupTime, filesets[0].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+
+                this.ModifySourceFiles();
+                c.Backup(new[] {this.DATAFOLDER});
+                DateTime fifthBackupTime = c.List().Filesets.First().Time;
+
+                // Since the most recent backup is not considered in the retention logic, we now have two backups in the
+                // first time frame: the third (partial) and fourth (full).  Since the first backup in each interval is
+                // kept, we would typically keep just the third backup.  However, since we should not discard a full
+                // backup in favor of a partial one, we keep the fourth as well.  We also still have the initial backup.
+                filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(4, filesets.Count);
+                Assert.AreEqual(firstBackupTime, filesets[3].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[3].IsFullBackup);
+                Assert.AreEqual(thirdBackupTime, filesets[2].Time);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[2].IsFullBackup);
+                Assert.AreEqual(fourthBackupTime, filesets[1].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(fifthBackupTime, filesets[0].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+
+            // Wait so that the next backups fall in the next retention interval.
+            Thread.Sleep(new TimeSpan(0, 0, 1, 0));
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                this.ModifySourceFiles();
+                c.Backup(new[] {this.DATAFOLDER});
+                DateTime sixthBackupTime = c.List().Filesets.First().Time;
+
+                // Since the most recent backup is not considered in the retention logic, we now have three backups in the
+                // second time frame: the third (partial), fourth (full), and fifth (full).  Since we keep up to the first
+                // full backup in each time frame, we now drop the fifth backup.
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(4, filesets.Count);
+                Assert.AreEqual(firstBackupTime, filesets[3].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[3].IsFullBackup);
+                Assert.AreEqual(thirdBackupTime, filesets[2].Time);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[2].IsFullBackup);
+                Assert.AreEqual(fourthBackupTime, filesets[1].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(sixthBackupTime, filesets[0].Time);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
         public async Task StopAfterCurrentFile()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
