@@ -225,43 +225,29 @@ namespace Duplicati.Library.Main.Operation
             // and remove oldest backups while there are still more backups than should be kept as specified via option
             var backupsRemaining = sortedAllBackups.Except(toDelete).ToList();
             var fullVersionsToKeep = m_options.KeepVersions;
-            var fullVersionsKeptCount = 0;
             if (fullVersionsToKeep > 0 && fullVersionsToKeep < backupsRemaining.Count)
             {
+                int fullVersionsKept = 0;
                 ISet<DateTime> intermediatePartials = new HashSet<DateTime>();
-                bool haveFullBackup = false;
 
-                // Keep the number of full backups specified in fullVersionsToKeep.
-                // Remove partial backups that are followed by full backups.
-                // Once enough versions are kept, delete all older backups.
-                foreach (var backup in backupsRemaining)
+                // Enumerate the collection starting from the most recent full backup.
+                foreach (DateTime backup in backupsRemaining.SkipWhile(x => !db.IsFilesetFullBackup(x)))
                 {
-                    bool isFullBackup = db.IsFilesetFullBackup(backup);
-                    if (isFullBackup)
+                    if (fullVersionsKept >= fullVersionsToKeep)
                     {
+                        // If we have enough full backups, delete all older backups.
+                        toDelete.Add(backup);
+                    }
+                    else if (db.IsFilesetFullBackup(backup))
+                    {
+                        // We can delete partial backups that are surrounded by full backups.
                         toDelete.AddRange(intermediatePartials);
                         intermediatePartials.Clear();
-                        haveFullBackup = true;
+                        fullVersionsKept++;
                     }
                     else
                     {
-                        // Only consider a partial backup for deletion if we have already encountered a full backup.
-                        if (haveFullBackup)
-                        {
-                            intermediatePartials.Add(backup);
-                        }
-                    }
-
-                    if (fullVersionsKeptCount < fullVersionsToKeep)
-                    {
-                        if (isFullBackup)
-                        {
-                            fullVersionsKeptCount++;
-                        }
-                    }
-                    else
-                    {
-                        toDelete.Add(backup);
+                        intermediatePartials.Add(backup);
                     }
                 }
             }
