@@ -45,8 +45,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localization", "Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AmazonCloudDrive", "Duplicati\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj", "{08D7E42D-285C-4010-9881-986125FE2F3E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SQLiteHelper", "Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
@@ -179,10 +177,6 @@ Global
 		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B68F2214-951F-4F78-8488-66E1ED3F50BF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7E119745-1F62-43F0-936C-F312A1912C0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7E119745-1F62-43F0-936C-F312A1912C0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E119745-1F62-43F0-936C-F312A1912C0B}.Release|Any CPU.ActiveCfg = Release|Any CPU

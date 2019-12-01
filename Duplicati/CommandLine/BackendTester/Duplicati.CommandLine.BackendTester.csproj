@@ -126,10 +126,6 @@
       <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
       <Name>Duplicati.Library.Backend.HubiC</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj">
-      <Project>{08D7E42D-285C-4010-9881-986125FE2F3E}</Project>
-      <Name>Duplicati.Library.Backend.AmazonCloudDrive</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>
