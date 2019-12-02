@@ -803,10 +803,6 @@ namespace Duplicati.Library.Main
             if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "7zModuleHasIssues", null, "The 7z compression module has known issues and should only be used for experimental purposes");
 
-            // Amazon CD is closing August 16th 2019
-			if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "amzcd", StringComparison.OrdinalIgnoreCase))
-				Logging.Log.WriteWarningMessage(LOGTAG, "AmzCDClosingApi", null, "The Amazon Cloud Drive API is closing down on August 16th 2019, please migrate your backups before this date");
-
 			//TODO: Based on the action, see if all options are relevant
 		}
 
