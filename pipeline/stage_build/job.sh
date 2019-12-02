@@ -5,8 +5,8 @@
 function build () {
   nuget restore "${DUPLICATI_ROOT}"/Duplicati.sln
 
-  if [ ! -d "${DUPLICATI_ROOT}"/packages/SharpCompress.0.18.2 ]; then
-      ln -s "${DUPLICATI_ROOT}"/packages/sharpcompress.0.18.2 "${DUPLICATI_ROOT}"/packages/SharpCompress.0.18.2
+  if [ ! -d "${DUPLICATI_ROOT}"/packages/SharpCompress.0.23.0 ]; then
+      ln -s "${DUPLICATI_ROOT}"/packages/sharpcompress.0.23.0 "${DUPLICATI_ROOT}"/packages/SharpCompress.0.23.0
   fi
 
   # build version stamper
