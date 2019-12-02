@@ -1,14 +1,10 @@
-dist: bionic
-language: csharp
-solution: Duplicati.sln
-dotnet: 2.0.0
-install:
-  - nuget restore Duplicati.sln
-  - nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory testrunner
-  - sudo pip install --upgrade pip
-  - sudo pip install selenium
-  - sudo pip install --upgrade urllib3
-  - if [ ! -d "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.23.0 ]; then ln -s "${TRAVIS_BUILD_DIR}"/packages/sharpcompress.0.23.0 "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.23.0; fi
+language: minimal
+services: docker
+before_install:
+  - sudo apt-get install moreutils
+  - set -o pipefail
+before_script:
+  - ${TRAVIS_BUILD_DIR}/pipeline/shared/sync_repo.sh
 addons:
   coverity_scan:
     project:
@@ -16,65 +12,81 @@ addons:
       description: "Duplicati Build submitted via Travis CI"
     notification_email: kenneth@duplicati.com
     build_command_prepend: "msbuild /t:Clean"
-    build_command:   "msbuild /t:Rebuild"
+    build_command: "msbuild /t:Rebuild"
     branch_pattern: coverity_scan
 env:
   global:
-    - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-    - DOTNET_CLI_TELEMETRY_OPTOUT=1 # stop telemetry
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
     #   via the "travis encrypt" command using the project repo's public key
     - secure: "ijaQDcVcMo/utuP514FiDZVGR5LJbATWmYDmgRIIaI0YG2Rk6uuJp9XXDXr8sx66JWttPGgs7Htqfy50VKHdr7nsfyCQCRNGmqF+OJeUgAQMj5spxn9A7PZY9+GVhnXoJ06wvYjCv5MPeLBMDK/KpIM5Ny5IG+TKzQy4U7Dyg0riMUT61aqzxSjTGfHZPmaqBICJTzsRmeGHglemFUz/1B4NAN+IeAtXoH9YIfA2LjJfYmMLckPgFQLKN/tQRaGPWXh77y0qVgA++K8UVu5W3yGo3JXBPDdabGgKs9BPlfN5/Ixnkcy6ekAubDA/Aspur9x7/szj4/AnGMY6frNB33nQcnJQZ/51GYKr6CXCmjoJQuWc8ZKdEMqDn3w/kyEzvluSjAsJNRVboeWPE4VfpAeUBsjQ+TuEQi8WXhN8VJgZV7yCkVlZTVbhtOxMPsBiFb74lpWC2iQuWLJv9ED6vyXZVzZhNtfjXNXNZzIwYxbcd7I0ZQ8fmDstFnvBJveJby2ZRpECXTbc03eIUq1SAaVJJY2r47RD1PwVqM3xvUTljIqtKdyIz915mEOjqG1BnCDaiGHYJ4byuDDeIUZO9X70s60Gh4hupZA2Ruup0v7SfYgkto6aNcStd0NYd716Vd7hqXNTp6nu01L5YYJDY4h5sHyBXVXbxCKlUb01kUw="
-  general:
     - USAGEREPORTER_Duplicati_LEVEL=none
     - AUTOUPDATER_Duplicati_SKIP_UPDATE=1
-    - TMPDIR=$HOME/tmp
+    - BUILD_DIR=${TRAVIS_BUILD_DIR}/.build
+    - TEST_DIR=${TRAVIS_BUILD_DIR}/.test
+    - ARCHIVE_DIR=${TRAVIS_BUILD_DIR}/.zip
+    - ROOT_DIR="$TRAVIS_BUILD_DIR"
+
+# matrix expansion within jobs would be good:
+# https://github.com/travis-ci/travis-ci/issues/8295
+
+# There is one cache per branch, so concurrent builds on different branches possible!
+# DO NOT SET ENVIRONMENT VARIABLES WITHIN JOBS, OR CACHES WILL NOT BE SHARED AMONGST JOBS!
+
 
 jobs:
   include:
-    - stage: Run unittests
-      env: CATEGORY=Border
-    - env: CATEGORY=Filter
-
-    - env: CATEGORY=BulkNormal
+    - stage: build
       cache:
         directories:
-          - $HOME/download/bulk
+          - $BUILD_DIR
+      script:
+        - ${ROOT_DIR}/pipeline/jobs/build_job.sh
 
-    - env: CATEGORY=BulkNoSize
+
+    - stage: unit tests
       cache:
         directories:
-          - $HOME/download/bulk
-
-    - env: CATEGORY=SVNData
+          - $HOME/download/
+          - $BUILD_DIR
+      script:
+        - ${ROOT_DIR}/pipeline/jobs/unittest1_job.sh
+    - stage: unit tests
       cache:
         directories:
-          - $HOME/download/svn
-
-    - env: CATEGORY=SVNDataLong
+          - $HOME/download/
+          - $BUILD_DIR
+      script:
+        - ${ROOT_DIR}/pipeline/jobs/unittest2_job.sh
+    - stage: unit tests
       cache:
         directories:
-          - $HOME/download/svn
+          - $HOME/download/
+          - $BUILD_DIR
+      script:
+        - ${ROOT_DIR}/pipeline/jobs/unittest3_job.sh
+    - stage: unit tests
+      cache:
+        directories:
+          - $HOME/download/
+          - $BUILD_DIR
+      script:
+        - ${ROOT_DIR}/pipeline/jobs/unittest4_job.sh
+    - stage: unit tests
+      cache:
+        directories:
+          - $HOME/download/
+          - $BUILD_DIR
+      script:
+        - ${ROOT_DIR}/pipeline/jobs/unittest5_job.sh
 
-    - env: CATEGORY=Targeted
-    - env: CATEGORY=Purge
-    - env: CATEGORY=Serialization
-    - env: CATEGORY=Utility
-    - env: CATEGORY=UriUtility
-    - env: CATEGORY=WebApi
-    - env: CATEGORY=IO
-    - env: CATEGORY=ImportExport
-    - env: CATEGORY=Disruption
-
-    - env: CATEGORY=GUI
+    - stage: integration tests
+      cache:
+        directories:
+          - $HOME/download/
+          - $BUILD_DIR
+      script:
+        - ${ROOT_DIR}/pipeline/jobs/selenium_job.sh
       addons:
         sauce_connect:
           username: $SAUCE_USERNAME
           access_key: $SAUCE_ACCESS_KEY
-
-before_install:
-  - chmod +x ./build.sh # make the script executable if it already is not
-  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-
-script:
-  - ./build.sh ${CATEGORY} ${TRAVIS_BUILD_DIR}
