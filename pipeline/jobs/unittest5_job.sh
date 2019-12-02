@@ -6,5 +6,5 @@ ${ROOT_DIR}/pipeline/stage_unittests/trigger.sh \
 ${FORWARD_OPTS[@]} \
 --sourcedir $BUILD_DIR \
 --targetdir $TEST_DIR \
---testcategories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport | ts
+--testcategories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport,Disruption | ts
 
