@@ -40,43 +40,42 @@ jobs:
         - ${ROOT_DIR}/pipeline/jobs/build_job.sh
 
 
-    - stage: unit tests
+    - stage: tests
       cache:
         directories:
           - $HOME/download/
           - $BUILD_DIR
       script:
         - ${ROOT_DIR}/pipeline/jobs/unittest1_job.sh
-    - stage: unit tests
+    - stage: tests
       cache:
         directories:
           - $HOME/download/
           - $BUILD_DIR
       script:
         - ${ROOT_DIR}/pipeline/jobs/unittest2_job.sh
-    - stage: unit tests
+    - stage: tests
       cache:
         directories:
           - $HOME/download/
           - $BUILD_DIR
       script:
         - ${ROOT_DIR}/pipeline/jobs/unittest3_job.sh
-    - stage: unit tests
+    - stage: tests
       cache:
         directories:
           - $HOME/download/
           - $BUILD_DIR
       script:
         - ${ROOT_DIR}/pipeline/jobs/unittest4_job.sh
-    - stage: unit tests
+    - stage: tests
       cache:
         directories:
           - $HOME/download/
           - $BUILD_DIR
       script:
         - ${ROOT_DIR}/pipeline/jobs/unittest5_job.sh
-
-    - stage: integration tests
+    - stage: tests
       cache:
         directories:
           - $HOME/download/
