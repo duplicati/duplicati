@@ -82,6 +82,12 @@ function parse_options () {
       fi
   done
 
+
+  if [ "${TARGET_DIR##${SOURCE_DIR}}" != "${TARGET_DIR}" ]; then
+    echo "targetdir $TARGET_DIR is not allowed to be a subdir of sourcedir $SOURCE_DIR"
+  fi
+
+
   add_option "--workingdir" "$TARGET_DIR"
   add_option "--sourcedirnum" ${#SOURCE_DIR[@]}
 }

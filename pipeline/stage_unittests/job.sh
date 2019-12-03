@@ -25,7 +25,7 @@ function start_test () {
         fi
 
         travis_mark_begin "UNIT TESTING CATEGORY $CAT"
-        mono "${DUPLICATI_ROOT}"/testrunner/NUnit.ConsoleRunner.3.5.0/tools/nunit3-console.exe \
+        mono "${DUPLICATI_ROOT}"/testrunner/NUnit.ConsoleRunner.3.10.0/tools/nunit3-console.exe \
         "${DUPLICATI_ROOT}"/Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==$CAT --workers=1
         travis_mark_end "UNIT TESTING CATEGORY $CAT"
     done
