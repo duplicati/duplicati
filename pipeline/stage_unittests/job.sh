@@ -12,7 +12,7 @@ function get_and_extract_test_zip () {
 }
 
 function start_test () {
-    nuget install NUnit.Runners -Version 3.5.0 -OutputDirectory testrunner
+    nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory testrunner
 
     for CAT in $(echo $testcategories | sed "s/,/ /g")
     do
