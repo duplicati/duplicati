@@ -88,7 +88,7 @@ namespace Duplicati.UnitTest
             // and run the delete operation.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                options["keep-time"] = $"{(DateTime.Now - firstBackupTime).Seconds - (secondBackupTime - firstBackupTime).Seconds / 2}s";
+                options["keep-time"] = $"{(int) ((DateTime.Now - firstBackupTime).TotalSeconds - (secondBackupTime - firstBackupTime).TotalSeconds / 2)}s";
                 c.Delete();
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
