@@ -31,6 +31,4 @@ function start_test () {
     done
 }
 
-travis_mark_begin "UNIT TESTING"
 start_test
-travis_mark_end "UNIT TESTING"

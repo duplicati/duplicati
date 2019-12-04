@@ -13,16 +13,15 @@ function sync_dirs () {
 }
 
 function setup () {
-   if [ -f /sbin/apk ]; then
-      apk --update add $DOCKER_PACKAGES
-      return
-   fi
+    travis_mark_begin "INSTALLING PACKAGES IN DOCKER"
 
-   if [ -f /usr/bin/apt-get ]; then
+    if [ -f /sbin/apk ]; then
+      apk --update add $DOCKER_PACKAGES
+    elif [ -f /usr/bin/apt-get ]; then
       export DEBIAN_FRONTEND=noninteractive
       apt-get update && apt-get install -y $DOCKER_PACKAGES
-      return
-   fi
+    fi
+    travis_mark_end "INSTALLING PACKAGES IN DOCKER"
 }
 
 function clean_up () {
