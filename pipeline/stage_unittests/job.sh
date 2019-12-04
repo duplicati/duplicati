@@ -12,7 +12,9 @@ function get_and_extract_test_zip () {
 }
 
 function start_test () {
+    travis_mark_begin "SETUP NUGET"
     nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory testrunner
+    travis_mark_end "SETUP NUGET"
 
     for CAT in $(echo $testcategories | sed "s/,/ /g")
     do
