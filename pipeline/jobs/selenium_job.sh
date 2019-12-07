@@ -1,6 +1,6 @@
 #!/bin/bash
 SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-. "${SCRIPT_DIR}/params.sh"
+. "${SCRIPT_DIR}/_import.sh"
 
 ${ROOT_DIR}/pipeline/stage_integrationtests/trigger.sh \
 ${FORWARD_OPTS[@]} \
