@@ -4,4 +4,4 @@
 PACKAGES="libgtk2.0-cil rsync"
 docker-run --image mono \
 --packages "$PACKAGES" \
---command "/pipeline/stage_build/job.sh" "$@"
+--command "/pipeline/stage_build/job.sh" $@
