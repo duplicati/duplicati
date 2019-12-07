@@ -301,7 +301,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if ($scope.Selected.length == 0) {
             DialogService.dialog(gettextCatalog.getString('No items selected'), gettextCatalog.getString('No items to restore, please select one or more items'));
             $scope.restore_step = 0;
-			return;
+            return;
         }
 
         if ($scope.RestoreLocation == 'custom' && ($scope.RestorePath || '').trim().length == 0)
