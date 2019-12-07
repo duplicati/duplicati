@@ -204,11 +204,18 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            // Remove backups that are older than date specified via option
+            // Remove backups that are older than date specified via option while ensuring
+            // that we always have at least one full backup.
             var keepTime = m_options.KeepTime;
             if (keepTime.Ticks > 0)
             {
-                toDelete.AddRange(sortedAllBackups.SkipWhile(x => x >= keepTime));
+                bool haveFullBackup = false;
+                toDelete.AddRange(sortedAllBackups.SkipWhile(x =>
+                {
+                    bool keepBackup = (x >= keepTime) || !haveFullBackup;
+                    haveFullBackup = haveFullBackup || db.IsFilesetFullBackup(x);
+                    return keepBackup;
+                }));
             }
 
             // Remove backups via retention policy option
@@ -218,37 +225,30 @@ namespace Duplicati.Library.Main.Operation
             // and remove oldest backups while there are still more backups than should be kept as specified via option
             var backupsRemaining = sortedAllBackups.Except(toDelete).ToList();
             var fullVersionsToKeep = m_options.KeepVersions;
-            var fullVersionsKeptCount = 0;
             if (fullVersionsToKeep > 0 && fullVersionsToKeep < backupsRemaining.Count)
             {
-                // keep the number of full backups specified in fullVersionsToKeep.
-                // once the last full backup t okeep is found, also keep the partials immediately after it the full backup.
-                // add the remainder of full and partial backups to toDelete
-                bool foundLastFullBackupToKeep = false;
-                foreach (var backup in backupsRemaining)
+                int fullVersionsKept = 0;
+                ISet<DateTime> intermediatePartials = new HashSet<DateTime>();
+
+                // Enumerate the collection starting from the most recent full backup.
+                foreach (DateTime backup in backupsRemaining.SkipWhile(x => !db.IsFilesetFullBackup(x)))
                 {
-                    bool isFullBackup;
-                    if (fullVersionsKeptCount < fullVersionsToKeep)
+                    if (fullVersionsKept >= fullVersionsToKeep)
                     {
-                        isFullBackup = db.IsFilesetFullBackup(backup);
-                        // count only a full backup
-                        if (fullVersionsKeptCount < fullVersionsToKeep && isFullBackup)
-                        {
-                            fullVersionsKeptCount++;
-                        }
-                        continue;
+                        // If we have enough full backups, delete all older backups.
+                        toDelete.Add(backup);
                     }
-                    // do not include any partial backup that precedes the last full backup
-                    if (!foundLastFullBackupToKeep)
+                    else if (db.IsFilesetFullBackup(backup))
                     {
-                        isFullBackup = db.IsFilesetFullBackup(backup);
-                        if (!isFullBackup)
-                        {
-                            continue;
-                        }
-                        foundLastFullBackupToKeep = true;
+                        // We can delete partial backups that are surrounded by full backups.
+                        toDelete.AddRange(intermediatePartials);
+                        intermediatePartials.Clear();
+                        fullVersionsKept++;
                     }
-                    toDelete.Add(backup);
+                    else
+                    {
+                        intermediatePartials.Add(backup);
+                    }
                 }
             }
 

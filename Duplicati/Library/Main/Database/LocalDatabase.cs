@@ -218,25 +218,9 @@ namespace Duplicati.Library.Main.Database
             get
             {
                 using (var cmd = m_connection.CreateCommand())
-                using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
-                {
-                    var isFullBackupEncountered = false;
+                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     while (rd.Read())
-                    {
-                        var id = rd.GetInt64(0);
-                        var isFullBackup = rd.GetInt32(1);
-                        var timeStamp = ParseFromEpochSeconds(rd.GetInt64(2)).ToLocalTime();
-
-                        if (isFullBackupEncountered && isFullBackup != BackupType.FULL_BACKUP) continue;
-
-                        yield return new KeyValuePair<long, DateTime>(id, timeStamp);
-
-                        if (!isFullBackupEncountered && isFullBackup == BackupType.FULL_BACKUP)
-                        {
-                            isFullBackupEncountered = true;
-                        }
-                    }
-                }
+                        yield return new KeyValuePair<long, DateTime>(rd.GetInt64(0), ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime());
             }
         }
 
