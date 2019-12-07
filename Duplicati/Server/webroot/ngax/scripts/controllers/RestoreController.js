@@ -298,6 +298,12 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     };
 
     $scope.onStartRestore = function() {
+        if ($scope.Selected.length == 0) {
+            DialogService.dialog(gettextCatalog.getString('No items selected'), gettextCatalog.getString('No items to restore, please select one or more items'));
+            $scope.restore_step = 0;
+			return;
+        }
+
         if ($scope.RestoreLocation == 'custom' && ($scope.RestorePath || '').trim().length == 0)
         {
             DialogService.alert(gettextCatalog.getString('You have chosen to restore to a new location, but not entered one'));
