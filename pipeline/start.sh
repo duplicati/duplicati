@@ -8,5 +8,5 @@ ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories BulkNormal --testdata
 ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories BulkNoSize --testdata data.zip
 ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories SVNDataLong,SVNData --testdata DSMCBE.zip
 ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories Border
-${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testctegories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport,Disruption
+${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport,Disruption
 
