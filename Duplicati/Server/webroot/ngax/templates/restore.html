@@ -12,7 +12,7 @@
         <div class="step step3" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
             <span>3</span>
         </div>
-        <div class="step step4" ng-class="{active: restore_step == 1}" ng-click="trySetStep(1)">
+        <div class="step step4" ng-class="{active: restore_step == 1}" ng-click="onClickNext()">
             <span>4</span>
         </div>
     </div>
@@ -21,7 +21,7 @@
         <li class="step1 not-clickable" translate>Backup location</li>
         <li class="step2 not-clickable" translate>Encryption</li>
         <li ng-class="{active: restore_step == 0}" class="step3" ng-click="trySetStep(0)" translate>Select files</li>
-        <li ng-class="{active: restore_step == 1}" class="step4" ng-click="trySetStep(1)" translate>Restore options</li>
+        <li ng-class="{active: restore_step == 1}" class="step4" ng-click="onClickNext()" translate>Restore options</li>
     </ol>
 
 
@@ -29,14 +29,14 @@
         <div class="step step1" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
             <span>1</span>
         </div>
-        <div class="step step2" ng-class="{active: restore_step == 1}" ng-click="trySetStep(1)">
+        <div class="step step2" ng-class="{active: restore_step == 1}" ng-click="onClickNext()">
             <span>2</span>
         </div>
     </div>
 
     <ol class="steps-legend" ng-hide="IsBackupTemporary || restore_step &gt; 1">
         <li ng-class="{active: restore_step == 0}" class="step1" ng-click="trySetStep(0)" translate>Select files</li>
-        <li ng-class="{active: restore_step == 1}" class="step2" ng-click="trySetStep(1)" translate>Restore options</li>
+        <li ng-class="{active: restore_step == 1}" class="step2" ng-click="onClickNext()" translate>Restore options</li>
     </ol>
 
     <form id="restore" class="styled">
