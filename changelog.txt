@@ -1,3 +1,10 @@
+2019-12-08 - 2.0.4.36_canary_2019-12-08
+==========
+* Removed Amazon Cloud Drive support, thanks @warwickmm
+* Fixed an edge case where paths longer than 258 characters and short than 260 characters produced errors, thanks @drwtsn32x
+* Fixed a number of edge cases where partial backups could create defect backups when used with retention rules, thanks @warwickmm
+* Fixed a problem with SharePoint reporting conflicts after v2.0.4.35, thanks @warwickmm
+
 2019-11-29 - 2.0.4.35_canary_2019-11-29
 ==========
 * Made password input in dark-theme better, thanks @mithileshz
