@@ -14,7 +14,7 @@ function start_test () {
     #echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | tee -a /etc/ssl/certs/ca-
     mono "${DUPLICATI_ROOT}/Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe" &
     cd
-    python /application/guiTests/guiTest.py
+    python "${DUPLICATI_ROOT}/guiTests/guiTest.py"
 }
 
 travis_mark_begin "INTEGRATION TESTING"
