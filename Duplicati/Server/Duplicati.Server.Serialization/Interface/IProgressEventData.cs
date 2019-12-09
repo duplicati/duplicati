@@ -20,6 +20,7 @@ namespace Duplicati.Server.Serialization.Interface
         string CurrentFilename { get; }
         long CurrentFilesize { get; }
         long CurrentFileoffset { get; }
+        bool CurrentFilecomplete { get; }
         
         string Phase { get; }
         float OverallProgress { get; }

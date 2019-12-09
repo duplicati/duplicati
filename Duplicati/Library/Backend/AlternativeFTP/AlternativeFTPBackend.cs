@@ -47,14 +47,16 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         private const string CONFIG_KEY_AFTP_ENCRYPTION_MODE = "aftp-encryption-mode";
         private const string CONFIG_KEY_AFTP_DATA_CONNECTION_TYPE = "aftp-data-connection-type";
         private const string CONFIG_KEY_AFTP_SSL_PROTOCOLS = "aftp-ssl-protocols";
+        private const string CONFIG_KEY_AFTP_UPLOAD_DELAY = "aftp-upload-delay";
 
         private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
-        private const string TEST_FILE_CONTENT = "This file used by Duplicati to test access permissions and could be safely deleted.";
+        private const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
         // ReSharper disable InconsistentNaming
         private static readonly string DEFAULT_DATA_CONNECTION_TYPE_STRING = DEFAULT_DATA_CONNECTION_TYPE.ToString();
         private static readonly string DEFAULT_ENCRYPTION_MODE_STRING = DEFAULT_ENCRYPTION_MODE.ToString();
         private static readonly string DEFAULT_SSL_PROTOCOLS_STRING = DEFAULT_SSL_PROTOCOLS.ToString();
+        private static readonly string DEFAULT_UPLOAD_DELAY_STRING = "0s";
         // ReSharper restore InconsistentNaming
 
         private readonly string _url;
@@ -62,6 +64,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         private readonly FtpEncryptionMode _encryptionMode;
         private readonly FtpDataConnectionType _dataConnectionType;
         private readonly SslProtocols _sslProtocols;
+        private readonly TimeSpan _uploadWaitTime;
 
         private readonly byte[] _copybuffer = new byte[CoreUtility.DEFAULT_BUFFER_SIZE];
         private readonly bool _accepAllCertificates;
@@ -97,6 +100,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                           new CommandLineArgument(CONFIG_KEY_AFTP_DATA_CONNECTION_TYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpDataConnectionTypeShort, Strings.DescriptionFtpDataConnectionTypeLong, DEFAULT_DATA_CONNECTION_TYPE_STRING, null, Enum.GetNames(typeof(FtpDataConnectionType))),
                           new CommandLineArgument(CONFIG_KEY_AFTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
                           new CommandLineArgument(CONFIG_KEY_AFTP_SSL_PROTOCOLS, CommandLineArgument.ArgumentType.Flags, Strings.DescriptionSslProtocolsShort, Strings.DescriptionSslProtocolsLong, DEFAULT_SSL_PROTOCOLS_STRING, null, Enum.GetNames(typeof(SslProtocols))),
+                          new CommandLineArgument(CONFIG_KEY_AFTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
                      });
             }
         }
@@ -153,6 +157,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             _url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
             _url = Common.IO.Util.AppendDirSeparator(_url, "/");
             _listVerify = !CoreUtility.ParseBoolOption(options, "disable-upload-verify");
+            if (options.TryGetValue(CONFIG_KEY_AFTP_UPLOAD_DELAY, out var uploadWaitTimeString) && !string.IsNullOrWhiteSpace(uploadWaitTimeString))
+                _uploadWaitTime = Duplicati.Library.Utility.Timeparser.ParseTimeSpan(uploadWaitTimeString);
 
             // Process the aftp-data-connection-type option
             string dataConnectionTypeString;
@@ -337,23 +343,21 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
                 }
 
-                // check remote file size; matching file size indicates completion
-                var sleepTime = 250;
-                var maxVerifyMilliseconds = 5000;
-                var m = maxVerifyMilliseconds;
-                long remoteSize = 0;
-                while (m > 0)
+                // Wait for the upload, if required
+                if (_uploadWaitTime.Ticks > 0)
                 {
-                    remoteSize = ftpClient.GetFileSize(remotePath);
-                    if (streamLen == remoteSize)
-                    {
-                        return;
-                    }
-                    m -= sleepTime;
-                    Thread.Sleep(sleepTime);
+                    Thread.Sleep(_uploadWaitTime);
                 }
 
-                throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
+                if (_listVerify)
+                {
+                    // check remote file size; matching file size indicates completion
+                    var remoteSize = await ftpClient.GetFileSizeAsync(remotePath, cancelToken);
+                    if (streamLen != remoteSize)
+                    {
+                        throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
+                    }
+                }
             }
             catch (FtpCommandException ex)
             {
@@ -544,7 +548,9 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     EncryptionMode = _encryptionMode,
                     DataConnectionType = _dataConnectionType,
                     SslProtocols = _sslProtocols,
-                    EnableThreadSafeDataConnections = true, // Required to work properly but can result in up to 3 connections being used even when you expect just one..
+
+                    // We do not support parallel uploads, and the feature is buggy
+                    EnableThreadSafeDataConnections = false,
                 };
 
                 ftpClient.ValidateCertificate += HandleValidateCertificate;

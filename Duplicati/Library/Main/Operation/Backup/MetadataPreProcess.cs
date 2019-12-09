@@ -19,6 +19,8 @@ using CoCoL;
 using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
+using System.Security.Principal;
+using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Snapshots;
@@ -58,7 +60,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             public bool MetadataChanged;
         }
             
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid)
+        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, CancellationToken token)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -118,7 +120,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (CHECKFILETIMEONLY || DISABLEFILETIMECHECK)
                             {
                                 var tmp = await database.GetFileLastModifiedAsync(prefixid, split.Value, lastfilesetid, false);
-                                await self.Output.WriteAsync(new FileEntry() {
+                                await self.Output.WriteAsync(new FileEntry
+                                {
                                     OldId = tmp.Item1,
                                     Path = path,
                                     PathPrefixID = prefixid,
@@ -126,7 +129,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     Attributes = attributes,
                                     LastWrite = lastwrite,
                                     OldModified = tmp.Item2,
-                                    LastFileSize = tmp.Item3 ,
+                                    LastFileSize = tmp.Item3,
                                     OldMetaHash = null,
                                     OldMetaSize = -1
                                 });
@@ -134,7 +137,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                             else
                             {
                                 var res = await database.GetFileEntryAsync(prefixid, split.Value, lastfilesetid);
-                                await self.Output.WriteAsync(new FileEntry() {
+                                await self.Output.WriteAsync(new FileEntry
+                                {
                                     OldId = res == null ? -1 : res.id,
                                     Path = path,
                                     PathPrefixID = prefixid,
@@ -148,9 +152,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 });
                             }
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "ProcessingMetadataFailed", ex, "Failed to process entry, path: {0}", path);
+                            if (ex.IsRetiredException() || token.IsCancellationRequested)
+                            {
+                                continue;
+                            }
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "ProcessingMetadataFailed", ex,
+                                "Failed to process entry, path: {0}", path);
                         }
                     }
                 }

@@ -33,11 +33,11 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class S3Wrapper : IDisposable
     {
-        private static string LOGTAG = Logging.Log.LogTagFromType<S3Wrapper>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3Wrapper>();
         private const int ITEM_LIST_LIMIT = 1000;
 
-        protected string m_locationConstraint;
-        protected string m_storageClass;
+        protected readonly string m_locationConstraint;
+        protected readonly string m_storageClass;
         protected AmazonS3Client m_client;
 
         public readonly string DNSHost;

@@ -26,7 +26,6 @@ backupApp.directive('advancedOptionsEditor', function() {
                 'throttle-download': 'speed',
 
                 'retry-delay': 'shorttimespan',
-                'amzcd-consistency-delay': 'shorttimespan',
                 'web-timeout': 'shorttimespan',
                 'run-script-timeout': 'shorttimespan'
             };

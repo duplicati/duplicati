@@ -35,6 +35,7 @@ namespace Duplicati.GUI.TrayIcon
         Idle,
         Paused,
         Running,
+        IdleWarning,
         IdleError,
         PausedError,
         RunningError
@@ -194,7 +195,7 @@ namespace Duplicati.GUI.TrayIcon
                         this.SetIcon(TrayIcons.IdleError);
                         break;
                     case SuggestedStatusIcon.ReadyWarning:
-                        this.SetIcon(TrayIcons.IdleError);
+                        this.SetIcon(TrayIcons.IdleWarning);
                         break;
                     case SuggestedStatusIcon.Paused:
                         this.SetIcon(TrayIcons.Paused);

@@ -41,6 +41,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             new
             {
                 Input = Channels.ProcessedFiles.ForRead,
+                ProgressChannel = Channels.ProgressEvents.ForWrite,
                 Output = Channels.AcceptedChangedFile.ForWrite
             },
 
@@ -81,6 +82,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (tooLargeFile)
                     {
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Path);
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }
 
@@ -106,6 +108,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 throw;
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
                         }
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }
 
@@ -143,6 +146,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
                         }
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
                     }
                 }
             });

@@ -786,14 +786,11 @@ namespace Duplicati.Library.Utility
         /// <returns>The string as byte array.</returns>
         /// <param name="hex">The hex string</param>
         /// <param name="data">The parsed data</param>
-        public static byte[] HexStringAsByteArray(string hex, byte[] data)
+        public static void HexStringAsByteArray(string hex, byte[] data)
         {
             for (var i = 0; i < hex.Length; i += 2)
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-
-            return data;
         }
-
 
         public static bool Which(string appname)
         {
@@ -954,8 +951,18 @@ namespace Duplicati.Library.Utility
             return new DateTime(ticks, DateTimeKind.Utc);
         }
         
+	/// <summary>
+	/// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
+	/// </summary>
+	/// <returns>The number of elapsed seconds since the Unix epoch</returns>
+	/// <param name="input">The input time</param>
         public static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
+            // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
+            // The DateTimeOffset constructor will convert the provided DateTime to the UTC
+            // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
+            // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
+            // and DateTimeOffset.MaxValue bounds.
             return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
         }
         
@@ -1117,11 +1124,11 @@ namespace Duplicati.Library.Utility
 
             if (IsPrimitiveTypeForSerialization(item.GetType()))
             {
-                if (item is DateTime)
+                if (item is DateTime time)
                 {
-                    writer.Write(((DateTime)item).ToLocalTime());
+                    writer.Write(time.ToLocalTime());
                     writer.Write(" (");
-                    writer.Write(ToUnixTimestamp((DateTime)item));
+                    writer.Write(ToUnixTimestamp(time));
                     writer.Write(")");
                 }
                 else
@@ -1389,7 +1396,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Special characters that needs to be escaped on Linux
         /// </summary>
-        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""|$|`|\\|!]");
+        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""$`\\!]");
 
         /// <summary>
         /// Wraps a single argument in quotes suitable for the passing on the commandline

@@ -5,6 +5,7 @@ using System.Text;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -15,7 +16,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRestoreDatabase));
 
-        protected string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+        protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
         protected string m_tempfiletable;
         protected string m_tempblocktable;
         protected string m_fileprogtable;
@@ -224,14 +225,14 @@ namespace Duplicati.Library.Main.Database
                         cmd.AddParameter(filesetId);
                         cmd.ExecuteNonQuery();
                     }
-                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
+                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
                     {
                         // If we get a list of filenames, the lookup table is faster
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
                         using(var tr = m_connection.BeginTransaction())
                         {
-                            var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
+                            var p = expression.GetSimpleList();
                             var m_filenamestable = "Filenames-" + guid;
                             cmd.Transaction = tr;
                             cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));

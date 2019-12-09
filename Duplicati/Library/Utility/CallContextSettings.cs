@@ -225,7 +225,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The settings that are stored in the call context, which are not serializable
         /// </summary>
-        private static Dictionary<string, T> _settings = new Dictionary<string, T>();
+        private static readonly Dictionary<string, T> _settings = new Dictionary<string, T>();
 
         /// <summary>
         /// The context setting types that are used and need their private setting key
@@ -316,7 +316,7 @@ namespace Duplicati.Library.Utility
             /// </summary>
             public ContextGuard()
             {
-                CallContext.SetData(contextSettingsType, ID);
+                CallContext.LogicalSetData(contextSettingsType, ID);
             }
 
             /// <summary>

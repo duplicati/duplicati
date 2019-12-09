@@ -96,6 +96,9 @@ if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
 	exit 0
 fi
 
+echo "Activating sudo rights for building the installers later, please enter sudo password:"
+sudo echo "Sudo activated"
+
 RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
 
 git stash save "${GIT_STASH_NAME}"

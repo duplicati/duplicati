@@ -29,7 +29,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The file path to the system browser selected
         /// </summary>
-        public static string SystemBrowser = null;
+        public static readonly string SystemBrowser = null;
 
         /// <summary>
         /// A delegate for handing error messages

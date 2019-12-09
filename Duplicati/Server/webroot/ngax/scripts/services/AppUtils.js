@@ -131,8 +131,8 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             name: gettextCatalog.getString('Exclude files whose names contain'),
             key: '-file*',
             prefix: '-[.*',
-            suffix: '.*[^!]]',
-            rx: '\\-\\[\\.\\*([^\\!]+)\\.\\*\\[\\^\\!\\]\\]'
+            suffix: '[^!]*]',
+            rx: '\\-\\[\\.\\*[\\^\\!\\]\\*\\]'
         }, {
             name: gettextCatalog.getString('Exclude folder'),
             key: '-folder',
@@ -545,6 +545,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         }
 
         function matches(txt, n) {
+            // We need to escape dirsep if it is the backslash character
+            if (dirsep == '\\')
+                dirsep = '\\\\';
+
             var pre = apputils.replace_all(n.prefix || '', '!', dirsep);
             var suf = apputils.replace_all(n.suffix || '', '!', dirsep);
 
@@ -582,6 +586,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             return body;
 
         body = body || '';
+
+        // We need to escape dirsep if it is the backslash character
+        if (dirsep == '\\')
+            dirsep = '\\\\';
 
         var f = this.filterTypeMap[type];
         var pre = this.replace_all(f.prefix || '', '!', dirsep);

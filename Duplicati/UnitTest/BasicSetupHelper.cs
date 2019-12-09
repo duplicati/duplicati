@@ -93,7 +93,7 @@ namespace Duplicati.UnitTest
         }
 
         [SetUp]
-        public void SetUp()
+        public virtual void SetUp()
         {
             Directory.CreateDirectory(this.DATAFOLDER);
             Directory.CreateDirectory(this.TARGETFOLDER);
@@ -147,7 +147,6 @@ namespace Duplicati.UnitTest
                 opts["dbpath"] = DBFILE;
                 opts["blocksize"] = "10kb";
                 opts["backup-test-samples"] = "0";
-                opts["keep-versions"] = "100";
                 opts["unittest-mode"] = "true";
 
                 return opts;

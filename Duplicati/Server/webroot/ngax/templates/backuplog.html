@@ -9,7 +9,7 @@
 
     <div ng-show="Page == 'general'">
         <ul class="entries backuplog">
-            <li ng-show="GeneralData == null" translate>Loading ...</li>
+            <li ng-show="GeneralData == null" translate>Loading …</li>
             <li ng-repeat="item in GeneralData" style="width: 100%">
                 <div ng-click="expanded = !expanded" class="entryline clickable">
                     <i class="{{ResultIcon(item.Result ? item.Result.ParsedResult : 'None')}}"></i>
@@ -22,14 +22,14 @@
             </li>
         </ul>
         <div ng-show="GeneralData != null &amp;&amp; !GeneralDataComplete" class="button" ng-click="LoadMoreGeneralData()">
-            <span ng-show="LoadingData" translate>Loading ...</span>
+            <span ng-show="LoadingData" translate>Loading …</span>
             <span ng-hide="LoadingData" translate>Load older data</span>
         </div>
     </div>
 
     <div ng-show="Page == 'remote'">
         <ul class="entries">
-            <li ng-show="RemoteData == null" translate>Loading ...</li>
+            <li ng-show="RemoteData == null" translate>Loading …</li>
             <li ng-repeat="item in RemoteData">
                 <div ng-click="expanded = !expanded" class="entryline clickable">
                     {{item.Timestamp | parsetimestamp}}: {{item.Operation}} {{item.Path}}
@@ -40,7 +40,7 @@
             </li>
         </ul>
         <div ng-show="RemoteData != null &amp;&amp; !RemoteDataComplete" class="button" ng-click="LoadMoreRemoteData()">
-            <span ng-show="LoadingData" translate>Loading ...</span>
+            <span ng-show="LoadingData" translate>Loading …</span>
             <span ng-hide="LoadingData" translate>Load older data</span>
         </div>
     </div>

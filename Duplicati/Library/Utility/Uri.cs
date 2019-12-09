@@ -35,7 +35,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
+        private static readonly System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
@@ -336,7 +336,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_]", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_]", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
@@ -391,7 +391,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){2,4,6,8}))", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Decodes a URL, like System.Web.HttpUtility.UrlDecode
@@ -436,7 +436,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches a=b type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_URLPARAM = new System.Text.RegularExpressions.Regex(@"(?<key>[^\=\&]+)(\=(?<value>[^\&]*))?", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_URLPARAM = new System.Text.RegularExpressions.Regex(@"(?<key>[^\=\&]+)(\=(?<value>[^\&]*))?", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Parses the query string.

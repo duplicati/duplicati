@@ -24,7 +24,7 @@ namespace Duplicati.Library.AutoUpdater
 {
     public static class AutoUpdateSettings
     {
-        private static Dictionary<string, string> _cache = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> _cache = new Dictionary<string, string>();
         private const string APP_NAME = "AutoUpdateAppName.txt";
         private const string UPDATE_URL = "AutoUpdateURL.txt";
         private const string UPDATE_KEY = "AutoUpdateSignKey.txt";

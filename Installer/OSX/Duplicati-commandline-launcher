@@ -1,7 +1,0 @@
-#!/bin/bash
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-export APP_NAME="Duplicati CommandLine"
-export ASSEMBLY="Duplicati.CommandLine.exe"
-
-bash "${SCRIPT_DIR}/run-with-mono.sh" "$@"

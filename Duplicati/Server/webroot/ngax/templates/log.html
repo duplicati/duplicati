@@ -9,7 +9,7 @@
 
     <div ng-show="Page=='stored'">
         <ul class="entries">
-            <li ng-show="LogData == null" translate>Loading ...</li>
+            <li ng-show="LogData == null" translate>Loading …</li>
             <li ng-repeat="item in LogData">
                 <div ng-click="expanded = !expanded" class="entryline clickable">
                     {{item.Timestamp | parsetimestamp}}: {{item.Message}}
@@ -20,7 +20,7 @@
             </li>
         </ul>
         <div ng-show="LogData != null &amp;&amp; !LogDataComplete" class="button" ng-click="LoadMoreStoredData()">
-            <span ng-show="LoadingData" translate>Loading ...</span>
+            <span ng-show="LoadingData" translate>Loading …</span>
             <span ng-hide="LoadingData" translate>Load older data</span>
         </div>
     </div>

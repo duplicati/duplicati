@@ -26,7 +26,7 @@ namespace DnsLib
         private int position, id, length;
         private string name;
         private ArrayList dnsServers;
-        private static int DNS_PORT = 53;
+        private static readonly int DNS_PORT = 53;
         readonly Encoding ASCII = Encoding.ASCII;
         public DnsLite()
         {

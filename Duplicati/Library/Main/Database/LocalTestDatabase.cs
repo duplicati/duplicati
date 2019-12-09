@@ -164,8 +164,8 @@ namespace Duplicati.Library.Main.Database
         
         private abstract class Basiclist : IDisposable
         {
-              protected System.Data.IDbConnection m_connection;
-              protected string m_volumename;
+              protected readonly System.Data.IDbConnection m_connection;
+              protected readonly string m_volumename;
               protected string m_tablename;
               protected System.Data.IDbTransaction m_transaction;
               protected System.Data.IDbCommand m_insertCommand;

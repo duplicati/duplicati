@@ -97,6 +97,8 @@ cd "Installer/OSX"
 bash "make-dmg.sh" "../../$1"
 mv "Duplicati.dmg" "../../${UPDATE_TARGET}/${DMGNAME}"
 mv "Duplicati.pkg" "../../${UPDATE_TARGET}/${PKGNAME}"
+
+
 cd "../.."
 
 echo ""
@@ -214,6 +216,14 @@ if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 else
 	echo "Skipped authenticode signing as files are missing"
 fi
+
+echo ""
+echo ""
+echo "Performing macOS notarization ..."
+
+# Notarize and staple, cannot run in parallel but takes a while
+bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${DMGNAME}"
+bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${PKGNAME}"
 
 echo ""
 echo ""

@@ -94,13 +94,13 @@ namespace Duplicati.Library.Snapshots
             string[] arrInstalledInstances = null;
 
             var installed = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server", "InstalledInstances", "");
-            if (installed is string)
+            if (installed is string s)
             {
-                if (!string.IsNullOrWhiteSpace(installed as string))
-                    arrInstalledInstances = new string[] { installed as string };
+                if (!string.IsNullOrWhiteSpace(s))
+                    arrInstalledInstances = new string[] { s };
             }
-            else if (installed is string[])
-                arrInstalledInstances = (string[])installed;
+            else if (installed is string[] strings)
+                arrInstalledInstances = strings;
             else if (installed != null)
                 try { arrInstalledInstances = (string[])installed; }
                 catch { }
@@ -108,13 +108,13 @@ namespace Duplicati.Library.Snapshots
             if(Environment.Is64BitOperatingSystem && arrInstalledInstances == null)
             {
                 var installed32on64 = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SQL Server", "InstalledInstances", "");
-                if (installed32on64 is string)
+                if (installed32on64 is string on64)
                 {
-                    if (!string.IsNullOrWhiteSpace(installed32on64 as string))
-                        arrInstalledInstances = new string[] { installed32on64 as string };
+                    if (!string.IsNullOrWhiteSpace(on64))
+                        arrInstalledInstances = new string[] { on64 };
                 }         
-                else if (installed32on64 is string[])
-                    arrInstalledInstances = (string[])installed32on64;
+                else if (installed32on64 is string[] strings)
+                    arrInstalledInstances = strings;
                 else if (installed32on64 != null)
                     try { arrInstalledInstances = (string[])installed32on64; }
                     catch { }

@@ -31,7 +31,7 @@ namespace Duplicati.License
         /// <summary>
         /// The component title
         /// </summary>
-        public string Title;
+        public readonly string Title;
         /// <summary>
         /// The homepage of the component
         /// </summary>
@@ -39,7 +39,7 @@ namespace Duplicati.License
         /// <summary>
         /// The license for the component
         /// </summary>
-        public string License;
+        public readonly string License;
         /// <summary>
         /// The json data
         /// </summary>

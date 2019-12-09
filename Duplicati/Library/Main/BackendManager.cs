@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Net;
 using System.Text;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Database;
@@ -68,7 +69,7 @@ namespace Duplicati.Library.Main
             /// <summary>
             /// The current operation this entry represents
             /// </summary>
-            public OperationType Operation;
+            public readonly OperationType Operation;
             /// <summary>
             /// The name of the remote file
             /// </summary>
@@ -114,7 +115,7 @@ namespace Duplicati.Library.Main
             /// True if an exception ultimately kills the handler,
             /// false if the item is returned with an exception
             /// </summary>
-            public bool ExceptionKillsHandler;
+            public readonly bool ExceptionKillsHandler;
             /// <summary>
             /// A flag indicating if the file is a extra metadata file
             /// that has no entry in the database
@@ -326,17 +327,17 @@ namespace Duplicati.Library.Main
 
                 //As we replace the list, we can now freely access the elements without locking
                 foreach (var e in entries)
-                    if (e is DbOperation)
-                        db.LogRemoteOperation(((DbOperation)e).Action, ((DbOperation)e).File, ((DbOperation)e).Result, transaction);
-                    else if (e is DbUpdate && ((DbUpdate)e).State == RemoteVolumeState.Deleted)
+                    if (e is DbOperation operation)
+                        db.LogRemoteOperation(operation.Action, operation.File, operation.Result, transaction);
+                    else if (e is DbUpdate update && update.State == RemoteVolumeState.Deleted)
                     {
-                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, RemoteVolumeState.Deleted, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, true, TimeSpan.FromHours(2), transaction);
-                        volsRemoved.Add(((DbUpdate)e).Remotename);
+                        db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), transaction);
+                        volsRemoved.Add(update.Remotename);
                     }
-                    else if (e is DbUpdate)
-                        db.UpdateRemoteVolume(((DbUpdate)e).Remotename, ((DbUpdate)e).State, ((DbUpdate)e).Size, ((DbUpdate)e).Hash, transaction);
-                    else if (e is DbRename)
-                        db.RenameRemoteFile(((DbRename)e).Oldname, ((DbRename)e).Newname, transaction);
+                    else if (e is DbUpdate dbUpdate)
+                        db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash, transaction);
+                    else if (e is DbRename rename)
+                        db.RenameRemoteFile(rename.Oldname, rename.Newname, transaction);
                     else if (e != null)
                         Logging.Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
 
@@ -524,10 +525,10 @@ namespace Duplicati.Library.Main
                                 throw;
                             }
 
-                            if (ex is System.Net.WebException)
+                            if (ex is WebException exception)
                             {
                                 // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
-                                if (((System.Net.WebException)ex).Status == System.Net.WebExceptionStatus.NameResolutionFailure)
+                                if (exception.Status == System.Net.WebExceptionStatus.NameResolutionFailure)
                                 {
                                     try
                                     {
@@ -656,11 +657,9 @@ namespace Duplicati.Library.Main
                     item.IndexfileUpdated = true;
                 }
 
-                IndexVolumeWriter wr = null;
-                try
+                var hashsize = HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                using (IndexVolumeWriter wr = new IndexVolumeWriter(m_options))
                 {
-                    var hashsize = HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
-                    wr = new IndexVolumeWriter(m_options);
                     using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);
                     item.Indexfile.Item1.Dispose();
@@ -668,15 +667,6 @@ namespace Duplicati.Library.Main
                     item.Indexfile.Item2.LocalTempfile.Dispose();
                     item.Indexfile.Item2.LocalTempfile = wr.TempFile;
                     wr.Close();
-                }
-                catch
-                {
-                    if (wr != null)
-                        try { wr.Dispose(); }
-                        catch { }
-                        finally { wr = null; }
-
-                    throw;
                 }
             }
         }
@@ -1106,7 +1096,7 @@ namespace Duplicati.Library.Main
 
                 if (isFileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailed", ex, LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileFailed", LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename));
                     bool success = false;
 
                     try
@@ -1119,10 +1109,13 @@ namespace Duplicati.Library.Main
 
                     if (success)
                     {
-                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileSuccess", LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
+                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileSuccess", LC.L("Listing indicates file {0} was deleted correctly", item.RemoteFilename));
                         return;
                     }
-
+                    else
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailed", ex, LC.L("Listing confirms file {0} was not deleted", item.RemoteFilename));
+                    }
                 }
 
                 result = ex.ToString();

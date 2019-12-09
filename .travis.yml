@@ -1,7 +1,7 @@
 dist: bionic
 language: csharp
 solution: Duplicati.sln
-dotnet: 2.2.0
+dotnet: 2.2.207
 install:
   - dotnet restore Duplicati.sln
   - nuget restore Duplicati.sln
@@ -65,6 +65,7 @@ jobs:
     - env: CATEGORY=WebApi
     - env: CATEGORY=IO
     - env: CATEGORY=ImportExport
+    - env: CATEGORY=Disruption
 
     - env: CATEGORY=GUI
       addons:

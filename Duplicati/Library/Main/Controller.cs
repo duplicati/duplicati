@@ -1,5 +1,5 @@
 ﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2019, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
 // This library is free software; you can redistribute it and/or
@@ -16,15 +16,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
-using System.Linq;
-
-
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main
 {
@@ -83,6 +83,11 @@ namespace Duplicati.Library.Main
         private ControllerMultiLogTarget m_logTarget;
 
         /// <summary>
+        /// The cancellation token for the running task
+        /// </summary>
+        private readonly CancellationTokenSource m_cancellationTokenSource = new CancellationTokenSource();
+
+        /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
         /// <param name="backend">The url for the backend to use</param>
@@ -100,8 +105,8 @@ namespace Duplicati.Library.Main
         /// <param name="sink">The sink to use.</param>
         public void AppendSink(IMessageSink sink)
         {
-            if (m_messageSink is MultiMessageSink)
-                ((MultiMessageSink)m_messageSink).Append(sink);
+            if (this.m_messageSink is MultiMessageSink messageSink)
+                messageSink.Append(sink);
             else
                 m_messageSink = new MultiMessageSink(m_messageSink, sink);
         }
@@ -118,7 +123,9 @@ namespace Duplicati.Library.Main
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) => {
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
-                    h.Run(ExpandInputSources(inputsources, filter), filter);
+                {
+                    h.Run(ExpandInputSources(inputsources, filter), filter, m_cancellationTokenSource.Token);
+                }
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
                 Library.UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
@@ -293,7 +300,7 @@ namespace Duplicati.Library.Main
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
                 {
-                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter);
+                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter, m_cancellationTokenSource.Token);
                 });
             }
         }
@@ -482,13 +489,13 @@ namespace Duplicati.Library.Main
             if (m_options != null && m_options.LoadedModules != null)
             {
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is Duplicati.Library.Interface.IGenericCallbackModule)
-                        try { ((Duplicati.Library.Interface.IGenericCallbackModule)mx.Value).OnFinish(result); }
+                    if (mx.Key && mx.Value is IGenericCallbackModule module)
+                        try { module.OnFinish(result); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
 
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
-                    if (mx.Key && mx.Value is IDisposable)
-                        try { ((IDisposable)mx.Value).Dispose(); }
+                    if (mx.Key && mx.Value is IDisposable disposable)
+                        try { disposable.Dispose(); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"DisposeError{mx.Key}", ex, "Dispose for {0} failed: {1}", mx.Key, ex.Message); }
 
                 m_options.LoadedModules.Clear();
@@ -569,10 +576,8 @@ namespace Duplicati.Library.Main
                     else
                         mx.Value.Configure(m_options.RawOptions);
 
-                    if (mx.Value is Library.Interface.IGenericSourceModule)
+                    if (mx.Value is IGenericSourceModule sourcemodule)
                     {
-                        var sourcemodule = (Library.Interface.IGenericSourceModule)mx.Value;
-
                         if (sourcemodule.ContainFilesForBackup(paths))
                         {
                             var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
@@ -582,8 +587,8 @@ namespace Duplicati.Library.Main
                         }
                     }
 
-                    if (mx.Value is Library.Interface.IGenericCallbackModule)
-                        ((Library.Interface.IGenericCallbackModule)mx.Value).OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
+                    if (mx.Value is IGenericCallbackModule module)
+                        module.OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
 
             // If the filters were changed by a module, read them back in
@@ -797,10 +802,6 @@ namespace Duplicati.Library.Main
             // For now, warn not to use 7z
             if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "7zModuleHasIssues", null, "The 7z compression module has known issues and should only be used for experimental purposes");
-
-            // Amazon CD is closing August 16th 2019
-			if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "amzcd", StringComparison.OrdinalIgnoreCase))
-				Logging.Log.WriteWarningMessage(LOGTAG, "AmzCDClosingApi", null, "The Amazon Cloud Drive API is closing down on August 16th 2019, please migrate your backups before this date");
 
 			//TODO: Based on the action, see if all options are relevant
 		}
@@ -1072,11 +1073,16 @@ namespace Duplicati.Library.Main
                 ct.Resume();
         }
 
-        public void Stop()
+        public void Stop(bool allowCurrentFileToFinish)
         {
             var ct = m_currentTask;
-            if (ct != null)
-                ct.Stop();
+            if (ct == null) return;
+            if (allowCurrentFileToFinish)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "CancellationRequested", "Cancellation Requested");
+                m_cancellationTokenSource.Cancel();
+            }
+            ct.Stop(allowCurrentFileToFinish);
         }
 
         public void Abort()

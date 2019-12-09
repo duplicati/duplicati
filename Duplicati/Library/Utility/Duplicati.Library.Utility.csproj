@@ -11,7 +11,6 @@
     <Description>A collection of utility functions used extensively in Duplicati</Description>
     <PackageId>Utility</PackageId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.5.0" />
     <PackageReference Include="System.Management" Version="4.5.0" />

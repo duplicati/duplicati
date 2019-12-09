@@ -13,7 +13,6 @@
     <AssemblyName>Duplicati.Backend.AlternativeFTP</AssemblyName>
     <RootNamespace>Duplicati.Backend.AlternativeFTP</RootNamespace>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="FluentFTP" Version="27.0.3" />
   </ItemGroup>

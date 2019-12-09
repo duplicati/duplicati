@@ -11,7 +11,6 @@
     <Description>S3 backend for Duplicati</Description>
     <PackageId>S3</PackageId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="AWSSDK.Core" Version="3.3.103.33" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.103.22" />

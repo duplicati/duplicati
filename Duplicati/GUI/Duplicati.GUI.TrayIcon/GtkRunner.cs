@@ -25,7 +25,7 @@ namespace Duplicati.GUI.TrayIcon
 {
     public class GtkRunner : TrayIconBase
     {
-        private static string m_svgfolder;
+        private static readonly string m_svgfolder;
 
         /// <summary>
         /// Static constructor that ensures the Gtk environment is initialized
@@ -46,9 +46,9 @@ namespace Duplicati.GUI.TrayIcon
         
         private class MenuItemWrapper : IMenuItem
         {
-            private MenuItem m_item;
-            private System.Action m_callback;
-            private static Dictionary<MenuIcons, Gtk.Image> _icons = new Dictionary<MenuIcons, Gtk.Image>();
+            private readonly MenuItem m_item;
+            private readonly System.Action m_callback;
+            private static readonly Dictionary<MenuIcons, Gtk.Image> _icons = new Dictionary<MenuIcons, Gtk.Image>();
             
             public MenuItem MenuItem { get { return m_item; } }
 
@@ -164,7 +164,7 @@ namespace Duplicati.GUI.TrayIcon
         protected StatusIcon m_trayIcon;
         protected Menu m_popupMenu;
         
-        protected static Dictionary<TrayIcons, Pixbuf> _images = new Dictionary<TrayIcons, Pixbuf>();
+        protected static readonly Dictionary<TrayIcons, Pixbuf> _images = new Dictionary<TrayIcons, Pixbuf>();
 
         protected override void Exit ()
         {

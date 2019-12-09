@@ -103,6 +103,7 @@ namespace Duplicati.Library.Compression
         /// The ZipArchive instance used when reading archives
         /// </summary>
         private IArchive m_archive;
+
         /// <summary>
         /// The stream used to either read or write
         /// </summary>
@@ -202,7 +203,7 @@ namespace Duplicati.Library.Compression
         /// you may reuse it and have to dispose it yourself.
         /// </summary>
         /// <param name="stream">The stream to read or write depending access mode</param>
-        /// <param name="mode">The archive acces mode</param>
+        /// <param name="mode">The archive access mode</param>
         /// <param name="options">The options passed on the commandline</param>
         public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string> options)
         {
@@ -328,8 +329,8 @@ namespace Duplicati.Library.Compression
             if (ze == null)
                 return null;
 
-            if (ze is IArchiveEntry)
-                return ((IArchiveEntry)ze).OpenEntryStream();
+            if (ze is IArchiveEntry entry)
+                return entry.OpenEntryStream();
             else if (ze is SharpCompress.Common.Zip.ZipEntry)
                 return GetStreamFromReader(ze);
 
@@ -410,7 +411,7 @@ namespace Duplicati.Library.Compression
 
             return null;
         }
-
+        
         /// <summary>
         /// Creates a file in the archive and returns a writeable stream
         /// </summary>
@@ -433,9 +434,8 @@ namespace Duplicati.Library.Compression
                 ModificationDateTime = lastWrite,
                 CompressionType = m_compressionType
             });
-
         }
-
+        
         /// <summary>
         /// Returns a value that indicates if the file exists
         /// </summary>

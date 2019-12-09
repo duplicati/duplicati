@@ -352,7 +352,7 @@ namespace Duplicati.Server.WebServer
             /// <summary>
             /// The hostnames that are always allowed
             /// </summary>
-            private static string[] DEFAULT_ALLOWED = new string[] { "localhost", "127.0.0.1", "::1", "localhost.localdomain" };
+            private static readonly string[] DEFAULT_ALLOWED = new string[] { "localhost", "127.0.0.1", "::1", "localhost.localdomain" };
 
             /// <summary>
             /// Process the received request
