@@ -1,8 +1,9 @@
 dist: bionic
 language: csharp
 solution: Duplicati.sln
-dotnet: 2.0.0
+dotnet: 2.2.0
 install:
+  - dotnet restore Duplicati.sln
   - nuget restore Duplicati.sln
   - nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory testrunner
   - sudo pip install --upgrade pip
