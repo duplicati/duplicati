@@ -235,6 +235,8 @@ namespace Duplicati.GUI.TrayIcon
                     return "normal-pause";
                 case TrayIcons.Running:
                     return "normal-running";
+                case TrayIcons.IdleWarning:
+                    return "normal-warning";
                 case TrayIcons.IdleError:
                     return "normal-error";
                 case TrayIcons.RunningError:
@@ -260,6 +262,9 @@ namespace Duplicati.GUI.TrayIcon
                             break;
                         case TrayIcons.Running:
                             _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.WorkingIcon).ToBitmap());
+                            break;
+                        case TrayIcons.IdleWarning:
+                            _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.WarningIcon).ToBitmap());
                             break;
                         case TrayIcons.IdleError:
                             _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.ErrorIcon).ToBitmap());

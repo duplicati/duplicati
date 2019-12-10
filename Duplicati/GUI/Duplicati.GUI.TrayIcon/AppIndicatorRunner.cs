@@ -65,6 +65,9 @@ namespace Duplicati.GUI.TrayIcon
                 case TrayIcons.Running:
                     m_appIndicator.IconDesc = "Running";
                     break;
+                case TrayIcons.IdleWarning:
+                    m_appIndicator.IconDesc = "Warning";
+                    break;
                 case TrayIcons.IdleError:
                     m_appIndicator.IconDesc = "Error";
                     break;
