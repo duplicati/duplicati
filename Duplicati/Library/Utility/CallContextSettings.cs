@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-
+using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Logging.Duplicati.Library.Logging;
 
@@ -307,7 +307,7 @@ namespace Duplicati.Library.Utility
             /// <summary>
             /// Randomly generated identifier
             /// </summary>
-            private readonly string ID = Guid.NewGuid().ToString();
+            private AsyncLocal<string> _contextId = new AsyncLocal<string>();
 
             /// <summary>
             /// Initializes a new instance of the
@@ -316,7 +316,7 @@ namespace Duplicati.Library.Utility
             /// </summary>
             public ContextGuard()
             {
-                CallContext.LogicalSetData(contextSettingsType, ID);
+                _contextId.Value = Guid.NewGuid().ToString();
             }
 
             /// <summary>
@@ -335,10 +335,10 @@ namespace Duplicati.Library.Utility
                 lock (_lock)
                 {
                     // Release the resources, if any
-                    _settings.Remove(ID);
+                    _settings.Remove(_contextId.Value);
                 }
 
-                CallContext.SetData(contextSettingsType, null);
+                _contextId.Value = null;
             }
         }
 

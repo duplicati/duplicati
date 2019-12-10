@@ -26,9 +26,8 @@ echo "Build script starting with parameters TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR a
 
 # build duplicati
 
-list_dir "${TRAVIS_BUILD_DIR}"/packages/
 echo "travis_fold:start:build_duplicati"
-msbuild /p:Configuration=Release Duplicati.sln
+dotnet build --configuration Release Duplicati.sln
 cp -r ./Duplicati/Server/webroot ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 echo "travis_fold:end:build_duplicati"
 
@@ -39,15 +38,15 @@ chmod -R 755 ~/duplicati_testdata
 # run unit tests
 echo "travis_fold:start:unit_test"
 if [[ "$CATEGORY" != "GUI"  && "$CATEGORY" != "" ]]; then
-    mono ./testrunner/NUnit.ConsoleRunner.3.10.0/tools/nunit3-console.exe \
-    ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==$CATEGORY --workers=1
+    dotnet test ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll \
+    --where:cat==$CATEGORY --workers=1
 fi
 echo "travis_fold:end:unit_test"
 
 # start server and run gui tests
 echo "travis_fold:start:gui_unit_test"
 if [[ "$CATEGORY" == "GUI" ]]; then
-    mono ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
+    dotnet ./Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
     python guiTests/guiTest.py
 fi
 echo "travis_fold:end:gui_unit_test"

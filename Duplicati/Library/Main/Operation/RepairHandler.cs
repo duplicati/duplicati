@@ -346,8 +346,6 @@ namespace Duplicati.Library.Main.Operation
                                     newEntry = w;
                                     w.SetRemoteFilename(n.Name);
 
-                                    var h = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-
                                     foreach (var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
                                     {
                                         w.StartVolume(blockvolume.Name);
