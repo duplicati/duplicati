@@ -20,8 +20,8 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Globalization;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -30,11 +30,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// The tag used for logging
         /// </summary>
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<DeleteHandler>();
-        /// <summary>
-        /// The tag used for logging retention policy messages
-        /// </summary>
-        private static readonly string LOGTAG_RETENTION = LOGTAG + ":RetentionPolicy";
+        internal static readonly string LOGTAG = Logging.Log.LogTagFromType<DeleteHandler>();
 
         private readonly DeleteResults m_result;
         protected readonly string m_backendurl;
@@ -92,19 +88,25 @@ namespace Duplicati.Library.Main.Operation
                 var backend = bk ?? sharedManager;
 
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter); 
-                
-                var filesetNumbers = db.FilesetTimes.Zip(Enumerable.Range(0, db.FilesetTimes.Count()), (a, b) => new Tuple<long, DateTime>(b, a.Value)).ToList();
-                var sets = db.FilesetTimes.Select(x => x.Value).ToArray();
-                var toDelete = GetFilesetsToDelete(db, sets);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
 
-                if (!m_options.AllowFullRemoval && sets.Length == toDelete.Length)
+                IListResultFileset[] filesets = db.Filesets.ToArray();
+                List<IListResultFileset> versionsToDelete = new List<IListResultFileset>();
+                versionsToDelete.AddRange(new SpecificVersionsRemover(this.m_options).GetFilesetsToDelete(filesets));
+                versionsToDelete.AddRange(new KeepTimeRemover(this.m_options).GetFilesetsToDelete(filesets));
+                versionsToDelete.AddRange(new RetentionPolicyRemover(this.m_options).GetFilesetsToDelete(filesets));
+
+                // When determining the number of full versions to keep, we need to ignore the versions already marked for removal.
+                versionsToDelete.AddRange(new KeepVersionsRemover(this.m_options).GetFilesetsToDelete(filesets.Except(versionsToDelete)));
+
+                DateTime[] toDelete = versionsToDelete.Select(x => x.Time.ToUniversalTime()).Distinct().OrderByDescending(x => x).ToArray();
+                if (!m_options.AllowFullRemoval && filesets.Length == toDelete.Length)
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "PreventingLastFilesetRemoval", "Preventing removal of last fileset, use --{0} to allow removal ...", "allow-full-removal");
                     toDelete = toDelete.Skip(1).ToArray();
                 }
 
-                if (toDelete != null && toDelete.Length > 0)
+                if (toDelete.Length > 0)
                     Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", toDelete.Length);
 
                 var lst = db.DropFilesetsFromTable(toDelete, transaction).ToArray();
@@ -156,222 +158,233 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteHelp", "Remove --dry-run to actually delete files");
                 }
                 
-                if (!m_options.NoAutoCompact && (forceCompact || (toDelete != null && toDelete.Length > 0)))
+                if (!m_options.NoAutoCompact && (forceCompact || toDelete.Length > 0))
                 {
                     m_result.CompactResults = new CompactResults(m_result);
                     new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref transaction, sharedManager);
                 }
-                
-                m_result.SetResults(
-                    from n in filesetNumbers
-                    where toDelete.Contains(n.Item2)
-                    select n, 
-                    m_options.Dryrun);
+
+                m_result.SetResults(versionsToDelete.Select(v => new Tuple<long, DateTime>(v.Version, v.Time)), m_options.Dryrun);
             }
         }
+    }
 
-        /// <summary>
-        /// Gets the filesets selected for deletion
-        /// </summary>
-        /// <returns>The filesets to delete</returns>
-        /// <param name="allBackups">The list of backups that can be deleted</param>
-        private DateTime[] GetFilesetsToDelete(Database.LocalDeleteDatabase db, DateTime[] allBackups)
+    public abstract class FilesetRemover
+    {
+        protected readonly Options Options;
+
+        protected FilesetRemover(Options options)
         {
-            if (allBackups.Length == 0)
-            {
-                return allBackups;
-            }
+            this.Options = options;
+        }
 
-            DateTime[] sortedAllBackups = allBackups.OrderByDescending(x => x.ToUniversalTime()).ToArray();
+        public abstract IEnumerable<IListResultFileset> GetFilesetsToDelete(IEnumerable<IListResultFileset> filesets);
+    }
 
-            if (sortedAllBackups.Select(x => x.ToUniversalTime()).Distinct().Count() != sortedAllBackups.Length)
-            {
-                throw new Exception($"List of backup timestamps contains duplicates: {string.Join(", ", sortedAllBackups.Select(x => x.ToString()))}");
-            }
+    /// <summary>
+    /// Keep backups that are newer than the date specified by the --keep-time option.
+    /// If none of the retained versions are full backups, then continue to keep versions
+    /// until we have a full backup.
+    /// </summary>
+    public class KeepTimeRemover : FilesetRemover
+    {
+        public KeepTimeRemover(Options options) : base(options)
+        {
+        }
 
-            List<DateTime> toDelete = new List<DateTime>();
+        public override IEnumerable<IListResultFileset> GetFilesetsToDelete(IEnumerable<IListResultFileset> filesets)
+        {
+            IListResultFileset[] sortedFilesets = filesets.OrderByDescending(x => x.Time).ToArray();
+            List<IListResultFileset> versionsToDelete = new List<IListResultFileset>();
 
-            // Remove backups explicitly specified via option
-            var versions = m_options.Version;
-            if (versions != null && versions.Length > 0)
-            {
-                foreach (var ix in versions.Distinct())
-                {
-                    if (ix >= 0 && ix < sortedAllBackups.Length)
-                    {
-                        toDelete.Add(sortedAllBackups[ix]);
-                    }
-                }
-            }
-
-            // Remove backups that are older than date specified via option while ensuring
-            // that we always have at least one full backup.
-            var keepTime = m_options.KeepTime;
-            if (keepTime.Ticks > 0)
+            DateTime earliestTime = this.Options.KeepTime;
+            if (earliestTime.Ticks > 0)
             {
                 bool haveFullBackup = false;
-                toDelete.AddRange(sortedAllBackups.SkipWhile(x =>
+                versionsToDelete.AddRange(sortedFilesets.SkipWhile(x =>
                 {
-                    bool keepBackup = (x >= keepTime) || !haveFullBackup;
-                    haveFullBackup = haveFullBackup || db.IsFilesetFullBackup(x);
+                    bool keepBackup = (x.Time >= earliestTime) || !haveFullBackup;
+                    haveFullBackup = haveFullBackup || (x.IsFullBackup == BackupType.FULL_BACKUP);
                     return keepBackup;
                 }));
             }
 
-            // Remove backups via retention policy option
-            toDelete.AddRange(ApplyRetentionPolicy(db, sortedAllBackups));
+            return versionsToDelete;
+        }
+    }
+
+    /// <summary>
+    /// Keep a number of recent full backups as specified by the --keep-versions option.
+    /// Partial backups that are surrounded by full backups will also be removed.
+    /// </summary>
+    public class KeepVersionsRemover : FilesetRemover
+    {
+        public KeepVersionsRemover(Options options) : base(options)
+        {
+        }
+
+        public override IEnumerable<IListResultFileset> GetFilesetsToDelete(IEnumerable<IListResultFileset> filesets)
+        {
+            IListResultFileset[] sortedFilesets = filesets.OrderByDescending(x => x.Time).ToArray();
+            List<IListResultFileset> versionsToDelete = new List<IListResultFileset>();
 
             // Check how many full backups will be remaining after the previous steps
             // and remove oldest backups while there are still more backups than should be kept as specified via option
-            var backupsRemaining = sortedAllBackups.Except(toDelete).ToList();
-            var fullVersionsToKeep = m_options.KeepVersions;
-            if (fullVersionsToKeep > 0 && fullVersionsToKeep < backupsRemaining.Count)
+            int fullVersionsToKeep = this.Options.KeepVersions;
+            if (fullVersionsToKeep > 0 && fullVersionsToKeep < sortedFilesets.Length)
             {
                 int fullVersionsKept = 0;
-                ISet<DateTime> intermediatePartials = new HashSet<DateTime>();
+                ISet<IListResultFileset> intermediatePartials = new HashSet<IListResultFileset>();
 
                 // Enumerate the collection starting from the most recent full backup.
-                foreach (DateTime backup in backupsRemaining.SkipWhile(x => !db.IsFilesetFullBackup(x)))
+                foreach (IListResultFileset fileset in sortedFilesets.SkipWhile(x => x.IsFullBackup == BackupType.PARTIAL_BACKUP))
                 {
                     if (fullVersionsKept >= fullVersionsToKeep)
                     {
                         // If we have enough full backups, delete all older backups.
-                        toDelete.Add(backup);
+                        versionsToDelete.Add(fileset);
                     }
-                    else if (db.IsFilesetFullBackup(backup))
+                    else if (fileset.IsFullBackup == BackupType.FULL_BACKUP)
                     {
                         // We can delete partial backups that are surrounded by full backups.
-                        toDelete.AddRange(intermediatePartials);
+                        versionsToDelete.AddRange(intermediatePartials);
                         intermediatePartials.Clear();
                         fullVersionsKept++;
                     }
                     else
                     {
-                        intermediatePartials.Add(backup);
+                        intermediatePartials.Add(fileset);
                     }
                 }
             }
 
-            var toDeleteDistinct = toDelete.Distinct().OrderByDescending(x => x.ToUniversalTime()).ToArray();
-            var removeCount = toDeleteDistinct.Length;
-            if (removeCount > sortedAllBackups.Length)
-            {
-                throw new Exception($"Too many entries {removeCount} vs {sortedAllBackups.Length}, lists: {string.Join(", ", toDeleteDistinct.Select(x => x.ToString(CultureInfo.InvariantCulture)))} vs {string.Join(", ", sortedAllBackups.Select(x => x.ToString(CultureInfo.InvariantCulture)))}");
-            }
+            return versionsToDelete;
+        }
+    }
 
-            return toDeleteDistinct;
+    /// <summary>
+    /// Remove backups according to the --retention-policy option.
+    /// Backups that are not within any of the specified time frames will will NOT be deleted.
+    /// Partial backups are not removed.
+    /// </summary>
+    public class RetentionPolicyRemover : FilesetRemover
+    {
+        private static readonly string LOGTAG_RETENTION = DeleteHandler.LOGTAG + ":RetentionPolicy";
+
+        public RetentionPolicyRemover(Options options) : base(options)
+        {
         }
 
-        /// <summary>
-        /// Deletes backups according to the retention policy configuration.
-        /// Backups that are not within any of the specified time frames will will NOT be deleted.
-        /// </summary>
-        /// <returns>The filesets to delete</returns>
-        /// <param name="backups">The list of backups that can be deleted</param>
-        private List<DateTime> ApplyRetentionPolicy(Database.LocalDeleteDatabase db, DateTime[] backups)
+        public override IEnumerable<IListResultFileset> GetFilesetsToDelete(IEnumerable<IListResultFileset> filesets)
         {
-            // Any work to do?
-            var retentionPolicyOptionValues = m_options.RetentionPolicy;
-            if (retentionPolicyOptionValues.Count == 0 || backups.Length == 0)
+            IListResultFileset[] sortedFilesets = filesets.OrderByDescending(x => x.Time).ToArray();
+            List<IListResultFileset> versionsToDelete = new List<IListResultFileset>();
+
+            List<Options.RetentionPolicyValue> retentionPolicyOptionValues = this.Options.RetentionPolicy;
+            if (retentionPolicyOptionValues.Count == 0 || sortedFilesets.Length == 0)
             {
-                return new List<DateTime>(); // don't delete any backups
+                return versionsToDelete;
             }
 
             Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "StartCheck", "Start checking if backups can be removed");
 
             // Work with a copy to not modify the enumeration that the caller passed
-            List<DateTime> clonedBackupList = new List<DateTime>(backups);
-
-            // Make sure the backups are in descending order (newest backup in the beginning)
-            clonedBackupList = clonedBackupList.OrderByDescending(x => x).ToList();
+            List<IListResultFileset> clonedBackupList = new List<IListResultFileset>(sortedFilesets);
 
             // Most recent backup usually should never get deleted in this process, so exclude it for now,
             // but keep a reference to potential delete it when allow-full-removal is set
-            var mostRecentBackup = clonedBackupList.ElementAt(0);
+            IListResultFileset mostRecentBackup = clonedBackupList.ElementAt(0);
             clonedBackupList.RemoveAt(0);
-            var deleteMostRecentBackup = m_options.AllowFullRemoval;
+            bool deleteMostRecentBackup = this.Options.AllowFullRemoval;
 
-            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "FramesAndIntervals", "Time frames and intervals pairs: {0}",
-                string.Join(", ", retentionPolicyOptionValues));
-
-            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "BackupList", "Backups to consider: {0}",
-                string.Join(", ", clonedBackupList));
+            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "FramesAndIntervals", "Time frames and intervals pairs: {0}", string.Join(", ", retentionPolicyOptionValues));
+            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "BackupList", "Backups to consider: {0}", string.Join(", ", clonedBackupList));
 
             // Collect all potential backups in each time frame and thin out according to the specified interval,
             // starting with the oldest backup in that time frame.
             // The order in which the time frames values are checked has to be from the smallest to the largest.
-            List<DateTime> backupsToDelete = new List<DateTime>();
-            var now = DateTime.Now;
-            foreach (var singleRetentionPolicyOptionValue in retentionPolicyOptionValues.OrderBy(x => x.Timeframe))
+            DateTime now = DateTime.Now;
+            foreach (Options.RetentionPolicyValue singleRetentionPolicyOptionValue in retentionPolicyOptionValues.OrderBy(x => x.Timeframe))
             {
                 // The timeframe in the retention policy option is only a timespan which has to be applied to the current DateTime to get the actual lower bound
                 DateTime timeFrame = (singleRetentionPolicyOptionValue.IsUnlimtedTimeframe()) ? DateTime.MinValue : (now - singleRetentionPolicyOptionValue.Timeframe);
 
                 Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "NextTimeAndFrame", "Next time frame and interval pair: {0}", singleRetentionPolicyOptionValue.ToString());
 
-                List<DateTime> backupsInTimeFrame = new List<DateTime>();
-                while (clonedBackupList.Count > 0 && clonedBackupList[0] >= timeFrame)
+                List<IListResultFileset> backupsInTimeFrame = new List<IListResultFileset>();
+                while (clonedBackupList.Count > 0 && clonedBackupList[0].Time >= timeFrame)
                 {
                     backupsInTimeFrame.Insert(0, clonedBackupList[0]); // Insert at beginning to reverse order, which is necessary for next step
                     clonedBackupList.RemoveAt(0); // remove from here to not handle the same backup in two time frames
                 }
 
-                Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "BackupsInFrame", "Backups in this time frame: {0}",
-                    string.Join(", ", backupsInTimeFrame));
+                Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "BackupsInFrame", "Backups in this time frame: {0}", string.Join(", ", backupsInTimeFrame));
 
                 // Run through backups in this time frame
-                DateTime? lastKept = null;
-                foreach (DateTime backup in backupsInTimeFrame)
+                IListResultFileset lastKept = null;
+                foreach (IListResultFileset fileset in backupsInTimeFrame)
                 {
-                    var isFullBackup = db.IsFilesetFullBackup(backup);
+                    bool isFullBackup = fileset.IsFullBackup == BackupType.FULL_BACKUP;
 
                     // Keep this backup if
                     // - no backup has yet been added to the time frame (keeps at least the oldest backup in a time frame)
                     // - difference between last added backup and this backup is bigger than the specified interval
-                    if (lastKept == null || singleRetentionPolicyOptionValue.IsKeepAllVersions() || (backup - lastKept.Value) >= singleRetentionPolicyOptionValue.Interval)
+                    if (lastKept == null || singleRetentionPolicyOptionValue.IsKeepAllVersions() || (fileset.Time - lastKept.Time) >= singleRetentionPolicyOptionValue.Interval)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", $"Keeping {(isFullBackup ? "" : "partial")} backup: {backup}", Logging.LogMessageType.Profiling);
+                        Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", $"Keeping {(isFullBackup ? "" : "partial")} backup: {fileset}", Logging.LogMessageType.Profiling);
                         if (isFullBackup)
                         {
-                            lastKept = backup;
+                            lastKept = fileset;
                         }
                     }
                     else
                     {
                         if (isFullBackup)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "DeletingBackups",
-                                "Deleting backup: {0}", backup);
-                            backupsToDelete.Add(backup);
+                            Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "DeletingBackups", "Deleting backup: {0}", fileset);
+                            versionsToDelete.Add(fileset);
                         }
                         else
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", $"Keeping partial backup: {backup}", Logging.LogMessageType.Profiling);
+                            Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", $"Keeping partial backup: {fileset}", Logging.LogMessageType.Profiling);
                         }
                     }
                 }
 
                 // Check if most recent backup is outside of this time frame (meaning older/smaller)
-                deleteMostRecentBackup &= (mostRecentBackup < timeFrame);
+                deleteMostRecentBackup &= (mostRecentBackup.Time < timeFrame);
             }
 
             // Delete all remaining backups
-            backupsToDelete.AddRange(clonedBackupList);
-            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "BackupsToDelete", "Backups outside of all time frames and thus getting deleted: {0}",
-                    string.Join(", ", clonedBackupList));
+            versionsToDelete.AddRange(clonedBackupList);
+            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "BackupsToDelete", "Backups outside of all time frames and thus getting deleted: {0}", string.Join(", ", clonedBackupList));
 
             // Delete most recent backup if allow-full-removal is set and the most current backup is outside of any time frame
             if (deleteMostRecentBackup)
             {
-                backupsToDelete.Add(mostRecentBackup);
-                Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "DeleteMostRecent", "Deleting most recent backup: {0}",
-                    mostRecentBackup);
+                versionsToDelete.Add(mostRecentBackup);
+                Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "DeleteMostRecent", "Deleting most recent backup: {0}", mostRecentBackup);
             }
 
-            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "AllBackupsToDelete", "All backups to delete: {0}",
-                    string.Join(", ", backupsToDelete.OrderByDescending(x => x)));
+            Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "AllBackupsToDelete", "All backups to delete: {0}", string.Join(", ", versionsToDelete.OrderByDescending(x => x.Time)));
 
-            return backupsToDelete;
+            return versionsToDelete;
+        }
+    }
+
+    /// <summary>
+    /// Remove versions specified by the --version option.
+    /// </summary>
+    public class SpecificVersionsRemover : FilesetRemover
+    {
+        public SpecificVersionsRemover(Options options) : base(options)
+        {
+        }
+
+        public override IEnumerable<IListResultFileset> GetFilesetsToDelete(IEnumerable<IListResultFileset> filesets)
+        {
+            ISet<long> versionsToDelete = new HashSet<long>(this.Options.Version ?? new long[0]);
+            return filesets.Where(x => versionsToDelete.Contains(x.Version));
         }
     }
 }

@@ -17,9 +17,11 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -104,6 +106,26 @@ namespace Duplicati.Library.Main.Database
                 using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
                 while (rd.Read())
                     yield return new KeyValuePair<string, long>(rd.GetString(0), rd.ConvertValueToInt64(1));
+            }
+        }
+
+        public IEnumerable<IListResultFileset> Filesets
+        {
+            get
+            {
+                List<IListResultFileset> filesets = new List<IListResultFileset>();
+                using (IDbCommand cmd = this.m_connection.CreateCommand())
+                {
+                    using (IDataReader reader = cmd.ExecuteReader(@"SELECT ""ID"", ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
+                    {
+                        while (reader.Read())
+                        {
+                            filesets.Add(new ListResultFileset(reader.GetInt64(0), reader.GetInt32(1), ParseFromEpochSeconds(reader.GetInt64(2)).ToLocalTime(), -1L, -1L));
+                        }
+                    }
+                }
+
+                return filesets;
             }
         }
 
