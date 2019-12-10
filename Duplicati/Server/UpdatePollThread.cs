@@ -174,7 +174,7 @@ namespace Duplicati.Server
                             Program.DataConnection.ApplicationSettings.UpdatedVersion = null;
                     }
 
-                    if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(Program.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
+                    if (Duplicati.Library.AutoUpdater.UpdaterManager.ShowUpdateNotification && Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(Program.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
                         Program.DataConnection.RegisterNotification(
                                     NotificationType.Information,
