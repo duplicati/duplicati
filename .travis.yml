@@ -9,7 +9,6 @@ install:
   - sudo pip install --upgrade pip
   - sudo pip install selenium
   - sudo pip install --upgrade urllib3
-  - if [ ! -d "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.24.0 ]; then ln -s "${TRAVIS_BUILD_DIR}"/packages/sharpcompress.0.24.0 "${TRAVIS_BUILD_DIR}"/packages/SharpCompress.0.24.0; fi
 addons:
   coverity_scan:
     project:
