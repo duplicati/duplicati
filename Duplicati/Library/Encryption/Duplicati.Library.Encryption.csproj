@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="SharpAESCrypt.dll" Version="1.3.3" />
-    <PackageReference Include="SharpAESCrypt.exe" Version="1.3.3" />
   </ItemGroup>
 
   <ItemGroup>
