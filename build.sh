@@ -38,8 +38,8 @@ chmod -R 755 ~/duplicati_testdata
 # run unit tests
 echo "travis_fold:start:unit_test"
 if [[ "$CATEGORY" != "GUI"  && "$CATEGORY" != "" ]]; then
-    dotnet test ./Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll \
-    --no-build --filter Category=$CATEGORY -- NumberOfTestWorkers=1
+    echo Running command 'dotnet test ./Duplicati/UnitTest/bin/Release/netcoreapp2.2/Duplicati.UnitTest.dll --no-build --filter Category=$CATEGORY -- NumberOfTestWorkers=1'
+    dotnet test ./Duplicati/UnitTest/bin/Release/netcoreapp2.2/Duplicati.UnitTest.dll --no-build --filter Category=$CATEGORY
 fi
 echo "travis_fold:end:unit_test"
 
