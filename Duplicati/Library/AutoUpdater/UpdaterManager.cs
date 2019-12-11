@@ -86,7 +86,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// Show UI notification when update is found - default is True
         /// </summary>
-        public static bool ShowUpdateNotification { get { return Duplicati.Library.Utility.Utility.ParseBool(System.Environment.GetEnvironmentVariable(string.Format(UPDATE_NOTIFY_ENVNAME_TEMPLATE, APPNAME)), true); } }
+        public static bool ShowUpdateNotification { get { return Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(UPDATE_NOTIFY_ENVNAME_TEMPLATE, APPNAME)), true); } }
 
         /// <summary>
         /// Gets the original directory that this application was installed into
