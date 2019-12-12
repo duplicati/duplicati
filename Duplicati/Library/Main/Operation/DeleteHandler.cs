@@ -182,6 +182,22 @@ namespace Duplicati.Library.Main.Operation
     }
 
     /// <summary>
+    /// Remove versions specified by the --version option.
+    /// </summary>
+    public class SpecificVersionsRemover : FilesetRemover
+    {
+        public SpecificVersionsRemover(Options options) : base(options)
+        {
+        }
+
+        public override IEnumerable<IListResultFileset> GetFilesetsToDelete(IEnumerable<IListResultFileset> filesets)
+        {
+            ISet<long> versionsToDelete = new HashSet<long>(this.Options.Version ?? new long[0]);
+            return filesets.Where(x => versionsToDelete.Contains(x.Version));
+        }
+    }
+
+    /// <summary>
     /// Keep backups that are newer than the date specified by the --keep-time option.
     /// If none of the retained versions are full backups, then continue to keep versions
     /// until we have a full backup.
@@ -369,22 +385,6 @@ namespace Duplicati.Library.Main.Operation
             Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "AllBackupsToDelete", "All backups to delete: {0}", string.Join(", ", versionsToDelete.OrderByDescending(x => x.Time)));
 
             return versionsToDelete;
-        }
-    }
-
-    /// <summary>
-    /// Remove versions specified by the --version option.
-    /// </summary>
-    public class SpecificVersionsRemover : FilesetRemover
-    {
-        public SpecificVersionsRemover(Options options) : base(options)
-        {
-        }
-
-        public override IEnumerable<IListResultFileset> GetFilesetsToDelete(IEnumerable<IListResultFileset> filesets)
-        {
-            ISet<long> versionsToDelete = new HashSet<long>(this.Options.Version ?? new long[0]);
-            return filesets.Where(x => versionsToDelete.Contains(x.Version));
         }
     }
 }
