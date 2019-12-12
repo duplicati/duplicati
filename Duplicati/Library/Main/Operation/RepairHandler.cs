@@ -23,11 +23,11 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backend;
             m_options = options;
             m_result = result;
-            
+
             if (options.AllowPassphraseChange)
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
-        
+
         public void Run(Library.Utility.IFilter filter = null)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
@@ -287,19 +287,24 @@ namespace Duplicati.Library.Main.Operation
                             if (n.Type == RemoteVolumeType.Files)
                             {
                                 var filesetId = db.GetFilesetIdFromRemotename(n.Name);
-                                var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
-                                newEntry = w;
-                                w.SetRemoteFilename(n.Name);
 
-                                db.WriteFileset(w, filesetId, null);
+                                // We cannot wrap the FilesetVolumeWriter in a using statement here because a reference to it is
+                                // retained in newEntry.
+                                FilesetVolumeWriter volumeWriter = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
+                                newEntry = volumeWriter;
+                                volumeWriter.SetRemoteFilename(n.Name);
 
-                                w.Close();
+                                db.WriteFileset(volumeWriter, filesetId, null);
+                                DateTime filesetTime = db.FilesetTimes.First(x => x.Key == filesetId).Value;
+                                volumeWriter.CreateFilesetFile(db.IsFilesetFullBackup(filesetTime));
+
+                                volumeWriter.Close();
                                 if (m_options.Dryrun)
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                 else
                                 {
-                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(w);
+                                    db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                                    backend.Put(volumeWriter);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Index)

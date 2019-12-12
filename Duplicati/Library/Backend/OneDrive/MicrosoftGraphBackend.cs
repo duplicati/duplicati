@@ -357,8 +357,6 @@ namespace Duplicati.Library.Backend
                 // but also states that the nextExpectedRanges value returned may indicate multiple ranges...
                 // For now, this plays it safe and does a sequential upload.
                 using (HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename))))
-                /* Indicate that we want to replace any existing content with this new data we're uploading */
-                using (createSessionRequest.Content = this.PrepareContent(new UploadSession() { Item = new DriveItem() { ConflictBehavior = ConflictBehavior.Replace } }))
                 {
                     using (HttpResponseMessage createSessionResponse = await m_client.SendAsync(createSessionRequest, cancelToken).ConfigureAwait(false))
                     {

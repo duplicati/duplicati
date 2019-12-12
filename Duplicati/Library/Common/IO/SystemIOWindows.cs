@@ -35,7 +35,8 @@ namespace Duplicati.Library.Common.IO
 
         private static bool IsPathTooLong(string path)
         {
-            return path.StartsWith(UNCPREFIX, StringComparison.Ordinal) || path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) || path.Length > 260;
+            // Use 258 for length check instead of 260 (MAX_PATH) - we need to leave room for the 16-bit (wide) null terminator
+            return path.StartsWith(UNCPREFIX, StringComparison.Ordinal) || path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) || path.Length > 258;
         }
 
         public static string PrefixWithUNC(string path)

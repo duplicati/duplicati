@@ -92,6 +92,7 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly string ICON_NORMAL = ICON_PATH + "normal.png";
         private static readonly string ICON_PAUSED = ICON_PATH + "normal-pause.png";
         private static readonly string ICON_RUNNING = ICON_PATH + "normal-running.png";
+        private static readonly string ICON_WARNING = ICON_PATH + "normal-error.png"; // TODO: create a normal-warning.png, for now use normal-error.png
         private static readonly string ICON_ERROR = ICON_PATH + "normal-error.png";
 
         private readonly Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string> m_images = new Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string>();
@@ -270,6 +271,9 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     case Duplicati.GUI.TrayIcon.TrayIcons.IdleError:
                         m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_ERROR));
+                        break;
+                    case Duplicati.GUI.TrayIcon.TrayIcons.IdleWarning:
+                        m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_WARNING));
                         break;
                     case Duplicati.GUI.TrayIcon.TrayIcons.Paused:
                         m_images[icon] = LoadStream(ASSEMBLY.GetManifestResourceStream(ICON_PAUSED));

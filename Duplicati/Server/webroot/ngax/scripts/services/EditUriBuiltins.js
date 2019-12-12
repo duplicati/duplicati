@@ -12,29 +12,29 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     // All backends with a custom UI must register here
-    EditUriBackendConfig.templates["file"] = "templates/backends/file.html";
-    EditUriBackendConfig.templates["s3"] = "templates/backends/s3.html";
-    EditUriBackendConfig.templates["googledrive"] = "templates/backends/oauth.html";
-    EditUriBackendConfig.templates["hubic"] = "templates/backends/oauth.html";
-    EditUriBackendConfig.templates["onedrive"] = "templates/backends/oauth.html";
-    EditUriBackendConfig.templates["onedrivev2"] = "templates/backends/oauth.html";
-    EditUriBackendConfig.templates["sharepoint"] = "templates/backends/sharepoint.html";
-    EditUriBackendConfig.templates["msgroup"] = "templates/backends/msgroup.html";
-    EditUriBackendConfig.templates["amzcd"] = "templates/backends/amzcd.html";
-    EditUriBackendConfig.templates["openstack"] = "templates/backends/openstack.html";
-    EditUriBackendConfig.templates["azure"] = "templates/backends/azure.html";
-    EditUriBackendConfig.templates["gcs"] = "templates/backends/gcs.html";
-    EditUriBackendConfig.templates["b2"] = "templates/backends/b2.html";
-    EditUriBackendConfig.templates["mega"] = "templates/backends/mega.html";
-    EditUriBackendConfig.templates["jottacloud"] = "templates/backends/jottacloud.html";
-    EditUriBackendConfig.templates["box"] = "templates/backends/oauth.html";
-    EditUriBackendConfig.templates["dropbox"] = "templates/backends/oauth.html";
-    EditUriBackendConfig.templates["sia"] = "templates/backends/sia.html";
-    EditUriBackendConfig.templates["rclone"] = "templates/backends/rclone.html";
+    EditUriBackendConfig.templates['file']        = 'templates/backends/file.html';
+    EditUriBackendConfig.templates['s3']          = 'templates/backends/s3.html';
+    EditUriBackendConfig.templates['googledrive'] = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['hubic']       = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['onedrive']    = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['onedrivev2']  = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['sharepoint']  = 'templates/backends/sharepoint.html';
+    EditUriBackendConfig.templates['msgroup']     = 'templates/backends/msgroup.html';
+    EditUriBackendConfig.templates['openstack']   = 'templates/backends/openstack.html';
+    EditUriBackendConfig.templates['azure']       = 'templates/backends/azure.html';
+    EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';
+    EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
+    EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
+    EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/jottacloud.html';
+    EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
+    EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 
-    EditUriBackendConfig.testers['s3'] = function (scope, callback) {
+    EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
-        if (scope.s3_server != 's3.amazonaws.com') {
+        if (scope.s3_server != 's3.amazonaws.com')
+        {
             callback();
             return;
         }
@@ -205,34 +205,15 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             return false;
         };
     };
-
-    EditUriBackendConfig.loaders['googledrive'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['hubic'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['onedrive'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['onedrivev2'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['sharepoint'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['msgroup'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['amzcd'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['box'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.loaders['dropbox'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
+  
+    EditUriBackendConfig.loaders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['hubic']       = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['msgroup']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
     EditUriBackendConfig.loaders['openstack'] = function (scope) {
         if (scope.openstack_providers == null) {
@@ -376,30 +357,13 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
-    EditUriBackendConfig.parsers['googledrive'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.parsers['hubic'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.parsers['onedrive'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.parsers['onedrivev2'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.parsers['sharepoint'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.parsers['amzcd'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.parsers['box'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.parsers['dropbox'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
+    EditUriBackendConfig.parsers['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['hubic']       = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['box']         = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
     EditUriBackendConfig.parsers['openstack'] = function (scope, module, server, port, path, options) {
         scope.openstack_domainname = options['--openstack-domain-name'];
@@ -549,34 +513,14 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         return url;
     };
 
-    EditUriBackendConfig.builders['googledrive'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['hubic'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['onedrive'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['onedrivev2'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['sharepoint'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['msgroup'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['amzcd'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['box'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-    EditUriBackendConfig.builders['dropbox'] = function () {
-        return this['oauth-base'].apply(this, arguments);
-    };
-
+    EditUriBackendConfig.builders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['hubic']       = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['msgroup']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
     EditUriBackendConfig.builders['openstack'] = function (scope) {
         var opts = {
@@ -816,13 +760,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['authid-base'];
-    EditUriBackendConfig.validaters['gcs'] = EditUriBackendConfig.validaters['authid-base'];
-    EditUriBackendConfig.validaters['amzcd'] = EditUriBackendConfig.validaters['authid-base'];
-    EditUriBackendConfig.validaters['box'] = EditUriBackendConfig.validaters['authid-base'];
-    EditUriBackendConfig.validaters['dropbox'] = EditUriBackendConfig.validaters['authid-base'];
-    EditUriBackendConfig.validaters['onedrive'] = EditUriBackendConfig.validaters['authid-base'];
-    EditUriBackendConfig.validaters['onedrivev2'] = EditUriBackendConfig.validaters['authid-base'];
-    EditUriBackendConfig.validaters['sharepoint'] = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['gcs']         = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['box']         = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['dropbox']     = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['onedrive']    = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['onedrivev2']  = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['sharepoint']  = EditUriBackendConfig.validaters['authid-base'];
 
     EditUriBackendConfig.validaters['msgroup'] = function (scope, continuation) {
 

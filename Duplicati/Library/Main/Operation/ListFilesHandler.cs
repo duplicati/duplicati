@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -109,7 +110,7 @@ namespace Duplicati.Library.Main.Operation
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 
-                var numberSeq = CreateResultSequence(filteredList);
+                var numberSeq = CreateResultSequence(filteredList, backend, m_options);
                 if (filter.Empty)
                 {
                     m_result.SetResult(numberSeq, null);
@@ -203,9 +204,26 @@ namespace Duplicati.Library.Main.Operation
             return filelistFilter(parsedlist).ToList();
         }
 
-        public static IEnumerable<Library.Interface.IListResultFileset> CreateResultSequence(IEnumerable<KeyValuePair<long, Volumes.IParsedVolume>> filteredList)
+        private static IEnumerable<IListResultFileset> CreateResultSequence(IEnumerable<KeyValuePair<long, IParsedVolume>> filteredList, BackendManager backendManager, Options options)
         {
-            return (from n in filteredList select (Library.Interface.IListResultFileset)(new ListResultFileset(n.Key, BackupType.PARTIAL_BACKUP, n.Value.Time.ToLocalTime(), -1, -1))).ToArray();
+            List<IListResultFileset> list = new List<IListResultFileset>();
+            foreach (KeyValuePair<long, IParsedVolume> entry in filteredList)
+            {
+                AsyncDownloader downloader = new AsyncDownloader(new IRemoteVolume[] {new RemoteVolume(entry.Value.File)}, backendManager);
+                foreach (IAsyncDownloadedFile file in downloader)
+                {
+                    // We must obtain the partial/full status from the fileset file in the dlist files.
+                    // Without this, the restore dialog will show all versions as full, or all versions
+                    // as partial.  While the dlist files are already downloaded elsewhere, doing so again
+                    // here is the most direct way to obtain the partial/full status without a major
+                    // refactoring.  Since restoring directly from the backend files should be a relatively
+                    // rare event, we can work on improving the performance later.
+                    VolumeBase.FilesetData filesetData = VolumeReaderBase.GetFilesetData(entry.Value.CompressionModule, file.TempFile, options);
+                    list.Add(new ListResultFileset(entry.Key, filesetData.IsFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP, entry.Value.Time.ToLocalTime(), -1, -1));
+                }
+            }
+
+            return list.ToArray();
         }
     }
 }

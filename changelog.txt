@@ -1,3 +1,19 @@
+2019-12-08 - 2.0.4.36_canary_2019-12-08
+==========
+* Removed Amazon Cloud Drive support, thanks @warwickmm
+* Fixed an edge case where paths longer than 258 characters and short than 260 characters produced errors, thanks @drwtsn32x
+* Fixed a number of edge cases where partial backups could create defect backups when used with retention rules, thanks @warwickmm
+* Fixed a problem with SharePoint reporting conflicts after v2.0.4.35, thanks @warwickmm
+
+2019-11-29 - 2.0.4.35_canary_2019-11-29
+==========
+* Made password input in dark-theme better, thanks @mithileshz
+* Fixed resource leaks and shutdown code for OneDrive, thanks @tygill
+* Report a warning if the backup was cancelled, thanks @warwickmm
+* Do not warn if deletion fails but actually removes the remote file, thanks @drwtsn32x
+* Prevent storing journal data on incomplete backups, thanks @drwtsn32x
+* Disabled file attribute masking on Windows 10, thanks @drwtsn32x
+
 2019-11-05 - 2.0.4.34_canary_2019-11-05
 ==========
 * Stapling macOS notarization to bundles, thanks @kenkendk

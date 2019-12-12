@@ -162,6 +162,7 @@ namespace Duplicati.Library.Main.Operation
                                     var isOriginalFilesetFullBackup = db.IsFilesetFullBackup(tsOriginal);
                                     var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts, isOriginalFilesetFullBackup);
                                     vol.VolumeID = newids.Item1;
+                                    vol.CreateFilesetFile(isOriginalFilesetFullBackup);
 
                                     Logging.Log.WriteInformationMessage(LOGTAG, "ReplacingFileset", "Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize));
 

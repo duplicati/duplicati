@@ -111,6 +111,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 foreach (var p in options.ControlFiles.Split(new char[] {System.IO.Path.PathSeparator}, StringSplitOptions.RemoveEmptyEntries))
                                     fsw.AddControlFile(p, options.GetCompressionHintFromFilename(p));
 
+                            // We declare this to be a partial backup since the synthetic filelist is only created
+                            // when a backup is interrupted.
+                            fsw.CreateFilesetFile(false);
                             var newFilesetID = await database.CreateFilesetAsync(fsw.VolumeID, fileTime);
                             await database.LinkFilesetToVolumeAsync(newFilesetID, fsw.VolumeID);
                             await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime);

@@ -1095,7 +1095,7 @@ namespace Duplicati.Library.Main
 
                 if (isFileMissingException || (wr != null && wr.StatusCode == System.Net.HttpStatusCode.NotFound))
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailed", ex, LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileFailed", LC.L("Delete operation failed for {0} with FileNotFound, listing contents", item.RemoteFilename));
                     bool success = false;
 
                     try
@@ -1108,10 +1108,13 @@ namespace Duplicati.Library.Main
 
                     if (success)
                     {
-                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileSuccess", LC.L("Listing indicates file {0} is deleted correctly", item.RemoteFilename));
+                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileSuccess", LC.L("Listing indicates file {0} was deleted correctly", item.RemoteFilename));
                         return;
                     }
-
+                    else
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailed", ex, LC.L("Listing confirms file {0} was not deleted", item.RemoteFilename));
+                    }
                 }
 
                 result = ex.ToString();
