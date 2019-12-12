@@ -1,3 +1,10 @@
+2019-12-12 - 2.0.4.37_canary_2019-12-12
+==========
+* Updated and improved TrayIcon's for warning state, thanks @drwtsn32x
+* Fixed a selection issue for file restores, thanks @drwtsn32x
+* Updated build system and added tests, thanks @verhoek
+* Added support for Minio as an S3 backend option, thanks @verhoek
+
 2019-12-08 - 2.0.4.36_canary_2019-12-08
 ==========
 * Removed Amazon Cloud Drive support, thanks @warwickmm
