@@ -1,4 +1,5 @@
 #region Disclaimer / License
+
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -16,7 +17,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+
 #endregion
+
 using Amazon.S3;
 using Amazon.S3.Model;
 using Duplicati.Library.Interface;
@@ -31,29 +34,31 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// Helper class that fixes long list support and injects location headers, includes using directives etc.
     /// </summary>
-    public class S3Wrapper : IDisposable
+    public class S3AwsClient : IS3Client
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3Wrapper>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
         private const int ITEM_LIST_LIMIT = 1000;
 
-        protected readonly string m_locationConstraint;
-        protected readonly string m_storageClass;
-        protected AmazonS3Client m_client;
+        private readonly string m_locationConstraint;
+        private readonly string m_storageClass;
+        private AmazonS3Client m_client;
 
-        public readonly string DNSHost;
+        private readonly string m_dnsHost;
 
-        public S3Wrapper(string awsID, string awsKey, string locationConstraint, string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
+        public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
+            string storageClass, bool useSSL, Dictionary<string, string> options)
         {
             var cfg = new AmazonS3Config
             {
                 UseHttp = !useSSL,
                 ServiceURL = (useSSL ? "https://" : "http://") + servername,
-                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE
+                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
             };
 
             foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
-                var prop = cfg.GetType().GetProperties().FirstOrDefault(x => string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
+                var prop = cfg.GetType().GetProperties().FirstOrDefault(x =>
+                    string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
                 if (prop != null && prop.CanWrite)
                 {
                     if (prop.PropertyType == typeof(bool))
@@ -76,14 +81,14 @@ namespace Duplicati.Library.Backend
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
-            DNSHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
+            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
         }
 
         public void AddBucket(string bucketName)
         {
             var request = new PutBucketRequest
             {
-                BucketName = bucketName
+                BucketName = bucketName,
             };
 
             if (!string.IsNullOrEmpty(m_locationConstraint))
@@ -101,28 +106,28 @@ namespace Duplicati.Library.Backend
             };
 
             using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
-            using(System.IO.Stream s = objectGetResponse.ResponseStream)
+            using (System.IO.Stream s = objectGetResponse.ResponseStream)
             {
-                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
-                catch { }
+                try
+                {
+                    s.ReadTimeout = (int) TimeSpan.FromMinutes(1).TotalMilliseconds;
+                }
+                catch
+                {
+                    // We don't care about this timeout
+                }
 
                 Utility.Utility.CopyStream(s, target);
             }
         }
 
-        public void GetFileObject(string bucketName, string keyName, string localfile)
+        public string GetDnsHost()
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                GetFileStream(bucketName, keyName, fs);
+            return m_dnsHost;
         }
 
-        public void AddFileObject(string bucketName, string keyName, string localfile)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Open(localfile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                AddFileStream(bucketName, keyName, fs);
-        }
-
-        public virtual void AddFileStream(string bucketName, string keyName, System.IO.Stream source)
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source,
+            CancellationToken cancelToken)
         {
             var objectAddRequest = new PutObjectRequest
             {
@@ -133,21 +138,19 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
 
-            m_client.PutObject(objectAddRequest);
-        }
-
-        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source, CancellationToken cancelToken)
-        {
-            var objectAddRequest = new PutObjectRequest
+            try
             {
-                BucketName = bucketName,
-                Key = keyName,
-                InputStream = source
-            };
-            if (!string.IsNullOrWhiteSpace(m_storageClass))
-                objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
+                await m_client.PutObjectAsync(objectAddRequest, cancelToken);
+            }
+            catch (AmazonS3Exception e)
+            {
+                //Catch "non-existing" buckets
+                if (e.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                    "NoSuchBucket".Equals(e.ErrorCode))
+                    throw new FolderMissingException(e);
 
-            await m_client.PutObjectAsync(objectAddRequest, cancelToken);
+                throw;
+            }
         }
 
         public void DeleteObject(string bucketName, string keyName)
@@ -174,8 +177,7 @@ namespace Duplicati.Library.Backend
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
-                ListObjectsRequest listRequest = new ListObjectsRequest();
-                listRequest.BucketName = bucketName;
+                var listRequest = new ListObjectsRequest {BucketName = bucketName};
 
                 if (!string.IsNullOrEmpty(filename))
                     listRequest.Marker = filename;
@@ -184,21 +186,33 @@ namespace Duplicati.Library.Backend
                 if (!string.IsNullOrEmpty(prefix))
                     listRequest.Prefix = prefix;
 
-                ListObjectsResponse listResponse = m_client.ListObjects(listRequest);
+                ListObjectsResponse listResponse;
+                try
+                {
+                    listResponse = m_client.ListObjects(listRequest);
+                }
+                catch (AmazonS3Exception e)
+                {
+                    if (e.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                        "NoSuchBucket".Equals(e.ErrorCode))
+                    {
+                        throw new FolderMissingException(e);
+                    }
+
+                    throw;
+                }
+
                 isTruncated = listResponse.IsTruncated;
                 filename = listResponse.NextMarker;
 
-                foreach (S3Object obj in listResponse.S3Objects)
+                foreach (var obj in listResponse.S3Objects.Where(obj => alreadyReturned.Add(obj.Key)))
                 {
-                    if (alreadyReturned.Add(obj.Key))
-                    {
-                        yield return new Common.IO.FileEntry(
-                            obj.Key,
-                            obj.Size,
-                            obj.LastModified,
-                            obj.LastModified
-                        );
-                    }
+                    yield return new Common.IO.FileEntry(
+                        obj.Key,
+                        obj.Size,
+                        obj.LastModified,
+                        obj.LastModified
+                    );
                 }
             }
         }
