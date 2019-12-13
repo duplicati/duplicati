@@ -90,7 +90,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
                     FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
 
-                IListResultFileset[] filesets = db.Filesets.ToArray();
+                IListResultFileset[] filesets = db.FilesetsWithBackupVersion.ToArray();
                 List<IListResultFileset> versionsToDelete = new List<IListResultFileset>();
                 versionsToDelete.AddRange(new SpecificVersionsRemover(this.m_options).GetFilesetsToDelete(filesets));
                 versionsToDelete.AddRange(new KeepTimeRemover(this.m_options).GetFilesetsToDelete(filesets));

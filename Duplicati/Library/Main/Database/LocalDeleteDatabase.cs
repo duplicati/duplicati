@@ -109,18 +109,24 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<IListResultFileset> Filesets
+        /// <summary>
+        /// Returns a collection of IListResultFilesets, where the Version is the backup version number
+        /// exposed to the user.  This is in contrast to other cases where the Version is the ID in the
+        /// Fileset table.
+        /// </summary>
+        internal IEnumerable<IListResultFileset> FilesetsWithBackupVersion
         {
             get
             {
                 List<IListResultFileset> filesets = new List<IListResultFileset>();
                 using (IDbCommand cmd = this.m_connection.CreateCommand())
                 {
-                    using (IDataReader reader = cmd.ExecuteReader(@"SELECT ""ID"", ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
+                    using (IDataReader reader = cmd.ExecuteReader(@"SELECT ROW_NUMBER() OVER (ORDER BY ""Timestamp"" DESC) Version, ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"""))
                     {
                         while (reader.Read())
                         {
-                            filesets.Add(new ListResultFileset(reader.GetInt64(0), reader.GetInt32(1), ParseFromEpochSeconds(reader.GetInt64(2)).ToLocalTime(), -1L, -1L));
+                            // Since ROW_NUMBER() starts from 1, we subtract 1 to get the backup version number.
+                            filesets.Add(new ListResultFileset(reader.GetInt64(0) - 1, reader.GetInt32(1), ParseFromEpochSeconds(reader.GetInt64(2)).ToLocalTime(), -1L, -1L));
                         }
                     }
                 }
