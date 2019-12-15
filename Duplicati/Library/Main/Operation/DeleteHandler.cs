@@ -99,17 +99,16 @@ namespace Duplicati.Library.Main.Operation
                 // When determining the number of full versions to keep, we need to ignore the versions already marked for removal.
                 versionsToDelete.AddRange(new KeepVersionsRemover(this.m_options).GetFilesetsToDelete(filesets.Except(versionsToDelete)));
 
-                DateTime[] toDelete = versionsToDelete.Select(x => x.Time.ToUniversalTime()).Distinct().OrderByDescending(x => x).ToArray();
-                if (!m_options.AllowFullRemoval && filesets.Length == toDelete.Length)
+                if (!m_options.AllowFullRemoval && filesets.Length == versionsToDelete.Count)
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "PreventingLastFilesetRemoval", "Preventing removal of last fileset, use --{0} to allow removal ...", "allow-full-removal");
-                    toDelete = toDelete.Skip(1).ToArray();
+                    versionsToDelete = versionsToDelete.OrderBy(x => x.Version).Skip(1).ToList();
                 }
 
-                if (toDelete.Length > 0)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", toDelete.Length);
+                if (versionsToDelete.Count > 0)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
-                var lst = db.DropFilesetsFromTable(toDelete, transaction).ToArray();
+                var lst = db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray(), transaction).ToArray();
                 foreach(var f in lst)
                     db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, transaction);
 
@@ -158,7 +157,7 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteHelp", "Remove --dry-run to actually delete files");
                 }
                 
-                if (!m_options.NoAutoCompact && (forceCompact || toDelete.Length > 0))
+                if (!m_options.NoAutoCompact && (forceCompact || versionsToDelete.Count > 0))
                 {
                     m_result.CompactResults = new CompactResults(m_result);
                     new CompactHandler(m_backendurl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref transaction, sharedManager);
