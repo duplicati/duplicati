@@ -121,12 +121,15 @@ namespace Duplicati.Library.Main.Database
                 List<IListResultFileset> filesets = new List<IListResultFileset>();
                 using (IDbCommand cmd = this.m_connection.CreateCommand())
                 {
-                    using (IDataReader reader = cmd.ExecuteReader(@"SELECT ROW_NUMBER() OVER (ORDER BY ""Timestamp"" DESC) Version, ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"""))
+                    // We can also use the ROW_NUMBER() window function to generate the backup versions,
+                    // but this requires at least SQLite 3.25, which is not available in some common
+                    // distributions (e.g., Debian) currently.
+                    using (IDataReader reader = cmd.ExecuteReader(@"SELECT ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     {
+                        int version = 0;
                         while (reader.Read())
                         {
-                            // Since ROW_NUMBER() starts from 1, we subtract 1 to get the backup version number.
-                            filesets.Add(new ListResultFileset(reader.GetInt64(0) - 1, reader.GetInt32(1), ParseFromEpochSeconds(reader.GetInt64(2)).ToLocalTime(), -1L, -1L));
+                            filesets.Add(new ListResultFileset(version++, reader.GetInt32(0), ParseFromEpochSeconds(reader.GetInt64(1)).ToLocalTime(), -1L, -1L));
                         }
                     }
                 }
