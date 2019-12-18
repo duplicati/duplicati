@@ -1,4 +1,5 @@
 ﻿#region Disclaimer / License
+
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -16,7 +17,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
+
 #endregion
+
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Renci.SshNet;
@@ -104,7 +107,6 @@ namespace Duplicati.Library.Backend
 
             if (!string.IsNullOrWhiteSpace(timeoutstr))
                 m_keepaliveinterval = Library.Utility.Timeparser.ParseTimeSpan(timeoutstr);
-
         }
 
         #region IBackend Members
@@ -144,13 +146,15 @@ namespace Duplicati.Library.Backend
 
         public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
+            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open,
+                System.IO.FileAccess.Read, System.IO.FileShare.Read))
                 return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create,
+                System.IO.FileAccess.Write, System.IO.FileShare.None))
                 Get(remotename, fs);
         }
 
@@ -166,24 +170,39 @@ namespace Duplicati.Library.Backend
             {
                 throw new FileMissingException(ex);
             }
-
         }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionAuthPasswordShort, Strings.SSHv2Backend.DescriptionAuthPasswordLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionAuthUsernameShort, Strings.SSHv2Backend.DescriptionAuthUsernameLong),
-                    new CommandLineArgument(SSH_FINGERPRINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.SSHv2Backend.DescriptionFingerprintShort, Strings.SSHv2Backend.DescriptionFingerprintLong),
-                    new CommandLineArgument(SSH_FINGERPRINT_ACCEPT_ANY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.SSHv2Backend.DescriptionAnyFingerprintShort, Strings.SSHv2Backend.DescriptionAnyFingerprintLong),
-                    new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.SSHv2Backend.DescriptionSshkeyfileShort, Strings.SSHv2Backend.DescriptionSshkeyfileLong),
-                    new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password, Strings.SSHv2Backend.DescriptionSshkeyShort, Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
-                    new CommandLineArgument(SSH_TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.SSHv2Backend.DescriptionSshtimeoutShort, Strings.SSHv2Backend.DescriptionSshtimeoutLong, "0"),
-                    new CommandLineArgument(SSH_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.SSHv2Backend.DescriptionSshkeepaliveShort, Strings.SSHv2Backend.DescriptionSshkeepaliveLong, "0"),
+                return new List<ICommandLineArgument>(new ICommandLineArgument[]
+                {
+                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password,
+                        Strings.SSHv2Backend.DescriptionAuthPasswordShort,
+                        Strings.SSHv2Backend.DescriptionAuthPasswordLong),
+                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String,
+                        Strings.SSHv2Backend.DescriptionAuthUsernameShort,
+                        Strings.SSHv2Backend.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(SSH_FINGERPRINT_OPTION, CommandLineArgument.ArgumentType.String,
+                        Strings.SSHv2Backend.DescriptionFingerprintShort,
+                        Strings.SSHv2Backend.DescriptionFingerprintLong),
+                    new CommandLineArgument(SSH_FINGERPRINT_ACCEPT_ANY_OPTION, CommandLineArgument.ArgumentType.Boolean,
+                        Strings.SSHv2Backend.DescriptionAnyFingerprintShort,
+                        Strings.SSHv2Backend.DescriptionAnyFingerprintLong),
+                    new CommandLineArgument(SSH_KEYFILE_OPTION, CommandLineArgument.ArgumentType.Path,
+                        Strings.SSHv2Backend.DescriptionSshkeyfileShort,
+                        Strings.SSHv2Backend.DescriptionSshkeyfileLong),
+                    new CommandLineArgument(SSH_KEYFILE_INLINE, CommandLineArgument.ArgumentType.Password,
+                        Strings.SSHv2Backend.DescriptionSshkeyShort,
+                        Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
+                    new CommandLineArgument(SSH_TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan,
+                        Strings.SSHv2Backend.DescriptionSshtimeoutShort, Strings.SSHv2Backend.DescriptionSshtimeoutLong,
+                        "0"),
+                    new CommandLineArgument(SSH_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Timespan,
+                        Strings.SSHv2Backend.DescriptionSshkeepaliveShort,
+                        Strings.SSHv2Backend.DescriptionSshkeepaliveLong, "0"),
                 });
-
             }
         }
 
@@ -292,15 +311,15 @@ namespace Duplicati.Library.Backend
                     throw new Library.Utility.HostKeyException(
                         Strings.SSHv2Backend.FingerprintNotSpecifiedManagedError(
                             hostFingerprint.ToLower(CultureInfo.InvariantCulture), SSH_FINGERPRINT_OPTION,
-                            SSH_FINGERPRINT_ACCEPT_ANY_OPTION), 
-                            hostFingerprint, m_fingerprint);
+                            SSH_FINGERPRINT_ACCEPT_ANY_OPTION),
+                        hostFingerprint, m_fingerprint);
 
                 if (!string.Equals(hostFingerprint, m_fingerprint, StringComparison.OrdinalIgnoreCase))
                     throw new Library.Utility.HostKeyException(
                         Strings.SSHv2Backend.FingerprintNotMatchManagedError(
-                            hostFingerprint.ToLower(CultureInfo.InvariantCulture)), 
-                            hostFingerprint, m_fingerprint);
-                
+                            hostFingerprint.ToLower(CultureInfo.InvariantCulture)),
+                        hostFingerprint, m_fingerprint);
+
                 e.CanTrust = true;
             };
 
@@ -345,7 +364,7 @@ namespace Duplicati.Library.Backend
             {
                 if (ls.Name.ToString() == "." || ls.Name.ToString() == "..") continue;
                 yield return new FileEntry(ls.Name, ls.Length,
-                    ls.LastAccessTime, ls.LastWriteTime) { IsFolder = ls.Attributes.IsDirectory };
+                    ls.LastAccessTime, ls.LastWriteTime) {IsFolder = ls.Attributes.IsDirectory};
             }
         }
 
@@ -368,15 +387,13 @@ namespace Duplicati.Library.Backend
 
                     ms.Position = 0;
 
-                    return String.IsNullOrEmpty(password) ? 
-                        new PrivateKeyFile(ms) : new PrivateKeyFile(ms, password);
+                    return String.IsNullOrEmpty(password) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, password);
                 }
-
             }
             catch (Exception ex)
             {
                 throw new UserInformationException(
-            "Failed to parse the keyfile, check the key format and passphrase. " +
+                    "Failed to parse the keyfile, check the key format and passphrase. " +
                     $"Error message was {ex.Message}",
                     "SSHFailedToParseKeyFile", ex);
             }
@@ -386,15 +403,12 @@ namespace Duplicati.Library.Backend
 
         internal SftpClient Client
         {
-            get
-            {
-                return m_con;
-            }
+            get { return m_con; }
         }
 
         public string[] DNSName
         {
-            get { return new[] { m_server }; }
+            get { return new[] {m_server}; }
         }
     }
 }
