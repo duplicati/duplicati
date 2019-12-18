@@ -201,7 +201,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Dequeues an element from the queue
         /// </summary>
-        /// <returns>The dequed element or default(T) if there are no more elements</returns>
+        /// <returns>The dequeued element or default(T) if there are no more elements</returns>
         public T Dequeue()
         {
             while(true)

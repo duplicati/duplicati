@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 namespace Duplicati.Library.Encryption
 {
     /// <summary>
-    /// Simple helper class that implements the filebased functions, and wraps them onto the stream based ones
+    /// Simple helper class that implements the file-based functions, and wraps them onto the stream based ones
     /// </summary>
     public abstract class EncryptionBase : IEncryption
     {

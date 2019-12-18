@@ -46,7 +46,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected readonly string RESTOREFOLDER = Path.Combine(BASEFOLDER, "restored");
         /// <summary>
-        /// The log file for manual examiniation
+        /// The log file for manual examination
         /// </summary>
         protected readonly string LOGFILE = Path.Combine(BASEFOLDER, "logfile.log");
         /// <summary>

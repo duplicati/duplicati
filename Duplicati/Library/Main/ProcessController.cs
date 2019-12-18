@@ -139,7 +139,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Activates the process bacground IO priority
+        /// Activates the process background IO priority
         /// </summary>
         private void ActivateBackgroundIOPriority()
         {

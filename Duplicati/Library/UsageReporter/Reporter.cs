@@ -162,7 +162,7 @@ namespace Duplicati.Library.UsageReporter
         }
 
         /// <summary>
-        /// The maxmimum allowed report level
+        /// The maximum allowed report level
         /// </summary>
         /// <value>The type of the max report.</value>
         private static ReportType MaxReportLevel

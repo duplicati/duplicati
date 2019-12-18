@@ -876,7 +876,7 @@ namespace Duplicati.Library.Main
             }
             finally
             {
-                // Be tidy: manually do some cleanup to temp files, as we could not use using's.
+                // Be tidy: manually do some cleanup to temp files, as we could not use usings.
                 // Unclosed streams should only occur if we failed even before tasks were started.
                 if (dlToStream != null) dlToStream.Dispose();
                 if (dlTarget != null) dlTarget.Dispose();

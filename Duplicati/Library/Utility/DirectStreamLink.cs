@@ -331,7 +331,7 @@ namespace Duplicati.Library.Utility
         }
 
 
-        /// <summary> The class for readig from DirectStreamLink. </summary>
+        /// <summary> The class for reading from DirectStreamLink. </summary>
         private class LinkedReaderStream : LinkedSubStream
         {
             public LinkedReaderStream(DirectStreamLink linkStream)

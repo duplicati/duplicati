@@ -24,7 +24,7 @@ using System.Text;
 namespace Duplicati.Library.Logging
 {
     /// <summary>
-    /// Interface for a loggin destination
+    /// Interface for a log destination
     /// </summary>
     public interface ILogDestination
     {
