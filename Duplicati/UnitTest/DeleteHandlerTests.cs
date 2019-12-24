@@ -32,26 +32,6 @@ namespace Duplicati.UnitTest
                 if (ReferenceEquals(this, other)) return true;
                 return this.Version == other.Version && this.IsFullBackup == other.IsFullBackup && this.Time.Equals(other.Time) && this.FileCount == other.FileCount && this.FileSizes == other.FileSizes;
             }
-
-            public override bool Equals(object obj)
-            {
-                if (ReferenceEquals(null, obj)) return false;
-                if (ReferenceEquals(this, obj)) return true;
-                return obj.GetType() == this.GetType() && this.Equals((Fileset) obj);
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    int hashCode = this.Version.GetHashCode();
-                    hashCode = (hashCode * 397) ^ this.IsFullBackup;
-                    hashCode = (hashCode * 397) ^ this.Time.GetHashCode();
-                    hashCode = (hashCode * 397) ^ this.FileCount.GetHashCode();
-                    hashCode = (hashCode * 397) ^ this.FileSizes.GetHashCode();
-                    return hashCode;
-                }
-            }
         }
 
         [Test]
