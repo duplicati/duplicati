@@ -328,6 +328,13 @@
   </ItemGroup>
   
   <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>

@@ -16,6 +16,10 @@
     <PackageReference Include="AWSSDK.Core" Version="3.3.104.11" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.104.18" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.110.7" />
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Minio" Version="3.1.8" />
     <PackageReference Include="System.Reactive.Linq" Version="4.3.2" />
   </ItemGroup>
