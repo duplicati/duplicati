@@ -23,6 +23,7 @@ using System.Linq;
 
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
+using Newtonsoft.Json;
 
 namespace Duplicati.Library.Common.IO
 {
@@ -59,11 +60,19 @@ namespace Duplicati.Library.Common.IO
 
         private class FileSystemAccess
         {
+            // Use JsonProperty Attribute to allow readonly fields to be set by deserializer
+            // https://github.com/duplicati/duplicati/issues/4028
+            [JsonProperty]
             public readonly FileSystemRights Rights;
+            [JsonProperty]
             public readonly AccessControlType ControlType;
+            [JsonProperty]
             public readonly string SID;
+            [JsonProperty]
             public readonly bool Inherited;
+            [JsonProperty]
             public readonly InheritanceFlags Inheritance;
+            [JsonProperty]
             public readonly PropagationFlags Propagation;
 
             public FileSystemAccess()
