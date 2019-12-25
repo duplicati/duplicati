@@ -15,7 +15,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="AlphaFS" Version="2.2.6" />
-    <PackageReference Include="AlphaVSS" Version="1.4.0" />
+    <PackageReference Include="AlphaVSS" Version="2.0.0" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
   </ItemGroup>
 
