@@ -22,6 +22,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 namespace Duplicati.Library.Backend
@@ -210,14 +211,14 @@ namespace Duplicati.Library.Backend
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FolderMissingException(wex);
                 throw;
             }
             // Handle XML response. Since we in the constructor demand a folder below the mount point we know the root
             // element must be a "folder", else it could also have been a "mountPoint" (which has a very similar structure).
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
-            // so we treat them as non-existant here.
+            // so we treat them as non-existent here.
             var xRoot = doc.DocumentElement;
             if (xRoot.Attributes["deleted"] != null)
             {
@@ -286,14 +287,14 @@ namespace Duplicati.Library.Backend
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 throw;
             }
             // Handle XML response. Since we in the constructor demand a folder below the mount point we know the root
             // element must be a "folder", else it could also have been a "mountPoint" (which has a very similar structure).
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
-            // so we treat them as non-existant here.
+            // so we treat them as non-existent here.
             var xFile = doc.DocumentElement;
             if (xFile.Attributes["deleted"] != null)
             {

@@ -198,9 +198,9 @@ namespace Duplicati.Library.Main
         /// </summary>
         protected readonly object m_lock = new object();
 
-        protected Dictionary<string, string> m_options;
+        protected readonly Dictionary<string, string> m_options;
 
-        protected List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
+        protected readonly List<KeyValuePair<bool, Library.Interface.IGenericModule>> m_loadedModules = new List<KeyValuePair<bool, IGenericModule>>();
 
         /// <summary>
         /// Lookup table for compression hints
@@ -291,7 +291,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-concurrent-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
-
+                    
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
                     new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
@@ -346,11 +346,11 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("dbpath", CommandLineArgument.ArgumentType.Path, Strings.Options.DbpathShort, Strings.Options.DbpathLong),
                     new CommandLineArgument("blocksize", CommandLineArgument.ArgumentType.Size, Strings.Options.BlocksizeShort, Strings.Options.BlocksizeLong, DEFAULT_BLOCKSIZE),
-                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb"),
+                    new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb", null, null, @"The ""file-read-buffer-size"" option is no longer used and has been deprecated."),
                     new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
                     new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
                     new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
-                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true", null, null, Strings.Options.VerboseDeprecated),
+                    new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true", null, null, @"The ""disable-filepath-cache"" option is no longer used and has been deprecated."),
                     new CommandLineArgument("use-block-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UseblockcacheShort, Strings.Options.UseblockcacheLong, "false"),
                     new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
                     new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
@@ -1081,7 +1081,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the temporary folder to use for asyncronous transfers
+        /// Gets the temporary folder to use for asynchronous transfers
         /// </summary>
         public string AsynchronousUploadFolder
         {
@@ -1097,7 +1097,7 @@ namespace Duplicati.Library.Main
                     return value;
             }
         }
-
+        
         /// <summary>
         /// Gets the logfile filename
         /// </summary>
@@ -1369,22 +1369,6 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the size the read-ahead buffer
-        /// </summary>
-        public long FileReadBufferSize
-        {
-            get
-            {
-                string tmp;
-                if (!m_options.TryGetValue("file-read-buffer-size", out tmp))
-                    tmp = DEFAULT_READ_BUFFER_SIZE;
-
-                long t = Library.Utility.Sizeparser.ParseSize(tmp, "mb");                
-                return (int)t;
-            }
-        }
-
-        /// <summary>
         /// Gets a flag indicating if metadata for files and folders should be ignored
         /// </summary>
         public bool SkipMetadata
@@ -1401,7 +1385,8 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if empty folders should be ignored
+        /// Gets a flag indicating if during restores metadata should be applied to the symlink target.
+        /// Setting this to true can result in errors if the target no longer exists.
         /// </summary>
         public bool RestoreSymlinkMetadata
         {
@@ -1990,7 +1975,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Class for handling a single RententionPolicy timeframe-interval-pair
+        /// Class for handling a single RetentionPolicy timeframe-interval-pair
         /// </summary>
         public class RetentionPolicyValue
         {
@@ -2018,7 +2003,7 @@ namespace Duplicati.Library.Main
             /// <returns></returns>
             public Boolean IsUnlimtedTimeframe()
             {
-                // Timeframes equal or bigger than the maximum TimeSpan effectivly represent an unlimited timeframe
+                // Timeframes equal or bigger than the maximum TimeSpan effectively represent an unlimited timeframe
                 return Timeframe >= TimeSpan.MaxValue;
             }
 
@@ -2039,7 +2024,7 @@ namespace Duplicati.Library.Main
             }
 
             /// <summary>
-            /// Parses a string representation of a timeframe-interval-pair and returns a RentionPolicyValue object
+            /// Parses a string representation of a timeframe-interval-pair and returns a RetentionPolicyValue object
             /// </summary>
             /// <returns></returns>
             public static RetentionPolicyValue CreateFromString(string rententionPolicyValueString)
@@ -2047,7 +2032,7 @@ namespace Duplicati.Library.Main
                 var periodInterval = rententionPolicyValueString.Split(':');
 
                 TimeSpan timeframe;
-                // Timeframe "U" (= Unlimited) means: For unlimted time keep one version every X interval.
+                // Timeframe "U" (= Unlimited) means: For unlimited time keep one version every X interval.
                 // So the timeframe has to span the maximum time possible.
                 if (String.Equals(periodInterval[0], "U", StringComparison.OrdinalIgnoreCase))
                 {

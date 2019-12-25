@@ -1,7 +1,7 @@
-﻿using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
-using System;
+﻿using System;
 using System.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -60,16 +60,33 @@ namespace Duplicati.Library.Main.Volumes
             if (m_compression == null)
                 throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule), "UnsupportedCompressionModule");
 
-            if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && m_compression is Library.Interface.ICompressionHinting)
-                ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;
+            if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && this.m_compression is ICompressionHinting hinting)
+                hinting.LowOverheadMode = true;
 
-            AddManifestfile();
+            AddManifestFile();
         }
 
-        protected void AddManifestfile()
+        protected void AddManifestFile()
         {
             using (var sr = new StreamWriter(m_compression.CreateFile(MANIFEST_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
                 sr.Write(ManifestData.GetManifestInstance(m_blocksize, m_blockhash, m_filehash));
+        }
+
+        internal BackendHandler.FileEntryItem CreateFileEntryForUpload(Options options)
+        {
+            var fileEntry = new BackendHandler.FileEntryItem(BackendActionType.Put, this.RemoteFilename);
+            fileEntry.SetLocalfilename(this.LocalFilename);
+            fileEntry.Encrypt(options);
+            fileEntry.UpdateHashAndSize(options);
+            return fileEntry;
+        }
+
+        public void CreateFilesetFile(bool isFullBackup)
+        {
+            using (var sr = new StreamWriter(m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
+            {
+                sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
+            }
         }
 
         public virtual void Dispose()

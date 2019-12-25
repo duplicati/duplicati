@@ -1,20 +1,22 @@
-//  Copyright (C) 2015, The Duplicati Team
-
-//  http://www.duplicati.com, info@duplicati.com
+#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 //
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
 //
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#endregion
 using System;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
@@ -152,7 +154,7 @@ namespace Duplicati.Library.Main
     {
         void Pause();
         void Resume();
-        void Stop();
+        void Stop(bool allowCurrentFileToFinish);
         void Abort();
     }
 
@@ -194,7 +196,7 @@ namespace Duplicati.Library.Main
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
         protected readonly object m_lock = new object();
-        protected Queue<DbMessage> m_dbqueue;
+        protected readonly Queue<DbMessage> m_dbqueue;
 
         private TaskControlState m_controlState = TaskControlState.Run;
         private readonly System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
@@ -219,9 +221,9 @@ namespace Duplicati.Library.Main
 
         public abstract OperationMode MainOperation { get; }
 
-        protected Library.Utility.FileBackedStringList m_messages;
-        protected Library.Utility.FileBackedStringList m_warnings;
-        protected Library.Utility.FileBackedStringList m_errors;
+        protected readonly Library.Utility.FileBackedStringList m_messages;
+        protected readonly Library.Utility.FileBackedStringList m_warnings;
+        protected readonly Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
         
         protected IMessageSink m_messageSink;
@@ -241,7 +243,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        protected internal IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
+        protected internal readonly IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
         internal IOperationProgressUpdaterAndReporter OperationProgressUpdater
         {
             get
@@ -253,7 +255,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        protected internal IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
+        protected internal readonly IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
         internal IBackendProgressUpdaterAndReporter BackendProgressUpdater
         {
             get
@@ -351,7 +353,7 @@ namespace Duplicati.Library.Main
         [JsonProperty(PropertyName = "Errors")]
         public IEnumerable<string> LimitedErrors { get { return Errors?.Take(SERIALIZATION_LIMIT); } }
 
-        protected Operation.Common.TaskControl m_taskController;
+        protected readonly Operation.Common.TaskControl m_taskController;
         public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
 
         protected BasicResults()
@@ -376,7 +378,7 @@ namespace Duplicati.Library.Main
             this.m_parent = p;
         }
 
-        protected IBackendStatstics m_backendStatistics;
+        protected readonly IBackendStatstics m_backendStatistics;
         public IBackendStatstics BackendStatistics
         {
             get
@@ -438,10 +440,10 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Request that this task stops.
         /// </summary>
-        public void Stop()
+        public void Stop(bool allowCurrentFileToFinish)
         {
             if (m_parent != null)
-                m_parent.Stop();
+                m_parent.Stop(allowCurrentFileToFinish);
             else
             {
                 lock (m_lock)
@@ -449,6 +451,10 @@ namespace Duplicati.Library.Main
                     {
                         m_controlState = TaskControlState.Stop;
                         m_pauseEvent.Set();
+                        if (!allowCurrentFileToFinish)
+                        {
+                            m_taskController.Stop(true);
+                        }
                     }
 
                 if (StateChangedEvent != null)
@@ -665,12 +671,14 @@ namespace Duplicati.Library.Main
     internal class ListResultFileset : Duplicati.Library.Interface.IListResultFileset
     {
         public long Version { get; private set; }
+        public int IsFullBackup { get; private set; }
         public DateTime Time { get; private set; }
         public long FileCount { get; private set; }
         public long FileSizes { get; private set; }
-        public ListResultFileset(long version, DateTime time, long fileCount, long fileSizes)
+        public ListResultFileset(long version, int isFullBackup, DateTime time, long fileCount, long fileSizes)
         {
             this.Version = version;
+            this.IsFullBackup = isFullBackup;
             this.Time = time;
             this.FileCount = fileCount;
             this.FileSizes = fileSizes;
@@ -747,15 +755,15 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (m_parent != null && m_parent is BackupResults)
-                    return ((BackupResults)m_parent).CompactResults;
+                if (m_parent != null && this.m_parent is BackupResults results)
+                    return results.CompactResults;
 
                 return m_compactResults;
             }
             internal set
             {
-                if (m_parent != null && m_parent is BackupResults)
-                    ((BackupResults)m_parent).CompactResults = value;
+                if (m_parent != null && this.m_parent is BackupResults results)
+                    results.CompactResults = value;
 
                 m_compactResults = value;
             }

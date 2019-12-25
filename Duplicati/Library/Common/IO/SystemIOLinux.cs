@@ -297,7 +297,7 @@ namespace Duplicati.Library.Common.IO
         {
             var p = Path.GetFullPath(path);
 
-            // This should not be required, but some versions of Mono apperently do not strip the trailing slash
+            // This should not be required, but some versions of Mono apparently do not strip the trailing slash
             return p.Length > 1 && p[p.Length - 1] == Path.DirectorySeparatorChar ? p.Substring(0, p.Length - 1) : p;
         }
 

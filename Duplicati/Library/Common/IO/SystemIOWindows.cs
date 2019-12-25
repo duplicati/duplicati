@@ -23,6 +23,7 @@ using System.Linq;
 
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
+using Newtonsoft.Json;
 
 namespace Duplicati.Library.Common.IO
 {
@@ -35,7 +36,8 @@ namespace Duplicati.Library.Common.IO
 
         private static bool IsPathTooLong(string path)
         {
-            return path.StartsWith(UNCPREFIX, StringComparison.Ordinal) || path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) || path.Length > 260;
+            // Use 258 for length check instead of 260 (MAX_PATH) - we need to leave room for the 16-bit (wide) null terminator
+            return path.StartsWith(UNCPREFIX, StringComparison.Ordinal) || path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) || path.Length > 258;
         }
 
         public static string PrefixWithUNC(string path)
@@ -58,12 +60,20 @@ namespace Duplicati.Library.Common.IO
 
         private class FileSystemAccess
         {
-            public FileSystemRights Rights;
-            public AccessControlType ControlType;
-            public string SID;
-            public bool Inherited;
-            public InheritanceFlags Inheritance;
-            public PropagationFlags Propagation;
+            // Use JsonProperty Attribute to allow readonly fields to be set by deserializer
+            // https://github.com/duplicati/duplicati/issues/4028
+            [JsonProperty]
+            public readonly FileSystemRights Rights;
+            [JsonProperty]
+            public readonly AccessControlType ControlType;
+            [JsonProperty]
+            public readonly string SID;
+            [JsonProperty]
+            public readonly bool Inherited;
+            [JsonProperty]
+            public readonly InheritanceFlags Inheritance;
+            [JsonProperty]
+            public readonly PropagationFlags Propagation;
 
             public FileSystemAccess()
             {
@@ -553,10 +563,14 @@ namespace Duplicati.Library.Common.IO
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
 
-            Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile),
-                                                                 target,
-                                                                 asDir ? Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.Directory : Alphaleonis.Win32.Filesystem.SymbolicLinkTarget.File,
-                                                                 AlphaFS.PathFormat.LongFullPath);
+            if (asDir)
+            {
+                Alphaleonis.Win32.Filesystem.Directory.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+            }
+            else
+            {
+                Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+            }
 
             //Sadly we do not get a notification if the creation fails :(
             System.IO.FileAttributes attr = 0;

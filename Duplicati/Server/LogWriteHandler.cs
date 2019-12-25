@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using Duplicati.Library.Logging;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Server
 {
@@ -125,8 +126,8 @@ namespace Duplicati.Server
 
                 if (entry.Exception == null)
                     this.ExceptionID = null;
-                else if (entry.Exception is Library.Interface.UserInformationException)
-                    this.ExceptionID = ((Library.Interface.UserInformationException)entry.Exception).HelpID;
+                else if (entry.Exception is UserInformationException exception)
+                    this.ExceptionID = exception.HelpID;
                 else
                     this.ExceptionID = entry.Exception.GetType().FullName;
                     
@@ -339,8 +340,8 @@ namespace Duplicati.Server
             {
                 var sf = m_serverfile;
                 m_serverfile = null;
-                if (sf is IDisposable)
-                    ((IDisposable)sf).Dispose();
+                if (sf is IDisposable disposable)
+                    disposable.Dispose();
             }
         }
 

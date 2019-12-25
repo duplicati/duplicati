@@ -76,7 +76,7 @@ namespace Duplicati.Library
         }
 
         /// <summary>
-        /// Set to true to automatically add the Authorization header to requets
+        /// Set to true to automatically add the Authorization header to requests
         /// </summary>
         public bool AutoAuthHeader { get; set; }
         /// <summary>
@@ -137,21 +137,21 @@ namespace Duplicati.Library
                         {
                             var msg = ex.Message;
                             var clienterror = false;
-                            if (ex is WebException)
+                            if (ex is WebException exception)
                             {
-                                var resp = ((WebException)ex).Response as HttpWebResponse;
+                                var resp = exception.Response as HttpWebResponse;
                                 if (resp != null)
                                 {
                                     msg = resp.Headers["X-Reason"];
                                     if (string.IsNullOrWhiteSpace(msg))
                                         msg = resp.StatusDescription;
-                                    
+
                                     if (resp.StatusCode == HttpStatusCode.ServiceUnavailable)
                                     {
                                         if (msg == resp.StatusDescription)
                                             throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError, "OAuthOverQuotaError");
                                         else
-                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
+                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", exception);
                                     }
 
                                     //Fail faster on client errors

@@ -98,17 +98,16 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
-                                FileEntryItem blockEntry = CreateFileEntryForUpload(blockvolume, options);
+                                FileEntryItem blockEntry = blockvolume.CreateFileEntryForUpload(options);
 
-                                IndexVolumeWriter indexVolumeWriter = null;
-                                FileEntryItem indexEntry = null;
+                                TemporaryIndexVolume indexVolumeCopy = null;
                                 if (indexvolume != null)
                                 {
-                                    indexVolumeWriter = await indexvolume.CreateVolume(blockvolume.RemoteFilename, blockEntry.Hash, blockEntry.Size, options, database);
-                                    indexEntry = CreateFileEntryForUpload(indexVolumeWriter, options);
+                                    indexVolumeCopy = new TemporaryIndexVolume(options);
+                                    indexvolume.CopyTo(indexVolumeCopy, false);
                                 }
 
-                                var uploadRequest = new VolumeUploadRequest(blockvolume, blockEntry, indexVolumeWriter, indexEntry);
+                                var uploadRequest = new VolumeUploadRequest(blockvolume, blockEntry, indexVolumeCopy, options, database);
                                 await self.Output.WriteAsync(uploadRequest);
 
                                 blockvolume = null;
@@ -135,15 +134,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     throw;
                 }
             });
-        }
-
-        private static FileEntryItem CreateFileEntryForUpload(VolumeWriterBase volume, Options options)
-        {
-            var fileEntry = new FileEntryItem(BackendActionType.Put, volume.RemoteFilename);
-            fileEntry.SetLocalfilename(volume.LocalFilename);
-            fileEntry.Encrypt(options);
-            fileEntry.UpdateHashAndSize(options);
-            return fileEntry;
         }
     }
 }

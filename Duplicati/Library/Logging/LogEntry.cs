@@ -43,7 +43,7 @@ namespace Duplicati.Library.Logging
         /// <summary>
         /// The message level
         /// </summary>
-        public LogMessageType Level;
+        public readonly LogMessageType Level;
 
         /// <summary>
         /// The filter tag for the message

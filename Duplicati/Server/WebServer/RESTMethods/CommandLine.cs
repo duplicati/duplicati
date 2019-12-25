@@ -95,7 +95,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             public readonly string ID = Guid.NewGuid().ToString();
             public DateTime LastAccess = DateTime.Now;
-            public Library.Utility.FileBackedStringList Log = new Library.Utility.FileBackedStringList();
+            public readonly Library.Utility.FileBackedStringList Log = new Library.Utility.FileBackedStringList();
             public Runner.IRunnerData Task;
             public LogWriter Writer;
             public readonly object Lock = new object();

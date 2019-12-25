@@ -152,8 +152,8 @@ namespace Duplicati.Library.Backend
                 }
                 catch (WebException wex)
                 {
-                    if (markerUrl == "") //Only check on first itteration
-                        if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                    if (markerUrl == "") //Only check on first iteration
+                        if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                             throw new FolderMissingException(wex);
                     
                     //Other error, just re-throw
@@ -164,7 +164,7 @@ namespace Duplicati.Library.Backend
 
                 //Perhaps the folder does not exist?
                 //The response should be 404 from the server, but it is not :(
-                if (lst.Count == 0 && markerUrl == "") //Only on first itteration
+                if (lst.Count == 0 && markerUrl == "") //Only on first iteration
                 {
                     try { CreateFolder(); }
                     catch { } //Ignore
@@ -228,7 +228,7 @@ namespace Duplicati.Library.Backend
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw;

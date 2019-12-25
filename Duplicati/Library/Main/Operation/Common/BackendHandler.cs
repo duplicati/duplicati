@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Common
             /// <summary>
             /// The current operation this entry represents
             /// </summary>
-            public BackendActionType Operation;
+            public readonly BackendActionType Operation;
             /// <summary>
             /// The name of the remote file
             /// </summary>

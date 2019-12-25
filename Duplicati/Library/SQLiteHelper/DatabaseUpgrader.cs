@@ -32,7 +32,7 @@ namespace Duplicati.Library.SQLiteHelper
     /// This class will read embedded files from the given folder.
     /// Updates should have the form &quot;1.Sample upgrade.sql&quot;.
     /// When the database schema changes, simply put a new file into the folder
-    /// and set it to be emnbedded in the binary.
+    /// and set it to be embedded in the binary.
     /// 
     /// Additionally, it's possible to execute custom code before and after 
     /// the SQL is executed. To set up a custom upgrade stage, add your
@@ -236,7 +236,7 @@ namespace Duplicati.Library.SQLiteHelper
                 }
 
                 //On a new database, we just load the most current schema, and upgrade from there
-                //This avoids potentitally lenghty upgrades
+                //This avoids potentially lengthy upgrades
                 if (dbversion == -1)
                 {
                     cmd.CommandText = PreparseSQL(schema, preparserVars);

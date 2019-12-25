@@ -71,8 +71,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.H
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AmazonCloudDrive", "Duplicati\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj", "{08D7E42D-285C-4010-9881-986125FE2F3E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Backblaze", "Duplicati\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj", "{61C43D61-4368-4942-84A3-1EB623F4EF2A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Mega", "Duplicati\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj", "{6643A5AE-AB38-453F-ADCE-408E35A81A83}"
@@ -245,10 +243,6 @@ Global
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08D7E42D-285C-4010-9881-986125FE2F3E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{61C43D61-4368-4942-84A3-1EB623F4EF2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{61C43D61-4368-4942-84A3-1EB623F4EF2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61C43D61-4368-4942-84A3-1EB623F4EF2A}.Release|Any CPU.ActiveCfg = Release|Any CPU

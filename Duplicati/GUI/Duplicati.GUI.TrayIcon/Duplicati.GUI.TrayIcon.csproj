@@ -69,9 +69,6 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CoCoL, Version=1.6.2.0, Culture=neutral, PublicKeyToken=0983de3c914beeaa, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\CoCoL.1.6.2\lib\net45\CoCoL.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -116,6 +113,9 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="CoCoL">
+      <HintPath>..\..\..\packages\CoCoL.1.7.1\lib\net45\CoCoL.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IBrowserWindow.cs" />
@@ -140,6 +140,7 @@
     <None Include="Info.plist" />
     <Compile Include="TrayIconBase.cs" />
     <EmbeddedResource Include="Resources\TrayNormal.ico" />
+    <EmbeddedResource Include="Resources\TrayNormalWarning.ico" />
     <EmbeddedResource Include="Resources\TrayNormalError.ico" />
     <EmbeddedResource Include="Resources\TrayNormalPause.ico" />
     <EmbeddedResource Include="Resources\TrayWorking.ico" />
@@ -312,10 +313,6 @@
       <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>
       <Name>Duplicati.CommandLine.RecoveryTool</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\AmazonCloudDrive\Duplicati.Library.Backend.AmazonCloudDrive.csproj">
-      <Project>{08D7E42D-285C-4010-9881-986125FE2F3E}</Project>
-      <Name>Duplicati.Library.Backend.AmazonCloudDrive</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj">
       <Project>{61C43D61-4368-4942-84A3-1EB623F4EF2A}</Project>
       <Name>Duplicati.Library.Backend.Backblaze</Name>
@@ -382,6 +379,9 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ItemGroup />
   <ItemGroup>
+    <Content Include="SVGIcons\dark\normal-warning.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="SVGIcons\light\normal-error.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -389,6 +389,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="SVGIcons\light\normal-running.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="SVGIcons\light\normal-warning.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="SVGIcons\light\normal.svg">
@@ -443,8 +446,9 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent Condition="' $(OS)'=='Windows_NT' AND $(ConfigurationName) == Debug ">copy /Y  '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\build\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
+copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
+</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -453,4 +457,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent></PostBuildEvent>
+  </PropertyGroup>
 </Project>

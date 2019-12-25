@@ -103,7 +103,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
             catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FolderMissingException();
                 else
                     throw;
@@ -259,7 +259,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
             catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException();
                 else
                     throw;

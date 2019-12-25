@@ -111,8 +111,8 @@ namespace Duplicati.Library.UsageReporter
         /// <param name="args">Arguments.</param>
         private static void HandleUncaughtException(object sender, UnhandledExceptionEventArgs args)
         {
-            if (args.ExceptionObject is Exception)
-                Report(args.ExceptionObject as Exception, ReportType.Crash);
+            if (args.ExceptionObject is Exception exception)
+                Report(exception, ReportType.Crash);
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace Duplicati.Library.UsageReporter
         }
 
         /// <summary>
-        /// The maxmimum allowed report level
+        /// The maximum allowed report level
         /// </summary>
         /// <value>The type of the max report.</value>
         private static ReportType MaxReportLevel

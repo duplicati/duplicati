@@ -54,7 +54,7 @@ namespace Duplicati.Server.WebServer
         private readonly bool FULLY_DISABLED;
 
         /// <summary>
-        /// Re-evealuate the logins periodically to ensure it is still valid
+        /// Re-evaluate the logins periodically to ensure it is still valid
         /// </summary>
         private readonly TimeSpan CACHE_TIMEOUT = TimeSpan.FromMinutes(3);
 

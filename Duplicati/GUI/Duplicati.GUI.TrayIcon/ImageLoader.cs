@@ -77,6 +77,7 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         public const string NormalIcon = "Resources.TrayNormal.ico";
+        public const string WarningIcon = "Resources.TrayNormalWarning.ico";
         public const string ErrorIcon = "Resources.TrayNormalError.ico";
         public const string PauseIcon = "Resources.TrayNormalPause.ico";
         public const string WorkingIcon = "Resources.TrayWorking.ico";

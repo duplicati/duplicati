@@ -308,7 +308,7 @@ namespace Duplicati.Library.Utility
         /// <summary> Common base class for reader and writer. </summary>
         private abstract class LinkedSubStream : Stream
         {
-            protected DirectStreamLink m_linkStream;
+            protected readonly DirectStreamLink m_linkStream;
             protected LinkedSubStream(DirectStreamLink linkStream)
             { this.m_linkStream = linkStream; }
 
@@ -331,7 +331,7 @@ namespace Duplicati.Library.Utility
         }
 
 
-        /// <summary> The class for readig from DirectStreamLink. </summary>
+        /// <summary> The class for reading from DirectStreamLink. </summary>
         private class LinkedReaderStream : LinkedSubStream
         {
             public LinkedReaderStream(DirectStreamLink linkStream)

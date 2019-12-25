@@ -1,10 +1,10 @@
 # Translators:
-# Mārtiņš Mangulis <martins.mangulis@gmail.com>, 2017
+# Mārtiņš Mangulis <martins.mangulis@gmail.com>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Mārtiņš Mangulis <martins.mangulis@gmail.com>, 2017\n"
+"Last-Translator: Mārtiņš Mangulis <martins.mangulis@gmail.com>, 2019\n"
 "Language-Team: Latvian (https://www.transifex.com/duplicati/teams/67655/lv/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,16 +26,16 @@ msgstr "API atslēga"
 #: scripts/services/EditUriBuiltins.js:828 templates/backends/s3.html:54
 #: templates/backends/s3.html:55
 msgid "AWS Access ID"
-msgstr ""
+msgstr "AWS Piekļuves ID"
 
 #: scripts/services/EditUriBuiltins.js:829 templates/backends/s3.html:58
 #: templates/backends/s3.html:59
 msgid "AWS Access Key"
-msgstr ""
+msgstr "AWS Piekļuves atslēga"
 
 #: scripts/services/EditUriBuiltins.js:138
 msgid "AWS IAM Policy"
-msgstr ""
+msgstr "AWS IAM Politika"
 
 #: index.html:227 index.html:243
 msgid "About"
@@ -96,7 +96,7 @@ msgstr "Pievienot ceļu"
 
 #: templates/backup-result/top-right-box.html:11
 msgid "Added"
-msgstr ""
+msgstr "Pievienots"
 
 #: scripts/services/EditUriBuiltins.js:839
 #: scripts/services/EditUriBuiltins.js:856
@@ -170,7 +170,7 @@ msgstr "Anonīmas lietošanas atskaites"
 
 #: scripts/services/AppUtils.js:204
 msgid "Applications"
-msgstr ""
+msgstr "Lietotnes"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -226,7 +226,7 @@ msgstr "Backend moduļi:"
 
 #: scripts/services/ServerStatus.js:44
 msgid "Backup complete!"
-msgstr ""
+msgstr "Dublējumkopijas veidošana pabeigta!"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -247,7 +247,7 @@ msgstr "Dublējumkopijas atrašanās vieta"
 
 #: templates/addoredit.html:319
 msgid "Backup retention"
-msgstr ""
+msgstr "Dublējumkopiju saglabāšanas ilgums"
 
 #: templates/home.html:73
 msgid "Backup:"

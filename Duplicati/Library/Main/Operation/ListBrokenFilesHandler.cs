@@ -28,9 +28,9 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ListBrokenFilesHandler));
-        protected string m_backendurl;
-        protected Options m_options;
-        protected ListBrokenFilesResults m_result;
+        protected readonly string m_backendurl;
+        protected readonly Options m_options;
+        protected readonly ListBrokenFilesResults m_result;
 
         public ListBrokenFilesHandler(string backend, Options options, ListBrokenFilesResults result)
         {

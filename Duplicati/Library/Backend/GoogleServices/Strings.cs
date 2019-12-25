@@ -19,7 +19,7 @@ using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings
 {
     internal static class GoogleCloudStorage {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Google Cloud Storage. Supported format is ""googlecloudstore://bucket/folder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Google Cloud Storage. Supported format is ""gcs://bucket/folder""."); } }
         public static string DisplayName { get { return LC.L(@"Google Cloud Storage"); } }
         public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID, you can get it from: {0}", url); }
         public static string ProjectIDMissingError(string projectoption) { return LC.L(@"You must supply a project ID with --{0} for creating a bucket", projectoption); }

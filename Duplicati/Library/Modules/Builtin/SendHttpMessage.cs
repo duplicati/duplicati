@@ -244,13 +244,11 @@ namespace Duplicati.Library.Modules.Builtin {
             catch (Exception e) 
             {
                 ex = e;
-                if (ex is WebException && ((WebException)ex).Response is HttpWebResponse)
+                if (ex is WebException exception && exception.Response is HttpWebResponse response)
                 {
-                    var response = ((WebException)ex).Response as HttpWebResponse;
-
-                    Logging.Log.WriteWarningMessage(LOGTAG, 
+                    Logging.Log.WriteWarningMessage(LOGTAG,
                                                     "HttpResponseError",
-                                                    ex,
+                                                    exception,
                                                      "HTTP Response: {0} - {1}: {2}",
                                                      ((int)response.StatusCode).ToString(),
                                                      response.StatusDescription,

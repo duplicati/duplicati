@@ -204,13 +204,13 @@ namespace Duplicati.Library.Backend
 
         private void HandleDropboxException(Exception ex, bool filerequest)
         {
-            if (ex is WebException)
+            if (ex is WebException exception)
             {
                 string json = string.Empty;
 
                 try
                 {
-                    using (var sr = new StreamReader(((WebException)ex).Response.GetResponseStream()))
+                    using (var sr = new StreamReader(exception.Response.GetResponseStream()))
                         json = sr.ReadToEnd();
                 }
                 catch { }
@@ -218,10 +218,8 @@ namespace Duplicati.Library.Backend
                 // Special mapping for exceptions:
                 //    https://www.dropbox.com/developers-v1/core/docs
 
-                if (((WebException)ex).Response is HttpWebResponse)
+                if (exception.Response is HttpWebResponse httpResp)
                 {
-                    var httpResp = ((WebException)ex).Response as HttpWebResponse;
-
                     if (httpResp.StatusCode == HttpStatusCode.NotFound)
                     {
                         if (filerequest)
@@ -238,7 +236,7 @@ namespace Duplicati.Library.Backend
                             throw new Duplicati.Library.Interface.FolderMissingException(json);
                     }
                     if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
-                        ThrowAuthException(json, ex);
+                        ThrowAuthException(json, exception);
                     if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
                         ThrowOverQuotaError();
                 }

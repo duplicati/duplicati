@@ -23,9 +23,9 @@ namespace Duplicati.GUI.TrayIcon
 
         private class BackgroundRequest
         {
-            public string Method;
-            public string Endpoint;
-            public Dictionary<string, string> Query;
+            public readonly string Method;
+            public readonly string Endpoint;
+            public readonly Dictionary<string, string> Query;
 
             public BackgroundRequest(string method, string endpoint, Dictionary<string, string> query)
             {
@@ -226,7 +226,12 @@ namespace Duplicati.GUI.TrayIcon
 
         private class SaltAndNonce
         {
+            // ReSharper disable once FieldCanBeMadeReadOnly.Local
+            // This cannot be made readonly as its value is set by a deserializer.
             public string Salt = null;
+            
+            // ReSharper disable once FieldCanBeMadeReadOnly.Local
+            // This cannot be made readonly as its value is set by a deserializer.
             public string Nonce = null;
         }
 
@@ -383,15 +388,16 @@ namespace Duplicati.GUI.TrayIcon
                         switch (m_passwordSource)
                         {
                             case Program.PasswordSource.Database:
-                                Program.databaseConnection.ApplicationSettings.ReloadSettings();
+                                if (Program.databaseConnection != null)
+                                    Program.databaseConnection.ApplicationSettings.ReloadSettings();
                                 
-                                if (Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
+                                if (Program.databaseConnection != null && Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
                                     m_password = Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                                 else
                                     hasTriedPassword = true;
                                 break;
                             case Program.PasswordSource.HostedServer:
-                                if (Server.Program.DataConnection.ApplicationSettings.WebserverPassword != m_password)
+                                if (Server.Program.DataConnection != null && Server.Program.DataConnection.ApplicationSettings.WebserverPassword != m_password)
                                     m_password = Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
                                 else
                                     hasTriedPassword = true;

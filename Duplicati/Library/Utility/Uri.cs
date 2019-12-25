@@ -26,7 +26,7 @@ namespace Duplicati.Library.Utility
     /// <summary>
     /// Represents a relaxed parsing of a URL.
     /// The goal is to cover as many types of url's as possible,
-    /// without being ambiguos.
+    /// without being ambiguous.
     /// The major limitations is that an embedded username may not contain a :,
     /// and the password may not contain a @.
     /// </summary>
@@ -35,7 +35,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
+        private static readonly System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Utility
         private NameValueCollection m_queryParams;
 
         /// <summary>
-        /// Gets the paramters in the query string
+        /// Gets the parameters in the query string
         /// </summary>
         /// <value>The query parameters.</value>
         public NameValueCollection QueryParameters
@@ -336,7 +336,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_]", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_]", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
@@ -391,7 +391,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){2,4,6,8}))", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Decodes a URL, like System.Web.HttpUtility.UrlDecode
@@ -436,7 +436,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches a=b type values in a querystring
         /// </summary>
-        private static System.Text.RegularExpressions.Regex RE_URLPARAM = new System.Text.RegularExpressions.Regex(@"(?<key>[^\=\&]+)(\=(?<value>[^\&]*))?", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_URLPARAM = new System.Text.RegularExpressions.Regex(@"(?<key>[^\=\&]+)(\=(?<value>[^\&]*))?", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Parses the query string.
@@ -489,7 +489,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The generated querystring</returns>
         /// <param name="query">A collection of name value pairs to be translated into a query string that is
-        /// ampsersand delimited.</param>
+        /// ampersand delimited.</param>
         public static string BuildUriQuery(NameValueCollection query)
         {
             return BuildUriQuery(query, "&");
