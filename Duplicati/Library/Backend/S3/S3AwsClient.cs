@@ -183,7 +183,7 @@ namespace Duplicati.Library.Backend
                 ListObjectsResponse listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjects(listRequest);
+                    listResponse = m_client.ListObjectsAsync(listRequest).GetAwaiter().GetResult();
                 }
                 catch (AmazonS3Exception e)
                 {

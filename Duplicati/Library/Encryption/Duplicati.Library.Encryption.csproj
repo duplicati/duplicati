@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <Version>2.0.0.7</Version>
     
     <Copyright>LGPL, Copyright � Duplicati Team 2015</Copyright>
@@ -15,20 +15,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpAESCrypt.dll" Version="1.3.3" />
-    <PackageReference Include="SharpAESCrypt.exe" Version="1.3.3" />
+    <PackageReference Include="SharpAESCrypt.dll" Version="1.3.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="SharpAESCrypt">
-      <HintPath>..\..\..\thirdparty\SharpAESCrypt\SharpAESCrypt.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

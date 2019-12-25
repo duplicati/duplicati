@@ -9,6 +9,7 @@ using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
 using System.Threading;
+using System.Net;
 
 namespace Duplicati.Library.Main
 {
@@ -656,11 +657,9 @@ namespace Duplicati.Library.Main
                     item.IndexfileUpdated = true;
                 }
 
-                IndexVolumeWriter wr = null;
-                try
+                var hashsize = HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                using (IndexVolumeWriter wr = new IndexVolumeWriter(m_options))
                 {
-                    var hashsize = HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
-                    wr = new IndexVolumeWriter(m_options);
                     using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);
                     item.Indexfile.Item1.Dispose();

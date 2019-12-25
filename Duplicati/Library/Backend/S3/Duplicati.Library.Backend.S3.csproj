@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <Version>2.0.0.7</Version>
     
     <Copyright>LGPL, Copyright � Duplicati Team 2015</Copyright>
@@ -13,14 +13,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Core" Version="3.3.103.33" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.103.22" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.104.21" />
+    <PackageReference Include="AWSSDK.Core" Version="3.3.103.37" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.103.26" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.0.0" />
+    <PackageReference Include="Minio" Version="3.1.8" />
+    <PackageReference Include="System.Reactive.Linq" Version="4.3.2" />
   </ItemGroup>
   
   <ItemGroup>
-    <Analyzer Include="..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.103.26\analyzers\dotnet\cs\AWSSDK.IdentityManagement.CodeAnalysis.dll" />
-    <Analyzer Include="..\..\..\..\packages\AWSSDK.S3.3.3.104.25\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />

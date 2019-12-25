@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <Version>2.0.0.7</Version>
     
     <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
@@ -16,7 +16,7 @@
     <PackageReference Include="sharpcompress" Version="0.24.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
     <Reference Include="managed-lzma">
       <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
     </Reference>
