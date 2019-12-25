@@ -149,28 +149,18 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        private static FileEntryItem CreateFileEntryForUpload(VolumeWriterBase volume, Options options)
-        {
-            var fileEntry = new FileEntryItem(BackendActionType.Put, volume.RemoteFilename);
-            fileEntry.SetLocalfilename(volume.LocalFilename);
-            fileEntry.Encrypt(options);
-            fileEntry.UpdateHashAndSize(options);
-            return fileEntry;
-        }
-
         private static async Task UploadVolumeAndIndex(SpillVolumeRequest target, IWriteChannel<IUploadRequest> outputChannel, Options options, BackupDatabase database)
         {
-            var blockEntry = CreateFileEntryForUpload(target.BlockVolume, options);
+            var blockEntry = target.BlockVolume.CreateFileEntryForUpload(options);
 
-            IndexVolumeWriter indexVolume = null;
-            FileEntryItem indexEntry = null;
+            TemporaryIndexVolume indexVolumeCopy = null;
             if (target.IndexVolume != null)
             {
-                indexVolume = await target.IndexVolume.CreateVolume(target.BlockVolume.RemoteFilename, blockEntry.Hash, blockEntry.Size, options, database).ConfigureAwait(false);
-                indexEntry = CreateFileEntryForUpload(indexVolume, options);
+                indexVolumeCopy = new TemporaryIndexVolume(options);
+                target.IndexVolume.CopyTo(indexVolumeCopy, false);
             }
 
-            var uploadRequest = new VolumeUploadRequest(target.BlockVolume, blockEntry, indexVolume, indexEntry);
+            var uploadRequest = new VolumeUploadRequest(target.BlockVolume, blockEntry, indexVolumeCopy, options, database);
             await outputChannel.WriteAsync(uploadRequest).ConfigureAwait(false);
         }
     }

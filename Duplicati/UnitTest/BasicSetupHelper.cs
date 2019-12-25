@@ -46,7 +46,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected readonly string RESTOREFOLDER = Path.Combine(BASEFOLDER, "restored");
         /// <summary>
-        /// The log file for manual examiniation
+        /// The log file for manual examination
         /// </summary>
         protected readonly string LOGFILE = Path.Combine(BASEFOLDER, "logfile.log");
         /// <summary>
@@ -93,7 +93,7 @@ namespace Duplicati.UnitTest
         }
 
         [SetUp]
-        public void SetUp()
+        public virtual void SetUp()
         {
             Directory.CreateDirectory(this.DATAFOLDER);
             Directory.CreateDirectory(this.TARGETFOLDER);
@@ -147,7 +147,6 @@ namespace Duplicati.UnitTest
                 opts["dbpath"] = DBFILE;
                 opts["blocksize"] = "10kb";
                 opts["backup-test-samples"] = "0";
-                opts["keep-versions"] = "100";
                 opts["unittest-mode"] = "true";
 
                 return opts;

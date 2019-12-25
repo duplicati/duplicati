@@ -40,7 +40,7 @@ namespace Duplicati.Library.Localization
         /// </summary>
         public const string LOCALIZATIONDIR_ENVNAME = "LOCALIZATION_FOLDER";
 
-        private static string LOCALIZATIONDIR_VALUE =
+        private static readonly string LOCALIZATIONDIR_VALUE =
             string.IsNullOrWhiteSpace(AppDomain.CurrentDomain.GetData(LOCALIZATIONDIR_ENVNAME) as string)
                   ? Environment.GetEnvironmentVariable(LOCALIZATIONDIR_ENVNAME)
                   : AppDomain.CurrentDomain.GetData(LOCALIZATIONDIR_ENVNAME) as string;
@@ -48,7 +48,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// Path to search for extra .mo files in
         /// </summary>
-        public static string[] SearchPaths =
+        public static readonly string[] SearchPaths =
             string.IsNullOrWhiteSpace(LOCALIZATIONDIR_VALUE)
                 ? new string[] { Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) }
                 : (LOCALIZATIONDIR_VALUE).Split(new char[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
@@ -57,7 +57,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// Assembly to look for .mo files in
         /// </summary>
-        public static Assembly SearchAssembly = Assembly.GetExecutingAssembly();
+        public static readonly Assembly SearchAssembly = Assembly.GetExecutingAssembly();
 
         /// <summary>
         /// Regular expression to match a locale from a filename

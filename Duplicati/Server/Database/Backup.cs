@@ -128,7 +128,7 @@ namespace Duplicati.Server.Database
         }
 
         /// <summary>
-        /// Sanitizes the settings from any fields in the PassworldFields list.
+        /// Sanitizes the settings from any fields in the PasswordFields list.
         /// </summary>
         public void SanitizeSettings()
         {

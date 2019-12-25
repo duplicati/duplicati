@@ -18,7 +18,6 @@ using System;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Volumes;
-using System.IO;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {

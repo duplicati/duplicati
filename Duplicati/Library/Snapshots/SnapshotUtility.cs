@@ -45,7 +45,7 @@ namespace Duplicati.Library.Snapshots
             
         }
 
-        // The two loader methods below guard agains the type system attempting to load types
+        // The two loader methods below guard against the type system attempting to load types
         // related to the OS specific implementations which may not be present for
         // the operation system we are not running on (i.e. prevent loading AlphaVSS on Linux)
 

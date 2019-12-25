@@ -29,8 +29,10 @@ namespace Duplicati.Library.Backend.Strings {
         public static string S3ServerNameDescriptionLong(string providers) { return LC.L(@"Companies other than Amazon are now supporting the S3 API, meaning that this backend can read and write data to those providers as well. Use this option to set the hostname. Currently known providers are:
 {0}", providers); }
         public static string S3ServerNameDescriptionShort { get { return LC.L(@"Specifies an alternate S3 server name"); } }
+        public static string S3ClientDescriptionShort { get { return LC.L(@"Specifies the S3 client library to use"); } }
         public static string S3NewStyleDeprecation { get { return LC.L(@"The subdomain calling option does nothing, the library will pick the right calling convention"); } }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this flag to communicate using Secure Socket Layer (SSL) over http (https). Note that bucket names containing a period has problems with SSL connections."); } }
+        public static string DescriptionS3ClientLong { get { return LC.L(@"Set either to aws or minio . Then either the AWS SDK or Minio SDK will used to communicate with S3 services."); } }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (https) connection"); } }
 
         public static string S3StorageclassDescriptionLong { get { return LC.L(@"Use this option to specify a storage class. If this option is not used, the server will choose a default storage class."); } }

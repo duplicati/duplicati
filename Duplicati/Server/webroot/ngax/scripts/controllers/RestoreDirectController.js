@@ -37,7 +37,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
     $scope.doConnect = function() {
         function connect() {
             $scope.connecting = true;
-            $scope.ConnectionProgress = gettextCatalog.getString('Registering temporary backup ...');
+            $scope.ConnectionProgress = gettextCatalog.getString('Registering temporary backup …');
 
             var opts = {};
             var obj = {'Backup': {'TargetURL':  $scope.TargetURL } };
@@ -61,7 +61,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
             AppService.post('/backups?temporary=true', obj, {'headers': {'Content-Type': 'application/json'}}).then(
                 function(resp) {
 
-                    $scope.ConnectionProgress = gettextCatalog.getString('Listing backup dates ...');
+                    $scope.ConnectionProgress = gettextCatalog.getString('Listing backup dates …');
                     $scope.BackupID = resp.data.ID;
                     $scope.fetchBackupTimes();
                 }, function(resp) {

@@ -150,7 +150,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         protected string m_parsedresultlevel = string.Empty;
         /// <summary>
-        /// The maxmimum number of log lines to include
+        /// The maximum number of log lines to include
         /// </summary>
         protected int m_maxmimumLogLines;
 
@@ -386,8 +386,8 @@ namespace Duplicati.Library.Modules.Builtin
             ParsedResultType level;
             if (result is Exception)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is Library.Interface.IBasicResults)
-                level = ((IBasicResults)result).ParsedResult;
+            else if (result != null && result is IBasicResults results)
+                level = results.ParsedResult;
             else
                 level = ParsedResultType.Error;
 

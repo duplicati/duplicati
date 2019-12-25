@@ -54,7 +54,7 @@ namespace Duplicati.Library.Modules.Builtin
 		private IDisposable m_httpsettings;
 
         /// <summary>
-        /// The handle to the call-contet oauth setttings
+        /// The handle to the call-context oauth settings
         /// </summary>
 		private IDisposable m_oauthsettings;
 
@@ -169,7 +169,7 @@ namespace Duplicati.Library.Modules.Builtin
             bool disableExpect100 = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_EXPECT100);
 
             // TODO: This is done to avoid conflicting settings,
-            // but ideally, we should run each operation in a seperate
+            // but ideally, we should run each operation in a separate
             // app-domain to ensure that multiple invocations of this module
             // does not interfere, as the options are shared in the app-domain
             m_resetNagle = commandlineOptions.ContainsKey(OPTION_DISABLE_NAGLING);

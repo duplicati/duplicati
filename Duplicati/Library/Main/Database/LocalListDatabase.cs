@@ -19,7 +19,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
@@ -41,6 +40,7 @@ namespace Duplicati.Library.Main.Database
         public interface IFileset
         {
             long Version { get; }
+            int IsFullBackup { get; set; }
             DateTime Time { get; }
             long FileCount { get; }
             long FileSizes { get; }
@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter);
             void TakeFirst ();
         }
-        
+
         private class FileSets : IFileSets
         {
             private readonly System.Data.IDbConnection m_connection;
@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Database
                 
                 using(var cmd = m_connection.CreateCommand())
                 {
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args);
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args);
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FilesetIDTimestampIndex"" ON ""{0}"" (""FilesetID"", ""Timestamp"" DESC)", m_tablename));
                 }
             }
@@ -81,13 +81,15 @@ namespace Duplicati.Library.Main.Database
             private class Fileset : IFileset
             {
                 public long Version { get; private set; }
+                public int IsFullBackup { get; set; }
                 public DateTime Time { get; private set; }
                 public long FileCount { get; private set; }
                 public long FileSizes { get; private set; }
                 
-                public Fileset(long version, DateTime time, long filecount, long filesizes)
+                public Fileset(long version, int isFullBackup, DateTime time, long filecount, long filesizes)
                 {
                     this.Version = version;
+                    this.IsFullBackup = isFullBackup;
                     this.Time = time;
                     this.FileCount = filecount;
                     this.FileSizes = filesizes;
@@ -163,8 +165,9 @@ namespace Duplicati.Library.Main.Database
     
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
-                        cmd.SetParameterValue(0, maxpath.Length);
-                        cmd.SetParameterValue(1, maxpath);
+                        var mp = Util.AppendDirSeparator(maxpath, dirsep);
+                        cmd.SetParameterValue(0, mp.Length);
+                        cmd.SetParameterValue(1, mp);
                         
                         foundfiles = cmd.ExecuteScalarInt64(0);
 
@@ -353,18 +356,24 @@ namespace Duplicati.Library.Main.Database
                 get
                 {
                     var dict = new Dictionary<long, long>();
-                    for(var i = 0; i < m_filesets.Length; i++)
+                    for (var i = 0; i < m_filesets.Length; i++)
+                    {
                         dict[m_filesets[i].Key] = i;
+                    }
 
-                    using(var cmd = m_connection.CreateCommand())
-                    using(var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
-                        while (rd.Read())
+                    using (var cmd = m_connection.CreateCommand())
+                    {
+                        using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                         {
-                            var id = rd.GetInt64(0);
-                            var e = dict[id];
-                            
-                            yield return new Fileset(e, m_filesets[e].Value, -1L, -1L);
+                            while (rd.Read())
+                            {
+                                var id = rd.GetInt64(0);
+                                var backupType = rd.GetInt32(1);
+                                var e = dict[id];
+                                yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
+                            }
                         }
+                    }
                 }
             }
 
@@ -373,24 +382,32 @@ namespace Duplicati.Library.Main.Database
                 get
                 {
                     var dict = new Dictionary<long, long>();
-                    for(var i = 0; i < m_filesets.Length; i++)
+                    for (var i = 0; i < m_filesets.Length; i++)
+                    {
                         dict[m_filesets[i].Key] = i;
+                    }
                     
-                    var summation = string.Format(@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{0}"") GROUP BY ""A"".""FilesetID"" ",m_tablename);
-                    
-                    using(var cmd = m_connection.CreateCommand())
-                    using (var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""A"".""FilesetID"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{0}"" A LEFT OUTER JOIN ( " + summation + @" ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ", m_tablename)))
-                        while(rd.Read())
-                        {
-                            var id = rd.GetInt64(0);
-                            var e = dict[id];
-                            
-                            var filecount = rd.ConvertValueToInt64(1, -1L);
-                            var filesizes = rd.ConvertValueToInt64(2, -1L);
+                    var summation =
+                        $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ";
 
-                            yield return new Fileset(e, m_filesets[e].Value, filecount, filesizes);
+                    using (var cmd = m_connection.CreateCommand())
+                    {
+                        using (var rd = cmd.ExecuteReader(
+                            $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ")
+                        )
+                        {
+                            while (rd.Read())
+                            {
+                                var id = rd.GetInt64(0);
+                                var isFullBackup = rd.GetInt32(1);
+                                var e = dict[id];
+                                var filecount = rd.ConvertValueToInt64(2, -1L);
+                                var filesizes = rd.ConvertValueToInt64(3, -1L);
+
+                                yield return new Fileset(e, isFullBackup, m_filesets[e].Value, filecount, filesizes);
+                            }
                         }
-                    
+                    }
                 }
             }
             
@@ -399,9 +416,11 @@ namespace Duplicati.Library.Main.Database
                 if (m_tablename != null)
                 {
                     try 
-                    { 
-                        using(var cmd = m_connection.CreateCommand())
+                    {
+                        using (var cmd = m_connection.CreateCommand())
+                        {
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tablename));
+                        }
                     }
                     catch {}
                     finally { m_tablename = null; }

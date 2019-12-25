@@ -282,7 +282,7 @@ namespace Duplicati.Library.Backend
         /// slash to separate web.
         /// Otherwise it's a good guess to look for "/documents", as we expect
         /// that the default document library is used in the path.
-        /// If that won't help, we will try all possible pathes from longest
+        /// If that won't help, we will try all possible paths from longest
         /// to shortest...
         /// </summary>
         private static string findCorrectWebPath(Utility.Uri orgUrl, System.Net.ICredentials userInfo, out SP.ClientContext retCtx)

@@ -93,7 +93,7 @@ namespace Duplicati.Library.UsageReporter
                 }
                 else
                 {
-                    // Manual extraction, this grabs the distro identication files directly
+                    // Manual extraction, this grabs the distro identification files directly
                     try
                     {
                         var keys = new List<Tuple<string, string>>();

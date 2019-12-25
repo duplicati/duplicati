@@ -24,7 +24,7 @@ namespace Duplicati.Server.WebServer
     {
         private readonly HttpServer.IHttpResponse m_resp;
         private readonly string m_jsonp;
-        private static object SUCCESS_RESPONSE = new { Status = "OK" };
+        private static readonly object SUCCESS_RESPONSE = new { Status = "OK" };
 
         // We override the format provider so all JSON output uses US format
         public override IFormatProvider FormatProvider

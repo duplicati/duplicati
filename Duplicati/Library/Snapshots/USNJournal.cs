@@ -370,7 +370,7 @@ namespace Duplicati.Library.Snapshots
                 UsnJournalID = m_journal.UsnJournalID
             };
 
-            var bufferSize = 4096; // larger buffer returns more record, but pervents user from cancelling operation for a longer time
+            var bufferSize = 4096; // larger buffer returns more record, but prevents user from cancelling operation for a longer time
             while (readData.StartUsn < m_journal.NextUsn)
             {
                 if (!Win32USN.ControlWithInput(m_volumeHandle, Win32USN.FsCtl.ReadUSNJournal,

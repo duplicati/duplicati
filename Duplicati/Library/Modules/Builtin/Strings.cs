@@ -11,6 +11,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string EmptyPassphraseError { get { return LC.L(@"Empty passphrases are not allowed"); } }
         public static string EnterPassphrasePrompt { get { return LC.L(@"Enter encryption passphrase"); } }
         public static string PassphraseMismatchError { get { return LC.L(@"The passphrases do not match"); } }
+        public static string ForcepassphrasefromstdinShort { get { return LC.L(@"Read passphrase from STDIN"); } }
+        public static string ForcepassphrasefromstdinLong { get { return LC.L(@"By default, the passphrase is attempted read from the TTY device directly, increasing the security by not copying the passphrase into a stream. In some setups, such as when running detached from a console, this does not work. Set this flag to prevent trying a TTY read and only read the passphrase from STDIN."); } }
     }
     internal static class CheckMonoSSL {
         public static string Description { get { return LC.L(@"When running with Mono, this module will check if any certificates are installed and suggest installing them otherwise"); } }

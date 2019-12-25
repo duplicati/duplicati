@@ -15,12 +15,15 @@
 # Philip De, 2018
 # Manfred Mueller <manfred.mueller@fluxflux.net>, 2018
 # agrajaghh <agrajaghh@gmail.com>, 2018
-# sfahrenholz, 2018
+# sfahrenholz, 2019
+# Colin Frei <colin@colinfrei.com>, 2019
+# RiseT, 2019
+# c28cac2ce862d12de2b1d95be60d8254, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: sfahrenholz, 2018\n"
+"Last-Translator: c28cac2ce862d12de2b1d95be60d8254, 2019\n"
 "Language-Team: German (https://www.transifex.com/duplicati/teams/67655/de/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -292,7 +295,7 @@ msgstr "Defekter Zugriff"
 
 #: templates/backends/file.html:8 templates/restore.html:91
 msgid "Browse"
-msgstr "Anzeigen"
+msgstr "Durchsuchen"
 
 #: scripts/controllers/SystemSettingsController.js:33
 msgid "Browser default"
@@ -341,10 +344,10 @@ msgid ""
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
-"Bei erlauben des Remotezugriffes, wird der Server auf jede Anfrage von jedem"
-" Computer aus dem Netzwerk hören. Wenn Du diese Option aktivierst, stelle "
-"bitte sicher, dass Du ein Computer aus einemmit einer Firewall geschützten "
-"Netzwerk verwendest."
+"Wenn der Remotezugriff erlaubt wird, wird der Server auf Anfragen von jedem "
+"Computer aus dem Netzwerk antworten. Wenn Du diese Option aktivierst, stelle"
+" bitte sicher, dass Du ein Computer aus einem mit einer Firewall geschützten"
+" Netzwerk verwendest."
 
 #: templates/settings.html:29
 msgid ""
@@ -555,7 +558,7 @@ msgstr "Kopie"
 
 #: templates/addoredit.html:103 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
-msgstr "Kopiere Ziel-URL in Zwischenablage"
+msgstr "Ziel-URL in Zwischenablage kopieren"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
@@ -777,7 +780,7 @@ msgstr "Alles ausblenden"
 
 #: templates/settings.html:68
 msgid "Display and color theme"
-msgstr "Anzeige und Farbthema"
+msgstr "Darstellung und Farbthema"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
@@ -801,7 +804,7 @@ msgstr "Spenden-Links"
 
 #: templates/settings.html:80
 msgid "Donation messages are hidden, click to show"
-msgstr "Spenden-Links werden versteckt (jetzt anzeigen)"
+msgstr "Spenden-Links sind versteckt. Zum Anzeigen anklicken"
 
 #: templates/settings.html:79
 msgid "Donation messages are visible, click to hide"
@@ -849,9 +852,9 @@ msgid ""
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
-"Duplicati wird beim Start ausgeführt, verbleibt für die Dauer im "
-"pausierenden Zustand. Dabei belegt Duplicati minimale Systemressourcen und "
-"Backups werden nicht ausgeführt."
+"Duplicati verbleibt für die angegebene Dauer im pausierten Zustand. Dabei "
+"belegt Duplicati minimale Systemressourcen und Backups werden nicht "
+"ausgeführt."
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -940,7 +943,7 @@ msgstr ""
 "Geben Sie manuell die Aufbewahrungregeln an. Platzhalter sind D/W/Y für "
 "Tag/Woche/Jahr und U für unbegrenzt.  Die syntax lautet 7D:1D,4W:1W,36M:1M. "
 "Dieses Beispiel erhält eine Sicherung für jeden der nächsten 7 Tage, jede "
-"der nächsten 4 Wochen und jeden der nächsten 12 Monate. Die Eingabe kann "
+"der nächsten 4 Wochen und jeden der nächsten 36 Monate. Die Eingabe kann "
 "auch als 1W:1D,1M:1W,3Y:1M erfolgen."
 
 #: templates/backends/azure.html:12
@@ -2279,16 +2282,16 @@ msgstr "Einstellungen"
 #: templates/addoredit.html:69 templates/notificationarea.html:12
 #: templates/notificationarea.html:32
 msgid "Show"
-msgstr "Zeigen"
+msgstr "Anzeigen"
 
 #: templates/addoredit.html:132
 msgid "Show advanced editor"
-msgstr "Profi-Modus anzeigen"
+msgstr "Erweiterten Editor anzeigen"
 
 #: templates/addoredit.html:143 templates/backends/file.html:16
 #: templates/restore.html:99
 msgid "Show hidden folders"
-msgstr "Zeige versteckte Ordner"
+msgstr "Versteckte Ordner anzeigen"
 
 #: templates/about.html:8
 msgid "Show log"
@@ -2300,7 +2303,7 @@ msgstr "Protokolldatei anzeigen..."
 
 #: templates/addoredit.html:135
 msgid "Show treeview"
-msgstr "Zeige Baumansicht"
+msgstr "Baumansicht anzeigen"
 
 #: templates/backends/sia.html:11
 msgid "Sia server password"

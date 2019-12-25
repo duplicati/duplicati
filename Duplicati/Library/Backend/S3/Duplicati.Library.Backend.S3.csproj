@@ -19,6 +19,8 @@
   </ItemGroup>
   
   <ItemGroup>
+    <Analyzer Include="..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.103.26\analyzers\dotnet\cs\AWSSDK.IdentityManagement.CodeAnalysis.dll" />
+    <Analyzer Include="..\..\..\..\packages\AWSSDK.S3.3.3.104.25\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />

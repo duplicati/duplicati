@@ -139,7 +139,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Activates the process bacground IO priority
+        /// Activates the process background IO priority
         /// </summary>
         private void ActivateBackgroundIOPriority()
         {
@@ -235,6 +235,31 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Expose all filesystem attributes
+        /// </summary>
+        private static void ExposeAllFilesystemAttributes()
+        {
+            // Starting with Windows 10 1803, the operating system may mask the process's view of some
+            // file attributes such as reparse, offline, and sparse.
+            //
+            // This function will turn off such masking.
+            //
+            // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-rtlqueryprocessplaceholdercompatibilitymode
+
+            if (Platform.IsClientWindows)
+            {
+                try
+                {
+                    Win32.RtlSetProcessPlaceholderCompatibilityMode(Win32.PHCM_VALUES.PHCM_EXPOSE_PLACEHOLDERS);
+                }
+                catch
+                {
+                    // Ignore exceptions - not applicable on this version of Windows
+                }
+            }
+        }
+
+        /// <summary>
         /// Starts the process controller
         /// </summary>
         /// <param name="options">The options to use</param>
@@ -245,6 +270,8 @@ namespace Duplicati.Library.Main
 
             if (options.UseBackgroundIOPriority)
                 ActivateBackgroundIOPriority();
+
+            ExposeAllFilesystemAttributes();
         }
 
         /// <summary>

@@ -500,7 +500,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="stream">The stream to read</param>
         /// <param name="buf">The buffer to read into</param>
-        /// <param name="count">The amout of bytes to read</param>
+        /// <param name="count">The amount of bytes to read</param>
         /// <returns>The actual number of bytes read</returns>
         public static int ForceStreamRead(Stream stream, byte[] buf, int count)
         {
@@ -523,7 +523,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="stream">The stream to read.</param>
         /// <param name="buf">The buffer to read into.</param>
-        /// <param name="count">The amout of bytes to read.</param>
+        /// <param name="count">The amount of bytes to read.</param>
         /// <returns>The number of bytes read</returns>
         public static async Task<int> ForceStreamReadAsync(this System.IO.Stream stream, byte[] buf, int count)
         {
@@ -786,14 +786,11 @@ namespace Duplicati.Library.Utility
         /// <returns>The string as byte array.</returns>
         /// <param name="hex">The hex string</param>
         /// <param name="data">The parsed data</param>
-        public static byte[] HexStringAsByteArray(string hex, byte[] data)
+        public static void HexStringAsByteArray(string hex, byte[] data)
         {
             for (var i = 0; i < hex.Length; i += 2)
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-
-            return data;
         }
-
 
         public static bool Which(string appname)
         {
@@ -837,7 +834,7 @@ namespace Duplicati.Library.Utility
                     var str = Environment.GetEnvironmentVariable("FILESYSTEM_CASE_SENSITIVE");
 
                     // TODO: This should probably be determined by filesystem rather than OS,
-                    // OSX can actually have the disks formated as Case Sensitive, but insensitive is default
+                    // OSX can actually have the disks formatted as Case Sensitive, but insensitive is default
                     CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientPosix && !Platform.IsClientOSX);
                 }
 
@@ -954,8 +951,18 @@ namespace Duplicati.Library.Utility
             return new DateTime(ticks, DateTimeKind.Utc);
         }
         
+	/// <summary>
+	/// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
+	/// </summary>
+	/// <returns>The number of elapsed seconds since the Unix epoch</returns>
+	/// <param name="input">The input time</param>
         public static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
+            // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
+            // The DateTimeOffset constructor will convert the provided DateTime to the UTC
+            // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
+            // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
+            // and DateTimeOffset.MaxValue bounds.
             return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
         }
         
@@ -1117,11 +1124,11 @@ namespace Duplicati.Library.Utility
 
             if (IsPrimitiveTypeForSerialization(item.GetType()))
             {
-                if (item is DateTime)
+                if (item is DateTime time)
                 {
-                    writer.Write(((DateTime)item).ToLocalTime());
+                    writer.Write(time.ToLocalTime());
                     writer.Write(" (");
-                    writer.Write(ToUnixTimestamp((DateTime)item));
+                    writer.Write(ToUnixTimestamp(time));
                     writer.Write(")");
                 }
                 else
@@ -1141,7 +1148,7 @@ namespace Duplicati.Library.Utility
         /// <param name="filter">A filter applied to properties to decide if they are omitted or not</param>
         /// <param name="recurseobjects">A value indicating if non-primitive values are recursed</param>
         /// <param name="indentation">The string indentation</param>
-        /// <param name="visited">A lookup table with visited objects, used to avoid inifinite recursion</param>
+        /// <param name="visited">A lookup table with visited objects, used to avoid infinite recursion</param>
         /// <param name="collectionlimit">The maximum number of items to report from an IEnumerable instance</param>
         public static void PrintSerializeObject(object item, TextWriter writer, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 0, Dictionary<object, object> visited = null)
         {
@@ -1389,7 +1396,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Special characters that needs to be escaped on Linux
         /// </summary>
-        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""|$|`|\\|!]");
+        private static readonly Regex COMMANDLINE_ESCAPED_LINUX = new Regex(@"[""$`\\!]");
 
         /// <summary>
         /// Wraps a single argument in quotes suitable for the passing on the commandline

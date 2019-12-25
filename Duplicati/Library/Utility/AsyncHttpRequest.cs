@@ -99,15 +99,15 @@ namespace Duplicati.Library.Utility
             m_request.Timeout = System.Threading.Timeout.Infinite;
 
             //Then we register custom settings
-            if (m_request is HttpWebRequest)
+            if (this.m_request is HttpWebRequest webRequest)
             {
-                if (((HttpWebRequest)m_request).ReadWriteTimeout != System.Threading.Timeout.Infinite)
-                    m_activity_timeout = ((HttpWebRequest)m_request).ReadWriteTimeout;
+                if (webRequest.ReadWriteTimeout != System.Threading.Timeout.Infinite)
+                    m_activity_timeout = webRequest.ReadWriteTimeout;
 
-                ((HttpWebRequest)m_request).ReadWriteTimeout = System.Threading.Timeout.Infinite;
+                webRequest.ReadWriteTimeout = System.Threading.Timeout.Infinite;
 
                 // Prevent in-memory buffering causing out-of-memory issues
-                ((HttpWebRequest)m_request).AllowReadStreamBuffering = HttpContextSettings.BufferRequests;
+                webRequest.AllowReadStreamBuffering = HttpContextSettings.BufferRequests;
             }
 		}
 
@@ -129,12 +129,12 @@ namespace Duplicati.Library.Utility
         public Stream GetRequestStream(long contentlength = -1)
         {
             // Prevent in-memory buffering causing out-of-memory issues
-            if (m_request is HttpWebRequest)
+            if (this.m_request is HttpWebRequest request)
             {
                 if (contentlength >= 0)
-                    ((HttpWebRequest)m_request).ContentLength = contentlength;
-                if (m_request.ContentLength >= 0)
-                    ((HttpWebRequest)m_request).AllowWriteStreamBuffering = false;
+                    request.ContentLength = contentlength;
+                if (request.ContentLength >= 0)
+                    request.AllowWriteStreamBuffering = false;
             }
 
             if (m_state == RequestStates.GetRequest)
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Utility
         }
             
         /// <summary>
-        /// Wrapper class for getting request and respone objects in a async manner
+        /// Wrapper class for getting request and response objects in a async manner
         /// </summary>
         private class AsyncWrapper
         {
@@ -221,12 +221,12 @@ namespace Duplicati.Library.Utility
                 catch (Exception ex)
                 {
                     if (m_timedout)
-                        m_exception = new WebException(string.Format("{0} timed out", m_isRequest ? "GetRequestStream" : "GetResponse"), ex, WebExceptionStatus.Timeout, ex is WebException ? ((WebException)ex).Response : null);
+                        m_exception = new WebException(string.Format("{0} timed out", m_isRequest ? "GetRequestStream" : "GetResponse"), ex, WebExceptionStatus.Timeout, ex is WebException exception ? exception.Response : null);
                     else
                     {
                         // Workaround for: https://bugzilla.xamarin.com/show_bug.cgi?id=28287
                         var wex = ex;
-                        if (ex is WebException && ((WebException)ex).Response == null)
+                        if (ex is WebException exception && exception.Response == null)
                         {
                             WebResponse resp = null;
 
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Utility
                                 catch { }
 
                             if (resp != null)
-                                wex = new WebException(ex.Message, ex.InnerException, ((WebException)ex).Status, resp);
+                                wex = new WebException(exception.Message, exception.InnerException, exception.Status, resp);
                         }
 
                         m_exception = wex;

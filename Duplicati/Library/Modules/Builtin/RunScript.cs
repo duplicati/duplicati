@@ -181,8 +181,8 @@ namespace Duplicati.Library.Modules.Builtin
             ParsedResultType level;
             if (result is Exception)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is Library.Interface.IBasicResults)
-                level = ((IBasicResults)result).ParsedResult;
+            else if (result != null && result is IBasicResults results)
+                level = results.ParsedResult;
             else
                 level = ParsedResultType.Error;
 
@@ -314,7 +314,7 @@ namespace Duplicati.Library.Modules.Builtin
                     {
                         string line = rawline.Trim();
                         if (!line.StartsWith("--", StringComparison.Ordinal))
-                            continue; //Ingore anything that does not start with --
+                            continue; //Ignore anything that does not start with --
 
                         line = line.Substring(2);
                         int lix = line.IndexOf('=');

@@ -342,11 +342,11 @@ namespace Duplicati.CommandLine.BackendTester
 
                             try
                             {
-                                if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
+                                if (backend is IStreamingBackend streamingBackend && !disableStreaming)
                                 {
                                     using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                     using (NonSeekableStream nss = new NonSeekableStream(fs))
-                                        (backend as Library.Interface.IStreamingBackend).Get(files[i].remotefilename, nss);
+                                        streamingBackend.Get(files[i].remotefilename, nss);
                                 }
                                 else
                                     backend.Get(files[i].remotefilename, cf);
@@ -453,8 +453,8 @@ namespace Duplicati.CommandLine.BackendTester
             finally
             {
                 foreach (Library.Interface.IGenericModule m in loadedModules)
-                    if (m is IDisposable)
-                        ((IDisposable)m).Dispose();
+                    if (m is IDisposable disposable)
+                        disposable.Dispose();
             }
 
             return true;
@@ -467,11 +467,11 @@ namespace Duplicati.CommandLine.BackendTester
 
             try
             {
-                if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
+                if (backend is IStreamingBackend streamingBackend && !disableStreaming)
                 {
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (NonSeekableStream nss = new NonSeekableStream(fs))
-                        (backend as Library.Interface.IStreamingBackend).PutAsync(remotefilename, nss, CancellationToken.None).Wait();
+                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Wait();
                 }
                 else
                     backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Wait();

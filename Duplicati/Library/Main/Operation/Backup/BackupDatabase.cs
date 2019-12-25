@@ -248,6 +248,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.WriteFileset(fsw, filesetid, m_transaction));
         }
 
+        public Task UpdateFilesetAndMarkAsFullBackupAsync(long filesetid)
+        {
+            return RunOnMain(() => m_database.UpdateFullBackupStateInFileset(filesetid, true, m_transaction));
+        }
+
         public Task<string[]> GetMissingIndexFilesAsync()
         {
             return RunOnMain(() => m_database.GetMissingIndexFiles(m_transaction).ToArray());
@@ -282,6 +287,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             return RunOnMain(() => m_database.UpdateChangeJournalData(journalData, lastfilesetid, m_transaction));
         }
+
     }
 }
 
