@@ -106,9 +106,9 @@ namespace Duplicati.Library.Common.IO
             [JsonProperty]
             public readonly bool IsProtected;
 
-            public FileSystemAccessProtected(bool isProtected)
+            public FileSystemAccessProtected(bool Protected)
             {
-                IsProtected = isProtected;
+                IsProtected = Protected;
             }
         }
 
