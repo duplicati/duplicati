@@ -101,17 +101,6 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
-        private class FileSystemAccessProtected
-        {
-            [JsonProperty]
-            public readonly bool IsProtected;
-
-            public FileSystemAccessProtected(bool Protected)
-            {
-                IsProtected = Protected;
-            }
-        }
-
         private static Newtonsoft.Json.JsonSerializer _cachedSerializer;
 
         private Newtonsoft.Json.JsonSerializer Serializer
@@ -498,7 +487,7 @@ namespace Duplicati.Library.Common.IO
                 objs.Add(new FileSystemAccess((FileSystemAccessRule)f));
 
             dict["win-ext:accessrules"] = SerializeObject(objs);
-            dict["win-ext:accessrulesprotected"] = SerializeObject(new FileSystemAccessProtected(rules.AreAccessRulesProtected));
+            dict["win-ext:accessrulesprotected"] = rules.AreAccessRulesProtected.ToString();
 
             return dict;
         }
@@ -514,10 +503,10 @@ namespace Duplicati.Library.Common.IO
 
                 if (data.ContainsKey("win-ext:accessrulesprotected"))
                 {
-                    var content = DeserializeObject<FileSystemAccessProtected>(data["win-ext:accessrulesprotected"]);
-                    if (rules.AreAccessRulesProtected != content.IsProtected)
+                    bool IsProtected = bool.Parse(data["win-ext:accessrulesprotected"]);
+                    if (rules.AreAccessRulesProtected != IsProtected)
                     {
-                        rules.SetAccessRuleProtection(content.IsProtected, false);
+                        rules.SetAccessRuleProtection(IsProtected, false);
                     }
                 }
 
