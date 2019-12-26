@@ -508,9 +508,10 @@ namespace Duplicati.Library.Common.IO
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
 
-            FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
             if (restorePermissions)
             {
+                FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
+
                 if (data.ContainsKey("win-ext:accessrulesprotected"))
                 {
                     var content = DeserializeObject<FileSystemAccessProtected>(data["win-ext:accessrulesprotected"]);
@@ -544,12 +545,12 @@ namespace Duplicati.Library.Common.IO
 
                     if (ex != null)
                         throw ex;
-
-                    if (isDirTarget)
-                        SetAccessControlDir(targetpath, (DirectorySecurity)rules);
-                    else
-                        SetAccessControlFile(targetpath, (FileSecurity)rules);
                 }
+
+                if (isDirTarget)
+                    SetAccessControlDir(targetpath, (DirectorySecurity)rules);
+                else
+                    SetAccessControlFile(targetpath, (FileSecurity)rules);
             }
         }
 
