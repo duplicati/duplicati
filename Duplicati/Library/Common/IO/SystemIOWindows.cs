@@ -503,10 +503,10 @@ namespace Duplicati.Library.Common.IO
 
                 if (data.ContainsKey("win-ext:accessrulesprotected"))
                 {
-                    bool IsProtected = bool.Parse(data["win-ext:accessrulesprotected"]);
-                    if (rules.AreAccessRulesProtected != IsProtected)
+                    bool isProtected = bool.Parse(data["win-ext:accessrulesprotected"]);
+                    if (rules.AreAccessRulesProtected != isProtected)
                     {
-                        rules.SetAccessRuleProtection(IsProtected, false);
+                        rules.SetAccessRuleProtection(isProtected, false);
                     }
                 }
 
