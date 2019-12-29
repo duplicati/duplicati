@@ -1,3 +1,11 @@
+2019-12-29 - 2.0.4.38_canary_2019-12-29
+==========
+* Fixed AutoUpdater environment setting to be parsed as a boolean, thanks @drwtsn32x
+* Code cleanup for the SSH backend, thanks @verhoek
+* Fixed an issue with restoring metadata on Windows, thanks @drwtsn32x
+* Improved AppVeyor test builds, thanks @warwickmm
+* Updated translations, thanks @kenkendk
+
 2019-12-12 - 2.0.4.37_canary_2019-12-12
 ==========
 * Updated and improved TrayIcon's for warning state, thanks @drwtsn32x
