@@ -5,11 +5,12 @@
 # Andrea De Lunardi <a.delunardi@arca.com>, 2018
 # Folgore101 <andrea.gramegna@gmail.com>, 2018
 # Francesco Infantini <infantini.francesco@gmail.com>, 2019
+# albanobattistella <albano_battistella@hotmail.com>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Francesco Infantini <infantini.francesco@gmail.com>, 2019\n"
+"Last-Translator: albanobattistella <albano_battistella@hotmail.com>, 2019\n"
 "Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -217,7 +218,7 @@ msgstr "Esegui automaticamente i backup."
 
 #: templates/backends/b2.html:12
 msgid "B2 Application ID"
-msgstr ""
+msgstr "ID applicazione B2"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
@@ -229,7 +230,7 @@ msgstr "ID Account Cloud B2 Storage"
 
 #: templates/backends/b2.html:13
 msgid "B2 Cloud Storage Application ID"
-msgstr ""
+msgstr "ID applicazione di archiviazione cloud B2"
 
 #: scripts/services/EditUriBuiltins.js:879 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
@@ -319,11 +320,11 @@ msgstr "Classe bucket"
 
 #: scripts/services/ServerStatus.js:48
 msgid "Building list of files to restore …"
-msgstr ""
+msgstr "Creazione di un elenco di file da ripristinare ..."
 
 #: scripts/controllers/RestoreController.js:366
 msgid "Building partial temporary database …"
-msgstr ""
+msgstr "Creazione di un database temporaneo parziale ..."
 
 #: templates/restore.html:59
 msgid "Busy ..."
@@ -347,6 +348,13 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
+"Per impostazione predefinita, l'icona nella barra delle applicazioni aprirà "
+"l'interfaccia utente con un token che sblocca l'interfaccia utente. Ciò "
+"garantisce che sia possibile accedere all'interfaccia utente dall'icona "
+"nella barra delle applicazioni, mentre si richiede agli altri di inserire "
+"una password. Se si preferisce digitare la password, anche quando si accede "
+"all'interfaccia utente dall'icona nella barra delle applicazioni, abilitare "
+"questa opzione."
 
 #: scripts/services/AppUtils.js:198
 msgid "Cache Files"
@@ -407,7 +415,7 @@ msgstr "Controllo..."
 
 #: templates/about.html:37
 msgid "Checking for updates …"
-msgstr ""
+msgstr "Verifica aggiornamenti …"
 
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
@@ -425,7 +433,7 @@ msgstr "Clicca per impostare le opzioni di limitazione"
 
 #: templates/home.html:42
 msgid "Commandline …"
-msgstr ""
+msgstr "Riga di comando …"
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
@@ -441,19 +449,19 @@ msgstr "Comprimendo dati remoti..."
 
 #: scripts/services/ServerStatus.js:65
 msgid "Compacting remote data …"
-msgstr ""
+msgstr "Compattazione dei dati remoti ..."
 
 #: templates/backup-result/box.html:34
 msgid "Complete log"
-msgstr ""
+msgstr "Registro completo"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
-msgstr ""
+msgstr "Completamento del backup ..."
 
 #: scripts/services/ServerStatus.js:36
 msgid "Completing previous backup …"
-msgstr ""
+msgstr "Completamento del backup precedente ..."
 
 #: templates/about.html:68
 msgid "Compression modules:"
@@ -487,7 +495,7 @@ msgstr "Conferma passphrase crittografia"
 
 #: templates/export.html:29
 msgid "Confirm passphrase"
-msgstr ""
+msgstr "Conferma frase d'accesso"
 
 #: templates/settings.html:12
 msgid "Confirm password"
@@ -507,7 +515,7 @@ msgstr "Connetti ora"
 
 #: index.html:315
 msgid "Connecting to server …"
-msgstr ""
+msgstr "Connessione al server …"
 
 #: templates/commandline.html:51
 msgid "Connecting to task ...."
@@ -572,7 +580,7 @@ msgstr "Solo arresti anomali"
 
 #: templates/home.html:48
 msgid "Create bug report …"
-msgstr ""
+msgstr "Crea segnalazione bug ..."
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
@@ -584,19 +592,19 @@ msgstr "Creato nuovo utente limitato"
 
 #: scripts/services/ServerStatus.js:60
 msgid "Creating bug report …"
-msgstr ""
+msgstr "Creazione segnalazione bug ..."
 
 #: scripts/services/EditUriBuiltins.js:115
 msgid "Creating new user with limited access …"
-msgstr ""
+msgstr "Creazione di un nuovo utente con accesso limitato ..."
 
 #: scripts/services/ServerStatus.js:49
 msgid "Creating target folders …"
-msgstr ""
+msgstr "Creazione di cartelle di destinazione ..."
 
 #: scripts/controllers/RestoreController.js:361
 msgid "Creating temporary backup …"
-msgstr ""
+msgstr "Creazione backup temporaneo ..."
 
 #: scripts/services/EditUriBuiltins.js:115
 msgid "Creating user..."
@@ -648,7 +656,7 @@ msgstr "Classe di archiviazione personalizzata ({{class}})"
 
 #: templates/home.html:39
 msgid "Database …"
-msgstr ""
+msgstr "Banca dati …"
 
 #: scripts/services/AppUtils.js:91 templates/addoredit.html:351
 msgid "Days"
@@ -704,7 +712,7 @@ msgstr "Cancella {{filecount}} file ({{filesize}}) dall'archivio remoto?"
 
 #: templates/home.html:33
 msgid "Delete …"
-msgstr ""
+msgstr "Elimina …"
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
@@ -720,11 +728,11 @@ msgstr "File cancellati"
 
 #: scripts/services/ServerStatus.js:62
 msgid "Deleting remote files …"
-msgstr ""
+msgstr "Eliminazione di file remoti ..."
 
 #: scripts/services/ServerStatus.js:40
 msgid "Deleting unwanted files …"
-msgstr ""
+msgstr "Eliminazione di file indesiderati ..."
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
@@ -818,15 +826,15 @@ msgstr "File scaricati"
 
 #: scripts/services/ServerStatus.js:53
 msgid "Downloading files …"
-msgstr ""
+msgstr "Download di file ..."
 
 #: templates/notificationarea.html:24
 msgid "Downloading update…"
-msgstr ""
+msgstr "Download aggiornamento in corso ..."
 
 #: templates/notificationarea.html:30
 msgid "Downloading …"
-msgstr ""
+msgstr "Download in corso ..."
 
 #: scripts/services/AppUtils.js:301
 msgid "Duplicate option {{opt}}"
@@ -891,7 +899,7 @@ msgstr "Modifica come testo"
 
 #: templates/home.html:31
 msgid "Edit …"
-msgstr ""
+msgstr "Modifica …"
 
 #: templates/export.html:22
 msgid "Encrypt file"
@@ -1093,11 +1101,11 @@ msgstr "Esporta le password"
 
 #: templates/home.html:32
 msgid "Export …"
-msgstr ""
+msgstr "Esporta …"
 
 #: templates/export.html:39
 msgid "Exporting …"
-msgstr ""
+msgstr "Esportazione in corso ..."
 
 #: templates/externallink.html:1
 msgid "External link"
@@ -1162,7 +1170,7 @@ msgstr "Salvataggio fallito:"
 #: scripts/controllers/RestoreController.js:124
 #: scripts/controllers/RestoreController.js:163
 msgid "Fetching path information …"
-msgstr ""
+msgstr "Recupero delle informazioni sul percorso ..."
 
 #: scripts/services/AppUtils.js:74
 msgid "File"
@@ -1235,7 +1243,7 @@ msgstr "Genera criteri di accesso IAM"
 
 #: scripts/controllers/RestoreController.js:70
 msgid "Getting file versions …"
-msgstr ""
+msgstr "Ottenere versioni di file ..."
 
 #: scripts/services/EditUriBuiltins.js:732
 #: scripts/services/EditUriBuiltins.js:743 templates/backends/msgroup.html:2
@@ -1318,6 +1326,9 @@ msgid ""
 "href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
 " as …&quot;</a>"
 msgstr ""
+"Se il file di backup non è stato scaricato automaticamente, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">tasto destro e sciegli "
+"&quota;Salva come …&quota;</a>"
 
 #: templates/notificationarea.html:7
 msgid ""
@@ -1325,6 +1336,9 @@ msgid ""
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
 "&quot;Save as …&quot;</a>"
 msgstr ""
+"Se il file di backup non è stato scaricato automaticamente, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">tasto destro e sciegli "
+"&quota;Salva come …&quota;</a>"
 
 #: scripts/services/EditUriBackendConfig.js:106
 msgid ""
@@ -1386,7 +1400,7 @@ msgstr "Importa metadati"
 
 #: templates/import.html:35
 msgid "Importing …"
-msgstr ""
+msgstr "Importazione ..."
 
 #: scripts/controllers/EditBackupController.js:163
 msgid "Include a file?"
@@ -1487,15 +1501,15 @@ msgstr "Librerie"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates …"
-msgstr ""
+msgstr "Elenco date di backup ..."
 
 #: scripts/services/ServerStatus.js:63
 msgid "Listing remote files for purge …"
-msgstr ""
+msgstr "Elenco dei file remoti per l'eliminazione ..."
 
 #: scripts/services/ServerStatus.js:61
 msgid "Listing remote files …"
-msgstr ""
+msgstr "Elenco dei file remoti ..."
 
 #: templates/log.html:7
 msgid "Live"
@@ -1532,7 +1546,7 @@ msgstr "Caricamento dell'archivio remoto utilizzato ..."
 #: templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
-msgstr ""
+msgstr "Caricamento in corso …"
 
 #: scripts/services/EditUriBuiltins.js:948
 msgid "Local Repository"
@@ -1920,7 +1934,7 @@ msgstr "Password"
 
 #: scripts/services/ServerStatus.js:52
 msgid "Patching files with local blocks …"
-msgstr ""
+msgstr "Patch di file con blocchi locali ..."
 
 #: scripts/services/EditUriBuiltins.js:898
 msgid "Path"
@@ -2000,11 +2014,11 @@ msgstr "Eliminazione dei file completata!"
 
 #: scripts/services/ServerStatus.js:64
 msgid "Purging files …"
-msgstr ""
+msgstr "Eliminazione dei file ..."
 
 #: scripts/services/ServerStatus.js:46
 msgid "Rebuilding local database …"
-msgstr ""
+msgstr "Ricostruzione del database locale ..."
 
 #: templates/localdatabase.html:20
 msgid "Recreate (delete and repair)"
@@ -2016,11 +2030,11 @@ msgstr "Fase ricreazione database"
 
 #: scripts/services/ServerStatus.js:56
 msgid "Recreating database …"
-msgstr ""
+msgstr "Ricreazione del database ..."
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"
-msgstr ""
+msgstr "Registrazione backup temporaneo ..."
 
 #: scripts/controllers/EditBackupController.js:138
 msgid "Relative paths not allowed"
@@ -2076,7 +2090,7 @@ msgstr "Fase riparazione"
 
 #: scripts/services/ServerStatus.js:58
 msgid "Repairing database …"
-msgstr ""
+msgstr "Ripristino del database ..."
 
 #: templates/addoredit.html:62
 msgid "Repeat Passphrase"
@@ -2108,7 +2122,7 @@ msgstr "Ripristina file da {{backupname}}"
 
 #: templates/home.html:26
 msgid "Restore files …"
-msgstr ""
+msgstr "Ripristina file ..."
 
 #: templates/restore.html:48
 msgid "Restore from"
@@ -2133,20 +2147,20 @@ msgstr "Ripristina autorizzazioni lettura/scrittura"
 
 #: templates/backup-result/restore-items.html:2
 msgid "Restored Files"
-msgstr ""
+msgstr "File ripristinati"
 
 #: templates/backup-result/restore-items.html:6
 msgid "Restored Folders"
-msgstr ""
+msgstr "Cartelle ripristinate"
 
 #: templates/backup-result/restore-items.html:10
 msgid "Restored Symlinks"
-msgstr ""
+msgstr "Symlink ripristinati"
 
 #: scripts/controllers/RestoreController.js:376
 #: scripts/controllers/RestoreController.js:398
 msgid "Restoring files …"
-msgstr ""
+msgstr "Ripristino di file ..."
 
 #: index.html:228
 msgid "Resume"
@@ -2178,7 +2192,7 @@ msgstr "Attività in esecuzione:"
 
 #: scripts/controllers/StateController.js:25
 msgid "Running …"
-msgstr ""
+msgstr "In esecuzione …"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
@@ -2210,11 +2224,11 @@ msgstr "Salva immediatamente"
 
 #: scripts/services/ServerStatus.js:50
 msgid "Scanning existing files …"
-msgstr ""
+msgstr "Scansione di file esistenti ..."
 
 #: scripts/services/ServerStatus.js:51
 msgid "Scanning for local blocks …"
-msgstr ""
+msgstr "Scansione per blocchi locali ..."
 
 #: templates/addoredit.html:255 templates/addoredit.html:27
 msgid "Schedule"
@@ -2299,7 +2313,7 @@ msgstr "Mostra log"
 
 #: templates/home.html:47
 msgid "Show log …"
-msgstr ""
+msgstr "Mostra registro …"
 
 #: templates/addoredit.html:135
 msgid "Show treeview"
@@ -2327,7 +2341,7 @@ msgstr "Dati Sorgente"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Source Files"
-msgstr ""
+msgstr "Sorgente File"
 
 #: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:124
 msgid "Source data"
@@ -2362,20 +2376,20 @@ msgstr "Avvio"
 
 #: scripts/services/ServerStatus.js:33
 msgid "Starting backup …"
-msgstr ""
+msgstr "Avvio backup ..."
 
 #: scripts/services/ServerStatus.js:45
 msgid "Starting restore …"
-msgstr ""
+msgstr "Avvio ripristino ..."
 
 #: scripts/controllers/RestoreController.js:372
 #: scripts/controllers/RestoreController.js:396
 msgid "Starting the restore process …"
-msgstr ""
+msgstr "Avvio del processo di ripristino ..."
 
 #: scripts/controllers/StateController.js:106
 msgid "Stop after current file"
-msgstr ""
+msgstr "Stop dopo il file corrente"
 
 #: scripts/controllers/StateController.js:115
 msgid "Stop after the current file"
@@ -2396,7 +2410,7 @@ msgstr "Ferma esecuzione attività"
 
 #: index.html:179
 msgid "Stopping after the current file:"
-msgstr ""
+msgstr "Arresto dopo il file corrente:"
 
 #: index.html:184
 msgid "Stopping task:"
@@ -2501,7 +2515,7 @@ msgstr "Prova connessione..."
 
 #: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions …"
-msgstr ""
+msgstr "Test delle autorizzazioni ..."
 
 #: scripts/services/EditUriBuiltins.js:45
 msgid "Testing permissions..."
@@ -2509,7 +2523,7 @@ msgstr "Prova autorizzazioni..."
 
 #: templates/edituri.html:22
 msgid "Testing …"
-msgstr ""
+msgstr "Test in corso..."
 
 #: scripts/services/EditUriBuiltins.js:887
 #: scripts/services/EditUriBuiltins.js:898
@@ -2798,7 +2812,7 @@ msgstr "File caricati"
 
 #: scripts/services/ServerStatus.js:42
 msgid "Uploading verification file …"
-msgstr ""
+msgstr "Caricamento file di verifica ..."
 
 #: templates/settings.html:132
 msgid ""
@@ -2807,6 +2821,11 @@ msgid ""
 "reporter.duplicati.com/'\">{{'public usage statistics' | translate"
 "}}</external-link>"
 msgstr ""
+"I report sull'utilizzo ci aiutano a migliorare l'esperienza dell'utente e a "
+"valutare l'impatto delle nuove funzionalità. Li usiamo per generare "
+"<external-link link=\"'https://usage-"
+"reporter.duplicati.com/'\">{{\"statistiche sull'uso pubblico\" | tradurre"
+"}}</external-link>"
 
 #: templates/settings.html:120
 msgid "Usage statistics"
@@ -2860,11 +2879,11 @@ msgstr "Nome utente"
 
 #: scripts/services/ServerStatus.js:57
 msgid "Vacuuming database …"
-msgstr ""
+msgstr "Prelevamento database ..."
 
 #: templates/addoredit.html:155
 msgid "Validating …"
-msgstr ""
+msgstr "Convalida in corso ..."
 
 #: templates/backup-result/phases/test.html:20
 #: templates/backup-result/test-items.html:2
@@ -2885,23 +2904,23 @@ msgstr "Verifica risposta"
 
 #: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
 msgid "Verifying backend data …"
-msgstr ""
+msgstr "Verifica dei dati di backend ..."
 
 #: scripts/services/ServerStatus.js:59
 msgid "Verifying files …"
-msgstr ""
+msgstr "Verifica dei file ..."
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data …"
-msgstr ""
+msgstr "Verifica dei dati remoti ..."
 
 #: scripts/services/ServerStatus.js:54
 msgid "Verifying restored files …"
-msgstr ""
+msgstr "Verifica dei file ripristinati ..."
 
 #: templates/notificationarea.html:31
 msgid "Verifying …"
-msgstr ""
+msgstr "Verifica in corso ..."
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
@@ -2941,7 +2960,7 @@ msgstr "In attesa dell'attività per iniziare..."
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload to finish …"
-msgstr ""
+msgstr "In attesa del completamento del caricamento ..."
 
 #: templates/settings.html:127
 msgid "Warnings, errors and crashes"
@@ -3054,12 +3073,16 @@ msgid ""
 "You can stop the backup after any file uploads currently in progress have "
 "finished."
 msgstr ""
+"È possibile interrompere il backup al termine di eventuali caricamenti di "
+"file attualmente in corso."
 
 #: scripts/controllers/StateController.js:114
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and then stop."
 msgstr ""
+"È possibile interrompere l'operazione immediatamente, o consentire il "
+"processo di continuare il suo file corrente e poi fermarsi."
 
 #: scripts/controllers/EditBackupController.js:402
 msgid ""
@@ -3211,7 +3234,7 @@ msgstr "Personalizzato"
 
 #: templates/settings.html:132
 msgid "public usage statistics"
-msgstr ""
+msgstr "statistiche sull'uso pubblico"
 
 #: templates/commandline.html:49 templates/restoredirect.html:95
 #: templates/waitarea.html:15
@@ -3265,4 +3288,4 @@ msgstr "{{time}} (durata {{duration}})"
 
 #: templates/localdatabase.html:4
 msgid "…loading…"
-msgstr ""
+msgstr "…Caricamento in corso…"

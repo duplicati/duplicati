@@ -4,11 +4,12 @@
 # Andres Rusconi <arusconi@gmail.com>, 2019
 # Joaquín Entrialgo, 2019
 # Pruebas, 2019
+# Clement Machado <cm@do360now.com>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Pruebas, 2019\n"
+"Last-Translator: Clement Machado <cm@do360now.com>, 2019\n"
 "Language-Team: Spanish (https://www.transifex.com/duplicati/teams/67655/es/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -216,7 +217,7 @@ msgstr "Ejecutar automáticamente las copias de seguridad."
 
 #: templates/backends/b2.html:12
 msgid "B2 Application ID"
-msgstr ""
+msgstr "ID de la aplicación B2"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
@@ -228,7 +229,7 @@ msgstr "B2 Cuenta Cloud Storage ID"
 
 #: templates/backends/b2.html:13
 msgid "B2 Cloud Storage Application ID"
-msgstr ""
+msgstr "ID de la aplicación de almacenamiento en la nube B2"
 
 #: scripts/services/EditUriBuiltins.js:879 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
@@ -318,11 +319,11 @@ msgstr "Categoría de almacenamiento del depósito"
 
 #: scripts/services/ServerStatus.js:48
 msgid "Building list of files to restore …"
-msgstr ""
+msgstr "Creando una lista de archivos para restaurar ..."
 
 #: scripts/controllers/RestoreController.js:366
 msgid "Building partial temporary database …"
-msgstr ""
+msgstr "Construyendo una base de datos parcial temporal ..."
 
 #: templates/restore.html:59
 msgid "Busy ..."

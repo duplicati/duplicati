@@ -1057,13 +1057,15 @@ msgstr "Google Drive"
 
 #: Library/Backend/GoogleServices/Strings.cs:46
 msgid "Team drive ID"
-msgstr ""
+msgstr "Team drive ID"
 
 #: Library/Backend/GoogleServices/Strings.cs:47
 msgid ""
 "This option sets the team drive to use. Leaving it empty uses the personal "
 "drive"
 msgstr ""
+"This option sets the team drive to use. Leaving it empty uses the personal "
+"drive"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -1399,7 +1401,7 @@ msgstr "Module for generating SSH private/public keys"
 
 #: Library/Backend/SSHv2/Strings.cs:5
 msgid "SSH Key Generator"
-msgstr ""
+msgstr "SSH Key Generator"
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
@@ -1450,6 +1452,8 @@ msgid ""
 "The SSH public key must be a valid SSH string, which is appended to the "
 ".ssh/authorized_keys file"
 msgstr ""
+"The SSH public key must be a valid SSH string, which is appended to the "
+".ssh/authorized_keys file"
 
 #: Library/Backend/SSHv2/Strings.cs:22
 msgid ""
@@ -1457,16 +1461,21 @@ msgid ""
 "Allowed formats are \"ssh://hostname/folder\" or "
 "\"ssh://username:password@hostname/folder\"."
 msgstr ""
+"This backend can read and write data to an SSH based backend, using SFTP. "
+"Allowed formats are \"ssh://hostname/folder\" or "
+"\"ssh://username:password@hostname/folder\"."
 
 #: Library/Backend/SSHv2/Strings.cs:27
 msgid ""
 "The server fingerprint used for validation of server identity. Format is eg."
 " \"ssh-rsa 4096 11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66\"."
 msgstr ""
+"The server fingerprint used for validation of server identity. Format is eg."
+" \"ssh-rsa 4096 11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66\"."
 
 #: Library/Backend/SSHv2/Strings.cs:28
 msgid "Supplies server fingerprint used for validation of server identity"
-msgstr ""
+msgstr "Supplies server fingerprint used for validation of server identity"
 
 #: Library/Backend/SSHv2/Strings.cs:29
 msgid ""
@@ -1474,10 +1483,13 @@ msgid ""
 "verified on connection. Use this option to disable host-key fingerprint "
 "verification. You should only use this option for testing."
 msgstr ""
+"To guard against man-in-the-middle attacks, the server fingerprint is "
+"verified on connection. Use this option to disable host-key fingerprint "
+"verification. You should only use this option for testing."
 
 #: Library/Backend/SSHv2/Strings.cs:30
 msgid "Disables fingerprint validation"
-msgstr ""
+msgstr "Disables fingerprint validation"
 
 #: Library/Backend/SSHv2/Strings.cs:31
 msgid ""
@@ -1486,10 +1498,14 @@ msgid ""
 "password is not used to authenticate. This option only works when using the "
 "managed SSH client."
 msgstr ""
+"Points to a valid OpenSSH keyfile. If the file is encrypted, the password "
+"supplied is used to decrypt the keyfile.  If this option is supplied, the "
+"password is not used to authenticate. This option only works when using the "
+"managed SSH client."
 
 #: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
-msgstr ""
+msgstr "Uses a SSH private key to authenticate"
 
 #: Library/Backend/SSHv2/Strings.cs:33
 #, csharp-format
@@ -1499,16 +1515,22 @@ msgid ""
 "keyfile.  If this option is supplied, the password is not used to "
 "authenticate. This option only works when using the managed SSH client."
 msgstr ""
+"An URL-encoded SSH private key. The private key must be prefixed with {0}. "
+"If the file is encrypted, the password supplied is used to decrypt the "
+"keyfile.  If this option is supplied, the password is not used to "
+"authenticate. This option only works when using the managed SSH client."
 
 #: Library/Backend/SSHv2/Strings.cs:35
 msgid ""
 "Use this option to manage the internal timeout for SSH operations. If this "
 "options is set to zero, the operations will not time out"
 msgstr ""
+"Use this option to manage the internal timeout for SSH operations. If this "
+"options is set to zero, the operations will not time out"
 
 #: Library/Backend/SSHv2/Strings.cs:36
 msgid "Sets the operation timeout value"
-msgstr ""
+msgstr "Sets the operation timeout value"
 
 #: Library/Backend/SSHv2/Strings.cs:37
 msgid ""
@@ -1517,19 +1539,23 @@ msgid ""
 "connection. Using keep-alive will keep the connection open in this scenario."
 " If this value is set to zero, the keep-alive is disabled."
 msgstr ""
+"This option can be used to enable the keep-alive interval for the SSH "
+"connection. If the connection is idle, aggressive firewalls might close the "
+"connection. Using keep-alive will keep the connection open in this scenario."
+" If this value is set to zero, the keep-alive is disabled."
 
 #: Library/Backend/SSHv2/Strings.cs:38
 msgid "Sets a keepalive value"
-msgstr ""
+msgstr "Sets a keepalive value"
 
 #: Library/Backend/SSHv2/Strings.cs:39
 msgid "SFTP (SSH)"
-msgstr ""
+msgstr "SFTP (SSH)"
 
 #: Library/Backend/SSHv2/Strings.cs:40
 #, csharp-format
 msgid "Unable to set folder to {0}, error message: {1}"
-msgstr ""
+msgstr "Unable to set folder to {0}, error message: {1}"
 
 #: Library/Backend/SSHv2/Strings.cs:41
 #, csharp-format
@@ -1538,6 +1564,9 @@ msgid ""
 "\"{0}\". Cause of this message is either not correct configuration or Man-"
 "in-the-middle attack!"
 msgstr ""
+"Validation of server fingerprint failed. Server returned fingerprint "
+"\"{0}\". Cause of this message is either not correct configuration or Man-"
+"in-the-middle attack!"
 
 #: Library/Backend/SSHv2/Strings.cs:42
 #, csharp-format
@@ -1545,20 +1574,24 @@ msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
 "(NOT SECURE) for testing!"
 msgstr ""
+"Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
+"(NOT SECURE) for testing!"
 
 #: Library/Backend/Box/Strings.cs:21
 msgid ""
 "This backend can read and write data to Box.com. Supported format is "
 "\"box://folder/subfolder\"."
 msgstr ""
+"This backend can read and write data to Box.com. Supported format is "
+"\"box://folder/subfolder\"."
 
 #: Library/Backend/Box/Strings.cs:22
 msgid "Box.com"
-msgstr ""
+msgstr "Box.com"
 
 #: Library/Backend/Box/Strings.cs:25
 msgid "Force delete files"
-msgstr ""
+msgstr "Force delete files"
 
 #: Library/Backend/Box/Strings.cs:26
 msgid ""
@@ -1566,59 +1599,67 @@ msgid ""
 "deleted after a grace period. Use this command to force immediate removal of"
 " delete files."
 msgstr ""
+"After deleting a file, it may end up in the trash folder where it will be "
+"deleted after a grace period. Use this command to force immediate removal of"
+" delete files."
 
 #: Library/Backend/Rclone/Strings.cs:6
 msgid "Rclone"
-msgstr ""
+msgstr "Rclone"
 
 #: Library/Backend/Rclone/Strings.cs:7
 msgid "This backend can read and write data to Rclone."
-msgstr ""
+msgstr "This backend can read and write data to Rclone."
 
 #: Library/Backend/Rclone/Strings.cs:8
 msgid "Local repository"
-msgstr ""
+msgstr "Local repository"
 
 #: Library/Backend/Rclone/Strings.cs:9
 msgid ""
 "Local repository for Rclone. Make sure it is configured as a local drive, as"
 " it needs access to the files generated by Duplicati."
 msgstr ""
+"Local repository for Rclone. Make sure it is configured as a local drive, as"
+" it needs access to the files generated by Duplicati."
 
 #: Library/Backend/Rclone/Strings.cs:10
 msgid "Remote repository"
-msgstr ""
+msgstr "Remote repository"
 
 #: Library/Backend/Rclone/Strings.cs:11
 msgid ""
 "Remote repository for Rclone. This can be any of the backends provided by "
 "Rclone. More info available on https://rclone.org/."
 msgstr ""
+"Remote repository for Rclone. This can be any of the backends provided by "
+"Rclone. More info available on https://rclone.org/."
 
 #: Library/Backend/Rclone/Strings.cs:12
 msgid "Remote path"
-msgstr ""
+msgstr "Remote path"
 
 #: Library/Backend/Rclone/Strings.cs:13
 msgid "Path on the Remote repository. "
-msgstr ""
+msgstr "Path on the Remote repository. "
 
 #: Library/Backend/Rclone/Strings.cs:14
 msgid "Rclone options."
-msgstr ""
+msgstr "Rclone options."
 
 #: Library/Backend/Rclone/Strings.cs:15
 msgid "Options will be transferred to rclone."
-msgstr ""
+msgstr "Options will be transferred to rclone."
 
 #: Library/Backend/Rclone/Strings.cs:16
 msgid "Rclone executable"
-msgstr ""
+msgstr "Rclone executable"
 
 #: Library/Backend/Rclone/Strings.cs:17
 msgid ""
 "Full path to the rclone executable. Only needed if it's not in your path."
 msgstr ""
+"Full path to the rclone executable. Only needed if it's not in your path."
 
 #: Library/Backend/File/Strings.cs:4
 #, csharp-format
@@ -1631,10 +1672,17 @@ msgid ""
 "unwanted external drive. The contents of the file are never examined, only "
 "file existence."
 msgstr ""
+"This option only works when the --{0} option is also specified. If there are"
+" alternate paths specified, this option indicates the name of a marker file "
+"that must be present in the folder. This can be used to handle situations "
+"where an external drive changes drive letter or mount point. By ensuring "
+"that a certain file exists, it is possible to prevent writing data to an "
+"unwanted external drive. The contents of the file are never examined, only "
+"file existence."
 
 #: Library/Backend/File/Strings.cs:5
 msgid "Look for a file in the destination folder"
-msgstr ""
+msgstr "Look for a file in the destination folder"
 
 #: Library/Backend/File/Strings.cs:6
 #, csharp-format
@@ -1650,10 +1698,20 @@ msgid ""
 " a username and password is supplied, the same credentials are used for all "
 "destinations."
 msgstr ""
+"This option allows multiple targets to be specified. The primary target path"
+" is placed before the list of paths supplied with this option. Before "
+"starting the backup, each folder in the list is checked for existence and "
+"optionally the presence of the marker file supplied by --{0}. The first "
+"existing path that optionally contains the marker file is then used as the "
+"destination. Multiple destinations are separated with a \"{1}\". On Windows,"
+" the path may be a UNC path, and the drive letter may be substituted with an"
+" asterisk (*), eg.: \"*:\\backup\", which will examine all drive letters. If"
+" a username and password is supplied, the same credentials are used for all "
+"destinations."
 
 #: Library/Backend/File/Strings.cs:7
 msgid "A list of secondary target paths"
-msgstr ""
+msgstr "A list of secondary target paths"
 
 #: Library/Backend/File/Strings.cs:8
 msgid ""
@@ -1663,15 +1721,20 @@ msgid ""
 "\"file://\\\\server\\folder\") or local paths (eg: (win) "
 "\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 msgstr ""
+"This backend can read and write data to an file based backend. Allowed "
+"formats are \"file://hostname/folder\" or "
+"\"file://username:password@hostname/folder\". You may supply UNC paths (eg: "
+"\"file://\\\\server\\folder\") or local paths (eg: (win) "
+"\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 
 #: Library/Backend/File/Strings.cs:13
 msgid "Local folder or drive"
-msgstr ""
+msgstr "Local folder or drive"
 
 #: Library/Backend/File/Strings.cs:14
 #, csharp-format
 msgid "The folder {0} does not exist"
-msgstr ""
+msgstr "The folder {0} does not exist"
 
 #: Library/Backend/File/Strings.cs:15
 #, csharp-format
@@ -1679,6 +1742,8 @@ msgid ""
 "The marker file \"{0}\" was not found in any of the examined destinations: "
 "{1}"
 msgstr ""
+"The marker file \"{0}\" was not found in any of the examined destinations: "
+"{1}"
 
 #: Library/Backend/File/Strings.cs:16
 msgid ""
@@ -1688,20 +1753,27 @@ msgid ""
 "to fail.  This option has no effect unless the --disable-streaming-transfers"
 " options is activated."
 msgstr ""
+"When storing the file, the standard operation is to copy the file and delete"
+" the original. This sequence ensures that the operation can be retried if "
+"something goes wrong. Activating this option may cause the retry operation "
+"to fail.  This option has no effect unless the --disable-streaming-transfers"
+" options is activated."
 
 #: Library/Backend/File/Strings.cs:17
 msgid "Move the file instead of copying it"
-msgstr ""
+msgstr "Move the file instead of copying it"
 
 #: Library/Backend/File/Strings.cs:18
 msgid "Force authentication against remote share"
-msgstr ""
+msgstr "Force authentication against remote share"
 
 #: Library/Backend/File/Strings.cs:19
 msgid ""
 "If this option is set, any existing authentication against the remote share "
 "is dropped before attempting to authenticate"
 msgstr ""
+"If this option is set, any existing authentication against the remote share "
+"is dropped before attempting to authenticate"
 
 #: Library/Backend/Backblaze/Strings.cs:4
 msgid ""
@@ -1709,10 +1781,13 @@ msgid ""
 "your Backblaze account, this can also be supplied through the \"auth-"
 "password\" property"
 msgstr ""
+"The \"B2 Cloud Storage Application Key\" can be obtained after logging into "
+"your Backblaze account, this can also be supplied through the \"auth-"
+"password\" property"
 
 #: Library/Backend/Backblaze/Strings.cs:5
 msgid "The \"B2 Cloud Storage Application Key\""
-msgstr ""
+msgstr "The \"B2 Cloud Storage Application Key\""
 
 #: Library/Backend/Backblaze/Strings.cs:6
 msgid ""
@@ -1723,35 +1798,39 @@ msgstr ""
 
 #: Library/Backend/Backblaze/Strings.cs:7
 msgid "The \"B2 Cloud Storage Account ID\""
-msgstr ""
+msgstr "The \"B2 Cloud Storage Account ID\""
 
 #: Library/Backend/Backblaze/Strings.cs:8
 msgid "B2 Cloud Storage"
-msgstr ""
+msgstr "B2 Cloud Storage"
 
 #: Library/Backend/Backblaze/Strings.cs:13
 msgid "No \"B2 Cloud Storage Application Key\" given"
-msgstr ""
+msgstr "No \"B2 Cloud Storage Application Key\" given"
 
 #: Library/Backend/Backblaze/Strings.cs:14
 msgid "No \"B2 Cloud Storage Account ID\" given"
-msgstr ""
+msgstr "No \"B2 Cloud Storage Account ID\" given"
 
 #: Library/Backend/Backblaze/Strings.cs:15
 msgid ""
 "This backend can read and write data to the Backblaze B2 Cloud Storage. "
 "Allowed formats are: \"b2://bucketname/prefix\""
 msgstr ""
+"This backend can read and write data to the Backblaze B2 Cloud Storage. "
+"Allowed formats are: \"b2://bucketname/prefix\""
 
 #: Library/Backend/Backblaze/Strings.cs:16
 msgid ""
 "By default, a private bucket is created. Use this option to set the bucket "
 "type. Refer to the B2 documentation for allowed types "
 msgstr ""
+"By default, a private bucket is created. Use this option to set the bucket "
+"type. Refer to the B2 documentation for allowed types "
 
 #: Library/Backend/Backblaze/Strings.cs:17
 msgid "The bucket type used when creating a bucket"
-msgstr ""
+msgstr "The bucket type used when creating a bucket"
 
 #: Library/Backend/Backblaze/Strings.cs:18
 msgid ""

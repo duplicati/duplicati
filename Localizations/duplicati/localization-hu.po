@@ -5,6 +5,7 @@
 # 
 # Translators:
 # Kiss István <gail7.mailbox@gmail.com>, 2017
+# Falu <info@falu.me>, 2019
 # 
 #, fuzzy
 msgid ""
@@ -13,7 +14,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-09-20 12:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Kiss István <gail7.mailbox@gmail.com>, 2017\n"
+"Last-Translator: Falu <info@falu.me>, 2019\n"
 "Language-Team: Hungarian (https://www.transifex.com/duplicati/teams/67655/hu/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,7 +24,7 @@ msgstr ""
 
 #: Server/Strings.cs:7
 msgid "Another instance is running, and was notified"
-msgstr ""
+msgstr "Egy másik példány fut, és értesítést kapott"
 
 #: Server/Strings.cs:8
 #, csharp-format
@@ -31,21 +32,25 @@ msgid ""
 "Failed to create, open or upgrade the database.\n"
 "Error message: {0}"
 msgstr ""
+"Nem sikerült az adatbázis létrehozása, megnyitása vagy frissítése. "
+"Hibaüzenet: {0}"
 
 #: Server/Strings.cs:10
 msgid "Displays this help"
-msgstr ""
+msgstr "Megjeleníti ezt a súgót"
 
 #: Server/Strings.cs:11
 msgid ""
 "Supported commandline arguments:\n"
 "\n"
 msgstr ""
+"Támogatott parancssori argumentumok:\n"
+"\n"
 
 #: Server/Strings.cs:14
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "- {0}: {1}"
 
 #: Server/Strings.cs:15 CommandLine/Strings.cs:21
 #, csharp-format
@@ -61,10 +66,20 @@ msgid ""
 "parameter file. Each filter must be prefixed with either a + or a -, and "
 "multiple filters must be joined with {5} "
 msgstr ""
+"Ez az opció felhasználható a parancssori kliensnek adott összes opció vagy "
+"azok mindegyikének tárolására. A fájlnak sima szöveges fájlnak kell lennie, "
+"az UTF-8 kódolást részesítik előnyben. A fájl minden sorának - option = "
+"érték formátumúnak kell lennie. A - {0} és - {1} speciális opciók "
+"felülbírálhatják a lokális útvonalat és a távoli rendeltetési hely uri-t. A "
+"fájl beállításai elsőbbséget élveznek a parancssorban megadott "
+"lehetőségekkel szemben. Nem lehet szűrőket megadni mind a fájlban, mind a "
+"parancssorban. Ehelyett a - {2}, - {3} vagy - {4} speciális opciókat "
+"használhatja a szűrők meghatározására a paraméterfájlban. Minden szűrőt + "
+"vagy a - előtaggal kell elõírni, és több szûrõt össze kell kötni a {5} -nel."
 
 #: Server/Strings.cs:16 CommandLine/Strings.cs:22
 msgid "Path to a file with parameters"
-msgstr ""
+msgstr "Útvonal egy fájlhoz paraméterekkel"
 
 #: Server/Strings.cs:17 CommandLine/Strings.cs:19
 #, csharp-format
@@ -74,68 +89,82 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
+"A szűrőket nem lehet megadni a parancssorban, ha a szűrők szintén vannak a "
+"paraméterfájlban. A speciális - {0}, - {1} vagy - {2} beállításokkal adja "
+"meg a szűrőket a paraméterfájlban. Mindegyik szűrőt + vagy a - előtaggal "
+"kell előtagolni, és több szűrőt össze kell kötni a {3}"
 
 #: Server/Strings.cs:18 CommandLine/Strings.cs:18
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr ""
+msgstr "Nem sikerült olvasni a (z) &quot;{0}&quot; paraméterfájlt, ok: {1}"
 
 #: Server/Strings.cs:20
 msgid "Outputs log information to the file given"
-msgstr ""
+msgstr "Naplóinformációkat ad ki a megadott fájlhoz"
 
 #: Server/Strings.cs:21
 msgid "Determines the amount of information written in the log file"
-msgstr ""
+msgstr "Meghatározza a naplófájlba írt információk mennyiségét"
 
 #: Server/Strings.cs:22
 msgid ""
 "Activates portable mode where the database is placed below the program "
 "executable"
 msgstr ""
+"Aktiválja a hordozható módot, ha az adatbázist a program végrehajtható része"
+" alá helyezik"
 
 #: Server/Strings.cs:23
 #, csharp-format
 msgid "A serious error occurred in Duplicati: {0}"
-msgstr ""
+msgstr "Súlyos hiba történt a Duplicati-ban: {0}"
 
 #: Server/Strings.cs:24
 #, csharp-format
 msgid ""
 "Unable to start up, perhaps another process is already running?\n"
 "Error message: {0}"
-msgstr ""
+msgstr "Nem indul el, talán egy másik folyamat már fut? Hibaüzenet: {0}"
 
 #: Server/Strings.cs:26
 msgid "Disables database encryption"
-msgstr ""
+msgstr "Letiltja az adatbázis titkosítását"
 
 #: Server/Strings.cs:27
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr ""
+"Az SQLite nem támogatott verziója ({0}) {1} vagy annál magasabbnak kell "
+"lennie"
 
 #: Server/Strings.cs:28
 msgid ""
 "The path to the folder where the static files for the webserver is present. "
 "The folder must be located beneath the installation folder"
 msgstr ""
+"A mappa elérési útja, ahol a statikus fájlok vannak a webszerver számára. A "
+"mappának a telepítési mappa alatt kell lennie"
 
 #: Server/Strings.cs:29
 msgid ""
 "The port the webserver listens on. Multiple values may be supplied with a "
 "comma in between."
 msgstr ""
+"A port, amelyet a webszerver hallgat. Több érték is megadható vesszővel a "
+"között."
 
 #: Server/Strings.cs:30
 msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL. "
 "Only RSA/DSA keys are supported."
 msgstr ""
+"A tanúsítvány és a kulcsfájl PKCS # 12 formátumban, amelyet a webszerver "
+"használ az SSL-hez. Csak az RSA / DSA kulcsok támogatottak."
 
 #: Server/Strings.cs:31
 msgid "The password for decryption of certificate PKCS #12 file."
-msgstr ""
+msgstr "A jelszó a PKCS # 12 tanúsítvány fájl dekódolásához."
 
 #: Server/Strings.cs:32
 msgid ""
@@ -143,6 +172,9 @@ msgid ""
 " means any interface. The special value \"loopback\" means the loopback "
 "adapter."
 msgstr ""
+"A felület, amelyet a webszerver hallgat. A &quot;*&quot; és &quot;any&quot; "
+"speciális értékek bármilyen interfészt jelenthetnek. A "
+"&quot;visszacsatolás&quot; speciális érték a visszacsatoló adaptert jelenti."
 
 #: Server/Strings.cs:33
 msgid ""
@@ -150,6 +182,9 @@ msgid ""
 "do not need to set it on each run. Setting an empty value disables the "
 "password."
 msgstr ""
+"A webszerver eléréséhez szükséges jelszó. Ez az opció mentésre kerül, így "
+"nem kell beállítania minden futtatáskor. Az üres érték beállítása letiltja a"
+" jelszót."
 
 #: Server/Strings.cs:34
 msgid ""
@@ -157,10 +192,13 @@ msgid ""
 "hostnames are \"*\", all hostnames are allowed and the hostname checking is "
 "disabled."
 msgstr ""
+"Az elfogadott hostnevek, pontosvesszővel elválasztva. Ha a gazdanevek "
+"bármelyike &quot;*&quot;, akkor minden hostnév megengedett, és a gazdagépnév"
+" ellenőrzése le van tiltva."
 
 #: Server/Strings.cs:35
 msgid "Enables the ping-pong responder"
-msgstr ""
+msgstr "Engedélyezi a ping-pong válaszadót"
 
 #: Server/Strings.cs:36
 msgid ""
@@ -168,18 +206,23 @@ msgid ""
 " responding. If this option is enabled, the server reads stdin and writes a "
 "reply to each line read"
 msgstr ""
+"Amikor kiszolgálóként fut, a szolgáltatási démonnak ellenőriznie kell, hogy "
+"a folyamat válaszol-e. Ha ez az opció engedélyezve van, a kiszolgáló "
+"elolvassa az stdin-t, és minden olvasott sorra válaszokat ír"
 
 #: Server/Strings.cs:37 Library/Main/Strings.cs:224
 msgid "Clean up old log data"
-msgstr ""
+msgstr "Tisztítsa meg a régi naplóadatokat"
 
 #: Server/Strings.cs:38 Library/Main/Strings.cs:225
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
+"Állítsa be azt az időtartamot, amely után a naplóadatok törlődnek az "
+"adatbázisból."
 
 #: Server/Strings.cs:39
 msgid "Sets the folder where settings are stored"
-msgstr ""
+msgstr "A mappát állítja be, ahol a beállítások tárolódnak"
 
 #: Server/Strings.cs:40
 #, csharp-format
@@ -188,10 +231,13 @@ msgid ""
 " to choose where the settings are stored. This option can also be set with "
 "the environment variable {0}."
 msgstr ""
+"A Duplicatiának egy kis adatbázist kell tárolnia az összes beállítással. "
+"Ezzel a beállítással kiválaszthatja, hogy a beállítások hol kerüljenek "
+"tárolásra. Ez az opció a {0} környezeti változóval is beállítható."
 
 #: Server/Strings.cs:41
 msgid "Sets the database encryption key"
-msgstr ""
+msgstr "Beállítja az adatbázis titkosítási kulcsát"
 
 #: Server/Strings.cs:42
 #, csharp-format
@@ -200,10 +246,13 @@ msgid ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
+"Ez az opció állítja be a helyi beállítások adatbázisának kódolásához "
+"használt titkosítási kulcsot. Ez az opció a {0} környezeti változóval is "
+"beállítható. Használja a - {1} opciót az adatbázis-kódolás letiltásához."
 
 #: Server/Strings.cs:43 Library/Main/Strings.cs:74
 msgid "Temporary storage folder"
-msgstr ""
+msgstr "Ideiglenes tároló mappa"
 
 #: Server/Strings.cs:44 Library/Main/Strings.cs:75
 msgid ""
@@ -211,6 +260,10 @@ msgid ""
 "storage. By default the system default temporary folder is used. Note that "
 "also SQLite will put temporary files in this temporary folder."
 msgstr ""
+"Ez az opció felhasználható alternatív mappa átadására ideiglenes tároláshoz."
+" Alapértelmezés szerint a rendszer alapértelmezett ideiglenes mappáját "
+"használja. Ne feledje, hogy az SQLite ideiglenes fájlokat is ebbe az "
+"ideiglenes mappába helyez."
 
 #: Server/Strings.cs:47
 #, csharp-format
@@ -218,6 +271,8 @@ msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr ""
+"Nem találunk érvényes dátumot, figyelembe véve a kezdő dátumot {0}, az "
+"ismétlési intervallumot {1} és az engedélyezett napokat {2}"
 
 #: Server/Strings.cs:52
 #, csharp-format
@@ -230,25 +285,29 @@ msgid ""
 "Unable to create SSL certificate using provided parameters. Exception "
 "detail: {0}"
 msgstr ""
+"Nem sikerült létrehozni SSL tanúsítványt a megadott paraméterekkel. Kivétel "
+"részlete: {0}"
 
 #: Server/Strings.cs:54
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
-msgstr ""
+msgstr "Nem lehet megnyitni a csatlakozót hallgatáshoz, kipróbált portok: {0}"
 
 #: Library/Encryption/Strings.cs:26
 msgid ""
 "This module encrypts all files in the same way that AESCrypt does, using 256"
 " bit AES encryption."
 msgstr ""
+"Ez a modul az összes fájlt ugyanúgy titkosítja, mint az AESCrypt, 256 bites "
+"AES titkosítással."
 
 #: Library/Encryption/Strings.cs:27
 msgid "AES-256 encryption, built in"
-msgstr ""
+msgstr "AES-256 titkosítás, beépítve"
 
 #: Library/Encryption/Strings.cs:28
 msgid "Empty passphrase not allowed"
-msgstr ""
+msgstr "Az üres jelmondat nem engedélyezett"
 
 #: Library/Encryption/Strings.cs:29
 msgid ""
@@ -256,15 +315,18 @@ msgid ""
 "Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. "
 "multithreading)"
 msgstr ""
+"Ezzel az opcióval állíthatja be az AES kriptaműveletekhez engedélyezett "
+"szálszintet. Az érvényes értékek 0 (alapértelmezés szerint használhatók), "
+"vagy 1-től (nincs többszálú) és 4-ig (max. Többszálú)"
 
 #: Library/Encryption/Strings.cs:30
 msgid "Set thread level utilized for crypting (0-4)"
-msgstr ""
+msgstr "A rejtjelezéshez használt szálszint beállítása (0-4)"
 
 #: Library/Encryption/Strings.cs:34
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
-msgstr ""
+msgstr "Az adatok visszafejtése nem sikerült (érvénytelen jelmondat?): {0}"
 
 #: Library/Encryption/Strings.cs:38
 msgid ""
@@ -275,40 +337,56 @@ msgid ""
 "program is available via the PATH environment variable. It is possible to "
 "supply the path to GPG using the --gpg-program-path switch."
 msgstr ""
+"A GPG titkosítási modul a GNU Privacy Guard programot használja a fájlok "
+"titkosításához és visszafejtéséhez. Ez megköveteli, hogy a gpg futtatható "
+"fájl elérhető legyen a rendszeren. Windows rendszeren feltételezzük, hogy ez"
+" az alapértelmezett telepítési mappában található a programfájlok alatt, "
+"Linux és OSX esetén feltételezzük, hogy a program elérhető a PATH környezeti"
+" változón keresztül. A GPG elérési útját a --gpg-program-path kapcsolóval "
+"lehet megadni."
 
 #: Library/Encryption/Strings.cs:39
 msgid "GNU Privacy Guard, external"
-msgstr ""
+msgstr "GNU Privacy Guard, külső"
 
 #: Library/Encryption/Strings.cs:40
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
 msgstr ""
+"Ezzel a kapcsolóval megadhat további lehetőségeket a GPG-hez. Itt nem "
+"adhatja meg a --passphrase-fd beállítást. A --decrypt opció mindig meg van "
+"adva."
 
 #: Library/Encryption/Strings.cs:41
 msgid "Extra GPG commandline options for decryption"
-msgstr ""
+msgstr "Extra GPG parancssori lehetőségek a dekódoláshoz"
 
 #: Library/Encryption/Strings.cs:42
 msgid ""
 "The GPG encryption/decryption will use the --armor option for GPG to protect"
 " the files with armor. Specify this switch to remove the --armor option."
 msgstr ""
+"A GPG titkosítás / dekódolás a --armor opciót fogja használni a GPG számára "
+"a fájlok páncélzattal történő védelmére. Adja meg ezt a kapcsolót a --armor "
+"opció eltávolításához."
 
 #: Library/Encryption/Strings.cs:43
 msgid "Don't use GPG Armor"
-msgstr ""
+msgstr "Ne használja a GPG páncélt"
 
 #: Library/Encryption/Strings.cs:44
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
 msgstr ""
+"Ezzel a kapcsolóval megadhat további lehetőségeket a GPG-hez. Itt nem "
+"adhatja meg a --passphrase-fd beállítást. A --encrypt opció mindig meg van "
+"adva."
 
 #: Library/Encryption/Strings.cs:45
 msgid "Extra GPG commandline options for encryption"
-msgstr ""
+msgstr "Extra GPG parancssori lehetőségek a titkosításhoz"
 
 #: Library/Encryption/Strings.cs:46
 #, csharp-format
@@ -320,34 +398,41 @@ msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "assume that the program \"gpg\" is available in the system path."
 msgstr ""
+"A GNU Privacy Guard program elérési útja. Ha nem, a Duplicati azt "
+"feltételezi, hogy a &quot;gpg&quot; program elérhető a rendszer elérési "
+"útján."
 
 #: Library/Encryption/Strings.cs:48
 msgid "The path to GnuPG"
-msgstr ""
+msgstr "A GnuPG elérési útja"
 
 #: Library/Encryption/Strings.cs:49
 #, csharp-format
 msgid ""
 "This option has non-standard handling, please use the --{0} option instead."
 msgstr ""
+"Ennek az opciónak a kezelése nem szokásos, kérjük, használja inkább a - {0} "
+"beállítást."
 
 #: Library/Encryption/Strings.cs:50
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
 msgstr ""
+"Ezzel az opcióval elláthatja a --armor opciót a GPG-hez. A fájlok nagyobb "
+"lesznek, de tiszta szöveges fájlokként is elküldhetők."
 
 #: Library/Encryption/Strings.cs:51
 msgid "Use GPG Armor"
-msgstr ""
+msgstr "Használjon GPG páncélt"
 
 #: Library/Encryption/Strings.cs:52
 msgid "Overrides the GPG command supplied for decryption"
-msgstr ""
+msgstr "Felülbírálja a dekódoláshoz kapott GPG parancsot"
 
 #: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
-msgstr ""
+msgstr "A GPG visszafejtési parancs"
 
 #: Library/Encryption/Strings.cs:54
 #, csharp-format
@@ -355,118 +440,123 @@ msgid ""
 "Overrides the default GPG encryption command \"{0}\", normal usage is to "
 "request asymetric encryption with the setting {1}"
 msgstr ""
+"Felülbírálja az alapértelmezett \"{0}\" GPG titkosítási parancsot, normál "
+"használat esetén aszimmetrikus titkosítást kell kérni {1} beállítással."
 
 #: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
-msgstr ""
+msgstr "GPG titkosítási parancs"
 
 #: Library/Encryption/Strings.cs:59
 #, csharp-format
 msgid "Decryption failed: {0}"
-msgstr ""
+msgstr "A dekódolás sikertelen: {0}"
 
 #: Library/Encryption/Strings.cs:60
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr ""
+"Ha a GnuPG meghívása meghiúsul, a program nem fogja kiüríteni a kimenetet"
 
 #: Library/Encryption/Strings.cs:61
 msgid "Failure while invoking GnuPG, program won't terminate"
-msgstr ""
+msgstr "A GnuPG meghívása közben a program nem áll le"
 
 #: Library/Interface/Strings.cs:4
 msgid "aliases"
-msgstr ""
+msgstr "álnevek"
 
 #: Library/Interface/Strings.cs:5
 msgid "default value"
-msgstr ""
+msgstr "alapértelmezett érték"
 
 #: Library/Interface/Strings.cs:6
 msgid "[DEPRECATED]"
-msgstr ""
+msgstr "[ELAVULT]"
 
 #: Library/Interface/Strings.cs:7
 msgid "values"
-msgstr ""
+msgstr "értékek"
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
-msgstr ""
+msgstr "Logikai"
 
 #: Library/Interface/Strings.cs:11
 msgid "Enumeration"
-msgstr ""
+msgstr "Felsorolás"
 
 #: Library/Interface/Strings.cs:12
 msgid "Flags"
-msgstr ""
+msgstr "Zászlók"
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr ""
+msgstr "Egész szám"
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
-msgstr ""
+msgstr "Útvonal"
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
-msgstr ""
+msgstr "Méret"
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr ""
+msgstr "String"
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
-msgstr ""
+msgstr "Időtartam"
 
 #: Library/Interface/Strings.cs:18
 msgid "Unknown"
-msgstr ""
+msgstr "Ismeretlen"
 
 #: Library/Interface/Strings.cs:21
 #, csharp-format
 msgid ""
 "The configuration for the backend is not valid, it is missing the {0} field"
-msgstr ""
+msgstr "A háttér konfigurációja nem érvényes, hiányzik a {0} mező"
 
 #: Library/Interface/Strings.cs:22
 msgid "Do you want to test the connection?"
-msgstr ""
+msgstr "Tesztelni akarja a kapcsolatot?"
 
 #: Library/Interface/Strings.cs:23
 #, csharp-format
 msgid "Connection Failed: {0}"
-msgstr ""
+msgstr "A kapcsolat sikertelen: {0}"
 
 #: Library/Interface/Strings.cs:24
 msgid "Connection succeeded!"
-msgstr ""
+msgstr "A kapcsolat sikeres volt!"
 
 #: Library/Interface/Strings.cs:25
 msgid ""
 "You have not entered a path. This will store all backups in the default "
 "directory. Is this what you want?"
 msgstr ""
+"Még nem adta meg az elérési utat. Ezzel az összes biztonsági másolatot az "
+"alapértelmezett könyvtárba tárolja. Ezt akarod?"
 
 #: Library/Interface/Strings.cs:26
 msgid "You must enter a password"
-msgstr ""
+msgstr "Meg kell adnia a jelszót"
 
 #: Library/Interface/Strings.cs:27
 msgid ""
 "You have not entered a password.\n"
 "Proceed without a password?"
-msgstr ""
+msgstr "Még nem írta be a jelszót. Folytassa a jelszót?"
 
 #: Library/Interface/Strings.cs:29
 msgid "You must enter the name of the server"
-msgstr ""
+msgstr "Meg kell adnia a szerver nevét"
 
 #: Library/Interface/Strings.cs:30
 msgid "You must enter a username"
-msgstr ""
+msgstr "Meg kell adnia egy felhasználónevet"
 
 #: Library/Interface/Strings.cs:31
 msgid ""
@@ -474,6 +564,8 @@ msgid ""
 "This is fine if the server allows anonymous uploads, but likely a username is required\n"
 "Proceed without a username?"
 msgstr ""
+"Még nem írta be a felhasználónevet. Ez rendben van, ha a szerver névtelen "
+"feltöltéseket tesz lehetővé, de valószínűleg felhasználói név szükséges."
 
 #: Library/Interface/Strings.cs:34
 msgid ""
@@ -481,33 +573,37 @@ msgid ""
 "\n"
 "Do you want to use the selected folder?"
 msgstr ""
+"A kapcsolat sikeres volt, de újabb biztonsági másolatot találtak a "
+"célmappában. Lehetőség van a Duplicati konfigurálására, hogy több biztonsági"
+" másolatot tároljon ugyanabban a mappában, de ez nem ajánlott. Használja a "
+"kiválasztott mappát?"
 
 #: Library/Interface/Strings.cs:37
 msgid "The folder cannot be created because it already exists"
-msgstr ""
+msgstr "A mappát nem lehet létrehozni, mert már létezik"
 
 #: Library/Interface/Strings.cs:38
 msgid "Folder created!"
-msgstr ""
+msgstr "Mappa létrehozva!"
 
 #: Library/Interface/Strings.cs:39
 msgid "The requested folder does not exist"
-msgstr ""
+msgstr "A kért mappa nem létezik"
 
 #: Library/Interface/Strings.cs:40
 #, csharp-format
 msgid "The server name \"{0}\" is not valid"
-msgstr ""
+msgstr "\"{0}\"  szerver név érvénytelen"
 
 #: Library/Interface/Strings.cs:41
 msgid "Cancelled"
-msgstr ""
+msgstr "Törölve"
 
 #: Library/Interface/CustomExceptions.cs:82
 #: Library/Interface/CustomExceptions.cs:90
 #: Library/Backend/Jottacloud/Jottacloud.cs:300
 msgid "The requested file does not exist"
-msgstr ""
+msgstr "A kért fájl nem létezik"
 
 #: Library/Snapshots/Strings.cs:4
 #, csharp-format
@@ -515,13 +611,13 @@ msgid ""
 "The external command failed to start.\n"
 "Error message: {0}\n"
 "Command: {1} {2}"
-msgstr ""
+msgstr "A külső parancs nem indult el. Hibaüzenet: {0} Parancs: {1} {2}"
 
 #: Library/Snapshots/Strings.cs:7
 #, csharp-format
 msgid ""
 "The external command failed to complete within the set time limit: {0} {1}"
-msgstr ""
+msgstr "A külső parancs a megadott határidőn belül nem fejeződött be: {0} {1}"
 
 #: Library/Snapshots/Strings.cs:8
 #, csharp-format
@@ -534,12 +630,15 @@ msgid ""
 "Script returned successfully, but the temporary folder {0} does not exist: "
 "{1}"
 msgstr ""
+"A szkript sikeresen visszatért, de az {0} ideiglenes mappa nem létezik: {1}"
 
 #: Library/Snapshots/Strings.cs:10
 #, csharp-format
 msgid ""
 "Script returned successfully, but the temporary folder {0} still exist: {1}"
 msgstr ""
+"A szkript sikeresen visszatért, de az {0} ideiglenes mappa továbbra is "
+"létezik: {1}"
 
 #: Library/Snapshots/Strings.cs:11
 #, csharp-format
@@ -552,40 +651,45 @@ msgid ""
 "Script returned successfully, but the output was missing the {0} parameter: "
 "{1}"
 msgstr ""
+"A szkript sikeresen visszatért, de a kimenetből hiányzott a {0} paraméter: "
+"{1}"
 
 #: Library/Snapshots/Strings.cs:15
 msgid "Unable to determine full file path for USN entry"
 msgstr ""
+"Nem sikerült meghatározni a teljes fájl elérési útját az USN bejegyzéshez"
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN journal entries were purged since last scan"
-msgstr ""
+msgstr "Az USN naplóbejegyzéseit az utolsó szkennelés óta megtisztítottuk"
 
 #: Library/Snapshots/Strings.cs:17
 msgid "Unexpected empty response while enumerating"
-msgstr ""
+msgstr "Váratlan üres válasz felsorolás közben"
 
 #: Library/Snapshots/Strings.cs:18
 msgid "USN is not supported on Linux"
-msgstr ""
+msgstr "Az USN nem támogatott Linuxon"
 
 #: Library/Snapshots/Strings.cs:19
 msgid ""
 "The number of files returned by USN was zero. This is likely an error. To "
 "remedy this, USN has been disabled."
 msgstr ""
+"Az USN által visszaadott fájlok száma nulla volt. Ez valószínűleg hiba. "
+"Ennek orvoslása érdekében az USN le van tiltva."
 
 #: Library/Snapshots/Strings.cs:20
 msgid "Unexpected path format encountered"
-msgstr ""
+msgstr "Váratlan útvonalformátum történt"
 
 #: Library/Snapshots/Strings.cs:21
 msgid "Unsupported USN journal version."
-msgstr ""
+msgstr "Nem támogatott USN folyóirat-verzió."
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Calling process does not have the backup privilege"
-msgstr ""
+msgstr "A hívási folyamatnak nincs biztonsági mentési joga"
 
 #: Library/Backend/OpenStack/Strings.cs:23
 msgid ""
@@ -595,12 +699,12 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:24
 msgid "OpenStack Simple Storage"
-msgstr ""
+msgstr "OpenStack egyszerű tárolóhely"
 
 #: Library/Backend/OpenStack/Strings.cs:25
 #, csharp-format
 msgid "Missing required option: {0}"
-msgstr ""
+msgstr "Hiányzik a szükséges opció: {0}"
 
 #: Library/Backend/OpenStack/Strings.cs:26
 #, csharp-format
@@ -609,6 +713,9 @@ msgid ""
 " environment variable \"AUTH_PASSWORD\". If the password is supplied, --{0} "
 "must also be set"
 msgstr ""
+"A kiszolgálóhoz való csatlakozáshoz használt jelszó. Ezt "
+"&quot;AUTH_PASSWORD&quot; környezeti változóként is eljuttathatjuk. Ha "
+"megadta a jelszót, akkor a - {0} -ot is be kell állítani"
 
 #: Library/Backend/OpenStack/Strings.cs:27 Library/Backend/FTP/Strings.cs:13
 #: Library/Backend/CloudFiles/Strings.cs:7 Library/Backend/S3/Strings.cs:10
@@ -619,15 +726,16 @@ msgstr ""
 #: Library/Backend/Jottacloud/Strings.cs:14 Library/Backend/Mega/Strings.cs:6
 #: Library/Backend/SharePoint/Strings.cs:9 Library/Backend/WEBDAV/Strings.cs:8
 msgid "Supplies the password used to connect to the server"
-msgstr ""
+msgstr "A kiszolgálóhoz való csatlakozáshoz használt jelszót adja meg"
 
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "The domain name of the user used to connect to the server."
 msgstr ""
+"A kiszolgálóhoz való kapcsolódáshoz használt felhasználó tartományneve."
 
 #: Library/Backend/OpenStack/Strings.cs:29
 msgid "Supplies the domain used to connect to the server"
-msgstr ""
+msgstr "A kiszolgálóhoz való kapcsolódáshoz használt tartományt adja meg"
 
 #: Library/Backend/OpenStack/Strings.cs:30 Library/Backend/FTP/Strings.cs:14
 #: Library/Backend/CloudFiles/Strings.cs:8 Library/Backend/S3/Strings.cs:11
@@ -642,6 +750,8 @@ msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
 msgstr ""
+"A kiszolgálóhoz való csatlakozáshoz használt felhasználónév. Ezt "
+"&quot;AUTH_USERNAME&quot; környezeti változóként is eljuttathatjuk."
 
 #: Library/Backend/OpenStack/Strings.cs:31 Library/Backend/FTP/Strings.cs:15
 #: Library/Backend/CloudFiles/Strings.cs:9 Library/Backend/S3/Strings.cs:12
@@ -654,6 +764,7 @@ msgstr ""
 #: Library/Backend/WEBDAV/Strings.cs:10
 msgid "Supplies the username used to connect to the server"
 msgstr ""
+"A kiszolgálóhoz való csatlakozáshoz használt felhasználónevet adja meg"
 
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid ""
@@ -661,20 +772,25 @@ msgid ""
 "be supplied when authenticating with a password, but is not required when "
 "using an API key."
 msgstr ""
+"A Bérlő neve általában a fizető felhasználói fiók neve. Ezt a beállítást "
+"jelszóval történő hitelesítéskor kell megadni, de API-kulcs használatakor ez"
+" nem szükséges."
 
 #: Library/Backend/OpenStack/Strings.cs:33
 msgid "Supplies the Tenant Name used to connect to the server"
-msgstr ""
+msgstr "A bérlő nevét adja meg, amely a kiszolgálóhoz kapcsolódik"
 
 #: Library/Backend/OpenStack/Strings.cs:34
 msgid ""
 "The API key can be used to connect without supplying a password and tenant "
 "ID with some providers."
 msgstr ""
+"Az API kulcs felhasználható jelszó és bérlői azonosító megadása nélkül egyes"
+" szolgáltatókkal történő kapcsolódáshoz."
 
 #: Library/Backend/OpenStack/Strings.cs:35
 msgid "Supplies the API key used to connect to the server"
-msgstr ""
+msgstr "A szerverhez való csatlakozáshoz használt API kulcsot szállítja"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 #, csharp-format
@@ -682,18 +798,22 @@ msgid ""
 "The authentication URL is used to authenticate the user and find the storage"
 " service. The URL commonly ends with \"/v2.0\". Known providers are: {0}{1}"
 msgstr ""
+"A hitelesítési URL a felhasználó hitelesítésére és a tárolási szolgáltatás "
+"megtalálására szolgál. Az URL általában &quot;/v2.0&quot; -nel végződik. "
+"Ismert szolgáltatók: {0} {1}"
 
 #: Library/Backend/OpenStack/Strings.cs:37
 msgid "Supplies the authentication URL"
-msgstr ""
+msgstr "A hitelesítési URL-t adja meg"
 
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid "The keystone API version to use, valid values are 'v2' and 'v3'."
 msgstr ""
+"A kulcstartó API verziója, érvényes értékek: &#39;v2&#39; és &#39;v3&#39;."
 
 #: Library/Backend/OpenStack/Strings.cs:39
 msgid "The keystone API version to use"
-msgstr ""
+msgstr "A kulcstartó API verziója"
 
 #: Library/Backend/OpenStack/Strings.cs:40
 msgid ""
@@ -701,10 +821,13 @@ msgid ""
 "where the container should be placed. Consult your provider for a list of "
 "valid regions, or leave empty for the default region."
 msgstr ""
+"Ezt az opciót csak egy tároló létrehozásakor használják, és azt jelzik, hogy"
+" a tárolót hol kell elhelyezni. Keresse fel a szolgáltatót az érvényes "
+"régiók listájáért, vagy hagyja üresen az alapértelmezett régiót."
 
 #: Library/Backend/OpenStack/Strings.cs:41
 msgid "Supplies the region used for creating a container"
-msgstr ""
+msgstr "A konténer létrehozásához használt régiót adja meg"
 
 #: Library/Backend/FTP/Strings.cs:7
 msgid ""
@@ -718,10 +841,13 @@ msgid ""
 "If this flag is set, the FTP connection is made in active mode. Even if the "
 "\"ftp-passive\" flag is also set, the connection will be made in active mode"
 msgstr ""
+"Ha ez a jelző be van állítva, az FTP kapcsolat aktív módban jön létre. Még "
+"akkor is, ha az &quot;ftp-passzív&quot; zászló be van állítva, a kapcsolat "
+"aktív módban fog létrejönni"
 
 #: Library/Backend/FTP/Strings.cs:9 Library/Backend/FTP/Strings.cs:11
 msgid "Toggles the FTP connections method"
-msgstr ""
+msgstr "Váltás az FTP-kapcsolatok módszerére"
 
 #: Library/Backend/FTP/Strings.cs:10
 msgid ""
@@ -729,6 +855,9 @@ msgid ""
 " better with some firewalls. If the \"ftp-regular\" flag is also set, this "
 "flag is ignored"
 msgstr ""
+"Ha ez a zászló be van állítva, az FTP-kapcsolat passzív módban jön létre, "
+"ami jobban működik egyes tűzfalakkal. Ha az &quot;ftp-regular&quot; zászló "
+"is be van állítva, akkor ezt a jelzőt figyelmen kívül hagyja"
 
 #: Library/Backend/FTP/Strings.cs:12 Library/Backend/CloudFiles/Strings.cs:6
 #: Library/Backend/S3/Strings.cs:9
@@ -742,16 +871,20 @@ msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
 msgstr ""
+"A kiszolgálóhoz való csatlakozáshoz használt jelszó. Ezt "
+"&quot;AUTH_PASSWORD&quot; környezeti változóként is eljuttathatjuk."
 
 #: Library/Backend/FTP/Strings.cs:16
 msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over ftp "
 "(ftps)."
 msgstr ""
+"Ezzel a jelzővel kommunikálhat a biztonságos socket réteg (SSL) "
+"használatával az ftp (ftps) segítségével."
 
 #: Library/Backend/FTP/Strings.cs:17
 msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr ""
+msgstr "Utasítja Duplicatiit, hogy használjon SSL (ftps) kapcsolatot"
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
@@ -761,7 +894,7 @@ msgstr "FTP"
 #: Library/Backend/TahoeLAFS/Strings.cs:8
 #, csharp-format
 msgid "The folder {0} was not found, message: {1}"
-msgstr ""
+msgstr "A {0} mappa nem található, üzenet: {1}"
 
 #: Library/Backend/FTP/Strings.cs:20
 #: Library/Backend/AlternativeFTP/Strings.cs:16
@@ -1383,7 +1516,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:8
 msgid "Local repository"
-msgstr ""
+msgstr "Helyi tároló"
 
 #: Library/Backend/Rclone/Strings.cs:9
 msgid ""
@@ -1393,7 +1526,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:10
 msgid "Remote repository"
-msgstr ""
+msgstr "Távoli tároló"
 
 #: Library/Backend/Rclone/Strings.cs:11
 msgid ""
@@ -1403,7 +1536,7 @@ msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:12
 msgid "Remote path"
-msgstr ""
+msgstr "Távoli útvonal"
 
 #: Library/Backend/Rclone/Strings.cs:13
 msgid "Path on the Remote repository. "
@@ -1602,7 +1735,7 @@ msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:9
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Cél útvona, pl: /mentes"
 
 #: Library/Backend/Sia/Strings.cs:10 Library/Backend/Sia/Strings.cs:11
 msgid "Sia password"
@@ -3682,7 +3815,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:8
 msgid "Confirm encryption passphrase"
-msgstr ""
+msgstr "Titkosítási jelszó megerősítése"
 
 #: Library/Modules/Builtin/Strings.cs:9
 msgid ""
@@ -3700,7 +3833,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:12
 msgid "Enter encryption passphrase"
-msgstr ""
+msgstr "Titkosítási jelszó megadása"
 
 #: Library/Modules/Builtin/Strings.cs:13
 msgid "The passphrases do not match"
@@ -4328,27 +4461,27 @@ msgstr ""
 #: Library/Utility/Strings.cs:28
 #, csharp-format
 msgid "{0} bytes"
-msgstr ""
+msgstr "{0} byte"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format
 msgid "{0:N} GB"
-msgstr ""
+msgstr "{0:N} GB"
 
 #: Library/Utility/Strings.cs:30
 #, csharp-format
 msgid "{0:N} KB"
-msgstr ""
+msgstr "{0:N} KB"
 
 #: Library/Utility/Strings.cs:31
 #, csharp-format
 msgid "{0:N} MB"
-msgstr ""
+msgstr "{0:N} MB"
 
 #: Library/Utility/Strings.cs:32
 #, csharp-format
 msgid "{0:N} TB"
-msgstr ""
+msgstr "{0:N} TB"
 
 #: Library/Utility/Strings.cs:33
 #, csharp-format

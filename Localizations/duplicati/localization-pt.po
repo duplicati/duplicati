@@ -6,6 +6,7 @@
 # Translators:
 # Sérgio Marques <smarquespt@gmail.com>, 2018
 # Rui <xymarior@yandex.com>, 2019
+# Paulo Constança <paulocesarsc@live.com>, 2019
 # 
 #, fuzzy
 msgid ""
@@ -14,7 +15,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-09-20 12:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Rui <xymarior@yandex.com>, 2019\n"
+"Last-Translator: Paulo Constança <paulocesarsc@live.com>, 2019\n"
 "Language-Team: Portuguese (https://www.transifex.com/duplicati/teams/67655/pt/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -83,21 +84,24 @@ msgstr ""
 #: Server/Strings.cs:18 CommandLine/Strings.cs:18
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr ""
+msgstr "Não foi possivel ler os parametros do ficheiro \"{0}\", razão: {1}"
 
 #: Server/Strings.cs:20
 msgid "Outputs log information to the file given"
-msgstr ""
+msgstr "Mostra informações do registo do ficheiro indicado"
 
 #: Server/Strings.cs:21
 msgid "Determines the amount of information written in the log file"
 msgstr ""
+"Indica a quantidade de informação que é escrita no ficheiro de registo"
 
 #: Server/Strings.cs:22
 msgid ""
 "Activates portable mode where the database is placed below the program "
 "executable"
 msgstr ""
+"Ativa o modo portátil em que a base de dados é colocada junto do executável "
+"do programa"
 
 #: Server/Strings.cs:23
 #, csharp-format
@@ -113,7 +117,7 @@ msgstr ""
 
 #: Server/Strings.cs:26
 msgid "Disables database encryption"
-msgstr ""
+msgstr "Desativa a encriptação da base de dados"
 
 #: Server/Strings.cs:27
 #, csharp-format
@@ -165,7 +169,7 @@ msgstr ""
 
 #: Server/Strings.cs:35
 msgid "Enables the ping-pong responder"
-msgstr ""
+msgstr "Ativa o ping-pong responder"
 
 #: Server/Strings.cs:36
 msgid ""
@@ -176,7 +180,7 @@ msgstr ""
 
 #: Server/Strings.cs:37 Library/Main/Strings.cs:224
 msgid "Clean up old log data"
-msgstr ""
+msgstr "Apagar dados de registo antigos"
 
 #: Server/Strings.cs:38 Library/Main/Strings.cs:225
 msgid "Set the time after which log data will be purged from the database."
@@ -264,12 +268,12 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:30
 msgid "Set thread level utilized for crypting (0-4)"
-msgstr ""
+msgstr "Quantidade de processadores lógicos utilizados para encriptar (0-4)"
 
 #: Library/Encryption/Strings.cs:34
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
-msgstr ""
+msgstr "Erro ao desencriptar dados (palavra-passe inválida?): {0}"
 
 #: Library/Encryption/Strings.cs:38
 msgid ""
@@ -380,7 +384,7 @@ msgstr ""
 
 #: Library/Interface/Strings.cs:4
 msgid "aliases"
-msgstr ""
+msgstr "pseudônimos"
 
 #: Library/Interface/Strings.cs:5
 msgid "default value"
@@ -464,6 +468,8 @@ msgid ""
 "You have not entered a password.\n"
 "Proceed without a password?"
 msgstr ""
+"Não introduziu uma palavra-passe.\n"
+"Continuar sem introduzir uma palavra-passe?"
 
 #: Library/Interface/Strings.cs:29
 msgid "You must enter the name of the server"
@@ -512,7 +518,7 @@ msgstr "Cancelado"
 #: Library/Interface/CustomExceptions.cs:90
 #: Library/Backend/Jottacloud/Jottacloud.cs:300
 msgid "The requested file does not exist"
-msgstr ""
+msgstr "O ficheiro requisitado não existe"
 
 #: Library/Snapshots/Strings.cs:4
 #, csharp-format
@@ -717,16 +723,21 @@ msgid ""
 "formats are \"ftp://hostname/folder\" or "
 "\"ftp://username:password@hostname/folder\""
 msgstr ""
+"Este backend consegue ler e escrever dados para um backend baseado em FTP. "
+"São suportados os seguintes formatos de endereço: \"ftp://hostname/pasta/\" "
+"ou \"ftp://utilizador:senha@hostname/pasta/\""
 
 #: Library/Backend/FTP/Strings.cs:8
 msgid ""
 "If this flag is set, the FTP connection is made in active mode. Even if the "
 "\"ftp-passive\" flag is also set, the connection will be made in active mode"
 msgstr ""
+"Se esta opção estiver ativa, a ligação FTP é feita em modo ativo. Mesmo que "
+"a opção ftp-passive\" esteja ativa, a ligação será feita em modo ativo"
 
 #: Library/Backend/FTP/Strings.cs:9 Library/Backend/FTP/Strings.cs:11
 msgid "Toggles the FTP connections method"
-msgstr ""
+msgstr "Ativa o modo de ligações por FTP"
 
 #: Library/Backend/FTP/Strings.cs:10
 msgid ""
@@ -861,7 +872,7 @@ msgstr "Google Cloud Storage"
 #: Library/Backend/OAuthHelper/Strings.cs:6
 #, csharp-format
 msgid "You need an AuthID, you can get it from: {0}"
-msgstr ""
+msgstr "Necessita de um ID de Autenticação, pode obte-lo aqui: {0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:25
 #, csharp-format
@@ -913,7 +924,7 @@ msgstr "Google Drive"
 
 #: Library/Backend/GoogleServices/Strings.cs:46
 msgid "Team drive ID"
-msgstr ""
+msgstr "ID de Disco de Equipa"
 
 #: Library/Backend/GoogleServices/Strings.cs:47
 msgid ""
@@ -990,7 +1001,7 @@ msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:22
 msgid "No CloudFiles userID given"
-msgstr ""
+msgstr "Não foi introduzido um ID de utilizador CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:23
 msgid "Unexpected CloudFiles response, perhaps the API has changed?"
@@ -3692,7 +3703,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:8
 msgid "Confirm encryption passphrase"
-msgstr ""
+msgstr "Confirme a chave de encriptação"
 
 #: Library/Modules/Builtin/Strings.cs:9
 msgid ""
@@ -4515,7 +4526,7 @@ msgstr ""
 
 #: CommandLine/Strings.cs:26
 msgid "Include files"
-msgstr ""
+msgstr "Incluir ficheiros"
 
 #: CommandLine/Strings.cs:27
 msgid ""
@@ -4530,7 +4541,7 @@ msgstr ""
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"
-msgstr ""
+msgstr "Excluir ficheiros"
 
 #: CommandLine/Strings.cs:29
 msgid ""
@@ -4541,7 +4552,7 @@ msgstr ""
 
 #: CommandLine/Strings.cs:30
 msgid "Use control files"
-msgstr ""
+msgstr "Utilizar ficheiros de controlo"
 
 #: CommandLine/Strings.cs:31
 msgid ""
