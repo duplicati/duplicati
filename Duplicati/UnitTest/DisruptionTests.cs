@@ -115,6 +115,29 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(2, backupTypes.Length);
             Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1]);
             Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0]);
+
+            // Remove the dlist files.
+            foreach (string dlistFile in dlistFiles)
+            {
+                File.Delete(dlistFile);
+            }
+
+            // Run a repair and verify that the fileset file exists in the new dlist files.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Repair();
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup);
+
+                backupTypeMap = GetBackupTypesFromRemoteFiles(c, out _);
+            }
+
+            backupTypes = backupTypeMap.OrderByDescending(x => x.Key).Select(x => x.Value).ToArray();
+            Assert.AreEqual(2, backupTypes.Length);
+            Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1]);
+            Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0]);
         }
 
         [Test]
