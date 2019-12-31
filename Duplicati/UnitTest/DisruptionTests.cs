@@ -195,6 +195,35 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption")]
+        public async Task ListWithoutLocalDb()
+        {
+            // Choose a dblock size that is small enough so that more than one volume is needed.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "10mb",
+                ["no-local-db"] = "true"
+            };
+
+            // Run a full backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+            }
+
+            // Run a partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                await this.RunPartialBackup(c).ConfigureAwait(false);
+
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
         public async Task RetentionPolicyRetention()
         {
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
