@@ -49,6 +49,72 @@ namespace Duplicati.UnitTest
             this.ModifySourceFiles();
         }
 
+        private class ReadOnlyDirectory : IDisposable
+        {
+            private readonly string directory;
+            private readonly FileAttributes originalAttributes;
+
+            internal ReadOnlyDirectory(string directory)
+            {
+                this.directory = directory;
+                DirectoryInfo directoryInfo = new DirectoryInfo(this.directory);
+                this.originalAttributes = directoryInfo.Attributes;
+                directoryInfo.Attributes = FileAttributes.ReadOnly;
+            }
+
+            public void Dispose()
+            {
+                DirectoryInfo directoryInfo = new DirectoryInfo(this.directory);
+                directoryInfo.Attributes = this.originalAttributes;
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public void FailedPutOperations()
+        {
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["number-of-retries"] = "1",
+                ["dblock-size"] = "1mb",
+                ["asynchronous-concurrent-upload-limit"] = "3",
+            };
+
+            string sourceFolder = Path.Combine(this.DATAFOLDER, "source");
+            Directory.CreateDirectory(sourceFolder);
+
+            // Test the case where we have more upload threads than uploads.  This was
+            // the case described in issue #3673 that did not throw an exception.
+            File.WriteAllBytes(Path.Combine(sourceFolder, Path.GetRandomFileName()), new byte[] {0});
+            using (new ReadOnlyDirectory(this.TARGETFOLDER))
+            {
+                using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                {
+                    // ReSharper disable once AccessToDisposedClosure
+                    Assert.That(() => c.Backup(new[] {sourceFolder}), Throws.Exception);
+                }
+            }
+
+            // Test the case where we have fewer upload threads than uploads.
+            const int numFiles = 10;
+            for (int k = 0; k < numFiles; k++)
+            {
+                byte[] data = new byte[1024 * 1024];
+                Random rng = new Random();
+                rng.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(sourceFolder, Path.GetRandomFileName()), data);
+            }
+
+            using (new ReadOnlyDirectory(this.TARGETFOLDER))
+            {
+                using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                {
+                    // ReSharper disable once AccessToDisposedClosure
+                    Assert.That(() => c.Backup(new[] {sourceFolder}), Throws.Exception);
+                }
+            }
+        }
+
         [Test]
         [Category("Disruption")]
         public async Task KeepTimeRetention()
