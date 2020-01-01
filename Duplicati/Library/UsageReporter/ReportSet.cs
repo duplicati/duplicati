@@ -86,7 +86,7 @@ namespace Duplicati.Library.UsageReporter
 
         static ReportSet()
         {
-            // Keep it here to avoid crasing
+            // Keep it here to avoid crashing
             // if the loader fails to grab an ID
             try { DoInitUID(); }
             catch { }

@@ -211,7 +211,7 @@ namespace Duplicati.Library.Snapshots
         /// Returns the size of a file
         /// </summary>
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
-        /// <returns>The lenth of the file</returns>
+        /// <returns>The length of the file</returns>
         public override long GetFileSize(string localPath)
         {
             return SystemIO.IO_WIN.FileLength(ConvertToSnapshotPath(localPath));

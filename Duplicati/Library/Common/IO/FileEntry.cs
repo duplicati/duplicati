@@ -114,7 +114,7 @@ namespace Duplicati.Library.Common.IO
         }
 
         /// <summary>
-        /// Construcs an entry supplying all information
+        /// Constructs an entry supplying all information
         /// </summary>
         /// <param name="filename">The name of the file or folder</param>
         /// <param name="size">The size of the file or folder</param>

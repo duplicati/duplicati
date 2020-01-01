@@ -30,7 +30,7 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// Wraps a crypto stream, ensuring that it is correctly disposed
         /// </summary>
-        /// <param name="basestream">The stream to wrape</param>
+        /// <param name="basestream">The stream to wrap</param>
         public GPGStreamWrapper(System.Diagnostics.Process p, System.Threading.Thread t, Stream basestream)
             : base(basestream)
         {

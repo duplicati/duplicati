@@ -1,10 +1,10 @@
 # Translators:
-# Andi Chandler <andi@gowling.com>, 2018
+# Andi Chandler <andi@gowling.com>, 2019
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Andi Chandler <andi@gowling.com>, 2018\n"
+"Last-Translator: Andi Chandler <andi@gowling.com>, 2019\n"
 "Language-Team: English (United Kingdom) (https://www.transifex.com/duplicati/teams/67655/en_GB/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1485,7 +1485,7 @@ msgstr ""
 
 #: templates/backends/rclone.html:2
 msgid "Local repository"
-msgstr ""
+msgstr "Local repository"
 
 #: scripts/services/SystemInfo.js:81
 msgid "Local storage"
@@ -1966,11 +1966,11 @@ msgstr ""
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
-msgstr ""
+msgstr "Remote path"
 
 #: templates/backends/rclone.html:6
 msgid "Remote repository"
-msgstr ""
+msgstr "Remote repository"
 
 #: templates/addoredit.html:307
 msgid "Remote volume size"

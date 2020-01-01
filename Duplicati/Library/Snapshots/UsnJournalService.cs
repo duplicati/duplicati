@@ -257,7 +257,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="files">Files to filter</param>
         /// <param name="filter">Exclusion filter</param>
-        /// <param name="cache">Cache of included and exculded files / folders</param>
+        /// <param name="cache">Cache of included and excluded files / folders</param>
         /// <param name="errorCallback"></param>
         /// <returns>Filtered files</returns>
         private IEnumerable<string> FilterExcludedFiles(IEnumerable<string> files,

@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main
         /// if not already found.
         /// </summary>
         /// <param name="hash">The hash to add</param>
-        /// <param name="value">The value assocated with the hash</param>
+        /// <param name="value">The value associated with the hash</param>
         /// <returns>>True if the value was added, false otherwise</returns>
         public bool TryAdd(string hash, long size, T value)
         {
@@ -72,7 +72,7 @@ namespace Duplicati.Library.Main
         /// Adds the specified hash and value to the lookup
         /// </summary>
         /// <param name="hash">The hash to add</param>
-        /// <param name="value">The value assocated with the hash</param>
+        /// <param name="value">The value associated with the hash</param>
         public void Add(string hash, long size, T value)
         {
             var key = DecodeBase64Hash(hash) % m_entries;

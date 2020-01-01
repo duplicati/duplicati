@@ -2077,7 +2077,7 @@ msgstr "Verwijderde bestanden"
 
 #: templates/localdatabase.html:18 templates/notificationarea.html:14
 msgid "Repair"
-msgstr "Repareer"
+msgstr "Repareren"
 
 #: templates/backup-result/phases/repair.html:3
 msgid "Repair Phase"

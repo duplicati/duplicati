@@ -24,7 +24,7 @@ using Duplicati.Library.Snapshots;
 namespace Duplicati.Library.Main.Operation.Backup
 {
     /// <summary>
-    /// This class encasuplates the generation of metadata for a filesystem entry
+    /// This class encapsulates the generation of metadata for a filesystem entry
     /// </summary>
     internal static class MetadataGenerator
     {

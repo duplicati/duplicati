@@ -57,7 +57,7 @@ namespace Duplicati.Library.DynamicLoader
         protected abstract string[] Subfolders { get; }
 
         /// <summary>
-        /// Construcst a new instance of the dynamic loader,
+        /// Construct a new instance of the dynamic loader,
         ///  does not load anything
         /// </summary>
         protected DynamicLoader()

@@ -1081,7 +1081,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the temporary folder to use for asyncronous transfers
+        /// Gets the temporary folder to use for asynchronous transfers
         /// </summary>
         public string AsynchronousUploadFolder
         {
@@ -1975,7 +1975,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Class for handling a single RententionPolicy timeframe-interval-pair
+        /// Class for handling a single RetentionPolicy timeframe-interval-pair
         /// </summary>
         public class RetentionPolicyValue
         {
@@ -2003,7 +2003,7 @@ namespace Duplicati.Library.Main
             /// <returns></returns>
             public Boolean IsUnlimtedTimeframe()
             {
-                // Timeframes equal or bigger than the maximum TimeSpan effectivly represent an unlimited timeframe
+                // Timeframes equal or bigger than the maximum TimeSpan effectively represent an unlimited timeframe
                 return Timeframe >= TimeSpan.MaxValue;
             }
 
@@ -2024,7 +2024,7 @@ namespace Duplicati.Library.Main
             }
 
             /// <summary>
-            /// Parses a string representation of a timeframe-interval-pair and returns a RentionPolicyValue object
+            /// Parses a string representation of a timeframe-interval-pair and returns a RetentionPolicyValue object
             /// </summary>
             /// <returns></returns>
             public static RetentionPolicyValue CreateFromString(string rententionPolicyValueString)
@@ -2032,7 +2032,7 @@ namespace Duplicati.Library.Main
                 var periodInterval = rententionPolicyValueString.Split(':');
 
                 TimeSpan timeframe;
-                // Timeframe "U" (= Unlimited) means: For unlimted time keep one version every X interval.
+                // Timeframe "U" (= Unlimited) means: For unlimited time keep one version every X interval.
                 // So the timeframe has to span the maximum time possible.
                 if (String.Equals(periodInterval[0], "U", StringComparison.OrdinalIgnoreCase))
                 {

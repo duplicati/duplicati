@@ -134,7 +134,7 @@ namespace Duplicati.Library.Interface
     /// An interface for accessing files in an archive, such as a folder or compressed file.
     /// All modules that implements compression must implement this interface.
     /// The classes that implements this interface MUST also 
-    /// implement a default constructor and a construtor that
+    /// implement a default constructor and a constructor that
     /// has the signature new(string file, Dictionary&lt;string, string&gt; options).
     /// The default constructor is used to construct an instance
     /// so the DisplayName and other values can be read.

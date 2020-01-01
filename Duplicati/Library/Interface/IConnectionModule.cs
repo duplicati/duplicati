@@ -20,7 +20,7 @@ using System;
 namespace Duplicati.Library.Interface
 {
     /// <summary>
-    /// A marker interface that can be addedd to a IGenericModule
+    /// A marker interface that can be added to a IGenericModule
     /// class to indicate that this module is required for the
     /// connections to succeed
     /// </summary>

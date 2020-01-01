@@ -150,7 +150,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         protected string m_parsedresultlevel = string.Empty;
         /// <summary>
-        /// The maxmimum number of log lines to include
+        /// The maximum number of log lines to include
         /// </summary>
         protected int m_maxmimumLogLines;
 

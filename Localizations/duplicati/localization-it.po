@@ -9,6 +9,7 @@
 # Andrea De Lunardi <a.delunardi@arca.com>, 2017
 # Francesco Infantini <infantini.francesco@gmail.com>, 2018
 # Folgore101 <andrea.gramegna@gmail.com>, 2018
+# albanobattistella <albano_battistella@hotmail.com>, 2019
 # 
 #, fuzzy
 msgid ""
@@ -17,7 +18,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-09-20 12:36+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2018\n"
+"Last-Translator: albanobattistella <albano_battistella@hotmail.com>, 2019\n"
 "Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1085,13 +1086,15 @@ msgstr "Google Drive"
 
 #: Library/Backend/GoogleServices/Strings.cs:46
 msgid "Team drive ID"
-msgstr ""
+msgstr "ID unità del team"
 
 #: Library/Backend/GoogleServices/Strings.cs:47
 msgid ""
 "This option sets the team drive to use. Leaving it empty uses the personal "
 "drive"
 msgstr ""
+"Questa opzione imposta l'unità del team da utilizzare. Lasciandolo vuoto "
+"utilizza l'unità personale"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -1905,10 +1908,14 @@ msgid ""
 "uploading will not be affected. The default download url depends on your "
 "account and looks like \"https://f00X.backblazeb2.com\""
 msgstr ""
+"Modificalo se desideri utilizzare il tuo dominio personalizzato per "
+"scaricare i file e il caricamento non sarà interessato. L'URL di download "
+"predefinito dipende dal tuo account e assomiglia a "
+"\"https://f00X.backblazeb2.com\""
 
 #: Library/Backend/Backblaze/Strings.cs:21
 msgid "The base URL to use for downloading files"
-msgstr ""
+msgstr "L'URL di base da utilizzare per il download dei file"
 
 #: Library/Backend/Backblaze/Strings.cs:22
 #, csharp-format
@@ -2246,7 +2253,7 @@ msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:20
 msgid "Number of threads for restore operations."
-msgstr ""
+msgstr "Numero di thread per le operazioni di ripristino."
 
 #: Library/Backend/Jottacloud/Strings.cs:21
 msgid ""
@@ -2254,16 +2261,21 @@ msgid ""
 " limited to 18.5 Mbps per stream. Use multiple threads to increase "
 "throughput."
 msgstr ""
+"Numero di thread per le operazioni di ripristino. In alcuni casi la velocità"
+" di download è limitata a 18,5 Mbps per stream. Utilizzare più thread per "
+"aumentare la velocità effettiva."
 
 #: Library/Backend/Jottacloud/Strings.cs:22
 msgid "The chunk size for simultaneous downloading."
-msgstr ""
+msgstr "La dimensione del blocco per il download simultaneo."
 
 #: Library/Backend/Jottacloud/Strings.cs:23
 msgid ""
 "The chunk size for simultaneous downloading. These chunks will be held in "
 "memory, so keep it as low as possible."
 msgstr ""
+"La dimensione del blocco per il download simultaneo. Questi blocchi vengono "
+"tenuti in memoria, in modo da mantenere il più basso possibile."
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
@@ -3303,10 +3315,12 @@ msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
 msgstr ""
+"Quando si eseguono caricamenti asincroni, è consentito il numero massimo di "
+"caricamenti simultanei. Impostare su zero per disabilitare il limite."
 
 #: Library/Main/Strings.cs:99
 msgid "The number of concurrent uploads allowed"
-msgstr ""
+msgstr "Il numero di caricamenti simultanei consentiti"
 
 #: Library/Main/Strings.cs:100
 msgid ""
@@ -3538,6 +3552,11 @@ msgid ""
 "size. If the backend does not report the quota information, this value will "
 "be ignored"
 msgstr ""
+"Imposta una soglia per quando avvisare del superamento della quota di back-"
+"end. Viene fornito in percentuale e viene generato un avviso se la quantità "
+"di quota disponibile è inferiore a questa percentuale della dimensione "
+"totale del backup. Se il back-end non riporta le informazioni sulla quota, "
+"questo valore verrà ignorato"
 
 #: Library/Main/Strings.cs:129
 msgid "Threshold for warning about low quota"
@@ -4046,10 +4065,16 @@ msgid ""
 "samples tested is the maximum implied by the two options. If this value is "
 "set to 0 or the option --{0} is set, no remote files are verified"
 msgstr ""
+"Una volta completato un backup, alcuni file (dblock, dindex, dlist) dal "
+"back-end remoto vengono selezionati per la verifica. Utilizzare questa "
+"opzione per modificare il numero. Se viene fornita anche l'opzione "
+"percentuale test di backup, il numero di campioni testati è il massimo "
+"implicito dalle due opzioni. Se questo valore è impostato su 0 o l'opzione "
+"-{0} è impostata, nessun file remoto viene verificato"
 
 #: Library/Main/Strings.cs:201
 msgid "The percentage of samples to test after a backup"
-msgstr ""
+msgstr "La percentuale di campioni da testare dopo un backup"
 
 #: Library/Main/Strings.cs:202
 msgid ""
@@ -4060,6 +4085,12 @@ msgid ""
 "implied by the two options. If the no-backend-verification option is "
 "provided, no remote files are verified."
 msgstr ""
+"Una volta completato un backup, alcuni file (dblock, dindex, dlist) dal "
+"back-end remoto vengono selezionati per la verifica. Utilizzare questa "
+"opzione per specificare la percentuale (tra 0 e 100) dei file da testare. Se"
+" viene fornita anche l'opzione backup-test-samples, il numero di campioni "
+"testati è il massimo implicito dalle due opzioni. Se viene fornita l'opzione"
+" di verifica senza backend, nessun file remoto viene verificato."
 
 #: Library/Main/Strings.cs:203
 msgid "Activates in-depth verification of files"
@@ -4075,6 +4106,13 @@ msgid ""
 "--{0} is set, no remote files are verified. This option is automatically set"
 " when then verification is performed directly."
 msgstr ""
+"Una volta completato un backup, alcuni file (dblock, dindex, dlist) dal "
+"back-end remoto vengono selezionati per la verifica. Utilizzare questa "
+"opzione per attivare la verifica completa, che decodificherà i file ed "
+"esaminerà l'interno di ciascun volume, invece di verificare semplicemente "
+"l'hash esterno, Se l'opzione -{0} è impostata, nessun file remoto viene "
+"verificato. Questa opzione viene impostata automaticamente quando la "
+"verifica viene eseguita direttamente."
 
 #: Library/Main/Strings.cs:205
 msgid "Size of the file read buffer"
@@ -4085,6 +4123,8 @@ msgid ""
 "Use this size to control how many bytes are read from a file before "
 "processing"
 msgstr ""
+"Utilizzare questa dimensione per controllare quanti byte vengono letti da un"
+" file prima dell'elaborazione"
 
 #: Library/Main/Strings.cs:207
 msgid "Allow the passphrase to change"
@@ -4226,6 +4266,8 @@ msgstr ""
 #: Library/Main/Strings.cs:230
 msgid "Forces the display of the actual date instead of calendar date"
 msgstr ""
+"Forza la visualizzazione della data effettiva anziché della data del "
+"calendario"
 
 #: Library/Main/Strings.cs:231
 msgid ""
@@ -4233,6 +4275,10 @@ msgid ""
 " \"Last Thursday\". By setting this option, only the actual dates are "
 "displayed, \"Nov 12, 2018, 8:01 AM\" for example."
 msgstr ""
+"Per impostazione predefinita, le date sono visualizzate nel formato del "
+"calendario, che significa \"Oggi\" o \"Giovedì scorso\". Impostando questa "
+"opzione, vengono visualizzate solo le date effettive, ad esempio \"12 nov "
+"2018, 8:01\"."
 
 #: Library/Main/Strings.cs:232
 msgid "Handle file communication with backend using threaded pipes"
@@ -4334,7 +4380,7 @@ msgstr "Controlla solo il file modificato l'ultima volta"
 
 #: Library/Main/Strings.cs:246
 msgid "Disables path compression on restore"
-msgstr ""
+msgstr "Compressione percorso disabilitato al ripristino"
 
 #: Library/Main/Strings.cs:247
 msgid ""
@@ -4647,6 +4693,11 @@ msgid ""
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
+"Se il certificato del tuo server viene dichiarato non valido (ad es. Con "
+"certificati autofirmati), puoi fornire l'hash del certificato (SHA1) per "
+"approvarlo comunque. Il valore di hash deve essere inserito in formato "
+"esadecimale senza spazi o due punti. È possibile inserire più hash separati "
+"da virgole."
 
 #: Library/Modules/Builtin/Strings.cs:25
 msgid "Optionally accept a known SSL certificate"

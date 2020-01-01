@@ -29,7 +29,7 @@ namespace Duplicati.Server
         private static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_HOME";
 
         /// <summary>
-        /// The environment variable that holdes the database key used to encrypt the SQLite database
+        /// The environment variable that holds the database key used to encrypt the SQLite database
         /// </summary>
         private static readonly string DB_KEY_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_DB_KEY";
 
@@ -109,7 +109,7 @@ namespace Duplicati.Server
         public static readonly System.Threading.ManualResetEvent ServerStartedEvent = new System.Threading.ManualResetEvent(false);
 
         /// <summary>
-        /// The status event signaler, used to controll long polling of status updates
+        /// The status event signaler, used to control long polling of status updates
         /// </summary>
         public static readonly EventPollNotify StatusEventNotifyer = new EventPollNotify();
 

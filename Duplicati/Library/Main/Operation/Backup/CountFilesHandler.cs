@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         public static async Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
         {
-            // Make sure we create the enumeration process in a seperate scope,
+            // Make sure we create the enumeration process in a separate scope,
             // but keep the log channel from the parent scope
             using(Logging.Log.StartIsolatingScope(true))
             using (new IsolatedChannelScope())
