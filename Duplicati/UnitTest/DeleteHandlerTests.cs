@@ -16,20 +16,28 @@ namespace Duplicati.UnitTest
             public long Version { get; }
             public int IsFullBackup { get; }
             public DateTime Time { get; }
-            public long FileCount { get; } = 0;
-            public long FileSizes { get; } = 0;
+            public long FileCount { get; }
+            public long FileSizes { get; }
 
             public Fileset(int version, int backupType, DateTime time)
             {
                 this.Version = version;
                 this.IsFullBackup = backupType;
                 this.Time = time;
+                this.FileCount = 0;
+                this.FileSizes = 0;
             }
 
             public bool Equals(Fileset other)
             {
-                if (ReferenceEquals(null, other)) return false;
-                if (ReferenceEquals(this, other)) return true;
+                if (ReferenceEquals(null, other))
+                {
+                    return false;
+                }
+                if (ReferenceEquals(this, other))
+                {
+                    return true;
+                }
                 return this.Version == other.Version && this.IsFullBackup == other.IsFullBackup && this.Time.Equals(other.Time) && this.FileCount == other.FileCount && this.FileSizes == other.FileSizes;
             }
         }
