@@ -351,7 +351,6 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/autoexec.bat");
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.System);
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.SystemX86);
-                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Recent);
 
                 var windir = FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
