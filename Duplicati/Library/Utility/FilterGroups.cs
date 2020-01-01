@@ -324,6 +324,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Microsoft*/Windows/Cookies*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/MSOCache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/NTUSER*");
+                yield return FilterGroups.CreateWildcardFilter(@"*/$RECYCLE.BIN/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/RECYCLER/");
                 yield return FilterGroups.CreateWildcardFilter(@"*UsrClass.dat*");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/hiberfil.sys");
@@ -396,7 +397,6 @@ namespace Duplicati.Library.Utility
 
             if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
-                yield return FilterGroups.CreateWildcardFilter(@"*/$RECYCLE.BIN/");
                 yield return FilterGroups.CreateWildcardFilter(@"*.tmp");
                 yield return FilterGroups.CreateWildcardFilter(@"*.tmp/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Temp*");
