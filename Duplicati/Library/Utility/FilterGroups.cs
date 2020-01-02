@@ -332,7 +332,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/RECYCLED/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/RECYCLER/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/System Volume Information/");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Installer*");
+                yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Installer/");
 
                 foreach (var s in GetWindowsRegistryFilters() ?? new string[0])
                 {
