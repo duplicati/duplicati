@@ -328,9 +328,9 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/hiberfil.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/pagefile.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/swapfile.sys");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/$RECYCLE.BIN/");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/RECYCLED/");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/RECYCLER/");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/$Recycle.Bin/");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/Recycled/");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/Recycler/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/System Volume Information/");
                 yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Installer/");
 
