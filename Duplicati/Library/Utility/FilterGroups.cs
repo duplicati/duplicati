@@ -324,7 +324,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Microsoft*/Windows/Cookies*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/MSOCache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/NTUSER*");
-                yield return FilterGroups.CreateWildcardFilter(@"*UsrClass.dat*");
+                yield return FilterGroups.CreateWildcardFilter(@"*/UsrClass.dat");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/hiberfil.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/pagefile.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/swapfile.sys");
