@@ -401,7 +401,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Temp*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Temp*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/Temp*");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Temp*");
+                yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Temp/");
             }
 
             if (group.HasFlag(FilterGroup.Applications))
