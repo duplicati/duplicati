@@ -334,7 +334,6 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/System Volume Information/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Installer*");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Temp*");
-                yield return FilterGroups.CreateWildcardFilter(@"*/ntuser.dat*");
 
                 foreach (var s in GetWindowsRegistryFilters() ?? new string[0])
                 {
