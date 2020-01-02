@@ -582,7 +582,7 @@ namespace Duplicati.Library.Utility
 
                 // Duplicati matches filters against folder paths exactly.
                 // Meaning a filter for 'C:\Windows' won't match 'C:\Windows\'.
-                // So this makes sure special folder's filters have a trailing directory separator.
+                // So this makes sure special folder filters have a trailing directory separator.
                 // (Alternatively, this could append '*' to all folder filters.)
                 return Common.IO.Util.AppendDirSeparator(filter);
             }
