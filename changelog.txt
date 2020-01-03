@@ -1,3 +1,14 @@
+2020-01-03 - 2.0.5.0_experimental_2020-01-03
+==========
+This is once again a cumulative release for more than 6 months of hard work.
+This release has a large number of stability improvements and speed optimizations.
+
+If you are using macOS, please re-install from the .dmg or .pkg, as the launcher has been updated to work with GateKeeper.
+Using the built-in update mechanism will not update the launcer and will not work well with GateKeeper on macOS Catalina.
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
 2019-12-29 - 2.0.4.38_canary_2019-12-29
 ==========
 * Fixed AutoUpdater environment setting to be parsed as a boolean, thanks @drwtsn32x
