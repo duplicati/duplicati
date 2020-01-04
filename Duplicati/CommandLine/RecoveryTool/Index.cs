@@ -41,23 +41,14 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             Directory.SetCurrentDirectory(folder);
 
+            SortedSet<string> ix_sorted =
+                new SortedSet<string>(StringComparer.Ordinal);
             string ixfile;
             options.TryGetValue("indexfile", out ixfile);
             if (string.IsNullOrWhiteSpace(ixfile))
                 ixfile = "index.txt";
 
             ixfile = Path.GetFullPath(ixfile);
-            if (!File.Exists(ixfile))
-            {
-                using (File.Create(ixfile))
-                {
-                }
-            }
-            else
-            {
-                Console.WriteLine("Sorting existing index file");
-                SortFile(ixfile, ixfile);
-            }
 
             var filecount = Directory.EnumerateFiles(folder).Count();
 
@@ -101,8 +92,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                     {
                         using (var sw = new StreamWriter(tf))
                             foreach (var f in cp.ListFiles(null))
-                            {
-                                sw.WriteLine("{0}, {1}", Library.Utility.Utility.Base64UrlToBase64Plain(f), filekey);
+                            {                                
+                                ix_sorted.Add(String.Format("{0}, {1}", Library.Utility.Utility.Base64UrlToBase64Plain(f), filekey));
                                 blocks++;
                             }
 
@@ -110,14 +101,10 @@ namespace Duplicati.CommandLine.RecoveryTool
                         totalblocks += blocks;
 
                         Console.Write(" {0} hashes found, sorting ...", blocks);
-
-                        SortFile(tf, tf);
-
+                        
                         Console.WriteLine(" done!");
 
                         Console.Write("Merging {0} hashes ...", totalblocks);
-
-                        MergeFiles(ixfile, tf, ixfile);
 
                         Console.WriteLine(" done!");
                     }
@@ -130,7 +117,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 i++;
             }
-
+            WriteIndex(ref ix_sorted, ixfile);
             Console.WriteLine("Processed {0} files and found {1} hashes", files, totalblocks);
             if (errors > 0)
                 Console.WriteLine("Experienced {0} errors", errors);
@@ -138,104 +125,14 @@ namespace Duplicati.CommandLine.RecoveryTool
             return 0;
         }
 
-        public static void SortFile(string filein, string fileout)
+        private static void WriteIndex(ref SortedSet<string> sorted_set, string file1)
         {
-            try
+            using (var sw = new System.IO.StreamWriter(file1))
             {
-                // If the file can fit into memory, this is MUCH faster
-                using (var tfout = new Library.Utility.TempFile())
+                foreach (string line in sorted_set)
                 {
-                    var data = File.ReadAllLines(filein);
-                    Array.Sort(data, StringComparer.Ordinal);
-                    File.WriteAllLines(tfout, data);
-
-                    File.Copy(tfout, fileout, true);
-                    return;
-                }
-            }
-            catch
-            {
-            }
-
-            using (var tfin = new Library.Utility.TempFile())
-            using (var tfout = new Library.Utility.TempFile())
-            {
-                long swaps;
-
-                File.Copy(filein, tfin, true);
-
-                do
-                {
-                    swaps = 0L;
-
-                    using (var sw = new System.IO.StreamWriter(tfout))
-                    using (var sr = new System.IO.StreamReader(tfin))
-                    {
-                        var c1 = sr.ReadLine();
-                        var c2 = sr.ReadLine();
-
-                        while (c1 != null || c2 != null)
-                        {
-                            if (c1 != null && c1.StartsWith("a", StringComparison.Ordinal))
-                                Console.Write("");
-                            var cmp = StringComparer.Ordinal.Compare(c1, c2);
-
-                            if (c2 == null || (c1 != null && cmp < 0))
-                            {
-                                sw.WriteLine(c1);
-
-                                c1 = c2;
-                                c2 = sr.ReadLine();
-                            }
-                            else
-                            {
-                                if (cmp != 0)
-                                    sw.WriteLine(c2);
-                                c2 = sr.ReadLine();
-                                swaps++;
-                            }
-                        }
-                    }
-
-                    File.Copy(tfout, tfin, true);
-
-                } while (swaps > 0);
-
-                File.Copy(tfout, fileout, true);
-            }
-        }
-
-        private static void MergeFiles(string file1, string file2, string fileout)
-        {
-            using (var tf = new Library.Utility.TempFile())
-            {
-                using (var sw = new System.IO.StreamWriter(tf))
-                using (var sr1 = new System.IO.StreamReader(file1))
-                using (var sr2 = new System.IO.StreamReader(file2))
-                {
-                    var c1 = sr1.ReadLine();
-                    var c2 = sr2.ReadLine();
-
-                    while (c1 != null || c2 != null)
-                    {
-                        var cmp = StringComparer.Ordinal.Compare(c1, c2);
-
-                        if (c2 == null || (c1 != null && cmp < 0))
-                        {
-                            sw.WriteLine(c1);
-                            c1 = sr1.ReadLine();
-                        }
-                        else
-                        {
-                            if (cmp != 0)
-                                sw.WriteLine(c2);
-
-                            c2 = sr2.ReadLine();
-                        }
-                    }
-                }
-
-                File.Copy(tf, fileout, true);
+                    sw.WriteLine(line);
+                }                
             }
         }
     }

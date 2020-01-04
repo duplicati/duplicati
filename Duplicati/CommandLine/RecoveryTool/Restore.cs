@@ -58,9 +58,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                 return 100;
             }
 
-            Console.Write("Sorting index file ...");
-            Index.SortFile(ixfile, ixfile);
-            Console.WriteLine(" done!");
 
             string filelist;
             if (args.Count == 2)
