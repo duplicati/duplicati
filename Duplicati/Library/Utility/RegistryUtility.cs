@@ -36,7 +36,7 @@ namespace Duplicati.Library.Utility
                 }
 
                 var lmParentKey = Registry.LocalMachine.OpenSubKey(parentKeyName, RegistryKeyPermissionCheck.ReadSubTree);
-                return lmParentKey.GetValue(name).ToString();
+                return lmParentKey?.GetValue(name).ToString();
             }
             catch
             {

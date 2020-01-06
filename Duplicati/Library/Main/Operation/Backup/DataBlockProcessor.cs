@@ -108,10 +108,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
 
                                 var uploadRequest = new VolumeUploadRequest(blockvolume, blockEntry, indexVolumeCopy, options, database);
-                                await self.Output.WriteAsync(uploadRequest);
 
                                 blockvolume = null;
                                 indexvolume = null;
+
+                                // Write to output at the end here to prevent sending a full volume to the SpillCollector
+                                await self.Output.WriteAsync(uploadRequest);
                             }
 
                         }
