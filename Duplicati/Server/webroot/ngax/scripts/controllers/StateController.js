@@ -67,6 +67,11 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
             {
                 pg = 1;
             }
+            else if ($scope.state.lastPgEvent != null && $scope.state.lastPgEvent.Phase == 'Paused_WaitForUpload')
+            {
+                var speed_txt = ($scope.state.lastPgEvent.BackendSpeed < 0) ? "" : " at "+AppUtils.formatSizeString($scope.state.lastPgEvent.BackendSpeed)+"/s";
+                text = text + speed_txt;    
+            }
             else if ($scope.state.lastPgEvent.OverallProgress > 0) {
                 pg = $scope.state.lastPgEvent.OverallProgress;
             }
@@ -91,10 +96,12 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
             {
                 AppService.post('/task/' + taskId + '/stopaftercurrentfile');
                 $scope.StopReqId = taskId;
+                $scope.stopEvent = 'stopaftercurrentfile';
             }
             else if (ix == 1) {
                 AppService.post('/task/' + taskId + '/stopnow');
                 $scope.StopReqId = taskId;
+                $scope.stopEvent = 'stopnow';
             }
         };
 

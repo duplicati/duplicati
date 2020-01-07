@@ -59,7 +59,9 @@ namespace Duplicati.Library.Main
         PurgeFiles_Compact,
         PurgeFiles_Complete,
 
+        Paused,
+        Paused_WaitForUpload,
+
         Error
     }
 }
-

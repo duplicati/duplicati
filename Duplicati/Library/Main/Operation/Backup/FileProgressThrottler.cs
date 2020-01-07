@@ -30,6 +30,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         private readonly object m_Lock = new object();
         private readonly StatsCollector m_Stats;
         private long m_MaxBytesPerSecond;
+        private bool m_Paused;
         private long m_TotalSize;
 
         public FileProgressThrottler(StatsCollector stats, long maxBytesPerSecond)
@@ -46,6 +47,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (f != null)
                     f.Done = true;
             }
+        }
+
+        public void Pause()
+        {
+            m_Paused = true;
+        }
+
+        public void Resume()
+        {
+            m_Paused = false;
         }
 
         public void Run(CancellationToken cancelToken)
@@ -148,6 +159,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await Task.Delay(1000).ConfigureAwait(false);
                 if (cancelToken.IsCancellationRequested)
                     return;
+
+                if (m_Paused)
+                    continue;
 
                 lock (m_Lock)
                 {

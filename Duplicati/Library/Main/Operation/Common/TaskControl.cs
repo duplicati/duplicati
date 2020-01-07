@@ -30,6 +30,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// The return value is <c>true</c> if the program should continue and <c>false</c> if a stop is requested
         /// </summary>
         Task<bool> ProgressAsync { get; }
+
         /// <summary>
         /// Gets the transfer progress async control.
         /// The transfer handler should await this instead of the <see cref="ProgressAsync"/> event.
@@ -159,8 +160,8 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Requests that progress should be paused
         /// </summary>
-        /// <param name="alsoTransfers">If set to <c>true</c> also transfers.</param>
-        public void Pause(bool alsoTransfers = false)
+        /// <param name="alsoNewTransfers">If set to <c>true</c> also pauses new transfers. Transfers in progress will complete.</param>
+        public void Pause(bool alsoNewTransfers = false)
         {
             lock(m_lock)
             {
@@ -170,7 +171,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_progressstate = State.Paused;
                 }
 
-                if (alsoTransfers && m_transferstate == State.Active)
+                if (alsoNewTransfers && m_transferstate == State.Active)
                 {
                     m_transfer = new TaskCompletionSource<bool>();
                     m_transferstate = State.Paused;
@@ -182,8 +183,8 @@ namespace Duplicati.Library.Main.Operation.Common
         /// Requests that the progress should be stopped in an orderly manner,
         /// which allows current transfers to be completed.
         /// </summary>
-        /// <param name="alsoTransfers">If set to <c>true</c> also transfers.</param>
-        public void Stop(bool alsoTransfers = false)
+        /// <param name="alsoNewTransfers">If set to <c>true</c> stops any new transfers and completes existing transfers.</param>
+        public void Stop(bool alsoNewTransfers = false)
         {
             lock(m_lock)
             {
@@ -196,7 +197,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_progressstate = State.Stopped;
                 }
 
-                if (alsoTransfers && (m_transferstate == State.Active || m_transferstate == State.Paused))
+                if (alsoNewTransfers && (m_transferstate == State.Active || m_transferstate == State.Paused))
                 {
                     if (m_transferstate != State.Paused)
                         m_transfer = new TaskCompletionSource<bool>();
@@ -208,7 +209,7 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         /// <summary>
-        /// Terminates the progress without allowing a flush
+        /// Terminates the progress and all existing transfers without allowing them to complete.
         /// </summary>
         public void Terminate()
         {

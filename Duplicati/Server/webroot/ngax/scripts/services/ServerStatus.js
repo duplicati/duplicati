@@ -22,7 +22,8 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         updateReady: false,
         updateDownloadProgress: 0,
         proposedSchedule: [],
-        schedulerQueueIds: []
+        schedulerQueueIds: [],
+        stopEvent: ''
     };
 
     this.state = state;
@@ -42,6 +43,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'Backup_VerificationUpload': gettextCatalog.getString('Uploading verification file …'),
             'Backup_PostBackupVerify': gettextCatalog.getString('Verifying backend data …'),
             'Backup_Complete': gettextCatalog.getString('Backup complete!'),
+            'Backup_StopNow': gettextCatalog.getString('Stopping backup ...'),
             'Restore_Begin': gettextCatalog.getString('Starting restore …'),
             'Restore_RecreateDatabase': gettextCatalog.getString('Rebuilding local database …'),
             'Restore_PreRestoreVerify': gettextCatalog.getString('Verifying remote data …'),
@@ -64,6 +66,8 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             'PurgeFiles_Process,': gettextCatalog.getString('Purging files …'),
             'PurgeFiles_Compact,': gettextCatalog.getString('Compacting remote data …'),
             'PurgeFiles_Complete,': gettextCatalog.getString('Purging files complete!'),
+            'Paused': gettextCatalog.getString('Paused'),
+            'Paused_WaitForUpload': gettextCatalog.getString('Pausing, waiting for uploads to finish'),
             'Error': gettextCatalog.getString('Error!')
         };
     };

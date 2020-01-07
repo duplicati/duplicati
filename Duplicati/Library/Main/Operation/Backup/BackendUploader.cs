@@ -39,12 +39,12 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         public Task<long> LastWriteSizeAsync { get { return m_tcs.Task; } }
         private readonly TaskCompletionSource<long> m_tcs = new TaskCompletionSource<long>();
-        
+
         public void SetFlushed(long size)
         {
             m_tcs.TrySetResult(size);
         }
-        
+
         public void TrySetCanceled()
         {
             m_tcs.TrySetCanceled();
@@ -100,22 +100,25 @@ namespace Duplicati.Library.Main.Operation.Backup
         private CancellationTokenSource m_cancelTokenSource;
         private readonly DatabaseCommon m_database;
         private long m_initialUploadThrottleSpeed;
+        private long m_lastSize;
         private int m_lastThrottleCheckTime;
         private long m_lastUploadThrottleSpeed;
         private int m_maxConcurrentUploads;
         private readonly Options m_options;
         private readonly FileProgressThrottler m_progressUpdater;
         private readonly StatsCollector m_stats;
+        private readonly IOperationProgressUpdaterAndReporter m_operationUpdater;
         private readonly ITaskReader m_taskReader;
+        private List<Worker> m_workers = new List<Worker>();
 
-
-        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskReader, StatsCollector stats)
+        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskReader, StatsCollector stats, IOperationProgressUpdaterAndReporter operationUpdater)
         {
             m_backendFactory = backendFactory;
             m_options = options;
             m_taskReader = taskReader;
             m_stats = stats;
             m_database = database;
+            m_operationUpdater = operationUpdater;
             m_progressUpdater = new FileProgressThrottler(stats, options.MaxUploadPrSecond);
         }
 
@@ -128,77 +131,46 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                var workers = new List<Worker>();
                 m_maxConcurrentUploads = m_options.AsynchronousConcurrentUploadLimit <= 0 ? int.MaxValue : m_options.AsynchronousConcurrentUploadLimit;
                 m_initialUploadThrottleSpeed = m_options.AsynchronousConcurrentUploadLimit <= 0 ? int.MaxValue : m_options.MaxUploadPrSecond / m_maxConcurrentUploads;
-                var lastSize = -1L;
                 var uploadsInProgress = 0;
+                var waitForInputTimeout = TimeSpan.FromSeconds(2);
                 m_cancelTokenSource = new CancellationTokenSource();
                 m_progressUpdater.Run(m_cancelTokenSource.Token);
 
                 try
                 {
-                    while (!await self.Input.IsRetiredAsync && await m_taskReader.ProgressAsync)
+                    while (!await self.Input.IsRetiredAsync)
                     {
-                        var req = await self.Input.ReadAsync();
+                        var request = await GetRequest(self.Input, waitForInputTimeout);
 
-                        if (!await m_taskReader.ProgressAsync)
-                            break;
-
-                        var worker = workers.FirstOrDefault(w => w.Task.IsCompleted && !w.Task.IsFaulted);
-                        if (worker == null)
+                        if (m_operationUpdater.CurrentPhase == OperationPhase.Paused_WaitForUpload)
                         {
-                            worker = new Worker(m_backendFactory());
-                            workers.Add(worker);
+                            await WaitForUploadsToFinish(flush: null).ConfigureAwait(false);
+                            m_operationUpdater.UpdatePhase(OperationPhase.Paused);
+                            m_progressUpdater.Pause();
+                            if (!await m_taskReader.TransferProgressAsync.ConfigureAwait(false))
+                                break;
+                            m_progressUpdater.Resume();
                         }
 
-                        if (req is VolumeUploadRequest volumeUpload)
-                        {
-                            if (volumeUpload.IndexVolume == null)
-                                worker.Task = Task.Run(() => UploadFileAsync(volumeUpload.BlockEntry, worker, m_cancelTokenSource.Token));
-                            else
-                                worker.Task = Task.Run(() => UploadBlockAndIndexAsync(volumeUpload, worker, m_cancelTokenSource.Token));
+                        if (request == null)
+                            continue;
 
-                            lastSize = volumeUpload.BlockVolume.SourceSize;
-                            uploadsInProgress++;
-                        }
-                        else if (req is FilesetUploadRequest filesetUpload)
+                        await HandleRequest(request).ConfigureAwait(false);
+                        uploadsInProgress++;
+                        if (request is FlushRequest)
                         {
-                            worker.Task = Task.Run(() => UploadVolumeWriter(filesetUpload.Fileset, worker, m_cancelTokenSource.Token));
-                            uploadsInProgress++;
-                        }
-                        else if (req is IndexVolumeUploadRequest indexUpload)
-                        {
-                            worker.Task = Task.Run(() => UploadVolumeWriter(indexUpload.IndexVolume, worker, m_cancelTokenSource.Token));
-                            uploadsInProgress++;
-                        }
-                        else if (req is FlushRequest flush)
-                        {
-                            while (workers.Any())
-                            {
-                                Task finishedTask = await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
-                                if (finishedTask.IsFaulted)
-                                {
-                                    flush.TrySetCanceled();
-                                    ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
-                                }
-
-                                Worker finishedWorker = workers.Single(w => w.Task == finishedTask);
-                                workers.Remove(finishedWorker);
-                                finishedWorker.Dispose();
-                            }
-                            
-                            flush.SetFlushed(lastSize);
                             uploadsInProgress = 0;
                             break;
                         }
 
                         if (uploadsInProgress >= m_maxConcurrentUploads)
                         {
-                            await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
+                            await Task.WhenAny(m_workers.Select(w => w.Task)).ConfigureAwait(false);
                             uploadsInProgress--;
 
-                            var failedUploads = workers.Where(w => w.Task.IsFaulted).Select(w => GetInnerMostException(w.Task.Exception)).ToList();
+                            var failedUploads = m_workers.Where(w => w.Task.IsFaulted).Select(w => GetInnerMostException(w.Task.Exception)).ToList();
                             if (failedUploads.Any())
                             {
                                 if (failedUploads.Count == 1)
@@ -209,12 +181,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                     }
                 }
-                catch (Exception ex) when (!ex.IsRetiredException())
+                catch (Exception)
                 {
                     m_cancelTokenSource.Cancel();
                     try
                     {
-                        await Task.WhenAll(workers.Select(w => w.Task));
+                        await Task.WhenAll(m_workers.Select(w => w.Task));
                     }
                     catch
                     {
@@ -222,7 +194,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     finally
                     {
-                        workers.ForEach(w => w.Dispose());
+                        m_workers.ForEach(w => w.Dispose());
                     }
                     throw;
                 }
@@ -230,12 +202,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                 try
                 {
                     m_stats.SetBlocking(true);
-                    await Task.WhenAll(workers.Select(w => w.Task));
+                    await Task.WhenAll(m_workers.Select(w => w.Task));
                 }
                 finally
                 {
                     m_stats.SetBlocking(false);
-                    workers.ForEach(w => w.Dispose());
+                    m_workers.ForEach(w => w.Dispose());
                 }
             });
         }
@@ -245,6 +217,59 @@ namespace Duplicati.Library.Main.Operation.Backup
             while (ex.InnerException != null)
                 ex = ex.InnerException;
             return ex;
+        }
+
+        private async Task<IUploadRequest> GetRequest(IReadChannel<IUploadRequest> channel, TimeSpan timeout)
+        {
+            try
+            {
+                return await channel.ReadAsync(timeout).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                // Timeout exception is expected and handled
+            }
+
+            return null;
+        }
+
+        private async Task HandleRequest(IUploadRequest request)
+        {
+            var worker = m_workers.FirstOrDefault(w => w.Task.IsCompleted && !w.Task.IsFaulted);
+            if (worker == null)
+            {
+                worker = new Worker(m_backendFactory());
+                m_workers.Add(worker);
+            }
+
+            if (request is VolumeUploadRequest volumeUpload)
+            {
+                if (volumeUpload.IndexVolume == null)
+                    worker.Task = Task.Run(() => UploadFileAsync(volumeUpload.BlockEntry, worker, m_cancelTokenSource.Token));
+                else
+                    worker.Task = Task.Run(() => UploadBlockAndIndexAsync(volumeUpload, worker, m_cancelTokenSource.Token));
+
+                m_lastSize = volumeUpload.BlockVolume.SourceSize;
+            }
+            else if (request is FilesetUploadRequest filesetUpload)
+            {
+                worker.Task = Task.Run(() => UploadVolumeWriter(filesetUpload.Fileset, worker, m_cancelTokenSource.Token));
+            }
+            else if (request is IndexVolumeUploadRequest indexUpload)
+            {
+                worker.Task = Task.Run(() => UploadVolumeWriter(indexUpload.IndexVolume, worker, m_cancelTokenSource.Token));
+            }
+            else if (request is FlushRequest flush)
+            {
+                try
+                {
+                    WaitForUploadsToFinish(flush);
+                }
+                finally
+                {
+                    flush.SetFlushed(m_lastSize);
+                }
+            }
         }
 
         private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker, CancellationToken cancelToken)
@@ -460,6 +485,23 @@ namespace Duplicati.Library.Main.Operation.Backup
                 m_lastUploadThrottleSpeed = maxUploadPerSecond;
                 m_initialUploadThrottleSpeed = maxUploadPerSecond / m_maxConcurrentUploads;
                 m_progressUpdater.UpdateThrottleSpeeds(maxUploadPerSecond);
+            }
+        }
+
+        private async Task WaitForUploadsToFinish(FlushRequest flush)
+        {
+            while (m_workers.Any())
+            {
+                Task finishedTask = await Task.WhenAny(m_workers.Select(w => w.Task)).ConfigureAwait(false);
+                if (finishedTask.IsFaulted)
+                {
+                    flush?.TrySetCanceled();
+                    ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
+                }
+
+                Worker finishedWorker = m_workers.Single(w => w.Task == finishedTask);
+                m_workers.Remove(finishedWorker);
+                finishedWorker.Dispose();
             }
         }
 
