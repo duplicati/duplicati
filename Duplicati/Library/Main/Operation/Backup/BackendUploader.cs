@@ -147,11 +147,21 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (m_operationUpdater.CurrentPhase == OperationPhase.Paused_WaitForUpload)
                         {
                             await WaitForUploadsToFinish(flush: null).ConfigureAwait(false);
+                            uploadsInProgress = 0;
                             m_operationUpdater.UpdatePhase(OperationPhase.Paused);
                             m_progressUpdater.Pause();
                             if (!await m_taskReader.TransferProgressAsync.ConfigureAwait(false))
+                            {
+                                (request as FlushRequest)?.SetFlushed(-1);
                                 break;
+                            }
                             m_progressUpdater.Resume();
+                        }
+                        else if (!await m_taskReader.TransferProgressAsync.ConfigureAwait(false))
+                        {
+                            m_cancelTokenSource.Cancel();
+                            (request as FlushRequest)?.SetFlushed(-1);
+                            break;
                         }
 
                         if (request == null)
@@ -160,14 +170,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                         await HandleRequest(request).ConfigureAwait(false);
                         uploadsInProgress++;
                         if (request is FlushRequest)
-                        {
-                            uploadsInProgress = 0;
                             break;
-                        }
 
                         if (uploadsInProgress >= m_maxConcurrentUploads)
                         {
-                            await Task.WhenAny(m_workers.Select(w => w.Task)).ConfigureAwait(false);
+                            if (!await AnyUploadCompleted().ConfigureAwait(false))
+                                continue;
+
                             uploadsInProgress--;
 
                             var failedUploads = m_workers.Where(w => w.Task.IsFaulted).Select(w => GetInnerMostException(w.Task.Exception)).ToList();
@@ -210,6 +219,21 @@ namespace Duplicati.Library.Main.Operation.Backup
                     m_workers.ForEach(w => w.Dispose());
                 }
             });
+        }
+
+        /// <returns><c>true</c> if an upload task completed or <c>false</c> if the operation is requested to pause or stop.</returns>
+        private async Task<bool> AnyUploadCompleted()
+        {
+            var twoSeconds = TimeSpan.FromSeconds(2);
+            while (true)
+            {
+                await Task.Delay(twoSeconds).ConfigureAwait(false);
+                if (m_operationUpdater.CurrentPhase == OperationPhase.Paused_WaitForUpload || !await m_taskReader.TransferProgressAsync.ConfigureAwait(false))
+                    return false;
+
+                if (m_workers.Any(w => w.Task.IsCompleted))
+                    return true;
+            }
         }
 
         private static Exception GetInnerMostException(Exception ex)
@@ -263,7 +287,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 try
                 {
-                    WaitForUploadsToFinish(flush);
+                    await WaitForUploadsToFinish(flush).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -306,12 +330,12 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 if (item.IsRetry)
                     await RenameFileAfterErrorAsync(item).ConfigureAwait(false);
-                await DoPut(item, worker.Backend, cancelToken).ConfigureAwait(false);
+                return await DoPut(item, worker.Backend, cancelToken).ConfigureAwait(false);
             },
             item, worker, cancelToken).ConfigureAwait(false);
         }
 
-        private async Task<bool> DoWithRetry(Func<Task> method, FileEntryItem item, Worker worker, CancellationToken cancelToken)
+        private async Task<bool> DoWithRetry(Func<Task<bool>> method, FileEntryItem item, Worker worker, CancellationToken cancelToken)
         {
             item.IsRetry = false;
             var retryCount = 0;
@@ -328,8 +352,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     if (worker.Backend == null)
                         worker.Backend = m_backendFactory();
-                    await method().ConfigureAwait(false);
-                    return true;
+                    return await method().ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -402,10 +425,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             item.RemoteFilename = newname;
         }
 
-        private async Task DoPut(FileEntryItem item, IBackend backend, CancellationToken cancelToken)
+        private async Task<bool> DoPut(FileEntryItem item, IBackend backend, CancellationToken cancelToken)
         {
             if (cancelToken.IsCancellationRequested)
-                return;
+                return false;
 
             if (item.TrackedInDb)
                 await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploading, item.Size, item.Hash);
@@ -414,7 +437,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadVolume", "Would upload volume: {0}, size: {1}", item.RemoteFilename, Library.Utility.Utility.FormatSizeString(new FileInfo(item.LocalFilename).Length));
                 item.DeleteLocalFile();
-                return;
+                return true;
             }
 
             await m_database.LogRemoteOperationAsync("put", item.RemoteFilename, JsonConvert.SerializeObject(new { Size = item.Size, Hash = item.Hash }));
@@ -434,26 +457,33 @@ namespace Duplicati.Library.Main.Operation.Backup
             else
                 await backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
 
+            var success = !cancelToken.IsCancellationRequested;
+
             var duration = DateTime.Now - begin;
             m_progressUpdater.EndFileProgress(item.RemoteFilename);
-            Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
 
-            if (item.TrackedInDb)
-                await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
-
-            await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
-
-            if (m_options.ListVerifyUploads)
+            if (success)
             {
-                var f = backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
-                if (f == null)
-                    throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
-                else if (f.Size != item.Size && f.Size >= 0)
-                    throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
+                Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
+
+                if (item.TrackedInDb)
+                    await m_database.UpdateRemoteVolumeAsync(item.RemoteFilename, RemoteVolumeState.Uploaded, item.Size, item.Hash);
+
+                await m_stats.SendEventAsync(BackendActionType.Put, BackendEventType.Completed, item.RemoteFilename, item.Size);
+
+                if (m_options.ListVerifyUploads)
+                {
+                    var f = backend.List().FirstOrDefault(n => n.Name.Equals(item.RemoteFilename, StringComparison.OrdinalIgnoreCase));
+                    if (f == null)
+                        throw new Exception(string.Format("List verify failed, file was not found after upload: {0}", item.RemoteFilename));
+                    else if (f.Size != item.Size && f.Size >= 0)
+                        throw new Exception(string.Format("List verify failed for file: {0}, size was {1} but expected to be {2}", f.Name, f.Size, item.Size));
+                }
             }
 
             item.DeleteLocalFile();
             await m_database.CommitTransactionAsync("CommitAfterUpload");
+            return success;
         }
 
         private void HandleProgress(ThrottledStream stream, long progress, string path)
