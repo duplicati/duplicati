@@ -28,6 +28,7 @@ namespace Duplicati.UnitTest
             }
 
             string[] dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            Assert.Greater(dindexFiles.Length, 0);
             foreach (string f in dindexFiles)
             {
                 File.Delete(f);
