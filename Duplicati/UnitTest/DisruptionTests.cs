@@ -512,5 +512,63 @@ namespace Duplicati.UnitTest
                 }
             }
         }
+
+        [Test]
+        [Category("Disruption")]
+        public void StopNow()
+        {
+            // Choose a dblock size that is small enough so that more than one volume is needed.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
+
+            // Run a complete backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(1, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+
+            // Interrupt a backup with "stop now".
+            this.ModifySourceFiles();
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                // ReSharper disable once AccessToDisposedClosure
+                Task backupTask = Task.Run(() => c.Backup(new[] {this.DATAFOLDER}));
+
+                // Block for a small amount of time to allow the ITaskControl to be associated
+                // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
+                Thread.Sleep(1000);
+
+                c.Stop(false);
+                Assert.That(async () => await backupTask.ConfigureAwait(false), Throws.Exception);
+            }
+
+            // The next backup should proceed without issues.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+
+            // Restore from the backup that followed the interruption.
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) {["restore-path"] = this.RESTOREFOLDER};
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IListResults lastResults = c.List("*");
+                string[] fullVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
+                Assert.AreEqual(this.fileSizes.Length, fullVersionFiles.Length);
+                c.Restore(fullVersionFiles);
+
+                foreach (string filepath in fullVersionFiles)
+                {
+                    string filename = Path.GetFileName(filepath);
+                    Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, false));
+                }
+            }
+        }
     }
 }
