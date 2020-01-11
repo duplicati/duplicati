@@ -12,7 +12,7 @@ namespace Duplicati.UnitTest
         public override void SetUp()
         {
             base.SetUp();
-            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "emptyFile"), new byte[] {0});
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), new byte[] {0});
         }
 
         [Test]
