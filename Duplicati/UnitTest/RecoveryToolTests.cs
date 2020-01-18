@@ -9,6 +9,28 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class RecoveryToolTests : BasicSetupHelper
     {
+        private string originalCurrentDirectory;
+
+        [SetUp]
+        public override void SetUp()
+        {
+            base.SetUp();
+            this.originalCurrentDirectory = Directory.GetCurrentDirectory();
+        }
+
+        [TearDown]
+        public override void TearDown()
+        {
+            // Since the RecoveryTool changes the current directory, we will reset it so that
+            // the teardown methods to not complain about the paths being used by another process.
+            if (this.originalCurrentDirectory != null)
+            {
+                Directory.SetCurrentDirectory(this.originalCurrentDirectory);
+            }
+
+            base.TearDown();
+        }
+
         [Test]
         [Category("RecoveryTool")]
         public void Recover()
