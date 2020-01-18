@@ -1,3 +1,9 @@
+2020-01-18 - 2.0.5.100_canary_2020-01-18
+==========
+* Fixed issue with restoring permissions with inheritance, thanks @drwtsn32x
+* Improved tests, thanks @warwickmm
+* Fixed an issue that could be triggered by force stopping a backup, thanks @warwickmm
+
 2020-01-18 - 2.0.5.1_beta_2020-01-18
 ==========
 This beta release is a collection of additions and improvements from many contributors.
