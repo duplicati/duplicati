@@ -26,6 +26,9 @@ MONO=/Library/Frameworks/Mono.framework/Commands/mono
 
 GPG=/usr/local/bin/gpg2
 
+# Newer GPG needs this to allow input from a non-terminal
+export GPG_TTY=$(tty)
+
 ZIPFILE=$(basename "$1")
 VERSION=$(echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 1)
 BUILDTYPE=$(echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 2)
@@ -52,9 +55,18 @@ echo "DEBName: ${DEBNAME}"
 echo "SPKName: ${SPKNAME}"
 
 build_file_signatures() {
-	if [ "z${GPGID}" != "z" ]; then
-		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--output" "$2.sig" "--detach-sig" "$1"
-		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--armor" "--output" "$2.sig.asc" "--detach-sig" "$1"
+	if [ -f "${GPG_KEYFILE}" ]; then
+		"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+		--inputfile=\"$1\" \
+		--signaturefile=\"$2.sig\" \
+		--armor=false --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+		--keyfile-password="${KEYFILE_PASSWORD}"
+
+		"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+		--inputfile=\"$1\" \
+		--signaturefile=\"$2.sig.asc\" \
+		--armor=true --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+		--keyfile-password="${KEYFILE_PASSWORD}"
 	fi
 
 	md5 "$1" | awk -F ' ' '{print $NF}' > "$2.md5"
