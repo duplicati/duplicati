@@ -33,6 +33,8 @@ XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
+AWS=/usr/local/bin/aws
+GITHUB_RELEASE=/usr/local/bin/github-release
 
 # Newer GPG needs this to allow input from a non-terminal
 export GPG_TTY=$(tty)
@@ -56,6 +58,18 @@ if [ ! -f "$NUGET" ]; then
 	echo "NuGet executable not found: $NUGET"
 	exit 1
 fi
+
+if [ ! -f "$AWS" ]; then
+	echo "aws-cli not found: $AWS"
+	exit 1
+fi
+
+if [ ! -f "$GITHUB_RELEASE" ]; then
+	echo "github-release executable not found: $GITHUB_RELEASE"
+	echo "Grab it from: https://github.com/aktau/github-release"
+	exit 1
+fi
+
 
 # The "OTHER_UPLOADS" setting is no longer used
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
@@ -281,12 +295,12 @@ cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
 
 echo "Uploading binaries"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
 
-aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
+"${AWS}" --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 
 ZIP_MD5=$(md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}')
 ZIP_SHA1=$(shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
@@ -311,8 +325,8 @@ echo "duplicati_version_info =" > "latest.js"
 cat "latest.json" >> "latest.js"
 echo ";" >> "latest.js"
 
-aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
-aws --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
+"${AWS}" --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
+"${AWS}" --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
 
 # echo "Propagating to other build types"
 # for OTHER in ${OTHER_UPLOADS}; do
@@ -338,14 +352,12 @@ fi
 
 RELEASE_MESSAGE=$(printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}")
 
-# Using the tool from https://github.com/aktau/github-release
-
 GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
 
 if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
 else
-	github-release release ${PRE_RELEASE_LABEL} \
+	"${GITHUB_RELEASE}" release ${PRE_RELEASE_LABEL} \
 	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
 	    --name "v${RELEASE_VERSION}-${RELEASE_NAME}" \
 	    --repo "duplicati" \
@@ -353,7 +365,7 @@ else
 	    --security-token "${GITHUB_TOKEN}" \
 	    --description "${RELEASE_MESSAGE}" \
 
-	github-release upload \
+	"${GITHUB_RELEASE}" upload \
 	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
 	    --name "${RELEASE_FILE_NAME}.zip" \
 	    --repo "duplicati" \
