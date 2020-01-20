@@ -5,7 +5,7 @@ if [ ! -f "$1" ]; then
     exit
 fi
 
-ARCHITECTURES="amd64 arm32v7"
+ARCHITECTURES="amd64 arm32v7 arm64v8"
 DEFAULT_ARCHITECTURE=amd64
 DEFAULT_CHANNEL=beta
 REPOSITORY=duplicati/duplicati

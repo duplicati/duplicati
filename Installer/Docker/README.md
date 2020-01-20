@@ -17,6 +17,7 @@ Images for the following OS/architecture combinations are available:
 
 * `linux-amd64`
 * `linux-arm32v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
+* `linux-arm64v8` - 64-bit ARMv8 devices like the Raspberry Pi 4 (when running a 64-bit OS)
 
 The default architecture is `linux-amd64`. To pull an image for another architecture, prepend the architecture string to the image tag, e.g. `linux-arm32v7-beta`.
 
