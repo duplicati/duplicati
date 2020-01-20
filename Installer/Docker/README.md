@@ -7,16 +7,16 @@ Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 
 
 ## Available tags
 
-* `beta` - the most recent beta release
-* `experimental` - the most recent experimental release
-* `canary` - the most recent canary release
-* `latest` - an alias for `beta`
-* specific versions like `2.0.2.1_beta_2017-08-01`
+  * `beta` - the most recent beta release
+  * `experimental` - the most recent experimental release
+  * `canary` - the most recent canary release
+  * `latest` - an alias for `beta`
+  * specific versions like `2.0.2.1_beta_2017-08-01`
 
 Images for the following OS/architecture combinations are available:
 
-* `linux-amd64`
-* `linux-arm32v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
+  * `linux-amd64`
+  * `linux-arm32v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
 
 The default architecture is `linux-amd64`. To pull an image for another architecture, prepend the architecture string to the image tag, e.g. `linux-arm32v7-beta`.
 
