@@ -5,7 +5,7 @@ if [ ! -f "$1" ]; then
     exit
 fi
 
-PLATFORMS="linux/amd64,linux/arm/v7"
+PLATFORMS="linux/amd64,linux/arm/v7,linux/arm64"
 DEFAULT_CHANNEL=beta
 REPOSITORY=duplicati/duplicati
 PUSH_TO_REGISTRY=${PUSH_TO_REGISTRY:-true}

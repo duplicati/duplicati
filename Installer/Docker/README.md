@@ -17,6 +17,7 @@ Images for the following OS/architecture combinations are available using Docker
 
   * `linux/amd64`
   * `linux/arm/v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
+  * `linux/arm64` - 64-bit ARMv8 devices like the Raspberry Pi 4 (when running a 64-bit OS)
 
 ## How to use this image
 
