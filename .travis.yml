@@ -69,7 +69,7 @@ jobs:
         directories:
           - $BUILD_DIR
       script:
-        - ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport,Disruption,RestoreHandler,DeleteHandler
+        - ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport,Disruption,RestoreHandler,RepairHandler,DeleteHandler
 
     - stage: tests
       cache:

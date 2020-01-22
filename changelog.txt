@@ -1,3 +1,59 @@
+2020-01-18 - 2.0.5.100_canary_2020-01-18
+==========
+* Fixed issue with restoring permissions with inheritance, thanks @drwtsn32x
+* Improved tests, thanks @warwickmm
+* Fixed an issue that could be triggered by force stopping a backup, thanks @warwickmm
+
+2020-01-18 - 2.0.5.1_beta_2020-01-18
+==========
+This beta release is a collection of additions and improvements from many contributors.
+Since it is released more than a year after the last beta, there is a large number of changes.
+
+Important notes:
+* On Linux, macOS, and other systems that require Mono, this version requires Mono v5 or later.
+
+* On macOS please remove the current beta and install this version, instead of using the updater. Doing so, will make Duplicati compatible with Gatekeeper and allow you to grant permissions.
+
+A big thanks to all Duplicati contributors, supporters, fans and users for keeping the project evolving and improving.
+
+Note that the beta `v2.0.4.23` has database version `8` and this release has database version `10`. This means that your local database will be upgraded once you run this version, and you cannot roll back without some manual intervention.
+
+Here is a short list of some of the more notable changes:
+
+* Numerous bug fixes and performance enhancements.
+* Updated translations, new languages added.
+* Improved support for macOS Catalina
+* Add support for minio backend.
+* Improve tray icon to reflect warning state.
+* Fix long path issue when path has 259 or 260 characters.
+* Remove support for Amazon Cloud Drive.
+* Fix input issues with dark theme.
+* Fix bug in handling filter expressions.
+* Fix purge operation with simple filters and case-sensitive filesystems.
+* Fix ignoring of --tempdir option when using the command-line.
+* Improved list of S3 compatible options and providers.
+* Fix ability to stop backup after current file has finished processing.
+* Updates to support libraries
+* Improve logging during database recreation.
+* Add option to skip vacuum operations within specified duration, `--auto-vacuum-interval`.
+* Add option to skip compact operations within specified duration, `--auto-compact-interval`.
+* Fix backup corruption from upload throttling. #3787
+* Fix for “Unexpected difference in fileset”. #3800
+* Fix for “CheckingErrorsForIssue1400” and “FoundIssue1400Error”. #3868
+* Fix for “FTP (Alternative)” upload verification.
+* Server database version is still 6. Backup database rose to 10. This may impede downgrades.
+
+2020-01-03 - 2.0.5.0_experimental_2020-01-03
+==========
+This is once again a cumulative release for more than 6 months of hard work.
+This release has a large number of stability improvements and speed optimizations.
+
+If you are using macOS, please re-install from the .dmg or .pkg, as the launcher has been updated to work with GateKeeper.
+Using the built-in update mechanism will not update the launcer and will not work well with GateKeeper on macOS Catalina.
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
 2019-12-29 - 2.0.4.38_canary_2019-12-29
 ==========
 * Fixed AutoUpdater environment setting to be parsed as a boolean, thanks @drwtsn32x
