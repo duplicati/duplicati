@@ -22,7 +22,7 @@ namespace Duplicati.UnitTest
         public override void TearDown()
         {
             // Since the RecoveryTool changes the current directory, we will reset it so that
-            // the teardown methods to not complain about the paths being used by another process.
+            // the teardown methods do not complain about the paths being used by another process.
             if (this.originalCurrentDirectory != null)
             {
                 Directory.SetCurrentDirectory(this.originalCurrentDirectory);
