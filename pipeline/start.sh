@@ -8,5 +8,4 @@ ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories BulkNormal
 ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories BulkNoSize
 ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories SVNDataLong,SVNData,RecoveryTool
 ${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories Border
-${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport,Disruption,RestoreHandler,RepairHandler
-
+${ROOT_DIR}/pipeline/jobs/unittest_job.sh --testcategories Filter,Targeted,Purge,Serialization,WebApi,Utility,UriUtility,IO,ImportExport,Disruption,RestoreHandler,RepairHandler,DeleteHandler
