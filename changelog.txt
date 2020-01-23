@@ -1,3 +1,11 @@
+2020-01-23 - 2.0.5.101_canary_2020-01-23
+==========
+* Improved tests, thanks @drwtsn32x
+* Fixed a case where repair fails due to missing `dindex` files, thanks @warwickmm
+* Fixed an issue where compacted files would miss a blocklist, thanks @seantempleton
+* Now producing Docker multi-arch images, thanks @dnrce
+* Improved code quality and testing, thanks @warwickmm
+
 2020-01-18 - 2.0.5.100_canary_2020-01-18
 ==========
 * Fixed issue with restoring permissions with inheritance, thanks @drwtsn32x
