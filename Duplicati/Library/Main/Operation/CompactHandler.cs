@@ -15,12 +15,11 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
-using System.Text;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -101,7 +100,7 @@ namespace Duplicati.Library.Main.Operation
                     var backend = bk ?? sharedBackend;
                     if (!hasVerifiedBackend && !m_options.NoBackendverification)
                         FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
-        
+
                     BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
                     newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
     
@@ -140,7 +139,7 @@ namespace Duplicati.Library.Main.Operation
                                                  where report.CompactableVolumes.Contains(v.Name)
                                                  select (IRemoteVolume)v).ToList();
 
-                        using(var q = db.CreateBlockQueryHelper(transaction))
+                        using (var q = db.CreateBlockQueryHelper(transaction))
                         {
                             foreach (var entry in new AsyncDownloader(volumesToDownload, backend))
                             {
@@ -174,15 +173,7 @@ namespace Duplicati.Library.Main.Operation
 
                                                 if (newvol.Filesize > m_options.VolumeSize)
                                                 {
-                                                    uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
-                                                    if (newvolindex != null)
-                                                        uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
-
-                                                    if (!m_options.Dryrun)
-                                                        backend.Put(newvol, newvolindex);
-                                                    else
-                                                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
-
+                                                    FinishVolumeAndUpload(db, backend, newvol, newvolindex, uploadedVolumes);
 
                                                     newvol = new BlockVolumeWriter(m_options);
                                                     newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
@@ -211,13 +202,7 @@ namespace Duplicati.Library.Main.Operation
                             
                             if (blocksInVolume > 0)
                             {
-                                uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
-                                if (newvolindex != null)
-                                    uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
-                                if (!m_options.Dryrun)
-                                    backend.Put(newvol, newvolindex);
-                                else
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
+                                FinishVolumeAndUpload(db, backend, newvol, newvolindex, uploadedVolumes);
                             }
                             else
                             {
@@ -310,8 +295,28 @@ namespace Duplicati.Library.Main.Operation
 
             return PerformDelete(backend, db.GetDeletableVolumes(deleteableVolumes, transaction));
         }
-            
-        
+
+        private void FinishVolumeAndUpload(LocalDeleteDatabase db, BackendManager backend, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes)
+        {
+            Action indexVolumeFinished = () => {
+                if (newvolindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                {
+                    foreach (var blocklist in db.GetBlocklists(newvol.VolumeID, m_options.Blocksize, m_options.BlockhashSize))
+                    {
+                        newvolindex.WriteBlocklist(blocklist.Item1, blocklist.Item2, 0, blocklist.Item3);
+                    }
+                }
+            };
+
+            uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
+            if (newvolindex != null)
+                uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
+            if (!m_options.Dryrun)
+                backend.Put(newvol, newvolindex, indexVolumeFinished);
+            else
+                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
+        }
+
         private IEnumerable<KeyValuePair<string, long>> PerformDelete(BackendManager backend, IEnumerable<IRemoteVolume> list)
         {
             foreach(var f in list)
@@ -322,8 +327,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size));
 
                 yield return new KeyValuePair<string, long>(f.Name, f.Size);
-            }               
+            }
         }
     }
 }
-

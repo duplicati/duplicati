@@ -1180,7 +1180,7 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
-        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, bool synchronous = false)
+        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, Action indexVolumeFinishedCallback = null, bool synchronous = false)
         {
             if (m_lastException != null)
                 throw m_lastException;
@@ -1212,6 +1212,11 @@ namespace Duplicati.Library.Main
                 req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
                 req2.LocalTempfile = indexfile.TempFile;
                 req.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(indexfile, req2);
+
+                indexfile.FinishVolume(req.Hash, req.Size);
+                indexVolumeFinishedCallback?.Invoke();
+                indexfile.Close();
+                req.IndexfileUpdated = true;
             }
 
             try
