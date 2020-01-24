@@ -33,7 +33,9 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RecoveryTool")]
-        public void Recover()
+        [TestCase("false")]
+        [TestCase("true")]
+        public void Recover(string buildIndexWithFiles)
         {
             // Files to create in MB.
             int[] fileSizes = {10, 20, 30};
@@ -71,7 +73,7 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, status);
 
             // Create the index.
-            status = CommandLine.RecoveryTool.Program.RealMain(new[] {"index", $"{downloadFolder}"});
+            status = CommandLine.RecoveryTool.Program.RealMain(new[] {"index", $"{downloadFolder}", $"--build-index-with-files={buildIndexWithFiles}"});
             Assert.AreEqual(0, status);
 
             // Restore to a different folder.
