@@ -14,6 +14,7 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -41,8 +42,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             Directory.SetCurrentDirectory(folder);
 
-            SortedSet<string> ix_sorted =
-                new SortedSet<string>(StringComparer.Ordinal);
+            SortedSet<string> ix_sorted = new SortedSet<string>(StringComparer.Ordinal);
             string ixfile;
             options.TryGetValue("indexfile", out ixfile);
             if (string.IsNullOrWhiteSpace(ixfile))
@@ -64,14 +64,14 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 try
                 {
-                    var p = Duplicati.Library.Main.Volumes.VolumeBase.ParseFilename(file);
+                    var p = Library.Main.Volumes.VolumeBase.ParseFilename(file);
                     if (p == null)
                     {
                         Console.WriteLine(" - Not a Duplicati file, ignoring");
                         continue;
                     }
 
-                    if (p.FileType != Duplicati.Library.Main.RemoteVolumeType.Blocks)
+                    if (p.FileType != Library.Main.RemoteVolumeType.Blocks)
                     {
                         Console.WriteLine(" - Filetype {0}, skipping", p.FileType);
                         continue;
@@ -86,22 +86,20 @@ namespace Duplicati.CommandLine.RecoveryTool
                     var filekey = Path.GetFileName(file);
 
                     var blocks = 0;
-                    using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
                     using (var cp = Library.DynamicLoader.CompressionLoader.GetModule(p.CompressionModule, stream, Library.Interface.ArchiveMode.Read, options))
-                    using (var tf = new Library.Utility.TempFile())
                     {
-                        using (var sw = new StreamWriter(tf))
-                            foreach (var f in cp.ListFiles(null))
-                            {                                
-                                ix_sorted.Add(String.Format("{0}, {1}", Library.Utility.Utility.Base64UrlToBase64Plain(f), filekey));
-                                blocks++;
-                            }
+                        foreach (var f in cp.ListFiles(null))
+                        {
+                            ix_sorted.Add($"{Library.Utility.Utility.Base64UrlToBase64Plain(f)}, {filekey}");
+                            blocks++;
+                        }
 
                         files++;
                         totalblocks += blocks;
 
                         Console.Write(" {0} hashes found, sorting ...", blocks);
-                        
+
                         Console.WriteLine(" done!");
 
                         Console.Write("Merging {0} hashes ...", totalblocks);
@@ -117,6 +115,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 i++;
             }
+
             WriteIndex(ref ix_sorted, ixfile);
             Console.WriteLine("Processed {0} files and found {1} hashes", files, totalblocks);
             if (errors > 0)
@@ -127,14 +126,13 @@ namespace Duplicati.CommandLine.RecoveryTool
 
         private static void WriteIndex(ref SortedSet<string> sorted_set, string file1)
         {
-            using (var sw = new System.IO.StreamWriter(file1))
+            using (var sw = new StreamWriter(file1))
             {
                 foreach (string line in sorted_set)
                 {
                     sw.WriteLine(line);
-                }                
+                }
             }
         }
     }
 }
-
