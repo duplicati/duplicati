@@ -69,7 +69,7 @@ namespace Duplicati.Library.Utility.Power
                 return false;
             }
 
-            return reply |= !haveMains;
+            return reply || !haveMains;
         }
 
         private bool IsBattery()
