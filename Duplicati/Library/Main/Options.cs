@@ -1101,24 +1101,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-
-
-        /// <summary>
-        /// Parses a log level string
-        /// </summary>
-        /// <returns>The log level enumeration value.</returns>
-        /// <param name="value">The string value to parse.</param>
-        /// <param name="backupvalue">An optional fallback parsing value.</param>
-        public static Logging.LogMessageType ParseLogLevel(string value, string backupvalue)
-        {
-            value = string.IsNullOrWhiteSpace(value) ? backupvalue : value;
-            foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
-                if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
-                    return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
-
-            return Duplicati.Library.Logging.LogMessageType.Warning;
-        }
-
         /// <summary>
         /// Gets the filter used for log-file messages.
         /// </summary>
