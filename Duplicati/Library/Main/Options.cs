@@ -39,12 +39,7 @@ namespace Duplicati.Library.Main
         /// The default block size
         /// </summary>
         private const string DEFAULT_BLOCKSIZE = "100kb";
-        
-        /// <summary>
-        /// The default size of the read-ahead buffer
-        /// </summary>
-        private const string DEFAULT_READ_BUFFER_SIZE = "5mb";
-        
+
         /// <summary>
         /// The default threshold value
         /// </summary>
