@@ -755,19 +755,6 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Helper method to set the default compression mode based on the settings of the previous backup
-        /// </summary>
-        /// <param name="lastSetting">The compression module used for the last entry</param>
-        public void SetCompressionModuleDefault(string lastSetting)
-        {
-            //If a compression module is explicitly selected, don't change it
-            if (m_options.ContainsKey("compression-module"))
-                return;
-
-            m_options["compression-module"] = lastSetting;
-        }
-
-        /// <summary>
         /// Gets the module used for compression
         /// </summary>
         public string CompressionModule
