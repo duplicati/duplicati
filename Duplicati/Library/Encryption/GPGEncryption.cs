@@ -226,7 +226,7 @@ namespace Duplicati.Library.Encryption
 #if DEBUG
             psi.CreateNoWindow = false;
             psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-            Console.Error.WriteLine(string.Format("Running command: {0} {1}", m_programpath, args));
+            Console.Error.WriteLine("Running command: {0} {1}", m_programpath, args);
 #endif
 
             System.Diagnostics.Process p;

@@ -79,7 +79,7 @@ namespace Duplicati.Library.Backend
             if (options.ContainsKey(OPTION_RCLONE_EXECUTABLE))
                 rclone_executable = options[OPTION_RCLONE_EXECUTABLE];
 #if DEBUG
-            Console.WriteLine(string.Format("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone));
+            Console.WriteLine("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone);
 #endif
         }
 
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Backend
             };
 
 #if DEBUG
-            Console.Error.WriteLine(String.Format("command executing: {0} {1}", psi.FileName, psi.Arguments));
+            Console.Error.WriteLine("command executing: {0} {1}", psi.FileName, psi.Arguments);
 #endif
             process = new Process
             {
@@ -146,7 +146,7 @@ namespace Duplicati.Library.Backend
                     if (!String.IsNullOrEmpty(e.Data))
                     {
 #if DEBUG
-                        Console.Error.WriteLine(String.Format("error {0}", e.Data));
+                        Console.Error.WriteLine("error {0}", e.Data);
 #endif
                         errorBuilder.Append(e.Data);
                     }
