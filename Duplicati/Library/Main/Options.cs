@@ -1622,15 +1622,6 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if the current operation is intended to delete files older than a certain threshold
-        /// </summary>
-        public bool HasDeleteAllButN
-        {
-            get { return m_options.ContainsKey("delete-all-but-n") || m_options.ContainsKey("delete-all-but-n-full"); }
-        }
-
-        
-        /// <summary>
         /// Gets a flag indicating if the remote verification is deep
         /// </summary>
         public bool FullRemoteVerification
