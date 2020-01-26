@@ -1437,11 +1437,6 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
-        public bool FlushDbMessages(LocalDatabase database, System.Data.IDbTransaction transaction)
-        {
-            return m_db.FlushDbMessages(database, transaction);
-        }
-
         public bool FlushDbMessages()
         {
             return m_db.FlushDbMessages(false);
