@@ -1620,14 +1620,6 @@ namespace Duplicati.Library.Main
                     return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
             }
         }
-        
-        /// <summary>
-        /// Gets a flag indicating if the current operation is intended to delete files older than a certain threshold
-        /// </summary>
-        public bool HasDeleteOlderThan
-        {
-            get { return m_options.ContainsKey("delete-older-than"); }
-        }
 
         /// <summary>
         /// Gets a flag indicating if the current operation is intended to delete files older than a certain threshold
