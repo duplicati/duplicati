@@ -366,7 +366,6 @@ namespace Duplicati.Library.Main
 
         public string BackendUrl { get { return m_backendurl; } }
 
-        public bool HasDied { get { return m_lastException != null; } }
         public Exception LastException { get { return m_lastException; } }
 
         public BackendManager(string backendurl, Options options, IBackendWriter statwriter, LocalDatabase database)
