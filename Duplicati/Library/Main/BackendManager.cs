@@ -1411,31 +1411,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void CreateFolder(string remotename)
-        {
-            if (m_lastException != null)
-                throw m_lastException;
-
-            var req = new FileEntryItem(OperationType.CreateFolder, remotename);
-            try
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(true);
-                if (m_queue.Enqueue(req))
-                {
-                    req.WaitForComplete();
-                    if (req.Exception != null)
-                        throw req.Exception;
-                }
-            }
-            finally
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(false);
-            }
-
-            if (m_lastException != null)
-                throw m_lastException;
-        }
-
         public void Delete(string remotename, long size, bool synchronous = false)
         {
             if (m_lastException != null)
