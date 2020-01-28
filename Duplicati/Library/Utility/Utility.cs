@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
 // This library is free software; you can redistribute it and/or
@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
@@ -1050,6 +1051,15 @@ namespace Duplicati.Library.Utility
             return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
         }
 
+        // <summary>
+        // Returns the Executing.
+        // <returns>Executing assembly</returns>
+        public static System.Reflection.Assembly getExecutingAssembly()
+        {
+            return System.Reflection.Assembly.GetExecutingAssembly();
+        }
+
+
         /// <summary>
         /// Converts a Base64 encoded string to &quot;base64 for url&quot;
         /// See https://en.wikipedia.org/wiki/Base64#URL_applications
@@ -1488,5 +1498,76 @@ namespace Duplicati.Library.Utility
         {
             return task.GetAwaiter().GetResult();
         }
+
+
+        #region Execute command methods
+
+        /// <summary>
+        /// Execute script file in the folder location
+        /// If the file does not exit in the location, do nothing
+        /// </summary>
+        /// <param name="folderLocation"></param>
+        /// <param name="commandFile"></param>
+        /// <param name="runWithBash"></param>
+        public static Exception ExecuteCommand(string folderLocation, string commandFile, bool runWithBash = false)
+        {
+            string commandFilePath = Path.Combine(folderLocation, commandFile);
+
+            try
+            {
+                if (!File.Exists(commandFilePath))
+                    return new Exception($"Command '{commandFilePath}' does not exists.");
+
+                ProcessStartInfo processInfo;
+                if (runWithBash)
+                {
+                    processInfo = new ProcessStartInfo("/bin/bash")
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                        WorkingDirectory = folderLocation,
+                        Arguments = commandFile
+                    };
+                }
+                else
+                {
+                    processInfo = new ProcessStartInfo(commandFilePath)
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                        WorkingDirectory = folderLocation,
+                    };
+                }
+
+                var process = Process.Start(processInfo);
+                if (process != null)
+                {
+                    try
+                    {
+                        process.WaitForExit();
+                        if (0 != process.ExitCode)
+                        {
+                            return new Exception($"Command '{commandFilePath}' returned {process.ExitCode} exit code.");
+                        }
+                    }
+                    finally
+                    {
+                        process.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+
+            return null;
+        }
+
+        #endregion
     }
 }

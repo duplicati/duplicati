@@ -20,6 +20,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
@@ -250,7 +251,10 @@ namespace Duplicati.Library.AutoUpdater
             if (Version.TryParse(str, out v))
                 return v;
             else
-                return new Version(0, 0);
+            {
+                UpdateLogger.Log($"Tried to parse version {str} but failed. Returned version {new Version(99, 0)}");
+                return new Version(99, 0);
+            }
         }
 
         public static bool HasUpdateInstalled
@@ -507,9 +511,13 @@ namespace Duplicati.Library.AutoUpdater
                                 if (VerifyUnpackedFolder(tempfolder, version))
                                 {
                                     var versionstring = TryParseVersion(version.Version).ToString();
+                                    UpdateLogger.Log($"Install directory {versionstring} verified.");
                                     var targetfolder = System.IO.Path.Combine(INSTALLDIR, versionstring);
                                     if (System.IO.Directory.Exists(targetfolder))
-                                        System.IO.Directory.Delete(targetfolder, true);
+                                    {
+                                        UpdateLogger.Log($"Install directory {versionstring} exists. Try deleting it.");
+                                        TryDeleteFolder(targetfolder, true);
+                                    }
 
                                     System.IO.Directory.CreateDirectory(targetfolder);
 
@@ -531,6 +539,7 @@ namespace Duplicati.Library.AutoUpdater
                                         else
                                             System.IO.File.Copy(e, fullpath);
                                     }
+                                    UpdateLogger.Log($"Directory {versionstring} contents copied to install directory.");
 
                                     // Verification will kick in when we list the installed updates
                                     //VerifyUnpackedFolder(targetfolder, version);
@@ -538,15 +547,24 @@ namespace Duplicati.Library.AutoUpdater
 
                                     m_hasUpdateInstalled = null;
 
+                                    UpdateLogger.Log($"Current version {SelfVersion.Version}, installing {versionstring}");
                                     var obsolete = (from n in FindInstalledVersions()
-                                                    where n.Value.Version != version.Version && n.Value.Version != SelfVersion.Version
+                                                    where n.Value.Version != versionstring && n.Value.Version != SelfVersion.Version
                                                     let x = TryParseVersion(n.Value.Version)
                                                     orderby x descending
-                                                    select n).Skip(1).ToArray();
+                                                    select n).Skip(3).ToArray();
 
+                                    if (obsolete.Any())
+                                        UpdateLogger.Log($"Deleting old versions: {string.Join(",", obsolete.Select(p => p.Key).ToArray())}.");
+                                    else
+                                        UpdateLogger.Log("No old versions to delete.");
                                     foreach (var f in obsolete)
-                                        try { System.IO.Directory.Delete(f.Key, true); }
-                                        catch { }
+                                        if (!f.Key.Contains(versionstring) && !f.Key.Contains(SelfVersion.Version))
+                                        {
+                                            UpdateLogger.Log($"Trying to delete directory {f.Key}");
+                                            try { TryDeleteFolder(f.Key, true); }
+                                            catch { }
+                                        }
 
                                     return true;
                                 }
@@ -566,6 +584,34 @@ namespace Duplicati.Library.AutoUpdater
             }
 
             return false;
+        }
+
+        private static void TryDeleteFolder(string appDirectory, bool recursive)
+        {
+            bool done = false;
+            int retry = 0;
+            int retries = 60;
+            if (Directory.Exists(appDirectory))
+            {
+                while (!done)
+                {
+                    try
+                    {
+                        Directory.Delete(appDirectory, recursive);
+                        done = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (retry++ < retries)
+                            Thread.Sleep(1000);
+                        else
+                        {
+                            UpdateLogger.Log($"DeleteDirectory -> Unable to delete {(recursive ? "(recursive)" : "")} the directory {appDirectory}. Exception: {ex.Message}");
+                            done = true;
+                        }
+                    }
+                }
+            }
         }
 
         public static bool VerifyUnpackedFolder(string folder, UpdateInfo version = null)
@@ -638,7 +684,7 @@ namespace Duplicati.Library.AutoUpdater
 
                     paths.Remove(relpath);
 
-                    if (fe.Path.EndsWith("/", StringComparison.Ordinal))
+                    if (fe.Path.EndsWith("/", StringComparison.Ordinal) || fe.Path.EndsWith("\\", StringComparison.Ordinal))
                         continue;
 
                     sha256.Initialize();
@@ -656,7 +702,7 @@ namespace Duplicati.Library.AutoUpdater
                 }
 
                 var filteredpaths = paths
-                    .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal))
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Key) && !p.Key.EndsWith("/", StringComparison.Ordinal) && !p.Key.EndsWith("\\", StringComparison.Ordinal))
                     .Where(p => !IgnoreWebrootFolder || !p.Key.StartsWith("webroot", Library.Utility.Utility.ClientFilenameStringComparison))
                     .Select(p => p.Key)
                     .ToList();
@@ -719,7 +765,6 @@ namespace Duplicati.Library.AutoUpdater
             remoteManifest.UncompressedSize = 0;
 
             var localManifest = remoteManifest.Clone();
-            localManifest.RemoteURLS = null;
 
             inputfolder = Util.AppendDirSeparator(inputfolder);
             var baselen = inputfolder.Length;
@@ -1073,8 +1118,8 @@ namespace Duplicati.Library.AutoUpdater
 
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
-            if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), false))
-                return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
+            if (Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("AUTOUPDATER_USE_APPDOMAIN"), true))
+                    return RunFromMostRecentAppDomain(method, cmdargs, defaultstrategy);
 
             return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
         }

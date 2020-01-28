@@ -406,12 +406,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <EmbeddedResource Include="VersionTag.txt" />
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <EmbeddedResource Include="VersionTag.txt" />
     <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj">
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
       <Name>Duplicati.Library.Common</Name>
@@ -421,4 +424,5 @@
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
 </Project>

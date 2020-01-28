@@ -445,10 +445,15 @@ namespace Duplicati.Library.Main
                     }
                     else
                     {
-                        try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
-                        catch { }
-
-                        OnOperationComplete(ex);
+                        try
+                        {
+                            (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
+                            OnOperationComplete(result);
+                        }
+                        catch
+                        {
+                            OnOperationComplete(ex);
+                        }
 
                         Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
 

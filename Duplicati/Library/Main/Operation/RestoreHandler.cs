@@ -1,4 +1,4 @@
-﻿#region Disclaimer / License
+#region Disclaimer / License
 // Copyright (C) 2019, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //

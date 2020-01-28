@@ -10,11 +10,11 @@ namespace Duplicati.WindowsService
 {
     public class ServiceControl : System.ServiceProcess.ServiceBase
     {
-        private const string LOG_SOURCE = "Duplicati";
+        private const string LOG_SOURCE = "ENATrustBackup";
         private const string LOG_NAME = "Application";
         public const string SERVICE_NAME = "Duplicati";
-        public const string DISPLAY_NAME = "Duplicati service";
-        public const string DESCRIPTION = "Runs Duplicati as a service";
+        public const string DISPLAY_NAME = "ENA TrustBackup service";
+        public const string DESCRIPTION = "Runs ENA TrustBackup as a service";
 
         private readonly System.Diagnostics.EventLog m_eventLog;
 

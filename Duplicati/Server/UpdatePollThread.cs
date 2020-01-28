@@ -18,6 +18,8 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Common;
 using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server
@@ -80,14 +82,135 @@ namespace Duplicati.Server
             }
         }
 
-        public void ActivateUpdate()
+        public bool ActivateUpdate()
         {
             if (Duplicati.Library.AutoUpdater.UpdaterManager.SetRunUpdate())
             {
+                UpdateLogger.Log("Start activating updates.");
+                // If we are on Windows
+                if (Platform.IsClientWindows)
+                {
+                    UpdateLogger.Log("Execute updates script.");
+                    var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
+                    var runUpdateScriptBat = "run-update-script.bat";
+
+                    // On Windows, execute script file from the Last updates folder location
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScriptBat);
+                    if (null != ex)
+                    {
+                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
+                    }
+
+                    // Wait a few seconds for script to finish running
+                    UpdateLogger.Log("Executing updates script. Wait a few seconds for script to finish running");
+                    Thread.Sleep(5000);
+                }
+                // If we are on OSX
+                else if (Platform.IsClientOSX)
+                {
+                    UpdateLogger.Log("Execute OSX updates script.");
+                    var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
+                    UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
+                    var runUpdateScript = "run-update-script_osx.sh";
+
+
+                    // Execute script file from the Last updates folder location
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScript, true);
+                    if (null != ex)
+                    {
+                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
+                    }
+
+                    // Wait a few seconds for script to finish running
+                    UpdateLogger.Log("Executing OSX updates script. Wait a few seconds for script to finish running");
+                    Thread.Sleep(5000);
+                }
+                // If we are on Linux
+                else if (Platform.IsClientPosix)
+                {
+                    UpdateLogger.Log("Execute linux updates script.");
+                    var lastUpdatesFolderLocation = AppDomain.CurrentDomain.GetData("AUTOUPDATER_LOAD_UPDATE");
+                    UpdateLogger.Log($"lastUpdatesFolderLocation: {lastUpdatesFolderLocation}");
+                    var runUpdateScript = "run-update-script_linux.sh";
+
+                    // Execute script file from the Last updates folder location
+                    var ex = Library.Utility.Utility.ExecuteCommand(lastUpdatesFolderLocation.ToString(), runUpdateScript, true);
+                    if (null != ex)
+                    {
+                        UpdateLogger.Log($"Exception occurred on ExecuteCommand: {ex.Message}");
+                    }
+
+                    // Wait a few seconds for script to finish running
+                    UpdateLogger.Log("Executing linux updates script. Wait a few seconds for script to finish running");
+                    Thread.Sleep(5000);
+                }
+
+                UpdateLogger.Log("Application Exit Event.");
                 IsUpdateRequested = true;
                 Program.ApplicationExitEvent.Set();
+                return true;
+            }
+            else
+            {
+                UpdateLogger.Log("Stop activating updates. Update has not been installed");
+                return false;
             }
         }
+
+        private bool DownloadUpdate()
+        {
+            bool downloadAndUnpackFinished = false;
+            lock (m_lock)
+                m_download = false;
+
+            var v = Program.DataConnection.ApplicationSettings.UpdatedVersion;
+            if (v != null)
+            {
+                ThreadState = UpdatePollerStates.Downloading;
+                Program.StatusEventNotifyer.SignalNewEvent();
+
+                downloadAndUnpackFinished = UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; });
+                if (downloadAndUnpackFinished)
+                    Program.StatusEventNotifyer.SignalNewEvent();
+            }
+
+            return downloadAndUnpackFinished;
+        }
+
+        // If tasks are running or scheduled, retry the operation for about 180 seconds until can be safely executed
+        private static bool TryExecuteOperation(Func<bool> operationMethod)
+        {
+            bool done = false;
+            int retry = 0;
+            int retries = 60;
+            bool operationResult = false;
+
+            // Try to execute Operation, wait until resources are available
+            while (!done)
+            {
+                // Cannot execute Operation while task is running or scheduled
+                if (Program.WorkThread.CurrentTask == null && Program.WorkThread.CurrentTasks.Count == 0)
+                {
+                    UpdateLogger.Log($"Executing Operation '{operationMethod.Method.Name}'.");
+                    operationResult = operationMethod();
+                    done = true;
+                }
+                else
+                {
+                    if (retry++ < retries)
+                        Thread.Sleep(3000);
+                    else
+                    {
+                        // Give up
+                        UpdateLogger.Log($"Cannot execute Operation '{operationMethod.Method.Name}' while task is running or scheduled.");
+                        done = true;
+                    }
+                }
+            }
+
+            return operationResult;
+        }
+
 
         public void Terminate()
         {
@@ -110,6 +233,7 @@ namespace Duplicati.Server
 
             while (!m_terminated)
             {
+                UpdateLogger.Log($"Running update pool (at every {Program.DataConnection.ApplicationSettings.UpdateCheckInterval})");
                 var nextCheck = Program.DataConnection.ApplicationSettings.NextUpdateCheck;
 
                 var maxcheck = TimeSpan.FromDays(7);
@@ -125,9 +249,12 @@ namespace Duplicati.Server
                 if (nextCheck - DateTime.UtcNow > maxcheck)
                     nextCheck = DateTime.UtcNow - TimeSpan.FromSeconds(1);
 
-                if (nextCheck < DateTime.UtcNow || m_forceCheck)
+                bool autoUpdateCheck = nextCheck < DateTime.UtcNow;
+                bool updatePrepareForDownload = false;
+                if (autoUpdateCheck || m_forceCheck)
                 {
-                    lock(m_lock)
+                    UpdateLogger.Log($"Checking updates ({(autoUpdateCheck ? "auto" : "force")}).");
+                    lock (m_lock)
                         m_forceCheck = false;
 
                     ThreadState = UpdatePollerStates.Checking;
@@ -176,6 +303,7 @@ namespace Duplicati.Server
 
                     if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(Program.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
+                        updatePrepareForDownload = true;
                         Program.DataConnection.RegisterNotification(
                                     NotificationType.Information,
                                     "Found update",
@@ -190,22 +318,30 @@ namespace Duplicati.Server
                                         return all.FirstOrDefault(x => x.Action == "update:new") ?? self;
                                     }
                                 );
+                        UpdateLogger.Log($"Updates {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname} found.");
                     }
                 }
 
+                bool autoDownloadUpdate = autoUpdateCheck && Program.DataConnection.ApplicationSettings.AutoInstallUpdate && updatePrepareForDownload;
+                bool downloadAndUnpackUpdateFinished = false;
+
+                if (autoDownloadUpdate)
+                    UpdateLogger.Log($"Auto install update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+
+
                 if (m_download)
+                    UpdateLogger.Log($"Manual install update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+
+                if (autoDownloadUpdate || m_download)
                 {
-                    lock(m_lock)
-                        m_download = false;
-
-                    var v = Program.DataConnection.ApplicationSettings.UpdatedVersion;
-                    if (v != null)
+                    // Do not download another update if an update has been installed
+                    if (!UpdaterManager.HasUpdateInstalled)
                     {
-                        ThreadState = UpdatePollerStates.Downloading;
-                        Program.StatusEventNotifyer.SignalNewEvent();
-
-                        if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; }))
-                            Program.StatusEventNotifyer.SignalNewEvent();
+                        downloadAndUnpackUpdateFinished = TryExecuteOperation(DownloadUpdate);
+                    }
+                    else
+                    {
+                        UpdateLogger.Log("An update has been installed. Cannot download another update.");
                     }
                 }
 
@@ -217,6 +353,17 @@ namespace Duplicati.Server
                     Program.StatusEventNotifyer.SignalNewEvent();
                 }
 
+                if (autoDownloadUpdate && (downloadAndUnpackUpdateFinished || UpdaterManager.HasUpdateInstalled))
+                {
+                    if (downloadAndUnpackUpdateFinished)
+                        UpdateLogger.Log($"Auto activate update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+                    else if (UpdaterManager.HasUpdateInstalled)
+                        UpdateLogger.Log($"Auto activate previous installed update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
+
+                    TryExecuteOperation(ActivateUpdate);
+                }
+
+
                 var waitTime = nextCheck - DateTime.UtcNow;
 
                 // Guard against spin-loop
@@ -227,7 +374,9 @@ namespace Duplicati.Server
                 // A re-check does not cause an update check
                 if (waitTime.TotalDays > 1)
                     waitTime = TimeSpan.FromDays(1);
-                
+
+                UpdateLogger.Log($"Update pool next running time: {waitTime}.");
+
                 m_waitSignal.WaitOne(waitTime, true);
             }   
         }
