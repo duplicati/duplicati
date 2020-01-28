@@ -487,6 +487,7 @@ namespace Duplicati.Library.Common.IO
                 objs.Add(new FileSystemAccess((FileSystemAccessRule)f));
 
             dict["win-ext:accessrules"] = SerializeObject(objs);
+            dict["win-ext:accessrulesprotected"] = rules.AreAccessRulesProtected.ToString();
 
             return dict;
         }
@@ -496,31 +497,44 @@ namespace Duplicati.Library.Common.IO
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
 
-            FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
-            if (restorePermissions && data.ContainsKey("win-ext:accessrules"))
+            if (restorePermissions)
             {
-                var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
-                var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
-                for (var i = c.Count - 1; i >= 0; i--)
-                    rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
+                FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
 
-                Exception ex = null;
-
-                foreach (var r in content)
+                if (data.ContainsKey("win-ext:accessrulesprotected"))
                 {
-                    // Attempt to apply as many rules as we can
-                    try
+                    bool isProtected = bool.Parse(data["win-ext:accessrulesprotected"]);
+                    if (rules.AreAccessRulesProtected != isProtected)
                     {
-                        rules.AddAccessRule(r.Create(rules));
-                    }
-                    catch (Exception e)
-                    {
-                        ex = e;
+                        rules.SetAccessRuleProtection(isProtected, false);
                     }
                 }
 
-                if (ex != null)
-                    throw ex;
+                if (data.ContainsKey("win-ext:accessrules"))
+                {
+                    var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
+                    var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
+                    for (var i = c.Count - 1; i >= 0; i--)
+                        rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
+
+                    Exception ex = null;
+
+                    foreach (var r in content)
+                    {
+                        // Attempt to apply as many rules as we can
+                        try
+                        {
+                            rules.AddAccessRule(r.Create(rules));
+                        }
+                        catch (Exception e)
+                        {
+                            ex = e;
+                        }
+                    }
+
+                    if (ex != null)
+                        throw ex;
+                }
 
                 if (isDirTarget)
                     SetAccessControlDir(targetpath, (DirectorySecurity)rules);

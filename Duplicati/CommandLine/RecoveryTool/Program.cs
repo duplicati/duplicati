@@ -20,7 +20,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
-    static class Program
+    public static class Program
     {
         /// <summary>
         /// The main entry point for the application.

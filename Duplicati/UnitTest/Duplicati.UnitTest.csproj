@@ -43,7 +43,10 @@
     <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DeleteHandlerTests.cs" />
     <Compile Include="DisruptionTests.cs" />
+    <Compile Include="RecoveryToolTests.cs" />
+    <Compile Include="RestoreHandlerTests.cs" />
     <Compile Include="SVNCheckoutsTest.cs" />
     <Compile Include="GeneralBlackBoxTesting.cs" />
     <Compile Include="CommandLineOperationsTests.cs" />
@@ -78,6 +81,10 @@
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
       <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
       <Name>Duplicati.CommandLine.BackendTool</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+      <Project>{4a010589-76e6-4f05-a5c4-4598d5df11f8}</Project>
+      <Name>Duplicati.CommandLine.RecoveryTool</Name>
     </ProjectReference>
     <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj">
       <Project>{17566860-3D98-4604-AA5B-47661F75609F}</Project>

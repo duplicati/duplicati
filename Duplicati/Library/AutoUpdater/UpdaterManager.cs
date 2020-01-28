@@ -895,7 +895,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             string optstr = Environment.GetEnvironmentVariable(string.Format(UPDATE_STRATEGY_ENVNAME_TEMPLATE, APPNAME));
             AutoUpdateStrategy strategy;
-            if (string.IsNullOrWhiteSpace(optstr) || !Enum.TryParse(optstr, out strategy))
+            if (string.IsNullOrWhiteSpace(optstr) || !Enum.TryParse(optstr, true, out strategy))
                 strategy = defaultstrategy;
 
             System.Threading.Thread backgroundChecker = null;
