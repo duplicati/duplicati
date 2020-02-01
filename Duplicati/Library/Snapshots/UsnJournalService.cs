@@ -429,6 +429,9 @@ namespace Duplicati.Library.Snapshots
             if (!m_volumeDataDict.TryGetValue(volumeRoot, out var volumeData))
                 return false;
 
+            if (volumeData.IsFullScan)
+                return true; // do not append from previous set, already scanned
+
             if (volumeData.Files.Contains(path))
                 return true; // do not append from previous set, already scanned
 
