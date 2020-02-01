@@ -103,8 +103,18 @@ namespace Duplicati.Library.Main.Operation
         private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
         {
             if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
+
+            // get hash identifying current source filter / sources configuration
+            // ReSharper disable once PossibleMultipleEnumeration
+            var configHash = Library.Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(
+                (filter == null ? string.Empty : filter.ToString()) +
+                string.Join("; ", sources) +
+                m_options.FileAttributeFilter.ToString() +
+                m_options.SkipFilesLargerThan.ToString()
+            ));
+
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
-            var service = new UsnJournalService(sources, snapshot, filter, journalData, cancellationTokenSource.Token);
+            var service = new UsnJournalService(sources, snapshot, filter, configHash, journalData, cancellationTokenSource.Token);
 
             foreach (var volumeData in service.VolumeDataList)
             {

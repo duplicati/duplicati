@@ -45,12 +45,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="snapshot"></param>
         /// <param name="emitFilter">Emit filter</param>
         /// <param name="prevJournalData">Journal-data of previous fileset</param>
-        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, 
+        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, string configHash,
             IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
         {
             m_sources = sources;
             m_snapshot = snapshot;
-            m_volumeDataDict = Initialize(emitFilter, prevJournalData);
+            m_volumeDataDict = Initialize(emitFilter, configHash, prevJournalData);
             m_token = token;
         }
 
@@ -62,16 +62,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="emitFilter"></param>
         /// <param name="prevJournalData"></param>
         /// <returns></returns>
-        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, IEnumerable<USNJournalDataEntry> prevJournalData)
+        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, string configHash, IEnumerable<USNJournalDataEntry> prevJournalData)
         {
             if (prevJournalData == null)
                 throw new UsnJournalSoftFailureException();
 
             var result = new Dictionary<string, VolumeData>();
-
-            // get filter identifying current source filter / sources configuration
-            // ReSharper disable once PossibleMultipleEnumeration
-            var configHash = (emitFilter == null ? string.Empty : emitFilter.GetFilterHash()) + Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(m_sources));
 
             // create lookup for journal data
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);
