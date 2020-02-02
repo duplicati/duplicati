@@ -114,7 +114,7 @@ namespace Duplicati.Library.Main.Operation
             ));
 
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
-            var service = new UsnJournalService(sources, snapshot, filter, configHash, journalData, cancellationTokenSource.Token);
+            var service = new UsnJournalService(sources, snapshot, configHash, journalData, cancellationTokenSource.Token);
 
             foreach (var volumeData in service.VolumeDataList)
             {

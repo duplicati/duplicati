@@ -45,12 +45,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="snapshot"></param>
         /// <param name="emitFilter">Emit filter</param>
         /// <param name="prevJournalData">Journal-data of previous fileset</param>
-        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, string configHash,
+        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, string configHash,
             IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
         {
             m_sources = sources;
             m_snapshot = snapshot;
-            m_volumeDataDict = Initialize(emitFilter, configHash, prevJournalData);
+            m_volumeDataDict = Initialize(configHash, prevJournalData);
             m_token = token;
         }
 
@@ -62,7 +62,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="emitFilter"></param>
         /// <param name="prevJournalData"></param>
         /// <returns></returns>
-        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, string configHash, IEnumerable<USNJournalDataEntry> prevJournalData)
+        private Dictionary<string, VolumeData> Initialize(string configHash, IEnumerable<USNJournalDataEntry> prevJournalData)
         {
             if (prevJournalData == null)
                 throw new UsnJournalSoftFailureException();
