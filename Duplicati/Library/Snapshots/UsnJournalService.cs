@@ -44,13 +44,16 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sources">Sources to filter</param>
         /// <param name="snapshot"></param>
         /// <param name="emitFilter">Emit filter</param>
+        /// <param name="fileAttributeFilter"></param>
+        /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData">Journal-data of previous fileset</param>
-        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, 
-            IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
+        /// <param name="token"></param>
+        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, FileAttributes fileAttributeFilter,
+            long skipFilesLargerThan, IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
         {
             m_sources = sources;
             m_snapshot = snapshot;
-            m_volumeDataDict = Initialize(emitFilter, prevJournalData);
+            m_volumeDataDict = Initialize(emitFilter, fileAttributeFilter, skipFilesLargerThan, prevJournalData);
             m_token = token;
         }
 
@@ -60,18 +63,26 @@ namespace Duplicati.Library.Snapshots
         /// Initialize list of modified files / folder for each volume
         /// </summary>
         /// <param name="emitFilter"></param>
+        /// <param name="fileAttributeFilter"></param>
+        /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData"></param>
         /// <returns></returns>
-        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, IEnumerable<USNJournalDataEntry> prevJournalData)
+        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, FileAttributes fileAttributeFilter, long skipFilesLargerThan,
+            IEnumerable<USNJournalDataEntry> prevJournalData)
         {
             if (prevJournalData == null)
                 throw new UsnJournalSoftFailureException();
 
             var result = new Dictionary<string, VolumeData>();
 
-            // get filter identifying current source filter / sources configuration
+            // get hash identifying current source filter / sources configuration
             // ReSharper disable once PossibleMultipleEnumeration
-            var configHash = (emitFilter == null ? string.Empty : emitFilter.GetFilterHash()) + Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(m_sources));
+            var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
+                emitFilter == null ? string.Empty : emitFilter.ToString(),
+                string.Join("; ", m_sources),
+                fileAttributeFilter.ToString(),
+                skipFilesLargerThan.ToString()
+            }));
 
             // create lookup for journal data
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);

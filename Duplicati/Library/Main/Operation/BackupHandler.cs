@@ -103,8 +103,10 @@ namespace Duplicati.Library.Main.Operation
         private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
         {
             if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
+
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
-            var service = new UsnJournalService(sources, snapshot, filter, journalData, cancellationTokenSource.Token);
+            var service = new UsnJournalService(sources, snapshot, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
+                journalData, cancellationTokenSource.Token);
 
             foreach (var volumeData in service.VolumeDataList)
             {
