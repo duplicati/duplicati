@@ -257,7 +257,7 @@ namespace Duplicati.Library.Main.Database
                     while (rd.Read())
                     {
                         for (int i = 0; i < rd.FieldCount; i++)
-                            Console.Write(string.Format((i == 0 ? "{0}" : "\t{0}"), rd.GetValue(i)));
+                            Console.Write((i == 0 ? "{0}" : "\t{0}"), rd.GetValue(i));
                         Console.WriteLine();
                         n++;
                     }

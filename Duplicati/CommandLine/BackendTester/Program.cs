@@ -489,7 +489,7 @@ namespace Duplicati.CommandLine.BackendTester
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
-                    Console.WriteLine(string.Format("  Inner exception: {0}", e));
+                    Console.WriteLine("  Inner exception: {0}", e);
                 }
             }
             else
