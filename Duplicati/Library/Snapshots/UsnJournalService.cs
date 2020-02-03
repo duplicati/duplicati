@@ -77,12 +77,12 @@ namespace Duplicati.Library.Snapshots
 
             // get hash identifying current source filter / sources configuration
             // ReSharper disable once PossibleMultipleEnumeration
-            var configHash = Library.Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(
-                (emitFilter == null ? string.Empty : emitFilter.ToString()) +
-                string.Join("; ", m_sources) +
-                fileAttributeFilter.ToString() +
+            var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
+                emitFilter == null ? string.Empty : emitFilter.ToString(),
+                string.Join("; ", m_sources),
+                fileAttributeFilter.ToString(),
                 skipFilesLargerThan.ToString()
-            ));
+            }));
 
             // create lookup for journal data
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);
