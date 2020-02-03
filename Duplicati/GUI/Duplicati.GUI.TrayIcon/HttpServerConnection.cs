@@ -6,6 +6,7 @@ using System.Text;
 using Duplicati.Library.Common.IO;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
+using Newtonsoft.Json;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -226,13 +227,13 @@ namespace Duplicati.GUI.TrayIcon
 
         private class SaltAndNonce
         {
-            // ReSharper disable once FieldCanBeMadeReadOnly.Local
-            // This cannot be made readonly as its value is set by a deserializer.
-            public string Salt = null;
-            
-            // ReSharper disable once FieldCanBeMadeReadOnly.Local
-            // This cannot be made readonly as its value is set by a deserializer.
-            public string Nonce = null;
+            // The JsonProperty attribute allows the Serializer.Deserialize method to
+            // set these readonly fields.
+            [JsonProperty]
+            public readonly string Salt = null;
+
+            [JsonProperty]
+            public readonly string Nonce = null;
         }
 
         private SaltAndNonce GetSaltAndNonce()
