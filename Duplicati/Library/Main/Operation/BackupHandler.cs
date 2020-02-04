@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main.Operation
             catch (Exception ex)
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
-                    throw;
+                    throw new Exception("Failed to create a snapshot");
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
                     Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
             }
