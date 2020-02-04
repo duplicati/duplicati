@@ -126,7 +126,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
                         {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
                                 "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
                         }
                         else
