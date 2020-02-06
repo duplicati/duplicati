@@ -366,9 +366,6 @@ namespace Duplicati.Library.Main
 
         public string BackendUrl { get { return m_backendurl; } }
 
-        public bool HasDied { get { return m_lastException != null; } }
-        public Exception LastException { get { return m_lastException; } }
-
         public BackendManager(string backendurl, Options options, IBackendWriter statwriter, LocalDatabase database)
         {
             m_options = options;
@@ -1414,31 +1411,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void CreateFolder(string remotename)
-        {
-            if (m_lastException != null)
-                throw m_lastException;
-
-            var req = new FileEntryItem(OperationType.CreateFolder, remotename);
-            try
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(true);
-                if (m_queue.Enqueue(req))
-                {
-                    req.WaitForComplete();
-                    if (req.Exception != null)
-                        throw req.Exception;
-                }
-            }
-            finally
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(false);
-            }
-
-            if (m_lastException != null)
-                throw m_lastException;
-        }
-
         public void Delete(string remotename, long size, bool synchronous = false)
         {
             if (m_lastException != null)
@@ -1463,11 +1435,6 @@ namespace Duplicati.Library.Main
 
             if (m_lastException != null)
                 throw m_lastException;
-        }
-
-        public bool FlushDbMessages(LocalDatabase database, System.Data.IDbTransaction transaction)
-        {
-            return m_db.FlushDbMessages(database, transaction);
         }
 
         public bool FlushDbMessages()
