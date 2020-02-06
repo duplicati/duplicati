@@ -39,12 +39,7 @@ namespace Duplicati.Library.Main
         /// The default block size
         /// </summary>
         private const string DEFAULT_BLOCKSIZE = "100kb";
-        
-        /// <summary>
-        /// The default size of the read-ahead buffer
-        /// </summary>
-        private const string DEFAULT_READ_BUFFER_SIZE = "5mb";
-        
+
         /// <summary>
         /// The default threshold value
         /// </summary>
@@ -736,22 +731,6 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Helper method to set the default encryption mode based on the settings of the previous backup
-        /// </summary>
-        /// <param name="lastSetting">The encryption module used for the last entry</param>
-        public void SetEncryptionModuleDefault(string lastSetting)
-        {
-            //If the encryption module was specified explicitly, don't change it
-            if (m_options.ContainsKey("no-encryption") || m_options.ContainsKey("encryption-module"))
-                return;
-
-            if (string.IsNullOrEmpty(lastSetting))
-                m_options["no-encryption"] = "";
-            else
-                m_options["encryption-module"] = lastSetting;
-        }
-
-        /// <summary>
         /// A value indicating if backups are not encrypted
         /// </summary>
         public bool NoEncryption { get { return GetBool("no-encryption"); } }
@@ -773,19 +752,6 @@ namespace Duplicati.Library.Main
 
                 return "aes";
             }
-        }
-
-        /// <summary>
-        /// Helper method to set the default compression mode based on the settings of the previous backup
-        /// </summary>
-        /// <param name="lastSetting">The compression module used for the last entry</param>
-        public void SetCompressionModuleDefault(string lastSetting)
-        {
-            //If a compression module is explicitly selected, don't change it
-            if (m_options.ContainsKey("compression-module"))
-                return;
-
-            m_options["compression-module"] = lastSetting;
         }
 
         /// <summary>
@@ -1123,24 +1089,6 @@ namespace Duplicati.Library.Main
 
                 return Duplicati.Library.Logging.LogMessageType.Warning;
             }
-        }
-
-
-
-        /// <summary>
-        /// Parses a log level string
-        /// </summary>
-        /// <returns>The log level enumeration value.</returns>
-        /// <param name="value">The string value to parse.</param>
-        /// <param name="backupvalue">An optional fallback parsing value.</param>
-        public static Logging.LogMessageType ParseLogLevel(string value, string backupvalue)
-        {
-            value = string.IsNullOrWhiteSpace(value) ? backupvalue : value;
-            foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
-                if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
-                    return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
-
-            return Duplicati.Library.Logging.LogMessageType.Warning;
         }
 
         /// <summary>
@@ -1662,24 +1610,7 @@ namespace Duplicati.Library.Main
                     return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
             }
         }
-        
-        /// <summary>
-        /// Gets a flag indicating if the current operation is intended to delete files older than a certain threshold
-        /// </summary>
-        public bool HasDeleteOlderThan
-        {
-            get { return m_options.ContainsKey("delete-older-than"); }
-        }
 
-        /// <summary>
-        /// Gets a flag indicating if the current operation is intended to delete files older than a certain threshold
-        /// </summary>
-        public bool HasDeleteAllButN
-        {
-            get { return m_options.ContainsKey("delete-all-but-n") || m_options.ContainsKey("delete-all-but-n-full"); }
-        }
-
-        
         /// <summary>
         /// Gets a flag indicating if the remote verification is deep
         /// </summary>
