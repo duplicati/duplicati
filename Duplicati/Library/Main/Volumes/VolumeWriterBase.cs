@@ -81,14 +81,6 @@ namespace Duplicati.Library.Main.Volumes
             return fileEntry;
         }
 
-        public void CreateFilesetFile(bool isFullBackup)
-        {
-            using (var sr = new StreamWriter(m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
-            {
-                sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
-            }
-        }
-
         public virtual void Dispose()
         {
             if (m_compression != null)
