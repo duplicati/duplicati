@@ -970,16 +970,11 @@ namespace Duplicati.Library.Main
                 if (!m_options.TryGetValue("snapshot-policy", out strategy))
                     strategy = "";
 
-                if (string.Equals(strategy, "on", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.On;
-                else if (string.Equals(strategy, "off", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.Off;
-                else if (string.Equals(strategy, "required", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.Required;
-                else if (string.Equals(strategy, "auto", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.Auto;
-                else
-                    return OptimizationStrategy.Off;
+                OptimizationStrategy r;
+                if (!Enum.TryParse(strategy, true, out r))
+                    r = OptimizationStrategy.Off;
+
+                return r;
             }
         }
 
@@ -1031,16 +1026,11 @@ namespace Duplicati.Library.Main
                 if (!m_options.TryGetValue("usn-policy", out strategy))
                     strategy = "";
 
-                if (string.Equals(strategy, "on", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.On;
-                else if (string.Equals(strategy, "off", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.Off;
-                else if (string.Equals(strategy, "required", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.Required;
-                else if (string.Equals(strategy, "auto", StringComparison.OrdinalIgnoreCase))
-                    return OptimizationStrategy.Auto;
-                else
-                    return OptimizationStrategy.Off;
+                OptimizationStrategy r;
+                if (!Enum.TryParse(strategy, true, out r))
+                    r = OptimizationStrategy.Off;
+
+                return r;
             }
         }
 
