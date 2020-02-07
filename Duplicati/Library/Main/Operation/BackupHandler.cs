@@ -81,9 +81,11 @@ namespace Duplicati.Library.Main.Operation
             catch (Exception ex)
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
-                    throw;
+                    throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message), "SnapshotFailed", ex);
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message));
+                else if (options.SnapShotStrategy == Options.OptimizationStrategy.Auto)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
             }
 
             return Platform.IsClientPosix ?
@@ -126,7 +128,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
                         {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
                                 "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
                         }
                         else
