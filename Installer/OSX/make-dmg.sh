@@ -137,11 +137,11 @@ if [ "x${CODESIGN_IDENTITY}" != "x" ]; then
 
     # These files have dependencies, so we need to sign them in the correct order
     for file in "duplicati-cli" "duplicati-server" "uninstall.sh"; do
-        codesign -s "${CODESIGN_IDENTITY}" "Duplicati.app/Contents/MacOS/${file}"
+        codesign -f --options=runtime -s "${CODESIGN_IDENTITY}" "Duplicati.app/Contents/MacOS/${file}"
     done
 
     # Then sign the whole package
-    codesign -s "${CODESIGN_IDENTITY}" "Duplicati.app"
+    codesign -f --options=runtime -s "${CODESIGN_IDENTITY}" "Duplicati.app"
 else
     echo "No codesign identity supplied, skipping bundle signing"
 fi
@@ -229,7 +229,7 @@ rm -rf "$WC_DIR"
 
 if [ "x${CODESIGN_IDENTITY}" != "x" ]; then
     echo "Codesigning DMG image"
-    codesign -s "${CODESIGN_IDENTITY}" "${OUTPUT_DMG}"
+    codesign -f --options=runtime -s "${CODESIGN_IDENTITY}" "${OUTPUT_DMG}"
 else
     echo "No codesign identity supplied, skipping DMG signing"
 fi
