@@ -35,6 +35,7 @@ namespace Duplicati.UnitTest
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
         public SizeOmittingBackend(string url, Dictionary<string, string> options)
         {
             var u = new Library.Utility.Uri(url).SetScheme(WrappedBackend).ToString();
