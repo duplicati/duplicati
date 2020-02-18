@@ -1,3 +1,17 @@
+2020-02-18 - 2.0.5.102_canary_2020-02-18
+==========
+* Improved performance of the recovery-tool, thanks @tfriedel and @warwickmm
+* Debian and RPM packages now require Mono 5.0, thanks @drwtsn32x
+* Fixed issue with USN returning too many results, thanks @drwtsn32x
+* Code quality improvements, thanks @warwickmm
+* Added `.odg` and `.otg` as compressed file types, thanks @warwickmm
+* Improved USN changes by looking at size and attributes, thanks @drwtsn32x
+* Code quality improvements, thanks @drwtsn32x
+* Unittest improvements, thanks @warwickmm
+* The OVH backend now points to Keystone v3, thanks @warwickmm
+* Fixed allowing minutes in retention rules, thanks @Pectojin
+* Fixed loading SQLite on Windows, thanks @warwickmm
+
 2020-01-23 - 2.0.5.101_canary_2020-01-23
 ==========
 * Improved tests, thanks @drwtsn32x
