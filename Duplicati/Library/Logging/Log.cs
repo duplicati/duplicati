@@ -446,7 +446,10 @@ namespace Duplicati.Library.Logging
                     var cur = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LOGICAL_CONTEXT_KEY) as string;
                     if (cur == null || cur == m_root.InstanceID)
                         return m_root;
-                    
+
+                    if (m_log_instances.Count == 0)
+                        return m_root;
+
                     LogScope sc;
                     if (!m_log_instances.TryGetValue(cur, out sc))
                         throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (eg. with remoting calls)");
