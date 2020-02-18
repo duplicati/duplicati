@@ -251,6 +251,7 @@ namespace Duplicati.Server
 
                 bool autoUpdateCheck = nextCheck < DateTime.UtcNow;
                 bool updatePrepareForDownload = false;
+                long notification = 0;
                 if (autoUpdateCheck || m_forceCheck)
                 {
                     UpdateLogger.Log($"Checking updates ({(autoUpdateCheck ? "auto" : "force")}).");
@@ -304,7 +305,7 @@ namespace Duplicati.Server
                     if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(Program.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
                         updatePrepareForDownload = true;
-                        Program.DataConnection.RegisterNotification(
+                        notification = Program.DataConnection.RegisterNotification(
                                     NotificationType.Information,
                                     "Found update",
                                     Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname,
@@ -360,6 +361,10 @@ namespace Duplicati.Server
                     else if (UpdaterManager.HasUpdateInstalled)
                         UpdateLogger.Log($"Auto activate previous installed update {Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname}.");
 
+                    if (notification > 0)
+                    {
+                        Program.DataConnection.DismissNotification(notification);
+                    }
                     TryExecuteOperation(ActivateUpdate);
                 }
 

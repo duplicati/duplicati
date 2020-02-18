@@ -853,8 +853,9 @@ namespace Duplicati.Server.Database
             return true;
         }
 
-        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, string logid, string messageid, string logtag, Func<INotification, INotification[], INotification> conflicthandler)
+        public long RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, string logid, string messageid, string logtag, Func<INotification, INotification[], INotification> conflicthandler)
         {
+            long retId = 0;
             lock(m_lock)
             {
                 var notification = new Notification()
@@ -874,12 +875,13 @@ namespace Duplicati.Server.Database
 
                 var conflictResult = conflicthandler(notification, GetNotifications());
                 if (conflictResult == null)
-                    return;
+                    return retId;
                 
                 if (conflictResult != notification)
                     DeleteFromDb(typeof(Notification).Name, conflictResult.ID);
 
                 OverwriteAndUpdateDb(null, null, null, new Notification[] { notification }, false);
+                retId = notification.ID;
 
                 if (type == Duplicati.Server.Serialization.NotificationType.Error)
                     Program.DataConnection.ApplicationSettings.UnackedError = true;
@@ -889,6 +891,7 @@ namespace Duplicati.Server.Database
 
             System.Threading.Interlocked.Increment(ref Program.LastNotificationUpdateID);
             Program.StatusEventNotifyer.SignalNewEvent();
+            return retId;
         }
 
         //Workaround to clean up the database after invalid settings update
