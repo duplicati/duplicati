@@ -324,7 +324,7 @@ namespace Duplicati.Library.Main.Operation
                 // The timeframe in the retention policy option is only a timespan which has to be applied to the current DateTime to get the actual lower bound
                 DateTime timeFrame = (singleRetentionPolicyOptionValue.IsUnlimtedTimeframe()) ? DateTime.MinValue : (now - singleRetentionPolicyOptionValue.Timeframe);
 
-                Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "NextTimeAndFrame", "Next time frame and interval pair: {0}", singleRetentionPolicyOptionValue.ToString());
+                Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "NextTimeAndFrame", "Next time frame and interval pair: {0}", singleRetentionPolicyOptionValue);
 
                 List<IListResultFileset> backupsInTimeFrame = new List<IListResultFileset>();
                 while (clonedBackupList.Count > 0 && clonedBackupList[0].Time >= timeFrame)
