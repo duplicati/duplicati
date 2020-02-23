@@ -518,7 +518,7 @@ namespace Duplicati.UnitTest
         public void StopNow()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb", ["disable-synthetic-filelist"] = "true"};
 
             // Run a complete backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))

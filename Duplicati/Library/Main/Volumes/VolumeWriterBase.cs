@@ -87,14 +87,16 @@ namespace Duplicati.Library.Main.Volumes
                 try { m_compression.Dispose(); }
                 finally { m_compression = null; }
 
-            m_localfile.Protected = false;
             if (m_localFileStream != null)
                 try { m_localFileStream.Dispose(); }
                 finally { m_localFileStream = null; }
 
             if (m_localfile != null)
+            {
+                m_localfile.Protected = false;
                 try { m_localfile.Dispose(); }
                 finally { m_localfile = null; }
+            }
 
             m_volumename = null;
         }

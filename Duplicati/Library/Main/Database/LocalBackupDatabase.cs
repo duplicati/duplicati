@@ -864,19 +864,19 @@ namespace Duplicati.Library.Main.Database
                     return null;
         }
 
-        public RemoteVolumeEntry GetRemoteVolumeFromID(long id, System.Data.IDbTransaction transaction = null)
+        public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"" WHERE ""ID"" = ?", id))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
                 if (rd.Read())
                     return new RemoteVolumeEntry(
-                        id,
-                        rd.GetValue(0).ToString(),
-                        (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
-                        rd.ConvertValueToInt64(2, -1),
-                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
-                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
+                        int.Parse(rd.GetValue(0).ToString()),
+                        rd.GetValue(1).ToString(),
+                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
+                        rd.ConvertValueToInt64(3, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
                     );
                 else
                     return default(RemoteVolumeEntry);
