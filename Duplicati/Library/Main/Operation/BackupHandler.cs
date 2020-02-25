@@ -117,7 +117,8 @@ namespace Duplicati.Library.Main.Operation
                     if (volumeData.Exception == null || volumeData.Exception is UsnJournalSoftFailureException)
                     {
                         // soft fail
-                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume", $"Performing full scan for volume \"{volumeData.Volume}\"");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume",
+                            "Performing full scan for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception?.Message);
                     }
                     else
                     {
