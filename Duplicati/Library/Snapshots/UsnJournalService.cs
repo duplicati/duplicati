@@ -71,7 +71,7 @@ namespace Duplicati.Library.Snapshots
             IEnumerable<USNJournalDataEntry> prevJournalData)
         {
             if (prevJournalData == null)
-                throw new UsnJournalSoftFailureException();
+                throw new UsnJournalSoftFailureException(Strings.USNHelper.PreviousBackupNoInfo);
 
             var result = new Dictionary<string, VolumeData>();
 
@@ -119,13 +119,18 @@ namespace Duplicati.Library.Snapshots
                     // only use change journal if:
                     // - journal ID hasn't changed
                     // - nextUsn isn't zero (we use this as magic value to force a rescan)
-                    // - the exclude filter hash hasn't changed
-                    if (!journalDataDict.TryGetValue(volume, out var prevData) ||
-                        prevData.JournalId != nextData.JournalId || prevData.NextUsn == 0 ||
-                        prevData.ConfigHash != nextData.ConfigHash)
-                    {
-                        throw new UsnJournalSoftFailureException();
-                    }
+                    // - the configuration (sources or filters) hasn't changed
+                    if (!journalDataDict.TryGetValue(volume, out var prevData))
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.PreviousBackupNoInfo);
+
+                    if (prevData.JournalId != nextData.JournalId)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.JournalIdChanged);
+
+                    if (prevData.NextUsn == 0)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.NextUsnZero);
+                    
+                    if (prevData.ConfigHash != nextData.ConfigHash)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.ConfigHashChanged);
 
                     var changedFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
                     var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
