@@ -88,7 +88,11 @@ namespace Duplicati.Library.Main.Operation
                 var backend = bk ?? sharedManager;
 
                 if (!hasVerifiedBacked && !m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
+                {
+                    var backupDatabase = new LocalBackupDatabase(db, m_options);
+                    var latestFilelist = backupDatabase.GetTemporaryFilelistVolumeNames(latestOnly: true, transaction: transaction);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, latestFilelist);
+                }
 
                 IListResultFileset[] filesets = db.FilesetsWithBackupVersion.ToArray();
                 List<IListResultFileset> versionsToDelete = new List<IListResultFileset>();

@@ -2,10 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
-using System.IO;
-using System.Linq.Expressions;
-
 
 namespace Duplicati.Library.Main.Database
 {
@@ -842,7 +838,6 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
                 using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = ""Uploading"" OR ""RemoteVolume"".""State"" = ""Temporary"")"))
                     while (rd.Read())
                     {
@@ -880,6 +875,23 @@ namespace Duplicati.Library.Main.Database
                     );
                 else
                     return default(RemoteVolumeEntry);
+        }
+
+        public IEnumerable<string> GetTemporaryFilelistVolumeNames(bool latestOnly, IDbTransaction transaction = null)
+        {
+            var incompleteFilesetIDs = GetIncompleteFilesets(transaction).OrderBy(x => x.Value).Select(x => x.Key).ToArray();
+
+            if (!incompleteFilesetIDs.Any())
+                return Enumerable.Empty<string>();
+
+            if (latestOnly)
+                incompleteFilesetIDs = new long[] { incompleteFilesetIDs.Last() };
+
+            var volumeNames = new List<string>();
+            foreach (var filesetID in incompleteFilesetIDs)
+                volumeNames.Add(GetRemoteVolumeFromFilesetID(filesetID).Name);
+
+            return volumeNames;
         }
 
         public IEnumerable<string> GetMissingIndexFiles(System.Data.IDbTransaction transaction)
