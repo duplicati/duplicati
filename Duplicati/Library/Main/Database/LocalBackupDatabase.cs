@@ -870,7 +870,7 @@ namespace Duplicati.Library.Main.Database
             using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
                 if (rd.Read())
                     return new RemoteVolumeEntry(
-                        int.Parse(rd.GetValue(0).ToString()),
+                        rd.ConvertValueToInt64(0, -1),
                         rd.GetValue(1).ToString(),
                         (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
                         rd.ConvertValueToInt64(3, -1),
