@@ -253,6 +253,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 // Timeout exception is expected and handled
             }
+            catch (TaskCanceledException)
+            {
+                // Either the read will be tried again or uploads have been canceled
+            }
 
             return null;
         }
