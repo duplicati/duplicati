@@ -452,25 +452,25 @@ namespace Duplicati.Library.Main.Operation
                                 // Start the uploader process
                                 uploaderTask = uploader.Run();
 
-                                // If we have an interrupted backup, grab the 
-                                string lasttempfilelist = null;
-                                long lasttempfileid = -1;
+                                // If we have an interrupted backup, grab the fileset
+                                string lastTempFilelist = null;
+                                long lastTempFilesetId = -1;
                                 if (!m_options.DisableSyntheticFilelist)
                                 {
                                     var candidates = (await db.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToArray();
-                                    if (candidates.Length > 0)
+                                    if (candidates.Any())
                                     {
-                                        lasttempfileid = candidates.Last().Key;
-                                        lasttempfilelist = m_database.GetRemoteVolumeFromID(lasttempfileid).Name;
+                                        lastTempFilesetId = candidates.Last().Key;
+                                        lastTempFilelist = m_database.GetRemoteVolumeFromFilesetID(lastTempFilesetId).Name;
                                     }
                                 }
 
                                 // TODO: Rewrite to using the uploader process, or the BackendHandler interface
                                 // Do a remote verification, unless disabled
-                                PreBackupVerify(backendManager, lasttempfilelist);
+                                PreBackupVerify(backendManager, lastTempFilelist);
 
                                 // If the previous backup was interrupted, send a synthetic list
-                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lasttempfilelist, lasttempfileid);
+                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lastTempFilelist, lastTempFilesetId);
 
                                 // Grab the previous backup ID, if any
                                 var prevfileset = m_database.FilesetTimes.FirstOrDefault();
