@@ -720,7 +720,7 @@ namespace Duplicati.Library.Main
             if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, 0))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).PutAsync(item.RemoteFilename, pgs, CancellationToken.None).Wait();
             }
@@ -814,7 +814,7 @@ namespace Duplicati.Library.Main
                     {
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
-                            using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                            using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                             using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
@@ -900,7 +900,7 @@ namespace Duplicati.Library.Main
                     using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, out getFileHash))
                     using (var ss = new ShaderStream(hs, true))
                     {
-                        using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                        using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                         using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
