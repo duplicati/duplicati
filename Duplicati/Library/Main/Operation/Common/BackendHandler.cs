@@ -451,7 +451,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
                     using (var fs = System.IO.File.OpenWrite(tmpfile))
-                    using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                    using (var ts = new ThrottledStream(fs, 0, m_options.MaxDownloadPrSecond))
                     using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                         ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
                 }
