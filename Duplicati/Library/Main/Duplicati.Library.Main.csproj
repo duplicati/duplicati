@@ -52,7 +52,6 @@
     <Compile Include="Operation\VacuumHandler.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Database\ILocalFileEntry.cs" />
     <Compile Include="Database\IRemoteVolume.cs" />
     <Compile Include="Database\LocalBackupDatabase.cs" />
     <Compile Include="Database\LocalDatabase.cs" />
@@ -103,7 +102,6 @@
     <Compile Include="Database\LocalRecreateDatabase.cs" />
     <Compile Include="ProgressClasses.cs" />
     <Compile Include="OperationPhase.cs" />
-    <Compile Include="Database\PathLookupHelper.cs" />
     <Compile Include="Database\HashLookupHelper.cs" />
     <Compile Include="Operation\TestFilterHandler.cs" />
     <Compile Include="Operation\ListAffected.cs" />
