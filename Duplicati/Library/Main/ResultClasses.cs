@@ -72,21 +72,6 @@ namespace Duplicati.Library.Main
         protected long m_foldersCreated = 0;
         protected long m_retryAttemptCount = 0;
 
-        public void AddNumberOfRemoteCalls(long count)
-        {
-            System.Threading.Interlocked.Add(ref m_remoteCalls, count);
-        }
-
-        public void AddBytesUploaded(long count)
-        {
-            System.Threading.Interlocked.Add(ref m_bytesUploaded, count);
-        }
-
-        public void AddBytesDownloaded(long count)
-        {
-            System.Threading.Interlocked.Add(ref m_bytesDownloaded, count);
-        }
-
         public long RemoteCalls { get { return m_remoteCalls; } }
         public long BytesUploaded { get { return m_bytesUploaded; } }
         public long BytesDownloaded { get { return m_bytesDownloaded; } }
