@@ -668,11 +668,7 @@ namespace Duplicati.Library.Main
                 }
                 catch
                 {
-                    if (wr != null)
-                        try { wr.Dispose(); }
-                        catch { }
-                        finally { wr = null; }
-
+                    wr?.Dispose();
                     throw;
                 }
             }
