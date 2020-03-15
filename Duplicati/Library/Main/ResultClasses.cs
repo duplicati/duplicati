@@ -199,7 +199,10 @@ namespace Duplicati.Library.Main
             }
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
         public string Version { get { return string.Format("{0} ({1})", AutoUpdater.UpdaterManager.SelfVersion.Version, AutoUpdater.UpdaterManager.SelfVersion.Displayname); } }
+
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
         public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
@@ -323,12 +326,23 @@ namespace Duplicati.Library.Main
 
         [JsonIgnore]
         public IEnumerable<string> Messages { get { return m_messages; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
         public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count();  } }
+
         [JsonIgnore]
         public IEnumerable<string> Warnings { get { return m_warnings; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
         public int WarningsActualLength { get { return Warnings == null ? 0 : Warnings.Count(); } }
+
         [JsonIgnore]
         public IEnumerable<string> Errors { get { return m_errors; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
         public int ErrorsActualLength { get { return Errors == null ? 0 : Errors.Count(); } }
 
         [JsonProperty(PropertyName = "Messages")]
@@ -715,6 +729,9 @@ namespace Duplicati.Library.Main
     {
         [JsonIgnore]
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
         public int DeletedSetsActualLength { get { return DeletedSets == null ? 0 : DeletedSets.Count(); } }
 
         [JsonProperty(PropertyName = "DeletedSets")]
@@ -908,6 +925,9 @@ namespace Duplicati.Library.Main
         private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
         [JsonIgnore]
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
         public int VerificationsActualLength { get { return Verifications == null ? 0 : Verifications.Count(); } }
 
         [JsonProperty(PropertyName = "Verifications")]
