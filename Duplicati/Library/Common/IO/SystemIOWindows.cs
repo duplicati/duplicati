@@ -487,7 +487,11 @@ namespace Duplicati.Library.Common.IO
                 objs.Add(new FileSystemAccess((FileSystemAccessRule)f));
 
             dict["win-ext:accessrules"] = SerializeObject(objs);
-            dict["win-ext:accessrulesprotected"] = rules.AreAccessRulesProtected.ToString();
+
+            if (rules.AreAccessRulesProtected)
+            {
+                dict["win-ext:accessrulesprotected"] = rules.AreAccessRulesProtected.ToString();
+            }
 
             return dict;
         }
