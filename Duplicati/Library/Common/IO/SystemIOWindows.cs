@@ -490,7 +490,7 @@ namespace Duplicati.Library.Common.IO
 
             // Only include the following key when its value is True.
             // This prevents unnecessary 'metadata change' detections when upgrading from
-            //   older versions (pre-2.0.5.101) that didn't store this value at all.
+            // older versions (pre-2.0.5.101) that didn't store this value at all.
             // When key is not present, its value is presumed False by the restore code.
             if (rules.AreAccessRulesProtected)
             {
