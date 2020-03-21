@@ -76,7 +76,6 @@ namespace Duplicati.Library.Snapshots
             var result = new Dictionary<string, VolumeData>();
 
             // get hash identifying current source filter / sources configuration
-            // ReSharper disable once PossibleMultipleEnumeration
             var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
                 emitFilter == null ? string.Empty : emitFilter.ToString(),
                 string.Join("; ", m_sources),
