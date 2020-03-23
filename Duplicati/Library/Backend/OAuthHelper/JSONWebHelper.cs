@@ -304,23 +304,104 @@ namespace Duplicati.Library
         {
         }
 
-        public HttpWebResponse GetResponseWithoutException(string url, string method = null)
+        public HttpWebResponse GetResponseWithoutException(string url, object requestdata = null, string method = null)
         {
-            return GetResponseWithoutException(CreateRequest(url, method));
+            if (requestdata is string)
+                throw new ArgumentException("Cannot send string object as data");
+
+            if (method == null && requestdata != null)
+                method = "POST";
+
+            return GetResponseWithoutException(CreateRequest(url, method), requestdata);
         }
 
-        public HttpWebResponse GetResponseWithoutException(HttpWebRequest req)
+        public HttpWebResponse GetResponseWithoutException(HttpWebRequest req, object requestdata = null)
         {
-            return GetResponseWithoutException(new AsyncHttpRequest(req));
+            return GetResponseWithoutException(new AsyncHttpRequest(req), requestdata);
         }
 
-        public HttpWebResponse GetResponseWithoutException(AsyncHttpRequest req)
+        public HttpWebResponse GetResponseWithoutException(AsyncHttpRequest req, object requestdata = null)
         {
             try
             {
+                if (requestdata != null)
+                {
+                    if (requestdata is Stream stream)
+                    {
+                        req.Request.ContentLength = stream.Length;
+                        if (string.IsNullOrEmpty(req.Request.ContentType))
+                            req.Request.ContentType = "application/octet-stream";
+
+                        using (var rs = req.GetRequestStream())
+                            Library.Utility.Utility.CopyStream(stream, rs);
+                    }
+                    else
+                    {
+                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
+                        req.Request.ContentLength = data.Length;
+                        req.Request.ContentType = "application/json; charset=UTF-8";
+
+                        using (var rs = req.GetRequestStream())
+                            rs.Write(data, 0, data.Length);
+                    }
+                }
+
                 return (HttpWebResponse)req.GetResponse();
             }
             catch(WebException wex)
+            {
+                if (wex.Response is HttpWebResponse response)
+                    return response;
+
+                throw;
+            }
+        }
+
+        public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(string url, CancellationToken cancelToken, object requestdata = null, string method = null)
+        {
+            if (requestdata is string)
+                throw new ArgumentException("Cannot send string object as data");
+
+            if (method == null && requestdata != null)
+                method = "POST";
+
+            return await GetResponseWithoutExceptionAsync(CreateRequest(url, method), cancelToken, requestdata);
+        }
+
+        public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(HttpWebRequest req, CancellationToken cancelToken, object requestdata = null)
+        {
+            return await GetResponseWithoutExceptionAsync(new AsyncHttpRequest(req), cancelToken, requestdata);
+        }
+
+        public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
+        {
+            try
+            {
+                if (requestdata != null)
+                {
+                    if (requestdata is System.IO.Stream stream)
+                    {
+                        req.Request.ContentLength = stream.Length;
+                        if (string.IsNullOrEmpty(req.Request.ContentType))
+                            req.Request.ContentType = "application/octet-stream";
+
+                        using (var rs = req.GetRequestStream())
+                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken);
+                    }
+                    else
+                    {
+                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
+                        req.Request.ContentLength = data.Length;
+                        req.Request.ContentType = "application/json; charset=UTF-8";
+
+                        using (var rs = req.GetRequestStream())
+                            await rs.WriteAsync(data, 0, data.Length, cancelToken);
+                    }
+                }
+
+                return (HttpWebResponse)req.GetResponse();
+            }
+            catch (WebException wex)
             {
                 if (wex.Response is HttpWebResponse response)
                     return response;
