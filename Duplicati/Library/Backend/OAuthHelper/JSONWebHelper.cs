@@ -365,12 +365,12 @@ namespace Duplicati.Library
             if (method == null && requestdata != null)
                 method = "POST";
 
-            return await GetResponseWithoutExceptionAsync(CreateRequest(url, method), cancelToken, requestdata);
+            return await GetResponseWithoutExceptionAsync(CreateRequest(url, method), cancelToken, requestdata).ConfigureAwait(false);
         }
 
         public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(HttpWebRequest req, CancellationToken cancelToken, object requestdata = null)
         {
-            return await GetResponseWithoutExceptionAsync(new AsyncHttpRequest(req), cancelToken, requestdata);
+            return await GetResponseWithoutExceptionAsync(new AsyncHttpRequest(req), cancelToken, requestdata).ConfigureAwait(false);
         }
 
         public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
@@ -386,7 +386,7 @@ namespace Duplicati.Library
                             req.Request.ContentType = "application/octet-stream";
 
                         using (var rs = req.GetRequestStream())
-                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken);
+                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -395,7 +395,7 @@ namespace Duplicati.Library
                         req.Request.ContentType = "application/json; charset=UTF-8";
 
                         using (var rs = req.GetRequestStream())
-                            await rs.WriteAsync(data, 0, data.Length, cancelToken);
+                            await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
                     }
                 }
 
@@ -486,7 +486,7 @@ namespace Duplicati.Library
                             req.Request.ContentType = "application/octet-stream";
 
                         using (var rs = req.GetRequestStream())
-                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken);
+                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -495,7 +495,7 @@ namespace Duplicati.Library
                         req.Request.ContentType = "application/json; charset=UTF-8";
 
                         using (var rs = req.GetRequestStream())
-                            await rs.WriteAsync(data, 0, data.Length, cancelToken);
+                            await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
                     }
                 }
 
