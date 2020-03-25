@@ -495,7 +495,6 @@ namespace Duplicati.Library.Main.Database
         public interface IBlockSource
         {
             string Path { get; }
-            long Size { get; }
             long Offset { get; }
             bool IsMetadata { get; }
         }
@@ -521,7 +520,6 @@ namespace Duplicati.Library.Main.Database
         {
             string Path { get; }
             string Hash { get; }
-            long ID { get; }
             long Length { get; }
         }
 
@@ -616,7 +614,6 @@ namespace Duplicati.Library.Main.Database
 
                     public string Path { get { return m_reader.ConvertValueToString(6); } }
                     public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
-                    public long Size { get { return m_reader.ConvertValueToInt64(8); } }
                     public bool IsMetadata { get { return false; } }
                 }
 
@@ -908,8 +905,6 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
             }
-
-            public string Tablename { get { return m_tmptable; } }
         }
 
         public IFilesAndMetadata GetMissingBlockData(BlockVolumeReader curvolume, long blocksize)
@@ -921,12 +916,10 @@ namespace Duplicati.Library.Main.Database
         {
             public string Path { get; private set; }
             public string Hash { get; private set; }
-            public long ID { get; private set; }
             public long Length { get; private set; }
             
             public FileToRestore(long id, string path, string hash, long length)
             {
-                this.ID = id;
                 this.Path = path;
                 this.Hash = hash;
                 this.Length = length;
@@ -1005,7 +998,6 @@ namespace Duplicati.Library.Main.Database
             void SetFileDataVerified(long targetfileid);
             void Commit();
             void UpdateProcessed(IOperationProgressUpdater writer);
-            System.Data.IDbTransaction Transaction { get; }
         }
 
         /// <summary>
@@ -1024,8 +1016,6 @@ namespace Duplicati.Library.Main.Database
 
             private readonly string m_blocktablename;
             private readonly string m_filetablename;
-
-            public System.Data.IDbTransaction Transaction { get { return m_insertblockCommand.Transaction; } }
 
             public DirectBlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename, string statstablename)
             {

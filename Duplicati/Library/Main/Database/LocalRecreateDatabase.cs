@@ -15,27 +15,6 @@ namespace Duplicati.Library.Main.Database
 
         private class PathEntryKeeper
         {
-            private SortedList<KeyValuePair<long, long>, long> m_versions;
-                        
-            public long GetFilesetID(long blocksetId, long metadataId)
-            {
-                if (m_versions == null)
-                    return -1;
-
-                long r;
-                if (!m_versions.TryGetValue(new KeyValuePair<long, long>(blocksetId, metadataId), out r))
-                    return -1;
-                else
-                    return r;
-            }
-            
-            public void AddFilesetID(long blocksetId, long metadataId, long filesetId)
-            {
-                if (m_versions == null)
-                    m_versions = new SortedList<KeyValuePair<long, long>, long>(1, new KeyValueComparer());
-                m_versions.Add(new KeyValuePair<long, long>(blocksetId, metadataId), filesetId);
-            }
-            
             private struct KeyValueComparer : IComparer<KeyValuePair<long, long>>
             {
                 public int Compare(KeyValuePair<long, long> x, KeyValuePair<long, long> y)

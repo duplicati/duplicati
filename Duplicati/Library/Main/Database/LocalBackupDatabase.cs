@@ -17,58 +17,6 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
 
-        private class PathEntryKeeper
-        {
-            public DateTime Lastmodified;
-            public long FileID;
-            public long Filesize;
-            public string Metahash;
-            public long Metasize;
-
-            private SortedList<KeyValuePair<long, long>, long> m_versions;
-
-            public PathEntryKeeper(long fileId, DateTime lastmodified, long filesize, string metahash, long metasize)
-            {
-                this.FileID = fileId;
-                this.Lastmodified = lastmodified;
-                this.Filesize = filesize;
-                this.Metahash = metahash;
-                this.Metasize = metasize;
-                this.m_versions = null;
-            }
-
-            public long GetFilesetID(long blocksetId, long metadataId)
-            {
-                if (m_versions == null)
-                    return -1;
-
-                long r;
-                if (!m_versions.TryGetValue(new KeyValuePair<long, long>(blocksetId, metadataId), out r))
-                    return -1;
-                else
-                    return r;
-            }
-
-            public void AddFilesetID(long blocksetId, long metadataId, long filesetId)
-            {
-                if (m_versions == null)
-                    m_versions = new SortedList<KeyValuePair<long, long>, long>(1, new KeyValueComparer());
-                m_versions.Add(new KeyValuePair<long, long>(blocksetId, metadataId), filesetId);
-            }
-
-            private struct KeyValueComparer : IComparer<KeyValuePair<long, long>>
-            {
-                public int Compare(KeyValuePair<long, long> x, KeyValuePair<long, long> y)
-                {
-                    return x.Key == y.Key ?
-                            (x.Value == y.Value ?
-                                0
-                                : (x.Value < y.Value ? -1 : 1))
-                            : (x.Key < y.Key ? -1 : 1);
-                }
-            }
-        }
-
         private readonly System.Data.IDbCommand m_findblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
         private readonly System.Data.IDbCommand m_findfilesetCommand;
@@ -265,35 +213,6 @@ namespace Duplicati.Library.Main.Database
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
             m_selectblocklistHashesCommand.AddParameters(1);
-        }
-
-        /// <summary>
-        /// Builds the lookup tables. Call this method after deleting items, and before processing items
-        /// </summary>
-        /// <param name="options">The option settings</param>
-        public void BuildLookupTable(Options options)
-        {
-            if (options.UseBlockCache)
-            {
-                string failedhash = null;
-                try
-                {
-                    var cache = new Dictionary<string, long>();
-                    using (var cmd = m_connection.CreateCommand())
-                    {
-                        cmd.CommandText = @"SELECT ""Hash"", ""Size"" From ""Block""";
-                        using (var rd = cmd.ExecuteReader())
-                            while (rd.Read())
-                                cache.Add(failedhash = rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
-                    }
-                    m_blockCache = cache;
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheFailure", ex, "Failed to create block cache, this could mean you have hash collisions in your table, the hash that failed is {0}. Error message: {1}.", failedhash, ex.Message);
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheFailure", null, "Disabling block cache due to error");
-                }
-            }
         }
 
         /// <summary>
@@ -852,16 +771,6 @@ namespace Duplicati.Library.Main.Database
                         );
                     }
             }
-        }
-
-        public IRemoteVolume GetRemoteVolumeFromName(string name, System.Data.IDbTransaction transaction)
-        {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Name"" = ?", name))
-                if (rd.Read())
-                    return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), rd.ConvertValueToInt64(2));
-                else
-                    return null;
         }
 
         public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)

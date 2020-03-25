@@ -605,19 +605,10 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public System.Data.IDbConnection Connection { get { return m_parent.Connection; } }
-            public System.Data.IsolationLevel IsolationLevel { get { return m_parent.IsolationLevel; } }
-
             public void Commit()
             {
                 if (m_isTemporary)
                     m_parent.Commit();
-            }
-
-            public void Rollback()
-            {
-                if (m_isTemporary)
-                    m_parent.Rollback();
             }
 
             public void Dispose()
@@ -627,64 +618,6 @@ namespace Duplicati.Library.Main.Database
             }
 
             public System.Data.IDbTransaction Parent { get { return m_parent; } }
-        }
-
-        private class LocalFileEntry : ILocalFileEntry
-        {
-            private readonly System.Data.IDataReader m_reader;
-            public LocalFileEntry(System.Data.IDataReader reader)
-            {
-                m_reader = reader;
-            }
-
-            public string Path
-            {
-                get
-                {
-                    var c = m_reader.GetValue(0);
-                    if (c == null || c == DBNull.Value)
-                        return null;
-                    return c.ToString();
-                }
-            }
-
-            public long Length
-            {
-                get
-                {
-                    return m_reader.ConvertValueToInt64(1);
-                }
-            }
-
-            public string Hash
-            {
-                get
-                {
-                    var c = m_reader.GetValue(2);
-                    if (c == null || c == DBNull.Value)
-                        return null;
-                    return c.ToString();
-                }
-            }
-
-            public string Metahash
-            {
-                get
-                {
-                    var c = m_reader.GetValue(3);
-                    if (c == null || c == DBNull.Value)
-                        return null;
-                    return c.ToString();
-                }
-            }
-        }
-
-        public IEnumerable<ILocalFileEntry> GetFiles(long filesetId)
-        {
-            using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(@"SELECT ""A"".""Path"", ""B"".""Length"", ""B"".""FullHash"", ""D"".""FullHash"" FROM ""File"" A, ""Blockset"" B, ""Metadataset"" C, ""Blockset"" D, ""FilesetEntry"" E WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""MetadataID"" = ""C"".""ID"" AND ""C"".""BlocksetID"" = ""D"".""ID"" AND ""A"".""ID"" = ""E"".""FileID"" AND ""E"".""FilesetID"" = ? ", filesetId))
-                while (rd.Read())
-                    yield return new LocalFileEntry(rd);
         }
 
         private IEnumerable<KeyValuePair<string, string>> GetDbOptionList(System.Data.IDbTransaction transaction = null)

@@ -61,7 +61,6 @@ namespace Duplicati.Library.Main.Database
         public interface ITemporaryFileset : IDisposable
         {
             long ParentID { get; }
-            bool IsFullBackup { get; }
             long RemovedFileCount { get; }
             long RemovedFileSize { get; }
 
@@ -79,7 +78,6 @@ namespace Duplicati.Library.Main.Database
             private readonly LocalPurgeDatabase m_parentdb;
 
             public long ParentID { get; private set; }
-            public bool IsFullBackup { get; private set; }
             public long RemovedFileCount { get; private set; }
             public long RemovedFileSize { get; private set; }
 
@@ -168,7 +166,6 @@ namespace Duplicati.Library.Main.Database
 
             public Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup)
             {
-                this.IsFullBackup = isFullBackup;
                 var remotevolid = m_parentdb.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                 var filesetid = m_parentdb.CreateFileset(remotevolid, timestamp, m_transaction);
                 m_parentdb.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
