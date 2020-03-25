@@ -309,7 +309,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 catch (Exception ex)
                 {
                     item.IsRetry = true;
-                    Logging.Log.WriteRetryMessage(LOGTAG, $"Retry{item.Operation}", ex, "Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retryCount + 1, m_options.NumberOfRetries, ex.Message);
+                    Logging.Log.WriteRetryMessage(LOGTAG, $"Retry{item.Operation}", ex, "Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retryCount + 1, m_options.NumberOfRetries + 1, ex.Message);
                     if (ex is ThreadAbortException || ex is OperationCanceledException)
                         break;
 
