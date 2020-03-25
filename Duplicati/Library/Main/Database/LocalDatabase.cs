@@ -412,36 +412,67 @@ namespace Duplicati.Library.Main.Database
                 var volIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", volidstable);
                 deletecmd.Parameters.Clear();
 
-                // If the volume is a block or index volume, this will update the crosslink table, otherwise nothing will happen
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({0}) OR ""IndexVolumeID"" IN ({0})", volIdsSubQuery));
-
-                // If the volume is a fileset, this will remove the fileset, otherwise nothing will happen
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Fileset"" WHERE ""VolumeID""  IN ({0})", volIdsSubQuery));
 
                 var bsIdsSubQuery = string.Format(
-                      @"SELECT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" "
+                      @"SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"""
                     + @" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" IN ({0}) "
                     + @"UNION ALL "
-                    + @"SELECT ""BlocksetID"" FROM ""BlocklistHash"" "
-                    + @"WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN ({0}))"
+                    + @"SELECT DISTINCT ""BlocksetID"" FROM ""BlocklistHash"""
+                    + @" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN ({0}))"
                     , volIdsSubQuery);
 
                 // Create a temporary table to cache subquery result, as it might take long (SQLite does not cache at all). 
                 deletecmd.ExecuteNonQuery(string.Format(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", blocksetidstable));
                 deletecmd.ExecuteNonQuery(string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") {1}", blocksetidstable, bsIdsSubQuery));
-                bsIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", blocksetidstable);
+                bsIdsSubQuery = string.Format(@"SELECT DISTINCT ""ID"" FROM ""{0}"" ", blocksetidstable);
                 deletecmd.Parameters.Clear();
 
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FileLookup"" WHERE ""BlocksetID"" IN ({0}) OR ""MetadataID"" IN ({0})", bsIdsSubQuery));
+                // Create a temp table to associate metadata that is being deleted to a fileset
+                var metadataFilesetQuery = $@"SELECT Metadataset.ID, FilesetEntry.FilesetID
+FROM Metadataset
+INNER JOIN FileLookup ON FileLookup.MetadataID = Metadataset.ID
+INNER JOIN FilesetEntry ON FilesetEntry.FileID = FileLookup.ID
+WHERE Metadataset.BlocksetID IN ({bsIdsSubQuery})
+OR Metadataset.ID IN (SELECT MetadataID FROM FileLookup WHERE BlocksetID IN ({bsIdsSubQuery}))";
+
+                var metadataFilesetTable = @"DelMetadataFilesetIds-" + temptransguid;
+                deletecmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""{metadataFilesetTable}"" (MetadataID INTEGER PRIMARY KEY, FilesetID INTEGER)");
+                deletecmd.ExecuteNonQuery($@"INSERT OR IGNORE INTO ""{metadataFilesetTable}"" (MetadataID, FilesetID) {metadataFilesetQuery}");
+
+                // Delete FilesetEntry rows that had their metadata deleted
+                deletecmd.ExecuteNonQuery($@"DELETE FROM FilesetEntry
+WHERE FilesetEntry.FilesetID IN (SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}"")
+AND FilesetEntry.FileID IN (
+	SELECT FilesetEntry.FileID
+	FROM FilesetEntry
+	INNER JOIN FileLookup ON FileLookup.ID = FilesetEntry.FileID
+	WHERE FileLookup.MetadataID IN (SELECT MetadataID FROM ""{metadataFilesetTable}""))");
+
+                // Delete FilesetEntry rows that had their blocks deleted
+                deletecmd.ExecuteNonQuery($@"DELETE FROM FilesetEntry WHERE FilesetEntry.FileID IN (
+SELECT ID FROM FileLookup
+WHERE FileLookup.BlocksetID IN ({bsIdsSubQuery}))");
+                deletecmd.ExecuteNonQuery($@"DELETE FROM FileLookup WHERE FileLookup.MetadataID IN (SELECT MetadataID FROM ""{metadataFilesetTable}"")");
+
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FileLookup"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN ({0})", bsIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
-
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""BlocksetID"" IN ({0})", bsIdsSubQuery));
+
+                // If the volume is a block or index volume, this will update the crosslink table, otherwise nothing will happen
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({0}) OR ""IndexVolumeID"" IN ({0})", volIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery($@"DELETE FROM FilesetEntry WHERE FilesetID IN (SELECT ID FROM Fileset WHERE VolumeID IN ({volIdsSubQuery}))");
+                deletecmd.ExecuteNonQuery($@"DELETE FROM Fileset WHERE VolumeID IN ({volIdsSubQuery})");
+
+                // Delete from Fileset if FilesetEntry rows were deleted by related metadata and there are no references in FilesetEntry anymore
+                deletecmd.ExecuteNonQuery($@"DELETE FROM Fileset WHERE Fileset.ID IN
+(SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}"")
+AND Fileset.ID NOT IN
+    (SELECT DISTINCT FilesetID FROM FilesetEntry)");
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
@@ -453,6 +484,7 @@ namespace Duplicati.Library.Main.Database
                     deletecmd.CommandTimeout = 2;
                     deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", blocksetidstable));
                     deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", volidstable));
+                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", metadataFilesetTable));
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
 

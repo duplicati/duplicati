@@ -99,7 +99,11 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var backend = bk ?? sharedBackend;
                     if (!hasVerifiedBackend && !m_options.NoBackendverification)
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter);
+                    {
+                        var backupDatabase = new LocalBackupDatabase(db, m_options);
+                        var latestFilelist = backupDatabase.GetTemporaryFilelistVolumeNames(latestOnly: true, transaction: transaction);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, latestFilelist);
+                    }
 
                     BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
                     newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);

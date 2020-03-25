@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Operation
                         UpdateStorageStatsFromDatabase();
                     }
                     else
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { protectedfile });
                 }
                 catch (Exception ex)
                 {
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Operation
                         new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
 
                         Logging.Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { protectedfile });
                     }
                     else
                         throw;
@@ -286,13 +286,13 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void PostBackupVerification()
+        private void PostBackupVerification(string currentFilelistVolume)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
             {
-                using(new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { currentFilelistVolume });
                 backend.WaitForComplete(m_database, null);
             }
 
@@ -375,10 +375,17 @@ namespace Duplicati.Library.Main.Operation
 
         private static async Task<long> FlushBackend(BackupResults result, IWriteChannel<Backup.IUploadRequest> uploadtarget, Task uploader)
         {
-            var flushReq = new Backup.FlushRequest();
-
             // Wait for upload completion
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
+
+            if (await uploadtarget.IsRetiredAsync)
+            {
+                await uploader.ConfigureAwait(false);
+                return -1;
+            }
+
+            var flushReq = new Backup.FlushRequest();
+
             await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
             await uploader.ConfigureAwait(false);
 
@@ -558,7 +565,7 @@ namespace Duplicati.Library.Main.Operation
                                 if (m_options.NoBackendverification)
                                     UpdateStorageStatsFromDatabase();
                                 else
-                                    PostBackupVerification();
+                                    PostBackupVerification(filesetvolume.RemoteFilename);
                             }
                         }
                         
