@@ -39,6 +39,7 @@ namespace Duplicati.Library.Backend
         private const string UPLOAD_SESSION_FRAGMENT_SIZE_OPTION = "fragment-size";
         private const string UPLOAD_SESSION_FRAGMENT_RETRY_COUNT_OPTION = "fragment-retry-count";
         private const string UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION = "fragment-retry-delay";
+        private const string USE_HTTP_CLIENT = "use-http-client";
 
         private const int UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_COUNT = 5;
         private const int UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY = 1000;
@@ -68,12 +69,27 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private const int UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE = 320 * 1024;
 
+        /// <summary>
+        /// Whether to use the HttpClient class for HTTP requests.
+        /// Default is false when running under Mono (as it seems it might be causing a memory leak in some environments / versions)
+        /// but true in other cases (where these memory leaks haven't been reproduced).
+        /// </summary>
+        private static readonly bool USE_HTTP_CLIENT_DEFAULT = Utility.Utility.IsMono ? false : true;
+
         private static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
+
+        /// <summary>
+        /// Dummy UploadSession given as an empty body to createUploadSession requests when using the OAuthHelper instead of the OAuthHttpClient.
+        /// The API expects a ContentLength to be specified, but the body content is optional.
+        /// Passing an empty object (or specifying the ContentLength explicitly) bypasses this error.
+        /// </summary>
+        private static readonly UploadSession dummyUploadSession = new UploadSession();
 
         protected delegate string DescriptionTemplateDelegate(string mssadescription, string mssalink, string msopdescription, string msoplink);
 
         private readonly JsonSerializer m_serializer = new JsonSerializer();
         private readonly OAuthHttpClient m_client;
+        private readonly OAuthHelper m_oAuthHelper;
         private readonly int fragmentSize;
         private readonly int fragmentRetryCount;
         private readonly int fragmentRetryDelay; // In milliseconds
@@ -119,8 +135,27 @@ namespace Duplicati.Library.Backend
                 this.fragmentRetryDelay = UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY;
             }
 
-            this.m_client = new OAuthHttpClient(authid, protocolKey);
-            this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
+            bool useHttpClient;
+            string useHttpClientStr;
+            if (options.TryGetValue(USE_HTTP_CLIENT, out useHttpClientStr))
+            {
+                useHttpClient = Utility.Utility.ParseBool(useHttpClientStr, USE_HTTP_CLIENT_DEFAULT);
+            }
+            else
+            {
+                useHttpClient = USE_HTTP_CLIENT_DEFAULT;
+            }
+
+            if (useHttpClient)
+            {
+                this.m_client = new OAuthHttpClient(authid, protocolKey);
+                this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
+            }
+            else
+            {
+                this.m_oAuthHelper = new OAuthHelper(authid, protocolKey);
+                this.m_oAuthHelper.AutoAuthHeader = true;
+            }
 
             // Extract out the path to the backup root folder from the given URI.  Since this can be an expensive operation, 
             // we will cache the value using a lazy initializer.
@@ -153,6 +188,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentSizeShort, Strings.MicrosoftGraph.FragmentSizeLong, Library.Utility.Utility.FormatSizeString(UPLOAD_SESSION_FRAGMENT_DEFAULT_SIZE)),
                     new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_RETRY_COUNT_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentRetryCountShort, Strings.MicrosoftGraph.FragmentRetryCountLong, UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_COUNT.ToString()),
                     new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentRetryDelayShort, Strings.MicrosoftGraph.FragmentRetryDelayLong, UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY.ToString()),
+                    new CommandLineArgument(USE_HTTP_CLIENT, CommandLineArgument.ArgumentType.Boolean, Strings.MicrosoftGraph.UseHttpClientShort, Strings.MicrosoftGraph.UseHttpClientLong, USE_HTTP_CLIENT_DEFAULT.ToString()),
                 }
                 .Concat(this.AdditionalSupportedCommands).ToList();
             }
@@ -170,13 +206,23 @@ namespace Duplicati.Library.Backend
                     // To get the upload session endpoint, we can start an upload session and then immediately cancel it.
                     // We pick a random file name (using a guid) to make sure we don't conflict with an existing file
                     string dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
-                    UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), null);
+                    UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), MicrosoftGraphBackend.dummyUploadSession);
 
                     // Canceling an upload session is done by sending a DELETE to the upload URL
-                    using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
-                    using (var response = this.m_client.SendAsync(request).Await())
+                    if (this.m_client != null)
                     {
-                        this.CheckResponse(response);
+                        using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
+                        using (var response = this.m_client.SendAsync(request).Await())
+                        {
+                            this.CheckResponse(response);
+                        }
+                    }
+                    else
+                    {
+                        using (var response = this.m_oAuthHelper.GetResponseWithoutException(uploadSession.UploadUrl, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Delete.ToString()))
+                        {
+                            this.CheckResponse(response);
+                        }
                     }
 
                     this.dnsNames = new[]
@@ -238,7 +284,18 @@ namespace Duplicati.Library.Backend
 
         private string DrivePrefix
         {
-            get { return this.ApiVersion + this.DrivePath; }
+            get
+            {
+                if (this.m_client != null)
+                {
+                    return this.ApiVersion + this.DrivePath;
+                }
+                else
+                {
+                    // When not using the HttpClient for requests, the base address needs to be included in this prefix
+                    return BASE_ADDRESS + this.ApiVersion + this.DrivePath;
+                }
+            }
         }
 
         public void CreateFolder()
@@ -297,12 +354,27 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using (var response = this.m_client.GetAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename))).Await())
+                string getUrl = string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                if (this.m_client != null)
                 {
-                    this.CheckResponse(response);
-                    using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
+                    using (var response = this.m_client.GetAsync(getUrl).Await())
                     {
-                        responseStream.CopyTo(stream);
+                        this.CheckResponse(response);
+                        using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
+                        {
+                            responseStream.CopyTo(stream);
+                        }
+                    }
+                }
+                else
+                {
+                    using (var response = this.m_oAuthHelper.GetResponseWithoutException(getUrl))
+                    {
+                        this.CheckResponse(response);
+                        using (Stream responseStream = response.GetResponseStream())
+                        {
+                            responseStream.CopyTo(stream);
+                        }
                     }
                 }
             }
@@ -339,10 +411,22 @@ namespace Duplicati.Library.Backend
             // PUT only supports up to 4 MB file uploads. There's a separate process for larger files.
             if (stream.Length < PUT_MAX_SIZE)
             {
-                using (StreamContent streamContent = new StreamContent(stream))
+                string putUrl = string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                if (this.m_client != null)
                 {
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    using (var response = await m_client.PutAsync(string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename)), streamContent, cancelToken).ConfigureAwait(false))
+                    using (StreamContent streamContent = new StreamContent(stream))
+                    {
+                        streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                        using (var response = await this.m_client.PutAsync(putUrl, streamContent, cancelToken).ConfigureAwait(false))
+                        {
+                            // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
+                            this.ParseResponse<DriveItem>(response);
+                        }
+                    }
+                }
+                else
+                {
+                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(putUrl, cancelToken, stream, HttpMethod.Put.ToString()).ConfigureAwait(false))
                     {
                         // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
                         this.ParseResponse<DriveItem>(response);
@@ -356,9 +440,11 @@ namespace Duplicati.Library.Backend
                 // The documentation seems somewhat contradictory - it states that uploads must be done sequentially,
                 // but also states that the nextExpectedRanges value returned may indicate multiple ranges...
                 // For now, this plays it safe and does a sequential upload.
-                using (HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename))))
+                string createSessionUrl = string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                if (this.m_client != null)
                 {
-                    using (HttpResponseMessage createSessionResponse = await m_client.SendAsync(createSessionRequest, cancelToken).ConfigureAwait(false))
+                    using (HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, createSessionUrl))
+                    using (HttpResponseMessage createSessionResponse = await this.m_client.SendAsync(createSessionRequest, cancelToken).ConfigureAwait(false))
                     {
                         UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
 
@@ -385,7 +471,7 @@ namespace Duplicati.Library.Backend
                                     try
                                     {
                                         // The uploaded put requests will error if they are authenticated
-                                        using (HttpResponseMessage response = await m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
+                                        using (HttpResponseMessage response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
                                         {
                                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
                                             this.ParseResponse<UploadSession>(response);
@@ -400,20 +486,20 @@ namespace Duplicati.Library.Backend
                                             // We've used up all our retry attempts
                                             throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                                         }
-                                        else if ((int)ex.Response.StatusCode >= 500 && (int)ex.Response.StatusCode < 600)
+                                        else if ((int)ex.StatusCode >= 500 && (int)ex.StatusCode < 600)
                                         {
                                             // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
                                             // To make things simpler, we just use the current attempt number as the exponential factor.
                                             Thread.Sleep((int)Math.Pow(2, attempt) * this.fragmentRetryDelay); // If this is changed to use tasks, this should be changed to Task.Await()
                                             continue;
                                         }
-                                        else if (ex.Response.StatusCode == HttpStatusCode.NotFound)
+                                        else if (ex.StatusCode == HttpStatusCode.NotFound)
                                         {
                                             // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
                                             // Instead we'll let the caller re-attempt the whole file.
                                             throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
                                         }
-                                        else if ((int)ex.Response.StatusCode >= 400 && (int)ex.Response.StatusCode < 500)
+                                        else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
                                         {
                                             // If a 4xx error code is hit, we should retry without the backoff attempt
                                             continue;
@@ -432,6 +518,83 @@ namespace Duplicati.Library.Backend
                         }
                     }
                 }
+                else
+                {
+                    using (HttpWebResponse createSessionResponse = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(createSessionUrl, cancelToken, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Post.ToString()))
+                    {
+                        UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
+
+                        // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
+                        int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
+
+                        byte[] fragmentBuffer = new byte[bufferSize];
+                        int read = 0;
+                        for (int offset = 0; offset < stream.Length; offset += read)
+                        {
+                            read = await stream.ReadAsync(fragmentBuffer, 0, bufferSize, cancelToken).ConfigureAwait(false);
+
+                            int retryCount = this.fragmentRetryCount;
+                            for (int attempt = 0; attempt < retryCount; attempt++)
+                            {
+                                // The uploaded put requests will error if they are authenticated
+                                var request = new AsyncHttpRequest(this.m_oAuthHelper.CreateRequest(uploadSession.UploadUrl, HttpMethod.Put.ToString(), true));
+                                request.Request.ContentLength = read;
+                                request.Request.Headers.Set(HttpRequestHeader.ContentRange, new ContentRangeHeaderValue(offset, offset + read - 1, stream.Length).ToString());
+                                request.Request.ContentType = "application/octet-stream";
+
+                                using (var requestStream = request.GetRequestStream(read))
+                                {
+                                    await requestStream.WriteAsync(fragmentBuffer, 0, read, cancelToken);
+                                }
+
+                                try
+                                {
+                                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(request, cancelToken))
+                                    {
+                                        // Note: On the last request, the json result includes the default properties of the item that was uploaded
+                                        this.ParseResponse<UploadSession>(response);
+                                    }
+                                }
+                                catch (MicrosoftGraphException ex)
+                                {
+                                    // Error handling based on recommendations here:
+                                    // https://docs.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession#best-practices
+                                    if (attempt >= retryCount - 1)
+                                    {
+                                        // We've used up all our retry attempts
+                                        throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
+                                    }
+                                    else if ((int)ex.StatusCode >= 500 && (int)ex.StatusCode < 600)
+                                    {
+                                        // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
+                                        // To make things simpler, we just use the current attempt number as the exponential factor.
+                                        Thread.Sleep((int)Math.Pow(2, attempt) * this.fragmentRetryDelay); // If this is changed to use tasks, this should be changed to Task.Await()
+                                        continue;
+                                    }
+                                    else if (ex.StatusCode == HttpStatusCode.NotFound)
+                                    {
+                                        // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
+                                        // Instead we'll let the caller re-attempt the whole file.
+                                        throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
+                                    }
+                                    else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
+                                    {
+                                        // If a 4xx error code is hit, we should retry without the backoff attempt
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        // Other errors should be rethrown
+                                        throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
+                                    }
+                                }
+
+                                // If we successfully sent this piece, then we can break out of the retry loop
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -439,9 +602,20 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using (var response = this.m_client.DeleteAsync(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename))).Await())
+                string deleteUrl = string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                if (this.m_client != null)
                 {
-                    this.CheckResponse(response);
+                    using (var response = this.m_client.DeleteAsync(deleteUrl).Await())
+                    {
+                        this.CheckResponse(response);
+                    }
+                }
+                else
+                {
+                    using (var response = this.m_oAuthHelper.GetResponseWithoutException(deleteUrl, null, HttpMethod.Delete.ToString()))
+                    {
+                        this.CheckResponse(response);
+                    }
                 }
             }
             catch (DriveItemNotFoundException ex)
@@ -498,18 +672,38 @@ namespace Duplicati.Library.Backend
 
         private T SendRequest<T>(HttpMethod method, string url)
         {
-            using (var request = new HttpRequestMessage(method, url))
+            if (this.m_client != null)
             {
-                return this.SendRequest<T>(request);
+                using (var request = new HttpRequestMessage(method, url))
+                {
+                    return this.SendRequest<T>(request);
+                }
+            }
+            else
+            {
+                using (var response = this.m_oAuthHelper.GetResponseWithoutException(url, null, method.ToString()))
+                {
+                    return this.ParseResponse<T>(response);
+                }
             }
         }
 
         private T SendRequest<T>(HttpMethod method, string url, T body) where T : class
         {
-            using (var request = new HttpRequestMessage(method, url))
-            using (request.Content = this.PrepareContent(body))
+            if (this.m_client != null)
             {
-                return this.SendRequest<T>(request);
+                using (var request = new HttpRequestMessage(method, url))
+                using (request.Content = this.PrepareContent(body))
+                {
+                    return this.SendRequest<T>(request);
+                }
+            }
+            else
+            {
+                using (var response = this.m_oAuthHelper.GetResponseWithoutException(url, body, method.ToString()))
+                {
+                    return this.ParseResponse<T>(response);
+                }
             }
         }
 
@@ -520,7 +714,7 @@ namespace Duplicati.Library.Backend
                 return this.ParseResponse<T>(response);
             }
         }
-
+        
         private IEnumerable<T> Enumerate<T>(string url)
         {
             string nextUrl = url;
@@ -563,10 +757,38 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        private void CheckResponse(HttpWebResponse response)
+        {
+            if (!((int)response.StatusCode >= 200 && (int)response.StatusCode < 300))
+            {
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    // It looks like this is an 'item not found' exception, so wrap it in a new exception class to make it easier to pick things out.
+                    throw new DriveItemNotFoundException(response);
+                }
+                else
+                {
+                    // Throw a wrapper exception to make it easier for the caller to look at specific status codes, etc.
+                    throw new MicrosoftGraphException(response);
+                }
+            }
+        }
+
         private T ParseResponse<T>(HttpResponseMessage response)
         {
             this.CheckResponse(response);
             using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
+            using (StreamReader reader = new StreamReader(responseStream))
+            using (JsonTextReader jsonReader = new JsonTextReader(reader))
+            {
+                return this.m_serializer.Deserialize<T>(jsonReader);
+            }
+        }
+
+        private T ParseResponse<T>(HttpWebResponse response)
+        {
+            this.CheckResponse(response);
+            using (Stream responseStream = response.GetResponseStream())
             using (StreamReader reader = new StreamReader(responseStream))
             using (JsonTextReader jsonReader = new JsonTextReader(reader))
             {

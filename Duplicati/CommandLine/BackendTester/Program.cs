@@ -394,6 +394,30 @@ namespace Duplicati.CommandLine.BackendTester
                             Console.WriteLine("*** Remote folder contains {0} after cleanup", fe.Name);
                         }
 
+                    // Test some error cases
+                    Console.WriteLine("Checking retrieval of non-existent file...");
+                    bool caughtExpectedException = false;
+                    try
+                    {
+                        using (Duplicati.Library.Utility.TempFile tempFile = new Duplicati.Library.Utility.TempFile())
+                        {
+                            backend.Get(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name);
+                        }
+                    }
+                    catch (FileMissingException ex)
+                    {
+                        Console.WriteLine("Caught expected FileMissingException");
+                        caughtExpectedException = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("*** Retrieval of non-existent file failed: {0}", ex);
+                    }
+
+                    if (!caughtExpectedException)
+                    {
+                        Console.WriteLine("*** Retrieval of non-existent file should have failed with FileMissingException");
+                    }
                 }
 
                 // Test quota retrieval

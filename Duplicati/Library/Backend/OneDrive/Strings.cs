@@ -12,6 +12,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string FragmentRetryCountLong { get { return LC.L(@"Number of retry attempts made for each fragment before failing the overall file upload"); } }
         public static string FragmentRetryDelayShort { get { return LC.L(@"Millisecond delay between fragment errors"); } }
         public static string FragmentRetryDelayLong { get { return LC.L(@"Amount of time (in milliseconds) to wait between failures when uploading fragments"); } }
+        public static string UseHttpClientShort { get { return LC.L(@"Whether the HttpClient class should be used"); } }
+        public static string UseHttpClientLong { get { return LC.L(@"Whether the HttpClient class should be used to perform HTTP requests"); } }
     }
 
     internal static class OneDriveV2
