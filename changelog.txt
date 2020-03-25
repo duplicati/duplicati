@@ -1,3 +1,18 @@
+2020-03-25 - 2.0.5.104_canary_2020-03-25
+==========
+* Improved log messags when using retetion rules, thanks @warwickmm
+* Added logging for USN soft-failures, thannks @drwtsn32x
+* Improved regexp magic for parsing Windows, thanks @drwtsn32x
+* Fixed storing `dlist` file after interrupted backup, thanks @seantempleton
+* Improved logic around throttle values, thanks @seantempleton
+* Fixed issues with Windows metadata and inheritance, thanks @drwtsn32x
+* Major code cleanup, removing unused members and other, thanks @warwickmm
+* Corrected retry attempts log message, thanks @warwickmm
+* Fixed device-type reports on Mono, thanks @warwickmm
+* Improved error messages during HTTP timeouts in some cases, thanks @warwickmm
+* Reworked the MS-Graph backend to use an alternate HTTP implementation, thanks @tygill
+* Fixed some cases where an interrupted backup could cause database corruption, thanks @seantempleton
+
 2020-02-18 - 2.0.5.103_canary_2020-02-18
 ==========
 
