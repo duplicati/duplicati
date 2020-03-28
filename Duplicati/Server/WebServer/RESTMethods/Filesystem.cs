@@ -208,7 +208,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return false;
             };
 
-            foreach (var s in SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath))
+            foreach (var s in SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath)
+                .OrderByDescending(f => SystemIO.IO_OS.GetFileAttributes(f) & FileAttributes.Directory)
+                .ThenBy(f => SystemIO.IO_OS.PathGetFileName(f)))
             {
                 Serializable.TreeNode tn = null;
                 try
