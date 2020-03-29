@@ -210,7 +210,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             foreach (var s in SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath)
                 .OrderByDescending(f => SystemIO.IO_OS.GetFileAttributes(f) & FileAttributes.Directory)
-                .ThenBy(f => SystemIO.IO_OS.PathGetFileName(f)))
+                .ThenBy(f => f))
             {
                 Serializable.TreeNode tn = null;
                 try
