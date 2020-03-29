@@ -65,7 +65,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 result[n.Name] = n.Value;
 
             result["Filesets"] = r.Filesets;
-            result["Files"] = r.Files;
+            result["Files"] = r.Files
+                .OrderByDescending(f => f.Path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                .ThenBy(f => f.Path);
 
             info.OutputOK(result);
 
