@@ -404,7 +404,7 @@ namespace Duplicati.CommandLine.BackendTester
                             backend.Get(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name);
                         }
                     }
-                    catch (FileMissingException ex)
+                    catch (FileMissingException)
                     {
                         Console.WriteLine("Caught expected FileMissingException");
                         caughtExpectedException = true;
