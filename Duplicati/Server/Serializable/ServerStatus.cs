@@ -53,6 +53,14 @@ namespace Duplicati.Server.Serializable
             }
         }
 
+        public string CurrentVersion
+        {
+            get
+            {
+                return Library.Utility.Utility.getExecutingAssembly().GetName().Version.ToString();
+            }
+        }
+
         public UpdatePollerStates UpdaterState { get { return Program.UpdatePoller.ThreadState; } }
 
         public bool UpdateReady { get { return Duplicati.Library.AutoUpdater.UpdaterManager.HasUpdateInstalled; } }
