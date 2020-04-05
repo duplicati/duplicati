@@ -72,13 +72,13 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, bool latestVolumesOnly, IDbTransaction transaction)
+        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter backendWriter, bool latestVolumesOnly, IDbTransaction transaction)
         {
             if (!options.NoBackendverification)
             {
                 LocalBackupDatabase backupDatabase = new LocalBackupDatabase(database, options);
                 IEnumerable<string> protectedFiles = backupDatabase.GetTemporaryFilelistVolumeNames(latestVolumesOnly, transaction);
-                FilelistProcessor.VerifyRemoteList(backend, options, database, log, protectedFiles);
+                FilelistProcessor.VerifyRemoteList(backend, options, database, backendWriter, protectedFiles);
             }
         }
 
