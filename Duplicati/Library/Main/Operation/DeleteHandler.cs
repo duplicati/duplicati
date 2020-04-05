@@ -87,11 +87,9 @@ namespace Duplicati.Library.Main.Operation
             {
                 var backend = bk ?? sharedManager;
 
-                if (!hasVerifiedBacked && !m_options.NoBackendverification)
+                if (!hasVerifiedBacked)
                 {
-                    var backupDatabase = new LocalBackupDatabase(db, m_options);
-                    var latestFilelist = backupDatabase.GetTemporaryFilelistVolumeNames(latestOnly: true, transaction: transaction);
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, latestFilelist);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, true, transaction);
                 }
 
                 IListResultFileset[] filesets = db.FilesetsWithBackupVersion.ToArray();
