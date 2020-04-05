@@ -80,14 +80,14 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBacked, bool forceCompact, BackendManager sharedManager)
+        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBackend, bool forceCompact, BackendManager sharedManager)
         {
             // Workaround where we allow a running backendmanager to be used
             using(var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
             {
                 var backend = bk ?? sharedManager;
 
-                if (!hasVerifiedBacked)
+                if (!hasVerifiedBackend)
                 {
                     FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_result.BackendWriter, true, transaction);
                 }
