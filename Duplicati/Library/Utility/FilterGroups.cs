@@ -369,6 +369,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Apple Computer/Mobile Sync/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Comms/UnistoreDB/"); // Looks like storage about music / pictures for universal store apps
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/ElevatedDiagnostics/"); // Seems to be used by sfc tool and Windows troubleshooting
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Edge/User Data/Default/Cache");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/VSCommon/*SQM*"); // SQM appears to be 'service quality management', and it looks like these files report things about Visual Studio installation: https://stackoverflow.com/questions/23050561/what-permissions-policies-are-needed-to-support-loaduserprofile-true-for-new-app
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/Explorer/"); // Stores icon and thumbnail caches
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/INetCache/"); // 
@@ -380,6 +381,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Application Data/Application Data*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/Dropbox.exe.log"); // Dropbox log file, which may be kept open by Dropbox while it is running
                 yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/QuitReports/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cache");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies-journal");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/History/");
