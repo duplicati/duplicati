@@ -279,13 +279,14 @@ namespace Duplicati.Server.WebServer
                     m_activexsrf[xsrf_token] = expires;
                     response.Cookies.Add(new ResponseCookie(XSRF_COOKIE_NAME, xsrf_token, expires));
                 }
-                else
-                {
-                    response.Status = System.Net.HttpStatusCode.BadRequest;
-                    response.Reason = "Missing XSRF Token. Please reload the page";
+                // Story EB-2185
+                //else
+                //{
+                //    response.Status = System.Net.HttpStatusCode.BadRequest;
+                //    response.Reason = "Missing XSRF Token. Please reload the page";
 
-                    return true;
-                }
+                //    return true;
+                //}
             }
 
             if (string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.WebserverPassword))
