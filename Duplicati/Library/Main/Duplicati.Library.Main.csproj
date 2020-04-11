@@ -205,6 +205,8 @@
     <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
     <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
     <EmbeddedResource Include="Database\Database schema\9. Refactor Paths.sql" />
+    <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
+    <EmbeddedResource Include="Database\Database schema\11. Add Block indices.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -215,7 +217,6 @@
   </Target>
   -->
   <ItemGroup>
-    <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
