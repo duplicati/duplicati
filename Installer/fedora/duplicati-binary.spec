@@ -90,12 +90,8 @@ rm -rf win-tools
 rm -rf SQLite/win64
 rm -rf SQLite/win32
 rm -rf MonoMac.dll
-rm -rf alphavss
 rm -rf OSX\ Icons
 rm -rf OSXTrayHost
-rm AlphaFS.dll
-rm AlphaVSS.Common.dll
-rm -rf licenses/alphavss
 rm -rf licenses/MonoMac
 rm -rf licenses/gpg
 
