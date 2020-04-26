@@ -215,6 +215,11 @@ namespace Duplicati.Server
 
         private void OnStartingWork(WorkerThread<Runner.IRunnerData> worker, Runner.IRunnerData task)
         {
+            if (task is null)
+            {
+                return;
+            }
+            
             lock(m_lock)
             {
                 if (m_updateTasks.TryGetValue(task, out Tuple<ISchedule, DateTime, DateTime> scheduleInfo))
