@@ -174,7 +174,7 @@ namespace Duplicati.Server
                     i = 50000;
                     while (!IsDateAllowed(res, allowedDays) && i-- > 0)
                         res = Timeparser.ParseTimeInterval(repetition, res);
-            }
+                }
             }
 
             if (!IsDateAllowed(res, allowedDays) || res < firstdate)
