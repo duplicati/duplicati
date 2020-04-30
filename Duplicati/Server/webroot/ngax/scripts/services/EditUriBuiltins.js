@@ -29,6 +29,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
+    EditUriBackendConfig.templates['tardigrade']       = 'templates/backends/tardigrade.html';
     EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
@@ -450,6 +451,21 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.sia_password = options['--sia-password'];
 
         var nukeopts = ['--sia-targetpath', '--sia-redundancy', '--sia-password'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    }
+	
+	EditUriBackendConfig.parsers['tardigrade'] = function (scope, module, server, port, path, options) {
+        if (options['--tardigrade-satellite'])
+            scope.sia_targetpath = options['--tardigrade-satellite'];
+        if (options['--tardigrade-api-key'])
+            scope.sia_redundancy = options['--tardigrade-api-key'];
+        if (options['--tardigrade-secret'])
+            scope.sia_password = options['--tardigrade-secret'];
+		if (options['--tardigrade-shared-access'])
+            scope.sia_password = options['--tardigrade-shared-access'];
+
+        var nukeopts = ['--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-shared-access'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     }

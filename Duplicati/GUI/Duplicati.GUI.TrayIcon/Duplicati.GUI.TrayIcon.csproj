@@ -169,6 +169,10 @@
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Duplicati.Library.Backend.Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
+      <Name>Duplicati.Library.Backend.Tardigrade</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
       <Project>{b93e3bf0-daa7-49b7-b07d-0559c5816735}</Project>
       <Name>Duplicati.CommandLine.ConfigurationImporter</Name>
@@ -458,6 +462,7 @@ copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' 
     <Error Condition="!Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets'))" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent></PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>
