@@ -15,6 +15,18 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_SECRET = "tardigrade-secret";
         private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared_access";
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
+        public Tardigrade()
+        {
+        }
+
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
+        public Tardigrade(string url, Dictionary<string, string> options)
+        {
+        }
+
         public string DisplayName
         {
             get { return Strings.Tardigrade.DisplayName; }
