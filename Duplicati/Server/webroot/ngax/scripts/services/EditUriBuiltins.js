@@ -686,6 +686,28 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         return url;
     }
+	
+	EditUriBackendConfig.builders['tardigrade'] = function (scope) {
+        var opts = {
+            'tardigrade-satellite': scope.tardigrade_satellite,
+            'tardigrade-api-key': scope.tardigrade_api_key,
+            'tardigrade-secret': scope.tardigrade_secret,
+            'tardigrade-shared-access': scope.tardigrade_shared_access
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+            scope.tardigrade_satellite || '',
+            scope.tardigrade_api_key || '',
+            scope.tardigrade_secret || '',
+            scope.tardigrade_shared_access || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    }
 
     EditUriBackendConfig.builders['rclone'] = function (scope) {
 

@@ -62,6 +62,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Duplicati.Library.Backend.Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
+      <Name>Duplicati.Library.Backend.Tardigrade</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
       <Name>Duplicati.Library.Backend.AzureBlob</Name>
