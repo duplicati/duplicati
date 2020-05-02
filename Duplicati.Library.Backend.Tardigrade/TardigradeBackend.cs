@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             get { return Strings.Tardigrade.DisplayName; }
         }
 
-        public string ProtocolKey => "sj";
+        public string ProtocolKey => "tardigrade";
 
         public IList<ICommandLineArgument> SupportedCommands
         {
