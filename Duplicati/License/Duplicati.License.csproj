@@ -68,6 +68,15 @@
       <Link>licenses\gpg\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\S22.Xmpp\download.txt">
+      <Link>licenses\S22.Xmpp\download.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\S22.Xmpp\license.txt">
+      <Link>licenses\S22.Xmpp\license.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\S22.Xmpp\licensedata.json">
+      <Link>licenses\S22.Xmpp\licensedata.json</Link>
+    </Content>
     <Content Include="..\..\thirdparty\SharpCompress\download.txt">
       <Link>licenses\SharpCompress\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -216,18 +225,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="acknowledgements.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\download.txt">
-      <Link>licenses\agsXMPP\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\license.txt">
-      <Link>licenses\agsXMPP\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\licensedata.json">
-      <Link>licenses\agsXMPP\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
@@ -406,7 +403,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>

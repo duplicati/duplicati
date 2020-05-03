@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
-using System.Net.NetworkInformation;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using S22.Xmpp;
+using S22.Xmpp.Client;
+using S22.Xmpp.Im;
+using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -177,73 +179,42 @@ namespace Duplicati.Library.Modules.Builtin
             Exception ex = null;
             var waitEvent = new System.Threading.ManualResetEvent(false);
 
-            var uri = new Library.Utility.Uri(m_username.Contains("://") ? m_username : "http://" + m_username);
-            var con = new agsXMPP.XmppClientConnection(uri.Host, uri.Port == -1 ? (uri.Scheme == "https" ? 5223 :5222) : uri.Port);
-            if (uri.Scheme == "https")
-                con.UseSSL = true;
-
-            var resource = uri.Path ?? "";
-            if (resource.StartsWith("/", StringComparison.Ordinal))
-                resource = resource.Substring(1);
-
-            if (string.IsNullOrWhiteSpace(resource))
-                resource = "Duplicati";
-
-            agsXMPP.ObjectHandler loginDelegate = (sender) =>
+            void ErrorHandler(object sender, ErrorEventArgs e)
             {
-                try
-                {
-                    foreach(var recipient in m_to.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
-                        con.Send(new agsXMPP.protocol.client.Message(recipient, agsXMPP.protocol.client.MessageType.chat, body));
-                }
-                catch (Exception e)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send to XMPP messages: {0}", e.Message);
-                    ex = e;
-                }
-                finally
-                {
-                    waitEvent.Set();
-                }
-            };
+                Log.WriteWarningMessage(LOGTAG, "XMPPError", e.Exception, "An error ocurred in XMPP: {0}", e.Reason);
 
-            agsXMPP.ErrorHandler errorHandler = (sender, e) => {
-                Logging.Log.WriteWarningMessage(LOGTAG, "XMPPError", e, "An error ocurred in XMPP: {0}", e.Message);
-
-                ex = e;
+                ex = e.Exception;
                 waitEvent.Set();
-            };
+            }
 
-            agsXMPP.XmppElementHandler loginErroHandler = (sender, e) => {
-                Logging.Log.WriteWarningMessage(LOGTAG, "XMPPLoginError", null, "Failed to login to XMPP: {0}", e);
+            Uri uri = new Uri(m_username.Contains("://") ? m_username : "http://" + m_username);
+            string password = string.IsNullOrWhiteSpace(m_password) ? uri.Password : m_password;
+            int port = uri.Port == -1 ? (uri.Scheme == "https" ? 5223 : 5222) : uri.Port;
+            bool tls = uri.Scheme == "https";
+            using (XmppClient con = new XmppClient(uri.Host, uri.Username, password, port, tls))
+            {
+                con.Error += ErrorHandler;
 
-                ex = new Exception(string.Format("Failed to log in: {0}", e));
-                waitEvent.Set();
-            };
-    
-            con.OnLogin += loginDelegate;
-            con.OnError += errorHandler;
-            con.OnAuthError += loginErroHandler;
-            //con.OnBinded += (sender) => {Console.WriteLine("Binded: {0}", sender);};
-            //con.OnIq += (sender, iq) => {Console.WriteLine("Iq: {0}", iq);};
-            //con.OnReadXml += (sender, xml) => {Console.WriteLine("ReadXml: {0}", xml);};
-            //con.OnWriteXml += (sender, xml) => {Console.WriteLine("writeXml: {0}", xml);};;
-            con.Open(uri.Username, string.IsNullOrWhiteSpace(m_password) ? uri.Password : m_password, resource);
+                foreach (string recipient in m_to.Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    try
+                    {
+                        Message message = new Message(new Jid(recipient), body, subject, null, MessageType.Chat);
+                        con.SendMessage(message);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send to XMPP messages: {0}", e.Message);
+                        ex = e;
+                    }
+                    finally
+                    {
+                        waitEvent.Set();
+                    }
+                }
+            }
 
             var timeout = !waitEvent.WaitOne(TimeSpan.FromSeconds(30), true);
-
-            con.OnLogin -= loginDelegate;
-            con.OnError -= errorHandler;
-            con.OnAuthError -= loginErroHandler;
-
-            try
-            {
-                con.Close();
-            }
-            catch (Exception lex)
-            {
-                Logging.Log.WriteExplicitMessage(LOGTAG, "CloseConnectionError", lex, "Failed to close XMPP connection: {0}", lex.Message);
-            }
 
             if (ex != null)
                 throw ex;

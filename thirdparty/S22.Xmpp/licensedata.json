@@ -1,0 +1,7 @@
+{
+  "name": "S22.Xmpp",
+  "description": "S22.Xmpp is an easy-to-use and well-documented .NET assembly for communicating with an XMPP server. It supports basic Instant Messaging and Presence funtionality as well as a variety of XMPP extensions.",
+  "link": "https://github.com/smiley22/S22.Xmpp",
+  "license": "LGPL",
+  "notes": ""
+}
