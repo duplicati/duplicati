@@ -13,7 +13,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_SATELLITE = "tardigrade-satellite";
         private const string TARDIGRADE_API_KEY = "tardigrade-api-key";
         private const string TARDIGRADE_SECRET = "tardigrade-secret";
-        private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared_access";
+        private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared-access";
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.

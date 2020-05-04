@@ -697,12 +697,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
-        var url = AppUtils.format('{0}://{1}/{2}{3}',
+        var url = AppUtils.format('{0}://{1}/config{2}',
             scope.Backend.Key,
             scope.tardigrade_satellite || '',
-            scope.tardigrade_api_key || '',
-            scope.tardigrade_secret || '',
-            scope.tardigrade_shared_access || '',
             AppUtils.encodeDictAsUrl(opts)
         );
 
