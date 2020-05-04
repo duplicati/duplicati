@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             var uri = new Utility.Uri(url);
 
-            if (options.ContainsKey(TARDIGRADE_API_KEY))
+            if (options.ContainsKey(TARDIGRADE_API_KEY) && !string.IsNullOrEmpty(options[TARDIGRADE_SHARED_ACCESS]))
             {
                 _shared_access = options[TARDIGRADE_SHARED_ACCESS];
                 _access = new Access(_shared_access);
