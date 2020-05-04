@@ -22,6 +22,12 @@ namespace Duplicati.Library.Backend.Tardigrade
         private readonly string _shared_access;
         private Access _access;
 
+        public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+            { "US Central 1", "us-central-1" },
+            { "Asia East 1", "asia-east-1" },
+            { "Europe West 1", "europe-west-1" },
+        };
+
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public Tardigrade()

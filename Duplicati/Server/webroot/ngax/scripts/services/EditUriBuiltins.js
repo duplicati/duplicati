@@ -155,6 +155,20 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         scope.s3_client = s3_client_options[0];
         scope.s3_client_options = s3_client_options;
     };
+	
+	EditUriBackendConfig.loaders['tardigrade'] = function (scope) {
+        if (scope.tardigrade_satellites == null) {
+            AppService.post('/webmodule/tardigrade-getconfig', {'tardigrade-config': 'Satellites'}).then(function (data) {
+                scope.tardigrade_satellites = data.data.Result;
+                if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
+                    scope.tardigrade_satellite = 'us-central-1';
+
+            }, AppUtils.connectionError);
+        } else {
+            if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
+                scope.tardigrade_satellite = 'us-central-1';
+        }
+    };
 
     EditUriBackendConfig.loaders['oauth-base'] = function (scope) {
         scope.oauth_create_token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);

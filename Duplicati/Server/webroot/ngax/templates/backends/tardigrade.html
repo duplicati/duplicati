@@ -1,17 +1,24 @@
-<div class="input text">
+<div class="input select">
     <label for="tardigrade_satellite" translate>Satellite</label>
-    <input type="text" id="tardigrade_satellite" ng-model="$parent.tardigrade_satellite" placeholder="{{'us-central-1.tardigrade.io:7777'}}" />
+    <select name="tardigrade_satellite" id="tardigrade_satellite" ng-model="$parent.tardigrade_satellite"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in tardigrade_satellites | orderBy: k">
+        <option value="" translate translate-params-satellite="tardigrade_satellite_custom || ''">Custom Satellite ({{satellite}})
+        </option>
+    </select>
+
+    <input ng-hide="contains_value(tardigrade_satellites, tardigrade_satellite)" type="text" id="tardigrade_satellite_custom"
+           ng-model="$parent.tardigrade_satellite_custom" placeholder="{{'Custom Satellite' | translate}}"/>
 </div>
 <div class="input text">
-    <label for="tardigrade_api_key" translate>API-key</label>
-    <input type="text" name="tardigrade_api_key" id="tardigrade_api_key" ng-model="$parent.tardigrade_api_key" placeholder="{{'The API-key' | translate}}" />
+    <label for="tardigrade_api_key" translate>API key</label>
+    <input type="text" name="tardigrade_api_key" id="tardigrade_api_key" ng-model="$parent.tardigrade_api_key" placeholder="{{'The API key' | translate}}" />
 </div>
 <div class="input password">
-    <label for="tardigrade_secret" translate>Secret</label>
-    <input type="password" name="tardigrade_secret" id="tardigrade_secret" ng-model="$parent.tardigrade_secret" placeholder="{{'The secret' | translate}}" />
+    <label for="tardigrade_secret" translate>Encryption passphrase</label>
+    <input type="password" name="tardigrade_secret" id="tardigrade_secret" ng-model="$parent.tardigrade_secret" placeholder="{{'The encryption passphrase' | translate}}" />
 </div>
 <div class="input text">
-    <label for="tardigrade_shared_access" translate>Shared access</label>
-    <input type="text" name="tardigrade_shared_access" id="tardigrade_shared_access" ng-model="$parent.tardigrade_shared_access" placeholder="{{'The shared access key instead of the info above'}}" />
+    <label for="tardigrade_shared_access" translate>Access grant</label>
+    <input type="text" name="tardigrade_shared_access" id="tardigrade_shared_access" ng-model="$parent.tardigrade_shared_access" placeholder="{{'The access grant instead of the info above'}}" />
 </div>
 <div>You may provide the satellite, API-key and secret or a shared access (contains all that info encrypted). If a shared access is provided, the other information is ignored.</div>
