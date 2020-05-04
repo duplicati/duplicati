@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using uplink.NET.Models;
 
 namespace Duplicati.Library.Backend.Tardigrade
 {
@@ -14,6 +15,12 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_API_KEY = "tardigrade-api-key";
         private const string TARDIGRADE_SECRET = "tardigrade-secret";
         private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared-access";
+
+        private readonly string _satellite;
+        private readonly string _api_key;
+        private readonly string _secret;
+        private readonly string _shared_access;
+        private Access _access;
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
@@ -25,6 +32,24 @@ namespace Duplicati.Library.Backend.Tardigrade
         // This constructor is needed by the BackendLoader.
         public Tardigrade(string url, Dictionary<string, string> options)
         {
+            var uri = new Utility.Uri(url);
+
+            if (options.ContainsKey(TARDIGRADE_API_KEY))
+            {
+                _shared_access = options[TARDIGRADE_SHARED_ACCESS];
+                _access = new Access(_shared_access);
+            }
+            else
+            {
+                _satellite = uri.Host + ":" + uri.Port;
+
+                if (options.ContainsKey(TARDIGRADE_API_KEY))
+                    _api_key = options[TARDIGRADE_API_KEY];
+                if (options.ContainsKey(TARDIGRADE_SECRET))
+                    _secret = options[TARDIGRADE_SECRET];
+
+                _access = new Access(_satellite, _api_key, _secret);
+            }
         }
 
         public string DisplayName
@@ -89,7 +114,7 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public void Test()
         {
-            throw new NotImplementedException();
+            this.TestList();
         }
     }
 }
