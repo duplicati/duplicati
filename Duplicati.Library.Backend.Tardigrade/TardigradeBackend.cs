@@ -47,7 +47,10 @@ namespace Duplicati.Library.Backend.Tardigrade
             }
             else
             {
-                _satellite = uri.Host + ":" + uri.Port;
+                if (KNOWN_TARDIGRADE_SATELLITES.Select(s => s.Value == uri.Host).Count() == 1)
+                    _satellite = uri.Host + ".tardigrade.io:7777";
+                else
+                    _satellite = uri.Host + ":" + uri.Port;
 
                 if (options.ContainsKey(TARDIGRADE_API_KEY))
                     _api_key = options[TARDIGRADE_API_KEY];
@@ -70,7 +73,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, "us-central-1.tardigrade.io:7777"),
+                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, "us-central-1"),
                     new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAPIKeyDescriptionShort, Strings.Tardigrade.TardigradeAPIKeyDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Tardigrade.TardigradeSecretDescriptionShort, Strings.Tardigrade.TardigradeSecretDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSharedAccessDescriptionShort, Strings.Tardigrade.TardigradeSharedAccessDescriptionLong),
