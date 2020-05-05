@@ -19,10 +19,13 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
         private const string TARDIGRADE_FOLDER = "tardigrade-folder";
 
+        private readonly string _auth_method;
         private readonly string _satellite;
         private readonly string _api_key;
         private readonly string _secret;
         private readonly string _shared_access;
+        private readonly string _bucket;
+        private readonly string _folder;
         private Access _access;
 
         public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
@@ -48,7 +51,9 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             var uri = new Utility.Uri(url);
 
-            if (options.ContainsKey(TARDIGRADE_API_KEY) && !string.IsNullOrEmpty(options[TARDIGRADE_SHARED_ACCESS]))
+            _auth_method = options[TARDIGRADE_AUTH_METHOD];
+
+            if (_auth_method == "Access grant")
             {
                 _shared_access = options[TARDIGRADE_SHARED_ACCESS];
                 _access = new Access(_shared_access);
@@ -67,6 +72,14 @@ namespace Duplicati.Library.Backend.Tardigrade
 
                 _access = new Access(_satellite, _api_key, _secret);
             }
+
+            if (options.ContainsKey(TARDIGRADE_BUCKET))
+                _bucket = options[TARDIGRADE_BUCKET];
+            else
+                _bucket = "duplicati";
+
+            if (options.ContainsKey(TARDIGRADE_FOLDER))
+                _folder = options[TARDIGRADE_FOLDER];
         }
 
         public string DisplayName
