@@ -28,6 +28,11 @@ namespace Duplicati.Library.Backend.Tardigrade
             { "Europe West 1", "europe-west-1" },
         };
 
+        public static readonly Dictionary<string, string> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+            { "API key", "API key" },
+            { "Access grant", "Access grant" },
+        };
+
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public Tardigrade()

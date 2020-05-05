@@ -15,7 +15,8 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public enum ConfigType
         {
-            Satellites
+            Satellites,
+            AuthenticationMethods
         }
 
         public TardigradeConfig()
@@ -57,6 +58,8 @@ namespace Duplicati.Library.Backend.Tardigrade
             {
                 case ConfigType.Satellites:
                     return Tardigrade.KNOWN_TARDIGRADE_SATELLITES;
+                case ConfigType.AuthenticationMethods:
+                    return Tardigrade.KNOWN_AUTHENTICATION_METHODS;
                 default:
                     return Tardigrade.KNOWN_TARDIGRADE_SATELLITES;
             }

@@ -168,6 +168,18 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
                 scope.tardigrade_satellite = 'us-central-1';
         }
+		
+		if (scope.tardigrade_auth_methods == null) {
+            AppService.post('/webmodule/tardigrade-getconfig', {'tardigrade-config': 'AuthenticationMethods'}).then(function (data) {
+                scope.tardigrade_auth_methods = data.data.Result;
+                if (scope.tardigrade_auth_method == undefined)
+                    scope.tardigrade_auth_method = 'API key';
+
+            }, AppUtils.connectionError);
+        } else {
+            if (scope.tardigrade_auth_method == undefined)
+                scope.tardigrade_auth_method = 'API key';
+        }
     };
 
     EditUriBackendConfig.loaders['oauth-base'] = function (scope) {
@@ -703,6 +715,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 	
 	EditUriBackendConfig.builders['tardigrade'] = function (scope) {
         var opts = {
+			'tardigrade-auth-method': scope.tardigrade_auth_method,
             'tardigrade-satellite': scope.tardigrade_satellite,
             'tardigrade-api-key': scope.tardigrade_api_key,
             'tardigrade-secret': scope.tardigrade_secret,
@@ -711,9 +724,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
-        var url = AppUtils.format('{0}://{1}/config{2}',
+        var url = AppUtils.format('{0}://tardigrade.io/config{2}',
             scope.Backend.Key,
-            scope.tardigrade_satellite || '',
             AppUtils.encodeDictAsUrl(opts)
         );
 
