@@ -5,7 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using uplink.NET.Interfaces;
 using uplink.NET.Models;
+using uplink.NET.Services;
 
 namespace Duplicati.Library.Backend.Tardigrade
 {
@@ -27,6 +29,8 @@ namespace Duplicati.Library.Backend.Tardigrade
         private readonly string _bucket;
         private readonly string _folder;
         private Access _access;
+        private IBucketService _bucketService;
+        private IObjectService _objectService;
 
         public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
             { "US Central 1", "us-central-1" },
@@ -53,6 +57,8 @@ namespace Duplicati.Library.Backend.Tardigrade
 
             _auth_method = options[TARDIGRADE_AUTH_METHOD];
 
+            Access.SetTempDirectory(System.IO.Path.GetTempPath());
+
             if (_auth_method == "Access grant")
             {
                 _shared_access = options[TARDIGRADE_SHARED_ACCESS];
@@ -60,10 +66,9 @@ namespace Duplicati.Library.Backend.Tardigrade
             }
             else
             {
-                if (KNOWN_TARDIGRADE_SATELLITES.Select(s => s.Value == uri.Host).Count() == 1)
-                    _satellite = uri.Host + ".tardigrade.io:7777";
-                else
-                    _satellite = uri.Host + ":" + uri.Port;
+                _satellite = options[TARDIGRADE_SATELLITE];
+                if (KNOWN_TARDIGRADE_SATELLITES.Where(s => s.Value == _satellite).Count() == 1)
+                    _satellite = _satellite + ".tardigrade.io:7777";
 
                 if (options.ContainsKey(TARDIGRADE_API_KEY))
                     _api_key = options[TARDIGRADE_API_KEY];
@@ -72,6 +77,9 @@ namespace Duplicati.Library.Backend.Tardigrade
 
                 _access = new Access(_satellite, _api_key, _secret);
             }
+
+            _bucketService = new BucketService(_access);
+            _objectService = new ObjectService(_access);
 
             if (options.ContainsKey(TARDIGRADE_BUCKET))
                 _bucket = options[TARDIGRADE_BUCKET];
@@ -127,7 +135,15 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            if (_objectService != null)
+                _objectService = null;
+            if (_bucketService != null)
+                _bucketService = null;
+            if (_access != null)
+            {
+                _access.Dispose();
+                _access = null;
+            }
         }
 
         public void Get(string remotename, string filename)
@@ -145,9 +161,32 @@ namespace Duplicati.Library.Backend.Tardigrade
             throw new NotImplementedException();
         }
 
-        public void Test()
+        public async void Test()
         {
-            this.TestList();
+            string testFileName = GetBasePath() + "duplicati_test.dat";
+
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), new byte[] { 1, 2, 3, 4 }, false);
+            await upload.StartUploadAsync();
+
+            var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false);
+            await download.StartDownloadAsync();
+
+            await _objectService.DeleteObjectAsync(bucket, testFileName);
+
+            if (download.Failed)
+                throw new Exception(download.ErrorMessage);
+
+            if(download.DownloadedBytes[0] != 1 &&
+               download.DownloadedBytes[1] != 2 &&
+               download.DownloadedBytes[2] != 3 &&
+               download.DownloadedBytes[3] != 4)
+                throw new Exception(Strings.Tardigrade.TestConnectionFailed);
+        }
+
+        private string GetBasePath()
+        {
+            return "/" + _folder;
         }
     }
 }

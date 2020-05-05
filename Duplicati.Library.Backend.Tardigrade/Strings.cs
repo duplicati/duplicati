@@ -11,6 +11,7 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string DisplayName { get { return LC.L(@"Tardigrade Decentralized Cloud Storage"); } }
         public static string Description { get { return LC.L(@"This backend can read and write data to the Tardigrade Decentralized Cloud Storage."); } }
+        public static string TestConnectionFailed { get { return LC.L(@"The connection-test failed."); } }
         public static string TardigradeAuthMethodDescriptionShort { get { return LC.L(@"The authentication method"); } }
         public static string TardigradeAuthMethodDescriptionLong { get { return LC.L(@"The authentication method describes which way to use to connect to the network - either via API key or via an access grant."); } }
         public static string TardigradeSatelliteDescriptionShort { get { return LC.L(@"The satellite"); } }

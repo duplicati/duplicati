@@ -732,7 +732,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
-        var url = AppUtils.format('{0}://tardigrade.io/config{2}',
+        var url = AppUtils.format('{0}://tardigrade.io/config{1}',
             scope.Backend.Key,
             AppUtils.encodeDictAsUrl(opts)
         );
