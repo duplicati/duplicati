@@ -11,10 +11,13 @@ namespace Duplicati.Library.Backend.Tardigrade
 {
     public class Tardigrade : IBackend
     {
+        private const string TARDIGRADE_AUTH_METHOD = "tardigrade-auth-method";
         private const string TARDIGRADE_SATELLITE = "tardigrade-satellite";
         private const string TARDIGRADE_API_KEY = "tardigrade-api-key";
         private const string TARDIGRADE_SECRET = "tardigrade-secret";
         private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared-access";
+        private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
+        private const string TARDIGRADE_FOLDER = "tardigrade-folder";
 
         private readonly string _satellite;
         private readonly string _api_key;
@@ -78,10 +81,13 @@ namespace Duplicati.Library.Backend.Tardigrade
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                    new CommandLineArgument(TARDIGRADE_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAuthMethodDescriptionShort, Strings.Tardigrade.TardigradeAuthMethodDescriptionLong, "API key"),
                     new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, "us-central-1"),
                     new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAPIKeyDescriptionShort, Strings.Tardigrade.TardigradeAPIKeyDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Tardigrade.TardigradeSecretDescriptionShort, Strings.Tardigrade.TardigradeSecretDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSharedAccessDescriptionShort, Strings.Tardigrade.TardigradeSharedAccessDescriptionLong),
+                    new CommandLineArgument(TARDIGRADE_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeBucketDescriptionShort, Strings.Tardigrade.TardigradeBucketDescriptionLong),
+                    new CommandLineArgument(TARDIGRADE_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeFolderDescriptionShort, Strings.Tardigrade.TardigradeFolderDescriptionLong),
                 });
             }
         }

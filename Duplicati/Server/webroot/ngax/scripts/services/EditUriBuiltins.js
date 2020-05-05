@@ -482,6 +482,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     }
 	
 	EditUriBackendConfig.parsers['tardigrade'] = function (scope, module, server, port, path, options) {
+        if (options['--tardigrade-auth-method'])
+            scope.tardigrade_auth_method = options['--tardigrade-auth-method'];
         if (options['--tardigrade-satellite'])
             scope.tardigrade_satellite = options['--tardigrade-satellite'];
         if (options['--tardigrade-api-key'])
@@ -490,8 +492,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.tardigrade_secret = options['--tardigrade-secret'];
 		if (options['--tardigrade-shared-access'])
             scope.tardigrade_shared_access = options['--tardigrade-shared-access'];
+		if (options['--tardigrade-bucket'])
+            scope.tardigrade_bucket = options['--tardigrade-bucket'];
+		if (options['--tardigrade-folder'])
+            scope.tardigrade_folder = options['--tardigrade-folder'];
 
-        var nukeopts = ['--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-shared-access'];
+        var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
@@ -719,7 +725,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'tardigrade-satellite': scope.tardigrade_satellite,
             'tardigrade-api-key': scope.tardigrade_api_key,
             'tardigrade-secret': scope.tardigrade_secret,
-            'tardigrade-shared-access': scope.tardigrade_shared_access
+            'tardigrade-shared-access': scope.tardigrade_shared_access,
+			'tardigrade-bucket': scope.tardigrade_bucket,
+			'tardigrade-folder': scope.tardigrade_folder
         };
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
