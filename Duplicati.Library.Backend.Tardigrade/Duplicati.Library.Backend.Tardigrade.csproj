@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -41,8 +42,8 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="uplink.NET, Version=1.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\uplink.NET.2.0.5\lib\netstandard2.0\uplink.NET.dll</HintPath>
+    <Reference Include="uplink.NET, Version=2.1.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\uplink.NET.2.1.1\lib\netstandard2.0\uplink.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -73,11 +74,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\uplink.NET.2.0.5\build\uplink.NET.targets" Condition="Exists('..\packages\uplink.NET.2.0.5\build\uplink.NET.targets')" />
+  <Import Project="..\packages\uplink.NET.2.1.1\build\net40\uplink.NET.targets" Condition="Exists('..\packages\uplink.NET.2.1.1\build\net40\uplink.NET.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>Dieses Projekt verweist auf mindestens ein NuGet-Paket, das auf diesem Computer fehlt. Verwenden Sie die Wiederherstellung von NuGet-Paketen, um die fehlenden Dateien herunterzuladen. Weitere Informationen finden Sie unter "http://go.microsoft.com/fwlink/?LinkID=322105". Die fehlende Datei ist "{0}".</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\uplink.NET.2.0.5\build\uplink.NET.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\uplink.NET.2.0.5\build\uplink.NET.targets'))" />
+    <Error Condition="!Exists('..\packages\uplink.NET.2.1.1\build\net40\uplink.NET.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\uplink.NET.2.1.1\build\net40\uplink.NET.targets'))" />
   </Target>
 </Project>

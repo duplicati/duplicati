@@ -161,12 +161,20 @@ namespace Duplicati.Library.Backend.Tardigrade
             throw new NotImplementedException();
         }
 
-        public async void Test()
+        public void Test()
+        {
+            var testTask = TestAsync();
+            testTask.Wait(10000);
+            if(!testTask.Result)
+                throw new Exception(Strings.Tardigrade.TestConnectionFailed);
+        }
+
+        private async Task<bool> TestAsync()
         {
             string testFileName = GetBasePath() + "duplicati_test.dat";
 
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), new byte[] { 1, 2, 3, 4 }, false);
+            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false);
             await upload.StartUploadAsync();
 
             var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false);
@@ -174,19 +182,27 @@ namespace Duplicati.Library.Backend.Tardigrade
 
             await _objectService.DeleteObjectAsync(bucket, testFileName);
 
-            if (download.Failed)
+            if (download.Failed || download.BytesReceived != 256)
                 throw new Exception(download.ErrorMessage);
-
-            if(download.DownloadedBytes[0] != 1 &&
-               download.DownloadedBytes[1] != 2 &&
-               download.DownloadedBytes[2] != 3 &&
-               download.DownloadedBytes[3] != 4)
-                throw new Exception(Strings.Tardigrade.TestConnectionFailed);
+            
+            return true;
         }
 
         private string GetBasePath()
         {
-            return "/" + _folder;
+            if (!string.IsNullOrEmpty(_folder))
+                return "/" + _folder + "/";
+            else
+                return "/";
+        }
+
+        private byte[] GetRandomBytes(long length)
+        {
+            byte[] bytes = new byte[length];
+            Random rand = new Random();
+            rand.NextBytes(bytes);
+
+            return bytes;
         }
     }
 }
