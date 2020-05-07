@@ -47,6 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TardigradeFile.cs" />
     <Compile Include="Strings.cs" />
     <Compile Include="TardigradeBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

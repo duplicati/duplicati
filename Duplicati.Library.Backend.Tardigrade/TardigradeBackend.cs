@@ -1,6 +1,7 @@
 ﻿using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -148,17 +149,54 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public void Get(string remotename, string filename)
         {
-            throw new NotImplementedException();
+            var getTask = GetAsync(remotename, filename);
+            getTask.Wait();
+        }
+
+        public async Task GetAsync(string remotename, string filename)
+        {
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false);
+            await download.StartDownloadAsync();
+
+            if(download.Completed)
+            {
+                using (FileStream file = new FileStream(filename, FileMode.Create))
+                {
+                    await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived);
+                    await file.FlushAsync();
+                }
+            }
         }
 
         public IEnumerable<IFileEntry> List()
         {
-            throw new NotImplementedException();
+            var listTask = ListAsync();
+            listTask.Wait();
+            return listTask.Result;
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        private async Task<IEnumerable<IFileEntry>> ListAsync()
         {
-            throw new NotImplementedException();
+            List<TardigradeFile> files = new List<TardigradeFile>();
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions() { Recursive = true, System = true, Custom = true });
+
+            foreach(var obj in objects.Items)
+            {
+                TardigradeFile file = new TardigradeFile(obj);
+                file.Name = file.Name.Replace(GetBasePath(), "");
+                files.Add(file);
+            }
+
+            return files;
+        }
+
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        {
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), new FileStream(filename, FileMode.Open), false);
+            await upload.StartUploadAsync();
         }
 
         public void Test()
