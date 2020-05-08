@@ -62,12 +62,16 @@ namespace Duplicati.Library.Backend.Tardigrade
 
             if (_auth_method == "Access grant")
             {
+                //Create an access from the access grant
                 _shared_access = options[TARDIGRADE_SHARED_ACCESS];
                 _access = new Access(_shared_access);
             }
             else
             {
+                //Create an access for a satellite, API key and encryption passphrase
                 _satellite = options[TARDIGRADE_SATELLITE];
+
+                //If the satellite is from the list of known satellites, attach the domain and port
                 if (KNOWN_TARDIGRADE_SATELLITES.Where(s => s.Value == _satellite).Count() == 1)
                     _satellite = _satellite + ".tardigrade.io:7777";
 
@@ -82,6 +86,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             _bucketService = new BucketService(_access);
             _objectService = new ObjectService(_access);
 
+            //If no bucket was provided use the default "duplicati"-bucket
             if (options.ContainsKey(TARDIGRADE_BUCKET))
                 _bucket = options[TARDIGRADE_BUCKET];
             else
@@ -126,12 +131,19 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public void CreateFolder()
         {
-            throw new NotImplementedException();
+            //Tardigrade has no folders
         }
 
         public void Delete(string remotename)
         {
-            throw new NotImplementedException();
+            var deleteTask = DeleteAsync(remotename);
+            deleteTask.Wait();
+        }
+
+        public async Task DeleteAsync(string remotename)
+        {
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            await _objectService.DeleteObjectAsync(bucket, remotename);
         }
 
         public void Dispose()
@@ -207,6 +219,13 @@ namespace Duplicati.Library.Backend.Tardigrade
                 throw new Exception(Strings.Tardigrade.TestConnectionFailed);
         }
 
+        /// <summary>
+        /// Test the connection by:
+        /// - creating the bucket (if it not already exists)
+        /// - uploading 256 random bytes to a test-file
+        /// - downloading the file back and expecting 256 bytes
+        /// </summary>
+        /// <returns>true, if the test was successfull or and exception</returns>
         private async Task<bool> TestAsync()
         {
             string testFileName = GetBasePath() + "duplicati_test.dat";
@@ -226,6 +245,10 @@ namespace Duplicati.Library.Backend.Tardigrade
             return true;
         }
 
+        /// <summary>
+        /// Gets the base path - depending on there is a folder set or not
+        /// </summary>
+        /// <returns>The base path within a bucket where the backup shall be placed</returns>
         private string GetBasePath()
         {
             if (!string.IsNullOrEmpty(_folder))
@@ -234,6 +257,11 @@ namespace Duplicati.Library.Backend.Tardigrade
                 return "/";
         }
 
+        /// <summary>
+        /// Creates some random bytes with the given length - just for testing the connection
+        /// </summary>
+        /// <param name="length">The length of the bytes to create</param>
+        /// <returns>A byte-array with the given length</returns>
         private byte[] GetRandomBytes(long length)
         {
             byte[] bytes = new byte[length];
