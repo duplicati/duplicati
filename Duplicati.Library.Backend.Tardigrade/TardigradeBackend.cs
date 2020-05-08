@@ -207,6 +207,9 @@ namespace Duplicati.Library.Backend.Tardigrade
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            CustomMetadata custom = new CustomMetadata();
+            custom.Entries.Add(new CustomMetadataEntry() { Key = TardigradeFile.TARDIGRADE_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
+            custom.Entries.Add(new CustomMetadataEntry() { Key = TardigradeFile.TARDIGRADE_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), new FileStream(filename, FileMode.Open), false);
             await upload.StartUploadAsync();
         }
