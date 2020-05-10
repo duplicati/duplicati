@@ -186,6 +186,11 @@ CREATE UNIQUE INDEX "BlockHashSize" ON "Block" ("Hash", "Size");
 /* Add index for faster volume based block access (for compacting) */
 CREATE INDEX "Block_IndexByVolumeId" ON "Block" ("VolumeID");
 
+/* Speedup for recreate database */
+CREATE INDEX "BlockSize" ON "Block" ("Size");
+CREATE INDEX "BlockHashVolumeID" ON "Block" ("Hash", "VolumeID");
+
+
 /*
 The deleted block hashes,
 mapped to the containing file,
@@ -275,4 +280,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (10);
+INSERT INTO "Version" ("Version") VALUES (11);
