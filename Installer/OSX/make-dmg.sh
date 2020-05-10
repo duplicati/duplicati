@@ -9,7 +9,7 @@ WC_DIR=wc
 TEMPLATE_DMG=template.dmg
 OUTPUT_DMG=Duplicati.dmg
 OUTPUT_PKG=Duplicati.pkg
-UNWANTED_FILES="AlphaVSS.Common.dll AlphaFS.dll AlphaFS.dll.config AlphaVSS.Common.dll.config appindicator-sharp.dll SQLite win-tools alphavss control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons"
+UNWANTED_FILES="appindicator-sharp.dll SQLite win-tools control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons"
 
 # These are set via the macos-gatekeeper file
 CODESIGN_IDENTITY=
