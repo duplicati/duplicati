@@ -292,8 +292,8 @@ namespace Duplicati.Server
                                          select n.Backup;
                                 var tastTemp = m_worker.CurrentTask;
                                 if (tastTemp != null && tastTemp.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup)
-                                    tmplst.Union(new [] { tastTemp.Backup });
-                            
+                                    tmplst = tmplst.Union(new [] { tastTemp.Backup });
+
                                 //If it is not already in queue, put it there
                                 if (!tmplst.Any(x => x.ID == id))
                                 {
