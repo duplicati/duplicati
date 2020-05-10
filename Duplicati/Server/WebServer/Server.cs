@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using HttpServer.HttpModules;
@@ -398,11 +399,11 @@ namespace Duplicati.Server.WebServer
                 }
 
                 // Check the hostnames we always allow
-                if (Array.IndexOf(DEFAULT_ALLOWED, host) >= 0)
+                if (DEFAULT_ALLOWED.Contains(host, StringComparer.OrdinalIgnoreCase))
                     return false;
 
                 // Then the user specified ones
-                if (h != null && Array.IndexOf(h, host) >= 0)
+                if (h != null && h.Contains(host, StringComparer.OrdinalIgnoreCase))
                     return false;
 
                 // Disable checks if we have an asterisk
