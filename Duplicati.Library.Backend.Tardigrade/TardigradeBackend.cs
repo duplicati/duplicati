@@ -71,12 +71,18 @@ namespace Duplicati.Library.Backend.Tardigrade
 
                 //If the satellite is from the list of known satellites, attach the domain and port
                 if (KNOWN_TARDIGRADE_SATELLITES.Where(s => s.Value == _satellite).Count() == 1)
+                {
                     _satellite = _satellite + ".tardigrade.io:7777";
+                }
 
                 if (options.ContainsKey(TARDIGRADE_API_KEY))
+                {
                     _api_key = options[TARDIGRADE_API_KEY];
+                }
                 if (options.ContainsKey(TARDIGRADE_SECRET))
+                {
                     _secret = options[TARDIGRADE_SECRET];
+                }
 
                 _access = new Access(_satellite, _api_key, _secret);
             }
@@ -86,12 +92,18 @@ namespace Duplicati.Library.Backend.Tardigrade
 
             //If no bucket was provided use the default "duplicati"-bucket
             if (options.ContainsKey(TARDIGRADE_BUCKET))
+            {
                 _bucket = options[TARDIGRADE_BUCKET];
+            }
             else
+            {
                 _bucket = "duplicati";
+            }
 
             if (options.ContainsKey(TARDIGRADE_FOLDER))
+            {
                 _folder = options[TARDIGRADE_FOLDER];
+            }
         }
 
         public string DisplayName
@@ -160,9 +172,13 @@ namespace Duplicati.Library.Backend.Tardigrade
         public void Dispose()
         {
             if (_objectService != null)
+            {
                 _objectService = null;
+            }
             if (_bucketService != null)
+            {
                 _bucketService = null;
+            }
             if (_access != null)
             {
                 _access.Dispose();
@@ -230,7 +246,9 @@ namespace Duplicati.Library.Backend.Tardigrade
             var testTask = TestAsync();
             testTask.Wait(10000);
             if (!testTask.Result)
+            {
                 throw new Exception(Strings.Tardigrade.TestConnectionFailed);
+            }
         }
 
         /// <summary>
@@ -254,7 +272,9 @@ namespace Duplicati.Library.Backend.Tardigrade
             await _objectService.DeleteObjectAsync(bucket, testFileName);
 
             if (download.Failed || download.BytesReceived != 256)
+            {
                 throw new Exception(download.ErrorMessage);
+            }
 
             return true;
         }

@@ -43,11 +43,15 @@ namespace Duplicati.Library.Backend.Tardigrade
             string k;
             options.TryGetValue(KEY_CONFIGTYPE, out k);
             if (string.IsNullOrWhiteSpace(k))
+            {
                 k = DEFAULT_CONFIG_TYPE_STR;
+            }
 
             ConfigType ct;
             if (!Enum.TryParse<ConfigType>(k, true, out ct))
+            {
                 ct = DEFAULT_CONFIG_TYPE;
+            }
 
             switch (ct)
             {
