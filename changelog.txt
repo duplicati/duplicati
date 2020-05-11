@@ -1,3 +1,23 @@
+2020-05-11 - 2.0.5.106_canary_2020-05-11
+==========
+NOTE: this version updates the database version from v10 to v11!
+
+Downgrade from this version requires manually adjusting the version number in the database,
+The additions can be re-applied if the database is upgraded again later.
+
+* Added certificate dependency to debian packages, thanks @borfast
+* Sorting files and folders in the WEB UI, thanks @drwtsn32x
+* Code cleanup, unused code removal and more, thanks @warwickmm
+* Updated exclusion folder list, thanks @drwtsn32x
+* Fixed spelling issues for CLI help, thanks @comradekingu
+* Fixed the hostname check to be case-insensitive, thanks @warwickmm
+* No longer removes AlphaFS and AlphaVSS files from non-Windows packages, thanks @warwickmm
+* Fixed a case where backups could run immediately and ignore the scheduled time, thanks @warwickmm
+* Added a database index that signficantly improves database rebuilds, thanks @warwickmm
+* Added MyCloudPlace as an S3 provider, thanks @cedbossneo
+* Improved errors from Json source, thanks @kenkendk
+* Changed mentions of "Amazon S3" to "S3 compatible", thanks @kenkendk
+
 2020-03-25 - 2.0.5.104_canary_2020-03-25
 ==========
 * Improved log messags when using retetion rules, thanks @warwickmm
