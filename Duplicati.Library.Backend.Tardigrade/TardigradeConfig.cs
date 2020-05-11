@@ -19,11 +19,6 @@ namespace Duplicati.Library.Backend.Tardigrade
             AuthenticationMethods
         }
 
-        public TardigradeConfig()
-        {
-
-        }
-
         #region IWebModule implementation
 
         public string Key { get { return "tardigrade-getconfig"; } }

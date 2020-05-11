@@ -9,8 +9,8 @@ namespace Duplicati.Library.Backend.Tardigrade
 {
     public class TardigradeFile : IFileEntry
     {
-        public const string TARDIGRADE_LAST_ACCESS = "DUPLICATI:LAST-ACCESS";
-        public const string TARDIGRADE_LAST_MODIFICATION = "DUPLICATI:LAST-MODIFICATION";
+        public static readonly string TARDIGRADE_LAST_ACCESS = "DUPLICATI:LAST-ACCESS";
+        public static readonly string TARDIGRADE_LAST_MODIFICATION = "DUPLICATI:LAST-MODIFICATION";
         public bool IsFolder { get; set; }
 
         public DateTime LastAccess { get; set; }

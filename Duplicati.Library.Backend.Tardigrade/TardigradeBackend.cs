@@ -22,12 +22,11 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared-access";
         private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
         private const string TARDIGRADE_FOLDER = "tardigrade-folder";
+        private const string PROTOCOL_KEY = "tardigrade";
 
-        private readonly string _auth_method;
         private readonly string _satellite;
         private readonly string _api_key;
         private readonly string _secret;
-        private readonly string _shared_access;
         private readonly string _bucket;
         private readonly string _folder;
         private Access _access;
@@ -55,17 +54,15 @@ namespace Duplicati.Library.Backend.Tardigrade
         // This constructor is needed by the BackendLoader.
         public Tardigrade(string url, Dictionary<string, string> options)
         {
-            var uri = new Utility.Uri(url);
-
-            _auth_method = options[TARDIGRADE_AUTH_METHOD];
+            var auth_method = options[TARDIGRADE_AUTH_METHOD];
 
             Access.SetTempDirectory(System.IO.Path.GetTempPath());
 
-            if (_auth_method == "Access grant")
+            if (auth_method == "Access grant")
             {
                 //Create an access from the access grant
-                _shared_access = options[TARDIGRADE_SHARED_ACCESS];
-                _access = new Access(_shared_access);
+                var shared_access = options[TARDIGRADE_SHARED_ACCESS];
+                _access = new Access(shared_access);
             }
             else
             {
@@ -102,7 +99,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             get { return Strings.Tardigrade.DisplayName; }
         }
 
-        public string ProtocolKey => "tardigrade";
+        public string ProtocolKey => PROTOCOL_KEY;
 
         public IList<ICommandLineArgument> SupportedCommands
         {
@@ -132,8 +129,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             get
             {
-                var uri = new Utility.Uri(_satellite);
-                return new string[] { uri.Host };
+                return new string[0];
             }
         }
 
@@ -191,7 +187,7 @@ namespace Duplicati.Library.Backend.Tardigrade
                 using (FileStream file = new FileStream(filename, FileMode.Create))
                 {
                     await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived);
-                    await file.FlushAsync();
+                    await file.FlushAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -207,7 +203,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             List<TardigradeFile> files = new List<TardigradeFile>();
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions() { Recursive = true, System = true, Custom = true });
+            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true });
 
             foreach (var obj in objects.Items)
             {
@@ -223,8 +219,8 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
             CustomMetadata custom = new CustomMetadata();
-            custom.Entries.Add(new CustomMetadataEntry() { Key = TardigradeFile.TARDIGRADE_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            custom.Entries.Add(new CustomMetadataEntry() { Key = TardigradeFile.TARDIGRADE_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
+            custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
+            custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), new FileStream(filename, FileMode.Open), false);
             await upload.StartUploadAsync();
         }
@@ -280,7 +276,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         /// </summary>
         /// <param name="length">The length of the bytes to create</param>
         /// <returns>A byte-array with the given length</returns>
-        private byte[] GetRandomBytes(long length)
+        private static byte[] GetRandomBytes(long length)
         {
             byte[] bytes = new byte[length];
             Random rand = new Random();
