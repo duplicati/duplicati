@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -127,7 +128,14 @@ namespace Duplicati.Library.Backend.Tardigrade
             }
         }
 
-        public string[] DNSName => throw new NotImplementedException();
+        public string[] DNSName
+        {
+            get
+            {
+                var uri = new Utility.Uri(_satellite);
+                return new string[] { uri.Host };
+            }
+        }
 
         public void CreateFolder()
         {
@@ -142,8 +150,15 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public async Task DeleteAsync(string remotename)
         {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            await _objectService.DeleteObjectAsync(bucket, remotename);
+            try
+            {
+                var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+                await _objectService.DeleteObjectAsync(bucket, GetBasePath() + remotename);
+            }
+            catch (Exception root)
+            {
+                throw new FileMissingException(root);
+            }
         }
 
         public void Dispose()
@@ -171,7 +186,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false);
             await download.StartDownloadAsync();
 
-            if(download.Completed)
+            if (download.Completed)
             {
                 using (FileStream file = new FileStream(filename, FileMode.Create))
                 {
@@ -194,7 +209,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
             var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions() { Recursive = true, System = true, Custom = true });
 
-            foreach(var obj in objects.Items)
+            foreach (var obj in objects.Items)
             {
                 TardigradeFile file = new TardigradeFile(obj);
                 file.Name = file.Name.Replace(GetBasePath(), "");
@@ -218,7 +233,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             var testTask = TestAsync();
             testTask.Wait(10000);
-            if(!testTask.Result)
+            if (!testTask.Result)
                 throw new Exception(Strings.Tardigrade.TestConnectionFailed);
         }
 
@@ -244,7 +259,7 @@ namespace Duplicati.Library.Backend.Tardigrade
 
             if (download.Failed || download.BytesReceived != 256)
                 throw new Exception(download.ErrorMessage);
-            
+
             return true;
         }
 
