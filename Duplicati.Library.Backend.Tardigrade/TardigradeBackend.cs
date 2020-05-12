@@ -13,7 +13,7 @@ using uplink.NET.Services;
 
 namespace Duplicati.Library.Backend.Tardigrade
 {
-    public class Tardigrade : IBackend
+    public class Tardigrade : IBackend, IStreamingBackend
     {
         private const string TARDIGRADE_AUTH_METHOD = "tardigrade-auth-method";
         private const string TARDIGRADE_SATELLITE = "tardigrade-satellite";
@@ -208,6 +208,28 @@ namespace Duplicati.Library.Backend.Tardigrade
             }
         }
 
+        public void Get(string remotename, Stream stream)
+        {
+            var getTask = GetAsync(remotename, stream);
+            getTask.Wait();
+        }
+
+        public async Task GetAsync(string remotename, Stream stream)
+        {
+            int index = 0;
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false);
+            download.DownloadOperationProgressChanged += (op) =>
+            {
+                int newPartLength = (int)op.BytesReceived - index;
+                byte[] newPart = new byte[newPartLength];
+                Array.Copy(op.DownloadedBytes, index, newPart, 0, newPartLength);
+                stream.Write(newPart, 0, newPartLength);
+                index = index + newPartLength;
+            };
+            await download.StartDownloadAsync();
+        }
+
         public IEnumerable<IFileEntry> List()
         {
             var listTask = ListAsync();
@@ -233,11 +255,17 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
+            using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+                await PutAsync(remotename, fs, cancelToken);
+        }
+
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        {
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
             CustomMetadata custom = new CustomMetadata();
             custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), new FileStream(filename, FileMode.Open), false);
+            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, false);
             await upload.StartUploadAsync();
         }
 
