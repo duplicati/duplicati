@@ -34,9 +34,9 @@ namespace Duplicati.Library.Backend.Tardigrade
         private IObjectService _objectService;
 
         public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
-            { "US Central 1", "us-central-1" },
-            { "Asia East 1", "asia-east-1" },
-            { "Europe West 1", "europe-west-1" },
+            { "US Central 1", "us-central-1.tardigrade.io:7777" },
+            { "Asia East 1", "asia-east-1.tardigrade.io:7777" },
+            { "Europe West 1", "europe-west-1.tardigrade.io:7777" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
@@ -68,12 +68,6 @@ namespace Duplicati.Library.Backend.Tardigrade
             {
                 //Create an access for a satellite, API key and encryption passphrase
                 _satellite = options[TARDIGRADE_SATELLITE];
-
-                //If the satellite is from the list of known satellites, attach the domain and port
-                if (KNOWN_TARDIGRADE_SATELLITES.Where(s => s.Value == _satellite).Count() == 1)
-                {
-                    _satellite = _satellite + ".tardigrade.io:7777";
-                }
 
                 if (options.ContainsKey(TARDIGRADE_API_KEY))
                 {
@@ -119,7 +113,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(TARDIGRADE_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAuthMethodDescriptionShort, Strings.Tardigrade.TardigradeAuthMethodDescriptionLong, "API key"),
-                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, "us-central-1"),
+                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, "us-central-1.tardigrade.io:7777"),
                     new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAPIKeyDescriptionShort, Strings.Tardigrade.TardigradeAPIKeyDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Tardigrade.TardigradeSecretDescriptionShort, Strings.Tardigrade.TardigradeSecretDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSharedAccessDescriptionShort, Strings.Tardigrade.TardigradeSharedAccessDescriptionLong),
