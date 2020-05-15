@@ -333,10 +333,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoBackendverification)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
-
-                    var backupDatabase = new LocalBackupDatabase(database, m_options);
-                    var tempFilelistVolumes = backupDatabase.GetTemporaryFilelistVolumeNames(latestOnly: false);
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter, tempFilelistVolumes);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter, false, null);
                 }
 
                 //Figure out what files are to be patched, and what blocks are needed

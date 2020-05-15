@@ -18,6 +18,7 @@
 using System;
 using Duplicati.Library.Main.Database;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using Duplicati.Library.Interface;
 
@@ -68,6 +69,16 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 backend.FlushDbMessages();
+            }
+        }
+
+        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter backendWriter, bool latestVolumesOnly, IDbTransaction transaction)
+        {
+            if (!options.NoBackendverification)
+            {
+                LocalBackupDatabase backupDatabase = new LocalBackupDatabase(database, options);
+                IEnumerable<string> protectedFiles = backupDatabase.GetTemporaryFilelistVolumeNames(latestVolumesOnly, transaction);
+                FilelistProcessor.VerifyRemoteList(backend, options, database, backendWriter, protectedFiles);
             }
         }
 

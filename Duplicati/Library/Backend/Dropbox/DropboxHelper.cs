@@ -241,7 +241,20 @@ namespace Duplicati.Library.Backend
                         ThrowOverQuotaError();
                 }
 
-                throw new DropboxException() { errorJSON = JObject.Parse(json) };
+
+                JObject errJson = null;
+                try
+                {
+                    errJson = JObject.Parse(json);
+                }
+                catch
+                {
+                }
+
+                if (errJson != null)
+                    throw new DropboxException() { errorJSON = errJson };
+                else
+                    throw new InvalidDataException($"Non-json response: {json}");
             }
         }
     }
