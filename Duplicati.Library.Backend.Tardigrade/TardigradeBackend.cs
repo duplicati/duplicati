@@ -259,7 +259,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             CustomMetadata custom = new CustomMetadata();
             custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, false);
+            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false);
             await upload.StartUploadAsync();
         }
 
