@@ -29,6 +29,8 @@ namespace Duplicati.Server.Database
             "authid",
             "auth-password",
             "sia-password",
+            "tardigrade-secret",
+            "tardigrade-shared-access",
         };
 
         // Sensitive information that may be stored in Settings
