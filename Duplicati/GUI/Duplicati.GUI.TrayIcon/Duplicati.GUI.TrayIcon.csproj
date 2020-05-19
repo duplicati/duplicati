@@ -169,10 +169,6 @@
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati.Library.Backend.Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
-      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
-      <Name>Duplicati.Library.Backend.Tardigrade</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
       <Project>{b93e3bf0-daa7-49b7-b07d-0559c5816735}</Project>
       <Name>Duplicati.CommandLine.ConfigurationImporter</Name>
@@ -220,6 +216,10 @@
     <ProjectReference Include="..\..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
       <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
       <Name>Duplicati.Library.Backend.TahoeLAFS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
+      <Name>Duplicati.Library.Backend.Tardigrade</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
