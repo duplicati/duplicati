@@ -54,19 +54,19 @@
     <Compile Include="TardigradeConfig.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Duplicati\Library\Common\Duplicati.Library.Common.csproj">
+    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj">
       <Project>{d63e53e4-a458-4c2f-914d-92f715f58acf}</Project>
       <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj">
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
       <Project>{c5899f45-b0ff-483c-9d38-24a9fcaab237}</Project>
       <Name>Duplicati.Library.Interface</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Duplicati\Library\Localization\Duplicati.Library.Localization.csproj">
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
       <Project>{b68f2214-951f-4f78-8488-66e1ed3f50bf}</Project>
       <Name>Duplicati.Library.Localization</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj">
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
