@@ -308,9 +308,9 @@ namespace Duplicati.Library.Backend.Tardigrade
         private string GetBasePath()
         {
             if (!string.IsNullOrEmpty(_folder))
-                return "/" + _folder + "/";
+                return _folder + "/";
             else
-                return "/";
+                return "";
         }
 
         /// <summary>
