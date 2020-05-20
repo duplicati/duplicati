@@ -235,7 +235,8 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             List<TardigradeFile> files = new List<TardigradeFile>();
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true });
+            var prefix = GetBasePath();
+            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix });
 
             foreach (var obj in objects.Items)
             {
