@@ -62,10 +62,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati.Library.Backend.Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
-      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
-      <Name>Duplicati.Library.Backend.Tardigrade</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
       <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
       <Name>Duplicati.Library.Backend.AzureBlob</Name>
@@ -89,6 +85,10 @@
     <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
       <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
       <Name>Duplicati.Library.Backend.Sia</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
+      <Name>Duplicati.Library.Backend.Tardigrade</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
