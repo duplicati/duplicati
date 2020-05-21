@@ -1,3 +1,4 @@
+# 
 # Translators:
 # vita.brno, 2019
 # Pavel Borecki <pavel.borecki@gmail.com>, 2019
@@ -24,17 +25,21 @@ msgstr "…načítání…"
 msgid "API Key"
 msgstr "Klíč k aplikačnímu programovému rozhraní (API)"
 
-#: scripts/services/EditUriBuiltins.js:831 templates/backends/s3.html:54
-#: templates/backends/s3.html:55
+#: templates/backends/tardigrade.html:21
+msgid "API key"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
+#: templates/backends/s3.html:69
 msgid "AWS Access ID"
 msgstr "Přístupový identifikátor ke službe AWS"
 
-#: scripts/services/EditUriBuiltins.js:832 templates/backends/s3.html:58
-#: templates/backends/s3.html:59
+#: scripts/services/EditUriBuiltins.js:946 templates/backends/s3.html:72
+#: templates/backends/s3.html:74
 msgid "AWS Access Key"
 msgstr "Přístupový klíč ke službě AWS"
 
-#: scripts/services/EditUriBuiltins.js:138
+#: scripts/services/EditUriBuiltins.js:150
 msgid "AWS IAM Policy"
 msgstr "Zásady IAM služby AWS"
 
@@ -46,7 +51,7 @@ msgstr "O aplikaci"
 msgid "About {{appname}}"
 msgstr "O aplikaci {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:780 templates/backends/azure.html:11
+#: scripts/services/EditUriBuiltins.js:894 templates/backends/azure.html:11
 msgid "Access Key"
 msgstr "Přístupový klíč"
 
@@ -54,11 +59,15 @@ msgstr "Přístupový klíč"
 msgid "Access denied"
 msgstr "Přístup odepřen"
 
+#: templates/backends/tardigrade.html:29
+msgid "Access grant"
+msgstr ""
+
 #: templates/settings.html:5
 msgid "Access to user interface"
 msgstr "Přístup k uživatelskému rozhraní"
 
-#: scripts/services/EditUriBuiltins.js:779 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:893 templates/backends/azure.html:7
 msgid "Account name"
 msgstr "Název účtu"
 
@@ -99,12 +108,12 @@ msgstr "Přidat popis umístění"
 msgid "Added"
 msgstr "Přidáno"
 
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "Adjust bucket name?"
 msgstr "Přizpůsobit název „nádoby“ (bucket)?"
 
-#: scripts/services/EditUriBuiltins.js:760
+#: scripts/services/EditUriBuiltins.js:871
 msgid "Adjust path name?"
 msgstr "Přizpůsobit popis umístění?"
 
@@ -183,14 +192,21 @@ msgstr "Aplikace"
 msgid "As Command-line"
 msgstr "Jako příkazový řádek"
 
-#: scripts/services/EditUriBuiltins.js:713 templates/backends/amzcd.html:11
-#: templates/backends/amzcd.html:12 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:825 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
 #: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "AuthID"
+
+#: templates/backends/tardigrade.html:2
+msgid "Authentication method"
+msgstr ""
+
+#: templates/backends/tardigrade.html:5
+msgid "Authentication method ({{auth_method}})"
+msgstr ""
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
@@ -216,7 +232,7 @@ msgstr ""
 msgid "B2 Application Key"
 msgstr "Aplikační klíč ke službě B2"
 
-#: scripts/services/EditUriBuiltins.js:878
+#: scripts/services/EditUriBuiltins.js:991
 msgid "B2 Cloud Storage Account ID"
 msgstr "Identifikátor účtu u cloudového úložiště B2"
 
@@ -224,7 +240,7 @@ msgstr "Identifikátor účtu u cloudového úložiště B2"
 msgid "B2 Cloud Storage Application ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:879 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:992 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "Aplikační klíč ke cloudovému úložišti B2"
 
@@ -285,10 +301,14 @@ msgstr "Procházet"
 msgid "Browser default"
 msgstr "Výchozí nastavení webového prohlížeče"
 
-#: scripts/services/EditUriBuiltins.js:790
-#: scripts/services/EditUriBuiltins.js:830
-#: scripts/services/EditUriBuiltins.js:877
-#: scripts/services/EditUriBuiltins.js:887
+#: templates/backends/tardigrade.html:33
+msgid "Bucket"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:1004
+#: scripts/services/EditUriBuiltins.js:904
+#: scripts/services/EditUriBuiltins.js:944
+#: scripts/services/EditUriBuiltins.js:990
 msgid "Bucket Name"
 msgstr "Název „nádoby“ (bucket)"
 
@@ -296,13 +316,13 @@ msgstr "Název „nádoby“ (bucket)"
 msgid "Bucket create location"
 msgstr "Umístění ve kterém „nádobu“ (bucket) vytvořit"
 
-#: templates/backends/s3.html:26
+#: templates/backends/s3.html:29
 msgid "Bucket create region"
 msgstr "Oblast světa ve které „nádobu“ (bucket) vytvořit"
 
 #: templates/backends/b2.html:2 templates/backends/b2.html:3
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
-#: templates/backends/s3.html:19 templates/backends/s3.html:20
+#: templates/backends/s3.html:22 templates/backends/s3.html:23
 msgid "Bucket name"
 msgstr "Název „nádoby“ (bucket)"
 
@@ -365,10 +385,10 @@ msgstr "Kanárek"
 #: scripts/controllers/StateController.js:106
 #: scripts/controllers/StateController.js:115
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859 templates/delete.html:54
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:164
 #: templates/waitarea.html:19
 msgid "Cancel"
@@ -406,15 +426,18 @@ msgstr "Zjišťování dostupnosti případných aktualizací…"
 msgid "Chose a storage type to get started"
 msgstr "Pro začátek vyberte typ úložiště"
 
-#: templates/backends/amzcd.html:14 templates/backends/gcs.html:11
-#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
-#: templates/backends/sharepoint.html:11
+#: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
+#: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "AuthID vytvoříte kliknutím na odkaz AuthID"
 
 #: index.html:159 index.html:210
 msgid "Click to set throttle options"
 msgstr "Kliknutím nastavte předvolby přiškrcování"
+
+#: templates/backends/s3.html:79
+msgid "Client library to use"
+msgstr ""
 
 #: templates/home.html:42
 msgid "Commandline …"
@@ -519,7 +542,7 @@ msgstr "Spojení ztraceno"
 msgid "Connection worked!"
 msgstr "Spojení funguje!"
 
-#: scripts/services/EditUriBuiltins.js:781 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:895 templates/backends/azure.html:2
 msgid "Container name"
 msgstr "Název kontejneru"
 
@@ -571,7 +594,7 @@ msgstr "Vytvořit hlášení chyby…"
 msgid "Create folder?"
 msgstr "Vytvořit složku?"
 
-#: scripts/services/EditUriBuiltins.js:124
+#: scripts/services/EditUriBuiltins.js:133
 msgid "Created new limited user"
 msgstr "Vytvořit nový uživatelský účet s omezenými oprávněními"
 
@@ -579,19 +602,19 @@ msgstr "Vytvořit nový uživatelský účet s omezenými oprávněními"
 msgid "Creating bug report …"
 msgstr "Vytvořit hlášení chyby…"
 
-#: scripts/services/EditUriBuiltins.js:115
+#: scripts/services/EditUriBuiltins.js:119
 msgid "Creating new user with limited access …"
 msgstr "Vytváření nového uživatele s omezeným přístupem…"
 
 #: scripts/services/ServerStatus.js:49
 msgid "Creating target folders …"
-msgstr ""
+msgstr "Vytváření cílových složek…"
 
 #: scripts/controllers/RestoreController.js:361
 msgid "Creating temporary backup …"
 msgstr "Vytváření dočasné zálohy…"
 
-#: scripts/services/EditUriBuiltins.js:115
+#: scripts/services/EditUriBuiltins.js:119
 msgid "Creating user..."
 msgstr "Vytváření uživatelského účtu…"
 
@@ -607,9 +630,17 @@ msgstr "Stávající soubor:"
 msgid "Current version is {{versionname}} ({{versionnumber}})"
 msgstr "Stávající verze je {{versionname}} ({{versionnumber}})"
 
-#: templates/backends/s3.html:14
+#: templates/backends/s3.html:17
 msgid "Custom S3 endpoint"
 msgstr "Vlastní S3 koncový bod"
+
+#: templates/backends/tardigrade.html:18
+msgid "Custom Satellite"
+msgstr ""
+
+#: templates/backends/tardigrade.html:13
+msgid "Custom Satellite ({{satellite}})"
+msgstr ""
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
@@ -623,19 +654,25 @@ msgstr "Uživatelem určená doba uchovávání záloh"
 msgid "Custom location ({{server}})"
 msgstr "Vlastní umístění ({{server}})"
 
-#: templates/backends/s3.html:32
+#: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
 msgstr "Vlastní region pro vytváření „nádob“ (bucket)"
 
-#: templates/backends/s3.html:29
+#: templates/backends/s3.html:34
 msgid "Custom region value ({{region}})"
 msgstr "Hodnota pro vlastní region ({{region}})"
 
-#: templates/backends/openstack.html:10 templates/backends/s3.html:11
+#: templates/backends/openstack.html:10 templates/backends/s3.html:12
 msgid "Custom server url ({{server}})"
 msgstr "Vlastní URL adresa serveru ({{server}})"
 
-#: templates/backends/gcs.html:29 templates/backends/s3.html:41
+#: templates/backends/s3.html:50
+msgid ""
+"Custom storage class\n"
+"            ({{class}})"
+msgstr ""
+
+#: templates/backends/gcs.html:29
 msgid "Custom storage class ({{class}})"
 msgstr "Vlastní třída úložiště ({{class}})"
 
@@ -905,6 +942,10 @@ msgstr "Šifrování změněno"
 msgid "Encryption modules:"
 msgstr "Šifrovací moduly:"
 
+#: templates/backends/tardigrade.html:25
+msgid "Encryption passphrase"
+msgstr ""
+
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
 #: templates/backup-result/phases/purge.html:12
@@ -970,9 +1011,9 @@ msgstr "Zadejte popis umístění složky"
 msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr "Každou z voleb zadejte zvlášť na samostatný řádek, např. {0}"
 
-#: templates/backends/amzcd.html:6 templates/backends/file.html:7
-#: templates/backends/generic.html:14 templates/backends/msgroup.html:8
-#: templates/backends/oauth.html:3 templates/restore.html:90
+#: templates/backends/file.html:7 templates/backends/generic.html:14
+#: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
+#: templates/restore.html:90
 msgid "Enter the destination path"
 msgstr "Zadejte popis cílového umístění "
 
@@ -1156,7 +1197,7 @@ msgstr "Nepodařilo se uložit:"
 #: scripts/controllers/RestoreController.js:124
 #: scripts/controllers/RestoreController.js:163
 msgid "Fetching path information …"
-msgstr ""
+msgstr "Získávání informací o popisu umístění…"
 
 #: scripts/services/AppUtils.js:74
 msgid "File"
@@ -1184,9 +1225,9 @@ msgstr "Složka"
 
 #: templates/backends/b2.html:7 templates/backends/file.html:22
 #: templates/backends/file.html:6 templates/backends/jottacloud.html:2
-#: templates/backends/mega.html:2 templates/backends/s3.html:49
-#: templates/backends/sia.html:6 templates/restore.html:105
-#: templates/restore.html:89
+#: templates/backends/mega.html:2 templates/backends/s3.html:61
+#: templates/backends/sia.html:6 templates/backends/tardigrade.html:37
+#: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "Popis umístění složky"
 
@@ -1223,16 +1264,18 @@ msgstr "Obecné volby"
 msgid "Generate"
 msgstr "Vytvořit"
 
-#: templates/backends/s3.html:63
-msgid "Generate IAM access policy"
-msgstr "Vytvořit IAM zásady přístupu"
+#: templates/backends/s3.html:89
+msgid ""
+"Generate IAM\n"
+"        access policy"
+msgstr ""
 
 #: scripts/controllers/RestoreController.js:70
 msgid "Getting file versions …"
 msgstr "Získávání verzí souboru…"
 
-#: scripts/services/EditUriBuiltins.js:732
-#: scripts/services/EditUriBuiltins.js:743 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:843
+#: scripts/services/EditUriBuiltins.js:854 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "E-mail skupiny"
 
@@ -1415,7 +1458,7 @@ msgstr "Nainstalovat"
 msgid "Install failed:"
 msgstr "Instalace se nezdařila:"
 
-#: scripts/services/EditUriBuiltins.js:935
+#: scripts/services/EditUriBuiltins.js:1058
 msgid "Invalid characters in path"
 msgstr "Neplatné znaky v popisu umístění"
 
@@ -1425,7 +1468,7 @@ msgstr "Neplatné znaky v popisu umístění"
 msgid "Invalid retention time"
 msgstr "Neplatná doba ponechání"
 
-#: scripts/services/EditUriBuiltins.js:689
+#: scripts/services/EditUriBuiltins.js:801
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1479,7 +1522,7 @@ msgstr "Knihovny"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates …"
-msgstr ""
+msgstr "Vypisování datumů záloh…"
 
 #: scripts/services/ServerStatus.js:63
 msgid "Listing remote files for purge …"
@@ -1522,7 +1565,7 @@ msgstr "Načítání údajů o využití vzdáleného úložiště…"
 msgid "Loading …"
 msgstr "Načítání…"
 
-#: scripts/services/EditUriBuiltins.js:948
+#: scripts/services/EditUriBuiltins.js:1075
 msgid "Local Repository"
 msgstr "Místní repozitář"
 
@@ -1604,7 +1647,7 @@ msgstr "Databáze Microsoft SQL"
 msgid "Minimum redundancy"
 msgstr "Minimální redundance"
 
-#: scripts/services/EditUriBuiltins.js:939
+#: scripts/services/EditUriBuiltins.js:1062
 msgid "Minimum redundancy is 1.0"
 msgstr "Minimální redundance je 1.0"
 
@@ -1673,7 +1716,7 @@ msgstr "Nikdy"
 msgid "New update found: {{message}}"
 msgstr "Nalezena nová aktualizace: {{message}}"
 
-#: scripts/services/EditUriBuiltins.js:124
+#: scripts/services/EditUriBuiltins.js:133
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
@@ -1716,10 +1759,10 @@ msgstr "Příště"
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "No"
 msgstr "Ne"
 
@@ -1785,7 +1828,7 @@ msgstr "Nic nebude smazáno. Velikost zálohy naroste při každé změně."
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:124 templates/restore.html:156
+#: scripts/services/EditUriBuiltins.js:133 templates/restore.html:156
 #: templates/settings.html:165
 msgid "OK"
 msgstr "OK"
@@ -1809,7 +1852,7 @@ msgstr "Objektové úložiště OpenStack (Swift)"
 msgid "Opened"
 msgstr "Otevřeno"
 
-#: scripts/services/EditUriBuiltins.js:806
+#: scripts/services/EditUriBuiltins.js:920
 msgid "Openstack API Key are not supported in v3 keystone API."
 msgstr ""
 "Klíč pro Openstack API není podporován ve verzi 3 API stavebního bloku."
@@ -1896,8 +1939,8 @@ msgstr "Zadání heslové fráze se neshodují"
 msgid "Passphrases do not match"
 msgstr "Zadání heslové fráze se neshodují"
 
-#: scripts/services/EditUriBuiltins.js:913
-#: scripts/services/EditUriBuiltins.js:923 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1036
+#: scripts/services/EditUriBuiltins.js:1046 templates/backends/file.html:33
 #: templates/backends/generic.html:22 templates/backends/jottacloud.html:11
 #: templates/backends/jottacloud.html:12 templates/backends/mega.html:11
 #: templates/backends/mega.html:12 templates/backends/openstack.html:34
@@ -1909,7 +1952,7 @@ msgstr "Heslo"
 msgid "Patching files with local blocks …"
 msgstr "Opravování souborů pomocí místních bloků…"
 
-#: scripts/services/EditUriBuiltins.js:898
+#: scripts/services/EditUriBuiltins.js:1020
 msgid "Path"
 msgstr "Popis umístění"
 
@@ -1917,12 +1960,12 @@ msgstr "Popis umístění"
 msgid "Path not found"
 msgstr "Umístění nenalezeno"
 
-#: templates/backends/amzcd.html:5 templates/backends/generic.html:13
-#: templates/backends/msgroup.html:7 templates/backends/oauth.html:2
+#: templates/backends/generic.html:13 templates/backends/msgroup.html:7
+#: templates/backends/oauth.html:2
 msgid "Path on server"
 msgstr "Popis umístění na serveru"
 
-#: templates/backends/b2.html:8 templates/backends/s3.html:50
+#: templates/backends/b2.html:8 templates/backends/s3.html:63
 msgid "Path or subfolder in the bucket"
 msgstr "Umístění nebo podsložka v „nádobě“ (bucket)"
 
@@ -2022,11 +2065,11 @@ msgstr "Načíst znovu"
 msgid "Remote"
 msgstr "Vzdálené"
 
-#: scripts/services/EditUriBuiltins.js:949
+#: scripts/services/EditUriBuiltins.js:1076
 msgid "Remote Path"
 msgstr "Vzdálené umístění"
 
-#: scripts/services/EditUriBuiltins.js:947
+#: scripts/services/EditUriBuiltins.js:1074
 msgid "Remote Repository"
 msgstr "Vzdálený repozitář"
 
@@ -2180,6 +2223,10 @@ msgstr "Stejné jako základní nainstalovaná verze: {{channelname}}"
 msgid "Sat"
 msgstr "So"
 
+#: templates/backends/tardigrade.html:10
+msgid "Satellite"
+msgstr ""
+
 #: templates/addoredit.html:408 templates/localdatabase.html:32
 msgid "Save"
 msgstr "Uložit"
@@ -2230,7 +2277,7 @@ msgstr ""
 msgid "Select files"
 msgstr "Vybrat soubory"
 
-#: scripts/services/EditUriBuiltins.js:931 templates/backends/s3.html:8
+#: scripts/services/EditUriBuiltins.js:1054 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
 msgstr "Server"
@@ -2309,6 +2356,11 @@ msgid ""
 msgstr ""
 "Někteří poskytovatelé OpenStack umožňují použití klíče k API namísto hesla a"
 " jména nájemníka (tenant)"
+
+#: templates/backends/s3.html:83
+msgid ""
+"Some S3 providers might only be compatible with a certain client library"
+msgstr ""
 
 #: templates/addoredit.html:26
 msgid "Source Data"
@@ -2396,7 +2448,7 @@ msgstr "Zastavování úlohy:"
 msgid "Storage Type"
 msgstr "Typ úložiště"
 
-#: templates/backends/s3.html:38
+#: templates/backends/s3.html:45
 msgid "Storage class"
 msgstr "Třída úložiště"
 
@@ -2501,14 +2553,18 @@ msgstr "Zkouška přístupových práv…"
 msgid "Testing …"
 msgstr "Testování…"
 
-#: scripts/services/EditUriBuiltins.js:887
-#: scripts/services/EditUriBuiltins.js:898
+#: scripts/services/EditUriBuiltins.js:1000
+#: scripts/services/EditUriBuiltins.js:1016
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
 "Kolonka „{{fieldname}}“ obsahuje neplatný znak: {{character}} (hodnota: "
 "{{value}}, index: {{pos}})"
+
+#: templates/backends/tardigrade.html:22
+msgid "The API key"
+msgstr ""
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
@@ -2521,11 +2577,11 @@ msgstr ""
 "Záloha byla dočasná a už neexistuje, takže data záznamu událostí jsou "
 "ztracena"
 
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:972
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "Název nádoby by měl být malými písmeny, převést automaticky?"
 
-#: scripts/services/EditUriBuiltins.js:842
+#: scripts/services/EditUriBuiltins.js:956
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
@@ -2551,6 +2607,10 @@ msgstr "Tmavé téma vzhledu (od Michala)"
 #: templates/settings.html:71
 msgid "The default blue on white theme (by Alex)"
 msgstr "Výchozí téma vzhledu modrá na bílé (od Alexe)"
+
+#: templates/backends/tardigrade.html:26
+msgid "The encryption passphrase"
+msgstr ""
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2597,7 +2657,7 @@ msgstr ""
 "Je třeba, aby se jednalo o úplný popis umístění, tj. aby začínal dopředným "
 "lomítkem „/“"
 
-#: scripts/services/EditUriBuiltins.js:760
+#: scripts/services/EditUriBuiltins.js:871
 msgid ""
 "The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
 "\n"
@@ -2607,7 +2667,7 @@ msgstr ""
 "\n"
 "Chcete přidat předponu k popisu umístění automaticky?"
 
-#: templates/backends/s3.html:28
+#: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr "Parametr region je použit pouze při vytváření nové „nádoby“ (bucket)"
 
@@ -2623,7 +2683,7 @@ msgstr ""
 "Certifikát serveru se nepodařilo ověřit.\n"
 "Chcete schválit SSL certifikát s otiskem: {{hash}}?"
 
-#: templates/backends/s3.html:40
+#: templates/backends/s3.html:49
 msgid "The storage class affects the availability and price for a stored file"
 msgstr "Třída úložiště ovlivňuje dostupnost a cenu za uložení souboru"
 
@@ -2632,7 +2692,7 @@ msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
 msgstr "Cílová složka obsahuje zašifrované soubory, zadejte heslovou frázi"
 
-#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:54
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
@@ -2821,7 +2881,7 @@ msgstr "Uživatelská data"
 msgid "User domain name"
 msgstr "Název domény uživatele"
 
-#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:54
 msgid "User has too many permissions"
 msgstr "Uživatel má příliš mnoho oprávnění"
 
@@ -2829,10 +2889,10 @@ msgstr "Uživatel má příliš mnoho oprávnění"
 msgid "User interface settings"
 msgstr "Nastavení uživatelského rozhraní"
 
-#: scripts/services/EditUriBuiltins.js:684
-#: scripts/services/EditUriBuiltins.js:789
-#: scripts/services/EditUriBuiltins.js:912
-#: scripts/services/EditUriBuiltins.js:922 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1035
+#: scripts/services/EditUriBuiltins.js:1045
+#: scripts/services/EditUriBuiltins.js:796
+#: scripts/services/EditUriBuiltins.js:903 templates/backends/file.html:29
 #: templates/backends/generic.html:18 templates/backends/jottacloud.html:7
 #: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:30
@@ -2870,11 +2930,11 @@ msgstr "Ověřování dat podpůrné vrstvy (backend)…"
 
 #: scripts/services/ServerStatus.js:59
 msgid "Verifying files …"
-msgstr ""
+msgstr "Ověřování správnosti souborů…"
 
 #: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
 msgid "Verifying remote data …"
-msgstr ""
+msgstr "Ověřování správnosti dat na protějšku…"
 
 #: scripts/services/ServerStatus.js:54
 msgid "Verifying restored files …"
@@ -2922,7 +2982,7 @@ msgstr "Čekání na zahájení úlohy…"
 
 #: scripts/services/ServerStatus.js:39
 msgid "Waiting for upload to finish …"
-msgstr ""
+msgstr "Čeká se na dokončení nahrání…"
 
 #: templates/settings.html:127
 msgid "Warnings, errors and crashes"
@@ -2982,10 +3042,10 @@ msgstr "Let"
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "Yes"
 msgstr "Ano"
 
@@ -3082,7 +3142,7 @@ msgstr ""
 msgid "You must choose at least one source folder"
 msgstr "Je třeba zvolit alespoň jednu zdrojovou složku"
 
-#: scripts/services/EditUriBuiltins.js:800
+#: scripts/services/EditUriBuiltins.js:914
 msgid "You must enter a domain name to use v3 API"
 msgstr ""
 "Aby bylo možné použít verzi 3 aplikačního programového rozhraní, je třeba "
@@ -3096,7 +3156,7 @@ msgstr "Je třeba zadat název zálohy"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "Buď je třeba zadat heslovou frázi nebo šifrování vypnout"
 
-#: scripts/services/EditUriBuiltins.js:797
+#: scripts/services/EditUriBuiltins.js:911
 msgid "You must enter a password to use v3 API"
 msgstr ""
 "Aby bylo možné použít verzi 3 aplikačního programového rozhraní, je třeba "
@@ -3106,13 +3166,13 @@ msgstr ""
 msgid "You must enter a positive number of backups to keep"
 msgstr "Je třeba zadat kladný počet záloh které uchovávat"
 
-#: scripts/services/EditUriBuiltins.js:803
+#: scripts/services/EditUriBuiltins.js:917
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
 "Aby bylo možné použít verzi 3 aplikačního programového rozhraní, je třeba "
 "zadat název projektu (tenant)"
 
-#: scripts/services/EditUriBuiltins.js:817
+#: scripts/services/EditUriBuiltins.js:931
 msgid "You must enter a tenant name if you do not provide an API Key"
 msgstr "Pokud nezadáte klíč k API, je třeba zadat jméno nájemníka (tenant)"
 
@@ -3121,14 +3181,14 @@ msgid "You must enter a valid duration for the time to keep backups"
 msgstr "Je třeba zadat platnou dobu po kterou ponechávat zálohy"
 
 #: scripts/controllers/EditBackupController.js:305
-msgid "You must enter a valid rentention policy string"
-msgstr "Je třeba zadat platný řetězec zásady doby uchovávání záloh"
+msgid "You must enter a valid retention policy string"
+msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:814
+#: scripts/services/EditUriBuiltins.js:928
 msgid "You must enter either a password or an API Key"
 msgstr "Je třeba zadat buď klíč k API nebo heslo"
 
-#: scripts/services/EditUriBuiltins.js:821
+#: scripts/services/EditUriBuiltins.js:935
 msgid "You must enter either a password or an API Key, not both"
 msgstr "Je třeba zadat buď heslo, nebo klíč k API – ne obojí naráz"
 
@@ -3149,11 +3209,11 @@ msgstr "Je třeba vyplnit uživatelské jméno"
 msgid "You must fill in {{field}}"
 msgstr "Je třeba vyplnit kolonku {{field}}"
 
-#: scripts/services/EditUriBuiltins.js:793
+#: scripts/services/EditUriBuiltins.js:907
 msgid "You must select or fill in the AuthURI"
 msgstr "Je třeba vybrat nebo vyplnit AuthURI"
 
-#: scripts/services/EditUriBuiltins.js:835
+#: scripts/services/EditUriBuiltins.js:949
 msgid "You must select or fill in the server"
 msgstr "Je třeba vybrat nebo vyplnit server"
 
@@ -3200,8 +3260,8 @@ msgstr "veřejné statistiky využívání"
 msgid "resume now"
 msgstr "pokračovat nyní"
 
-#: scripts/services/EditUriBuiltins.js:732
-#: scripts/services/EditUriBuiltins.js:743
+#: scripts/services/EditUriBuiltins.js:843
+#: scripts/services/EditUriBuiltins.js:854
 msgid "unless you are explicitly specifying --group-id"
 msgstr "pokud výslovně neuvedete --group-id"
 

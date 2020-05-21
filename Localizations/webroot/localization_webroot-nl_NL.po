@@ -1,3 +1,4 @@
+# 
 # Translators:
 # Kees Zaaijer, 2019
 # 
@@ -23,17 +24,21 @@ msgstr "...laden..."
 msgid "API Key"
 msgstr "API sleutel"
 
-#: scripts/services/EditUriBuiltins.js:831 templates/backends/s3.html:54
-#: templates/backends/s3.html:55
+#: templates/backends/tardigrade.html:21
+msgid "API key"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
+#: templates/backends/s3.html:69
 msgid "AWS Access ID"
 msgstr "AWS Toegangs ID"
 
-#: scripts/services/EditUriBuiltins.js:832 templates/backends/s3.html:58
-#: templates/backends/s3.html:59
+#: scripts/services/EditUriBuiltins.js:946 templates/backends/s3.html:72
+#: templates/backends/s3.html:74
 msgid "AWS Access Key"
 msgstr "AWS Toegangssleutel"
 
-#: scripts/services/EditUriBuiltins.js:138
+#: scripts/services/EditUriBuiltins.js:150
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Beleid"
 
@@ -45,7 +50,7 @@ msgstr "Over"
 msgid "About {{appname}}"
 msgstr "Over {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:780 templates/backends/azure.html:11
+#: scripts/services/EditUriBuiltins.js:894 templates/backends/azure.html:11
 msgid "Access Key"
 msgstr "Toegangssleutel"
 
@@ -53,11 +58,15 @@ msgstr "Toegangssleutel"
 msgid "Access denied"
 msgstr "Toegang geweigerd"
 
+#: templates/backends/tardigrade.html:29
+msgid "Access grant"
+msgstr ""
+
 #: templates/settings.html:5
 msgid "Access to user interface"
 msgstr "Toegang tot gebruikersomgeving"
 
-#: scripts/services/EditUriBuiltins.js:779 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:893 templates/backends/azure.html:7
 msgid "Account name"
 msgstr "Accountnaam"
 
@@ -98,12 +107,12 @@ msgstr "Voeg pad toe"
 msgid "Added"
 msgstr "Toegevoegd"
 
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "Adjust bucket name?"
 msgstr "Bucket naam aanpassen?"
 
-#: scripts/services/EditUriBuiltins.js:760
+#: scripts/services/EditUriBuiltins.js:871
 msgid "Adjust path name?"
 msgstr "Padnaam aanpassen?"
 
@@ -186,14 +195,21 @@ msgstr "Toepassingen"
 msgid "As Command-line"
 msgstr "Als Opdrachtregel"
 
-#: scripts/services/EditUriBuiltins.js:713 templates/backends/amzcd.html:11
-#: templates/backends/amzcd.html:12 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:825 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
 #: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "AuthID"
+
+#: templates/backends/tardigrade.html:2
+msgid "Authentication method"
+msgstr ""
+
+#: templates/backends/tardigrade.html:5
+msgid "Authentication method ({{auth_method}})"
+msgstr ""
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
@@ -219,7 +235,7 @@ msgstr "B2 Applicatie ID"
 msgid "B2 Application Key"
 msgstr "B2 Applicatiesleutel"
 
-#: scripts/services/EditUriBuiltins.js:878
+#: scripts/services/EditUriBuiltins.js:991
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 Cloud Storage Account ID"
 
@@ -227,7 +243,7 @@ msgstr "B2 Cloud Storage Account ID"
 msgid "B2 Cloud Storage Application ID"
 msgstr "B2 Cloud Storage Applicatie ID"
 
-#: scripts/services/EditUriBuiltins.js:879 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:992 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 Cloud Storage Applicatiesleutel"
 
@@ -286,10 +302,14 @@ msgstr "Bladeren"
 msgid "Browser default"
 msgstr "Browser standaard"
 
-#: scripts/services/EditUriBuiltins.js:790
-#: scripts/services/EditUriBuiltins.js:830
-#: scripts/services/EditUriBuiltins.js:877
-#: scripts/services/EditUriBuiltins.js:887
+#: templates/backends/tardigrade.html:33
+msgid "Bucket"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:1004
+#: scripts/services/EditUriBuiltins.js:904
+#: scripts/services/EditUriBuiltins.js:944
+#: scripts/services/EditUriBuiltins.js:990
 msgid "Bucket Name"
 msgstr "Bucket Naam"
 
@@ -297,13 +317,13 @@ msgstr "Bucket Naam"
 msgid "Bucket create location"
 msgstr "Bucket aanmaaklocatie"
 
-#: templates/backends/s3.html:26
+#: templates/backends/s3.html:29
 msgid "Bucket create region"
 msgstr "Bucket aanmaakregio"
 
 #: templates/backends/b2.html:2 templates/backends/b2.html:3
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
-#: templates/backends/s3.html:19 templates/backends/s3.html:20
+#: templates/backends/s3.html:22 templates/backends/s3.html:23
 msgid "Bucket name"
 msgstr "Bucketnaam"
 
@@ -373,10 +393,10 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:106
 #: scripts/controllers/StateController.js:115
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859 templates/delete.html:54
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:164
 #: templates/waitarea.html:19
 msgid "Cancel"
@@ -414,15 +434,18 @@ msgstr "Controleren op updates ..."
 msgid "Chose a storage type to get started"
 msgstr "Kies een opslagtype om aan de slag te gaan"
 
-#: templates/backends/amzcd.html:14 templates/backends/gcs.html:11
-#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
-#: templates/backends/sharepoint.html:11
+#: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
+#: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Klik op de AuthID link om een AuthID aan te maken"
 
 #: index.html:159 index.html:210
 msgid "Click to set throttle options"
 msgstr "Klik om bandbreedte-opties in te stellen"
+
+#: templates/backends/s3.html:79
+msgid "Client library to use"
+msgstr "Te gebruiken client-blibliotheek"
 
 #: templates/home.html:42
 msgid "Commandline …"
@@ -527,7 +550,7 @@ msgstr "Verbinding verbroken"
 msgid "Connection worked!"
 msgstr "Verbinding werkt!"
 
-#: scripts/services/EditUriBuiltins.js:781 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:895 templates/backends/azure.html:2
 msgid "Container name"
 msgstr "Containernaam"
 
@@ -579,7 +602,7 @@ msgstr "Bug rapport maken ..."
 msgid "Create folder?"
 msgstr "Map aanmaken?"
 
-#: scripts/services/EditUriBuiltins.js:124
+#: scripts/services/EditUriBuiltins.js:133
 msgid "Created new limited user"
 msgstr "Nieuwe beperkte gebruiker aangemaakt"
 
@@ -587,7 +610,7 @@ msgstr "Nieuwe beperkte gebruiker aangemaakt"
 msgid "Creating bug report …"
 msgstr "Bug rapport maken ..."
 
-#: scripts/services/EditUriBuiltins.js:115
+#: scripts/services/EditUriBuiltins.js:119
 msgid "Creating new user with limited access …"
 msgstr "Nieuwe gebruiker met beperkte toegang aanmaken ..."
 
@@ -599,7 +622,7 @@ msgstr "Doelmappen aanmaken ..."
 msgid "Creating temporary backup …"
 msgstr "Tijdelijke back-up aanmaken ..."
 
-#: scripts/services/EditUriBuiltins.js:115
+#: scripts/services/EditUriBuiltins.js:119
 msgid "Creating user..."
 msgstr "Gebruiker aanmaken ..."
 
@@ -615,9 +638,17 @@ msgstr "Huidig bestand:"
 msgid "Current version is {{versionname}} ({{versionnumber}})"
 msgstr "Huidige versie is {{versionname}} ({{versionnumber}})"
 
-#: templates/backends/s3.html:14
+#: templates/backends/s3.html:17
 msgid "Custom S3 endpoint"
 msgstr "Aangepaste S3 endpoint"
+
+#: templates/backends/tardigrade.html:18
+msgid "Custom Satellite"
+msgstr ""
+
+#: templates/backends/tardigrade.html:13
+msgid "Custom Satellite ({{satellite}})"
+msgstr ""
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
@@ -631,19 +662,25 @@ msgstr "Aangepaste back-up retentie"
 msgid "Custom location ({{server}})"
 msgstr "Aangepaste locatie ({{server}})"
 
-#: templates/backends/s3.html:32
+#: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
 msgstr "Aangepaste regio voor het aanmaken van buckets"
 
-#: templates/backends/s3.html:29
+#: templates/backends/s3.html:34
 msgid "Custom region value ({{region}})"
 msgstr "Aangepaste regio waarde ({{region}})"
 
-#: templates/backends/openstack.html:10 templates/backends/s3.html:11
+#: templates/backends/openstack.html:10 templates/backends/s3.html:12
 msgid "Custom server url ({{server}})"
 msgstr "Aangepaste server url ({{server}})"
 
-#: templates/backends/gcs.html:29 templates/backends/s3.html:41
+#: templates/backends/s3.html:50
+msgid ""
+"Custom storage class\n"
+"            ({{class}})"
+msgstr "Aangepaste opslagklasse ({{class}})"
+
+#: templates/backends/gcs.html:29
 msgid "Custom storage class ({{class}})"
 msgstr "Aangepaste opslagklasse ({{class}})"
 
@@ -913,6 +950,10 @@ msgstr "Versleuteling aangepast"
 msgid "Encryption modules:"
 msgstr "Versleutelingsmodules:"
 
+#: templates/backends/tardigrade.html:25
+msgid "Encryption passphrase"
+msgstr ""
+
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
 #: templates/backup-result/phases/purge.html:12
@@ -980,9 +1021,9 @@ msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr ""
 "Geef één optie per regel in opdracht-prompt indeling, bijvoorbeeld {0}"
 
-#: templates/backends/amzcd.html:6 templates/backends/file.html:7
-#: templates/backends/generic.html:14 templates/backends/msgroup.html:8
-#: templates/backends/oauth.html:3 templates/restore.html:90
+#: templates/backends/file.html:7 templates/backends/generic.html:14
+#: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
+#: templates/restore.html:90
 msgid "Enter the destination path"
 msgstr "Geef het doelpad in"
 
@@ -1193,9 +1234,9 @@ msgstr "Map"
 
 #: templates/backends/b2.html:7 templates/backends/file.html:22
 #: templates/backends/file.html:6 templates/backends/jottacloud.html:2
-#: templates/backends/mega.html:2 templates/backends/s3.html:49
-#: templates/backends/sia.html:6 templates/restore.html:105
-#: templates/restore.html:89
+#: templates/backends/mega.html:2 templates/backends/s3.html:61
+#: templates/backends/sia.html:6 templates/backends/tardigrade.html:37
+#: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "Map-pad"
 
@@ -1232,16 +1273,18 @@ msgstr "Algemene opties"
 msgid "Generate"
 msgstr "Genereer"
 
-#: templates/backends/s3.html:63
-msgid "Generate IAM access policy"
+#: templates/backends/s3.html:89
+msgid ""
+"Generate IAM\n"
+"        access policy"
 msgstr "Genereer IAM toegangsbeleid"
 
 #: scripts/controllers/RestoreController.js:70
 msgid "Getting file versions …"
 msgstr "Bestandsversies ophalen ..."
 
-#: scripts/services/EditUriBuiltins.js:732
-#: scripts/services/EditUriBuiltins.js:743 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:843
+#: scripts/services/EditUriBuiltins.js:854 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Groep e-mail"
 
@@ -1431,7 +1474,7 @@ msgstr "Installeren"
 msgid "Install failed:"
 msgstr "Installeren mislukt"
 
-#: scripts/services/EditUriBuiltins.js:935
+#: scripts/services/EditUriBuiltins.js:1058
 msgid "Invalid characters in path"
 msgstr "Ongeldige tekens in pad"
 
@@ -1441,7 +1484,7 @@ msgstr "Ongeldige tekens in pad"
 msgid "Invalid retention time"
 msgstr "Ongeldige retentietijd"
 
-#: scripts/services/EditUriBuiltins.js:689
+#: scripts/services/EditUriBuiltins.js:801
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1541,7 +1584,7 @@ msgstr "Laden van remote opslaggebruik ..."
 msgid "Loading …"
 msgstr "Laden ..."
 
-#: scripts/services/EditUriBuiltins.js:948
+#: scripts/services/EditUriBuiltins.js:1075
 msgid "Local Repository"
 msgstr "Lokale Opslagplaats"
 
@@ -1623,7 +1666,7 @@ msgstr "Microsoft SQL Databases"
 msgid "Minimum redundancy"
 msgstr "Minimale redundantie"
 
-#: scripts/services/EditUriBuiltins.js:939
+#: scripts/services/EditUriBuiltins.js:1062
 msgid "Minimum redundancy is 1.0"
 msgstr "Minimale redundantie is 1.0"
 
@@ -1692,7 +1735,7 @@ msgstr "Nooit"
 msgid "New update found: {{message}}"
 msgstr "Nieuwe update gevonden: {{message}}"
 
-#: scripts/services/EditUriBuiltins.js:124
+#: scripts/services/EditUriBuiltins.js:133
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
@@ -1735,10 +1778,10 @@ msgstr "Volgende keer"
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "No"
 msgstr "Nee"
 
@@ -1808,7 +1851,7 @@ msgstr ""
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:124 templates/restore.html:156
+#: scripts/services/EditUriBuiltins.js:133 templates/restore.html:156
 #: templates/settings.html:165
 msgid "OK"
 msgstr "OK"
@@ -1833,7 +1876,7 @@ msgstr "OpenStack Object Storage / Swift"
 msgid "Opened"
 msgstr "Geopend"
 
-#: scripts/services/EditUriBuiltins.js:806
+#: scripts/services/EditUriBuiltins.js:920
 msgid "Openstack API Key are not supported in v3 keystone API."
 msgstr "Openstack API Sleutels worden niet ondersteund in v3 keystone API."
 
@@ -1919,8 +1962,8 @@ msgstr "Wachtwoordzinnen komen niet overeen"
 msgid "Passphrases do not match"
 msgstr "Wachtwoordzinnen komen niet overeen"
 
-#: scripts/services/EditUriBuiltins.js:913
-#: scripts/services/EditUriBuiltins.js:923 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1036
+#: scripts/services/EditUriBuiltins.js:1046 templates/backends/file.html:33
 #: templates/backends/generic.html:22 templates/backends/jottacloud.html:11
 #: templates/backends/jottacloud.html:12 templates/backends/mega.html:11
 #: templates/backends/mega.html:12 templates/backends/openstack.html:34
@@ -1932,7 +1975,7 @@ msgstr "Wachtwoord"
 msgid "Patching files with local blocks …"
 msgstr "Bestanden bijwerken met lokale blokken ..."
 
-#: scripts/services/EditUriBuiltins.js:898
+#: scripts/services/EditUriBuiltins.js:1020
 msgid "Path"
 msgstr "Pad"
 
@@ -1940,12 +1983,12 @@ msgstr "Pad"
 msgid "Path not found"
 msgstr "Pad niet gevonden"
 
-#: templates/backends/amzcd.html:5 templates/backends/generic.html:13
-#: templates/backends/msgroup.html:7 templates/backends/oauth.html:2
+#: templates/backends/generic.html:13 templates/backends/msgroup.html:7
+#: templates/backends/oauth.html:2
 msgid "Path on server"
 msgstr "Pad op server"
 
-#: templates/backends/b2.html:8 templates/backends/s3.html:50
+#: templates/backends/b2.html:8 templates/backends/s3.html:63
 msgid "Path or subfolder in the bucket"
 msgstr "Pad of submap in de bucket"
 
@@ -2043,11 +2086,11 @@ msgstr "Andere code"
 msgid "Remote"
 msgstr "Remote"
 
-#: scripts/services/EditUriBuiltins.js:949
+#: scripts/services/EditUriBuiltins.js:1076
 msgid "Remote Path"
 msgstr "Remote Pad"
 
-#: scripts/services/EditUriBuiltins.js:947
+#: scripts/services/EditUriBuiltins.js:1074
 msgid "Remote Repository"
 msgstr "Remote Opslagplaats"
 
@@ -2201,6 +2244,10 @@ msgstr "Zelfde als de basis installatie versie: {{channelname}}"
 msgid "Sat"
 msgstr "Zaterdag"
 
+#: templates/backends/tardigrade.html:10
+msgid "Satellite"
+msgstr ""
+
 #: templates/addoredit.html:408 templates/localdatabase.html:32
 msgid "Save"
 msgstr "Opslaan"
@@ -2250,7 +2297,7 @@ msgstr "Selecteer een logniveau en bekijk meldingen zodra ze zich voordoen:"
 msgid "Select files"
 msgstr "Selecteer bestanden"
 
-#: scripts/services/EditUriBuiltins.js:931 templates/backends/s3.html:8
+#: scripts/services/EditUriBuiltins.js:1054 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
 msgstr "Server"
@@ -2329,6 +2376,13 @@ msgid ""
 msgstr ""
 "Sommige OpenStack providers staan een API key toe in plaats van een "
 "wachtwoord en tenant naam"
+
+#: templates/backends/s3.html:83
+msgid ""
+"Some S3 providers might only be compatible with a certain client library"
+msgstr ""
+"Sommige S3 providers zouden alleen compatible kunnen zijn met een specifieke"
+" client-bibliotheek"
 
 #: templates/addoredit.html:26
 msgid "Source Data"
@@ -2416,7 +2470,7 @@ msgstr "Taak wordt gestopt:"
 msgid "Storage Type"
 msgstr "Opslagtype"
 
-#: templates/backends/s3.html:38
+#: templates/backends/s3.html:45
 msgid "Storage class"
 msgstr "Opslagklasse"
 
@@ -2521,14 +2575,18 @@ msgstr "Testen van de permissies ..."
 msgid "Testing …"
 msgstr "Testen ..."
 
-#: scripts/services/EditUriBuiltins.js:887
-#: scripts/services/EditUriBuiltins.js:898
+#: scripts/services/EditUriBuiltins.js:1000
+#: scripts/services/EditUriBuiltins.js:1016
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
 "Het '{{fieldname}}' veld bevat een ongeldig teken: {{character}} (value: "
 "{{value}}, index: {{pos}})"
+
+#: templates/backends/tardigrade.html:22
+msgid "The API key"
+msgstr ""
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
@@ -2541,12 +2599,12 @@ msgstr ""
 "De back-up was tijdelijk en bestaat niet meer, waardoor de log-gegevens "
 "verloren zijn gegaan"
 
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:972
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "De bucket-naam hoort in kleine letters te zijn, automatisch converteren?"
 
-#: scripts/services/EditUriBuiltins.js:842
+#: scripts/services/EditUriBuiltins.js:956
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
@@ -2573,6 +2631,10 @@ msgstr "Het donkere thema (door Michal)"
 #: templates/settings.html:71
 msgid "The default blue on white theme (by Alex)"
 msgstr "Het standaard blauw op wit thema (door Alex)"
+
+#: templates/backends/tardigrade.html:26
+msgid "The encryption passphrase"
+msgstr ""
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2619,7 +2681,7 @@ msgstr ""
 "Het pad moet een absoluut pad zijn, bijvoorbeeld het moet beginnen met een "
 "forward slash '/'"
 
-#: scripts/services/EditUriBuiltins.js:760
+#: scripts/services/EditUriBuiltins.js:871
 msgid ""
 "The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
 "\n"
@@ -2628,7 +2690,7 @@ msgstr ""
 "Het pad moet beginnen met \"{{prefix1}}\" of \"{{prefix2}}\", anders zullen "
 "bestanden in de HubiC web interface niet zichtbaar zijn."
 
-#: templates/backends/s3.html:28
+#: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr ""
 "De regio parameter wordt alleen toegepast bij het aanmaken van een bucket"
@@ -2646,7 +2708,7 @@ msgstr ""
 "Het servercertificaat kon niet gevalideerd worden.\n"
 "Wilt u het certificaat goedkeuren met deze hash: {{hash}}?"
 
-#: templates/backends/s3.html:40
+#: templates/backends/s3.html:49
 msgid "The storage class affects the availability and price for a stored file"
 msgstr ""
 "De opslagklasse beïnvloedt de beschikbaarheid en prijs van een opgeslagen "
@@ -2658,7 +2720,7 @@ msgid ""
 msgstr ""
 "De doelmap bevat versleutelde bestanden, geef alstublieft de wachtwoordzin"
 
-#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:54
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
@@ -2853,7 +2915,7 @@ msgstr "Gebruikersgegevens"
 msgid "User domain name"
 msgstr "Gebruikers domeinnaam"
 
-#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:54
 msgid "User has too many permissions"
 msgstr "Gebruiker heeft teveel permissies"
 
@@ -2861,10 +2923,10 @@ msgstr "Gebruiker heeft teveel permissies"
 msgid "User interface settings"
 msgstr "Gebruikersomgeving-instellingen"
 
-#: scripts/services/EditUriBuiltins.js:684
-#: scripts/services/EditUriBuiltins.js:789
-#: scripts/services/EditUriBuiltins.js:912
-#: scripts/services/EditUriBuiltins.js:922 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1035
+#: scripts/services/EditUriBuiltins.js:1045
+#: scripts/services/EditUriBuiltins.js:796
+#: scripts/services/EditUriBuiltins.js:903 templates/backends/file.html:29
 #: templates/backends/generic.html:18 templates/backends/jottacloud.html:7
 #: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:30
@@ -3017,10 +3079,10 @@ msgstr "Jaren"
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "Yes"
 msgstr "Ja"
 
@@ -3124,7 +3186,7 @@ msgstr ""
 msgid "You must choose at least one source folder"
 msgstr "U moet tenminste één bronmap kiezen"
 
-#: scripts/services/EditUriBuiltins.js:800
+#: scripts/services/EditUriBuiltins.js:914
 msgid "You must enter a domain name to use v3 API"
 msgstr "Een domeinnaam moet worden opgegeven om v3 API te gebruiken"
 
@@ -3136,7 +3198,7 @@ msgstr "U moet een naam ingeven voor de back-up"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "U moet een wachtwoordzin ingeven of versleuteling uitschakelen"
 
-#: scripts/services/EditUriBuiltins.js:797
+#: scripts/services/EditUriBuiltins.js:911
 msgid "You must enter a password to use v3 API"
 msgstr "Een wachtwoord moet worden opgegeven om v3 API te gebruiken"
 
@@ -3145,13 +3207,13 @@ msgid "You must enter a positive number of backups to keep"
 msgstr ""
 "U moet een positief getal opgeven voor de hoeveelheid te bewaren back-ups"
 
-#: scripts/services/EditUriBuiltins.js:803
+#: scripts/services/EditUriBuiltins.js:917
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
 "Een tenant (ofwel project) naam moet worden opgegeven om v3 API te gebruiken"
 " "
 
-#: scripts/services/EditUriBuiltins.js:817
+#: scripts/services/EditUriBuiltins.js:931
 msgid "You must enter a tenant name if you do not provide an API Key"
 msgstr "U moet een tenant naam ingeven als u de API sleutel niet verstrekt"
 
@@ -3162,14 +3224,14 @@ msgstr ""
 "moeten worden"
 
 #: scripts/controllers/EditBackupController.js:305
-msgid "You must enter a valid rentention policy string"
-msgstr "Er moet een geldige tekenreeks voor retentiebeleid worden opgegeven"
+msgid "You must enter a valid retention policy string"
+msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:814
+#: scripts/services/EditUriBuiltins.js:928
 msgid "You must enter either a password or an API Key"
 msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven"
 
-#: scripts/services/EditUriBuiltins.js:821
+#: scripts/services/EditUriBuiltins.js:935
 msgid "You must enter either a password or an API Key, not both"
 msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven, niet beide"
 
@@ -3190,11 +3252,11 @@ msgstr "U moet de gebruikersnaam invullen"
 msgid "You must fill in {{field}}"
 msgstr "U moet {{field}} invullen"
 
-#: scripts/services/EditUriBuiltins.js:793
+#: scripts/services/EditUriBuiltins.js:907
 msgid "You must select or fill in the AuthURI"
 msgstr "U moet de AuthURI selecteren of invullen"
 
-#: scripts/services/EditUriBuiltins.js:835
+#: scripts/services/EditUriBuiltins.js:949
 msgid "You must select or fill in the server"
 msgstr "U moet de server selecteren of invullen"
 
@@ -3243,8 +3305,8 @@ msgstr "openbare gebruikstatistieken"
 msgid "resume now"
 msgstr "nu hervatten"
 
-#: scripts/services/EditUriBuiltins.js:732
-#: scripts/services/EditUriBuiltins.js:743
+#: scripts/services/EditUriBuiltins.js:843
+#: scripts/services/EditUriBuiltins.js:854
 msgid "unless you are explicitly specifying --group-id"
 msgstr "tenzij u expliciet --group-id opgeeft"
 
