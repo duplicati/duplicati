@@ -1,3 +1,8 @@
+2020-05-26 - 2.0.5.107_canary_2020-05-26
+==========
+* Added a backend for Tardigrade.io, thanks @TopperDEL
+* Updated translations, thanks to all translators!
+
 2020-05-11 - 2.0.5.106_canary_2020-05-11
 ==========
 NOTE: this version updates the database version from v10 to v11!
