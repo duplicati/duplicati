@@ -8,11 +8,12 @@
 # Dmitry Kartsyn <kd@sparta-it.ru>, 2018
 # 85f5ad14c5f803c69d22f4aeb4ef6a7e, 2018
 # Valery <valery.naumenko@gmail.com>, 2019
+# Nikolay Parukhin <parukhin@gmail.com>, 2020
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Valery <valery.naumenko@gmail.com>, 2019\n"
+"Last-Translator: Nikolay Parukhin <parukhin@gmail.com>, 2020\n"
 "Language-Team: Russian (https://www.transifex.com/duplicati/teams/67655/ru/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -33,7 +34,7 @@ msgstr "Ключ API"
 
 #: templates/backends/tardigrade.html:21
 msgid "API key"
-msgstr ""
+msgstr "Ключ API"
 
 #: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
 #: templates/backends/s3.html:69
@@ -591,7 +592,7 @@ msgstr "Только падения"
 
 #: templates/home.html:48
 msgid "Create bug report …"
-msgstr ""
+msgstr "Создать отчет об ошибке…"
 
 #: scripts/directives/backupEditUri.js:131
 msgid "Create folder?"
@@ -603,19 +604,19 @@ msgstr "Создан новый ограниченный пользовател�
 
 #: scripts/services/ServerStatus.js:60
 msgid "Creating bug report …"
-msgstr ""
+msgstr "Создание отчета об ошибке…"
 
 #: scripts/services/EditUriBuiltins.js:119
 msgid "Creating new user with limited access …"
-msgstr ""
+msgstr "Создание нового пользователя с ограниченным доступом…"
 
 #: scripts/services/ServerStatus.js:49
 msgid "Creating target folders …"
-msgstr ""
+msgstr "Создание целевых папок…"
 
 #: scripts/controllers/RestoreController.js:361
 msgid "Creating temporary backup …"
-msgstr ""
+msgstr "Создание временной резервной копии…"
 
 #: scripts/services/EditUriBuiltins.js:119
 msgid "Creating user..."
@@ -623,11 +624,11 @@ msgstr "Создание пользователя..."
 
 #: templates/home.html:78
 msgid "Current action:"
-msgstr ""
+msgstr "Текущая операция:"
 
 #: templates/home.html:88
 msgid "Current file:"
-msgstr ""
+msgstr "Текущий файл:"
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
@@ -681,7 +682,7 @@ msgstr "Пользовательский класс хранения ({{class}})
 
 #: templates/home.html:39
 msgid "Database …"
-msgstr ""
+msgstr "База данных…"
 
 #: scripts/services/AppUtils.js:91 templates/addoredit.html:351
 msgid "Days"
@@ -737,19 +738,19 @@ msgstr "Удалить {{filecount}} файлов ({{filesize}}) из удале
 
 #: templates/home.html:33
 msgid "Delete …"
-msgstr ""
+msgstr "Удалить…"
 
 #: templates/backup-result/top-right-box.html:19
 msgid "Deleted"
-msgstr ""
+msgstr "Удалённые"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
-msgstr ""
+msgstr "Удалённые версии"
 
 #: templates/backup-result/phases/compact.html:23
 msgid "Deleted files"
-msgstr ""
+msgstr "Удалённые файлы"
 
 #: scripts/services/ServerStatus.js:62
 msgid "Deleting remote files …"
@@ -765,7 +766,7 @@ msgstr ""
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr ""
+msgstr "Описание:"
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -819,7 +820,7 @@ msgstr "Вы действительно хотите удалить локаль
 
 #: templates/backends/openstack.html:26
 msgid "Domain Name"
-msgstr ""
+msgstr "Имя домена"
 
 #: index.html:151 index.html:258
 msgid "Donate"

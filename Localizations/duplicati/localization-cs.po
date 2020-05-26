@@ -1872,7 +1872,7 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:15
 msgid "Whether the HttpClient class should be used"
-msgstr ""
+msgstr "Zda by měla být použitá třía HttpClient"
 
 #: Library/Backend/OneDrive/Strings.cs:16
 msgid "Whether the HttpClient class should be used to perform HTTP requests"
@@ -2079,7 +2079,7 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:15
 msgid "The authentication method"
-msgstr ""
+msgstr "Způsob ověřování"
 
 #: Library/Backend/Tardigrade/Strings.cs:16
 msgid ""
@@ -2100,7 +2100,7 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:19
 msgid "The API key"
-msgstr ""
+msgstr "Klíč k API rozhraní"
 
 #: Library/Backend/Tardigrade/Strings.cs:20
 msgid ""
@@ -2111,7 +2111,7 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:21
 msgid "The encryption passphrase"
-msgstr ""
+msgstr "Šifrovací heslo fráze"
 
 #: Library/Backend/Tardigrade/Strings.cs:22
 msgid ""

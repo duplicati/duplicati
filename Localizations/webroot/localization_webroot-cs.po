@@ -1,12 +1,12 @@
 # 
 # Translators:
 # vita.brno, 2019
-# Pavel Borecki <pavel.borecki@gmail.com>, 2019
+# Pavel Borecki <pavel.borecki@gmail.com>, 2020
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2019\n"
+"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2020\n"
 "Language-Team: Czech (https://www.transifex.com/duplicati/teams/67655/cs/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -202,7 +202,7 @@ msgstr "AuthID"
 
 #: templates/backends/tardigrade.html:2
 msgid "Authentication method"
-msgstr ""
+msgstr "Způsob ověřování"
 
 #: templates/backends/tardigrade.html:5
 msgid "Authentication method ({{auth_method}})"
@@ -303,7 +303,7 @@ msgstr "Výchozí nastavení webového prohlížeče"
 
 #: templates/backends/tardigrade.html:33
 msgid "Bucket"
-msgstr ""
+msgstr "„nádoba“ (bucket)"
 
 #: scripts/services/EditUriBuiltins.js:1004
 #: scripts/services/EditUriBuiltins.js:904
@@ -944,7 +944,7 @@ msgstr "Šifrovací moduly:"
 
 #: templates/backends/tardigrade.html:25
 msgid "Encryption passphrase"
-msgstr ""
+msgstr "Šifrovací heslová fráze"
 
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
@@ -2564,7 +2564,7 @@ msgstr ""
 
 #: templates/backends/tardigrade.html:22
 msgid "The API key"
-msgstr ""
+msgstr "Klíč k API rozhraní"
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
@@ -2610,7 +2610,7 @@ msgstr "Výchozí téma vzhledu modrá na bílé (od Alexe)"
 
 #: templates/backends/tardigrade.html:26
 msgid "The encryption passphrase"
-msgstr ""
+msgstr "Šifrovací heslo fráze"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -3182,7 +3182,7 @@ msgstr "Je třeba zadat platnou dobu po kterou ponechávat zálohy"
 
 #: scripts/controllers/EditBackupController.js:305
 msgid "You must enter a valid retention policy string"
-msgstr ""
+msgstr "Je třeba zadat platný řetězec zásady doby uchovávání záloh"
 
 #: scripts/services/EditUriBuiltins.js:928
 msgid "You must enter either a password or an API Key"

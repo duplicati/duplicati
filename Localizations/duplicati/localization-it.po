@@ -8,8 +8,8 @@
 # Andrea De Lunardi <a.delunardi@arca.com>, 2017
 # Francesco Infantini <infantini.francesco@gmail.com>, 2018
 # albanobattistella <albano_battistella@hotmail.com>, 2019
-# Folgore101 <andrea.gramegna@gmail.com>, 2020
 # Antonio Mazzarino <mzzntn95@gmail.com>, 2020
+# Folgore101 <andrea.gramegna@gmail.com>, 2020
 # 
 #, fuzzy
 msgid ""
@@ -18,7 +18,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-21 17:27+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Antonio Mazzarino <mzzntn95@gmail.com>, 2020\n"
+"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2020\n"
 "Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -630,19 +630,19 @@ msgstr "Versione del registro USN non supportata."
 
 #: Library/Snapshots/Strings.cs:22
 msgid "Previous backup did not record USN journal info"
-msgstr ""
+msgstr "Il backup precedente non registrava le informazioni del registro USN"
 
 #: Library/Snapshots/Strings.cs:23
 msgid "USN journal ID changed"
-msgstr ""
+msgstr "Cambiamento dell'ID del registro USN"
 
 #: Library/Snapshots/Strings.cs:24
 msgid "Next USN is zero"
-msgstr ""
+msgstr "Il prossimo USN è zero"
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Backup configuration changed"
-msgstr ""
+msgstr "Configurazione del backup modificata"
 
 #: Library/Snapshots/Strings.cs:28
 msgid "Calling process does not have the backup privilege"
@@ -1117,15 +1117,15 @@ msgstr "L'AWS \"Chiave Accesso ID\""
 
 #: Library/Backend/S3/Strings.cs:8
 msgid "S3 compatible"
-msgstr ""
+msgstr "S3 compatibile"
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No S3 secret key given"
-msgstr ""
+msgstr "Nessuna chiave segreta S3 fornita"
 
 #: Library/Backend/S3/Strings.cs:14
 msgid "No S3 userID given"
-msgstr ""
+msgstr "Nessun ID utente S3 fornito"
 
 #: Library/Backend/S3/Strings.cs:15
 msgid ""
@@ -1147,6 +1147,9 @@ msgid ""
 "Specify this argument to make the S3 backend use subdomains rather than the "
 "previous url prefix method. See the S3 documentation for more details."
 msgstr ""
+"Specifica questo argomento per far sì che il backend S3 utilizzi i "
+"sottodomini piuttosto che il precedente metodo del prefisso dell'url. Per "
+"maggiori dettagli, consultare la documentazione S3."
 
 #: Library/Backend/S3/Strings.cs:18
 msgid "Use subdomain calling style"
@@ -1185,6 +1188,8 @@ msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
 "formats are: \"s3://bucketname/prefix\""
 msgstr ""
+"Questo backend può leggere e scrivere dati su un server compatibile S3. I "
+"formati consentiti sono: \"s3://bucketname/prefix\""
 
 #: Library/Backend/S3/Strings.cs:24
 #, csharp-format
@@ -1913,11 +1918,12 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:15
 msgid "Whether the HttpClient class should be used"
-msgstr ""
+msgstr "Se la classe HttpClient deve essere utilizzata"
 
 #: Library/Backend/OneDrive/Strings.cs:16
 msgid "Whether the HttpClient class should be used to perform HTTP requests"
 msgstr ""
+"Se la classe HttpClient deve essere utilizzata per eseguire richieste HTTP"
 
 #: Library/Backend/OneDrive/Strings.cs:21
 msgid "Microsoft OneDrive v2"
@@ -2106,21 +2112,23 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:12
 msgid "Tardigrade Decentralized Cloud Storage"
-msgstr ""
+msgstr "Tardigrade Decentralized Cloud Storage"
 
 #: Library/Backend/Tardigrade/Strings.cs:13
 msgid ""
 "This backend can read and write data to the Tardigrade Decentralized Cloud "
 "Storage."
 msgstr ""
+"Questo backend può leggere e scrivere dati nel Tardigrade Decentralized "
+"Cloud Storage."
 
 #: Library/Backend/Tardigrade/Strings.cs:14
 msgid "The connection-test failed."
-msgstr ""
+msgstr "Il test di connessione non è riuscito."
 
 #: Library/Backend/Tardigrade/Strings.cs:15
 msgid "The authentication method"
-msgstr ""
+msgstr "Il metodo di autenticazione"
 
 #: Library/Backend/Tardigrade/Strings.cs:16
 msgid ""
@@ -2130,7 +2138,7 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:17
 msgid "The satellite"
-msgstr ""
+msgstr "Il satellite"
 
 #: Library/Backend/Tardigrade/Strings.cs:18
 msgid ""
@@ -2138,10 +2146,13 @@ msgid ""
 "server for high-performance SLA-backed connectivity or use a community "
 "server. Or even host your own."
 msgstr ""
+"Il satellite che tiene traccia di tutti i metadati. Utilizza un server di "
+"livello Tardigrade per la connettività con supporto SLA ad alte prestazioni "
+"o utilizza un server della comunità. O anche un tuo host."
 
 #: Library/Backend/Tardigrade/Strings.cs:19
 msgid "The API key"
-msgstr ""
+msgstr "La chiave API"
 
 #: Library/Backend/Tardigrade/Strings.cs:20
 msgid ""
@@ -2152,7 +2163,7 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:21
 msgid "The encryption passphrase"
-msgstr ""
+msgstr "La passphrase di crittografia"
 
 #: Library/Backend/Tardigrade/Strings.cs:22
 msgid ""
@@ -2161,10 +2172,14 @@ msgid ""
 "for Tardigrade you do not necessary need any additional encryption (from "
 "Duplicati) in place."
 msgstr ""
+"La passphrase di cifratura è utilizzata per cifrare i dati prima di inviarli"
+" alla rete tardigrada. Questa passphrase può essere l'unico segreto da "
+"fornire - per Tardigrade non è necessaria alcuna crittografia aggiuntiva (da"
+" Duplicati)."
 
 #: Library/Backend/Tardigrade/Strings.cs:23
 msgid "The access grant"
-msgstr ""
+msgstr "La concessione di accesso"
 
 #: Library/Backend/Tardigrade/Strings.cs:24
 msgid ""
@@ -2174,19 +2189,19 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:25
 msgid "The bucket"
-msgstr ""
+msgstr "Il bucket"
 
 #: Library/Backend/Tardigrade/Strings.cs:26
 msgid "The bucket where the backup will reside in."
-msgstr ""
+msgstr "Il bucket in cui risiederà il backup."
 
 #: Library/Backend/Tardigrade/Strings.cs:27
 msgid "The folder"
-msgstr ""
+msgstr "La cartella"
 
 #: Library/Backend/Tardigrade/Strings.cs:28
 msgid "The folder within the bucket where the backup will reside in."
-msgstr ""
+msgstr "La cartella all'interno del bucket in cui risiederà il backup."
 
 #: Library/Backend/Jottacloud/Strings.cs:5
 msgid "Jottacloud"

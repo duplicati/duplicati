@@ -1,11 +1,11 @@
 # 
 # Translators:
-# Kees Zaaijer, 2019
+# Kees Zaaijer, 2020
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Kees Zaaijer, 2019\n"
+"Last-Translator: Kees Zaaijer, 2020\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,7 +26,7 @@ msgstr "API sleutel"
 
 #: templates/backends/tardigrade.html:21
 msgid "API key"
-msgstr ""
+msgstr "API sleutel"
 
 #: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
 #: templates/backends/s3.html:69
@@ -60,7 +60,7 @@ msgstr "Toegang geweigerd"
 
 #: templates/backends/tardigrade.html:29
 msgid "Access grant"
-msgstr ""
+msgstr "Toegang verleend"
 
 #: templates/settings.html:5
 msgid "Access to user interface"
@@ -205,11 +205,11 @@ msgstr "AuthID"
 
 #: templates/backends/tardigrade.html:2
 msgid "Authentication method"
-msgstr ""
+msgstr "Authenticatiemethode"
 
 #: templates/backends/tardigrade.html:5
 msgid "Authentication method ({{auth_method}})"
-msgstr ""
+msgstr "Authenticatiemethode ({{auth_method}})"
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
@@ -304,7 +304,7 @@ msgstr "Browser standaard"
 
 #: templates/backends/tardigrade.html:33
 msgid "Bucket"
-msgstr ""
+msgstr "Bucket"
 
 #: scripts/services/EditUriBuiltins.js:1004
 #: scripts/services/EditUriBuiltins.js:904
@@ -644,11 +644,11 @@ msgstr "Aangepaste S3 endpoint"
 
 #: templates/backends/tardigrade.html:18
 msgid "Custom Satellite"
-msgstr ""
+msgstr "Aangepaste Satellite"
 
 #: templates/backends/tardigrade.html:13
 msgid "Custom Satellite ({{satellite}})"
-msgstr ""
+msgstr "Aangepaste Satellite ({{satellite}})"
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
@@ -952,7 +952,7 @@ msgstr "Versleutelingsmodules:"
 
 #: templates/backends/tardigrade.html:25
 msgid "Encryption passphrase"
-msgstr ""
+msgstr "Encryptie wachtwoordzin"
 
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
@@ -2246,7 +2246,7 @@ msgstr "Zaterdag"
 
 #: templates/backends/tardigrade.html:10
 msgid "Satellite"
-msgstr ""
+msgstr "Satellite"
 
 #: templates/addoredit.html:408 templates/localdatabase.html:32
 msgid "Save"
@@ -2586,7 +2586,7 @@ msgstr ""
 
 #: templates/backends/tardigrade.html:22
 msgid "The API key"
-msgstr ""
+msgstr "De API sleutel"
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
@@ -2634,7 +2634,7 @@ msgstr "Het standaard blauw op wit thema (door Alex)"
 
 #: templates/backends/tardigrade.html:26
 msgid "The encryption passphrase"
-msgstr ""
+msgstr "De versleutelings-wachtwoordzin"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -3225,7 +3225,7 @@ msgstr ""
 
 #: scripts/controllers/EditBackupController.js:305
 msgid "You must enter a valid retention policy string"
-msgstr ""
+msgstr "Er moet een geldige waarde voor retentiebeleid worden opgegeven"
 
 #: scripts/services/EditUriBuiltins.js:928
 msgid "You must enter either a password or an API Key"

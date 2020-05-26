@@ -4,7 +4,7 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Kees Zaaijer, 2019
+# Kees Zaaijer, 2020
 # 
 #, fuzzy
 msgid ""
@@ -13,7 +13,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-21 17:27+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Kees Zaaijer, 2019\n"
+"Last-Translator: Kees Zaaijer, 2020\n"
 "Language-Team: Dutch (Netherlands) (https://www.transifex.com/duplicati/teams/67655/nl_NL/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -624,19 +624,19 @@ msgstr "Niet-ondersteunde USN-journaalversie."
 
 #: Library/Snapshots/Strings.cs:22
 msgid "Previous backup did not record USN journal info"
-msgstr ""
+msgstr "Vorige back-up heeft geen USN logboek-informatie opgeslagen"
 
 #: Library/Snapshots/Strings.cs:23
 msgid "USN journal ID changed"
-msgstr ""
+msgstr "USN logboek ID is veranderd"
 
 #: Library/Snapshots/Strings.cs:24
 msgid "Next USN is zero"
-msgstr ""
+msgstr "Volgende USN is nul"
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Backup configuration changed"
-msgstr ""
+msgstr "Back-upconfiguratie is veranderd"
 
 #: Library/Snapshots/Strings.cs:28
 msgid "Calling process does not have the backup privilege"
@@ -1126,15 +1126,15 @@ msgstr "De AWS \"Access Key ID\""
 
 #: Library/Backend/S3/Strings.cs:8
 msgid "S3 compatible"
-msgstr ""
+msgstr "S3 compatible"
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No S3 secret key given"
-msgstr ""
+msgstr "Geen S3 geheime sleutel opgegeven"
 
 #: Library/Backend/S3/Strings.cs:14
 msgid "No S3 userID given"
-msgstr ""
+msgstr "Geen S3 gebruikers-ID opgegeven"
 
 #: Library/Backend/S3/Strings.cs:15
 msgid ""
@@ -1156,6 +1156,9 @@ msgid ""
 "Specify this argument to make the S3 backend use subdomains rather than the "
 "previous url prefix method. See the S3 documentation for more details."
 msgstr ""
+"Geef dit argument op om de S3 backend subdomeinen te laten gebruiken in "
+"plaats van de vorige url prefix methode. Zie de Amazon S3 documentatie voor "
+"meer details."
 
 #: Library/Backend/S3/Strings.cs:18
 msgid "Use subdomain calling style"
@@ -1193,6 +1196,8 @@ msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
 "formats are: \"s3://bucketname/prefix\""
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een S3 compatibele server."
+" Toegestane indelingen zijn: \"s3://bucketnaam/prefix\""
 
 #: Library/Backend/S3/Strings.cs:24
 #, csharp-format
@@ -1693,6 +1698,17 @@ msgid ""
 " a username and password is supplied, the same credentials are used for all "
 "destinations."
 msgstr ""
+"Deze optie staat toe dat meerdere doelen worden aangegeven. Het primaire "
+"doelpad wordt geplaatst voor de lijst met paden die wordt aangegeven met "
+"deze optie. Voordat de back-up wordt gestart, wordt het bestaan van iedere "
+"map in de lijst gecontroleerd en optioneel de aanwezigheid van het "
+"markeerbestand dat opgegeven is met --{0}. Het eerste pad dat bestaat en dat"
+" optioneel het markeerbestand bevat wordt dan gebruikt als doel. Meerdere "
+"doelen worden gescheiden met een \"{1}\". In Windows mag het pad een UNC pad"
+" zijn, en de schijfletter mag worden vervangen door een asterisk (*), "
+"bijvoorbeeld: \"*:\\backup\", wat alle schijfletters zal onderzoeken. Als "
+"een gebruikersnaam en wachtwoord is opgegeven, worden dezelfde referenties "
+"gebruikt voor alle doelen."
 
 #: Library/Backend/File/Strings.cs:7
 msgid "A list of secondary target paths"
@@ -1737,6 +1753,12 @@ msgid ""
 "to fail.  This option has no effect unless the --disable-streaming-transfers"
 " option is activated."
 msgstr ""
+"Wanneer het bestand wordt opgeslagen, is de standaard werkwijze het kopiëren"
+" van het bestand en het verwijderen van het origineel. Deze volgorde zorgt "
+"ervoor dat de bewerking opnieuw kan worden geprobeerd als er iets mis gaat. "
+"Het activeren van deze optie kan ervoor zorgen dat een bewerking opnieuw "
+"proberen mislukt. Deze optie heeft geen effect tenzij de --disable-"
+"streaming-transfers optie is geactiveerd."
 
 #: Library/Backend/File/Strings.cs:17
 msgid "Move the file instead of copying it"
@@ -1931,11 +1953,12 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:15
 msgid "Whether the HttpClient class should be used"
-msgstr ""
+msgstr "Of de klasse HttpClient moet worden gebruikt"
 
 #: Library/Backend/OneDrive/Strings.cs:16
 msgid "Whether the HttpClient class should be used to perform HTTP requests"
 msgstr ""
+"Of de klasse HttpClient moet worden gebruikt om HTTP-verzoeken uit te voeren"
 
 #: Library/Backend/OneDrive/Strings.cs:21
 msgid "Microsoft OneDrive v2"
@@ -2124,31 +2147,35 @@ msgstr ""
 
 #: Library/Backend/Tardigrade/Strings.cs:12
 msgid "Tardigrade Decentralized Cloud Storage"
-msgstr ""
+msgstr "Tardigrade Gedecentraliseerde Cloudopslag"
 
 #: Library/Backend/Tardigrade/Strings.cs:13
 msgid ""
 "This backend can read and write data to the Tardigrade Decentralized Cloud "
 "Storage."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar de Tardigrade "
+"Gedecentraliseerde Cloudopslag"
 
 #: Library/Backend/Tardigrade/Strings.cs:14
 msgid "The connection-test failed."
-msgstr ""
+msgstr "De verbindingstest is mislukt."
 
 #: Library/Backend/Tardigrade/Strings.cs:15
 msgid "The authentication method"
-msgstr ""
+msgstr "De authenticatiemethode"
 
 #: Library/Backend/Tardigrade/Strings.cs:16
 msgid ""
 "The authentication method describes which way to use to connect to the "
 "network - either via API key or via an access grant."
 msgstr ""
+"De authenticatiemethode geeft aan op welke manier verbonden wordt met het "
+"netwerk - via een API sleutel dan wel via verleende toegang."
 
 #: Library/Backend/Tardigrade/Strings.cs:17
 msgid "The satellite"
-msgstr ""
+msgstr "De Satellite"
 
 #: Library/Backend/Tardigrade/Strings.cs:18
 msgid ""
@@ -2156,10 +2183,13 @@ msgid ""
 "server for high-performance SLA-backed connectivity or use a community "
 "server. Or even host your own."
 msgstr ""
+"De satellite die alle metagegevens bijhoudt. Gebruik de Tardigrade-grade "
+"server voor hoogwaardige SLA-ondersteunde connectiviteit of gebruik een "
+"community-server. Of zelfs een host in eigen beheer."
 
 #: Library/Backend/Tardigrade/Strings.cs:19
 msgid "The API key"
-msgstr ""
+msgstr "De API sleutel"
 
 #: Library/Backend/Tardigrade/Strings.cs:20
 msgid ""
@@ -2167,10 +2197,13 @@ msgid ""
 "Head over to the dashboard of your satellite to create one if you do not "
 "already have an API key."
 msgstr ""
+"De API sleutel verleent toegang tot een specifiek project op de door u "
+"gekozen satellite. Ga naar het dashboard van uw satellite om er één aan te "
+"maken als u niet al een API sleutel heeft."
 
 #: Library/Backend/Tardigrade/Strings.cs:21
 msgid "The encryption passphrase"
-msgstr ""
+msgstr "De versleutelings-wachtwoordzin"
 
 #: Library/Backend/Tardigrade/Strings.cs:22
 msgid ""
@@ -2179,32 +2212,38 @@ msgid ""
 "for Tardigrade you do not necessary need any additional encryption (from "
 "Duplicati) in place."
 msgstr ""
+"De encryptie wachtwoordzin wordt gebruikt om uw gegevens te versleutelen "
+"voordat ze naar het tardigrade netwerk worden verzonden. Deze wachtwoordzin "
+"kan het enige opgegeven geheim zijn - voor Tardigrade heeft u geen "
+"aanvullende encryptie (van Duplicati) nodig."
 
 #: Library/Backend/Tardigrade/Strings.cs:23
 msgid "The access grant"
-msgstr ""
+msgstr "De verleende toegang"
 
 #: Library/Backend/Tardigrade/Strings.cs:24
 msgid ""
 "An access grant contains all information in one encrypted string. You may "
 "use it instead of a satellite, API key and secret."
 msgstr ""
+"Een verleende toegang bevat alle informatie in één versleutelde tekenreeks. "
+"Deze mag gebruikt worden in plaats van een satellite, API sleutel en geheim."
 
 #: Library/Backend/Tardigrade/Strings.cs:25
 msgid "The bucket"
-msgstr ""
+msgstr "De bucket"
 
 #: Library/Backend/Tardigrade/Strings.cs:26
 msgid "The bucket where the backup will reside in."
-msgstr ""
+msgstr "De bucket waarin de back-up zich bevindt."
 
 #: Library/Backend/Tardigrade/Strings.cs:27
 msgid "The folder"
-msgstr ""
+msgstr "De map"
 
 #: Library/Backend/Tardigrade/Strings.cs:28
 msgid "The folder within the bucket where the backup will reside in."
-msgstr ""
+msgstr "De map in de bucket waarin de back-up zich bevindt."
 
 #: Library/Backend/Jottacloud/Strings.cs:5
 msgid "Jottacloud"

@@ -32,7 +32,7 @@ msgstr "Chiave API"
 
 #: templates/backends/tardigrade.html:21
 msgid "API key"
-msgstr ""
+msgstr "Chiave API"
 
 #: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
 #: templates/backends/s3.html:69
@@ -66,7 +66,7 @@ msgstr "Accesso negato"
 
 #: templates/backends/tardigrade.html:29
 msgid "Access grant"
-msgstr ""
+msgstr "Concessione accesso"
 
 #: templates/settings.html:5
 msgid "Access to user interface"
@@ -210,11 +210,11 @@ msgstr "AuthID"
 
 #: templates/backends/tardigrade.html:2
 msgid "Authentication method"
-msgstr ""
+msgstr "Metodo di autenticazione"
 
 #: templates/backends/tardigrade.html:5
 msgid "Authentication method ({{auth_method}})"
-msgstr ""
+msgstr "Metodo di autenticazione ({{auth_method}})"
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
@@ -311,7 +311,7 @@ msgstr "Browser predefinito"
 
 #: templates/backends/tardigrade.html:33
 msgid "Bucket"
-msgstr ""
+msgstr "Bucket"
 
 #: scripts/services/EditUriBuiltins.js:1004
 #: scripts/services/EditUriBuiltins.js:904
@@ -651,11 +651,11 @@ msgstr "End point S3 personalizzato"
 
 #: templates/backends/tardigrade.html:18
 msgid "Custom Satellite"
-msgstr ""
+msgstr "Satellite personalizzato"
 
 #: templates/backends/tardigrade.html:13
 msgid "Custom Satellite ({{satellite}})"
-msgstr ""
+msgstr "Satellite personalizzato ({{satellite}})"
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
@@ -959,7 +959,7 @@ msgstr "Moduli crittografia:"
 
 #: templates/backends/tardigrade.html:25
 msgid "Encryption passphrase"
-msgstr ""
+msgstr "Passphrase di crittografia"
 
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
@@ -2255,7 +2255,7 @@ msgstr "Sab"
 
 #: templates/backends/tardigrade.html:10
 msgid "Satellite"
-msgstr ""
+msgstr "Satellitare"
 
 #: templates/addoredit.html:408 templates/localdatabase.html:32
 msgid "Save"
@@ -2594,7 +2594,7 @@ msgstr ""
 
 #: templates/backends/tardigrade.html:22
 msgid "The API key"
-msgstr ""
+msgstr "La chiave API"
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
@@ -2642,7 +2642,7 @@ msgstr "Predefinito - Tema blu su bianco (da Alex)"
 
 #: templates/backends/tardigrade.html:26
 msgid "The encryption passphrase"
-msgstr ""
+msgstr "La passphrase di crittografia"
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -3228,7 +3228,7 @@ msgstr "Devi inserire un periodo di tempo valido in cui mantenere i backup"
 
 #: scripts/controllers/EditBackupController.js:305
 msgid "You must enter a valid retention policy string"
-msgstr ""
+msgstr "Devi inserire una stringa di criteri di conservazione valida"
 
 #: scripts/services/EditUriBuiltins.js:928
 msgid "You must enter either a password or an API Key"
