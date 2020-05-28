@@ -156,7 +156,7 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 "${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
-"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
+"${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
