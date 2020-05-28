@@ -73,12 +73,40 @@ textarea {
     width: 16px;
     background: url('../img/external-link-hover.png');
     background-size: 16px;
+
+    @media
+    only screen and (-webkit-min-device-pixel-ratio: 1.25),
+    only screen and (min-resolution: 192dpi),
+    only screen and (min-resolution: 1.25dppx) {
+        background-image: url('../img/external-link-hover_2x.png');
+    }
+
+    @media
+    only screen and (-webkit-min-device-pixel-ratio: 1.25),
+    only screen and (min-resolution: 288dpi),
+    only screen and (min-resolution: 2.25dppx) {
+        background-image: url('../img/external-link-hover_3x.png');
+    }
 }
 
 a {
     .external-link-image {
         background: url('../img/external-link.png');
         background-size: 16px;
+
+        @media
+        only screen and (-webkit-min-device-pixel-ratio: 1.25),
+        only screen and (min-resolution: 192dpi),
+        only screen and (min-resolution: 1.25dppx) {
+            background-image: url('../img/external-link_2x.png');
+        }
+
+        @media
+        only screen and (-webkit-min-device-pixel-ratio: 2.25),
+        only screen and (min-resolution: 288dpi),
+        only screen and (min-resolution: 2.25dppx) {
+            background-image: url('../img/external-link_3x.png');
+        }
     }
 }
 
@@ -87,6 +115,20 @@ a {
         .external-link-image {
             background: url('../img/external-link-hover.png');
             background-size: 16px;
+
+            @media
+            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+            only screen and (min-resolution: 192dpi),
+            only screen and (min-resolution: 1.25dppx) {
+                background-image: url('../img/external-link-hover_2x.png');
+            }
+
+            @media
+            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+            only screen and (min-resolution: 288dpi),
+            only screen and (min-resolution: 2.25dppx) {
+                background-image: url('../img/external-link-hover_3x.png');
+            }
         }
     }
 }
@@ -631,6 +673,20 @@ body {
                         background: url('../img/progress-stop.png');
                         background-size: 26px;
                         cursor: pointer;
+
+                        @media
+                        only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                        only screen and (min-resolution: 192dpi),
+                        only screen and (min-resolution: 1.25dppx) {
+                            background-image: url('../img/progress-stop_2x.png');
+                        }
+
+                        @media
+                        only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                        only screen and (min-resolution: 288dpi),
+                        only screen and (min-resolution: 2.25dppx) {
+                            background-image: url('../img/progress-stop_3x.png');
+                        }
                     }
 
                     .resume {
@@ -640,6 +696,20 @@ body {
                         background: url('../img/progress-resume.png');
                         background-size: 26px;
                         cursor: pointer;
+
+                        @media
+                        only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                        only screen and (min-resolution: 192dpi),
+                        only screen and (min-resolution: 1.25dppx) {
+                            background-image: url('../img/progress-resume_2x.png');
+                        }
+
+                        @media
+                        only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                        only screen and (min-resolution: 288dpi),
+                        only screen and (min-resolution: 2.25dppx) {
+                            background-image: url('../img/progress-resume_3x.png');
+                        }
                     }
                 }
 
@@ -686,10 +756,39 @@ body {
                     display: inline-block;
                     cursor: pointer;
                     background: url('../img/pause.png');
+                    background-size: 26px;
+
+                    @media
+                    only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                    only screen and (min-resolution: 192dpi),
+                    only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/pause_2x.png');
+                    }
+
+                    @media
+                    only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                    only screen and (min-resolution: 288dpi),
+                    only screen and (min-resolution: 2.25dppx) {
+                        background-image: url('../img/pause_3x.png');
+                    }
                 }
 
                 > .pause.active {
                     background: url('../img/resume.png');
+
+                    @media
+                    only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                    only screen and (min-resolution: 192dpi),
+                    only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/resume_2x.png');
+                    }
+
+                    @media
+                    only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                    only screen and (min-resolution: 288dpi),
+                    only screen and (min-resolution: 2.25dppx) {
+                        background-image: url('../img/resume_3x.png');
+                    }
                 }
 
                 > .throttle {
@@ -698,6 +797,21 @@ body {
                     display: inline-block;
                     cursor: pointer;
                     background: url('../img/throttle.png');
+                    background-size: 26px;
+
+                    @media
+                    only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                    only screen and (min-resolution: 192dpi),
+                    only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/throttle_2x.png');
+                    }
+
+                    @media
+                    only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                    only screen and (min-resolution: 288dpi),
+                    only screen and (min-resolution: 2.25dppx) {
+                        background-image: url('../img/throttle_3x.png');
+                    }
                 }
 
                 > .throttle.inactive {
@@ -787,137 +901,382 @@ body {
 
                         > a.add {
                             background: url('../img/mainmenu/add.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/add_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/add_3x.png');
+                            }
                         }
 
                         > a.restore {
                             background: url('../img/mainmenu/restore.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.pause {
-                            background: url('../img/mainmenu/pause.png') no-repeat 8px 7px;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/restore_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/restore_3x.png');
+                            }
                         }
 
                         > a.resume {
                             background: url('../img/mainmenu/resume.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/resume_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/resume_3x.png');
+                            }
                         }
 
                         > a.settings {
                             background: url('../img/mainmenu/settings.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.log {
-                            background: url('../img/mainmenu/log.png') no-repeat 8px 7px;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/settings_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/settings_3x.png');
+                            }
                         }
 
                         > a.logout {
                             background: url('../img/mainmenu/logout.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/logout_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/logout_3x.png');
+                            }
                         }
 
                         > a.home {
                             background: url('../img/mainmenu/home.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/home_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/home_3x.png');
+                            }
                         }
 
                         > a.about {
                             background: url('../img/mainmenu/about.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.pause {
-                            > span {
-                                padding-right: 25px;
-                                background: url('../img/mainmenu/arrow_right.png') right center no-repeat;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/about_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/about_3x.png');
                             }
                         }
 
                         > a.home.active {
                             background: lighten(@lColor, 15%) url('../img/mainmenu/over/home.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_3x.png');
+                            }
                         }
 
                         > a.add.active {
                             background: lighten(@lColor, 15%) url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_3x.png');
+                            }
                         }
 
                         > a.restore.active {
                             background: lighten(@lColor, 15%) url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.pause.active {
-                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_3x.png');
+                            }
                         }
 
                         > a.resume.active {
                             background: lighten(@lColor, 15%) url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_3x.png');
+                            }
                         }
 
                         > a.settings.active {
                             background: lighten(@lColor, 15%) url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.log.active {
-                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_3x.png');
+                            }
                         }
 
                         > a.about.active {
                             background: lighten(@lColor, 15%) url('../img/mainmenu/over/about.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.pause.open.active {
-                            > span {
-                                background: url('../img/mainmenu/over/arrow_down.png') right center no-repeat;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_3x.png');
                             }
                         }
 
                         > a.add:hover {
                             background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_3x.png');
+                            }
                         }
 
                         > a.restore:hover {
                             background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.pause:hover {
-                            background: @lColor url('../img/mainmenu/over/pause.png') no-repeat 8px 7px;
-                        }
-
-                        > a.pause:hover {
-                            > span {
-                                background: url('../img/mainmenu/over/arrow_right.png') right center no-repeat;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_2x.png');
                             }
-                        }
 
-                        > a.pause.open:hover {
-                            > span {
-                                background: url('../img/mainmenu/over/arrow_down.png') right center no-repeat;
-                            }
-                        }
-
-                        > a.pause.open {
-                            > span {
-                                background: url('../img/mainmenu/arrow_down.png') right center no-repeat;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_3x.png');
                             }
                         }
 
                         > a.resume:hover {
                             background: @lColor url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_3x.png');
+                            }
                         }
 
                         > a.settings:hover {
                             background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
-                        }
+                            background-size: 27px 26px;
 
-                        > a.log:hover {
-                            background: @lColor url('../img/mainmenu/over/log.png') no-repeat 8px 7px;
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_3x.png');
+                            }
                         }
 
                         > a.logout:hover {
                             background: @lColor url('../img/mainmenu/over/logout.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/logout_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/logout_3x.png');
+                            }
                         }
 
                         > a.home:hover {
                             background: @lColor url('../img/mainmenu/over/home.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_3x.png');
+                            }
                         }
 
                         > a.about:hover {
                             background: @lColor url('../img/mainmenu/over/about.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_3x.png');
+                            }
                         }
                     }
 
@@ -1087,7 +1446,22 @@ body {
                         .step {
                             float: left;
                             background: url('../img/steps/line-out.png') no-repeat top left;
+                            background-size: 485px 24px;
                             color: #c7e5f6;
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                            only screen and (min-resolution: 192dpi),
+                            only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/steps/line-out_2x.png');
+                            }
+
+                            @media
+                            only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                            only screen and (min-resolution: 288dpi),
+                            only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/steps/line-out_3x.png');
+                            }
 
                             span {
                                 display: block;
@@ -2091,6 +2465,21 @@ div.modal-dialog {
                 background-image: url(../img/treeicons.png);
                 background-repeat: no-repeat;
                 background-position: -80px 0px;
+                background-size: 112px 64px;
+
+                @media
+                only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                only screen and (min-resolution: 192dpi),
+                only screen and (min-resolution: 1.25dppx) {
+                    background-image: url('../img/treeicons_2x.png');
+                }
+
+                @media
+                only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                only screen and (min-resolution: 288dpi),
+                only screen and (min-resolution: 2.25dppx) {
+                  background-image: url('../img/treeicons_3x.png');
+                }
 
                 &.leaf {
                     background: none;
@@ -2110,6 +2499,21 @@ div.modal-dialog {
                 background-image: url(../img/treeicons.png);
                 background-repeat: no-repeat;
                 background-position: 0px -16px;
+                background-size: 112px 64px;
+
+                @media
+                only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                only screen and (min-resolution: 192dpi),
+                only screen and (min-resolution: 1.25dppx) {
+                    background-image: url('../img/treeicons_2x.png');
+                }
+
+                @media
+                only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                only screen and (min-resolution: 288dpi),
+                only screen and (min-resolution: 2.25dppx) {
+                  background-image: url('../img/treeicons_3x.png');
+                }
 
                 &.invisible {
                     background-position: 0px -32px;
@@ -2120,6 +2524,14 @@ div.modal-dialog {
                     background-image: url(../img/loader-16.gif);
                     background-repeat: no-repeat;
                     background-position: 0px 0px;
+
+                    @media
+                    only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                    only screen and (min-resolution: 192dpi),
+                    only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/loader-32.gif');
+                        background-size: 16px 16px;
+                    }
                 }
 
                 &.x-tree-icon-drive {
@@ -2211,8 +2623,23 @@ div.modal-dialog {
                 cursor: pointer;
                 background-image: url(../img/treeicons.png);
                 background-repeat: no-repeat;
-                background-position: 0px 0px;
+                background-position: 0 0;
                 vertical-align: middle;
+                background-size: 112px 64px;
+
+                @media
+                only screen and (-webkit-min-device-pixel-ratio: 1.25),
+                only screen and (min-resolution: 192dpi),
+                only screen and (min-resolution: 1.25dppx) {
+                    background-image: url('../img/treeicons_2x.png');
+                }
+
+                @media
+                only screen and (-webkit-min-device-pixel-ratio: 2.25),
+                only screen and (min-resolution: 288dpi),
+                only screen and (min-resolution: 2.25dppx) {
+                  background-image: url('../img/treeicons_3x.png');
+                }
             }
 
             &.partial {
@@ -2315,6 +2742,7 @@ div.modal-dialog {
                     margin-top: 5px;
                     margin-right: 15px;
                     background: url('../img/menu.png') no-repeat right top;
+                    background-size: 39px 39px;
                     position: relative;
                     height: 40px;
                     line-height: 40px;
@@ -2324,11 +2752,40 @@ div.modal-dialog {
                     padding-left: 20px;
                     text-transform: uppercase;
                     text-align: right;
+
+                    @media
+                    (-webkit-min-device-pixel-ratio: 1.25),
+                    (min-resolution: 192dpi),
+                    (min-resolution: 1.25dppx) {
+                        background-image: url('../img/menu_2x.png');
+                    }
+
+                    @media
+                    (-webkit-min-device-pixel-ratio: 2.25),
+                    (min-resolution: 288dpi),
+                    (min-resolution: 2.25dppx) {
+                        background-image: url('../img/menu_3x.png');
+                    }
                 }
 
                 .menubutton.active {
                     background-image: url('../img/menu_active.png');
+                    background-size: 39px 39px;
                     color: @lColor;
+
+                    @media
+                    (-webkit-min-device-pixel-ratio: 1.25),
+                    (min-resolution: 192dpi),
+                    (min-resolution: 1.25dppx) {
+                        background-image: url('../img/menu_active_2x.png');
+                    }
+
+                    @media
+                    (-webkit-min-device-pixel-ratio: 2.25),
+                    (min-resolution: 288dpi),
+                    (min-resolution: 2.25dppx) {
+                        background-image: url('../img/menu_active_3x.png');
+                    }
                 }
 
                 .donate {
@@ -2639,14 +3096,6 @@ div.modal-dialog {
                             height: 32px;
                             width: 32px;*/
                         }
-                    }
-
-                    li.support {
-                        background: url('../img/support.png') no-repeat center center;
-                    }
-
-                    li.about {
-                        background: url('../img/about.png') no-repeat center center;
                     }
 
                     li:first-child {
