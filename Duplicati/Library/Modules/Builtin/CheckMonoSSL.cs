@@ -133,8 +133,12 @@ namespace Duplicati.Library.Modules.Builtin
             if (!commandlineOptions.ContainsKey("main-action") || !Library.Utility.Utility.IsMono)
                 return;
 
-			if (CheckForInstalledCerts() == 0)
-				Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingCerts", null, Strings.CheckMonoSSL.ErrorMessage);
+            if (CheckForInstalledCerts() == 0)
+            {
+                // Do not output this warning, recent Mono packages seems to work
+                if (Library.Utility.Utility.MonoVersion < new Version(6, 0))
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingCerts", null, Strings.CheckMonoSSL.ErrorMessage);
+            }
         }
 #endregion
 
