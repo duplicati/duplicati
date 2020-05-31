@@ -173,7 +173,7 @@ namespace Duplicati.Library.UsageReporter
                 {
                     var str = Environment.GetEnvironmentVariable(string.Format(DISABLED_ENVNAME_TEMPLATE, Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName));
                     ReportType tmp;
-                    if (string.IsNullOrWhiteSpace(str) || !Enum.TryParse(str, out tmp))
+                    if (string.IsNullOrWhiteSpace(str) || !Enum.TryParse(str, true, out tmp))
                         Cached_MaxReportLevel = ReportType.Information;
                     else
                         Cached_MaxReportLevel = tmp;

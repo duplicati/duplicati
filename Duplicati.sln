@@ -103,6 +103,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Encryptio
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Duplicati\CommandLine\AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{4D1B198B-F773-44F2-872B-2B283053323C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

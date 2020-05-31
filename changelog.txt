@@ -1,3 +1,146 @@
+2020-05-26 - 2.0.5.107_canary_2020-05-26
+==========
+* Added a backend for Tardigrade.io, thanks @TopperDEL
+* Updated translations, thanks to all translators!
+
+2020-05-11 - 2.0.5.106_canary_2020-05-11
+==========
+NOTE: this version updates the database version from v10 to v11!
+
+Downgrade from this version requires manually adjusting the version number in the database,
+The additions can be re-applied if the database is upgraded again later.
+
+* Added certificate dependency to debian packages, thanks @borfast
+* Sorting files and folders in the WEB UI, thanks @drwtsn32x
+* Code cleanup, unused code removal and more, thanks @warwickmm
+* Updated exclusion folder list, thanks @drwtsn32x
+* Fixed spelling issues for CLI help, thanks @comradekingu
+* Fixed the hostname check to be case-insensitive, thanks @warwickmm
+* No longer removes AlphaFS and AlphaVSS files from non-Windows packages, thanks @warwickmm
+* Fixed a case where backups could run immediately and ignore the scheduled time, thanks @warwickmm
+* Added a database index that signficantly improves database rebuilds, thanks @warwickmm
+* Added MyCloudPlace as an S3 provider, thanks @cedbossneo
+* Improved errors from Json source, thanks @kenkendk
+* Changed mentions of "Amazon S3" to "S3 compatible", thanks @kenkendk
+
+2020-03-25 - 2.0.5.104_canary_2020-03-25
+==========
+* Improved log messags when using retetion rules, thanks @warwickmm
+* Added logging for USN soft-failures, thannks @drwtsn32x
+* Improved regexp magic for parsing Windows, thanks @drwtsn32x
+* Fixed storing `dlist` file after interrupted backup, thanks @seantempleton
+* Improved logic around throttle values, thanks @seantempleton
+* Fixed issues with Windows metadata and inheritance, thanks @drwtsn32x
+* Major code cleanup, removing unused members and other, thanks @warwickmm
+* Corrected retry attempts log message, thanks @warwickmm
+* Fixed device-type reports on Mono, thanks @warwickmm
+* Improved error messages during HTTP timeouts in some cases, thanks @warwickmm
+* Reworked the MS-Graph backend to use an alternate HTTP implementation, thanks @tygill
+* Fixed some cases where an interrupted backup could cause database corruption, thanks @seantempleton
+
+2020-02-18 - 2.0.5.103_canary_2020-02-18
+==========
+
+This is a rebuild of 2.0.5.102 with a fix for MacOS packages
+
+* Improved performance of the recovery-tool, thanks @tfriedel and @warwickmm
+* Debian and RPM packages now require Mono 5.0, thanks @drwtsn32x
+* Fixed issue with USN returning too many results, thanks @drwtsn32x
+* Code quality improvements, thanks @warwickmm
+* Added `.odg` and `.otg` as compressed file types, thanks @warwickmm
+* Improved USN changes by looking at size and attributes, thanks @drwtsn32x
+* Code quality improvements, thanks @drwtsn32x
+* Unittest improvements, thanks @warwickmm
+* The OVH backend now points to Keystone v3, thanks @warwickmm
+* Fixed allowing minutes in retention rules, thanks @Pectojin
+* Fixed loading SQLite on Windows, thanks @warwickmm
+
+2020-02-18 - 2.0.5.102_canary_2020-02-18
+==========
+* Improved performance of the recovery-tool, thanks @tfriedel and @warwickmm
+* Debian and RPM packages now require Mono 5.0, thanks @drwtsn32x
+* Fixed issue with USN returning too many results, thanks @drwtsn32x
+* Code quality improvements, thanks @warwickmm
+* Added `.odg` and `.otg` as compressed file types, thanks @warwickmm
+* Improved USN changes by looking at size and attributes, thanks @drwtsn32x
+* Code quality improvements, thanks @drwtsn32x
+* Unittest improvements, thanks @warwickmm
+* The OVH backend now points to Keystone v3, thanks @warwickmm
+* Fixed allowing minutes in retention rules, thanks @Pectojin
+* Fixed loading SQLite on Windows, thanks @warwickmm
+
+2020-01-23 - 2.0.5.101_canary_2020-01-23
+==========
+* Improved tests, thanks @drwtsn32x
+* Fixed a case where repair fails due to missing `dindex` files, thanks @warwickmm
+* Fixed an issue where compacted files would miss a blocklist, thanks @seantempleton
+* Now producing Docker multi-arch images, thanks @dnrce
+* Improved code quality and testing, thanks @warwickmm
+
+2020-01-18 - 2.0.5.100_canary_2020-01-18
+==========
+* Fixed issue with restoring permissions with inheritance, thanks @drwtsn32x
+* Improved tests, thanks @warwickmm
+* Fixed an issue that could be triggered by force stopping a backup, thanks @warwickmm
+
+2020-01-18 - 2.0.5.1_beta_2020-01-18
+==========
+This beta release is a collection of additions and improvements from many contributors.
+Since it is released more than a year after the last beta, there is a large number of changes.
+
+Important notes:
+* On Linux, macOS, and other systems that require Mono, this version requires Mono v5 or later.
+
+* On macOS please remove the current beta and install this version, instead of using the updater. Doing so, will make Duplicati compatible with Gatekeeper and allow you to grant permissions.
+
+A big thanks to all Duplicati contributors, supporters, fans and users for keeping the project evolving and improving.
+
+Note that the beta `v2.0.4.23` has database version `8` and this release has database version `10`. This means that your local database will be upgraded once you run this version, and you cannot roll back without some manual intervention.
+
+Here is a short list of some of the more notable changes:
+
+* Numerous bug fixes and performance enhancements.
+* Updated translations, new languages added.
+* Improved support for macOS Catalina
+* Add support for minio backend.
+* Improve tray icon to reflect warning state.
+* Fix long path issue when path has 259 or 260 characters.
+* Remove support for Amazon Cloud Drive.
+* Fix input issues with dark theme.
+* Fix bug in handling filter expressions.
+* Fix purge operation with simple filters and case-sensitive filesystems.
+* Fix ignoring of --tempdir option when using the command-line.
+* Improved list of S3 compatible options and providers.
+* Fix ability to stop backup after current file has finished processing.
+* Updates to support libraries
+* Improve logging during database recreation.
+* Add option to skip vacuum operations within specified duration, `--auto-vacuum-interval`.
+* Add option to skip compact operations within specified duration, `--auto-compact-interval`.
+* Fix backup corruption from upload throttling. #3787
+* Fix for “Unexpected difference in fileset”. #3800
+* Fix for “CheckingErrorsForIssue1400” and “FoundIssue1400Error”. #3868
+* Fix for “FTP (Alternative)” upload verification.
+* Server database version is still 6. Backup database rose to 10. This may impede downgrades.
+
+2020-01-03 - 2.0.5.0_experimental_2020-01-03
+==========
+This is once again a cumulative release for more than 6 months of hard work.
+This release has a large number of stability improvements and speed optimizations.
+
+If you are using macOS, please re-install from the .dmg or .pkg, as the launcher has been updated to work with GateKeeper.
+Using the built-in update mechanism will not update the launcer and will not work well with GateKeeper on macOS Catalina.
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
+2019-12-29 - 2.0.4.38_canary_2019-12-29
+==========
+* Fixed AutoUpdater environment setting to be parsed as a boolean, thanks @drwtsn32x
+* Code cleanup for the SSH backend, thanks @verhoek
+* Fixed an issue with restoring metadata on Windows, thanks @drwtsn32x
+* Improved AppVeyor test builds, thanks @warwickmm
+* Updated translations, thanks @kenkendk
+
 2019-12-12 - 2.0.4.37_canary_2019-12-12
 ==========
 * Updated and improved TrayIcon's for warning state, thanks @drwtsn32x

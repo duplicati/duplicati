@@ -84,24 +84,24 @@ Where <test-folder> is the folder where files will be locked/created etc");
 
                 string filename = System.IO.Path.Combine(args[0], "testfile.bin");
 
-                Console.WriteLine(string.Format("Creating file {0}", filename));
+                Console.WriteLine("Creating file {0}", filename);
 
                 using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                 {
-                    Console.WriteLine(string.Format("Attempting to read locked file {0}", filename));
+                    Console.WriteLine("Attempting to read locked file {0}", filename);
 
                     try
                     {
                         using (System.IO.FileStream fs2 = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                         { }
 
-                        Console.WriteLine(string.Format("Could open locked file {0}, cannot test", filename));
+                        Console.WriteLine("Could open locked file {0}, cannot test", filename);
                         Console.WriteLine("* Test failed");
                         return;
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(string.Format("The file {0} was correctly locked, message: {1}", filename, ex.Message));
+                        Console.WriteLine("The file {0} was correctly locked, message: {1}", filename, ex.Message);
                     }
 
                     Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
@@ -114,11 +114,11 @@ Where <test-folder> is the folder where files will be locked/created etc");
                             using (System.IO.Stream s = snapshot.OpenRead(filename))
                             { }
 
-                            Console.WriteLine(string.Format("Could open locked file {0}, through snapshot", filename));
+                            Console.WriteLine("Could open locked file {0}, through snapshot", filename);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(string.Format("The file {0} was locked even through snapshot, message: {1}", filename, ex));
+                            Console.WriteLine("The file {0} was locked even through snapshot, message: {1}", filename, ex);
                             Console.WriteLine("* Test failed");
                             return;
                         }
@@ -129,7 +129,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format("The snapshot tester failed: {0}", ex));
+                Console.WriteLine("The snapshot tester failed: {0}", ex);
                 Console.WriteLine("* Test failed");
             }
 

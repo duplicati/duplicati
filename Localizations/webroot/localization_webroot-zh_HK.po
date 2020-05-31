@@ -1,3 +1,4 @@
+# 
 # Translators:
 # Aticaler, 2019
 # 
@@ -23,17 +24,21 @@ msgstr "...載入中..."
 msgid "API Key"
 msgstr "API Key"
 
-#: scripts/services/EditUriBuiltins.js:831 templates/backends/s3.html:54
-#: templates/backends/s3.html:55
+#: templates/backends/tardigrade.html:21
+msgid "API key"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
+#: templates/backends/s3.html:69
 msgid "AWS Access ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:832 templates/backends/s3.html:58
-#: templates/backends/s3.html:59
+#: scripts/services/EditUriBuiltins.js:946 templates/backends/s3.html:72
+#: templates/backends/s3.html:74
 msgid "AWS Access Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:138
+#: scripts/services/EditUriBuiltins.js:150
 msgid "AWS IAM Policy"
 msgstr "AWS IAM 原則"
 
@@ -45,7 +50,7 @@ msgstr "關於"
 msgid "About {{appname}}"
 msgstr "關於 {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:780 templates/backends/azure.html:11
+#: scripts/services/EditUriBuiltins.js:894 templates/backends/azure.html:11
 msgid "Access Key"
 msgstr ""
 
@@ -53,11 +58,15 @@ msgstr ""
 msgid "Access denied"
 msgstr "存取被拒"
 
+#: templates/backends/tardigrade.html:29
+msgid "Access grant"
+msgstr ""
+
 #: templates/settings.html:5
 msgid "Access to user interface"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:779 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:893 templates/backends/azure.html:7
 msgid "Account name"
 msgstr "用戶名"
 
@@ -98,12 +107,12 @@ msgstr "加入路徑"
 msgid "Added"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "Adjust bucket name?"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:760
+#: scripts/services/EditUriBuiltins.js:871
 msgid "Adjust path name?"
 msgstr ""
 
@@ -174,14 +183,21 @@ msgstr ""
 msgid "As Command-line"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:713 templates/backends/amzcd.html:11
-#: templates/backends/amzcd.html:12 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:825 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
 #: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "AuthID"
+
+#: templates/backends/tardigrade.html:2
+msgid "Authentication method"
+msgstr ""
+
+#: templates/backends/tardigrade.html:5
+msgid "Authentication method ({{auth_method}})"
+msgstr ""
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
@@ -207,7 +223,7 @@ msgstr ""
 msgid "B2 Application Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:878
+#: scripts/services/EditUriBuiltins.js:991
 msgid "B2 Cloud Storage Account ID"
 msgstr ""
 
@@ -215,7 +231,7 @@ msgstr ""
 msgid "B2 Cloud Storage Application ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:879 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:992 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr ""
 
@@ -272,10 +288,14 @@ msgstr "瀏覽"
 msgid "Browser default"
 msgstr "瀏覽預設"
 
-#: scripts/services/EditUriBuiltins.js:790
-#: scripts/services/EditUriBuiltins.js:830
-#: scripts/services/EditUriBuiltins.js:877
-#: scripts/services/EditUriBuiltins.js:887
+#: templates/backends/tardigrade.html:33
+msgid "Bucket"
+msgstr ""
+
+#: scripts/services/EditUriBuiltins.js:1004
+#: scripts/services/EditUriBuiltins.js:904
+#: scripts/services/EditUriBuiltins.js:944
+#: scripts/services/EditUriBuiltins.js:990
 msgid "Bucket Name"
 msgstr "Bucket 名稱"
 
@@ -283,13 +303,13 @@ msgstr "Bucket 名稱"
 msgid "Bucket create location"
 msgstr "Bucket 建立位置"
 
-#: templates/backends/s3.html:26
+#: templates/backends/s3.html:29
 msgid "Bucket create region"
 msgstr "Bucket 建立區域"
 
 #: templates/backends/b2.html:2 templates/backends/b2.html:3
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
-#: templates/backends/s3.html:19 templates/backends/s3.html:20
+#: templates/backends/s3.html:22 templates/backends/s3.html:23
 msgid "Bucket name"
 msgstr "Bucket 名稱"
 
@@ -349,10 +369,10 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:106
 #: scripts/controllers/StateController.js:115
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859 templates/delete.html:54
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:164
 #: templates/waitarea.html:19
 msgid "Cancel"
@@ -390,14 +410,17 @@ msgstr ""
 msgid "Chose a storage type to get started"
 msgstr ""
 
-#: templates/backends/amzcd.html:14 templates/backends/gcs.html:11
-#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
-#: templates/backends/sharepoint.html:11
+#: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
+#: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr ""
 
 #: index.html:159 index.html:210
 msgid "Click to set throttle options"
+msgstr ""
+
+#: templates/backends/s3.html:79
+msgid "Client library to use"
 msgstr ""
 
 #: templates/home.html:42
@@ -503,7 +526,7 @@ msgstr "連接中斷"
 msgid "Connection worked!"
 msgstr "連接成功！"
 
-#: scripts/services/EditUriBuiltins.js:781 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:895 templates/backends/azure.html:2
 msgid "Container name"
 msgstr "容器名稱"
 
@@ -555,7 +578,7 @@ msgstr ""
 msgid "Create folder?"
 msgstr "建立資料夾？"
 
-#: scripts/services/EditUriBuiltins.js:124
+#: scripts/services/EditUriBuiltins.js:133
 msgid "Created new limited user"
 msgstr "已建立受限制的使用者"
 
@@ -563,7 +586,7 @@ msgstr "已建立受限制的使用者"
 msgid "Creating bug report …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:115
+#: scripts/services/EditUriBuiltins.js:119
 msgid "Creating new user with limited access …"
 msgstr ""
 
@@ -575,7 +598,7 @@ msgstr ""
 msgid "Creating temporary backup …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:115
+#: scripts/services/EditUriBuiltins.js:119
 msgid "Creating user..."
 msgstr "建立使用者中..."
 
@@ -591,8 +614,16 @@ msgstr ""
 msgid "Current version is {{versionname}} ({{versionnumber}})"
 msgstr "現時版本 {{versionname}} ({{versionnumber}})"
 
-#: templates/backends/s3.html:14
+#: templates/backends/s3.html:17
 msgid "Custom S3 endpoint"
+msgstr ""
+
+#: templates/backends/tardigrade.html:18
+msgid "Custom Satellite"
+msgstr ""
+
+#: templates/backends/tardigrade.html:13
+msgid "Custom Satellite ({{satellite}})"
 msgstr ""
 
 #: templates/backends/openstack.html:13
@@ -607,19 +638,25 @@ msgstr ""
 msgid "Custom location ({{server}})"
 msgstr "自訂位置（{{server}}）"
 
-#: templates/backends/s3.html:32
+#: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
 msgstr ""
 
-#: templates/backends/s3.html:29
+#: templates/backends/s3.html:34
 msgid "Custom region value ({{region}})"
 msgstr ""
 
-#: templates/backends/openstack.html:10 templates/backends/s3.html:11
+#: templates/backends/openstack.html:10 templates/backends/s3.html:12
 msgid "Custom server url ({{server}})"
 msgstr "自訂伺服器地址（{{server}}）"
 
-#: templates/backends/gcs.html:29 templates/backends/s3.html:41
+#: templates/backends/s3.html:50
+msgid ""
+"Custom storage class\n"
+"            ({{class}})"
+msgstr ""
+
+#: templates/backends/gcs.html:29
 msgid "Custom storage class ({{class}})"
 msgstr ""
 
@@ -877,6 +914,10 @@ msgstr ""
 msgid "Encryption modules:"
 msgstr "加密模組："
 
+#: templates/backends/tardigrade.html:25
+msgid "Encryption passphrase"
+msgstr ""
+
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
 #: templates/backup-result/phases/purge.html:12
@@ -937,9 +978,9 @@ msgstr "輸入資料夾路徑名稱"
 msgid "Enter one option per line in command-line format, eg. {0}"
 msgstr ""
 
-#: templates/backends/amzcd.html:6 templates/backends/file.html:7
-#: templates/backends/generic.html:14 templates/backends/msgroup.html:8
-#: templates/backends/oauth.html:3 templates/restore.html:90
+#: templates/backends/file.html:7 templates/backends/generic.html:14
+#: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
+#: templates/restore.html:90
 msgid "Enter the destination path"
 msgstr "輸入目的地路徑"
 
@@ -1149,9 +1190,9 @@ msgstr "資籵夾"
 
 #: templates/backends/b2.html:7 templates/backends/file.html:22
 #: templates/backends/file.html:6 templates/backends/jottacloud.html:2
-#: templates/backends/mega.html:2 templates/backends/s3.html:49
-#: templates/backends/sia.html:6 templates/restore.html:105
-#: templates/restore.html:89
+#: templates/backends/mega.html:2 templates/backends/s3.html:61
+#: templates/backends/sia.html:6 templates/backends/tardigrade.html:37
+#: templates/restore.html:105 templates/restore.html:89
 msgid "Folder path"
 msgstr "資料夾路徑"
 
@@ -1188,16 +1229,18 @@ msgstr "一般設定"
 msgid "Generate"
 msgstr "產生"
 
-#: templates/backends/s3.html:63
-msgid "Generate IAM access policy"
-msgstr "產生 IAM 存取原則"
+#: templates/backends/s3.html:89
+msgid ""
+"Generate IAM\n"
+"        access policy"
+msgstr ""
 
 #: scripts/controllers/RestoreController.js:70
 msgid "Getting file versions …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:732
-#: scripts/services/EditUriBuiltins.js:743 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:843
+#: scripts/services/EditUriBuiltins.js:854 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr ""
 
@@ -1366,7 +1409,7 @@ msgstr "安裝"
 msgid "Install failed:"
 msgstr "安裝失敗："
 
-#: scripts/services/EditUriBuiltins.js:935
+#: scripts/services/EditUriBuiltins.js:1058
 msgid "Invalid characters in path"
 msgstr "路徑中有無效的字符"
 
@@ -1376,7 +1419,7 @@ msgstr "路徑中有無效的字符"
 msgid "Invalid retention time"
 msgstr "無效的保留時間"
 
-#: scripts/services/EditUriBuiltins.js:689
+#: scripts/services/EditUriBuiltins.js:801
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1471,7 +1514,7 @@ msgstr "載入遠端儲存使用量中..."
 msgid "Loading …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:948
+#: scripts/services/EditUriBuiltins.js:1075
 msgid "Local Repository"
 msgstr ""
 
@@ -1553,7 +1596,7 @@ msgstr "Microsoft SQL 資料庫"
 msgid "Minimum redundancy"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:939
+#: scripts/services/EditUriBuiltins.js:1062
 msgid "Minimum redundancy is 1.0"
 msgstr ""
 
@@ -1622,7 +1665,7 @@ msgstr "永不"
 msgid "New update found: {{message}}"
 msgstr "找到新版本：{{message}}"
 
-#: scripts/services/EditUriBuiltins.js:124
+#: scripts/services/EditUriBuiltins.js:133
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
@@ -1665,10 +1708,10 @@ msgstr "下次執行時間："
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "No"
 msgstr "否"
 
@@ -1734,7 +1777,7 @@ msgstr ""
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:124 templates/restore.html:156
+#: scripts/services/EditUriBuiltins.js:133 templates/restore.html:156
 #: templates/settings.html:165
 msgid "OK"
 msgstr "確定"
@@ -1757,7 +1800,7 @@ msgstr ""
 msgid "Opened"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:806
+#: scripts/services/EditUriBuiltins.js:920
 msgid "Openstack API Key are not supported in v3 keystone API."
 msgstr ""
 
@@ -1837,8 +1880,8 @@ msgstr "密碼不相同"
 msgid "Passphrases do not match"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:913
-#: scripts/services/EditUriBuiltins.js:923 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1036
+#: scripts/services/EditUriBuiltins.js:1046 templates/backends/file.html:33
 #: templates/backends/generic.html:22 templates/backends/jottacloud.html:11
 #: templates/backends/jottacloud.html:12 templates/backends/mega.html:11
 #: templates/backends/mega.html:12 templates/backends/openstack.html:34
@@ -1850,7 +1893,7 @@ msgstr "密碼"
 msgid "Patching files with local blocks …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:898
+#: scripts/services/EditUriBuiltins.js:1020
 msgid "Path"
 msgstr "路徑"
 
@@ -1858,12 +1901,12 @@ msgstr "路徑"
 msgid "Path not found"
 msgstr "找不到路徑"
 
-#: templates/backends/amzcd.html:5 templates/backends/generic.html:13
-#: templates/backends/msgroup.html:7 templates/backends/oauth.html:2
+#: templates/backends/generic.html:13 templates/backends/msgroup.html:7
+#: templates/backends/oauth.html:2
 msgid "Path on server"
 msgstr "伺服器上路徑"
 
-#: templates/backends/b2.html:8 templates/backends/s3.html:50
+#: templates/backends/b2.html:8 templates/backends/s3.html:63
 msgid "Path or subfolder in the bucket"
 msgstr ""
 
@@ -1961,11 +2004,11 @@ msgstr ""
 msgid "Remote"
 msgstr "遠端"
 
-#: scripts/services/EditUriBuiltins.js:949
+#: scripts/services/EditUriBuiltins.js:1076
 msgid "Remote Path"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:947
+#: scripts/services/EditUriBuiltins.js:1074
 msgid "Remote Repository"
 msgstr ""
 
@@ -2119,6 +2162,10 @@ msgstr ""
 msgid "Sat"
 msgstr "星期六"
 
+#: templates/backends/tardigrade.html:10
+msgid "Satellite"
+msgstr ""
+
 #: templates/addoredit.html:408 templates/localdatabase.html:32
 msgid "Save"
 msgstr "儲存"
@@ -2168,7 +2215,7 @@ msgstr ""
 msgid "Select files"
 msgstr "選擇檔案"
 
-#: scripts/services/EditUriBuiltins.js:931 templates/backends/s3.html:8
+#: scripts/services/EditUriBuiltins.js:1054 templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
 msgstr "伺服器"
@@ -2244,6 +2291,11 @@ msgstr ""
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
+msgstr ""
+
+#: templates/backends/s3.html:83
+msgid ""
+"Some S3 providers might only be compatible with a certain client library"
 msgstr ""
 
 #: templates/addoredit.html:26
@@ -2330,7 +2382,7 @@ msgstr "停止工作中："
 msgid "Storage Type"
 msgstr "儲存類型"
 
-#: templates/backends/s3.html:38
+#: templates/backends/s3.html:45
 msgid "Storage class"
 msgstr "儲存等級"
 
@@ -2435,11 +2487,15 @@ msgstr "測試權限中..."
 msgid "Testing …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:887
-#: scripts/services/EditUriBuiltins.js:898
+#: scripts/services/EditUriBuiltins.js:1000
+#: scripts/services/EditUriBuiltins.js:1016
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
+msgstr ""
+
+#: templates/backends/tardigrade.html:22
+msgid "The API key"
 msgstr ""
 
 #: scripts/directives/notificationArea.js:43
@@ -2451,11 +2507,11 @@ msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:972
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:842
+#: scripts/services/EditUriBuiltins.js:956
 msgid ""
 "The bucket name should start with your username, prepend automatically?"
 msgstr ""
@@ -2477,6 +2533,10 @@ msgstr "深色主題（Michai設計）"
 #: templates/settings.html:71
 msgid "The default blue on white theme (by Alex)"
 msgstr "預設的藍白色主題（Alexi設計）"
+
+#: templates/backends/tardigrade.html:26
+msgid "The encryption passphrase"
+msgstr ""
 
 #: scripts/directives/backupEditUri.js:131
 msgid ""
@@ -2513,14 +2573,14 @@ msgid ""
 "'/'"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:760
+#: scripts/services/EditUriBuiltins.js:871
 msgid ""
 "The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
 "\n"
 "Do you want to add the prefix to the path automatically?"
 msgstr ""
 
-#: templates/backends/s3.html:28
+#: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr ""
 
@@ -2534,7 +2594,7 @@ msgid ""
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
 msgstr ""
 
-#: templates/backends/s3.html:40
+#: templates/backends/s3.html:49
 msgid "The storage class affects the availability and price for a stored file"
 msgstr ""
 
@@ -2543,7 +2603,7 @@ msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:54
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
@@ -2710,7 +2770,7 @@ msgstr ""
 msgid "User domain name"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:50
+#: scripts/services/EditUriBuiltins.js:54
 msgid "User has too many permissions"
 msgstr ""
 
@@ -2718,10 +2778,10 @@ msgstr ""
 msgid "User interface settings"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:684
-#: scripts/services/EditUriBuiltins.js:789
-#: scripts/services/EditUriBuiltins.js:912
-#: scripts/services/EditUriBuiltins.js:922 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1035
+#: scripts/services/EditUriBuiltins.js:1045
+#: scripts/services/EditUriBuiltins.js:796
+#: scripts/services/EditUriBuiltins.js:903 templates/backends/file.html:29
 #: templates/backends/generic.html:18 templates/backends/jottacloud.html:7
 #: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:30
@@ -2866,10 +2926,10 @@ msgstr "年"
 #: scripts/directives/backupEditUri.js:214
 #: scripts/directives/backupEditUri.js:87
 #: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:50
-#: scripts/services/EditUriBuiltins.js:760
-#: scripts/services/EditUriBuiltins.js:842
-#: scripts/services/EditUriBuiltins.js:859
+#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:874
+#: scripts/services/EditUriBuiltins.js:956
+#: scripts/services/EditUriBuiltins.js:972
 msgid "Yes"
 msgstr "是"
 
@@ -2954,7 +3014,7 @@ msgstr ""
 msgid "You must choose at least one source folder"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:800
+#: scripts/services/EditUriBuiltins.js:914
 msgid "You must enter a domain name to use v3 API"
 msgstr ""
 
@@ -2966,7 +3026,7 @@ msgstr ""
 msgid "You must enter a passphrase or disable encryption"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:797
+#: scripts/services/EditUriBuiltins.js:911
 msgid "You must enter a password to use v3 API"
 msgstr ""
 
@@ -2974,11 +3034,11 @@ msgstr ""
 msgid "You must enter a positive number of backups to keep"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:803
+#: scripts/services/EditUriBuiltins.js:917
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:817
+#: scripts/services/EditUriBuiltins.js:931
 msgid "You must enter a tenant name if you do not provide an API Key"
 msgstr ""
 
@@ -2987,14 +3047,14 @@ msgid "You must enter a valid duration for the time to keep backups"
 msgstr ""
 
 #: scripts/controllers/EditBackupController.js:305
-msgid "You must enter a valid rentention policy string"
+msgid "You must enter a valid retention policy string"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:814
+#: scripts/services/EditUriBuiltins.js:928
 msgid "You must enter either a password or an API Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:821
+#: scripts/services/EditUriBuiltins.js:935
 msgid "You must enter either a password or an API Key, not both"
 msgstr ""
 
@@ -3015,11 +3075,11 @@ msgstr ""
 msgid "You must fill in {{field}}"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:793
+#: scripts/services/EditUriBuiltins.js:907
 msgid "You must select or fill in the AuthURI"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:835
+#: scripts/services/EditUriBuiltins.js:949
 msgid "You must select or fill in the server"
 msgstr "您必須選擇或填寫伺服器"
 
@@ -3066,8 +3126,8 @@ msgstr ""
 msgid "resume now"
 msgstr "立即繼續"
 
-#: scripts/services/EditUriBuiltins.js:732
-#: scripts/services/EditUriBuiltins.js:743
+#: scripts/services/EditUriBuiltins.js:843
+#: scripts/services/EditUriBuiltins.js:854
 msgid "unless you are explicitly specifying --group-id"
 msgstr ""
 

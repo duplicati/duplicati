@@ -71,11 +71,6 @@ namespace Duplicati.Library.Common.IO
         public string Drive { get { return m_drive; } }
 
         /// <summary>
-        /// Gets the path that this mapping represents
-        /// </summary>
-        public string Targetpath { get { return m_targetPath; } }
-
-        /// <summary>
         /// Creates a new mapping, using default settings
         /// </summary>
         /// <param name="path">The path to map</param>

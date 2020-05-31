@@ -31,6 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Duplicati.Library.Backend.Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
+      <Name>Duplicati.Library.Backend.Tardigrade</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
     </ProjectReference>
     <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj">

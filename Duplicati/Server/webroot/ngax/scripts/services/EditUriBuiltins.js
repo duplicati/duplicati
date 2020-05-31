@@ -29,6 +29,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
+    EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
     EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
@@ -153,6 +154,32 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         scope.s3_client = s3_client_options[0];
         scope.s3_client_options = s3_client_options;
+    };
+	
+	EditUriBackendConfig.loaders['tardigrade'] = function (scope) {
+        if (scope.tardigrade_satellites == null) {
+            AppService.post('/webmodule/tardigrade-getconfig', {'tardigrade-config': 'Satellites'}).then(function (data) {
+                scope.tardigrade_satellites = data.data.Result;
+                if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
+                    scope.tardigrade_satellite = 'us-central-1.tardigrade.io:7777';
+
+            }, AppUtils.connectionError);
+        } else {
+            if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
+                scope.tardigrade_satellite = 'us-central-1.tardigrade.io:7777';
+        }
+		
+		if (scope.tardigrade_auth_methods == null) {
+            AppService.post('/webmodule/tardigrade-getconfig', {'tardigrade-config': 'AuthenticationMethods'}).then(function (data) {
+                scope.tardigrade_auth_methods = data.data.Result;
+                if (scope.tardigrade_auth_method == undefined)
+                    scope.tardigrade_auth_method = 'API key';
+
+            }, AppUtils.connectionError);
+        } else {
+            if (scope.tardigrade_auth_method == undefined)
+                scope.tardigrade_auth_method = 'API key';
+        }
     };
 
     EditUriBackendConfig.loaders['oauth-base'] = function (scope) {
@@ -453,6 +480,27 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     }
+	
+	EditUriBackendConfig.parsers['tardigrade'] = function (scope, module, server, port, path, options) {
+        if (options['--tardigrade-auth-method'])
+            scope.tardigrade_auth_method = options['--tardigrade-auth-method'];
+        if (options['--tardigrade-satellite'])
+            scope.tardigrade_satellite = options['--tardigrade-satellite'];
+        if (options['--tardigrade-api-key'])
+            scope.tardigrade_api_key = options['--tardigrade-api-key'];
+        if (options['--tardigrade-secret'])
+            scope.tardigrade_secret = options['--tardigrade-secret'];
+		if (options['--tardigrade-shared-access'])
+            scope.tardigrade_shared_access = options['--tardigrade-shared-access'];
+		if (options['--tardigrade-bucket'])
+            scope.tardigrade_bucket = options['--tardigrade-bucket'];
+		if (options['--tardigrade-folder'])
+            scope.tardigrade_folder = options['--tardigrade-folder'];
+
+        var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    };
 
 
     // Builders take the scope and produce the uri output
@@ -670,6 +718,27 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         return url;
     }
+	
+	EditUriBackendConfig.builders['tardigrade'] = function (scope) {
+        var opts = {
+			'tardigrade-auth-method': scope.tardigrade_auth_method,
+            'tardigrade-satellite': scope.tardigrade_satellite,
+            'tardigrade-api-key': scope.tardigrade_api_key,
+            'tardigrade-secret': scope.tardigrade_secret,
+            'tardigrade-shared-access': scope.tardigrade_shared_access,
+			'tardigrade-bucket': scope.tardigrade_bucket,
+			'tardigrade-folder': scope.tardigrade_folder
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://tardigrade.io/config{1}',
+            scope.Backend.Key,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
 
     EditUriBackendConfig.builders['rclone'] = function (scope) {
 
@@ -993,6 +1062,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 1.0'));
 
         if (res)
+            continuation();
+    };
+	
+	EditUriBackendConfig.validaters['tardigrade'] = function (scope, continuation) {
             continuation();
     };
 

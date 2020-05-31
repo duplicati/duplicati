@@ -324,15 +324,15 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Microsoft*/Windows/Cookies*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/MSOCache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/NTUSER*");
-                yield return FilterGroups.CreateWildcardFilter(@"*/RECYCLER/");
-                yield return FilterGroups.CreateWildcardFilter(@"*UsrClass.dat*");
+                yield return FilterGroups.CreateWildcardFilter(@"*/UsrClass.dat");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/hiberfil.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/pagefile.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/swapfile.sys");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/$Recycle.Bin/");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/Recycled/");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/Recycler/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/System Volume Information/");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Installer*");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Temp*");
-                yield return FilterGroups.CreateWildcardFilter(@"*/ntuser.dat*");
+                yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Installer/");
 
                 foreach (var s in GetWindowsRegistryFilters() ?? new string[0])
                 {
@@ -351,7 +351,6 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/autoexec.bat");
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.System);
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.SystemX86);
-                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Recent);
 
                 var windir = FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
@@ -370,6 +369,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Apple Computer/Mobile Sync/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Comms/UnistoreDB/"); // Looks like storage about music / pictures for universal store apps
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/ElevatedDiagnostics/"); // Seems to be used by sfc tool and Windows troubleshooting
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Edge/User Data/Default/Cache");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/VSCommon/*SQM*"); // SQM appears to be 'service quality management', and it looks like these files report things about Visual Studio installation: https://stackoverflow.com/questions/23050561/what-permissions-policies-are-needed-to-support-loaduserprofile-true-for-new-app
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/Explorer/"); // Stores icon and thumbnail caches
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/INetCache/"); // 
@@ -381,6 +381,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Application Data/Application Data*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/Dropbox.exe.log"); // Dropbox log file, which may be kept open by Dropbox while it is running
                 yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/QuitReports/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cache");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies-journal");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/History/");
@@ -397,13 +398,12 @@ namespace Duplicati.Library.Utility
 
             if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
-                yield return FilterGroups.CreateWildcardFilter(@"*/$RECYCLE.BIN/");
                 yield return FilterGroups.CreateWildcardFilter(@"*.tmp");
                 yield return FilterGroups.CreateWildcardFilter(@"*.tmp/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Temp*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Temp*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/Temp*");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Temp*");
+                yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Temp/");
             }
 
             if (group.HasFlag(FilterGroup.Applications))
@@ -584,7 +584,7 @@ namespace Duplicati.Library.Utility
 
                 // Duplicati matches filters against folder paths exactly.
                 // Meaning a filter for 'C:\Windows' won't match 'C:\Windows\'.
-                // So this makes sure special folder's filter's have a trailing directory separator.
+                // So this makes sure special folder filters have a trailing directory separator.
                 // (Alternatively, this could append '*' to all folder filters.)
                 return Common.IO.Util.AppendDirSeparator(filter);
             }

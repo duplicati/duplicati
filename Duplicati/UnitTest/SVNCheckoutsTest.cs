@@ -46,22 +46,12 @@ namespace Duplicati.UnitTest
         /// </summary>
         private class LogHelper : StreamLogDestination
         {
-            private string m_backupset;
-            
             public static long WarningCount = 0;
             public static long ErrorCount = 0;
             
-            public string Backupset 
-            { 
-                get { return m_backupset; }
-                set { m_backupset = value; }
-            }
-            
             public LogHelper(string file)
                 : base(file)
-            {
-                this.Backupset = "none";
-            }
+            {}
 
             public override void WriteMessage(LogEntry entry)
             {
@@ -193,7 +183,6 @@ namespace Duplicati.UnitTest
                             }
                     }
 
-                    log.Backupset = "Backup " + folders[0];
                     string fhtempsource = null;
 
                     bool usingFHWithRestore = (!skipfullrestore || !skippartialrestore);
@@ -213,7 +202,6 @@ namespace Duplicati.UnitTest
                             //options["passphrase"] = "bad password";
                             //If the backups are too close, we can't pick the right one :(
                             System.Threading.Thread.Sleep(1000 * 5);
-                            log.Backupset = "Backup " + folders[i];
 
                             if (usingFHWithRestore)
                             {
@@ -255,7 +243,6 @@ namespace Duplicati.UnitTest
                         {
                             using (TempFolder ttf = new TempFolder())
                             {
-                                log.Backupset = "Restore " + folders[i];
                                 BasicSetupHelper.ProgressWriteLine("Restoring the copy: " + folders[i]);
 
                                 options["time"] = entries[entries.Count - i - 1].ToString();

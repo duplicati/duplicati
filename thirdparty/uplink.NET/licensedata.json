@@ -1,0 +1,7 @@
+{
+  "name": "uplink.NET",
+  "description": "A .Net-wrapper to connect to the storj v3 network.",
+  "link": "https://github.com/TopperDEL/uplink.net",
+  "license": "MIT",
+  "notes": ""
+}

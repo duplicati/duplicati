@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Volumes;
 using NUnit.Framework;
+using IFileEntry = Duplicati.Library.Interface.IFileEntry;
 using Utility = Duplicati.Library.Utility.Utility;
 
 namespace Duplicati.UnitTest
@@ -47,6 +49,95 @@ namespace Duplicati.UnitTest
         {
             base.SetUp();
             this.ModifySourceFiles();
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public async Task FilesetFiles()
+        {
+            // Choose a dblock size that is small enough so that more than one volume is needed.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "10mb",
+
+                // This allows us to inspect the dlist files without needing the BackendManager (which is inaccessible here) to decrypt them.
+                ["no-encryption"] = "true"
+            };
+
+            // Run a full backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+            }
+
+            // Run a partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                await this.RunPartialBackup(c).ConfigureAwait(false);
+            }
+
+            Dictionary<DateTime, int> GetBackupTypesFromRemoteFiles(Controller c, out List<string> filelistFiles)
+            {
+                Dictionary<DateTime, int> map = new Dictionary<DateTime, int>();
+                filelistFiles = new List<string>();
+
+                IListRemoteResults remoteFiles = c.ListRemote();
+                foreach (IFileEntry file in remoteFiles.Files)
+                {
+                    IParsedVolume volume = VolumeBase.ParseFilename(file);
+                    if (volume != null && volume.FileType == RemoteVolumeType.Files)
+                    {
+                        string dlistFile = Path.Combine(this.TARGETFOLDER, volume.File.Name);
+                        filelistFiles.Add(dlistFile);
+                        VolumeBase.FilesetData filesetData = VolumeReaderBase.GetFilesetData(volume.CompressionModule, dlistFile, new Options(options));
+                        map[volume.Time] = filesetData.IsFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP;
+                    }
+                }
+
+                return map;
+            }
+
+            // Purge a file and verify that the fileset file exists in the new dlist files.
+            List<string> dlistFiles;
+            Dictionary<DateTime, int> backupTypeMap;
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.PurgeFiles(new Library.Utility.FilterExpression($"*{this.fileSizes[0]}*"));
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup);
+
+                backupTypeMap = GetBackupTypesFromRemoteFiles(c, out dlistFiles);
+            }
+
+            int[] backupTypes = backupTypeMap.OrderByDescending(x => x.Key).Select(x => x.Value).ToArray();
+            Assert.AreEqual(2, backupTypes.Length);
+            Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1]);
+            Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0]);
+
+            // Remove the dlist files.
+            foreach (string dlistFile in dlistFiles)
+            {
+                File.Delete(dlistFile);
+            }
+
+            // Run a repair and verify that the fileset file exists in the new dlist files.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Repair();
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup);
+
+                backupTypeMap = GetBackupTypesFromRemoteFiles(c, out _);
+            }
+
+            backupTypes = backupTypeMap.OrderByDescending(x => x.Key).Select(x => x.Value).ToArray();
+            Assert.AreEqual(2, backupTypes.Length);
+            Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1]);
+            Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0]);
         }
 
         [Test]
@@ -190,6 +281,35 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
                 Assert.AreEqual(sixthBackupTime, filesets[0].Time);
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public async Task ListWithoutLocalDb()
+        {
+            // Choose a dblock size that is small enough so that more than one volume is needed.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "10mb",
+                ["no-local-db"] = "true"
+            };
+
+            // Run a full backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+            }
+
+            // Run a partial backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                await this.RunPartialBackup(c).ConfigureAwait(false);
+
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
         }
 
@@ -378,6 +498,64 @@ namespace Duplicati.UnitTest
 
             // Restore files from the full backup set.
             restoreOptions["overwrite"] = "true";
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IListResults lastResults = c.List("*");
+                string[] fullVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
+                Assert.AreEqual(this.fileSizes.Length, fullVersionFiles.Length);
+                c.Restore(fullVersionFiles);
+
+                foreach (string filepath in fullVersionFiles)
+                {
+                    string filename = Path.GetFileName(filepath);
+                    Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, false));
+                }
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public async Task StopNow()
+        {
+            // Choose a dblock size that is small enough so that more than one volume is needed.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb", ["disable-synthetic-filelist"] = "true"};
+
+            // Run a complete backup.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(1, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+
+            // Interrupt a backup with "stop now".
+            this.ModifySourceFiles();
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                // ReSharper disable once AccessToDisposedClosure
+                Task backupTask = Task.Run(() => c.Backup(new[] {this.DATAFOLDER}));
+
+                // Block for a small amount of time to allow the ITaskControl to be associated
+                // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
+                Thread.Sleep(1000);
+
+                c.Stop(false);
+                await backupTask.ConfigureAwait(false);
+            }
+
+            // The next backup should proceed without issues.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+                List<IListResultFileset> filesets = c.List().Filesets.ToList();
+                Assert.AreEqual(2, filesets.Count);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[1].IsFullBackup);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
+            }
+
+            // Restore from the backup that followed the interruption.
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) {["restore-path"] = this.RESTOREFOLDER};
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 IListResults lastResults = c.List("*");

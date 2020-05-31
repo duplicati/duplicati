@@ -65,6 +65,26 @@ namespace Duplicati.Library
         }
 
         /// <summary>
+        /// Hide the base GetAsync method to throw a TimeoutException when an HTTP timeout occurs.
+        /// </summary>
+        public new async Task<System.Net.Http.HttpResponseMessage> GetAsync(string requestUri)
+        {
+            // The HttpClient.GetAsync method throws an OperationCanceledException when the timeout is exceeded.
+            // In order to provide a more informative exception, we will detect this case and throw a TimeoutException
+            // instead.
+            try
+            {
+                return await base.GetAsync(requestUri).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Since there is no CancellationToken, we will assume that the OperationCanceledException
+                // is due to an HTTP timeout.
+                throw new TimeoutException($"HTTP timeout {this.Timeout} exceeded.");
+            }
+        }
+
+        /// <summary>
         /// Sends an async request with optional authentication.
         /// </summary>
         /// <param name="request">Http request</param>

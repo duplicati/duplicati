@@ -187,7 +187,7 @@ namespace Duplicati.CommandLine
             Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
             {
                 if (showDeletionErrors)
-                    outwriter.WriteLine(string.Format("Failed to delete temp file: {0}", path));
+                    outwriter.WriteLine("Failed to delete temp file: {0}", path);
             });
 
             string command = cargs[0];

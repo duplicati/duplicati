@@ -49,7 +49,7 @@ Requires:	bash
 Requires:	sqlite >= 3.6.12
 Requires:	mono(appindicator-sharp)
 Requires:	libappindicator
-Requires:	mono-core >= 3.0
+Requires:	mono-core >= 5.0
 Requires:	mono-data-sqlite
 Requires:	mono(System)
 Requires:	mono(System.Configuration)
@@ -144,13 +144,9 @@ rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/win-tools
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/SQLite/win64
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/SQLite/win32
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/MonoMac.dll
-rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/alphavss
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/OSX\ Icons
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/OSXTrayHost
-rm Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/AlphaFS.dll
-rm Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/AlphaVSS.Common.dll
 
-rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/alphavss
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/MonoMac
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/gpg
 

@@ -2,10 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
-using System.IO;
-using System.Linq.Expressions;
-
 
 namespace Duplicati.Library.Main.Database
 {
@@ -16,58 +12,6 @@ namespace Duplicati.Library.Main.Database
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
-
-        private class PathEntryKeeper
-        {
-            public DateTime Lastmodified;
-            public long FileID;
-            public long Filesize;
-            public string Metahash;
-            public long Metasize;
-
-            private SortedList<KeyValuePair<long, long>, long> m_versions;
-
-            public PathEntryKeeper(long fileId, DateTime lastmodified, long filesize, string metahash, long metasize)
-            {
-                this.FileID = fileId;
-                this.Lastmodified = lastmodified;
-                this.Filesize = filesize;
-                this.Metahash = metahash;
-                this.Metasize = metasize;
-                this.m_versions = null;
-            }
-
-            public long GetFilesetID(long blocksetId, long metadataId)
-            {
-                if (m_versions == null)
-                    return -1;
-
-                long r;
-                if (!m_versions.TryGetValue(new KeyValuePair<long, long>(blocksetId, metadataId), out r))
-                    return -1;
-                else
-                    return r;
-            }
-
-            public void AddFilesetID(long blocksetId, long metadataId, long filesetId)
-            {
-                if (m_versions == null)
-                    m_versions = new SortedList<KeyValuePair<long, long>, long>(1, new KeyValueComparer());
-                m_versions.Add(new KeyValuePair<long, long>(blocksetId, metadataId), filesetId);
-            }
-
-            private struct KeyValueComparer : IComparer<KeyValuePair<long, long>>
-            {
-                public int Compare(KeyValuePair<long, long> x, KeyValuePair<long, long> y)
-                {
-                    return x.Key == y.Key ?
-                            (x.Value == y.Value ?
-                                0
-                                : (x.Value < y.Value ? -1 : 1))
-                            : (x.Key < y.Key ? -1 : 1);
-                }
-            }
-        }
 
         private readonly System.Data.IDbCommand m_findblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
@@ -265,35 +209,6 @@ namespace Duplicati.Library.Main.Database
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
             m_selectblocklistHashesCommand.AddParameters(1);
-        }
-
-        /// <summary>
-        /// Builds the lookup tables. Call this method after deleting items, and before processing items
-        /// </summary>
-        /// <param name="options">The option settings</param>
-        public void BuildLookupTable(Options options)
-        {
-            if (options.UseBlockCache)
-            {
-                string failedhash = null;
-                try
-                {
-                    var cache = new Dictionary<string, long>();
-                    using (var cmd = m_connection.CreateCommand())
-                    {
-                        cmd.CommandText = @"SELECT ""Hash"", ""Size"" From ""Block""";
-                        using (var rd = cmd.ExecuteReader())
-                            while (rd.Read())
-                                cache.Add(failedhash = rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
-                    }
-                    m_blockCache = cache;
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheFailure", ex, "Failed to create block cache, this could mean you have hash collisions in your table, the hash that failed is {0}. Error message: {1}.", failedhash, ex.Message);
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheFailure", null, "Disabling block cache due to error");
-                }
-            }
         }
 
         /// <summary>
@@ -842,7 +757,6 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
                 using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = ""Uploading"" OR ""RemoteVolume"".""State"" = ""Temporary"")"))
                     while (rd.Read())
                     {
@@ -854,32 +768,39 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IRemoteVolume GetRemoteVolumeFromName(string name, System.Data.IDbTransaction transaction)
+        public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Name"" = ?", name))
-                if (rd.Read())
-                    return new RemoteVolume(rd.GetValue(0).ToString(), rd.GetValue(1).ToString(), rd.ConvertValueToInt64(2));
-                else
-                    return null;
-        }
-
-        public RemoteVolumeEntry GetRemoteVolumeFromID(long id, System.Data.IDbTransaction transaction = null)
-        {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"" WHERE ""ID"" = ?", id))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
                 if (rd.Read())
                     return new RemoteVolumeEntry(
-                        id,
-                        rd.GetValue(0).ToString(),
-                        (rd.GetValue(3) == null || rd.GetValue(3) == DBNull.Value) ? null : rd.GetValue(3).ToString(),
-                        rd.ConvertValueToInt64(2, -1),
-                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(1).ToString()),
-                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(4).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(5, 0), DateTimeKind.Utc)
+                        rd.ConvertValueToInt64(0, -1),
+                        rd.GetValue(1).ToString(),
+                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
+                        rd.ConvertValueToInt64(3, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
                     );
                 else
                     return default(RemoteVolumeEntry);
+        }
+
+        public IEnumerable<string> GetTemporaryFilelistVolumeNames(bool latestOnly, IDbTransaction transaction = null)
+        {
+            var incompleteFilesetIDs = GetIncompleteFilesets(transaction).OrderBy(x => x.Value).Select(x => x.Key).ToArray();
+
+            if (!incompleteFilesetIDs.Any())
+                return Enumerable.Empty<string>();
+
+            if (latestOnly)
+                incompleteFilesetIDs = new long[] { incompleteFilesetIDs.Last() };
+
+            var volumeNames = new List<string>();
+            foreach (var filesetID in incompleteFilesetIDs)
+                volumeNames.Add(GetRemoteVolumeFromFilesetID(filesetID).Name);
+
+            return volumeNames;
         }
 
         public IEnumerable<string> GetMissingIndexFiles(System.Data.IDbTransaction transaction)

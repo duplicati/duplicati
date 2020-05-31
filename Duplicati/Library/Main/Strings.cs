@@ -110,8 +110,6 @@ namespace Duplicati.Library.Main.Strings
         public static string VssexcludewritersShort { get { return LC.L(@"A semicolon separated list of guids of VSS writers to exclude (Windows only)"); } }
         public static string UsnpolicyLong { get { return LC.L(@"This setting controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to ""off"", Duplicati will not attempt to use USN. Setting this to ""auto"" makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of ""on"" will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to ""required"" will make Duplicati abort the backup if the USN usage fails. This feature is only supported on Windows and requires administrative privileges."); } }
         public static string UsnpolicyShort { get { return LC.L(@"Controls the use of NTFS Update Sequence Numbers"); } }
-        public static string DisableusndiffcheckLong { get { return LC.L(@"If USN is enabled the USN numbers are used to find all changed files since last backup. Use this option to disable the use of USN numbers, which will make Duplicati investigate all source files. This option is primarily intended for testing and should not be disabled in a production environment. If USN is not enabled, this option has no effect."); } }
-        public static string DisableusndiffcheckShort { get { return LC.L(@"Disables changelist by USN numbers"); } }
         public static string DisabletimetoleranceLong { get { return LC.L(@"When matching timestamps, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not cause unexpected updates. If the option --{0} is set to keep a week of backups, and the backup is made the same time each week, it is possible that the clock drifts slightly, such that full week has just passed, causing Duplicati to delete the older backup earlier than expected. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable the tolerance, and use strict time checking", "--keep-time"); } }
         public static string DisabletimetoleranceShort { get { return LC.L(@"Deactivates tolerance when comparing times"); } }
         public static string ListverifyuploadsShort { get { return LC.L(@"Verify uploads by listing contents"); } }
@@ -139,8 +137,6 @@ namespace Duplicati.Library.Main.Strings
         public static string BackupnameShort { get { return LC.L(@"Name of the backup"); } }
         public static string CompressionextensionfileLong(string path) { return LC.L(@"This property can be used to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}.", path); }
         public static string CompressionextensionfileShort { get { return LC.L(@"Manage non-compressible file extensions"); } }
-        public static string BlockhashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }
-        public static string BlockhashlookupsizeShort { get { return LC.L(@"Memory used by the block hash"); } }
         public static string BlocksizeLong { get { return LC.L(@"The block size determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created."); } }
         public static string BlocksizeShort { get { return LC.L(@"Block size used in hashing"); } }
         public static string ChangedfilesLong { get { return LC.L(@"This option can be used to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes."); } }
@@ -149,14 +145,10 @@ namespace Duplicati.Library.Main.Strings
         public static string DbpathShort { get { return LC.L(@"Path to the local state database"); } }
         public static string DeletedfilesLong(string optionname) { return LC.L(@"This option can be used to supply a list of deleted files. This option will be ignored unless the option --{0} is also set.", optionname); }
         public static string DeletedfilesShort { get { return LC.L(@"List of deleted files"); } }
-        public static string FilehashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }
-        public static string FilehashlookupsizeShort { get { return LC.L(@"Memory used by the file hash"); } }
         public static string DisablefilepathcacheLong { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
         public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
-	      public static string UseblockcacheShort { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
-	      public static string UseblockcacheLong { get { return LC.L(@"Store an in-memory block cache"); } }
-        public static string MetadatahashlookupsizeLong { get { return LC.L(@"A fragment of memory is used to reduce database lookups. You should not change this value unless you get warnings in the log."); } }
-        public static string MetadatahashlookupsizeShort { get { return LC.L(@"Memory used by the metadata hash"); } }
+        public static string UseblockcacheShort { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
+        public static string UseblockcacheLong { get { return LC.L(@"Store an in-memory block cache"); } }
         public static string NobackendverificationLong { get { return LC.L(@"If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
         public static string NobackendverificationShort { get { return LC.L(@"Do not query backend at startup"); } }
         public static string IndexfilepolicyLong { get { return LC.L(@"The index files are used to limit the need for downloading dblock files when there is no local database present. The more information is recorded in the index files, the faster operations can proceed without the database. The tradeoff is that larger index files take up more remote space and which may never be used."); } }
@@ -215,8 +207,6 @@ namespace Duplicati.Library.Main.Strings
         public static string RestorepermissionsLong { get { return LC.L(@"By default permissions are not restored as they might prevent you from accessing your files. Use this option to restore the permissions as well."); } }
         public static string SkiprestoreverificationShort { get { return LC.L(@"Skip restored file check"); } }
         public static string SkiprestoreverificationLong { get { return LC.L(@"After restoring files, the file hash of all restored files are checked to verify that the restore was successful. Use this option to disable the check and avoid waiting for the verification."); } }
-        public static string OldmemorylookupdefaultsShort { get { return LC.L(@"Activate caches"); } }
-        public static string OldmemorylookupdefaultsLong { get { return LC.L(@"Activate in-memory caches, which are now off by default"); } }
         public static string NolocalblocksShort { get { return LC.L(@"Do not use local data"); } }
         public static string NolocalblocksLong { get { return LC.L(@"Duplicati will attempt to use data from source files to minimize the amount of downloaded data. Use this option to skip this optimization and only use remote data."); } }
         public static string FullblockverificationShort { get { return LC.L(@"Check block hashes"); } }
@@ -237,8 +227,6 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencyblockhashersLong { get { return LC.L(@"Use this option to set the number of processes that perform hashing of data."); } }
         public static string ConcurrencycompressorsShort{ get { return LC.L(@"Specify the number of concurrent compression processes"); } }
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
-        public static string HypervbackupvmShort { get { return LC.L(@"Perform backup of Hyper-V machines (Windows only)"); } }
-        public static string HypervbackupvmLong { get { return LC.L(@"Use this option to specify the IDs of machines to include in the backup. Specify multiple machine IDs with a semicolon separator. (You can use this Powershell command to get ID 'Get-VM | ft VMName, ID')"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
         public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disables synthetic filelist"); } }
         public static string CheckfiletimeonlyLong { get { return LC.L(@"This flag instructs Duplicati to not look at metadata or filesize when deciding to scan a file for changes. Use this option if you have a large number of files and notice that the scanning takes a long time with unmodified files."); } }
@@ -256,11 +244,9 @@ namespace Duplicati.Library.Main.Strings
         public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
         public static string DisableOnBatteryLong { get { return LC.L("When this flag is enabled, a scheduled backup will not run if the system is detected to be running on battery power (manual or command line backups will still be run).  If the detected power source is mains (i.e., AC) or unknown, then scheduled backups will proceed as normal."); } }
 
-        public static string LogfileloglevelLong { get { return LC.L(@"Specifies the amount of log information to write into the file specified by --log-file"); } }
         public static string LogfileloglevelShort { get { return LC.L(@"Log file information level"); } }
         public static string LogfilelogfiltersShort { get { return LC.L(@"Applies filters to the file log data"); } }
         public static string LogfilelogfiltersLong(string delimiter) { return LC.L(@"This option accepts filters that removes or includes messages regardless of their log level. Multiple filters are supported by separating with {0}. Filters are matched against the log tag and assumed to be including, unless they start with '-'. Regular expressions are supported within hard braces. Example: ""+Path*{0}+*Mail*{0}-[.*DNS]"" ", delimiter); }
-        public static string ConsoleloglevelLong { get { return LC.L(@"Specifies the amount of log information to write as console output"); } }
         public static string ConsoleloglevelShort { get { return LC.L(@"Console information level"); } }
         public static string ConsolelogfiltersShort { get { return LC.L(@"Applies filters to the console log data"); } }
         public static string ConsolelogfiltersLong(string delimiter) { return LogfilelogfiltersLong(delimiter); }

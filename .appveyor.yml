@@ -8,9 +8,6 @@ environment:
         secure: szQsrkP5rvra8L60SomD73/dFvRwot0UuyA566zqzI2qmLOr+MhLN0AyC8BTbhYY
 before_build:
     - ps: $env:UNITTEST_BASEFOLDER = "$Env:APPVEYOR_BUILD_FOLDER" + "\testdata"
-    - ps: if ($env:APPVEYOR_REPO_NAME.Equals("duplicati/duplicati")) {
-        $env:GITTER_NOTIFY_URL = "https://webhooks.gitter.im/e/a2c55bac2b5c38838e0f"
-        }
     - cmd: nuget restore Duplicati.sln
 build:
     project: Duplicati.sln
@@ -72,10 +69,3 @@ test_script:
         if (!$testsPassed) {
             throw "Tests failed."
         }
-notifications:
-    - provider: Webhook
-      url: $Env:GITTER_NOTIFY_URL
-      method: POST
-      on_build_success: true
-      on_build_failure: true
-      on_build_status_changed: true

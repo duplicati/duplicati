@@ -1,21 +1,21 @@
 ﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -44,6 +44,7 @@ namespace Duplicati.Library.Backend
 
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
+            { "MyCloudyPlace (EU)", "s3.mycloudyplace.com" },
             { "Hosteurope", "cs.hosteurope.de" },
             { "Dunkel", "dcs.dunkel.de" },
             { "DreamHost", "objects.dreamhost.com" },
@@ -158,9 +159,9 @@ namespace Duplicati.Library.Backend
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
         private const string S3_EU_REGION_NAME = "eu-west-1";
         private const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
-        
+
         private IS3Client s3Client;
-        
+
         public S3()
         {
         }
@@ -180,7 +181,7 @@ namespace Duplicati.Library.Backend
                 awsID = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 awsKey = options["auth-password"];
-            
+
             if (options.ContainsKey("aws_access_key_id"))
                 awsID = options["aws_access_key_id"];
             if (options.ContainsKey("aws_secret_access_key"))
@@ -317,8 +318,8 @@ namespace Duplicati.Library.Backend
         {
             get { return true; }
         }
-        
-        
+
+
         public IEnumerable<IFileEntry> List()
         {
             foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))

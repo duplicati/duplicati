@@ -188,5 +188,13 @@ namespace Duplicati.Library.Main.Volumes
         {
             AddMetaEntry(FilelistEntryType.Symlink, name, metahash, metasize, metablockhash, metablocklisthashes);
         }
+
+        public void CreateFilesetFile(bool isFullBackup)
+        {
+            using (var sr = new StreamWriter(this.m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
+            {
+                sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
+            }
+        }
     }
 }

@@ -19,7 +19,10 @@ Command: {1} {2}", message, executable, arguments); }
         public static string SafeGuardError { get { return LC.L(@"The number of files returned by USN was zero. This is likely an error. To remedy this, USN has been disabled."); } }
         public static string UnexpectedPathFormat { get { return LC.L(@"Unexpected path format encountered"); } }
         public static string UnsupportedUsnVersion { get { return LC.L(@"Unsupported USN journal version."); } }
-
+        public static string PreviousBackupNoInfo { get { return LC.L(@"Previous backup did not record USN journal info"); } }
+        public static string JournalIdChanged { get { return LC.L(@"USN journal ID changed"); } }
+        public static string NextUsnZero { get { return LC.L(@"Next USN is zero"); } }
+        public static string ConfigHashChanged { get { return LC.L(@"Backup configuration changed"); } }
     }
     internal static class WinNativeMethod {
         public static string MissingBackupPrivilegeError { get { return LC.L(@"Calling process does not have the backup privilege"); } }
