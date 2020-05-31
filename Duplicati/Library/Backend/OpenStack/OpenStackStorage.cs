@@ -65,7 +65,7 @@ namespace Duplicati.Library.Backend.OpenStack
         public static readonly KeyValuePair<string, string>[] KNOWN_OPENSTACK_PROVIDERS = {
             new KeyValuePair<string, string>("Rackspace US", "https://identity.api.rackspacecloud.com/v2.0"),
             new KeyValuePair<string, string>("Rackspace UK", "https://lon.identity.api.rackspacecloud.com/v2.0"),
-            new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v2.0"),
+            new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v3"),
             new KeyValuePair<string, string>("Selectel Cloud Storage", "https://auth.selcdn.ru"),
             new KeyValuePair<string, string>("Memset Cloud Storage", "https://auth.storage.memset.com"),
         };

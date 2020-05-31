@@ -192,12 +192,6 @@ namespace Duplicati.Library.Common.IO
         }
 
         #region ISystemIO implementation
-        public void DirectoryDelete(string path)
-        {
-            PathTooLongActionWrapper(System.IO.Directory.Delete,
-                                     Alphaleonis.Win32.Filesystem.Directory.Delete, path, true);
-        }
-
         public void DirectoryCreate(string path)
         {
             PathTooLongVoidFuncWrapper(System.IO.Directory.CreateDirectory,
@@ -258,12 +252,6 @@ namespace Duplicati.Library.Common.IO
             return !FileExists(path)
                 ? FileCreate(path)
                 : PathTooLongFuncWrapper(System.IO.File.OpenWrite, Alphaleonis.Win32.Filesystem.File.OpenWrite, path, true);
-        }
-
-        public System.IO.FileStream FileOpenReadWrite(string path)
-        {
-            return PathTooLongFuncWrapper(p => System.IO.File.Open(p, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.Read),
-                                   p => Alphaleonis.Win32.Filesystem.File.Open(p, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read), path, true);
         }
 
         public System.IO.FileStream FileCreate(string path)
@@ -356,18 +344,6 @@ namespace Duplicati.Library.Common.IO
                                      p => Alphaleonis.Win32.Filesystem.File.SetCreationTimeUtc(p, time), path, true);
         }
 
-        public DateTime DirectoryGetLastWriteTimeUtc(string path)
-        {
-            return PathTooLongFuncWrapper(System.IO.Directory.GetLastWriteTimeUtc,
-                                          Alphaleonis.Win32.Filesystem.Directory.GetLastWriteTimeUtc, path, true);
-        }
-
-        public DateTime DirectoryGetCreationTimeUtc(string path)
-        {
-            return PathTooLongFuncWrapper(System.IO.Directory.GetCreationTimeUtc,
-                                          Alphaleonis.Win32.Filesystem.Directory.GetCreationTimeUtc, path, true);
-        }
-
         public void FileMove(string source, string target)
         {
             // We do not check if path is too long on target. If so, then we catch an exception.
@@ -381,13 +357,6 @@ namespace Duplicati.Library.Common.IO
             return PathTooLongFuncWrapper(p => new System.IO.FileInfo(p).Length,
                                           p => new Alphaleonis.Win32.Filesystem.FileInfo(p).Length,
                                           path, true);
-        }
-
-        public void DirectoryDelete(string path, bool recursive)
-        {
-            PathTooLongActionWrapper(p => System.IO.Directory.Delete(p, recursive),
-                                     p => Alphaleonis.Win32.Filesystem.Directory.Delete(p, recursive),
-                                     path, true);
         }
 
         public string GetPathRoot(string path)
@@ -488,6 +457,15 @@ namespace Duplicati.Library.Common.IO
 
             dict["win-ext:accessrules"] = SerializeObject(objs);
 
+            // Only include the following key when its value is True.
+            // This prevents unnecessary 'metadata change' detections when upgrading from
+            // older versions (pre-2.0.5.101) that didn't store this value at all.
+            // When key is not present, its value is presumed False by the restore code.
+            if (rules.AreAccessRulesProtected)
+            {
+                dict["win-ext:accessrulesprotected"] = "True";
+            }
+
             return dict;
         }
 
@@ -496,31 +474,44 @@ namespace Duplicati.Library.Common.IO
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
             var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
 
-            FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
-            if (restorePermissions && data.ContainsKey("win-ext:accessrules"))
+            if (restorePermissions)
             {
-                var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
-                var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
-                for (var i = c.Count - 1; i >= 0; i--)
-                    rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
+                FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
 
-                Exception ex = null;
-
-                foreach (var r in content)
+                if (data.ContainsKey("win-ext:accessrulesprotected"))
                 {
-                    // Attempt to apply as many rules as we can
-                    try
+                    bool isProtected = bool.Parse(data["win-ext:accessrulesprotected"]);
+                    if (rules.AreAccessRulesProtected != isProtected)
                     {
-                        rules.AddAccessRule(r.Create(rules));
-                    }
-                    catch (Exception e)
-                    {
-                        ex = e;
+                        rules.SetAccessRuleProtection(isProtected, false);
                     }
                 }
 
-                if (ex != null)
-                    throw ex;
+                if (data.ContainsKey("win-ext:accessrules"))
+                {
+                    var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
+                    var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
+                    for (var i = c.Count - 1; i >= 0; i--)
+                        rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);
+
+                    Exception ex = null;
+
+                    foreach (var r in content)
+                    {
+                        // Attempt to apply as many rules as we can
+                        try
+                        {
+                            rules.AddAccessRule(r.Create(rules));
+                        }
+                        catch (Exception e)
+                        {
+                            ex = e;
+                        }
+                    }
+
+                    if (ex != null)
+                        throw ex;
+                }
 
                 if (isDirTarget)
                     SetAccessControlDir(targetpath, (DirectorySecurity)rules);

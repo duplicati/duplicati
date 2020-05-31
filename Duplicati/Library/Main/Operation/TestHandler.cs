@@ -53,10 +53,8 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
-                
-                if (!m_options.NoBackendverification)
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter);
-                    
+                FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter, true, null);
+
                 DoRun(samples, db, backend);
                 db.WriteResults();
             }

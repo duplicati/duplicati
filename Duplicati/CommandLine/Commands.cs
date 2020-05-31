@@ -414,7 +414,7 @@ namespace Duplicati.CommandLine
                         outwriter.WriteLine(Strings.Program.DeletedBackups);
 
                     foreach(var f in res.DeletedSets)
-                        outwriter.WriteLine(string.Format("{0}: {1}", f.Item1, f.Item2));
+                        outwriter.WriteLine("{0}: {1}", f.Item1, f.Item2);
                 }
             }
 

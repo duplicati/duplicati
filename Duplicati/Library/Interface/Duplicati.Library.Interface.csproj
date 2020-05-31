@@ -43,7 +43,6 @@
   <ItemGroup>
     <Compile Include="BackendExtensions.cs" />
     <Compile Include="CommandLineArgument.cs" />
-    <Compile Include="CommonStrings.cs" />
     <Compile Include="CustomExceptions.cs" />
     <Compile Include="IBackend.cs" />
     <Compile Include="USNJournalDataEntry.cs" />

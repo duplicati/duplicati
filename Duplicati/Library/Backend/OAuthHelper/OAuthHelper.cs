@@ -105,8 +105,13 @@ namespace Duplicati.Library
 
         public override HttpWebRequest CreateRequest(string url, string method = null)
         {
+            return this.CreateRequest(url, method, false);
+        }
+
+        public HttpWebRequest CreateRequest(string url, string method, bool noAuthorization)
+        {
             var r = base.CreateRequest(url, method);
-            if (AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url))
+            if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url))
                 r.Headers["Authorization"] = string.Format("Bearer {0}", AccessToken);
             return r;
         } 

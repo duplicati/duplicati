@@ -65,7 +65,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 result[n.Name] = n.Value;
 
             result["Filesets"] = r.Filesets;
-            result["Files"] = r.Files;
+            result["Files"] = r.Files
+                // Group directories first - support either directory separator here as we may be restoring data from an alternate platform
+                .OrderByDescending(f => (f.Path.StartsWith("/", StringComparison.Ordinal) && f.Path.EndsWith("/", StringComparison.Ordinal)) || (!f.Path.StartsWith("/", StringComparison.Ordinal) && f.Path.EndsWith("\\", StringComparison.Ordinal)))
+                // Sort both groups (directories and files) alphabetically
+                .ThenBy(f => f.Path);
 
             info.OutputOK(result);
 

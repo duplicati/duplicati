@@ -84,6 +84,12 @@
       <Link>licenses\SQLite\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\uplink.NET\Homepage.txt">
+      <Link>licenses\uplink.NET\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\uplink.NET\license.txt">
+      <Link>licenses\uplink.NET\license.txt</Link>
+    </Content>
     <Content Include="..\license.txt">
       <Link>licenses\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -399,6 +405,9 @@
   <ItemGroup>
     <None Include="..\..\thirdparty\FluentFTP\licensedata.json">
       <Link>licenses\FluentFTP\licensedata.json</Link>
+    </None>
+    <None Include="..\..\thirdparty\uplink.NET\licensedata.json">
+      <Link>licenses\uplink.NET\licensedata.json</Link>
     </None>
     <None Include="Duplicati.snk" />
     <None Include="..\..\thirdparty\SharpCompress\licensedata.json">

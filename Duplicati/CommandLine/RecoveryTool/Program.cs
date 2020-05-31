@@ -20,7 +20,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
-    static class Program
+    public static class Program
     {
         /// <summary>
         /// The main entry point for the application.
@@ -79,10 +79,18 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var actions = new Dictionary<string, CommandRunner>(StringComparer.OrdinalIgnoreCase);
                 actions["download"] = Download.Run;
                 actions["recompress"] = Recompress.Run;
-                actions["index"] = Index.Run;
                 actions["list"] = List.Run;
                 actions["restore"] = Restore.Run;
                 actions["help"] = Help.Run;
+
+                if (Library.Utility.Utility.ParseBoolOption(options, "build-index-with-files"))
+                {
+                    actions["index"] = FileIndex.Run;
+                }
+                else
+                {
+                    actions["index"] = Index.Run;
+                }
 
                 CommandRunner command;
 

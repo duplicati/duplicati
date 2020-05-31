@@ -189,8 +189,8 @@ namespace Duplicati.Library.SQLiteHelper
                     // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
                     if (loadMixedModeAssembly)
                     {
-                        try { PInvoke.LoadLibraryEx(Path.Combine(basePath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
-                        catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "LoadMixedModeSQLiteError", ex, "Failed to load the mixed mode SQLite database: {0}", Path.Combine(basePath, "SQLite.Interop.dll")); }
+                        try { PInvoke.LoadLibraryEx(Path.Combine(assemblyPath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
+                        catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "LoadMixedModeSQLiteError", ex, "Failed to load the mixed mode SQLite database: {0}", Path.Combine(assemblyPath, "SQLite.Interop.dll")); }
                     }
                 }
                 else

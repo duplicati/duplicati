@@ -133,7 +133,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             k.Task.SetController(c);
                             c.AppendSink(sink);
                         }, args);
-                        k.Writer.WriteLine(string.Format("Return code: {0}", code));
+                        k.Writer.WriteLine("Return code: {0}", code);
                     }
                     catch (Exception ex)
                     {

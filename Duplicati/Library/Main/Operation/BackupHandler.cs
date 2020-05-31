@@ -81,9 +81,11 @@ namespace Duplicati.Library.Main.Operation
             catch (Exception ex)
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
-                    throw;
+                    throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message), "SnapshotFailed", ex);
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message));
+                else if (options.SnapShotStrategy == Options.OptimizationStrategy.Auto)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
             }
 
             return Platform.IsClientPosix ?
@@ -103,8 +105,10 @@ namespace Duplicati.Library.Main.Operation
         private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
         {
             if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
+
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
-            var service = new UsnJournalService(sources, snapshot, filter, journalData, cancellationTokenSource.Token);
+            var service = new UsnJournalService(sources, snapshot, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
+                journalData, cancellationTokenSource.Token);
 
             foreach (var volumeData in service.VolumeDataList)
             {
@@ -113,7 +117,8 @@ namespace Duplicati.Library.Main.Operation
                     if (volumeData.Exception == null || volumeData.Exception is UsnJournalSoftFailureException)
                     {
                         // soft fail
-                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume", $"Performing full scan for volume \"{volumeData.Volume}\"");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume",
+                            "Performing full scan for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception?.Message);
                     }
                     else
                     {
@@ -124,7 +129,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
                         {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
                                 "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
                         }
                         else
@@ -149,7 +154,7 @@ namespace Duplicati.Library.Main.Operation
                         UpdateStorageStatsFromDatabase();
                     }
                     else
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { protectedfile });
                 }
                 catch (Exception ex)
                 {
@@ -160,7 +165,7 @@ namespace Duplicati.Library.Main.Operation
                         new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
 
                         Logging.Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { protectedfile });
                     }
                     else
                         throw;
@@ -281,13 +286,13 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void PostBackupVerification()
+        private void PostBackupVerification(string currentFilelistVolume)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
             {
-                using(new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { currentFilelistVolume });
                 backend.WaitForComplete(m_database, null);
             }
 
@@ -370,10 +375,17 @@ namespace Duplicati.Library.Main.Operation
 
         private static async Task<long> FlushBackend(BackupResults result, IWriteChannel<Backup.IUploadRequest> uploadtarget, Task uploader)
         {
-            var flushReq = new Backup.FlushRequest();
-
             // Wait for upload completion
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
+
+            if (await uploadtarget.IsRetiredAsync)
+            {
+                await uploader.ConfigureAwait(false);
+                return -1;
+            }
+
+            var flushReq = new Backup.FlushRequest();
+
             await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
             await uploader.ConfigureAwait(false);
 
@@ -447,25 +459,25 @@ namespace Duplicati.Library.Main.Operation
                                 // Start the uploader process
                                 uploaderTask = uploader.Run();
 
-                                // If we have an interrupted backup, grab the 
-                                string lasttempfilelist = null;
-                                long lasttempfileid = -1;
+                                // If we have an interrupted backup, grab the fileset
+                                string lastTempFilelist = null;
+                                long lastTempFilesetId = -1;
                                 if (!m_options.DisableSyntheticFilelist)
                                 {
                                     var candidates = (await db.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToArray();
-                                    if (candidates.Length > 0)
+                                    if (candidates.Any())
                                     {
-                                        lasttempfileid = candidates.Last().Key;
-                                        lasttempfilelist = m_database.GetRemoteVolumeFromID(lasttempfileid).Name;
+                                        lastTempFilesetId = candidates.Last().Key;
+                                        lastTempFilelist = m_database.GetRemoteVolumeFromFilesetID(lastTempFilesetId).Name;
                                     }
                                 }
 
                                 // TODO: Rewrite to using the uploader process, or the BackendHandler interface
                                 // Do a remote verification, unless disabled
-                                PreBackupVerify(backendManager, lasttempfilelist);
+                                PreBackupVerify(backendManager, lastTempFilelist);
 
                                 // If the previous backup was interrupted, send a synthetic list
-                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lasttempfilelist, lasttempfileid);
+                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lastTempFilelist, lastTempFilesetId);
 
                                 // Grab the previous backup ID, if any
                                 var prevfileset = m_database.FilesetTimes.FirstOrDefault();
@@ -553,7 +565,7 @@ namespace Duplicati.Library.Main.Operation
                                 if (m_options.NoBackendverification)
                                     UpdateStorageStatsFromDatabase();
                                 else
-                                    PostBackupVerification();
+                                    PostBackupVerification(filesetvolume.RemoteFilename);
                             }
                         }
                         

@@ -332,8 +332,8 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!m_options.NoBackendverification)
                 {
-                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);                
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter);
+                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, database, result.BackendWriter, false, null);
                 }
 
                 //Figure out what files are to be patched, and what blocks are needed

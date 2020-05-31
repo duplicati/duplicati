@@ -159,7 +159,7 @@ namespace UnixSupport
         /// <param name="path">The full path to look up</param>
         public static FileType GetFileType(string path)
         {
-            
+
             var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
             if (fse.IsRegularFile)
                 return FileType.File;
@@ -174,7 +174,7 @@ namespace UnixSupport
             else if (fse.IsCharacterDevice)
                 return FileType.CharacterDevice;
             else if (fse.IsBlockDevice)
-                return FileType.CharacterDevice;
+                return FileType.BlockDevice;
             else
                 return FileType.Unknown;
         }

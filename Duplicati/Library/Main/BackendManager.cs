@@ -366,9 +366,6 @@ namespace Duplicati.Library.Main
 
         public string BackendUrl { get { return m_backendurl; } }
 
-        public bool HasDied { get { return m_lastException != null; } }
-        public Exception LastException { get { return m_lastException; } }
-
         public BackendManager(string backendurl, Options options, IBackendWriter statwriter, LocalDatabase database)
         {
             m_options = options;
@@ -656,9 +653,11 @@ namespace Duplicati.Library.Main
                     item.IndexfileUpdated = true;
                 }
 
-                var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
-                using (IndexVolumeWriter wr = new IndexVolumeWriter(m_options))
+                IndexVolumeWriter wr = null;
+                try
                 {
+                    var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                    wr = new IndexVolumeWriter(m_options);
                     using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);
                     item.Indexfile.Item1.Dispose();
@@ -666,6 +665,11 @@ namespace Duplicati.Library.Main
                     item.Indexfile.Item2.LocalTempfile.Dispose();
                     item.Indexfile.Item2.LocalTempfile = wr.TempFile;
                     wr.Close();
+                }
+                catch
+                {
+                    wr?.Dispose();
+                    throw;
                 }
             }
         }
@@ -723,7 +727,7 @@ namespace Duplicati.Library.Main
             if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond))
+                using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, 0))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                     ((Library.Interface.IStreamingBackend)m_backend).PutAsync(item.RemoteFilename, pgs, CancellationToken.None).Wait();
             }
@@ -817,7 +821,7 @@ namespace Duplicati.Library.Main
                     {
                         using (var ss = new ShaderStream(nextTierWriter, false))
                         {
-                            using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                            using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                             using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                             {
                                 taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
@@ -903,7 +907,7 @@ namespace Duplicati.Library.Main
                     using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, out getFileHash))
                     using (var ss = new ShaderStream(hs, true))
                     {
-                        using (var ts = new ThrottledStream(ss, m_options.MaxDownloadPrSecond, m_options.MaxUploadPrSecond))
+                        using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                         using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
@@ -1180,7 +1184,7 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
-        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, bool synchronous = false)
+        public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, Action indexVolumeFinishedCallback = null, bool synchronous = false)
         {
             if (m_lastException != null)
                 throw m_lastException;
@@ -1212,6 +1216,11 @@ namespace Duplicati.Library.Main
                 req2 = new FileEntryItem(OperationType.Put, indexfile.RemoteFilename);
                 req2.LocalTempfile = indexfile.TempFile;
                 req.Indexfile = new Tuple<IndexVolumeWriter, FileEntryItem>(indexfile, req2);
+
+                indexfile.FinishVolume(req.Hash, req.Size);
+                indexVolumeFinishedCallback?.Invoke();
+                indexfile.Close();
+                req.IndexfileUpdated = true;
             }
 
             try
@@ -1409,31 +1418,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void CreateFolder(string remotename)
-        {
-            if (m_lastException != null)
-                throw m_lastException;
-
-            var req = new FileEntryItem(OperationType.CreateFolder, remotename);
-            try
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(true);
-                if (m_queue.Enqueue(req))
-                {
-                    req.WaitForComplete();
-                    if (req.Exception != null)
-                        throw req.Exception;
-                }
-            }
-            finally
-            {
-                m_statwriter.BackendProgressUpdater.SetBlocking(false);
-            }
-
-            if (m_lastException != null)
-                throw m_lastException;
-        }
-
         public void Delete(string remotename, long size, bool synchronous = false)
         {
             if (m_lastException != null)
@@ -1458,11 +1442,6 @@ namespace Duplicati.Library.Main
 
             if (m_lastException != null)
                 throw m_lastException;
-        }
-
-        public bool FlushDbMessages(LocalDatabase database, System.Data.IDbTransaction transaction)
-        {
-            return m_db.FlushDbMessages(database, transaction);
         }
 
         public bool FlushDbMessages()

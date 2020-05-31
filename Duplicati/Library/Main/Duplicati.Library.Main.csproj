@@ -52,7 +52,6 @@
     <Compile Include="Operation\VacuumHandler.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Database\ILocalFileEntry.cs" />
     <Compile Include="Database\IRemoteVolume.cs" />
     <Compile Include="Database\LocalBackupDatabase.cs" />
     <Compile Include="Database\LocalDatabase.cs" />
@@ -103,7 +102,6 @@
     <Compile Include="Database\LocalRecreateDatabase.cs" />
     <Compile Include="ProgressClasses.cs" />
     <Compile Include="OperationPhase.cs" />
-    <Compile Include="Database\PathLookupHelper.cs" />
     <Compile Include="Database\HashLookupHelper.cs" />
     <Compile Include="Operation\TestFilterHandler.cs" />
     <Compile Include="Operation\ListAffected.cs" />
@@ -207,6 +205,8 @@
     <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
     <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
     <EmbeddedResource Include="Database\Database schema\9. Refactor Paths.sql" />
+    <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
+    <EmbeddedResource Include="Database\Database schema\11. Add Block indices.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -217,7 +217,6 @@
   </Target>
   -->
   <ItemGroup>
-    <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

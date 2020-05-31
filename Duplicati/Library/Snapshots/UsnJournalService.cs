@@ -44,13 +44,16 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sources">Sources to filter</param>
         /// <param name="snapshot"></param>
         /// <param name="emitFilter">Emit filter</param>
+        /// <param name="fileAttributeFilter"></param>
+        /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData">Journal-data of previous fileset</param>
-        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, 
-            IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
+        /// <param name="token"></param>
+        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, FileAttributes fileAttributeFilter,
+            long skipFilesLargerThan, IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
         {
             m_sources = sources;
             m_snapshot = snapshot;
-            m_volumeDataDict = Initialize(emitFilter, prevJournalData);
+            m_volumeDataDict = Initialize(emitFilter, fileAttributeFilter, skipFilesLargerThan, prevJournalData);
             m_token = token;
         }
 
@@ -60,18 +63,25 @@ namespace Duplicati.Library.Snapshots
         /// Initialize list of modified files / folder for each volume
         /// </summary>
         /// <param name="emitFilter"></param>
+        /// <param name="fileAttributeFilter"></param>
+        /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData"></param>
         /// <returns></returns>
-        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, IEnumerable<USNJournalDataEntry> prevJournalData)
+        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, FileAttributes fileAttributeFilter, long skipFilesLargerThan,
+            IEnumerable<USNJournalDataEntry> prevJournalData)
         {
             if (prevJournalData == null)
-                throw new UsnJournalSoftFailureException();
+                throw new UsnJournalSoftFailureException(Strings.USNHelper.PreviousBackupNoInfo);
 
             var result = new Dictionary<string, VolumeData>();
 
-            // get filter identifying current source filter / sources configuration
-            // ReSharper disable once PossibleMultipleEnumeration
-            var configHash = (emitFilter == null ? string.Empty : emitFilter.GetFilterHash()) + Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(m_sources));
+            // get hash identifying current source filter / sources configuration
+            var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
+                emitFilter == null ? string.Empty : emitFilter.ToString(),
+                string.Join("; ", m_sources),
+                fileAttributeFilter.ToString(),
+                skipFilesLargerThan.ToString()
+            }));
 
             // create lookup for journal data
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);
@@ -108,13 +118,18 @@ namespace Duplicati.Library.Snapshots
                     // only use change journal if:
                     // - journal ID hasn't changed
                     // - nextUsn isn't zero (we use this as magic value to force a rescan)
-                    // - the exclude filter hash hasn't changed
-                    if (!journalDataDict.TryGetValue(volume, out var prevData) ||
-                        prevData.JournalId != nextData.JournalId || prevData.NextUsn == 0 ||
-                        prevData.ConfigHash != nextData.ConfigHash)
-                    {
-                        throw new UsnJournalSoftFailureException();
-                    }
+                    // - the configuration (sources or filters) hasn't changed
+                    if (!journalDataDict.TryGetValue(volume, out var prevData))
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.PreviousBackupNoInfo);
+
+                    if (prevData.JournalId != nextData.JournalId)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.JournalIdChanged);
+
+                    if (prevData.NextUsn == 0)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.NextUsnZero);
+                    
+                    if (prevData.ConfigHash != nextData.ConfigHash)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.ConfigHashChanged);
 
                     var changedFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
                     var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
@@ -428,6 +443,9 @@ namespace Duplicati.Library.Snapshots
             // get volume data
             if (!m_volumeDataDict.TryGetValue(volumeRoot, out var volumeData))
                 return false;
+
+            if (volumeData.IsFullScan)
+                return true; // do not append from previous set, already scanned
 
             if (volumeData.Files.Contains(path))
                 return true; // do not append from previous set, already scanned

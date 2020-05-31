@@ -28,15 +28,10 @@ namespace Duplicati.Library.Common.IO
     public interface ISystemIO
     {
         IFileEntry DirectoryEntry(string path);
-        void DirectoryDelete(string path);
-        void DirectoryDelete(string path, bool recursive);
         void DirectoryCreate(string path);
         bool DirectoryExists(string path);
         void DirectorySetLastWriteTimeUtc(string path, DateTime time);
         void DirectorySetCreationTimeUtc(string path, DateTime time);
-        DateTime DirectoryGetLastWriteTimeUtc(string path);
-        DateTime DirectoryGetCreationTimeUtc(string path);
-
 
         IFileEntry FileEntry(string path);
         void FileMove(string source, string target);
@@ -50,7 +45,6 @@ namespace Duplicati.Library.Common.IO
         long FileLength(string path);
         FileStream FileOpenRead(string path);
         FileStream FileOpenWrite(string path);
-        FileStream FileOpenReadWrite(string path);
         FileStream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);
         void SetFileAttributes(string path, FileAttributes attributes);

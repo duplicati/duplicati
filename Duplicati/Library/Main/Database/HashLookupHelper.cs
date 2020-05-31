@@ -43,66 +43,7 @@ namespace Duplicati.Library.Main
             m_entries = Math.Max(16, maxmemory / (ulong)IntPtr.Size);
             m_lookup = new SortedList<string, T>[m_entries];
         }
-        
-        /// <summary>
-        /// Adds the specified hash and value to the lookup,
-        /// if not already found.
-        /// </summary>
-        /// <param name="hash">The hash to add</param>
-        /// <param name="value">The value associated with the hash</param>
-        /// <returns>>True if the value was added, false otherwise</returns>
-        public bool TryAdd(string hash, long size, T value)
-        {
-            var key = DecodeBase64Hash(hash) % m_entries;
-            var lst = m_lookup[key];
-            if (lst == null)
-                lst = m_lookup[key] = new SortedList<string, T>(1);
 
-            if (!lst.TryGetValue(hash + ':' + size.ToString(), out _))
-            {
-                lst.Add(hash + ':' + size.ToString(), value);
-                return true;
-            }
-
-            //
-            return false;
-        }
-
-        /// <summary>
-        /// Adds the specified hash and value to the lookup
-        /// </summary>
-        /// <param name="hash">The hash to add</param>
-        /// <param name="value">The value associated with the hash</param>
-        public void Add(string hash, long size, T value)
-        {
-            var key = DecodeBase64Hash(hash) % m_entries;
-            var lst = m_lookup[key];
-            if (lst == null)
-                lst = m_lookup[key] = new SortedList<string, T>(1);
-            lst.Add(hash + ':' + size.ToString(), value);
-        }
-        
-        /// <summary>
-        /// Retrieves the value for a given hash
-        /// </summary>
-        /// <returns><c>true</c>, if the value was found, <c>false</c> otherwise.</returns>
-        /// <param name="hash">The hash to look for.</param>
-        /// <param name="value">The value associated with the hash</param>
-        public bool TryGet(string hash, long size, out T value)
-        {
-            var key = DecodeBase64Hash(hash) % m_entries;
-            var lst = m_lookup[key];
-            if (lst == null)
-            {
-                value = default(T);
-                return false;
-            }
-            else
-            {
-                return lst.TryGetValue(hash + ':' + size.ToString(), out value);
-            }
-        }
-        
         /// <summary>
         /// Hex digit ASCII lookup table
         /// </summary>
@@ -141,67 +82,6 @@ namespace Duplicati.Library.Main
             //Base64 URL support
             BAS64TB['-'] = 62;
             BAS64TB['_'] = 63;
-        }
-
-        /// <summary>
-        /// Debug help function to compare values
-        /// </summary>
-        /// <param name="value">The value to convert</param>
-        /// <returns>The converted value</returns>
-        public static ulong ConvertEndianness(ulong value)
-        {
-            return
-                ((value << 56) & 0xff00000000000000uL) |
-                ((value << 40) & 0x00ff000000000000uL) |
-                ((value << 24) & 0x0000ff0000000000uL) |
-                ((value << 8)  & 0x000000ff00000000uL) |
-                ((value >> 8)  & 0x00000000ff000000uL) |
-                ((value >> 24) & 0x0000000000ff0000uL) |
-                ((value >> 40) & 0x000000000000ff00uL) |
-                ((value >> 56) & 0x00000000000000ffuL);
-        }
-
-        /// <summary>
-        /// Faster internal hex decoder, assumes valid hex string of at least 16 chars and no extended chars
-        /// </summary>
-        public static ulong DecodeHexHash(string hash)
-        {
-            return
-                (ulong)HEXTB[hash[0]] << 60 |
-                (ulong)HEXTB[hash[1]] << 56 |
-                (ulong)HEXTB[hash[2]] << 52 |
-                (ulong)HEXTB[hash[3]] << 48 |
-                (ulong)HEXTB[hash[4]] << 44 |
-                (ulong)HEXTB[hash[5]] << 40 |
-                (ulong)HEXTB[hash[6]] << 36 |
-                (ulong)HEXTB[hash[7]] << 32 |
-                (ulong)HEXTB[hash[8]] << 28 |
-                (ulong)HEXTB[hash[9]] << 24 |
-                (ulong)HEXTB[hash[10]] << 20 |
-                (ulong)HEXTB[hash[11]] << 16 |
-                (ulong)HEXTB[hash[12]] << 12 |
-                (ulong)HEXTB[hash[13]] << 8 |
-                (ulong)HEXTB[hash[14]] << 4 |
-                (ulong)HEXTB[hash[15]] << 0;
-        }
-
-        /// <summary>
-        /// Faster internal base64 decoder, assumes valid base64 string of at least 11 chars and no extended chars
-        /// </summary>
-        public static ulong DecodeBase64Hash(string hash)
-        {
-            return
-                (ulong)BAS64TB[hash[0]] << 58 |
-                (ulong)BAS64TB[hash[1]] << 52 |
-                (ulong)BAS64TB[hash[2]] << 46 |
-                (ulong)BAS64TB[hash[3]] << 40 |
-                (ulong)BAS64TB[hash[4]] << 34 |
-                (ulong)BAS64TB[hash[5]] << 28 |
-                (ulong)BAS64TB[hash[6]] << 22 |
-                (ulong)BAS64TB[hash[7]] << 16 |
-                (ulong)BAS64TB[hash[8]] << 10 |
-                (ulong)BAS64TB[hash[9]] << 4 |
-                (((ulong)BAS64TB[hash[10]] >> 2) & 0x0f);
         }
     }
 }

@@ -273,9 +273,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.RemoveRemoteVolume(remoteFilename, m_transaction));
         }
 
-        public Task<RemoteVolumeEntry> GetRemoteVolumeFromIDAsync(long fileid)
+        public Task<RemoteVolumeEntry> GetRemoteVolumeFromFilesetIDAsync(long filesetID)
         {
-            return RunOnMain(() => m_database.GetRemoteVolumeFromID(fileid, m_transaction));
+            return RunOnMain(() => m_database.GetRemoteVolumeFromFilesetID(filesetID, m_transaction));
         }
 
         public Task CreateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData)

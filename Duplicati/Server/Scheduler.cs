@@ -81,6 +81,7 @@ namespace Duplicati.Server
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
             m_worker.CompletedWork += OnCompleted;
+            m_worker.StartingWork += OnStartingWork;
             m_schedule = new KeyValuePair<DateTime, ISchedule>[0];
             m_terminate = false;
             m_event = new AutoResetEvent(false);
@@ -174,7 +175,7 @@ namespace Duplicati.Server
                     i = 50000;
                     while (!IsDateAllowed(res, allowedDays) && i-- > 0)
                         res = Timeparser.ParseTimeInterval(repetition, res);
-            }
+                }
             }
 
             if (!IsDateAllowed(res, allowedDays) || res < firstdate)
@@ -211,7 +212,25 @@ namespace Duplicati.Server
             }
             
         }
-                
+
+        private void OnStartingWork(WorkerThread<Runner.IRunnerData> worker, Runner.IRunnerData task)
+        {
+            if (task is null)
+            {
+                return;
+            }
+            
+            lock(m_lock)
+            {
+                if (m_updateTasks.TryGetValue(task, out Tuple<ISchedule, DateTime, DateTime> scheduleInfo))
+                {
+                    // Item2 is the scheduled start time (Time in the Schedule table).
+                    // Item3 is the actual start time (LastRun in the Schedule table).
+                    m_updateTasks[task] = Tuple.Create(scheduleInfo.Item1, scheduleInfo.Item2, DateTime.UtcNow);
+                }
+            }
+        }
+
         /// <summary>
         /// The actual scheduling procedure
         /// </summary>
@@ -273,8 +292,8 @@ namespace Duplicati.Server
                                          select n.Backup;
                                 var tastTemp = m_worker.CurrentTask;
                                 if (tastTemp != null && tastTemp.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup)
-                                    tmplst.Union(new [] { tastTemp.Backup });
-                            
+                                    tmplst = tmplst.Union(new [] { tastTemp.Backup });
+
                                 //If it is not already in queue, put it there
                                 if (!tmplst.Any(x => x.ID == id))
                                 {
@@ -308,10 +327,15 @@ namespace Duplicati.Server
                             
                             Server.Runner.IRunnerData lastJob = jobsToRun.LastOrDefault();
                             if (lastJob != null)
-                                lock(m_lock)
+                            {
+                                lock (m_lock)
+                                {
+                                    // The actual last run time will be updated when the StartingWork event is raised.
                                     m_updateTasks[lastJob] = new Tuple<ISchedule, DateTime, DateTime>(sc, start, DateTime.UtcNow);
-                            
-                            foreach(var job in jobsToRun)
+                                }
+                            }
+
+                            foreach (var job in jobsToRun)
                                 m_worker.AddTask(job);
                             
                             if (start < DateTime.UtcNow)

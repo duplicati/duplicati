@@ -26,10 +26,6 @@ namespace Duplicati.Library.Common.IO
     public struct SystemIOLinux : ISystemIO
     {
         #region ISystemIO implementation
-        public void DirectoryDelete(string path)
-        {
-            Directory.Delete(NormalizePath(path));
-        }
 
         public void DirectoryCreate(string path)
         {
@@ -79,11 +75,6 @@ namespace Duplicati.Library.Common.IO
         public FileStream FileOpenWrite(string path)
         {
             return File.OpenWrite(path);
-        }
-
-        public FileStream FileOpenReadWrite(string path)
-        {
-            return File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
         }
 
         public FileStream FileCreate(string path)
@@ -157,16 +148,6 @@ namespace Duplicati.Library.Common.IO
             Directory.SetCreationTimeUtc(NormalizePath(path), time);
         }
 
-        public DateTime DirectoryGetLastWriteTimeUtc(string path)
-        {
-            return Directory.GetLastWriteTimeUtc(NormalizePath(path));
-        }
-
-        public DateTime DirectoryGetCreationTimeUtc(string path)
-        {
-            return Directory.GetCreationTimeUtc(NormalizePath(path));
-        }
-
         public void FileMove(string source, string target)
         {
             File.Move(source, target);
@@ -175,11 +156,6 @@ namespace Duplicati.Library.Common.IO
         public long FileLength(string path)
         {
             return new FileInfo(path).Length;
-        }
-
-        public void DirectoryDelete(string path, bool recursive)
-        {
-            Directory.Delete(NormalizePath(path), recursive);
         }
 
         public Dictionary<string, string> GetMetadata(string file, bool isSymlink, bool followSymlink)

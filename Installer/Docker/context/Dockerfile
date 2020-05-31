@@ -1,5 +1,4 @@
-ARG ARCH=
-FROM ${ARCH}mono:5-slim
+FROM --platform=$TARGETPLATFORM mono:5-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

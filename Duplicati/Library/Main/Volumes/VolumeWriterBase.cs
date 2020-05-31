@@ -81,28 +81,22 @@ namespace Duplicati.Library.Main.Volumes
             return fileEntry;
         }
 
-        public void CreateFilesetFile(bool isFullBackup)
-        {
-            using (var sr = new StreamWriter(m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
-            {
-                sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
-            }
-        }
-
         public virtual void Dispose()
         {
             if (m_compression != null)
                 try { m_compression.Dispose(); }
                 finally { m_compression = null; }
 
-            m_localfile.Protected = false;
             if (m_localFileStream != null)
                 try { m_localFileStream.Dispose(); }
                 finally { m_localFileStream = null; }
 
             if (m_localfile != null)
+            {
+                m_localfile.Protected = false;
                 try { m_localfile.Dispose(); }
                 finally { m_localfile = null; }
+            }
 
             m_volumename = null;
         }
