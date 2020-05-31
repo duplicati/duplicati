@@ -654,10 +654,10 @@ namespace Duplicati.Library.Main
                     item.IndexfileUpdated = true;
                 }
 
-                var hashsize = HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
-                using (IndexVolumeWriter wr = new IndexVolumeWriter(m_options))
+                IndexVolumeWriter wr = null;
+                try
                 {
-                    var hashsize = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                    var hashsize = HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
                     wr = new IndexVolumeWriter(m_options);
                     using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);

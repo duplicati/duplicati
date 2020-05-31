@@ -20,15 +20,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati.Library.Backend.Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
-      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
-      <Name>Duplicati.Library.Backend.Tardigrade</Name>
+    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
     </ProjectReference>
