@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <Version>2.0.0.7</Version>
     <Copyright>LGPL, Copyright ? Duplicati Team 2019</Copyright>
     <Product>Duplicati.CommandLine.BackendTester</Product>

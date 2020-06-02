@@ -1099,7 +1099,7 @@ namespace Duplicati.Library.AutoUpdater
                 return r;
             }
 
-            var app = Environment.GetCommandLineArgs().First();
+            var app = Environment.GetCommandLineArgs().First().Substring(0, Environment.GetCommandLineArgs().First().Length - 3) + "exe";
             var args = Library.Utility.Utility.WrapAsCommandLine(Environment.GetCommandLineArgs().Skip(1), false);
 
             if (!Path.IsPathRooted(app))

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <Version>2.0.0.7</Version>
     
     <Copyright>LGPL, Copyright � Duplicati Team 2015</Copyright>
