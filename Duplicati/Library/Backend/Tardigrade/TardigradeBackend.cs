@@ -46,7 +46,7 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         static Tardigrade()
         {
-            Access.SetTempDirectory(System.IO.Path.GetTempPath());
+            Access.SetTempDirectory(Library.Utility.TempFolder.SystemTempPath);
         }
 
         // ReSharper disable once UnusedMember.Global
