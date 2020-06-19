@@ -44,6 +44,11 @@ namespace Duplicati.Library.Backend.Tardigrade
             { "Access grant", "Access grant" },
         };
 
+        static Tardigrade()
+        {
+            Access.SetTempDirectory(Library.Utility.TempFolder.SystemTempPath);
+        }
+
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public Tardigrade()
@@ -55,9 +60,6 @@ namespace Duplicati.Library.Backend.Tardigrade
         public Tardigrade(string url, Dictionary<string, string> options)
         {
             var auth_method = options[TARDIGRADE_AUTH_METHOD];
-
-            Access.SetTempDirectory(System.IO.Path.GetTempPath());
-
             if (auth_method == "Access grant")
             {
                 //Create an access from the access grant
@@ -241,7 +243,9 @@ namespace Duplicati.Library.Backend.Tardigrade
             foreach (var obj in objects.Items)
             {
                 TardigradeFile file = new TardigradeFile(obj);
-                file.Name = file.Name.Replace(GetBasePath(), "");
+                var basePath = GetBasePath();
+                if (basePath != "")
+                    file.Name = file.Name.Replace(basePath, "");
                 files.Add(file);
             }
 
