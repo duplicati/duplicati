@@ -267,7 +267,9 @@ namespace Duplicati.Library.Backend.Tardigrade
             foreach (var obj in objects.Items)
             {
                 TardigradeFile file = new TardigradeFile(obj);
-                file.Name = file.Name.Replace(GetBasePath(), "");
+                var basePath = GetBasePath();
+                if (basePath != "")
+                    file.Name = file.Name.Replace(basePath, "");
                 files.Add(file);
             }
 
