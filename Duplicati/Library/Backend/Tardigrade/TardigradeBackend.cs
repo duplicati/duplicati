@@ -65,6 +65,11 @@ namespace Duplicati.Library.Backend.Tardigrade
             _libraryLoaded = true;
         }
 
+        static Tardigrade()
+        {
+            Access.SetTempDirectory(Library.Utility.TempFolder.SystemTempPath);
+        }
+
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public Tardigrade()
@@ -79,9 +84,6 @@ namespace Duplicati.Library.Backend.Tardigrade
                 InitStorjLibrary(); //We need to init only on Windows to distinguish between x64 and x86
 
             var auth_method = options[TARDIGRADE_AUTH_METHOD];
-
-            Access.SetTempDirectory(System.IO.Path.GetTempPath());
-
             if (auth_method == "Access grant")
             {
                 //Create an access from the access grant
