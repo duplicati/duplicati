@@ -21,13 +21,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string COSBucketDescriptionLong { get { return LC.L(@"Bucket, format: BucketName-APPID"); } }
 
         public static string COSLocationDescriptionShort { get { return LC.L(@"Specifies COS location constraints"); } }
-        public static string COSLocationDescriptionLong
-        {
-            get
-            {
-                return LC.L(@"This option is only used when creating new buckets. Use this option to change what region the data is stored in. Amazon charges slightly more for non-US buckets. ");
-            }
-        }
+        public static string COSLocationDescriptionLong { get { return LC.L(@"Region (Region) is the distribution area of ​​the Tencent cloud hosting machine room, the object storage COS data is stored in the storage buckets of these regions. https://cloud.tencent.com/document/product/436/6224"); } }
     }
 
 }
