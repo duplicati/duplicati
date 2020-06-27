@@ -80,7 +80,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         // This constructor is needed by the BackendLoader.
         public Tardigrade(string url, Dictionary<string, string> options)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (Duplicati.Library.Common.Platform.IsClientWindows)
                 InitStorjLibrary(); //We need to init only on Windows to distinguish between x64 and x86
 
             var auth_method = options[TARDIGRADE_AUTH_METHOD];
