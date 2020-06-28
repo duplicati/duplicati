@@ -1,5 +1,4 @@
-﻿using COSXML.Model.Bucket;
-using Duplicati.Library.Localization.Short;
+﻿using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.Strings
 {

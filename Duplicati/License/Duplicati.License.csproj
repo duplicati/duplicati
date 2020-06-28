@@ -84,6 +84,12 @@
       <Link>licenses\SQLite\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\Tencentyun\download.txt">
+      <Link>licenses\Tencentyun\download.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\Tencentyun\LICENSE.txt">
+      <Link>licenses\Tencentyun\LICENSE.txt</Link>
+    </Content>
     <Content Include="..\..\thirdparty\uplink.NET\Homepage.txt">
       <Link>licenses\uplink.NET\Homepage.txt</Link>
     </Content>
@@ -405,6 +411,9 @@
   <ItemGroup>
     <None Include="..\..\thirdparty\FluentFTP\licensedata.json">
       <Link>licenses\FluentFTP\licensedata.json</Link>
+    </None>
+    <None Include="..\..\thirdparty\Tencentyun\licensedata.json">
+      <Link>licenses\Tencentyun\licensedata.json</Link>
     </None>
     <None Include="..\..\thirdparty\uplink.NET\licensedata.json">
       <Link>licenses\uplink.NET\licensedata.json</Link>

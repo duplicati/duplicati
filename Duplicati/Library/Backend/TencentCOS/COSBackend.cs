@@ -72,10 +72,6 @@ namespace Duplicati.Library.Backend
             public string Path { get; set; }
         }
 
-        //static COS()
-        //{
-        //}
-
         public COS()
         {
         }
@@ -85,7 +81,7 @@ namespace Duplicati.Library.Backend
             _cosOptions = new CosOptions();
 
             var uri = new Utility.Uri(url);
-            m_prefix = uri.HostAndPath?.Trim()?.Trim('/').Trim('/')?.Trim('\\')?.Trim('\\');
+            m_prefix = uri.HostAndPath?.Trim()?.Trim('/')?.Trim('\\');
 
             if (!string.IsNullOrEmpty(m_prefix))
             {
@@ -214,29 +210,28 @@ namespace Duplicati.Library.Backend
             try
             {
                 _cosXml = GetCosXml();
-                string bucket = _cosOptions.Bucket;
-                string key = GetFullKey(remotename);
+                string bucket = _cosOptions.Bucket; //存储桶，格式：BucketName-APPID
+                string key = GetFullKey(remotename); //对象在存储桶中的位置，即称对象键
 
-                //string bucket = "examplebucket-1250000000"; //存储桶，格式：BucketName-APPID
-                //string key = "exampleobject"; //对象在存储桶中的位置，即称对象键
                 DeleteObjectRequest request = new DeleteObjectRequest(bucket, key);
+
                 //设置签名有效时长
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
+
                 //执行请求
                 DeleteObjectResult result = _cosXml.DeleteObject(request);
+
                 //请求成功
-                Console.WriteLine(result.GetResultInfo());
+                //result.GetResultInfo()
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
-                //请求失败
-                Console.WriteLine("CosClientException: " + clientEx);
+                Logging.Log.WriteErrorMessage(LOGTAG, "Delete", clientEx, "Delete failed: {0}", remotename);
                 throw;
             }
             catch (COSXML.CosException.CosServerException serverEx)
             {
-                //请求失败
-                Console.WriteLine("CosServerException: " + serverEx.GetInfo());
+                Logging.Log.WriteErrorMessage(LOGTAG, "Delete", serverEx, "Delete failed: {0}, {1}", remotename, serverEx.GetInfo());
                 throw;
             }
         }
@@ -268,7 +263,7 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-
+            // cos no folders need to be created
         }
 
         public void Dispose()
@@ -295,18 +290,16 @@ namespace Duplicati.Library.Backend
                 //执行请求
                 PutObjectResult result = _cosXml.PutObject(request);
                 //对象的 eTag
-                string eTag = result.eTag;
+                //string eTag = result.eTag;
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
-                //请求失败
-                Console.WriteLine("CosClientException: " + clientEx);
+                Logging.Log.WriteErrorMessage(LOGTAG, "PutAsync", clientEx, "Put failed: {0}", remotename);
                 throw;
             }
             catch (COSXML.CosException.CosServerException serverEx)
             {
-                //请求失败
-                Console.WriteLine("CosServerException: " + serverEx.GetInfo());
+                Logging.Log.WriteErrorMessage(LOGTAG, "PutAsync", serverEx, "Put failed: {0}, {1}", remotename, serverEx.GetInfo());
                 throw;
             }
 
@@ -337,27 +330,25 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(ms, stream);
 
                 //请求成功
-                Console.WriteLine(result.GetResultInfo());
+                //Console.WriteLine(result.GetResultInfo());
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
-                //请求失败
-                Console.WriteLine("CosClientException: " + clientEx);
+                Logging.Log.WriteErrorMessage(LOGTAG, "Get", clientEx, "Get failed: {0}", remotename);
                 throw;
             }
             catch (COSXML.CosException.CosServerException serverEx)
             {
-                //请求失败
-                Console.WriteLine("CosServerException: " + serverEx.GetInfo());
+                Logging.Log.WriteErrorMessage(LOGTAG, "Get", serverEx, "Get failed: {0}, {1}", remotename, serverEx.GetInfo());
                 throw;
             }
         }
 
         public void Rename(string oldname, string newname)
         {
-            CosXml cosXml = GetCosXml();
             try
             {
+                CosXml cosXml = GetCosXml();
                 string sourceAppid = _cosOptions.Appid; //账号 appid
                 string sourceBucket = _cosOptions.Bucket; //"源对象所在的存储桶
                 string sourceRegion = _cosOptions.Region; //源对象的存储桶所在的地域
@@ -377,24 +368,21 @@ namespace Duplicati.Library.Backend
                 request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.COPY);
                 //执行请求
                 CopyObjectResult result = cosXml.CopyObject(request);
-                //请求成功
-                Console.WriteLine(result.GetResultInfo());
 
-                Logging.Log.WriteInformationMessage(LOGTAG, "COS rename ok", $"cos copy: {key}, " + result.GetResultInfo());
+                //请求成功
+                //Console.WriteLine(result.GetResultInfo());
 
                 // 删除
                 Delete(oldname);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
-                //请求失败
-                Console.WriteLine("CosClientException: " + clientEx);
+                Logging.Log.WriteErrorMessage(LOGTAG, "Rename", clientEx, "Rename failed: {0} to {1}", oldname, newname);
                 throw;
             }
             catch (COSXML.CosException.CosServerException serverEx)
             {
-                //请求失败
-                Console.WriteLine("CosServerException: " + serverEx.GetInfo());
+                Logging.Log.WriteErrorMessage(LOGTAG, "Rename", serverEx, "Rename failed: {0} to {1}, {2}", oldname, newname, serverEx.GetInfo());
                 throw;
             }
         }
