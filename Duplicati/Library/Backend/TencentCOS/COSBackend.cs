@@ -263,7 +263,7 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            // cos no folders need to be created
+            // No need to create folders
         }
 
         public void Dispose()
@@ -287,6 +287,8 @@ namespace Duplicati.Library.Backend
                 PutObjectRequest request = new PutObjectRequest(bucket, key, bytes);
                 //设置签名有效时长
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                request.SetRequestHeader("Content-Type", "application/octet-stream");
+
                 //执行请求
                 PutObjectResult result = _cosXml.PutObject(request);
                 //对象的 eTag
