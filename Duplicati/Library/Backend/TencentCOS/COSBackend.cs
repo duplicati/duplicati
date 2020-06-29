@@ -13,7 +13,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Backend.TencentCOS
 {
     /// <summary>
     /// Tencent COS
@@ -30,63 +30,71 @@ namespace Duplicati.Library.Backend
         private const string COS_SECRET_KEY = "cos-secret-key";
         private const string COS_BUCKET = "cos-bucket";
 
+        /// <summary>
+        /// Set default HTTPS request
+        /// </summary>
         private const bool COS_USE_SSL = true;
+        /// <summary>
+        /// Connection timeout time, in milliseconds, default 45000ms
+        /// </summary>
         private const int CONNECTION_TIMEOUT_MS = 1000 * 60 * 60;
+        /// <summary>
+        /// Read and write timeout time, in milliseconds, default 45000ms
+        /// </summary>
         private const int READ_WRITE_TIMEOUT_MS = 1000 * 60 * 60;
+        /// <summary>
+        /// The valid time of each request signature, unit: second
+        /// </summary>
         private const int KEY_DURATION_SECOND = 60 * 60;
 
         private readonly CosOptions _cosOptions;
-        private readonly string m_prefix;
 
-        private CosXml _cosXml;
+        CosXml cosXml;
 
         /// <summary>
-        /// 腾讯云对象存储配置
+        /// Tencent Cloud Object Storage Configuration
         /// </summary>
         public class CosOptions
         {
             /// <summary>
-            /// 腾讯云账户的账户标识
+            /// Tencent Cloud Account APPID
             /// </summary>
             public string Appid { get; set; }
             /// <summary>
-            /// 云 API 密钥 SecretId
+            /// Cloud API Secret Id
             /// </summary>
             public string SecretId { get; set; }
             /// <summary>
-            /// 云 API 密钥 SecretKey
+            /// Cloud API Secret Key
             /// </summary>
             public string SecretKey { get; set; }
             /// <summary>
-            /// 存储桶地域 ap-guangzhou ap-hongkong
+            /// Bucket region ap-guangzhou ap-hongkong
             /// https://cloud.tencent.com/document/product/436/6224
             /// </summary>
             public string Region { get; set; }
             /// <summary>
-            /// 存储桶，格式：BucketName-APPID
+            /// Bucket, format: BucketName-APPID
             /// </summary>
             public string Bucket { get; set; }
             /// <summary>
-            /// 存储桶中路径或子文件夹
+            /// A path or subfolder in a bucket
             /// </summary>
             public string Path { get; set; }
         }
 
-        public COS()
-        {
-        }
+        public COS() { }
 
         public COS(string url, Dictionary<string, string> options)
         {
             _cosOptions = new CosOptions();
 
-            var uri = new Utility.Uri(url);
-            m_prefix = uri.HostAndPath?.Trim()?.Trim('/')?.Trim('\\');
+            var uri = new Utility.Uri(url?.Trim());
+            var prefix = uri.HostAndPath?.Trim()?.Trim('/')?.Trim('\\');
 
-            if (!string.IsNullOrEmpty(m_prefix))
+            if (!string.IsNullOrEmpty(prefix))
             {
-                m_prefix += "/";
-                _cosOptions.Path = m_prefix;
+                _cosOptions.Path = prefix + "/";
             }
 
             if (options.ContainsKey(COS_APP_ID))
@@ -117,29 +125,23 @@ namespace Duplicati.Library.Backend
 
         CosXml GetCosXml()
         {
-            //初始化 CosXmlConfig 
-            string appid = _cosOptions.Appid;//设置腾讯云账户的账户标识 APPID
-            string region = _cosOptions.Region; //设置一个默认的存储桶地域
+            string appid = _cosOptions.Appid;
+            string region = _cosOptions.Region;
+            string secretId = _cosOptions.SecretId;
+            string secretKey = _cosOptions.SecretKey;
 
             CosXmlConfig config = new CosXmlConfig.Builder()
-              .SetConnectionTimeoutMs(CONNECTION_TIMEOUT_MS)  //设置连接超时时间，单位毫秒，默认45000ms
-              .SetReadWriteTimeoutMs(READ_WRITE_TIMEOUT_MS)  //设置读写超时时间，单位毫秒，默认45000ms
-              .IsHttps(COS_USE_SSL)  //设置默认 HTTPS 请求
-              .SetAppid(appid)  //设置腾讯云账户的账户标识 APPID
-              .SetRegion(region)  //设置一个默认的存储桶地域
-                                  //.SetDebugLog(true)  //显示日志
-              .Build();  //创建 CosXmlConfig 对象
+              .SetConnectionTimeoutMs(CONNECTION_TIMEOUT_MS)
+              .SetReadWriteTimeoutMs(READ_WRITE_TIMEOUT_MS)
+              .IsHttps(COS_USE_SSL)
+              .SetAppid(appid)
+              .SetRegion(region)
+              .Build();
 
-            //方式1， 永久密钥
-            string secretId = _cosOptions.SecretId; //"云 API 密钥 SecretId";
-            string secretKey = _cosOptions.SecretKey; //"云 API 密钥 SecretKey";
-            long durationSecond = KEY_DURATION_SECOND;  //每次请求签名有效时长，单位为秒
+            // Initialization QCloudCredentialProvider, COS SDK provides three ways: the permanent temporary keys custom
+            QCloudCredentialProvider cosCredentialProvider = new DefaultQCloudCredentialProvider(secretId, secretKey, KEY_DURATION_SECOND);
 
-            //初始化 QCloudCredentialProvider，COS SDK 中提供了3种方式：永久密钥、临时密钥、自定义
-            QCloudCredentialProvider cosCredentialProvider = new DefaultQCloudCredentialProvider(secretId, secretKey, durationSecond);
-
-            CosXml cosXml = new CosXmlServer(config, cosCredentialProvider);
-            return cosXml;
+            return new CosXmlServer(config, cosCredentialProvider);
         }
 
         public IEnumerable<IFileEntry> List()
@@ -149,25 +151,26 @@ namespace Duplicati.Library.Backend
 
             while (isTruncated)
             {
-                _cosXml = GetCosXml();
+                cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
+                string prefix = _cosOptions.Path;
 
                 GetBucketRequest request = new GetBucketRequest(bucket);
 
-                //设置签名有效时长
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
 
                 if (!string.IsNullOrEmpty(filename))
+                {
                     request.SetMarker(filename);
+                }
 
-                //获取 m_prefix/ 下的对象
-                if (!string.IsNullOrEmpty(m_prefix))
-                    request.SetPrefix(m_prefix);
+                if (!string.IsNullOrEmpty(prefix))
+                {
+                    request.SetPrefix(prefix);
+                }
 
-                //执行请求
-                GetBucketResult result = _cosXml.GetBucket(request);
+                GetBucketResult result = cosXml.GetBucket(request);
 
-                //bucket的相关信息
                 ListBucket info = result.listBucket;
 
                 isTruncated = result.listBucket.isTruncated;
@@ -178,13 +181,13 @@ namespace Duplicati.Library.Backend
                     var last = DateTime.Parse(item.lastModified);
 
                     var fileName = item.key;
-                    if (!string.IsNullOrWhiteSpace(m_prefix))
+                    if (!string.IsNullOrWhiteSpace(prefix))
                     {
-                        fileName = fileName.Substring(m_prefix.Length);
+                        fileName = fileName.Substring(prefix.Length);
 
                         if (fileName.StartsWith("/", StringComparison.Ordinal))
                         {
-                            fileName = fileName.Trim('/').Trim('/');
+                            fileName = fileName.Trim('/');
                         }
                     }
 
@@ -209,20 +212,15 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                _cosXml = GetCosXml();
-                string bucket = _cosOptions.Bucket; //存储桶，格式：BucketName-APPID
-                string key = GetFullKey(remotename); //对象在存储桶中的位置，即称对象键
+                cosXml = GetCosXml();
+                string bucket = _cosOptions.Bucket;
+                string key = GetFullKey(remotename);
 
                 DeleteObjectRequest request = new DeleteObjectRequest(bucket, key);
 
-                //设置签名有效时长
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
 
-                //执行请求
-                DeleteObjectResult result = _cosXml.DeleteObject(request);
-
-                //请求成功
-                //result.GetResultInfo()
+                DeleteObjectResult result = cosXml.DeleteObject(request);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -241,11 +239,11 @@ namespace Duplicati.Library.Backend
             var json = JsonConvert.SerializeObject(_cosOptions);
             try
             {
-                _cosXml = GetCosXml();
+                cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
                 HeadBucketRequest request = new HeadBucketRequest(bucket);
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
-                HeadBucketResult result = _cosXml.HeadBucket(request);
+                HeadBucketResult result = cosXml.HeadBucket(request);
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "Test", "Request complete {0}: {1}, {2}", result.httpCode, json, result.GetResultInfo());
             }
@@ -268,31 +266,32 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (_cosXml != null)
-                _cosXml = null;
+            if (cosXml != null)
+            {
+                cosXml = null;
+            }
         }
 
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                _cosXml = GetCosXml();
+                cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
                 string key = GetFullKey(remotename);
 
-                byte[] bytes = new byte[stream.Length];
-                stream.Read(bytes, 0, bytes.Length);
-                stream.Seek(0, SeekOrigin.Begin);
+                byte[] buffer = new byte[stream.Length];
+                if (Utility.Utility.ForceStreamRead(stream, buffer, buffer.Length) != stream.Length)
+                {
+                    throw new Exception("Bad file read");
+                }
 
-                PutObjectRequest request = new PutObjectRequest(bucket, key, bytes);
-                //设置签名有效时长
+                PutObjectRequest request = new PutObjectRequest(bucket, key, buffer);
+
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
                 request.SetRequestHeader("Content-Type", "application/octet-stream");
 
-                //执行请求
-                PutObjectResult result = _cosXml.PutObject(request);
-                //对象的 eTag
-                //string eTag = result.eTag;
+                PutObjectResult result = cosXml.PutObject(request);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -310,29 +309,22 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, Stream stream)
         {
-            //下载返回 bytes 数据
             try
             {
-                CosXml cosXml = GetCosXml();
+                cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
                 string key = GetFullKey(remotename);
 
                 GetObjectBytesRequest request = new GetObjectBytesRequest(bucket, key);
 
-                //设置签名有效时长
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
 
-                //执行请求
                 GetObjectBytesResult result = cosXml.GetObject(request);
 
-                //获取内容
                 byte[] bytes = result.content;
 
                 Stream ms = new MemoryStream(bytes);
                 Utility.Utility.CopyStream(ms, stream);
-
-                //请求成功
-                //Console.WriteLine(result.GetResultInfo());
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -350,31 +342,27 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                CosXml cosXml = GetCosXml();
-                string sourceAppid = _cosOptions.Appid; //账号 appid
-                string sourceBucket = _cosOptions.Bucket; //"源对象所在的存储桶
-                string sourceRegion = _cosOptions.Region; //源对象的存储桶所在的地域
-                string sourceKey = GetFullKey(oldname); //源对象键
-                                                        //构造源对象属性
+                cosXml = GetCosXml();
+                string sourceAppid = _cosOptions.Appid;
+                string sourceBucket = _cosOptions.Bucket;
+                string sourceRegion = _cosOptions.Region;
+                string sourceKey = GetFullKey(oldname);
+
                 CopySourceStruct copySource = new CopySourceStruct(sourceAppid, sourceBucket,
                   sourceRegion, sourceKey);
 
-                string bucket = _cosOptions.Bucket; //存储桶，格式：BucketName-APPID
-                string key = GetFullKey(newname); //对象在存储桶中的位置，即称对象键
+                string bucket = _cosOptions.Bucket;
+                string key = GetFullKey(newname);
                 CopyObjectRequest request = new CopyObjectRequest(bucket, key);
-                //设置签名有效时长
+
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
-                //设置拷贝源
                 request.SetCopySource(copySource);
-                //设置是否拷贝还是更新,此处是拷贝
                 request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.COPY);
-                //执行请求
+
                 CopyObjectResult result = cosXml.CopyObject(request);
 
-                //请求成功
                 //Console.WriteLine(result.GetResultInfo());
 
-                // 删除
                 Delete(oldname);
             }
             catch (COSXML.CosException.CosClientException clientEx)
@@ -413,9 +401,11 @@ namespace Duplicati.Library.Backend
 
         private string GetFullKey(string name)
         {
-            if (string.IsNullOrWhiteSpace(m_prefix))
+            if (string.IsNullOrWhiteSpace(_cosOptions?.Path))
+            {
                 return name;
-            return m_prefix + name;
+            }
+            return _cosOptions.Path + name;
         }
     }
 }
