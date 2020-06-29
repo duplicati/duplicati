@@ -54,20 +54,19 @@ namespace Duplicati.Library.Backend.Tardigrade
             if (_libraryLoaded)
                 return;
 
-            if(System.Environment.Is64BitProcess)
+            if (Duplicati.Library.Common.Platform.IsClientWindows) //We need to init only on Windows to distinguish between x64 and x86
             {
-               var res = LoadLibrary("win-x64/storj_uplink.dll");
+                if (System.Environment.Is64BitProcess)
+                {
+                    var res = LoadLibrary("win-x64/storj_uplink.dll");
+                }
+                else
+                {
+                    var res = LoadLibrary("win-x86/storj_uplink.dll");
+                }
             }
-            else
-            {
-                var res = LoadLibrary("win-x86/storj_uplink.dll");
-            }
-            _libraryLoaded = true;
-        }
-
-        static Tardigrade()
-        {
             Access.SetTempDirectory(Library.Utility.TempFolder.SystemTempPath);
+            _libraryLoaded = true;
         }
 
         // ReSharper disable once UnusedMember.Global
@@ -80,8 +79,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         // This constructor is needed by the BackendLoader.
         public Tardigrade(string url, Dictionary<string, string> options)
         {
-            if (Duplicati.Library.Common.Platform.IsClientWindows)
-                InitStorjLibrary(); //We need to init only on Windows to distinguish between x64 and x86
+            InitStorjLibrary();
 
             var auth_method = options[TARDIGRADE_AUTH_METHOD];
             if (auth_method == "Access grant")
