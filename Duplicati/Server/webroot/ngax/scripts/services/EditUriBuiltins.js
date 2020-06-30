@@ -31,6 +31,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
     EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
+	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -503,6 +504,25 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
 
+    EditUriBackendConfig.parsers['cos'] = function (scope, module, server, port, path, options) {
+        if (options['--cos-app-id'])
+            scope.cos_app_id = options['--cos-app-id'];
+        if (options['--cos-region'])
+            scope.cos_region = options['--cos-region'];
+        if (options['--cos-secret-id'])
+            scope.cos_secret_id = options['--cos-secret-id'];
+		if (options['--cos-secret-key'])
+            scope.cos_secret_key = options['--cos-secret-key'];
+        if (options['--cos-bucket'])
+            scope.cos_bucket = options['--cos-bucket'];
+
+        var nukeopts = ['--cos-app-id', '--cos-region', '--cos-secret-id', '--cos-secret-key', '--cos-bucket'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+		
+		EditUriBackendConfig.mergeServerAndPath(scope);
+    }
+
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function (scope) {
         var opts = {
@@ -784,6 +804,27 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         return url;
     };
+
+
+    EditUriBackendConfig.builders['cos'] = function (scope) {
+        var opts = {
+            'cos-app-id': scope.cos_app_id,
+            'cos-region': scope.cos_region,
+            'cos-secret-id': scope.cos_secret_id,
+			'cos-secret-key': scope.cos_secret_key,
+			'cos-bucket': scope.cos_bucket
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+		
+        return url;
+    }
 
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))
@@ -1079,4 +1120,15 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             continuation();
     };
 
+	EditUriBackendConfig.validaters['cos'] = function (scope, continuation) {
+		var res =
+            EditUriBackendConfig.require_field(scope, 'cos_app_id', gettextCatalog.getString('cos_app_id')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_secret_id', gettextCatalog.getString('cos_secret_id')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_secret_key', gettextCatalog.getString('cos_secret_key')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_region', gettextCatalog.getString('cos_region')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_bucket', gettextCatalog.getString('cos_bucket'));
+			
+		if (res)
+            continuation();
+    };
 });
