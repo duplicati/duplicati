@@ -96,6 +96,10 @@
       <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
       <Name>Duplicati.Library.Backend.Tardigrade</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
+      <Project>{545dd6d4-9476-42d6-b51c-a28e000c489e}</Project>
+      <Name>Duplicati.Library.Backend.TencentCOS</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>
