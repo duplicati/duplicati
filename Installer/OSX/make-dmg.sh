@@ -9,7 +9,7 @@ WC_DIR=wc
 TEMPLATE_DMG=template.dmg
 OUTPUT_DMG=Duplicati.dmg
 OUTPUT_PKG=Duplicati.pkg
-UNWANTED_FILES="appindicator-sharp.dll SQLite win-tools control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons storj_uplink.dll storj_uplink.so"
+UNWANTED_FILES="appindicator-sharp.dll SQLite win-tools control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log SVGIcons storj_uplink.dll libstorj_uplink.so"
 
 # These are set via the macos-gatekeeper file
 CODESIGN_IDENTITY=
