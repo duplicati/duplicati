@@ -76,7 +76,7 @@
     <None Include="storj_uplink.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="storj_uplink.so">
+    <None Include="libstorj_uplink.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
