@@ -4,11 +4,46 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.AccessControl;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
 {
     public class RestoreHandlerTests : BasicSetupHelper
     {
+        [Test]
+        [Category("RestoreHandler")]
+        public void RestoreEmptyFile()
+        {
+            string folderPath = Path.Combine(this.DATAFOLDER, "folder");
+            Directory.CreateDirectory(folderPath);
+            string filePath = Path.Combine(folderPath, "empty_file");
+            File.WriteAllBytes(filePath, new byte[] {});
+
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] {this.DATAFOLDER});
+            }
+
+            // Issue #4148 described a situation where the folders containing the empty file were not recreated properly.
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["restore-path"] = Path.Combine(this.RESTOREFOLDER),
+                ["dont-compress-restore-paths"] = "true"
+            };
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                c.Restore(new[] {filePath});
+                string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
+
+                // We need to strip the root part of the path.  Otherwise, Path.Combine will simply return the second argument
+                // if it's determined to be an absolute path.
+                string newPathPart = filePath.Substring(rootString.Length);
+                string restoredFilePath = Path.Combine(restoreOptions["restore-path"], newPathPart);
+                Assert.IsTrue(File.Exists(restoredFilePath));
+            }
+        }
+
         [Test]
         [Category("RestoreHandler")]
         public void RestoreInheritanceBreaks()
