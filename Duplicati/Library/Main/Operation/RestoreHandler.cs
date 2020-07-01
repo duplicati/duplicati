@@ -415,8 +415,7 @@ namespace Duplicati.Library.Main.Operation
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0))
                 {
-                    string folderpath = SystemIO.IO_OS.PathGetDirectoryName(file.Path);
-                    SystemIO.IO_OS.DirectoryCreate(folderpath);
+                    SystemIO.IO_OS.DirectoryCreate(SystemIO.IO_OS.PathGetDirectoryName(file.Path));
 
                     // Just create the file and close it right away, empty statement is intentional.
                     using (SystemIO.IO_OS.FileCreate(file.Path))
