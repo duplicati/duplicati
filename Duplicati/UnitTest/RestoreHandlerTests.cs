@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest
             string newPathPart = filePath.Substring(rootString.Length);
             if (Platform.IsClientWindows)
             {
-                // On windows, the drive letter is included in the path when the dont-compress-restore-paths option is used.
+                // On Windows, the drive letter is included in the path when the dont-compress-restore-paths option is used.
                 // The drive letter is assumed to be the first character of the path root (e.g., C:\).
                 newPathPart = Path.Combine(rootString.Substring(0, 1), filePath.Substring(rootString.Length));
             }
