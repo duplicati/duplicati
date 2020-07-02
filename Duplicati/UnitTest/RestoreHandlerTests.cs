@@ -34,21 +34,21 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 c.Restore(new[] {filePath});
-
-                // We need to strip the root part of the path.  Otherwise, Path.Combine will simply return the second argument
-                // if it's determined to be an absolute path.
-                string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
-                string newPathPart = filePath.Substring(rootString.Length);
-                if (Platform.IsClientWindows)
-                {
-                    // On windows, the drive letter is included in the path when the dont-compress-restore-paths option is used.
-                    // The drive letter is assumed to be the first character of the path root (e.g., C:\).
-                    newPathPart = Path.Combine(rootString.Substring(0, 1), filePath.Substring(rootString.Length));
-                }
-
-                string restoredFilePath = Path.Combine(restoreOptions["restore-path"], newPathPart);
-                Assert.IsTrue(File.Exists(restoredFilePath));
             }
+
+            // We need to strip the root part of the path.  Otherwise, Path.Combine will simply return the second argument
+            // if it's determined to be an absolute path.
+            string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
+            string newPathPart = filePath.Substring(rootString.Length);
+            if (Platform.IsClientWindows)
+            {
+                // On windows, the drive letter is included in the path when the dont-compress-restore-paths option is used.
+                // The drive letter is assumed to be the first character of the path root (e.g., C:\).
+                newPathPart = Path.Combine(rootString.Substring(0, 1), filePath.Substring(rootString.Length));
+            }
+
+            string restoredFilePath = Path.Combine(restoreOptions["restore-path"], newPathPart);
+            Assert.IsTrue(File.Exists(restoredFilePath));
         }
 
         [Test]
