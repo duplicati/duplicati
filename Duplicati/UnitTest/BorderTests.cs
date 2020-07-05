@@ -19,6 +19,7 @@ using NUnit.Framework;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.UnitTest
 {
@@ -212,8 +213,12 @@ namespace Duplicati.UnitTest
 
             var filenames = WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize);
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                c.Backup(new string[] { DATAFOLDER });
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
 
             // After the first backup we remove the --blocksize argument as that should be auto-set
             testopts.Remove("blocksize");
@@ -222,7 +227,9 @@ namespace Duplicati.UnitTest
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                c.List("*");
+                IListResults listResults = c.List("*");
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
                 //Console.WriteLine("In first backup:");
                 //Console.WriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
             }
@@ -240,6 +247,9 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var r = c.Backup(new string[] { DATAFOLDER });
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+
                 if (!Library.Utility.Utility.ParseBoolOption(testopts, "disable-filetime-check"))
                 {
                     if (r.OpenedFiles != filenames.Count)
@@ -255,14 +265,20 @@ namespace Duplicati.UnitTest
                 rn.NextBytes(data);
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "c" + k.Key), data.Take(k.Value).ToArray());
             }
-            
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                c.Backup(new string[] { DATAFOLDER });
-            
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
                 //ProgressWriteLine("Newest before deleting:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
@@ -271,6 +287,8 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
                 var r = c.List("*");
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
                 //ProgressWriteLine("Newest without db:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
@@ -278,15 +296,26 @@ namespace Duplicati.UnitTest
 
             testopts["dbpath"] = this.recreatedDatabaseFile;
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                c.Repair();
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                Assert.AreEqual(3, c.List().Filesets.Count());
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IListResults listResults = c.List();
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
+                Assert.AreEqual(3, listResults.Filesets.Count());
+            }
 
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
             {
                 var r = c.List("*");
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
                 //ProgressWriteLine("V2 after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 1) + 1, r.Files.Count());
@@ -295,6 +324,8 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
                 var r = c.List("*");
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
                 //ProgressWriteLine("V1 after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 2) + 1, r.Files.Count());
@@ -303,6 +334,8 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
                 //ProgressWriteLine("Newest after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
@@ -311,6 +344,8 @@ namespace Duplicati.UnitTest
             using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER, no_local_blocks = true }), null))
             {
                 var r = c.Restore(null);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
                 Assert.AreEqual(filenames.Count * 3, r.RestoredFiles);
             }
 
@@ -321,6 +356,8 @@ namespace Duplicati.UnitTest
                 using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = (string)tf, no_local_blocks = true }), null))
                 {
                     var r = c.Restore(new string[] { Path.Combine(DATAFOLDER, "a") + "*" });
+                    Assert.AreEqual(0, r.Errors.Count());
+                    Assert.AreEqual(0, r.Warnings.Count());
                     Assert.AreEqual(filenames.Count, r.RestoredFiles);
                 }
             }

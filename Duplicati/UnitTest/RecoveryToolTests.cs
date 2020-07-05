@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 
@@ -63,7 +65,9 @@ namespace Duplicati.UnitTest
             string backendURL = "file://" + this.TARGETFOLDER;
             using (Controller c = new Controller(backendURL, options, null))
             {
-                c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             // Download the backend files.
