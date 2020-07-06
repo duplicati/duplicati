@@ -1,3 +1,4 @@
+using System;
 using Duplicati.Library.Common;
 using Duplicati.Library.Main;
 using NUnit.Framework;
@@ -60,6 +61,10 @@ namespace Duplicati.UnitTest
             {
                 IRestoreResults restoreResults = c.Restore(new[] {filePath});
                 Assert.AreEqual(0, restoreResults.Errors.Count());
+                foreach (var warning in restoreResults.Warnings)
+                {
+                    Console.WriteLine(warning);
+                }
                 Assert.AreEqual(0, restoreResults.Warnings.Count());
 
                 string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
