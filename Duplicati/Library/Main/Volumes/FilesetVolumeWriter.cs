@@ -8,6 +8,11 @@ namespace Duplicati.Library.Main.Volumes
 {
     public class FilesetVolumeWriter : VolumeWriterBase
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<FilesetVolumeWriter>();
+
         private readonly Library.Utility.TempFile m_tempFile;
         private readonly Stream m_tempStream;
         private StreamWriter m_streamwriter;
@@ -159,11 +164,18 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.Flush();
             m_streamwriter.Flush();
 
-            using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
+            try
             {
-                m_tempStream.Seek(0, SeekOrigin.Begin);
-                m_tempStream.CopyTo(sr);
-                sr.Flush();
+                using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
+                {
+                    m_tempStream.Seek(0, SeekOrigin.Begin);
+                    m_tempStream.CopyTo(sr);
+                    sr.Flush();
+                }
+            }
+            catch (System.NotSupportedException e)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "CompressionError", e, "Compression Error: {0}", e.Message);
             }
         }
 
