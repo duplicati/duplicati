@@ -107,7 +107,7 @@ namespace Duplicati.Library.Backend
             { "sa-east-1", "s3.sa-east-1.amazonaws.com" },
             { "cn-north-1", "s3.cn-north-1.amazonaws.com.cn" },
             { "cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn" },
-            { "me-south-1", "s3.me-south-1.amazonaws.com.cn" },
+            { "me-south-1", "s3.me-south-1.amazonaws.com" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_S3_STORAGE_CLASSES;
