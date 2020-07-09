@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 
@@ -24,7 +25,9 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["no-encryption"] = noEncryption};
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             string[] dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
@@ -36,7 +39,9 @@ namespace Duplicati.UnitTest
 
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                c.Repair();
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
             foreach (string file in dindexFiles)

@@ -43,6 +43,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, options, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER });
+                Assert.AreEqual(0, res.Errors.Count());
+                Assert.AreEqual(0, res.Warnings.Count());
                 if (res.ParsedResult != ParsedResultType.Success)
                     throw new Exception("Unexpected result from base backup");
                 

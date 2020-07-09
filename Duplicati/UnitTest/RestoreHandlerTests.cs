@@ -3,7 +3,9 @@ using Duplicati.Library.Main;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.AccessControl;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
@@ -73,19 +75,28 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             // First, restore without restoring permissions.
             Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                c.Restore(new[] {filePath});
+                IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+
                 string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
 
                 FileSecurity restoredFileSecurity = File.GetAccessControl(restoredFilePath);
                 Assert.IsFalse(restoredFileSecurity.AreAccessRulesProtected);
+
+                // Remove the restored file so that the later restore avoids the "Restore completed
+                // without errors but no files were restored" warning.
+                File.Delete(restoredFilePath);
             }
 
             // Restore with restoring permissions.
@@ -93,7 +104,10 @@ namespace Duplicati.UnitTest
             restoreOptions["restore-permissions"] = "true";
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                c.Restore(new[] {filePath});
+                IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+
                 string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
 
