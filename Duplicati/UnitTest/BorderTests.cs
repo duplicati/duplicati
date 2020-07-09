@@ -219,7 +219,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, backupResults.Errors.Count());
 
                 // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
-                // Assert.AreEqual(0, repairResults.Warnings.Count());
+                // Because of this, we don't check for warnings here.
             }
 
             // After the first backup we remove the --blocksize argument as that should be auto-set
@@ -304,7 +304,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, repairResults.Errors.Count());
                 
                 // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
-                // Assert.AreEqual(0, repairResults.Warnings.Count());
+                // Because of this, we don't check for warnings here.
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
