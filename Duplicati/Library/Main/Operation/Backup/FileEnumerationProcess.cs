@@ -26,6 +26,7 @@ using System.Linq;
 using System.Threading;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -255,6 +256,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
                     return false;
                 }
+                else if (Platform.IsClientWindows && IsInvalidWindowsPath(path, attributes))
+                {
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "ExcludingInvalidWindowsPath", null, "Excluding invalid Windows path: {0}", path);
+                    return false;
+                }
             }
             catch (Exception ex)
             {
@@ -385,6 +391,45 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             // All the way through, yes!
             return true;
+        }
+
+        /// <summary>
+        /// Trailing characters that are invalid in Windows.
+        /// </summary>
+        private static readonly string[] InvalidTrailingWindowsPathCharacters =
+        {
+            ".",
+            " "
+        };
+
+        /// <summary>
+        /// Trailing characters that are invalid in Windows with the
+        /// directory separator appended.
+        /// </summary>
+        private static readonly string[] InvalidTrailingWindowsPathCharactersWithSeparator =
+            InvalidTrailingWindowsPathCharacters.Select(Util.AppendDirSeparator).ToArray();
+
+        /// <summary>
+        /// Tests if path is invalid for Windows.
+        /// </summary>
+        /// <remarks>
+        /// For example, calling Path.GetFullPath() in Windows on files or
+        /// directories ending in a dot or a space will return a path without
+        /// the dot or the space.
+        /// </remarks>
+        /// <param name="path">The current path.</param>
+        /// <param name="attributes">The file or folder attributes.</param>
+        /// <returns>Returns true if file or directory ends in an invalid character for Windows.</returns>
+        private static bool IsInvalidWindowsPath(string path, FileAttributes attributes)
+        {
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                return InvalidTrailingWindowsPathCharactersWithSeparator.Any(path.EndsWith);
+            }
+            else
+            {
+                return InvalidTrailingWindowsPathCharacters.Any(path.EndsWith);
+            }
         }
     }
 }
