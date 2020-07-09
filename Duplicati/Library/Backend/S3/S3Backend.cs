@@ -65,6 +65,7 @@ namespace Duplicati.Library.Backend
             { "Europe (EU, London)", "eu-west-2" },
             { "Europe (EU, Paris)", "eu-west-3" },
             { "Europe (EU, Stockholm)", "eu-north-1" },
+            { "Europe (EU, Milan)", "eu-south-1" },
             { "US East (Northern Virginia)", "us-east-1" },
             { "US East (Ohio)", "us-east-2" },
             { "US West (Northern California)", "us-west-1" },
@@ -90,6 +91,7 @@ namespace Duplicati.Library.Backend
             { "eu-west-2", "s3.eu-west-2.amazonaws.com" },
             { "eu-west-3", "s3.eu-west-3.amazonaws.com" },
             { "eu-north-1", "s3.eu-north-1.amazonaws.com" },
+            { "eu-south-1", "s3.eu-south-1.amazonaws.com" },
             { "eu-central-1", "s3.eu-central-1.amazonaws.com" },
             { "us-east-1", "s3.amazonaws.com" },
             { "us-east-2", "s3.us-east-2.amazonaws.com" },
@@ -105,7 +107,7 @@ namespace Duplicati.Library.Backend
             { "sa-east-1", "s3.sa-east-1.amazonaws.com" },
             { "cn-north-1", "s3.cn-north-1.amazonaws.com.cn" },
             { "cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn" },
-            { "me-south-1", "s3.me-south-1.amazonaws.com.cn" },
+            { "me-south-1", "s3.me-south-1.amazonaws.com" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_S3_STORAGE_CLASSES;
@@ -353,26 +355,7 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            try
-            {
-                Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
-            }
-            catch
-            {
-                //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
-                try
-                {
-                    if (!remotename.StartsWith("/", StringComparison.Ordinal))
-                        Connection.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
-                    return;
-                }
-                catch
-                {
-                }
-
-                //Throw original error
-                throw;
-            }
+            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
         }
 
         public void Delete(string remotename)
