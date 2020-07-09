@@ -353,26 +353,7 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            try
-            {
-                Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
-            }
-            catch
-            {
-                //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
-                try
-                {
-                    if (!remotename.StartsWith("/", StringComparison.Ordinal))
-                        Connection.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
-                    return;
-                }
-                catch
-                {
-                }
-
-                //Throw original error
-                throw;
-            }
+            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
         }
 
         public void Delete(string remotename)
