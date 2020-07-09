@@ -1,3 +1,18 @@
+2020-07-09 - 2.0.5.108_canary_2020-07-09
+==========
+* Removed unsupported compiler directives, thanks @kenkendk
+* Removed incorrect missing SSL certificate warnings, thanks @kenkendk
+* Upograded to retina icons, thanks @baumerdev
+* Updates to Tardigrade support, thanks @TopperDEL
+* Added Tencent Cloud Object Storage (COS) backend, thanks @trueai-org
+* Improved error reporting for S3 backend, thanks @jpschewe
+* Added the Milan EU region to AWS S3 regions, thanks @warwickmm
+* Fixed incorrect documentation on OpenStack help, thanks @warwickmm
+* Fixed an incorrect endpoint for AWS S3 Bahrain, thanks @warwickmm
+* Code cleanup, thanks @warwickmm
+* Fixed a case where restoring files could fail if the containing folder was not restored, thanks @warwickmm
+* Improved unittests, thanks @warwickmm
+
 2020-05-26 - 2.0.5.107_canary_2020-05-26
 ==========
 * Added a backend for Tardigrade.io, thanks @TopperDEL
