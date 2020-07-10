@@ -140,9 +140,6 @@ namespace Duplicati.Library.Main.Volumes
             if (m_streamwriter != null)
             {
                 this.AddFilelistFile();
-                m_writer.Close();
-                m_streamwriter.Dispose();
-                m_streamwriter = null;
             }
 
             if (m_tempStream != null)
@@ -176,6 +173,13 @@ namespace Duplicati.Library.Main.Volumes
             catch (System.NotSupportedException e)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "CompressionError", e, "Compression Error: {0}", e.Message);
+                throw e;
+            }
+            finally
+            {
+                m_writer.Close();
+                m_streamwriter.Dispose();
+                m_streamwriter = null;
             }
         }
 
