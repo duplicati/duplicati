@@ -8,11 +8,6 @@ namespace Duplicati.Library.Main.Volumes
 {
     public class FilesetVolumeWriter : VolumeWriterBase
     {
-        /// <summary>
-        /// The tag used for logging
-        /// </summary>
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<FilesetVolumeWriter>();
-
         private readonly Library.Utility.TempFile m_tempFile;
         private readonly Stream m_tempStream;
         private StreamWriter m_streamwriter;
