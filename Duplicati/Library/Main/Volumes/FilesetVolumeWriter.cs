@@ -135,9 +135,6 @@ namespace Duplicati.Library.Main.Volumes
             if (m_streamwriter != null)
             {
                 this.AddFilelistFile();
-                m_writer.Close();
-                m_streamwriter.Dispose();
-                m_streamwriter = null;
             }
 
             if (m_tempStream != null)
@@ -159,11 +156,20 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.Flush();
             m_streamwriter.Flush();
 
-            using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
+            try
             {
-                m_tempStream.Seek(0, SeekOrigin.Begin);
-                m_tempStream.CopyTo(sr);
-                sr.Flush();
+                using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
+                {
+                    m_tempStream.Seek(0, SeekOrigin.Begin);
+                    m_tempStream.CopyTo(sr);
+                    sr.Flush();
+                }
+            }
+            finally
+            {
+                m_writer.Close();
+                m_streamwriter.Dispose();
+                m_streamwriter = null;
             }
         }
 
