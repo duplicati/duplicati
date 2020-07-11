@@ -170,11 +170,6 @@ namespace Duplicati.Library.Main.Volumes
                     sr.Flush();
                 }
             }
-            catch (System.NotSupportedException e)
-            {
-                Logging.Log.WriteErrorMessage(LOGTAG, "CompressionError", e, "Compression Error: {0}", e.Message);
-                throw e;
-            }
             finally
             {
                 m_writer.Close();
