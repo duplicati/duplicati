@@ -394,8 +394,17 @@ namespace Duplicati.Library.Main.Operation.Backup
         }
 
         /// <summary>
-        /// Trailing characters that are invalid in Windows.
+        /// Trailing characters that can be invalid in native Windows
+        /// file system functions or in AlphaFS.
         /// </summary>
+        /// <remarks>
+        /// For files, trailing dots and spaces are stripped in calls to
+        /// Path.GetFullPath().  For directories, a single trailing dot
+        /// is stripped in calls to Path.GetFullPath(), though two or more
+        /// trailing dots and trailing spaces work fine.  For directories,
+        /// trailing dots and spaces are stripped in calls to
+        /// AlphaFS.Directory.GetDirectories().
+        /// </remarks>
         private static readonly string[] InvalidTrailingWindowsPathCharacters =
         {
             ".",
@@ -412,17 +421,12 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <summary>
         /// Tests if path is invalid for Windows.
         /// </summary>
-        /// <remarks>
-        /// For example, calling Path.GetFullPath() in Windows on files or
-        /// directories ending in a dot or a space will return a path without
-        /// the dot or the space.
-        /// </remarks>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
         /// <returns>Returns true if file or directory ends in an invalid character for Windows.</returns>
         private static bool IsInvalidWindowsPath(string path, FileAttributes attributes)
         {
-            if ((attributes & FileAttributes.Directory) != 0)
+            if (attributes.HasFlag(FileAttributes.Directory))
             {
                 return InvalidTrailingWindowsPathCharactersWithSeparator.Any(path.EndsWith);
             }
