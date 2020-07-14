@@ -399,6 +399,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
                     new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
                     new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
+                    new CommandLineArgument("allow-possibly-invalid-windows-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpossiblyinvalidwindowspathsShort, Strings.Options.AllowpossiblyinvalidwindowspathsLong, "false"),
 
                     new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
                     new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
@@ -1758,6 +1759,14 @@ namespace Duplicati.Library.Main
         public bool RebuildMissingDblockFiles
         {
             get { return GetBool("rebuild-missing-dblock-files"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if possibly invalid Windows paths should be allowed.
+        /// </summary>
+        public bool AllowPossiblyInvalidWindowsPaths
+        {
+            get { return GetBool("allow-possibly-invalid-windows-paths"); }
         }
 
         /// <summary>

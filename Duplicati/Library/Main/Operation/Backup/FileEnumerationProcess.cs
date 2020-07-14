@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, string[] changedfilelist, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, bool allowpossiblyinvalidwindowspaths, string[] changedfilelist, ITaskReader taskreader, CancellationToken token)
         {
             return AutomationExtensions.RunTask(
             new
@@ -89,13 +89,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 return false;
                             }
 
-                            return AttributeFilter(x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
+                            return AttributeFilter(x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, allowpossiblyinvalidwindowspaths, mixinqueue);
                         });
                     }
                     else
                     {
                         Library.Utility.Utility.EnumerationFilterDelegate attributeFilter = (root, path, attr) =>
-                            AttributeFilter(path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
+                            AttributeFilter(path, attr, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, allowpossiblyinvalidwindowspaths, mixinqueue);
 
                         if (journalService != null)
                         {
@@ -246,7 +246,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <returns>True if the path should be returned, false otherwise.</returns>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private static bool AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
+        private static bool AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, bool allowpossiblyinvalidwindowspaths, Queue<string> mixinqueue)
         {
 			// Step 1, exclude block devices
 			try
@@ -256,9 +256,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
                     return false;
                 }
-                else if (Platform.IsClientWindows && IsInvalidWindowsPath(path, attributes))
+                else if (!allowpossiblyinvalidwindowspaths && Platform.IsClientWindows && IsInvalidWindowsPath(path, attributes))
                 {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "ExcludingInvalidWindowsPath", null, "Excluding invalid Windows path: {0}", path);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "ExcludingPossiblyInvalidWindowsPath", null, "Excluding possibly invalid Windows path: {0}", path);
                     return false;
                 }
             }

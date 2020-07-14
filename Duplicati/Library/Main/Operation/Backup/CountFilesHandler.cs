@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             using(Logging.Log.StartIsolatingScope(true))
             using (new IsolatedChannelScope())
             {
-                var enumeratorTask = Backup.FileEnumerationProcess.Run(sources, snapshot, null, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader, token);
+                var enumeratorTask = Backup.FileEnumerationProcess.Run(sources, snapshot, null, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.AllowPossiblyInvalidWindowsPaths, options.ChangedFilelist, taskreader, token);
                 var counterTask = AutomationExtensions.RunTask(new
                 {
                     Input = Backup.Channels.SourcePaths.ForRead
