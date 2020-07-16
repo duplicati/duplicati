@@ -67,7 +67,7 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <BinFiles Include="..\Duplicati\**" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*;..\**\libstorj_uplink.so;..\**\storj_uplink.dylib" />
+    <BinFiles Include="..\Duplicati\**" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*;..\**\libstorj_uplink.so;..\**\libstorj_uplink.dylib" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <Target Name="BeforeBuild">
