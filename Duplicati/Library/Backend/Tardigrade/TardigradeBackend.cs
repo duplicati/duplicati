@@ -24,6 +24,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
         private const string TARDIGRADE_FOLDER = "tardigrade-folder";
         private const string PROTOCOL_KEY = "tardigrade";
+        private const string TARDIGRADE_PARTNER_ID = "duplicati";
 
         private readonly string _satellite;
         private readonly string _api_key;
@@ -86,7 +87,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             {
                 //Create an access from the access grant
                 var shared_access = options[TARDIGRADE_SHARED_ACCESS];
-                _access = new Access(shared_access);
+                _access = new Access(shared_access, new Config() { UserAgent = TARDIGRADE_PARTNER_ID });
             }
             else
             {
@@ -102,8 +103,8 @@ namespace Duplicati.Library.Backend.Tardigrade
                     _secret = options[TARDIGRADE_SECRET];
                 }
 
-                _access = new Access(_satellite, _api_key, _secret);
-            }
+                _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = TARDIGRADE_PARTNER_ID });
+                }
 
             _bucketService = new BucketService(_access);
             _objectService = new ObjectService(_access);
