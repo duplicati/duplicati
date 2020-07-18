@@ -32,6 +32,11 @@ namespace Duplicati.Library.Common.IO
             Directory.CreateDirectory(NormalizePath(path));
         }
 
+        public void DirectoryDelete(string path)
+        {
+            Directory.Delete(NormalizePath(path));
+        }
+
         public bool DirectoryExists(string path)
         {
             return Directory.Exists(NormalizePath(path));

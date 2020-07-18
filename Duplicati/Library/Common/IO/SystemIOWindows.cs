@@ -174,6 +174,11 @@ namespace Duplicati.Library.Common.IO
             System.IO.Directory.CreateDirectory(PrefixWithUNC(path));
         }
 
+        public void DirectoryDelete(string path)
+        {
+            System.IO.Directory.Delete(PrefixWithUNC(path));
+        }
+
         public bool DirectoryExists(string path)
         {
             return System.IO.Directory.Exists(PrefixWithUNC(path));

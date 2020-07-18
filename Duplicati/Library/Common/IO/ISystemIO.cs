@@ -29,6 +29,7 @@ namespace Duplicati.Library.Common.IO
     {
         IFileEntry DirectoryEntry(string path);
         void DirectoryCreate(string path);
+        void DirectoryDelete(string path);
         bool DirectoryExists(string path);
         void DirectorySetLastWriteTimeUtc(string path, DateTime time);
         void DirectorySetCreationTimeUtc(string path, DateTime time);
