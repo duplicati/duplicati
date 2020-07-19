@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("ProblematicPath")]
-        public void RestoreLongPath()
+        public void LongPath()
         {
             string folderPath = Path.Combine(this.DATAFOLDER, new string('x', 10));
             SystemIO.IO_OS.DirectoryCreate(folderPath);
@@ -88,7 +88,7 @@ namespace Duplicati.UnitTest
         [TestCase("ends_with_dots..")]
         [TestCase("ends_with_space ")]
         [TestCase("ends_with_spaces  ")]
-        public void RestoreProblematicSuffixes(string pathComponent)
+        public void ProblematicSuffixes(string pathComponent)
         {
             string folderPath = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, pathComponent);
             SystemIO.IO_OS.DirectoryCreate(folderPath);
