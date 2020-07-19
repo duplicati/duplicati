@@ -53,12 +53,12 @@ namespace Duplicati.Library.Common.IO
 
         public static string StripUNCPrefix(string path)
         {
-            if (path.StartsWith(UNCPREFIX_SERVER))
+            if (path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal))
             {
                 // @"\\?\UNC\example.com\share\file.txt" to @"\\example.com\share\file.txt"
                 return PATHPREFIX_SERVER + path.Substring(UNCPREFIX_SERVER.Length);
             }
-            else if (path.StartsWith(UNCPREFIX))
+            else if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal))
             {
                 // @"\\?\C:\file.txt" to @"C:\file.txt"
                 return path.Substring(UNCPREFIX.Length);
