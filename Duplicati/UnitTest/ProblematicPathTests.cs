@@ -81,5 +81,50 @@ namespace Duplicati.UnitTest
                 }
             }
         }
+
+        [Test]
+        [Category("ProblematicPath")]
+        [TestCase("ends_with_dot.")]
+        [TestCase("ends_with_dots..")]
+        [TestCase("ends_with_space ")]
+        [TestCase("ends_with_spaces  ")]
+        public void RestoreProblematicSuffixes(string pathComponent)
+        {
+            string folderPath = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, pathComponent);
+            SystemIO.IO_OS.DirectoryCreate(folderPath);
+            using (new DisposablePath(folderPath))
+            {
+                string filePath = SystemIO.IO_OS.PathCombine(folderPath, pathComponent);
+                using (new DisposablePath(filePath))
+                {
+                    using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(filePath))
+                    {
+                        Utility.CopyStream(new MemoryStream(new byte[] {0, 1, 2}), fileStream);
+                    }
+
+                    Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+                    using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                    {
+                        IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                    }
+
+                    string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, pathComponent);
+                    using (new DisposablePath(restoreFilePath))
+                    {
+                        Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
+                        using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                        {
+                            IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                            Assert.AreEqual(0, restoreResults.Errors.Count());
+                            Assert.AreEqual(0, restoreResults.Warnings.Count());
+                        }
+
+                        Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
+                    }
+                }
+            }
+        }
     }
 }
