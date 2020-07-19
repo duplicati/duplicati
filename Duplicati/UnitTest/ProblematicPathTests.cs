@@ -52,9 +52,10 @@ namespace Duplicati.UnitTest
                 string filePath = SystemIO.IO_OS.PathCombine(folderPath, fileName);
                 using (new DisposablePath(filePath))
                 {
+                    byte[] fileBytes = {0, 1, 2};
                     using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(filePath))
                     {
-                        Utility.CopyStream(new MemoryStream(new byte[] {0, 1, 2}), fileStream);
+                        Utility.CopyStream(new MemoryStream(fileBytes), fileStream);
                     }
 
                     Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
@@ -77,6 +78,14 @@ namespace Duplicati.UnitTest
                         }
 
                         Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
+
+                        MemoryStream restoredStream = new MemoryStream();
+                        using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
+                        {
+                            Utility.CopyStream(fileStream, restoredStream);
+                        }
+
+                        Assert.AreEqual(fileBytes, restoredStream.ToArray());
                     }
                 }
             }
@@ -97,9 +106,10 @@ namespace Duplicati.UnitTest
                 string filePath = SystemIO.IO_OS.PathCombine(folderPath, pathComponent);
                 using (new DisposablePath(filePath))
                 {
+                    byte[] fileBytes = {0, 1, 2};
                     using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(filePath))
                     {
-                        Utility.CopyStream(new MemoryStream(new byte[] {0, 1, 2}), fileStream);
+                        Utility.CopyStream(new MemoryStream(fileBytes), fileStream);
                     }
 
                     Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
@@ -122,6 +132,14 @@ namespace Duplicati.UnitTest
                         }
 
                         Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
+
+                        MemoryStream restoredStream = new MemoryStream();
+                        using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
+                        {
+                            Utility.CopyStream(fileStream, restoredStream);
+                        }
+
+                        Assert.AreEqual(fileBytes, restoredStream.ToArray());
                     }
                 }
             }
