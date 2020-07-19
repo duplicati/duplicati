@@ -38,7 +38,9 @@ namespace Duplicati.Library.Backend.Tardigrade
         public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
             { "US Central 1", "us-central-1.tardigrade.io:7777" },
             { "Asia East 1", "asia-east-1.tardigrade.io:7777" },
+            { "Saltlake", "saltlake.tardigrade.io:7777" },
             { "Europe West 1", "europe-west-1.tardigrade.io:7777" },
+            { "Europe North 1", "europe-north-1.tardigrade.io:7777" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
