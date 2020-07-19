@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="DeleteHandlerTests.cs" />
     <Compile Include="DisruptionTests.cs" />
+    <Compile Include="ProblematicPathTests.cs" />
     <Compile Include="RecoveryToolTests.cs" />
     <Compile Include="RepairHandlerTests.cs" />
     <Compile Include="RestoreHandlerTests.cs" />
