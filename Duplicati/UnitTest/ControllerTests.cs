@@ -51,10 +51,44 @@ namespace Duplicati.UnitTest
             }
 
             // After we delete backend files from the second backup configuration, those from the first
-            // configuration should remain (see issues #2678, #3845, and #4244).
+            // configuration should remain (see issues #3845, and #4244).
             foreach (string file in firstBackupFiles)
             {
                 Assert.IsTrue(File.Exists(file));
+            }
+
+            // Configure and run a second backup with a different prefix.  This should run without error.
+            secondOptions["prefix"] = new Options(firstOptions).Prefix + "2";
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, secondOptions, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            // Even without a local database, we should be able to safely remove backend files from
+            // the second backup due to the prefix.
+            File.Delete(secondOptions["dbpath"]);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, secondOptions, null))
+            {
+                IListRemoteResults listResults = c.DeleteAllRemoteFiles();
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
+            }
+
+            // After we delete backend files from the second backup configuration, those from the first
+            // configuration should remain (see issue #2678).
+            foreach (string file in firstBackupFiles)
+            {
+                Assert.IsTrue(File.Exists(file));
+            }
+
+            // The first backup configuration should still run normally.
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, firstOptions, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
             }
         }
     }
