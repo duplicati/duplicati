@@ -30,7 +30,7 @@ namespace Duplicati.UnitTest
             // Issue #4148 described a situation where the folders containing the empty file were not recreated properly.
             Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions)
             {
-                ["restore-path"] = Path.Combine(this.RESTOREFOLDER),
+                ["restore-path"] = this.RESTOREFOLDER,
                 ["dont-compress-restore-paths"] = "true"
             };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
