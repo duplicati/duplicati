@@ -11,7 +11,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Controller")]
-        public void DeleteConfigurationWithSameBackend()
+        public void DeleteAllRemoteFiles()
         {
             string filePath = Path.Combine(this.DATAFOLDER, "file");
             File.WriteAllBytes(filePath, new byte[] {0, 1, 2});
