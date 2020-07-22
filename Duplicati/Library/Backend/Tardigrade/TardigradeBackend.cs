@@ -106,7 +106,7 @@ namespace Duplicati.Library.Backend.Tardigrade
                 }
 
                 _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = TARDIGRADE_PARTNER_ID });
-                }
+            }
 
             _bucketService = new BucketService(_access);
             _objectService = new ObjectService(_access);
@@ -269,7 +269,9 @@ namespace Duplicati.Library.Backend.Tardigrade
             {
                 TardigradeFile file = new TardigradeFile(obj);
                 if (prefix != "")
+                {
                     file.Name = file.Name.Replace(prefix, "");
+                }
                 files.Add(file);
             }
 
