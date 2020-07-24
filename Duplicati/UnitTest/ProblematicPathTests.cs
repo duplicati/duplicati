@@ -41,6 +41,14 @@ namespace Duplicati.UnitTest
             }
         }
 
+        private static void WriteFile(string path, byte[] contents)
+        {
+            using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(path))
+            {
+                Utility.CopyStream(new MemoryStream(contents), fileStream);
+            }
+        }
+
         [Test]
         [Category("ProblematicPath")]
         public void FilterProblematicPaths()
@@ -53,10 +61,7 @@ namespace Duplicati.UnitTest
             string longFile = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, new string('y', 255));
             using (new DisposablePath(longFile))
             {
-                using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(longFile))
-                {
-                    Utility.CopyStream(new MemoryStream(new byte[] {0, 1}), fileStream);
-                }
+                WriteFile(longFile, new byte[] {0, 1});
 
                 // A folder that ends with a dot to exclude.
                 string folderWithDot = Path.Combine(this.DATAFOLDER, "folder_with_dot.");
@@ -72,19 +77,13 @@ namespace Duplicati.UnitTest
                         string fileWithDot = Path.Combine(this.DATAFOLDER, "file_with_dot.");
                         using (new DisposablePath(fileWithDot))
                         {
-                            using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(fileWithDot))
-                            {
-                                Utility.CopyStream(new MemoryStream(new byte[] {0, 1}), fileStream);
-                            }
+                            WriteFile(fileWithDot, new byte[] {0, 1});
 
                             // A file that ends with a space to exclude.
                             string fileWithSpace = Path.Combine(this.DATAFOLDER, "file_with_space ");
                             using (new DisposablePath(fileWithSpace))
                             {
-                                using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(fileWithSpace))
-                                {
-                                    Utility.CopyStream(new MemoryStream(new byte[] {0, 1}), fileStream);
-                                }
+                                WriteFile(fileWithSpace, new byte[] {0, 1});
 
                                 FilterExpression filter = new FilterExpression(longFile, false);
                                 filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithDot), false));
@@ -130,10 +129,7 @@ namespace Duplicati.UnitTest
                 using (new DisposablePath(filePath))
                 {
                     byte[] fileBytes = {0, 1, 2};
-                    using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(filePath))
-                    {
-                        Utility.CopyStream(new MemoryStream(fileBytes), fileStream);
-                    }
+                    WriteFile(filePath, fileBytes);
 
                     Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
                     using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
@@ -184,10 +180,7 @@ namespace Duplicati.UnitTest
                 using (new DisposablePath(filePath))
                 {
                     byte[] fileBytes = {0, 1, 2};
-                    using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(filePath))
-                    {
-                        Utility.CopyStream(new MemoryStream(fileBytes), fileStream);
-                    }
+                    WriteFile(filePath, fileBytes);
 
                     Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
                     using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
