@@ -5,6 +5,7 @@ using System.Linq;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Utility = Duplicati.Library.Utility.Utility;
 
@@ -36,6 +37,82 @@ namespace Duplicati.UnitTest
                 if (SystemIO.IO_OS.DirectoryExists(this.path))
                 {
                     SystemIO.IO_OS.DirectoryDelete(this.path);
+                }
+            }
+        }
+
+        [Test]
+        [Category("ProblematicPath")]
+        public void FilterProblematicPaths()
+        {
+            // A normal path that will be backed up.
+            string normalFilePath = Path.Combine(this.DATAFOLDER, "normal");
+            File.WriteAllBytes(normalFilePath, new byte[] {0, 1, 2});
+
+            // A long path to exclude.
+            string longFile = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, new string('y', 255));
+            using (new DisposablePath(longFile))
+            {
+                using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(longFile))
+                {
+                    Utility.CopyStream(new MemoryStream(new byte[] {0, 1}), fileStream);
+                }
+
+                // A folder that ends with a dot to exclude.
+                string folderWithDot = Path.Combine(this.DATAFOLDER, "folder_with_dot.");
+                SystemIO.IO_OS.DirectoryCreate(folderWithDot);
+                using (new DisposablePath(folderWithDot))
+                {
+                    // A folder that ends with a space to exclude.
+                    string folderWithSpace = Path.Combine(this.DATAFOLDER, "folder_with_space ");
+                    SystemIO.IO_OS.DirectoryCreate(folderWithSpace);
+                    using (new DisposablePath(folderWithSpace))
+                    {
+                        // A file that ends with a dot to exclude.
+                        string fileWithDot = Path.Combine(this.DATAFOLDER, "file_with_dot.");
+                        using (new DisposablePath(fileWithDot))
+                        {
+                            using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(fileWithDot))
+                            {
+                                Utility.CopyStream(new MemoryStream(new byte[] {0, 1}), fileStream);
+                            }
+
+                            // A file that ends with a space to exclude.
+                            string fileWithSpace = Path.Combine(this.DATAFOLDER, "file_with_space ");
+                            using (new DisposablePath(fileWithSpace))
+                            {
+                                using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(fileWithSpace))
+                                {
+                                    Utility.CopyStream(new MemoryStream(new byte[] {0, 1}), fileStream);
+                                }
+
+                                FilterExpression filter = new FilterExpression(longFile, false);
+                                filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithDot), false));
+                                filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithSpace), false));
+                                filter = FilterExpression.Combine(filter, new FilterExpression(fileWithDot, false));
+                                filter = FilterExpression.Combine(filter, new FilterExpression(fileWithSpace, false));
+
+                                Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+                                using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                                {
+                                    IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER}, filter);
+                                    Assert.AreEqual(0, backupResults.Errors.Count());
+                                    Assert.AreEqual(0, backupResults.Warnings.Count());
+                                }
+
+                                using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                                {
+                                    IListResults listResults = c.List("*");
+                                    Assert.AreEqual(0, listResults.Errors.Count());
+                                    Assert.AreEqual(0, listResults.Warnings.Count());
+
+                                    string[] backedUpPaths = listResults.Files.Select(x => x.Path).ToArray();
+                                    Assert.Contains(Util.AppendDirSeparator(this.DATAFOLDER), backedUpPaths);
+                                    Assert.Contains(normalFilePath, backedUpPaths);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
