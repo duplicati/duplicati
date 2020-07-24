@@ -268,7 +268,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             if (sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingSourcePath", "Including source path: {0}", path);
-                return true;
+                // If the file is a symlink, apply special handling
+                return HandleSymlink(path, attributes, snapshot, symlinkPolicy, mixinqueue);
             }
 
             // If we have a hardlink strategy, obey it
@@ -348,6 +349,25 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // If the file is a symlink, apply special handling
+            if (!HandleSymlink(path, attributes, snapshot, symlinkPolicy, mixinqueue))
+            {
+                return false;
+            }
+
+            if (!filtermatch)
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
+
+            // All the way through, yes!
+            return true;
+        }
+
+        /// <summary>
+        /// Test if path is symlink and handle it accordingly.
+        /// </summary>
+        /// <returns>True if path should continue to be considered.</returns>
+        private static bool HandleSymlink(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Options.SymlinkStrategy symlinkPolicy, Queue<string> mixinqueue)
+        {
+            // If the file is a symlink, apply special handling
             var isSymlink = snapshot.IsSymlink(path, attributes);
             string symlinkTarget = null;
             if (isSymlink)
@@ -379,11 +399,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "FollowingEmptySymlink", "Treating empty symlink as regular path {0}", path);
                 }
             }
-
-            if (!filtermatch)
-                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
-
-            // All the way through, yes!
             return true;
         }
     }
