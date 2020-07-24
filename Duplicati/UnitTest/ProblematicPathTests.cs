@@ -51,7 +51,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("ProblematicPath")]
-        public void FilterProblematicPaths()
+        public void ExcludeProblematicPaths()
         {
             // A normal path that will be backed up.
             string normalFilePath = Path.Combine(this.DATAFOLDER, "normal");
