@@ -106,6 +106,7 @@ namespace Duplicati.UnitTest
                                     Assert.AreEqual(0, listResults.Warnings.Count());
 
                                     string[] backedUpPaths = listResults.Files.Select(x => x.Path).ToArray();
+                                    Assert.AreEqual(2, backedUpPaths.Length);
                                     Assert.Contains(Util.AppendDirSeparator(this.DATAFOLDER), backedUpPaths);
                                     Assert.Contains(normalFilePath, backedUpPaths);
                                 }
