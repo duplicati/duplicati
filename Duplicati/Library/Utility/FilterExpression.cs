@@ -20,6 +20,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -121,7 +123,7 @@ namespace Duplicati.Library.Utility
                 }
                 else
                 {
-                    this.Type = (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
+                    this.Type = ContainsWildcards(filter) ? FilterType.Wildcard : FilterType.Simple;
                     this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper(CultureInfo.InvariantCulture) : filter;
                     this.Regexp = new Regex(Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
                 }
@@ -254,7 +256,19 @@ namespace Duplicati.Library.Utility
                 }
                 return matched;
             }
-            
+
+            /// <summary>
+            /// Tests for presence of wildcard characters in filter.
+            /// </summary>
+            /// <returns>True if filter contains wildcards.</returns>
+            private static bool ContainsWildcards(string filter)
+            {
+                // Question mark in Windows UNC prefix ("\\?\") will look
+                // like a wildcard, so strip it before looking for wildcards
+                var strippedFilter = SystemIOWindows.StripUNCPrefix(filter);
+                return (strippedFilter.Contains(MULTIPLE_WILDCARD) || strippedFilter.Contains(SINGLE_WILDCARD));
+            }
+
             /// <summary>
             /// Gets a value indicating if the filter matches the path
             /// </summary>
