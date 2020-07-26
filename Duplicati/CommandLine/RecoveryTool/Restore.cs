@@ -25,6 +25,8 @@ namespace Duplicati.CommandLine.RecoveryTool
 {
     public static class Restore
     {
+        private static readonly ISystemIO systemIO = SystemIO.IO_OS;
+
         public static int Run(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 2 && args.Count != 3)
@@ -158,8 +160,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                         try
                         {
                             var targetfile = MapToRestorePath(f.Path, largestprefix, targetpath);
-                            if (!Directory.Exists(Path.GetDirectoryName(targetfile)))
-                                Directory.CreateDirectory(Path.GetDirectoryName(targetfile));
+                            if (!systemIO.DirectoryExists(systemIO.PathGetDirectoryName(targetfile)))
+                                systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(targetfile));
 
                             Console.Write("{0}: {1} ({2})", i, targetfile, Library.Utility.Utility.FormatSizeString(f.Size));
 
@@ -214,12 +216,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 if (fh == f.Hash)
                                 {
                                     Console.WriteLine(" done!");
-                                    File.Copy(tf, targetfile, true);
+                                    systemIO.FileCopy(tf, targetfile, true);
                                 }
                                 else
                                 {
                                     Console.Write(" - Restored file hash mismatch");
-                                    if (File.Exists(targetfile))
+                                    if (systemIO.FileExists(targetfile))
                                         Console.WriteLine(" - not overwriting existing file: {0}", targetfile);
                                     else
                                         Console.WriteLine(" - restoring file in damaged condition");
@@ -254,10 +256,10 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (path.Substring(1, 1) == ":")
                     prefixpath = path.Substring(0, 1) + path.Substring(2);
 
-                return Path.Combine(restorepath, prefixpath);
+                return systemIO.PathCombine(restorepath, prefixpath);
             }
 
-            return Path.Combine(restorepath, path.Substring(prefixpath.Length));
+            return systemIO.PathCombine(restorepath, path.Substring(prefixpath.Length));
         }
 
 

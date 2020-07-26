@@ -24,6 +24,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
         private const string TARDIGRADE_FOLDER = "tardigrade-folder";
         private const string PROTOCOL_KEY = "tardigrade";
+        private const string TARDIGRADE_PARTNER_ID = "duplicati";
 
         private readonly string _satellite;
         private readonly string _api_key;
@@ -37,7 +38,9 @@ namespace Duplicati.Library.Backend.Tardigrade
         public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
             { "US Central 1", "us-central-1.tardigrade.io:7777" },
             { "Asia East 1", "asia-east-1.tardigrade.io:7777" },
+            { "Saltlake", "saltlake.tardigrade.io:7777" },
             { "Europe West 1", "europe-west-1.tardigrade.io:7777" },
+            { "Europe North 1", "europe-north-1.tardigrade.io:7777" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
@@ -86,7 +89,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             {
                 //Create an access from the access grant
                 var shared_access = options[TARDIGRADE_SHARED_ACCESS];
-                _access = new Access(shared_access);
+                _access = new Access(shared_access, new Config() { UserAgent = TARDIGRADE_PARTNER_ID });
             }
             else
             {
@@ -102,7 +105,7 @@ namespace Duplicati.Library.Backend.Tardigrade
                     _secret = options[TARDIGRADE_SECRET];
                 }
 
-                _access = new Access(_satellite, _api_key, _secret);
+                _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = TARDIGRADE_PARTNER_ID });
             }
 
             _bucketService = new BucketService(_access);
@@ -265,9 +268,10 @@ namespace Duplicati.Library.Backend.Tardigrade
             foreach (var obj in objects.Items)
             {
                 TardigradeFile file = new TardigradeFile(obj);
-                var basePath = GetBasePath();
-                if (basePath != "")
-                    file.Name = file.Name.Replace(basePath, "");
+                if (prefix != "")
+                {
+                    file.Name = file.Name.Replace(prefix, "");
+                }
                 files.Add(file);
             }
 
