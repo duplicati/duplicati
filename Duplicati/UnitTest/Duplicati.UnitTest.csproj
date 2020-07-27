@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.UnitTest</RootNamespace>
     <AssemblyName>Duplicati.UnitTest</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <UseMSBuildEngine>false</UseMSBuildEngine>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
