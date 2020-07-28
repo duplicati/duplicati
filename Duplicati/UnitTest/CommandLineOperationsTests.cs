@@ -48,7 +48,7 @@ namespace Duplicati.UnitTest
             get
             {
                 return
-                    from x in Directory.EnumerateDirectories(SOURCEFOLDER)
+                    from x in systemIO.EnumerateDirectories(SOURCEFOLDER)
                     orderby x
                     select x;
             }
@@ -58,15 +58,15 @@ namespace Duplicati.UnitTest
         {
             base.OneTimeSetUp();
 
-            if (!File.Exists(zipAlternativeFilepath))
+            if (!systemIO.FileExists(zipAlternativeFilepath))
             {
                 var url = $"{S3_URL}{this.zipFilename}";
                 DownloadS3FileIfNewer(zipFilepath, url);
-                System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
+                ZipFileExtractToDirectory(this.zipFilepath, BASEFOLDER);
             }
             else
             {
-                System.IO.Compression.ZipFile.ExtractToDirectory(this.zipAlternativeFilepath, BASEFOLDER);
+                ZipFileExtractToDirectory(this.zipAlternativeFilepath, BASEFOLDER);
             }
         }
 
@@ -74,9 +74,9 @@ namespace Duplicati.UnitTest
         {
             var webRequest = (HttpWebRequest)WebRequest.Create(url);
 
-            if (File.Exists(destinationFilePath))
+            if (systemIO.FileExists(destinationFilePath))
             {
-                webRequest.IfModifiedSince = File.GetLastWriteTimeUtc(destinationFilePath);
+                webRequest.IfModifiedSince = systemIO.FileGetLastWriteTimeUtc(destinationFilePath);
             }
 
             try
@@ -104,9 +104,9 @@ namespace Duplicati.UnitTest
 
         public override void OneTimeTearDown()
         {
-            if (Directory.Exists(this.SOURCEFOLDER))
+            if (systemIO.DirectoryExists(this.SOURCEFOLDER))
             {
-                Directory.Delete(this.SOURCEFOLDER, true);
+                systemIO.DirectoryDelete(this.SOURCEFOLDER, true);
             }
         }
 
@@ -143,9 +143,9 @@ namespace Duplicati.UnitTest
                 var targetfolder = Path.Combine(DATAFOLDER, foldername);
                 ProgressWriteLine("Adding folder {0} to source", foldername);
 
-                Directory.Move(n, targetfolder);
+                systemIO.DirectoryMove(n, targetfolder);
 
-                var size = Directory.EnumerateFiles(targetfolder, "*", SearchOption.AllDirectories).Select(x => new FileInfo(x).Length).Sum();
+                var size = systemIO.EnumerateFiles(targetfolder, "*", SearchOption.AllDirectories).Select(systemIO.FileLength).Sum();
 
                 ProgressWriteLine("Running backup with {0} data added ...", Duplicati.Library.Utility.Utility.FormatSizeString(size));
                 using (new Library.Logging.Timer(LOGTAG, "BackupWithDataAdded", string.Format("Backup with {0} data added", Duplicati.Library.Utility.Utility.FormatSizeString(size))))
@@ -161,29 +161,29 @@ namespace Duplicati.UnitTest
             using (new Library.Logging.Timer(LOGTAG, "UnchangedBackup", "Unchanged backup"))
                 Duplicati.CommandLine.Program.RealMain(backupargs);
 
-            var datafolders = Directory.EnumerateDirectories(DATAFOLDER);
+            var datafolders = systemIO.EnumerateDirectories(DATAFOLDER);
 
             var f = datafolders.Skip(datafolders.Count() / 2).First();
 
             ProgressWriteLine("Renaming folder {0}", Path.GetFileName(f));
-            Directory.Move(f, Path.Combine(Path.GetDirectoryName(f), Path.GetFileName(f) + "-renamed"));
+            systemIO.DirectoryMove(f, Path.Combine(Path.GetDirectoryName(f), Path.GetFileName(f) + "-renamed"));
 
             ProgressWriteLine("Running backup with renamed folder...");
             using (new Library.Logging.Timer(LOGTAG, "BackupWithRenamedFolder", "Backup with renamed folder"))
                 Duplicati.CommandLine.Program.RealMain(backupargs);
 
-            datafolders = Directory.EnumerateDirectories(DATAFOLDER);
+            datafolders = systemIO.EnumerateDirectories(DATAFOLDER);
 
             ProgressWriteLine("Deleting data");
             var rm1 = datafolders.First();
             var rm2 = datafolders.Skip(1).First();
             var rm3 = datafolders.Skip(2).First();
 
-            Directory.Delete(rm1, true);
-            Directory.Delete(rm2, true);
-            var rmfiles = Directory.EnumerateFiles(rm3, "*", SearchOption.AllDirectories);
+            systemIO.DirectoryDelete(rm1, true);
+            systemIO.DirectoryDelete(rm2, true);
+            var rmfiles = systemIO.EnumerateFiles(rm3, "*", SearchOption.AllDirectories);
             foreach (var n in rmfiles.Take(rmfiles.Count() / 2))
-                File.Delete(n);
+                systemIO.FileDelete(n);
 
             ProgressWriteLine("Running backup with deleted data...");
             using (new Library.Logging.Timer(LOGTAG, "BackupWithDeletedData", "Backup with deleted data"))
@@ -196,7 +196,7 @@ namespace Duplicati.UnitTest
             for (var i = 0; i < 5; i++)
             {
                 ProgressWriteLine("Running backup with changed logfile {0} of {1} ...", i + 1, 5);
-                File.Copy(LOGFILE, Path.Combine(SOURCEFOLDER, Path.GetFileName(LOGFILE)), true);
+                systemIO.FileCopy(LOGFILE, Path.Combine(SOURCEFOLDER, Path.GetFileName(LOGFILE)), true);
 
                 using (new Library.Logging.Timer(LOGTAG, "BackupWithLogfileChange", string.Format("Backup with logfilechange {0}", i + 1)))
                     Duplicati.CommandLine.Program.RealMain(backupargs);
@@ -207,7 +207,7 @@ namespace Duplicati.UnitTest
                 Duplicati.CommandLine.Program.RealMain((new string[] { "compact", target, "--small-file-max-count=2" }.Union(opts)).ToArray());
 
 
-            datafolders = Directory.EnumerateDirectories(DATAFOLDER);
+            datafolders = systemIO.EnumerateDirectories(DATAFOLDER);
             var rf = datafolders.Skip(datafolders.Count() - 2).First();
 
             ProgressWriteLine("Partial restore of {0} ...", Path.GetFileName(rf));
@@ -218,7 +218,7 @@ namespace Duplicati.UnitTest
             using (new Library.Logging.Timer(LOGTAG, "VerifiationOfPartialRestore", "Verification of partial restored files"))
                 TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
 
-            Directory.Delete(RESTOREFOLDER, true);
+            systemIO.DirectoryDelete(RESTOREFOLDER, true);
 
             ProgressWriteLine("Partial restore of {0} without local db...", Path.GetFileName(rf));
             using (new Library.Logging.Timer(LOGTAG, "PartialRestoreWithoutLocalDb", "Partial restore without local db"))
@@ -228,7 +228,7 @@ namespace Duplicati.UnitTest
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfPartialRestore", "Verification of partial restored files"))
                 TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
 
-            Directory.Delete(RESTOREFOLDER, true);
+            systemIO.DirectoryDelete(RESTOREFOLDER, true);
 
             ProgressWriteLine("Full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "FullRestore", "Full restore"))
@@ -236,10 +236,10 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfFullRestore", "Verification of restored files"))
-                foreach (var s in Directory.EnumerateDirectories(DATAFOLDER))
+                foreach (var s in systemIO.EnumerateDirectories(DATAFOLDER))
                     TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
 
-            Directory.Delete(RESTOREFOLDER, true);
+            systemIO.DirectoryDelete(RESTOREFOLDER, true);
 
             ProgressWriteLine("Full restore without local db...");
             using (new Library.Logging.Timer(LOGTAG, "FullRestoreWithoutDb", "Full restore without local db"))
@@ -247,7 +247,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfFullRestoreWithoutDb", "Verification of restored files"))
-                foreach (var s in Directory.EnumerateDirectories(DATAFOLDER))
+                foreach (var s in systemIO.EnumerateDirectories(DATAFOLDER))
                     TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
 
             ProgressWriteLine("Testing data ...");

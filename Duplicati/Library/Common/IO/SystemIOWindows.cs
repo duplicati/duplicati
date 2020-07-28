@@ -174,9 +174,19 @@ namespace Duplicati.Library.Common.IO
             System.IO.Directory.CreateDirectory(PrefixWithUNC(path));
         }
 
+        public void DirectoryDelete(string path, bool recursive)
+        {
+            System.IO.Directory.Delete(PrefixWithUNC(path), recursive);
+        }
+
         public bool DirectoryExists(string path)
         {
             return System.IO.Directory.Exists(PrefixWithUNC(path));
+        }
+
+        public void DirectoryMove(string sourceDirName, string destDirName)
+        {
+            System.IO.Directory.Move(PrefixWithUNC(sourceDirName), PrefixWithUNC(destDirName));
         }
 
         public void FileDelete(string path)
@@ -264,6 +274,11 @@ namespace Duplicati.Library.Common.IO
         public IEnumerable<string> EnumerateFiles(string path)
         {
             return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path)).Select(StripUNCPrefix);
+        }
+
+        public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
+        {
+            return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path), searchPattern,  searchOption).Select(StripUNCPrefix);
         }
 
         public string PathGetFileName(string path)

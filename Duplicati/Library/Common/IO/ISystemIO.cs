@@ -29,7 +29,9 @@ namespace Duplicati.Library.Common.IO
     {
         IFileEntry DirectoryEntry(string path);
         void DirectoryCreate(string path);
+        void DirectoryDelete(string path, bool recursive);
         bool DirectoryExists(string path);
+        void DirectoryMove(string sourceDirName, string destDirName);
         void DirectorySetLastWriteTimeUtc(string path, DateTime time);
         void DirectorySetCreationTimeUtc(string path, DateTime time);
 
@@ -64,6 +66,7 @@ namespace Duplicati.Library.Common.IO
         DateTime GetLastWriteTimeUtc(string path);
         IEnumerable<string> EnumerateFileSystemEntries(string path);
         IEnumerable<string> EnumerateFiles(string path);
+        IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption);
         IEnumerable<string> EnumerateDirectories(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
