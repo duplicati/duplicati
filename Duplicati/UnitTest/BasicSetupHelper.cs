@@ -176,9 +176,8 @@ namespace Duplicati.UnitTest
                     {
                         // By the ZIP spec, directories end in a forward slash
                         var isDirectory = entry.FullName.EndsWith("/");
-                        // Convert forward slashes to the Windows separator
-                        var fullNamePath = entry.FullName.Replace("/", Util.DirectorySeparatorString);
-                        var destination = systemIO.PathCombine(destinationDirectoryName, fullNamePath);
+                        var destination =
+                            systemIO.PathGetFullPath(systemIO.PathCombine(destinationDirectoryName, entry.FullName));
                         if (isDirectory)
                         {
                             systemIO.DirectoryCreate(destination);

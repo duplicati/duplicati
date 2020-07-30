@@ -69,6 +69,15 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        /// <summary>
+        /// Convert forward slashes to backslashes.
+        /// </summary>
+        /// <returns>Path with forward slashes replaced by backslashes.</returns>
+        private static string ConvertSlashes(string path)
+        {
+            return path.Replace("/", Util.DirectorySeparatorString);
+        }
+
         private class FileSystemAccess
         {
             // Use JsonProperty Attribute to allow readonly fields to be set by deserializer
@@ -400,11 +409,11 @@ namespace Duplicati.Library.Common.IO
         {
             if (IsPrefixedWithUNC(path))
             {
-                return System.IO.Path.GetFullPath(path);
+                return System.IO.Path.GetFullPath(ConvertSlashes(path));
             }
             else
             {
-                return StripUNCPrefix(System.IO.Path.GetFullPath(PrefixWithUNC(path)));
+                return StripUNCPrefix(System.IO.Path.GetFullPath(PrefixWithUNC(ConvertSlashes(path))));
             }
         }
 
