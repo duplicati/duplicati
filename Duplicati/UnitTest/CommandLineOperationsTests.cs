@@ -54,9 +54,9 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public override void OneTimeSetUp()
+        public override void SetUp()
         {
-            base.OneTimeSetUp();
+            base.SetUp();
 
             if (!File.Exists(zipAlternativeFilepath))
             {
