@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,33 +13,6 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class ProblematicPathTests : BasicSetupHelper
     {
-        /// <summary>
-        ///     This is a helper class that removes problematic paths that the built-in classes
-        ///     have trouble with (e.g., paths that end with a dot or space on Windows).
-        /// </summary>
-        private class DisposablePath : IDisposable
-        {
-            private readonly string path;
-
-            public DisposablePath(string path)
-            {
-                this.path = path;
-            }
-
-            public void Dispose()
-            {
-                if (SystemIO.IO_OS.FileExists(this.path))
-                {
-                    SystemIO.IO_OS.FileDelete(this.path);
-                }
-
-                if (SystemIO.IO_OS.DirectoryExists(this.path))
-                {
-                    SystemIO.IO_OS.DirectoryDelete(this.path);
-                }
-            }
-        }
-
         private static void WriteFile(string path, byte[] contents)
         {
             using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(path))
@@ -59,61 +31,48 @@ namespace Duplicati.UnitTest
 
             // A long path to exclude.
             string longFile = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, new string('y', 255));
-            using (new DisposablePath(longFile))
+            WriteFile(longFile, new byte[] {0, 1});
+
+            // A folder that ends with a dot to exclude.
+            string folderWithDot = Path.Combine(this.DATAFOLDER, "folder_with_dot.");
+            SystemIO.IO_OS.DirectoryCreate(folderWithDot);
+
+            // A folder that ends with a space to exclude.
+            string folderWithSpace = Path.Combine(this.DATAFOLDER, "folder_with_space ");
+            SystemIO.IO_OS.DirectoryCreate(folderWithSpace);
+
+            // A file that ends with a dot to exclude.
+            string fileWithDot = Path.Combine(this.DATAFOLDER, "file_with_dot.");
+            WriteFile(fileWithDot, new byte[] {0, 1});
+
+            // A file that ends with a space to exclude.
+            string fileWithSpace = Path.Combine(this.DATAFOLDER, "file_with_space ");
+            WriteFile(fileWithSpace, new byte[] {0, 1});
+
+            FilterExpression filter = new FilterExpression(longFile, false);
+            filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithDot), false));
+            filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithSpace), false));
+            filter = FilterExpression.Combine(filter, new FilterExpression(fileWithDot, false));
+            filter = FilterExpression.Combine(filter, new FilterExpression(fileWithSpace, false));
+
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                WriteFile(longFile, new byte[] {0, 1});
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER}, filter);
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
 
-                // A folder that ends with a dot to exclude.
-                string folderWithDot = Path.Combine(this.DATAFOLDER, "folder_with_dot.");
-                SystemIO.IO_OS.DirectoryCreate(folderWithDot);
-                using (new DisposablePath(folderWithDot))
-                {
-                    // A folder that ends with a space to exclude.
-                    string folderWithSpace = Path.Combine(this.DATAFOLDER, "folder_with_space ");
-                    SystemIO.IO_OS.DirectoryCreate(folderWithSpace);
-                    using (new DisposablePath(folderWithSpace))
-                    {
-                        // A file that ends with a dot to exclude.
-                        string fileWithDot = Path.Combine(this.DATAFOLDER, "file_with_dot.");
-                        using (new DisposablePath(fileWithDot))
-                        {
-                            WriteFile(fileWithDot, new byte[] {0, 1});
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IListResults listResults = c.List("*");
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
 
-                            // A file that ends with a space to exclude.
-                            string fileWithSpace = Path.Combine(this.DATAFOLDER, "file_with_space ");
-                            using (new DisposablePath(fileWithSpace))
-                            {
-                                WriteFile(fileWithSpace, new byte[] {0, 1});
-
-                                FilterExpression filter = new FilterExpression(longFile, false);
-                                filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithDot), false));
-                                filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithSpace), false));
-                                filter = FilterExpression.Combine(filter, new FilterExpression(fileWithDot, false));
-                                filter = FilterExpression.Combine(filter, new FilterExpression(fileWithSpace, false));
-
-                                Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
-                                using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
-                                {
-                                    IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER}, filter);
-                                    Assert.AreEqual(0, backupResults.Errors.Count());
-                                    Assert.AreEqual(0, backupResults.Warnings.Count());
-                                }
-
-                                using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
-                                {
-                                    IListResults listResults = c.List("*");
-                                    Assert.AreEqual(0, listResults.Errors.Count());
-                                    Assert.AreEqual(0, listResults.Warnings.Count());
-
-                                    string[] backedUpPaths = listResults.Files.Select(x => x.Path).ToArray();
-                                    Assert.AreEqual(2, backedUpPaths.Length);
-                                    Assert.Contains(Util.AppendDirSeparator(this.DATAFOLDER), backedUpPaths);
-                                    Assert.Contains(normalFilePath, backedUpPaths);
-                                }
-                            }
-                        }
-                    }
-                }
+                string[] backedUpPaths = listResults.Files.Select(x => x.Path).ToArray();
+                Assert.AreEqual(2, backedUpPaths.Length);
+                Assert.Contains(Util.AppendDirSeparator(this.DATAFOLDER), backedUpPaths);
+                Assert.Contains(normalFilePath, backedUpPaths);
             }
         }
 
@@ -123,46 +82,38 @@ namespace Duplicati.UnitTest
         {
             string folderPath = Path.Combine(this.DATAFOLDER, new string('x', 10));
             SystemIO.IO_OS.DirectoryCreate(folderPath);
-            using (new DisposablePath(folderPath))
+
+            string fileName = new string('y', 255);
+            string filePath = SystemIO.IO_OS.PathCombine(folderPath, fileName);
+            byte[] fileBytes = {0, 1, 2};
+            WriteFile(filePath, fileBytes);
+
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                string fileName = new string('y', 255);
-                string filePath = SystemIO.IO_OS.PathCombine(folderPath, fileName);
-                using (new DisposablePath(filePath))
-                {
-                    byte[] fileBytes = {0, 1, 2};
-                    WriteFile(filePath, fileBytes);
-
-                    Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
-                    using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
-                    {
-                        IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
-                        Assert.AreEqual(0, backupResults.Errors.Count());
-                        Assert.AreEqual(0, backupResults.Warnings.Count());
-                    }
-
-                    string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, fileName);
-                    using (new DisposablePath(restoreFilePath))
-                    {
-                        Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
-                        using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-                        {
-                            IRestoreResults restoreResults = c.Restore(new[] {filePath});
-                            Assert.AreEqual(0, restoreResults.Errors.Count());
-                            Assert.AreEqual(0, restoreResults.Warnings.Count());
-                        }
-
-                        Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
-
-                        MemoryStream restoredStream = new MemoryStream();
-                        using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
-                        {
-                            Utility.CopyStream(fileStream, restoredStream);
-                        }
-
-                        Assert.AreEqual(fileBytes, restoredStream.ToArray());
-                    }
-                }
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
             }
+
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+            }
+
+            string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, fileName);
+            Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
+
+            MemoryStream restoredStream = new MemoryStream();
+            using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
+            {
+                Utility.CopyStream(fileStream, restoredStream);
+            }
+
+            Assert.AreEqual(fileBytes, restoredStream.ToArray());
         }
 
         [Test]
@@ -175,45 +126,37 @@ namespace Duplicati.UnitTest
         {
             string folderPath = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, pathComponent);
             SystemIO.IO_OS.DirectoryCreate(folderPath);
-            using (new DisposablePath(folderPath))
+
+            string filePath = SystemIO.IO_OS.PathCombine(folderPath, pathComponent);
+            byte[] fileBytes = {0, 1, 2};
+            WriteFile(filePath, fileBytes);
+
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                string filePath = SystemIO.IO_OS.PathCombine(folderPath, pathComponent);
-                using (new DisposablePath(filePath))
-                {
-                    byte[] fileBytes = {0, 1, 2};
-                    WriteFile(filePath, fileBytes);
-
-                    Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
-                    using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
-                    {
-                        IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
-                        Assert.AreEqual(0, backupResults.Errors.Count());
-                        Assert.AreEqual(0, backupResults.Warnings.Count());
-                    }
-
-                    string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, pathComponent);
-                    using (new DisposablePath(restoreFilePath))
-                    {
-                        Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
-                        using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-                        {
-                            IRestoreResults restoreResults = c.Restore(new[] {filePath});
-                            Assert.AreEqual(0, restoreResults.Errors.Count());
-                            Assert.AreEqual(0, restoreResults.Warnings.Count());
-                        }
-
-                        Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
-
-                        MemoryStream restoredStream = new MemoryStream();
-                        using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
-                        {
-                            Utility.CopyStream(fileStream, restoredStream);
-                        }
-
-                        Assert.AreEqual(fileBytes, restoredStream.ToArray());
-                    }
-                }
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
             }
+
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+            }
+
+            string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, pathComponent);
+            Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
+
+            MemoryStream restoredStream = new MemoryStream();
+            using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
+            {
+                Utility.CopyStream(fileStream, restoredStream);
+            }
+
+            Assert.AreEqual(fileBytes, restoredStream.ToArray());
         }
     }
 }

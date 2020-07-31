@@ -69,6 +69,15 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        /// <summary>
+        /// Convert forward slashes to backslashes.
+        /// </summary>
+        /// <returns>Path with forward slashes replaced by backslashes.</returns>
+        private static string ConvertSlashes(string path)
+        {
+            return path.Replace("/", Util.DirectorySeparatorString);
+        }
+
         private class FileSystemAccess
         {
             // Use JsonProperty Attribute to allow readonly fields to be set by deserializer
@@ -174,14 +183,19 @@ namespace Duplicati.Library.Common.IO
             System.IO.Directory.CreateDirectory(PrefixWithUNC(path));
         }
 
-        public void DirectoryDelete(string path)
+        public void DirectoryDelete(string path, bool recursive)
         {
-            System.IO.Directory.Delete(PrefixWithUNC(path));
+            System.IO.Directory.Delete(PrefixWithUNC(path), recursive);
         }
 
         public bool DirectoryExists(string path)
         {
             return System.IO.Directory.Exists(PrefixWithUNC(path));
+        }
+
+        public void DirectoryMove(string sourceDirName, string destDirName)
+        {
+            System.IO.Directory.Move(PrefixWithUNC(sourceDirName), PrefixWithUNC(destDirName));
         }
 
         public void FileDelete(string path)
@@ -269,6 +283,11 @@ namespace Duplicati.Library.Common.IO
         public IEnumerable<string> EnumerateFiles(string path)
         {
             return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path)).Select(StripUNCPrefix);
+        }
+
+        public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
+        {
+            return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path), searchPattern,  searchOption).Select(StripUNCPrefix);
         }
 
         public string PathGetFileName(string path)
@@ -390,11 +409,11 @@ namespace Duplicati.Library.Common.IO
         {
             if (IsPrefixedWithUNC(path))
             {
-                return System.IO.Path.GetFullPath(path);
+                return System.IO.Path.GetFullPath(ConvertSlashes(path));
             }
             else
             {
-                return StripUNCPrefix(System.IO.Path.GetFullPath(PrefixWithUNC(path)));
+                return StripUNCPrefix(System.IO.Path.GetFullPath(PrefixWithUNC(ConvertSlashes(path))));
             }
         }
 
