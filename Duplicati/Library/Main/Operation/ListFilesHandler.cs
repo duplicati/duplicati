@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Operation
 
         public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
         {
-            var parsedfilter = new Library.Utility.FilterExpression(filterstrings);
+            var parsedfilter = new Library.Utility.FilterExpression(filterstrings, true, m_options.ListFilterLiteral);
             var filter = Library.Utility.JoinedFilterExpression.Join(parsedfilter, compositefilter);
             var simpleList = !((filter is FilterExpression expression && expression.Type == Library.Utility.FilterType.Simple) || m_options.AllVersions);
 

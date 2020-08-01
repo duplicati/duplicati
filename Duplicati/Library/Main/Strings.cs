@@ -63,6 +63,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ListprefixonlyShort { get { return LC.L(@"Show largest prefix"); } }
         public static string ListfoldercontentsLong { get { return LC.L(@"When searching for files, all matching files are returned. Use this option to return only the entries found in the folder specified as filter."); } }
         public static string ListfoldercontentsShort { get { return LC.L(@"Show folder contents"); } }
+        public static string ListfilterliteralShort { get { return LC.L(@"Take filters literally"); } }
+        public static string ListfilterliteralLong { get { return LC.L(@"When analyzing filters, do not try to identify regular expressions, groups, or wildcards; instead take the filter literally."); } }
         public static string RetrydelayLong { get { return LC.L(@"After a failed transmission, Duplicati will wait a short period before attempting again. This is useful if the network drops out occasionally during transmissions."); } }
         public static string RetrydelayShort { get { return LC.L(@"Time to wait between retries"); } }
         public static string ControlfilesLong { get { return LC.L(@"Use this option to attach extra files to the newly uploaded filelists."); } }

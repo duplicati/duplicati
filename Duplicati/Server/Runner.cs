@@ -167,7 +167,7 @@ namespace Duplicati.Server
             };
         }
 
-        public static IRunnerData CreateListTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, bool onlyPrefix, bool allVersions, bool folderContents, DateTime time)
+        public static IRunnerData CreateListTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, bool onlyPrefix, bool allVersions, bool folderContents, bool filterLiteral, DateTime time)
         {
             var dict = new Dictionary<string, string>();
             if (onlyPrefix)
@@ -178,6 +178,8 @@ namespace Duplicati.Server
                 dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
             if (folderContents)
                 dict["list-folder-contents"] = "true";
+            if (filterLiteral)
+                dict["list-filter-literal"] = "true";
 
             return CreateTask(
                 DuplicatiOperation.List,

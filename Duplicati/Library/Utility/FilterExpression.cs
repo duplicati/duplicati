@@ -20,6 +20,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Utility
 {
@@ -99,7 +101,8 @@ namespace Duplicati.Library.Utility
             /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.FilterEntry"/> struct.
             /// </summary>
             /// <param name="filter">The filter string to use.</param>
-            public FilterEntry(string filter)
+            /// <param name="isFilterLiteral">Should the filter be considered literally; i.e., without identifying regular expressions, groups, or wildcards.</param>
+            public FilterEntry(string filter, bool isFilterLiteral = false)
             {
                 if (string.IsNullOrEmpty(filter))
                 {
@@ -107,13 +110,13 @@ namespace Duplicati.Library.Utility
                     this.Filter = null;
                     this.Regexp = null;
                 }
-                else if (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal))
+                else if (!isFilterLiteral && filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal))
                 {
                     this.Type = FilterType.Regexp;
                     this.Filter = filter.Substring(1, filter.Length - 2);
                     this.Regexp = new Regex(this.Filter, REGEXP_OPTIONS);
                 }
-                else if (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal))
+                else if (!isFilterLiteral && filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal))
                 {
                     this.Type = FilterType.Group;
                     this.Filter = filter.Substring(1, filter.Length - 2);
@@ -121,7 +124,7 @@ namespace Duplicati.Library.Utility
                 }
                 else
                 {
-                    this.Type = (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
+                    this.Type = !isFilterLiteral && (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
                     this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper(CultureInfo.InvariantCulture) : filter;
                     this.Regexp = new Regex(Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
                 }
@@ -254,7 +257,7 @@ namespace Duplicati.Library.Utility
                 }
                 return matched;
             }
-            
+
             /// <summary>
             /// Gets a value indicating if the filter matches the path
             /// </summary>
@@ -377,7 +380,8 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
         /// <param name="result">Return value of <see cref="Matches(string,out bool,out IFilter)"/> in case of match</param>
-        public FilterExpression(IEnumerable<string> filter, bool result = true)
+        /// <param name="isFilterLiteral">Should the filter be considered literally; i.e., without identifying regular expressions, groups, or wildcards.</param>
+        public FilterExpression(IEnumerable<string> filter, bool result = true, bool isFilterLiteral = false)
         {
             this.Result = result;
             
@@ -389,7 +393,7 @@ namespace Duplicati.Library.Utility
             
             m_filters = Compact(
                 (from n in filter
-                let nx = new FilterEntry(n)
+                let nx = new FilterEntry(n, isFilterLiteral)
                 where nx.Type != FilterType.Empty
                 select nx)
             );

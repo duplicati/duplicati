@@ -263,6 +263,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("list-prefix-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListprefixonlyShort, Strings.Options.ListprefixonlyLong, "false"),
                     new CommandLineArgument("list-folder-contents", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListfoldercontentsShort, Strings.Options.ListfoldercontentsLong, "false"),
                     new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListsetsonlyShort, Strings.Options.ListsetsonlyLong, "false"),
+                    new CommandLineArgument("list-filter-literal", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListfilterliteralShort, Strings.Options.ListfilterliteralLong, "false"),
                     new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
                     new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
 
@@ -550,6 +551,11 @@ namespace Duplicati.Library.Main
         /// A value indicating that only filesets are returned
         /// </summary>
         public bool ListSetsOnly { get { return GetBool("list-sets-only"); } }
+
+        /// <summary>
+        /// A value indicating whether list filters should be considered literally
+        /// </summary>
+        public bool ListFilterLiteral { get { return GetBool("list-filter-literal"); } }
 
         /// <summary>
         /// A value indicating if file time checks are skipped

@@ -53,11 +53,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             var prefixonly = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["prefix-only"].Value, false);
             var foldercontents = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["folder-contents"].Value, false);
+            var filterliteral = Duplicati.Library.Utility.Utility.ParseBool(info.Request.QueryString["filter-literal"].Value, false);
             var time = new DateTime();
             if (!allversion)
                 time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
 
-            var r = Runner.Run(Runner.CreateListTask(backup, new string[] { filter }, prefixonly, allversion, foldercontents, time), false) as Duplicati.Library.Interface.IListResults;
+            var r = Runner.Run(Runner.CreateListTask(backup, new string[] { filter }, prefixonly, allversion, foldercontents, filterliteral, time), false) as Duplicati.Library.Interface.IListResults;
 
             var result = new Dictionary<string, object>();
 

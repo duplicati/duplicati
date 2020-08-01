@@ -93,12 +93,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFiles (string localFolderPath)
         {
-            string[] tmp = SystemIO.IO_WIN.GetFiles(localFolderPath);
-            string[] res = new string[tmp.Length];
-            for(int i = 0; i < tmp.Length; i++)
-                res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
-
-            return res;
+            return SystemIO.IO_WIN.GetFiles(localFolderPath);
         }
 
         
@@ -109,12 +104,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFolders (string localFolderPath)
         {
-            string[] tmp = SystemIO.IO_WIN.GetDirectories(SystemIOWindows.PrefixWithUNC(localFolderPath));
-            string[] res = new string[tmp.Length];
-            for (int i = 0; i < tmp.Length; i++)
-                res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
-
-            return res;
+            return SystemIO.IO_WIN.GetDirectories(localFolderPath);
         }
 
         /// <summary>
