@@ -485,11 +485,12 @@ namespace Duplicati.Library.Snapshots
                         // parent FRN not found in look-up table, fetch it from change journal
                         var parentRecord = GetRecordByFileRef(parentRefNr);
 
-                        if (parentRecord == null)
+                        if (parentRecord == null && cur.UsnRecord.Reason == Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME)
                         {
                             // check if this file was moved to the special \$Extend\$Deleted folder
                             // we do so by comparing its file name against the file reference number
-                            if (cur.FileName.Length > 16 && cur.UsnRecord.FileReferenceNumber.ToString("X16") == cur.FileName.Substring(0, 16))
+                            if (cur.FileName.Length > 16 
+                                && cur.UsnRecord.FileReferenceNumber.ToString("X16") == cur.FileName.Substring(0, 16))
                             {
                                 // as a safety precaution, we ensure that the FileReferenceNumber for " \$Extend\$Deleted" 
                                 // determined in this way is the same for *all* files
@@ -502,10 +503,6 @@ namespace Duplicati.Library.Snapshots
 
                                 pathList.Clear();
                                 break;
-                            }
-                            else
-                            {
-                                Debug.Assert(false);
                             }
                         }
 
