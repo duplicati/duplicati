@@ -485,7 +485,8 @@ namespace Duplicati.Library.Snapshots
                         // parent FRN not found in look-up table, fetch it from change journal
                         var parentRecord = GetRecordByFileRef(parentRefNr);
 
-                        if (parentRecord == null && cur.UsnRecord.Reason == Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME)
+                        if (parentRecord == null 
+                            && (cur.UsnRecord.Reason & Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME) == Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME)
                         {
                             // check if this file was moved to the special \$Extend\$Deleted folder
                             // we do so by comparing its file name against the file reference number
