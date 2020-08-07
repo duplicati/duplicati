@@ -9,7 +9,7 @@
     <RootNamespace>Duplicati.CommandLine.RecoveryTool</RootNamespace>
     <AssemblyName>Duplicati.CommandLine.RecoveryTool</AssemblyName>
     <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <UseMSBuildEngine>false</UseMSBuildEngine>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
