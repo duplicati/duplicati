@@ -44,6 +44,7 @@
     <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ControllerTests.cs" />
     <Compile Include="DeleteHandlerTests.cs" />
     <Compile Include="DisruptionTests.cs" />
     <Compile Include="ProblematicPathTests.cs" />
