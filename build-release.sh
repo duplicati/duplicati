@@ -392,8 +392,8 @@ ${RELEASE_CHANGEINFO_NEWS}
 	curl -X POST "https://forum.duplicati.com/posts" \
 		-H "Content-Type: multipart/form-data" \
 		-H "Accept: application/json" \
-		-F "api_key=${DISCOURSE_APIKEY}" \
-		-F "api_username=${DISCOURSE_USERNAME}" \
+		-H "Api-Key: ${DISCOURSE_APIKEY}" \
+		-H "Api-Username: ${DISCOURSE_USERNAME}" \
 		-F "category=10" \
 		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
 		-F "raw=${body}"
