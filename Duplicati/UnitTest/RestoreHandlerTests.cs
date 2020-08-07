@@ -1,12 +1,12 @@
-using Duplicati.Library.Common;
-using Duplicati.Library.Main;
-using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.AccessControl;
-using Duplicati.Library.Interface;
+using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
+using NUnit.Framework;
 
 namespace Duplicati.UnitTest
 {
@@ -19,12 +19,14 @@ namespace Duplicati.UnitTest
             string folderPath = Path.Combine(this.DATAFOLDER, "folder");
             Directory.CreateDirectory(folderPath);
             string filePath = Path.Combine(folderPath, "empty_file");
-            File.WriteAllBytes(filePath, new byte[] {});
+            File.WriteAllBytes(filePath, new byte[] { });
 
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             // Issue #4148 described a situation where the folders containing the empty file were not recreated properly.
@@ -35,7 +37,9 @@ namespace Duplicati.UnitTest
             };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                c.Restore(new[] {filePath});
+                IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
             }
 
             // We need to strip the root part of the path.  Otherwise, Path.Combine will simply return the second argument
