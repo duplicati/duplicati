@@ -87,6 +87,11 @@ namespace Duplicati.Library.Snapshots
         private SafeFileHandle m_volumeHandle;
 
         /// <summary>
+        /// Determined file ref number of "\$Extend\$Deleted\" folder
+        /// </summary>
+        private ulong? m_extendDeletedRefNr = null;
+
+        /// <summary>
         /// Constructs a new USN helper instance
         /// </summary>
         /// <param name="volumeRoot">The root volume where the USN lookup is performed</param>
@@ -382,7 +387,7 @@ namespace Duplicati.Library.Snapshots
 
                     if (e == Win32USN.ERROR_INSUFFICIENT_BUFFER)
                     {
-                        bufferSize = bufferSize * 2;
+                        bufferSize *= 2;
                         continue;
                     }
 
@@ -423,13 +428,16 @@ namespace Duplicati.Library.Snapshots
                     return null;
 
                 // retry, increasing buffer size
-                bufferSize = bufferSize * 2;
+                bufferSize *= 2;
             }
 
             // not really a foreach: we only check the first record
             foreach (var rec in EnumerateRecords(entryData))
+            {
                 if (rec.UsnRecord.FileReferenceNumber == frn)
                     return rec;
+                break;
+            }
 
             return null;
         }
@@ -476,6 +484,29 @@ namespace Duplicati.Library.Snapshots
                     {
                         // parent FRN not found in look-up table, fetch it from change journal
                         var parentRecord = GetRecordByFileRef(parentRefNr);
+
+                        if (parentRecord == null 
+                            && (cur.UsnRecord.Reason & Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME) == Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME)
+                        {
+                            // check if this file was moved to the special \$Extend\$Deleted folder
+                            // we do so by comparing its file name against the file reference number
+                            if (cur.FileName.Length > 16 
+                                && cur.UsnRecord.FileReferenceNumber.ToString("X16") == cur.FileName.Substring(0, 16))
+                            {
+                                // as a safety precaution, we ensure that the FileReferenceNumber for " \$Extend\$Deleted" 
+                                // determined in this way is the same for *all* files
+                                if (!m_extendDeletedRefNr.HasValue)
+                                {
+                                    m_extendDeletedRefNr = parentRefNr;
+                                }
+                                else if (m_extendDeletedRefNr.Value != parentRefNr)
+                                    throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
+
+                                pathList.Clear();
+                                break;
+                            }
+                        }
+
                         parents = new SortedRecords(new List<Record> { parentRecord });
                         cache.Add(parentRefNr, parents);
                     }
@@ -490,22 +521,25 @@ namespace Duplicati.Library.Snapshots
                     cur = parent;
                 }
 
-                // generate full path
-                Debug.Assert(m_volume != null, nameof(m_volume) + " != null");
-                var path = m_volume;
-                foreach (var r in pathList)
+                if (pathList.Count > 0)
                 {
-                    path = SystemIO.IO_WIN.PathCombine(path, r.FileName);
-                }
+                    // generate full path
+                    Debug.Assert(m_volume != null, nameof(m_volume) + " != null");
+                    var path = m_volume;
+                    foreach (var r in pathList)
+                    {
+                        path = SystemIO.IO_WIN.PathCombine(path, r.FileName);
+                    }
 
-                if (rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory))
-                {
-                    path = Util.AppendDirSeparator(path);
-                }
+                    if (rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory))
+                    {
+                        path = Util.AppendDirSeparator(path);
+                    }
 
-                // set resolved path
-                rec.FullPath = path;
-                result.Add(rec);
+                    // set resolved path
+                    rec.FullPath = path;
+                    result.Add(rec);
+                }
             }
 
             return result;
