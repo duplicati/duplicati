@@ -22,7 +22,7 @@ function build () {
   msbuild -p:Configuration=Release -v:minimal "${DUPLICATI_ROOT}/BuildTools/GnupgSigningTool/GnupgSigningTool.sln"
 
   # build duplicati
-	msbuild -p:DefineConstants=__MonoCS__ -p:DefineConstants=ENABLE_GTK /p:Configuration=Release "${DUPLICATI_ROOT}/Duplicati.sln"
+	msbuild -p:DefineConstants=ENABLE_GTK /p:Configuration=Release "${DUPLICATI_ROOT}/Duplicati.sln"
 
   msbuild -p:Configuration=Release -v:minimal "${DUPLICATI_ROOT}"/Duplicati.sln
   cp -r "${DUPLICATI_ROOT}"/Duplicati/Server/webroot "${DUPLICATI_ROOT}"/Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
