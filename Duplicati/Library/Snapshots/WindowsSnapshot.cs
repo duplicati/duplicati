@@ -265,8 +265,14 @@ namespace Duplicati.Library.Snapshots
 
             var root = SystemIO.IO_WIN.GetPathRoot(localPath);
             var volumePath = _vssBackupComponents.GetVolumeFromCache(root);
+
             var subPath = localPath.Substring(root.Length);
-            var mappedPath = SystemIO.IO_WIN.PathCombine(volumePath, subPath);
+            if (!subPath.StartsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
+            {
+                volumePath = Util.AppendDirSeparator(volumePath, Util.DirectorySeparatorString);
+            }
+
+            var mappedPath = volumePath + subPath;
             return mappedPath;
         }
 
