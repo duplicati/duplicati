@@ -266,6 +266,10 @@ namespace Duplicati.Library.Snapshots
             var root = SystemIO.IO_WIN.GetPathRoot(localPath);
             var volumePath = _vssBackupComponents.GetVolumeFromCache(root);
 
+            // Note that using a simple Path.Combine() for the following code
+            // can result in invalid snapshot paths; e.g., if localPath is
+            // @"C:\", mappedPath would not have the required trailing
+            // directory separator.
             var subPath = localPath.Substring(root.Length);
             if (!subPath.StartsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
             {
