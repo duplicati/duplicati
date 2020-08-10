@@ -1,3 +1,7 @@
+2020-08-10 - 2.0.5.110_canary_2020-08-10
+==========
+* Fixed an issue with snapshot paths, thanks @dferreyra
+
 2020-08-07 - 2.0.5.109_canary_2020-08-07
 ==========
 * Fixed hiding compression errors, thanks @jpschewe
