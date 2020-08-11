@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -48,7 +49,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sources">Source paths to enumerate</param>
         /// <param name="callback">The callback to invoke with each found path</param>
         /// <param name="errorCallback">The callback used to report errors</param>
-        public IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
+        public IEnumerable<FileEnumerationEntry> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
         {
             return sources.SelectMany(s => Utility.Utility.EnumerateFileSystemEntries(s, callback, ListFolders, ListFiles, GetAttributes, errorCallback));
         }

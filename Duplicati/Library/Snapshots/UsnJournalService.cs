@@ -290,7 +290,7 @@ namespace Duplicati.Library.Snapshots
                 var attr = m_snapshot.FileExists(file) ? m_snapshot.GetAttributes(file) : FileAttributes.Normal;
                 try
                 {
-                    if (!filter(file, file, attr))
+                    if (!filter(file, file, attr).ShouldRecurse)
                         continue;
 
                     if (!IsFolderOrAncestorsExcluded(Utility.Utility.GetParent(file, true), filter, cache))
@@ -390,7 +390,7 @@ namespace Duplicati.Library.Snapshots
 
                 var attr = m_snapshot.DirectoryExists(folder) ? m_snapshot.GetAttributes(folder) : FileAttributes.Directory;
 
-                if (!filter(folder, folder, attr))
+                if (!filter(folder, folder, attr).ShouldRecurse)
                     break; // excluded
 
                 folder = Utility.Utility.GetParent(folder, true);

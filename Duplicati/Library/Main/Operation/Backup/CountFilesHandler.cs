@@ -48,13 +48,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         while (await taskreader.ProgressAsync && !token.IsCancellationRequested)
                         {
-                            var path = await self.Input.ReadAsync();
+                            var fileEnumerationEntry = await self.Input.ReadAsync();
 
                             count++;
 
                             try
                             {
-                                size += snapshot.GetFileSize(path);
+                                size += snapshot.GetFileSize(fileEnumerationEntry.Path);
                             }
                             catch
                             {

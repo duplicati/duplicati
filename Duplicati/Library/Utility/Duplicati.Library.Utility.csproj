@@ -50,6 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
+    <Compile Include="EnumerationFilterResult.cs" />
+    <Compile Include="FileEnumerationEntry.cs" />
     <Compile Include="WinTools.cs" />
     <Compile Include="FilterGroups.cs" />
     <Compile Include="KeyGenerator.cs" />

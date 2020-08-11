@@ -24,6 +24,7 @@ using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -79,7 +80,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 while (true)
                 {
-                    var path = await self.Input.ReadAsync();
+                    var fileEnumerationEntry = await self.Input.ReadAsync();
+                    var path = fileEnumerationEntry.Path;
 
                     var lastwrite = new DateTime(0, DateTimeKind.Utc);
                     var attributes = default(FileAttributes);
@@ -102,7 +104,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // If we only have metadata, stop here
-                    if (await ProcessMetadata(path, attributes, lastwrite, options, snapshot, emptymetadata, database, self.StreamBlockChannel).ConfigureAwait(false))
+                    if (await ProcessMetadata(fileEnumerationEntry, attributes, lastwrite, options, snapshot, emptymetadata, database, self.StreamBlockChannel).ConfigureAwait(false))
                     {
                         try
                         {
@@ -172,8 +174,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// Processes the metadata for the given path.
         /// </summary>
         /// <returns><c>True</c> if the path should be submitted to more analysis, <c>false</c> if there is nothing else to do</returns>
-        private static async Task<bool> ProcessMetadata(string path, FileAttributes attributes, DateTime lastwrite, Options options, Snapshots.ISnapshotService snapshot, IMetahash emptymetadata, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
+        private static async Task<bool> ProcessMetadata(FileEnumerationEntry fileEnumerationEntry, FileAttributes attributes, DateTime lastwrite, Options options, Snapshots.ISnapshotService snapshot, IMetahash emptymetadata, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
+            var path = fileEnumerationEntry.Path;
             if (snapshot.IsSymlink(path, attributes))
             {
                 // Not all reparse points are symlinks.
@@ -183,25 +186,31 @@ namespace Duplicati.Library.Main.Operation.Backup
                 string symlinkTarget = snapshot.GetSymlinkTarget(path);
                 if (!string.IsNullOrWhiteSpace(symlinkTarget))
                 {
-                    if (options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                    // Explicit source filter matches are treated as
+                    // Options.SymlinkStrategy.Follow; otherwise, use
+                    // the configured symlink policy.
+                    if (!fileEnumerationEntry.IsSourceFilterMatch)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "IgnoreSymlink", "Ignoring symlink {0}", path);
-                        return false;
-                    }
+                        if (options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                        {
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "IgnoreSymlink", "Ignoring symlink {0}", path);
+                            return false;
+                        }
 
-                    if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
-                    {
-                        var metadata = MetadataGenerator.GenerateMetadata(path, attributes, options, snapshot);
+                        if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
+                        {
+                            var metadata = MetadataGenerator.GenerateMetadata(path, attributes, options, snapshot);
 
-                        if (!metadata.ContainsKey("CoreSymlinkTarget"))
-                            metadata["CoreSymlinkTarget"] = symlinkTarget;
+                            if (!metadata.ContainsKey("CoreSymlinkTarget"))
+                                metadata["CoreSymlinkTarget"] = symlinkTarget;
 
-                        var metahash = Utility.WrapMetadata(metadata, options);
-                        await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, database, streamblockchannel).ConfigureAwait(false);
+                            var metahash = Utility.WrapMetadata(metadata, options);
+                            await AddSymlinkToOutputAsync(path, DateTime.UtcNow, metahash, database, streamblockchannel).ConfigureAwait(false);
 
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "StoreSymlink", "Stored symlink {0}", path);
-                        // Don't process further
-                        return false;
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "StoreSymlink", "Stored symlink {0}", path);
+                            // Don't process further
+                            return false;
+                        }
                     }
                 }
                 else

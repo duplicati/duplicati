@@ -27,6 +27,7 @@ using System.Threading;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -55,7 +56,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (!token.IsCancellationRequested)
                 {
                     var hardlinkmap = new Dictionary<string, string>();
-                    var mixinqueue = new Queue<string>();
+                    var mixinqueue = new Queue<FileEnumerationEntry>();
                     Duplicati.Library.Utility.IFilter enumeratefilter = emitfilter;
 
                     bool includes;
@@ -69,15 +70,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                         ignorenames = null;
 
                     // If we have a specific list, use that instead of enumerating the filesystem
-                    IEnumerable<string> worklist;
+                    IEnumerable<FileEnumerationEntry> worklist;
                     if (changedfilelist != null && changedfilelist.Length > 0)
                     {
-                        worklist = changedfilelist.Where(x =>
+                        worklist = changedfilelist.SelectMany(changedFile =>
                         {
                             var fa = FileAttributes.Normal;
                             try
                             {
-                                fa = snapshot.GetAttributes(x);
+                                fa = snapshot.GetAttributes(changedFile);
                             }
                             catch
                             {
@@ -85,10 +86,15 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             if (token.IsCancellationRequested)
                             {
-                                return false;
+                                return Enumerable.Empty<FileEnumerationEntry>();
                             }
 
-                            return AttributeFilter(x, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
+                            var enumerationFilterResult = AttributeFilter(changedFile, fa, snapshot, sourcefilter, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributes, enumeratefilter, ignorenames, mixinqueue);
+                            if (! enumerationFilterResult.ShouldRecurse)
+                            {
+                                return Enumerable.Empty<FileEnumerationEntry>();
+                            }
+                            return new[] { new FileEnumerationEntry(changedFile, enumerationFilterResult.IsSourceFilterMatch) };
                         });
                     }
                     else
@@ -142,9 +148,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         private class DirectoryStackEntry
         {
             /// <summary>
-            /// The path for the folder
+            /// File enumeration entry, including the path for the folder
             /// </summary>
-            public string Path;
+            public FileEnumerationEntry FileEnumerationEntry;
             /// <summary>
             /// A flag indicating if any items are found in this folder
             /// </summary>
@@ -157,17 +163,18 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         /// <returns>The list without empty folders.</returns>
         /// <param name="source">The list with potential empty folders.</param>
-        private static IEnumerable<string> ExcludeEmptyFolders(IEnumerable<string> source)
+        private static IEnumerable<FileEnumerationEntry> ExcludeEmptyFolders(IEnumerable<FileEnumerationEntry> source)
         {
             var pathstack = new Stack<DirectoryStackEntry>();
 
             foreach (var s in source)
             {
+                var path = s.Path;
                 // Keep track of directories
-                var isDirectory = s[s.Length - 1] == System.IO.Path.DirectorySeparatorChar;
+                var isDirectory = path[path.Length - 1] == System.IO.Path.DirectorySeparatorChar;
                 if (isDirectory)
                 {
-                    while (pathstack.Count > 0 && !s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparison))
+                    while (pathstack.Count > 0 && !path.StartsWith(pathstack.Peek().FileEnumerationEntry.Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         var e = pathstack.Pop();
                         if (e.AnyEntries || pathstack.Count == 0)
@@ -176,15 +183,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (pathstack.Count > 0)
                                 pathstack.Peek().AnyEntries = true;
                                 
-                            yield return e.Path;
+                            yield return e.FileEnumerationEntry;
                         }
                         else
-                            Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingEmptyFolder", "Excluding empty folder {0}", e.Path);
+                            Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingEmptyFolder", "Excluding empty folder {0}", e.FileEnumerationEntry.Path);
                     }
 
-                    if (pathstack.Count == 0 || s.StartsWith(pathstack.Peek().Path, Library.Utility.Utility.ClientFilenameStringComparison))
+                    if (pathstack.Count == 0 || path.StartsWith(pathstack.Peek().FileEnumerationEntry.Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
-                        pathstack.Push(new DirectoryStackEntry() { Path = s });
+                        pathstack.Push(new DirectoryStackEntry() { FileEnumerationEntry = s });
                         continue;
                     }
                 }
@@ -206,7 +213,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (pathstack.Count > 0)
                         pathstack.Peek().AnyEntries = true;
 
-                    yield return e.Path;
+                    yield return e.FileEnumerationEntry;
                 }
             }
         }
@@ -219,7 +226,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="mixinqueue">The mix in queue.</param>
         /// <param name="emitfilter">The emitfilter.</param>
         /// <param name="enumeratefilter">The enumeratefilter.</param>
-        private static IEnumerable<string> ExpandWorkList(IEnumerable<string> worklist, Queue<string> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter enumeratefilter)
+        private static IEnumerable<FileEnumerationEntry> ExpandWorkList(IEnumerable<FileEnumerationEntry> worklist, Queue<FileEnumerationEntry> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter enumeratefilter)
         {
             // Process each path, and dequeue the mixins with symlinks as we go
             foreach (var s in worklist)
@@ -228,7 +235,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     yield return mixinqueue.Dequeue();
 
                 Library.Utility.IFilter m;
-                if (emitfilter != enumeratefilter && !Library.Utility.FilterExpression.Matches(emitfilter, s, out m))
+                if (emitfilter != enumeratefilter && !Library.Utility.FilterExpression.Matches(emitfilter, s.Path, out m))
                     continue;
 
                 yield return s;
@@ -245,7 +252,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <returns>True if the path should be returned, false otherwise.</returns>
         /// <param name="path">The current path.</param>
         /// <param name="attributes">The file or folder attributes.</param>
-        private static bool AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
+        private static EnumerationFilterResult AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<FileEnumerationEntry> mixinqueue)
         {
 			// Step 1, exclude block devices
 			try
@@ -253,13 +260,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (snapshot.IsBlockDevice(path))
                 {
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", path);
-                    return false;
+                    return EnumerationFilterResult.False;
                 }
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
-                return false;
+                return EnumerationFilterResult.False;
             }
 
             // Check if we explicitly include this entry
@@ -268,8 +275,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             if (sourcefilter.Matches(path, out sourcematches, out sourcematch) && sourcematches)
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingSourcePath", "Including source path: {0}", path);
-                // If the file is a symlink, apply special handling
-                return HandleSymlink(path, attributes, snapshot, symlinkPolicy, mixinqueue);
+                // For direct source matches we enforce
+                // Options.SymlinkStrategy.Follow, so ShouldRecurse is true
+                // regardless of whether or not path is a symlink.  Record
+                // that this was a direct source match so MetadataPreProcess
+                // also knows to enforce Options.SymlinkStrategy.Follow if
+                // this path happens to be a symlink.
+                return new EnumerationFilterResult(true, sourcematches);
             }
 
             // If we have a hardlink strategy, obey it
@@ -283,7 +295,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (hardlinkPolicy == Options.HardlinkStrategy.None)
                         {
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingHardlinkByPolicy", "Excluding hardlink: {0} ({1})", path, id);
-                            return false;
+                            return EnumerationFilterResult.False;
                         }
                         else if (hardlinkPolicy == Options.HardlinkStrategy.First)
                         {
@@ -291,7 +303,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (hardlinkmap.TryGetValue(id, out prevPath))
                             {
                                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", path, id, prevPath);
-                                return false;
+                                return EnumerationFilterResult.False;
                             }
                             else
                             {
@@ -303,8 +315,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                 catch (Exception ex)
                 {
                     Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
-                    return false;
-                }                    
+                    return EnumerationFilterResult.False;
+                }
             }
 
             if (ignorenames != null && (attributes & FileAttributes.Directory) != 0)
@@ -317,7 +329,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (snapshot.FileExists(ignorepath))
                         {
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathDueToIgnoreFile", "Excluding path because ignore file was found: {0}", ignorepath);
-                            return false;
+                            return EnumerationFilterResult.False;
                         }
                     }
                 }
@@ -331,7 +343,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             if ((fileAttributes & attributes) != 0)
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromAttributes", "Excluding path due to attribute filter: {0}", path);
-                return false;
+                return EnumerationFilterResult.False;
             }
 
             // Then check if the filename is not explicitly excluded by a filter
@@ -340,7 +352,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             if (!Library.Utility.FilterExpression.Matches(enumeratefilter, path, out match))
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromFilter", "Excluding path due to filter: {0} => {1}", path, match == null ? "null" : match.ToString());
-                return false;
+                return EnumerationFilterResult.False;
             }
             else if (match != null)
             {
@@ -348,25 +360,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", path, match.ToString());
             }
 
-            // If the file is a symlink, apply special handling
-            if (!HandleSymlink(path, attributes, snapshot, symlinkPolicy, mixinqueue))
-            {
-                return false;
-            }
-
-            if (!filtermatch)
-                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
-
-            // All the way through, yes!
-            return true;
-        }
-
-        /// <summary>
-        /// Test if path is symlink and handle it accordingly.
-        /// </summary>
-        /// <returns>True if path should continue to be considered.</returns>
-        private static bool HandleSymlink(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Options.SymlinkStrategy symlinkPolicy, Queue<string> mixinqueue)
-        {
             // If the file is a symlink, apply special handling
             var isSymlink = snapshot.IsSymlink(path, attributes);
             string symlinkTarget = null;
@@ -381,7 +374,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (symlinkPolicy == Options.SymlinkStrategy.Ignore)
                     {
                         Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludeSymlink", "Excluding symlink: {0}", path);
-                        return false;
+                        return EnumerationFilterResult.False;
                     }
 
                     if (symlinkPolicy == Options.SymlinkStrategy.Store)
@@ -390,8 +383,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         // We return false because we do not want to recurse into the path,
                         // but we add the symlink to the mixin so we process the symlink itself
-                        mixinqueue.Enqueue(path);
-                        return false;
+                        mixinqueue.Enqueue(new FileEnumerationEntry(path, false));
+                        return EnumerationFilterResult.False;
                     }
                 }
                 else
@@ -399,7 +392,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "FollowingEmptySymlink", "Treating empty symlink as regular path {0}", path);
                 }
             }
-            return true;
+
+            if (!filtermatch)
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPath", "Including path as no filters matched: {0}", path);
+
+            // All the way through, yes!
+            return EnumerationFilterResult.True;
         }
     }
 }

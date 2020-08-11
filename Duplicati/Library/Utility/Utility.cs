@@ -61,8 +61,11 @@ namespace Duplicati.Library.Utility
         /// <param name="rootpath">The path that the file enumeration started at</param>
         /// <param name="path">The current element</param>
         /// <param name="attributes">The attributes of the element</param>
-        /// <returns>A value indicating if the folder should be recursed, ignored for other types</returns>
-        public delegate bool EnumerationFilterDelegate(string rootpath, string path, FileAttributes attributes);
+        /// <returns>
+        /// EnumerationFilterResult where ShouldRecurse is a value indicating if the folder should be recursed, ignored for other types;
+        /// and where IsSourceFilterMatch is true for a source data filter match.
+        /// </returns>
+        public delegate EnumerationFilterResult EnumerationFilterDelegate(string rootpath, string path, FileAttributes attributes);
 
         /// <summary>
         /// Copies the content of one stream into another
@@ -194,7 +197,8 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string basepath)
         {
-            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => true, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null);
+            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => EnumerationFilterResult.True, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null)
+                .Select(fileEnumerationEntry => fileEnumerationEntry.Path);
         }
 
         /// <summary>
@@ -230,9 +234,9 @@ namespace Duplicati.Library.Utility
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
         /// <param name="errorCallback">An optional function to call with error messages.</param>
         /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader, ReportAccessError errorCallback = null)
+        public static IEnumerable<FileEnumerationEntry> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader, ReportAccessError errorCallback = null)
         {
-            var lst = new Stack<string>();
+            var lst = new Stack<FileEnumerationEntry>();
 
             if (IsFolder(rootpath, attributeReader))
             {
@@ -240,8 +244,9 @@ namespace Duplicati.Library.Utility
                 try
                 {
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
-                    if (callback(rootpath, rootpath, attr))
-                        lst.Push(rootpath);
+                    var fileEnumerationEntry = callback(rootpath, rootpath, attr);
+                    if (fileEnumerationEntry.ShouldRecurse)
+                        lst.Push(new FileEnumerationEntry(rootpath, fileEnumerationEntry.IsSourceFilterMatch));
                 }
                 catch (System.Threading.ThreadAbortException)
                 {
@@ -261,14 +266,15 @@ namespace Duplicati.Library.Utility
 
                     try
                     {
-                        foreach (var s in folderList(f))
+                        foreach (var s in folderList(f.Path))
                         {
                             var sf = Util.AppendDirSeparator(s);
                             try
                             {
                                 var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
-                                if (callback(rootpath, sf, attr))
-                                    lst.Push(sf);
+                                var fileEnumerationEntry = callback(rootpath, sf, attr);
+                                if (fileEnumerationEntry.ShouldRecurse)
+                                    lst.Push(new FileEnumerationEntry(sf, fileEnumerationEntry.IsSourceFilterMatch));
                             }
                             catch (System.Threading.ThreadAbortException)
                             {
@@ -287,8 +293,8 @@ namespace Duplicati.Library.Utility
                     }
                     catch (Exception ex)
                     {
-                        errorCallback?.Invoke(rootpath, f, ex);
-                        callback(rootpath, f, FileAttributes.Directory | ATTRIBUTE_ERROR);
+                        errorCallback?.Invoke(rootpath, f.Path, ex);
+                        callback(rootpath, f.Path, FileAttributes.Directory | ATTRIBUTE_ERROR);
                     }
 
                     string[] files = null;
@@ -296,7 +302,7 @@ namespace Duplicati.Library.Utility
                     {
                         try
                         {
-                            files = fileList(f);
+                            files = fileList(f.Path);
                         }
                         catch (System.Threading.ThreadAbortException)
                         {
@@ -304,8 +310,8 @@ namespace Duplicati.Library.Utility
                         }
                         catch (Exception ex)
                         {
-                            errorCallback?.Invoke(rootpath, f, ex);
-                            callback(rootpath, f, FileAttributes.Directory | ATTRIBUTE_ERROR);
+                            errorCallback?.Invoke(rootpath, f.Path, ex);
+                            callback(rootpath, f.Path, FileAttributes.Directory | ATTRIBUTE_ERROR);
                         }
                     }
 
@@ -313,10 +319,12 @@ namespace Duplicati.Library.Utility
                     {
                         foreach (var s in files)
                         {
+                            EnumerationFilterResult enumerationFilterResult = null;
                             try
                             {
                                 var attr = attributeReader?.Invoke(s) ?? FileAttributes.Normal;
-                                if (!callback(rootpath, s, attr))
+                                enumerationFilterResult = callback(rootpath, s, attr);
+                                if (!enumerationFilterResult.ShouldRecurse)
                                     continue;
                             }
                             catch (System.Threading.ThreadAbortException)
@@ -329,17 +337,19 @@ namespace Duplicati.Library.Utility
                                 callback(rootpath, s, ATTRIBUTE_ERROR);
                                 continue;
                             }
-                            yield return s;
+                            yield return new FileEnumerationEntry(s, enumerationFilterResult.IsSourceFilterMatch);
                         }
                     }
                 }
             }
             else
             {
+                EnumerationFilterResult enumerationFilterResult = null;
                 try
                 {
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Normal;
-                    if (!callback(rootpath, rootpath, attr))
+                    enumerationFilterResult = callback(rootpath, rootpath, attr);
+                    if (!enumerationFilterResult.ShouldRecurse)
                         yield break;
                 }
                 catch (System.Threading.ThreadAbortException)
@@ -353,7 +363,7 @@ namespace Duplicati.Library.Utility
                     yield break;
                 }
 
-                yield return rootpath;
+                yield return new FileEnumerationEntry(rootpath, enumerationFilterResult.IsSourceFilterMatch);
             }
         }
 
