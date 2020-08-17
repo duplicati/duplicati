@@ -691,25 +691,24 @@ namespace Duplicati.Library.Main.Database
         public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction,
             Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
         {
+            AppendFilesFromPreviousSet(transaction, null, fileSetId, prevFileSetId, timestamp);
+
             if (exclusionPredicate == null)
-            {
-                AppendFilesFromPreviousSet(transaction, null, fileSetId, prevFileSetId, timestamp);
                 return;
-            }
 
             using (var cmd = m_connection.CreateCommand())
-            using (var cmdAdd = m_connection.CreateCommand())
+            using (var cmdDelete = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 var lastFilesetId =
                     prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
 
-                // prepare command for adding new entries
-                cmdAdd.Transaction = tr.Parent;
-                cmdAdd.CommandText =
-                    @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?, ?, ?)";
-                cmdAdd.AddParameters(3);
-                cmdAdd.SetParameterValue(0, fileSetId);
+                // prepare command for deleting new entries
+                cmdDelete.Transaction = tr.Parent;
+                cmdDelete.CommandText = 
+                    @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID""=? AND ""FileID""=?";
+                cmdDelete.AddParameters(3);
+                cmdDelete.SetParameterValue(0, fileSetId);
 
                 // enumerate files from previous set
                 cmd.Transaction = tr.Parent;
@@ -730,11 +729,10 @@ namespace Duplicati.Library.Main.Database
                 {
                     var path = row.GetString(0);
                     var size = row.GetInt64(3);
-                    if (!exclusionPredicate(path, size))
+                    if (exclusionPredicate(path, size))
                     {
-                        cmdAdd.SetParameterValue(1, row.GetInt64(1));
-                        cmdAdd.SetParameterValue(2, row.GetInt64(2));
-                        cmdAdd.ExecuteNonQuery();
+                        cmdDelete.SetParameterValue(1, row.GetInt64(1));
+                        cmdDelete.ExecuteNonQuery();
                     }
                 }
 
