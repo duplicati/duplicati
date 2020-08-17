@@ -720,14 +720,10 @@ namespace Duplicati.Library.Main.Database
                       FROM (  SELECT DISTINCT ""FileID"", ""Lastmodified""
 		                      FROM ""FilesetEntry""
 		                      WHERE ""FilesetID"" = ?
-		                      AND ""FileID"" NOT IN (
-			                      SELECT ""FileID""
-			                      FROM ""FilesetEntry""
-			                      WHERE ""FilesetID"" = ?
-		                      )) AS fs
+		                      ) AS fs
                       LEFT JOIN ""File"" AS f ON fs.""FileID"" = f.""ID""
                       LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";",
-                    lastFilesetId, fileSetId))
+                    lastFilesetId))
                 {
                     var path = row.GetString(0);
                     var size = row.GetInt64(3);
