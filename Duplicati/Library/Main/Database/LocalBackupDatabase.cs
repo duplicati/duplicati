@@ -691,23 +691,25 @@ namespace Duplicati.Library.Main.Database
         public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction,
             Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
         {
-            AppendFilesFromPreviousSet(transaction, null, fileSetId, prevFileSetId, timestamp);
-
-            if (exclusionPredicate == null)
-                return;
-
             using (var cmd = m_connection.CreateCommand())
             using (var cmdDelete = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                var lastFilesetId =
-                    prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
+                long lastFilesetId = prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
+
+                cmd.Transaction = tr.Parent;
+                cmd.ExecuteNonQuery(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ? AS ""FilesetID"", ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)) ",
+                                    fileSetId,
+                                    lastFilesetId,
+                                    fileSetId);
+
+                if (exclusionPredicate == null)
+                    return;
 
                 // prepare command for deleting new entries
                 cmdDelete.Transaction = tr.Parent;
-                cmdDelete.CommandText = 
-                    @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID""=? AND ""FileID""=?";
-                cmdDelete.AddParameters(3);
+                cmdDelete.CommandText = @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" = ?";
+                cmdDelete.AddParameters(2);
                 cmdDelete.SetParameterValue(0, fileSetId);
 
                 // enumerate files from previous set
@@ -729,6 +731,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     var path = row.GetString(0);
                     var size = row.GetInt64(3);
+
                     if (exclusionPredicate(path, size))
                     {
                         cmdDelete.SetParameterValue(1, row.GetInt64(1));
@@ -739,7 +742,7 @@ namespace Duplicati.Library.Main.Database
                 tr.Commit();
             }
         }
-        
+
         /// <summary>
         /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
         /// </summary>
