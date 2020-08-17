@@ -560,9 +560,9 @@ namespace Duplicati.Library.Snapshots
                     resultRecords.Add(rec);
                 }
                 else if (!(rec.FileName.Length == 24
-                           && rec.UsnRecord.FileReferenceNumber.ToString("X16") == rec.FileName.Substring(0, 16))
+                           && rec.UsnRecord.FileReferenceNumber.ToString("X16") == rec.FileName.Substring(0, 16)
                     || rec.FileName.Equals("$TxfLog")
-                    || rec.FileName.Equals("$TxfLog.blf"))
+                    || rec.FileName.Equals("$TxfLog.blf")))
                 {
                     throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
                 }
