@@ -40,6 +40,7 @@ namespace Duplicati.Library.Snapshots
         [Flags]
         public enum ChangeReason
         {
+            None = 0,
             Modified = 1,
             Created = 2,
             Deleted = 4,
@@ -79,17 +80,12 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Start USN of current cached m_entryList
         /// </summary>
-        private long m_minUsn;
+        private long m_startUsn;
 
         /// <summary>
         /// The safe filehandle
         /// </summary>
         private SafeFileHandle m_volumeHandle;
-
-        /// <summary>
-        /// Determined file ref number of "\$Extend\$Deleted\" folder
-        /// </summary>
-        private ulong? m_extendDeletedRefNr = null;
 
         /// <summary>
         /// Constructs a new USN helper instance
@@ -138,27 +134,27 @@ namespace Duplicati.Library.Snapshots
         /// Returns a list of files or folders that have changed since the recorded USN
         /// </summary>
         /// <param name="sourceFileOrFolder">The file or folder to find entries for</param>
-        /// <param name="minUsn">Minimum USN of entry</param>
+        /// <param name="startUsn">USN of first entry to consider</param>
         /// <returns>A list of tuples with changed files and folders and their type</returns>
-        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long minUsn)
+        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long startUsn)
         {
-            return GetChangedFileSystemEntries(sourceFileOrFolder, minUsn, ChangeReason.Any);
+            return GetChangedFileSystemEntries(sourceFileOrFolder, startUsn, ChangeReason.Any);
         }
 
         /// <summary>
         /// Returns a list of files or folders that have changed since the recorded USN
         /// </summary>
         /// <param name="sourceFileOrFolder">The file or folder to find entries for</param>
-        /// <param name="minUsn">Minimum USN of entry</param>
+        /// <param name="startUsn">USN of first entry to consider</param>
         /// <param name="reason">Filter expression for change reason</param>
         /// <returns>A list of tuples with changed files and folders and their type</returns>
-        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long minUsn, ChangeReason reason)
+        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long startUsn, ChangeReason reason)
         {
             var isFolder = sourceFileOrFolder.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
 
-            foreach (var r in GetRecords(minUsn))
+            foreach (var r in GetRecords(startUsn))
             {
-                if (r.UsnRecord.Usn >= minUsn
+                if (r.UsnRecord.Usn >= startUsn
                     && (reason == ChangeReason.Any || (MapChangeReason(r.UsnRecord.Reason) & reason) != 0)
                     && (r.FullPath.Equals(sourceFileOrFolder, Utility.Utility.ClientFilenameStringComparison)
                         || isFolder && Utility.Utility.IsPathBelowFolder(r.FullPath, sourceFileOrFolder)))
@@ -186,13 +182,14 @@ namespace Duplicati.Library.Snapshots
 
         /// <summary>
         /// Internal method to initially create and then access the cached version of the file entry list
+        /// <param name="startUsn">USN of first entry to consider</param>
         /// </summary>       
-        private IEnumerable<Record> GetRecords(long minUsn)
+        private IEnumerable<Record> GetRecords(long startUsn)
         {
-            if (m_entryList == null || m_minUsn != minUsn)
+            if (m_entryList == null || m_startUsn != startUsn)
             {
-                m_minUsn = minUsn;
-                m_entryList = ResolveFullPaths(GetRawRecords(minUsn));
+                m_startUsn = startUsn;
+                m_entryList = ResolveFullPaths(GetRawRecords(startUsn));
             }
 
             return m_entryList;
@@ -316,29 +313,6 @@ namespace Duplicati.Library.Snapshots
         private static IEnumerable<Record> EnumerateRecords(IReadOnlyCollection<byte> entryData)
         {
             return new RecordEnumerator(entryData);
-
-            //if (entryData.Count <= sizeof(long)) 
-            //    yield break;
-
-            //var bufferHandle = GCHandle.Alloc(entryData, GCHandleType.Pinned);
-            //try
-            //{
-            //    var bufferPointer = bufferHandle.AddrOfPinnedObject();
-
-            //    long offset = sizeof(long);               
-            //    while (offset < entryData.Count)
-            //    {
-            //        var entry = GetBufferedEntry(bufferPointer, offset, out var fileName);
-
-            //        yield return new Record(entry, fileName);
-
-            //        offset += entry.RecordLength;
-            //    }
-            //}
-            //finally
-            //{
-            //    bufferHandle.Free();                    
-            //}
         }
 
         /// <summary>
@@ -465,10 +439,21 @@ namespace Duplicati.Library.Snapshots
                 }
             }
 
+            // List of unresolved USN records, with FileReferenceNumber as a key            
+            Dictionary<ulong, List<Record>> recordsByFileRefNumber = new Dictionary<ulong, List<Record>>();
+
             // iterate through USN records
             var result = new List<Record>();
             foreach (var rec in records)
             {
+                // Add entry to list of unresolved entries, and try to resolve them at the end of the scan
+                if (!recordsByFileRefNumber.TryGetValue(rec.UsnRecord.FileReferenceNumber, out List<Record> fileRefHistory))
+                {
+                    fileRefHistory = new List<Record>();
+                    recordsByFileRefNumber.Add(rec.UsnRecord.FileReferenceNumber, fileRefHistory);
+                }
+                fileRefHistory.Add(rec);
+
                 var pathList = new LinkedList<Record>();
                 pathList.AddFirst(rec);
 
@@ -485,30 +470,16 @@ namespace Duplicati.Library.Snapshots
                         // parent FRN not found in look-up table, fetch it from change journal
                         var parentRecord = GetRecordByFileRef(parentRefNr);
 
-                        if (parentRecord == null 
-                            && (cur.UsnRecord.Reason & Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME) == Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME)
+                        if (parentRecord == null)
                         {
-                            // check if this file was moved to the special \$Extend\$Deleted folder
-                            // we do so by comparing its file name against the file reference number
-                            if (cur.FileName.Length > 16 
-                                && cur.UsnRecord.FileReferenceNumber.ToString("X16") == cur.FileName.Substring(0, 16))
-                            {
-                                // as a safety precaution, we ensure that the FileReferenceNumber for " \$Extend\$Deleted" 
-                                // determined in this way is the same for *all* files
-                                if (!m_extendDeletedRefNr.HasValue)
-                                {
-                                    m_extendDeletedRefNr = parentRefNr;
-                                }
-                                else if (m_extendDeletedRefNr.Value != parentRefNr)
-                                    throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
-
-                                pathList.Clear();
-                                break;
-                            }
+                            pathList.Clear();
+                            break;
                         }
-
-                        parents = new SortedRecords(new List<Record> { parentRecord });
-                        cache.Add(parentRefNr, parents);
+                        else
+                        {
+                            parents = new SortedRecords(new List<Record> { parentRecord });
+                            cache.Add(parentRefNr, parents);
+                        }
                     }
 
                     // take parent entry having next smaller USN
@@ -538,11 +509,66 @@ namespace Duplicati.Library.Snapshots
 
                     // set resolved path
                     rec.FullPath = path;
-                    result.Add(rec);
                 }
             }
 
+            // parse all records
+            foreach (var entry in recordsByFileRefNumber)
+            {
+                bool wasCreated = false;
+                var tempRecords = new List<Record>();
+
+                foreach (var rec in entry.Value)
+                {
+                    // add entry to intermediate result set
+                    tempRecords.Add(rec);
+
+                    var reason = rec.UsnRecord.Reason;
+
+                    if (reason.HasFlag(Win32USN.USNReason.USN_REASON_FILE_CREATE) || reason.HasFlag(Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME))
+                    {
+                        wasCreated = true;
+                    }
+
+                    if (reason.HasFlag(Win32USN.USNReason.USN_REASON_FILE_DELETE) || reason.HasFlag(Win32USN.USNReason.USN_REASON_RENAME_OLD_NAME))
+                    {
+                        if (!wasCreated)
+                        {
+                            FlushRecords(tempRecords, result);
+                        }
+
+                        tempRecords.Clear();
+                        wasCreated = false;
+                    }
+                }
+
+                FlushRecords(tempRecords, result);
+            }
+
             return result;
+        }
+
+        private static void FlushRecords(List<Record> tempRecords, List<Record> resultRecords)
+        {
+            foreach (var rec in tempRecords)
+            {
+                // Ignore entries below \$Extend\. A clean implementation would now 
+                // parse the MFT and look up the actual entry. But for for now, we check against
+                // the well-known file names.
+                if (!string.IsNullOrEmpty(rec.FullPath))
+                {
+                    resultRecords.Add(rec);
+                }
+                else if (!(rec.FileName.Length == 24
+                           && rec.UsnRecord.FileReferenceNumber.ToString("X16") == rec.FileName.Substring(0, 16))
+                    || rec.FileName.Equals("$TxfLog")
+                    || rec.FileName.Equals("$TxfLog.blf"))
+                {
+                    throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
+                }
+            }
+
+            tempRecords.Clear();
         }
 
         private static ChangeReason MapChangeReason(Win32USN.USNReason reason)
