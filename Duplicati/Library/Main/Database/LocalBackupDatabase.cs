@@ -698,50 +698,48 @@ namespace Duplicati.Library.Main.Database
             }
 
             using (var cmd = m_connection.CreateCommand())
-            using (var cmdAdd = m_connection.CreateCommand())
+            using (var cmdDelete = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
-                var lastFilesetId =
-                    prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
+                long lastFilesetId = prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
 
-                // prepare command for adding new entries
-                cmdAdd.Transaction = tr.Parent;
-                cmdAdd.CommandText =
-                    @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?, ?, ?)";
-                cmdAdd.AddParameters(3);
-                cmdAdd.SetParameterValue(0, fileSetId);
+                // copy entries from previous file set into a temporary table, except those file IDs already added by the current backup
+                var tempFileSetTable = "FilesetEntry-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                cmd.Transaction = tr.Parent;
+                cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{tempFileSetTable}"" AS SELECT ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?))", lastFilesetId, fileSetId);
 
-                // enumerate files from previous set
+                // now we need to remove, from the above, any entries that were enumerated by the 
+                // UNC-driven backup
+                cmdDelete.Transaction = tr.Parent;
+                cmdDelete.CommandText = $@"DELETE FROM ""{tempFileSetTable}"" WHERE ""FileID"" = ?";
+                cmdDelete.AddParameters(1);
+
+                // enumerate files from new temporary file set, and remove any entries handled by UNC
                 cmd.Transaction = tr.Parent;
                 foreach (var row in cmd.ExecuteReaderEnumerable(
-                    @"SELECT
-	                      f.""Path"", fs.""FileID"", fs.""Lastmodified"", COALESCE(bs.""Length"", -1)
-                      FROM (  SELECT DISTINCT ""FileID"", ""Lastmodified""
-		                      FROM ""FilesetEntry""
-		                      WHERE ""FilesetID"" = ?
-		                      AND ""FileID"" NOT IN (
-			                      SELECT ""FileID""
-			                      FROM ""FilesetEntry""
-			                      WHERE ""FilesetID"" = ?
-		                      )) AS fs
+                    $@"SELECT f.""Path"", fs.""FileID"", fs.""Lastmodified"", COALESCE(bs.""Length"", -1)
+                      FROM (SELECT DISTINCT ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}"") AS fs
                       LEFT JOIN ""File"" AS f ON fs.""FileID"" = f.""ID""
-                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";",
-                    lastFilesetId, fileSetId))
+                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";"))
                 {
                     var path = row.GetString(0);
                     var size = row.GetInt64(3);
-                    if (!exclusionPredicate(path, size))
+
+                    if (exclusionPredicate(path, size))
                     {
-                        cmdAdd.SetParameterValue(1, row.GetInt64(1));
-                        cmdAdd.SetParameterValue(2, row.GetInt64(2));
-                        cmdAdd.ExecuteNonQuery();
+                        cmdDelete.SetParameterValue(0, row.GetInt64(1));
+                        cmdDelete.ExecuteNonQuery();
                     }
                 }
+
+                // now copy the temporary table into the FileSetEntry table
+                cmd.ExecuteNonQuery($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") 
+                                      SELECT ?, ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}""", fileSetId);
 
                 tr.Commit();
             }
         }
-        
+
         /// <summary>
         /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
         /// </summary>
