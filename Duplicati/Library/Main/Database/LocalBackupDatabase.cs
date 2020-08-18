@@ -691,49 +691,50 @@ namespace Duplicati.Library.Main.Database
         public void AppendFilesFromPreviousSetWithPredicate(System.Data.IDbTransaction transaction,
             Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp)
         {
+            if (exclusionPredicate == null)
+            {
+                AppendFilesFromPreviousSet(transaction, null, fileSetId, prevFileSetId, timestamp);
+                return;
+            }
+
             using (var cmd = m_connection.CreateCommand())
             using (var cmdDelete = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
                 long lastFilesetId = prevFileSetId < 0 ? GetPreviousFilesetID(cmd, timestamp, fileSetId) : prevFileSetId;
 
+                // copy entries from previous file set into a temporary table, except those file IDs already added by the current backup
+                var tempFileSetTable = "FilesetEntry-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 cmd.Transaction = tr.Parent;
-                cmd.ExecuteNonQuery(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ? AS ""FilesetID"", ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)) ",
-                                    fileSetId,
-                                    lastFilesetId,
-                                    fileSetId);
+                cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{tempFileSetTable}"" AS SELECT ""FileID"", ""Lastmodified"" FROM (SELECT DISTINCT ""FilesetID"", ""FileID"", ""Lastmodified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?))", lastFilesetId, fileSetId);
 
-                if (exclusionPredicate == null)
-                    return;
-
-                // prepare command for deleting new entries
+                // now we need to remove, from the above, any entries that were enumerated by the 
+                // UNC-driven backup
                 cmdDelete.Transaction = tr.Parent;
-                cmdDelete.CommandText = @"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" = ?";
-                cmdDelete.AddParameters(2);
-                cmdDelete.SetParameterValue(0, fileSetId);
+                cmdDelete.CommandText = $@"DELETE FROM ""{tempFileSetTable}"" WHERE ""FileID"" = ?";
+                cmdDelete.AddParameters(1);
 
-                // enumerate files from previous set
+                // enumerate files from new temporary file set, and remove any entries handled by UNC
                 cmd.Transaction = tr.Parent;
                 foreach (var row in cmd.ExecuteReaderEnumerable(
-                    @"SELECT
-	                      f.""Path"", fs.""FileID"", fs.""Lastmodified"", COALESCE(bs.""Length"", -1)
-                      FROM (  SELECT DISTINCT ""FileID"", ""Lastmodified""
-		                      FROM ""FilesetEntry""
-		                      WHERE ""FilesetID"" = ?
-		                      ) AS fs
+                    $@"SELECT f.""Path"", fs.""FileID"", fs.""Lastmodified"", COALESCE(bs.""Length"", -1)
+                      FROM (SELECT DISTINCT ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}"") AS fs
                       LEFT JOIN ""File"" AS f ON fs.""FileID"" = f.""ID""
-                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";",
-                    lastFilesetId))
+                      LEFT JOIN ""Blockset"" AS bs ON f.""BlocksetID"" = bs.""ID"";"))
                 {
                     var path = row.GetString(0);
                     var size = row.GetInt64(3);
 
                     if (exclusionPredicate(path, size))
                     {
-                        cmdDelete.SetParameterValue(1, row.GetInt64(1));
+                        cmdDelete.SetParameterValue(0, row.GetInt64(1));
                         cmdDelete.ExecuteNonQuery();
                     }
                 }
+
+                // now copy the temporary table into the FileSetEntry table
+                cmd.ExecuteNonQuery($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") 
+                                      SELECT ?, ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}""", fileSetId);
 
                 tr.Commit();
             }
