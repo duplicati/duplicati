@@ -550,21 +550,33 @@ namespace Duplicati.Library.Snapshots
 
         private static void FlushRecords(List<Record> tempRecords, List<Record> resultRecords)
         {
+            const Win32USN.USNReason DirectoryInclusionFlags = Win32USN.USNReason.USN_REASON_ANY 
+                & ~(Win32USN.USNReason.USN_REASON_INDEXABLE_CHANGE | Win32USN.USNReason.USN_REASON_COMPRESSION_CHANGE | 
+                    Win32USN.USNReason.USN_REASON_ENCRYPTION_CHANGE | Win32USN.USNReason.USN_REASON_EA_CHANGE | 
+                    Win32USN.USNReason.USN_REASON_REPARSE_POINT_CHANGE | Win32USN.USNReason.USN_REASON_CLOSE);
+            const Win32USN.USNReason FileInclusionFlags = DirectoryInclusionFlags | Win32USN.USNReason.USN_REASON_REPARSE_POINT_CHANGE;
+
             foreach (var rec in tempRecords)
             {
-                // Ignore entries below \$Extend\. A clean implementation would now 
-                // parse the MFT and look up the actual entry. But for for now, we check against
-                // the well-known file names.
-                if (!string.IsNullOrEmpty(rec.FullPath))
+                if ((rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)
+                    && rec.UsnRecord.Reason.HasFlag(DirectoryInclusionFlags))
+                    || (!rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)
+                    && rec.UsnRecord.Reason.HasFlag(FileInclusionFlags)))
                 {
-                    resultRecords.Add(rec);
-                }
-                else if (!(rec.FileName.Length == 24
-                           && rec.UsnRecord.FileReferenceNumber.ToString("X16") == rec.FileName.Substring(0, 16)
-                    || rec.FileName.Equals("$TxfLog")
-                    || rec.FileName.Equals("$TxfLog.blf")))
-                {
-                    throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
+                    // Ignore entries below \$Extend\. A clean implementation would now 
+                    // parse the MFT and look up the actual entry. But for for now, we check against
+                    // the well-known file names.
+                    if (!string.IsNullOrEmpty(rec.FullPath))
+                    {
+                        resultRecords.Add(rec);
+                    }
+                    else if (!(rec.FileName.Length == 24
+                               && rec.UsnRecord.FileReferenceNumber.ToString("X16") == rec.FileName.Substring(0, 16)
+                        || rec.FileName.Equals("$TxfLog")
+                        || rec.FileName.Equals("$TxfLog.blf")))
+                    {
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
+                    }
                 }
             }
 
