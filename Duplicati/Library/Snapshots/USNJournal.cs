@@ -193,10 +193,15 @@ namespace Duplicati.Library.Snapshots
         /// </summary>       
         private IEnumerable<Record> GetRecords(long startUsn)
         {
+            const Win32USN.USNReason InclusionFlags = Win32USN.USNReason.USN_REASON_ANY
+                & ~(Win32USN.USNReason.USN_REASON_INDEXABLE_CHANGE | Win32USN.USNReason.USN_REASON_COMPRESSION_CHANGE |
+                    Win32USN.USNReason.USN_REASON_ENCRYPTION_CHANGE | Win32USN.USNReason.USN_REASON_EA_CHANGE |
+                    Win32USN.USNReason.USN_REASON_REPARSE_POINT_CHANGE | Win32USN.USNReason.USN_REASON_CLOSE);
+
             if (m_entryList == null || m_startUsn != startUsn)
             {
                 m_startUsn = startUsn;
-                m_entryList = ResolveFullPaths(GetRawRecords(startUsn));
+                m_entryList = ResolveFullPaths(GetRawRecords(startUsn, rec => (rec.UsnRecord.Reason & InclusionFlags) != 0));
             }
 
             return m_entryList;
@@ -327,7 +332,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="startUsn">The USN number to start the list from, set to zero to get all</param>
         /// <returns>A list of files and folders changed since the USN</returns>
-        private ICollection<Record> GetRawRecords(long startUsn)
+        private ICollection<Record> GetRawRecords(long startUsn, Func<Record, bool> inclusionPredicate)
         {
             var records = new List<Record>();
 
@@ -338,7 +343,6 @@ namespace Duplicati.Library.Snapshots
                              Win32USN.USNReason.USN_REASON_DATA_EXTEND |
                              Win32USN.USNReason.USN_REASON_DATA_OVERWRITE |
                              Win32USN.USNReason.USN_REASON_DATA_TRUNCATION |
-                             Win32USN.USNReason.USN_REASON_EA_CHANGE |
                              Win32USN.USNReason.USN_REASON_FILE_CREATE |
                              Win32USN.USNReason.USN_REASON_FILE_DELETE |
                              Win32USN.USNReason.USN_REASON_HARD_LINK_CHANGE |
@@ -347,8 +351,6 @@ namespace Duplicati.Library.Snapshots
                              Win32USN.USNReason.USN_REASON_NAMED_DATA_TRUNCATION |
                              Win32USN.USNReason.USN_REASON_RENAME_NEW_NAME |
                              Win32USN.USNReason.USN_REASON_RENAME_OLD_NAME |
-                             Win32USN.USNReason.USN_REASON_REPARSE_POINT_CHANGE |
-                             Win32USN.USNReason.USN_REASON_SECURITY_CHANGE |
                              Win32USN.USNReason.USN_REASON_STREAM_CHANGE,
                 ReturnOnlyOnClose = 0,
                 Timeout = 0,
@@ -378,7 +380,9 @@ namespace Duplicati.Library.Snapshots
                     throw new Win32Exception(e);
                 }
 
-                records.AddRange(EnumerateRecords(entryData).TakeWhile(rec => rec.UsnRecord.Usn >= startUsn && rec.UsnRecord.Usn < m_journal.NextUsn));
+                records.AddRange(EnumerateRecords(entryData)
+                                    .TakeWhile(rec => rec.UsnRecord.Usn < m_journal.NextUsn)
+                                    .Where(rec => rec.UsnRecord.Usn >= startUsn && (inclusionPredicate == null || inclusionPredicate(rec))));
                 readData.StartUsn = Marshal.ReadInt64(entryData, 0);
             }
 
@@ -428,7 +432,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="records">The list of records with local names</param>
         /// <returns>A list of USN entries with full path</returns>
-        private List<Record> ResolveFullPaths(ICollection<Record> records)
+        private IReadOnlyCollection<Record> ResolveFullPaths(ICollection<Record> records)
         {
             // initialize file ref-nr (FRN) to path/parent-FRN look-up table
             var cache = new Dictionary<ulong, SortedRecords>();
@@ -450,7 +454,7 @@ namespace Duplicati.Library.Snapshots
             Dictionary<ulong, List<Record>> recordsByFileRefNumber = new Dictionary<ulong, List<Record>>();
 
             // iterate through USN records
-            var result = new List<Record>();
+            var result = new Dictionary<string, Record>();
             foreach (var rec in records)
             {
                 // Add entry to list of unresolved entries, and try to resolve them at the end of the scan
@@ -552,42 +556,30 @@ namespace Duplicati.Library.Snapshots
                 FlushRecords(tempRecords, result);
             }
 
-            return result;
+            return result.Values;
         }
 
-        private static void FlushRecords(List<Record> tempRecords, List<Record> resultRecords)
+        private static void FlushRecords(List<Record> tempRecords, Dictionary<string, Record> resultRecords)
         {
-            const Win32USN.USNReason DirectoryInclusionFlags = Win32USN.USNReason.USN_REASON_ANY 
-                & ~(Win32USN.USNReason.USN_REASON_INDEXABLE_CHANGE | Win32USN.USNReason.USN_REASON_COMPRESSION_CHANGE | 
-                    Win32USN.USNReason.USN_REASON_ENCRYPTION_CHANGE | Win32USN.USNReason.USN_REASON_EA_CHANGE | 
-                    Win32USN.USNReason.USN_REASON_REPARSE_POINT_CHANGE | Win32USN.USNReason.USN_REASON_CLOSE);
-            const Win32USN.USNReason FileInclusionFlags = DirectoryInclusionFlags | Win32USN.USNReason.USN_REASON_REPARSE_POINT_CHANGE;
-
             foreach (var rec in tempRecords)
             {
-                if ((rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)
-                     && ((rec.UsnRecord.Reason & DirectoryInclusionFlags) != 0))
-                    || (!rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)
-                        && ((rec.UsnRecord.Reason & FileInclusionFlags) != 0)))
+                if (!string.IsNullOrEmpty(rec.FullPath))
                 {
-                    // Ignore entries below \$Extend\. A clean implementation would now 
-                    // parse the MFT and look up the actual entry. But for for now, we check against
-                    // the well-known file names.
-                    if (!string.IsNullOrEmpty(rec.FullPath))
-                    {
-                        resultRecords.Add(rec);
-                    }
-                    else if (!(rec.FileName.Length == 24
-                               && rec.UsnRecord.FileReferenceNumber.ToString("X16") == rec.FileName.Substring(0, 16)
-                        || rec.FileName.Equals("$TxfLog")
-                        || rec.FileName.Equals("$TxfLog.blf")))
-                    {
-                        Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize",
-                                                        "Unable to use USN due to unresolvable entry \"{0}\" with ParentFileReferenceNumber {0:X24}",
-                                                        rec.FileName, rec.UsnRecord.ParentFileReferenceNumber);
+                    resultRecords[rec.FullPath] = rec;
+                }
+                // Ignore entries below \$Extend\. A clean implementation would now 
+                // parse the MFT and look up the actual entry. But for for now, we check against
+                // the well-known file names.
+                else if (!(rec.FileName.Length == 24
+                            && rec.UsnRecord.FileReferenceNumber.ToString("X16") == rec.FileName.Substring(0, 16)
+                    || rec.FileName.Equals("$TxfLog")
+                    || rec.FileName.Equals("$TxfLog.blf")))
+                {
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize",
+                                                    "Unable to use USN due to unresolvable entry \"{0}\" with ParentFileReferenceNumber {0:X24}",
+                                                    rec.FileName, rec.UsnRecord.ParentFileReferenceNumber);
 
-                        throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
-                    }
+                    throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
                 }
             }
 
