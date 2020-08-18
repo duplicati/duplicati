@@ -37,6 +37,11 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class USNJournal : IDisposable
     {
+        /// <summary>
+        /// The log tag to use
+        /// </summary>
+        private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(USNJournal));
+
         [Flags]
         public enum ChangeReason
         {
@@ -150,6 +155,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>A list of tuples with changed files and folders and their type</returns>
         public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long startUsn, ChangeReason reason)
         {
+            Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize", "Determine file system changes from USN for: {0}", sourceFileOrFolder);
+
             var isFolder = sourceFileOrFolder.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
 
             foreach (var r in GetRecords(startUsn))
@@ -559,9 +566,9 @@ namespace Duplicati.Library.Snapshots
             foreach (var rec in tempRecords)
             {
                 if ((rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)
-                    && rec.UsnRecord.Reason.HasFlag(DirectoryInclusionFlags))
+                     && ((rec.UsnRecord.Reason & DirectoryInclusionFlags) != 0))
                     || (!rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)
-                    && rec.UsnRecord.Reason.HasFlag(FileInclusionFlags)))
+                        && ((rec.UsnRecord.Reason & FileInclusionFlags) != 0)))
                 {
                     // Ignore entries below \$Extend\. A clean implementation would now 
                     // parse the MFT and look up the actual entry. But for for now, we check against
@@ -575,6 +582,10 @@ namespace Duplicati.Library.Snapshots
                         || rec.FileName.Equals("$TxfLog")
                         || rec.FileName.Equals("$TxfLog.blf")))
                     {
+                        Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize",
+                                                        "Unable to use USN due to unresolvable entry \"{0}\" with ParentFileReferenceNumber {0:X24}",
+                                                        rec.FileName, rec.UsnRecord.ParentFileReferenceNumber);
+
                         throw new UsnJournalSoftFailureException(Strings.USNHelper.PathResolveError);
                     }
                 }
