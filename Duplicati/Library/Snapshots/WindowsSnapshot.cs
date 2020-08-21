@@ -53,6 +53,8 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         public WindowsSnapshot(IEnumerable<string> sources, IDictionary<string, string> options)
         {
+            // For Windows, ensure we don't store paths with UNC prefix
+            sources = sources.Select(SystemIOWindows.StripUNCPrefix);
             try
             {
                 _vssBackupComponents = new VssBackupComponents();
@@ -152,6 +154,18 @@ namespace Duplicati.Library.Snapshots
         #endregion
 
         #region ISnapshotService Members
+
+        /// <summary>
+        /// Enumerates all files and folders in the snapshot, restricted to sources
+        /// </summary>
+        /// <param name="sources">Sources to enumerate</param>
+        /// <param name="callback">The callback to invoke with each found path</param>
+        /// <param name="errorCallback">The callback used to report errors</param>
+        public override IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
+        {
+            // For Windows, ensure we don't store paths with UNC prefix
+            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.StripUNCPrefix), callback, errorCallback);
+        }
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
@@ -260,6 +274,9 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
+            // For Windows, ensure we don't store paths with UNC prefix
+            localPath = SystemIOWindows.StripUNCPrefix(localPath);
+
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
