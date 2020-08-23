@@ -47,40 +47,40 @@ namespace Duplicati.UnitTest
             }
         }
 
+        IBackup CreateBackup(string name, string username, string password, Dictionary<string, string> metadata)
+        {
+            return new Backup
+            {
+                Description = "Mock Backup Description",
+                Filters = new IFilter[0],
+                ID = "1",
+                Metadata = metadata,
+                Name = name,
+                Settings = new[] { new Setting { Name = "passphrase", Value = "12345" } },
+                Sources = new[] { "Mock Backup Source" },
+                Tags = new[] { "Tags" },
+                TargetURL = $"file:///mock_backup_target?auth-username={username}&auth-password={password}"
+            };
+        }
+
         [Test]
         [Category("ImportExport")]
         public void RoundTrip()
         {
             Dictionary<string, string> metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
-            IBackup CreateBackup(string name)
-            {
-                return new Backup
-                {
-                    Description = "Mock Backup Description",
-                    Filters = new IFilter[0],
-                    ID = "1",
-                    Metadata = metadata,
-                    Name = name,
-                    Settings = new[] { new Setting { Name = "passphrase", Value = "12345" } },
-                    Sources = new[] { "Mock Backup Source" },
-                    Tags = new[] { "Tags" },
-                    TargetURL = "file:///mock_backup_target"
-                };
-            }
-
             Dictionary<string, string> advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
             using (Duplicati.Server.Program.DataConnection = Duplicati.Server.Program.GetDatabaseConnection(advancedOptions))
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("unencrypted without metadata"), null));
+                File.WriteAllBytes(unencryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(unencryptedWithoutMetadata, false, () => null, advancedOptions);
                 Assert.AreEqual(1, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Duplicati.Server.Program.DataConnection.Backups[0].Metadata.Count);
 
                 // Unencrypted file, import metadata.
                 string unencryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("unencrypted with metadata"), null));
+                File.WriteAllBytes(unencryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(unencryptedWithMetadata, true, () => null, advancedOptions);
                 Assert.AreEqual(2, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Duplicati.Server.Program.DataConnection.Backups[1].Metadata.Count);
@@ -88,14 +88,14 @@ namespace Duplicati.UnitTest
                 // Encrypted file, don't import metadata.
                 string encryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 string passphrase = "abcde";
-                File.WriteAllBytes(encryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("encrypted without metadata"), passphrase));
+                File.WriteAllBytes(encryptedWithoutMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(encryptedWithoutMetadata, false, () => passphrase, advancedOptions);
                 Assert.AreEqual(3, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Duplicati.Server.Program.DataConnection.Backups[2].Metadata.Count);
 
                 // Encrypted file, import metadata.
                 string encryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(encryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(CreateBackup("encrypted with metadata"), passphrase));
+                File.WriteAllBytes(encryptedWithMetadata, Server.WebServer.RESTMethods.Backup.ExportToJSON(this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
                 Duplicati.Server.WebServer.RESTMethods.Backups.ImportBackup(encryptedWithMetadata, true, () => passphrase, advancedOptions);
                 Assert.AreEqual(4, Duplicati.Server.Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Duplicati.Server.Program.DataConnection.Backups[3].Metadata.Count);
