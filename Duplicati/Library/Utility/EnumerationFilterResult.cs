@@ -28,13 +28,13 @@
 
         /// <summary>
         /// EnumerationFilterResult representing a true result with
-        /// IsSourceFilter set to false.
+        /// IsSourceFilterMatch set to false.
         /// </summary>
-        public static EnumerationFilterResult True = new EnumerationFilterResult(true);
+        public static readonly EnumerationFilterResult True = new EnumerationFilterResult(true);
 
         /// <summary>
         /// EnumerationFilterResult representing a false result.
         /// </summary>
-        public static EnumerationFilterResult False = new EnumerationFilterResult(false);
+        public static readonly EnumerationFilterResult False = new EnumerationFilterResult(false);
     }
 }
