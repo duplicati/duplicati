@@ -33,6 +33,11 @@ namespace Duplicati.Library.Snapshots
 {
     public class UsnJournalService
     {
+        /// <summary>
+        /// The log tag to use
+        /// </summary>
+        private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(UsnJournalService));
+
         private readonly ISnapshotService m_snapshot;
         private readonly IEnumerable<string> m_sources;
         private readonly Dictionary<string, VolumeData> m_volumeDataDict;
@@ -89,6 +94,8 @@ namespace Duplicati.Library.Snapshots
             // iterate over volumes
             foreach (var sourcesPerVolume in SortByVolume(m_sources))
             {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize", "Reading USN journal for volume: {0}", sourcesPerVolume.Key);
+
                 if (m_token.IsCancellationRequested) break;
 
                 var volume = sourcesPerVolume.Key;

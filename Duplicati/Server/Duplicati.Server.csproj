@@ -10,7 +10,7 @@
     <RootNamespace>Duplicati.Server</RootNamespace>
     <AssemblyName>Duplicati.Server</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

@@ -44,16 +44,16 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TestUncBehaviourOfAlphaFS()
+        public void TestUncBehaviourOfGetPathRoot()
         {
             if (!Platform.IsClientWindows)
             {
                 return;
             }
 
-            var root = @"C:";
+            var root = @"C:" + Util.DirectorySeparatorString;
             var filename = "test.txt";
-            var filePath = root + Util.DirectorySeparatorString + filename;
+            var filePath = root + filename;
             var filePathWithUNC = SystemIOWindows.PrefixWithUNC(filePath);
 
             var filePathWithUNCRoot = SystemIO.IO_WIN.GetPathRoot(filePathWithUNC);
@@ -63,7 +63,7 @@ namespace Duplicati.UnitTest
 
             //Without UNC prefixed, no prefix. 
             var filePathRoot = SystemIO.IO_WIN.GetPathRoot(filePath);
-            Assert.AreEqual(root + Util.DirectorySeparatorString, filePathRoot);
+            Assert.AreEqual(root, filePathRoot);
         }
 
         [Test]

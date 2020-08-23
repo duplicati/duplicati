@@ -1,3 +1,18 @@
+2020-08-10 - 2.0.5.110_canary_2020-08-10
+==========
+* Fixed an issue with snapshot paths, thanks @dferreyra
+
+2020-08-07 - 2.0.5.109_canary_2020-08-07
+==========
+* Fixed hiding compression errors, thanks @jpschewe
+* Fixed Tardigrade backend issues, thanks @TopperDEL
+* Fixed a case where the recovery tool would fail to recover files witth dashes in the name, thanks @dferreyra
+* Improved handling of "problematic" filenames on Windows and increased test coverage, thanks @dferreyra
+* Improved test coverage for invalid paths and removed unused code, thanks @warwickmm
+* Improved code to remove remote files to better support remote folders that are not exclusively used by Duplicati, thanks @warwickmm
+* Updated to use and require .Net 4.7.1, thanks @warwickmm
+* Updated USN support to work with the newer Windows features for moving instead of deleting files, thanks @dgehri
+
 2020-07-09 - 2.0.5.108_canary_2020-07-09
 ==========
 * Removed unsupported compiler directives, thanks @kenkendk

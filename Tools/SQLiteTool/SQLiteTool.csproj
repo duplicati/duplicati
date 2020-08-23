@@ -10,7 +10,7 @@
     <Prefer32Bit>False</Prefer32Bit>
     <RootNamespace>SQLiteTool</RootNamespace>
     <AssemblyName>SQLiteTool</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

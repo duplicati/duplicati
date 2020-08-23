@@ -49,7 +49,7 @@ Requires:	bash
 Requires:	sqlite >= 3.6.12
 Requires:	mono(appindicator-sharp)
 Requires:	libappindicator
-Requires:	mono-core >= 5.0
+Requires:	mono-core >= 5.10.0
 Requires:	mono-data-sqlite
 Requires:	mono(System)
 Requires:	mono(System.Configuration)

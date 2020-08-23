@@ -11,6 +11,9 @@
 # Then load overrides
 %include %{_topdir}/SOURCES/%{namer}-buildinfo.spec
 
+# Make sure it does not break because we have som arch-dependant libraries bundled
+%define _binaries_in_noarch_packages_terminate_build 0
+
 Name:	%{namer}
 Version:	%{_buildversion}
 Release:	%{_buildtag}

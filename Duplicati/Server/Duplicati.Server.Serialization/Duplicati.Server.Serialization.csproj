@@ -9,7 +9,7 @@
     <RootNamespace>Duplicati.Server.Serialization</RootNamespace>
     <AssemblyName>Duplicati.Server.Serialization</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <UseMSBuildEngine>false</UseMSBuildEngine>
   </PropertyGroup>
