@@ -444,7 +444,8 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The parsed query string</returns>
         /// <param name="query">The query to parse</param>
-        public static NameValueCollection ParseQueryString(string query)
+        /// <param name="decodeValues">Whether to the parameter values should be decoded or not.</param>
+        public static NameValueCollection ParseQueryString(string query, bool decodeValues = true)
         {
             if (query == null)
                 throw new ArgumentNullException(nameof(query));
@@ -455,7 +456,15 @@ namespace Duplicati.Library.Utility
 
             var result = new NameValueCollection(StringComparer.OrdinalIgnoreCase);
             foreach (System.Text.RegularExpressions.Match m in RE_URLPARAM.Matches(query))
-                result.Add(UrlDecode(m.Groups["key"].Value), UrlDecode(m.Groups["value"].Success ? m.Groups["value"].Value : ""));
+            {
+                string value = m.Groups["value"].Success ? m.Groups["value"].Value : "";
+                if (decodeValues)
+                {
+                    value = UrlDecode(value);
+                }
+
+                result.Add(UrlDecode(m.Groups["key"].Value), value);
+            }
 
             return result;
         }
