@@ -19,7 +19,6 @@ using System;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
-using System.Web;
 
 namespace Duplicati.Library.Utility
 {
@@ -444,8 +443,19 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The parsed query string</returns>
         /// <param name="query">The query to parse</param>
+        public static NameValueCollection ParseQueryString(string query)
+        {
+            return Library.Utility.Uri.ParseQueryString(query, true);
+        }
+
+        /// <summary>
+        /// Parses the query string.
+        /// This is a duplicate of the System.Web.HttpUtility.ParseQueryString that does not work well on Mono
+        /// </summary>
+        /// <returns>The parsed query string</returns>
+        /// <param name="query">The query to parse</param>
         /// <param name="decodeValues">Whether to the parameter values should be decoded or not.</param>
-        public static NameValueCollection ParseQueryString(string query, bool decodeValues = true)
+        public static NameValueCollection ParseQueryString(string query, bool decodeValues)
         {
             if (query == null)
                 throw new ArgumentNullException(nameof(query));
