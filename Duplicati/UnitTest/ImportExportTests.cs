@@ -75,7 +75,6 @@ namespace Duplicati.UnitTest
         [TestCase(false)]
         public void ExportToJSONEncoding(bool removePasswords)
         {
-            Dictionary<string, string> metadata = new Dictionary<string, string>();
             Dictionary<string, string> advancedOptions = new Dictionary<string, string> {{"server-datafolder", this.serverDatafolder}};
 
             string usernameKey = "auth-username";
