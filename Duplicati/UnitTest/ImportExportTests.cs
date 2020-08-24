@@ -20,6 +20,8 @@ using System.Collections.Generic;
 using System.IO;
 using Duplicati.Server;
 using Duplicati.Server.Database;
+using Duplicati.Server.Serializable;
+using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.Server.WebServer.RESTMethods;
 using NUnit.Framework;
@@ -65,6 +67,55 @@ namespace Duplicati.UnitTest
                 Tags = new[] {"Tags"},
                 TargetURL = $"file:///mock_backup_target?auth-username={username}&auth-password={password}"
             };
+        }
+
+        [Test]
+        [Category("ImportExport")]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void ExportToJSONEncoding(bool removePasswords)
+        {
+            Dictionary<string, string> metadata = new Dictionary<string, string>();
+            Dictionary<string, string> advancedOptions = new Dictionary<string, string> {{"server-datafolder", this.serverDatafolder}};
+
+            string usernameKey = "auth-username";
+            string passwordKey = "auth-password";
+            string username = @"user%40email.com";
+            string password = @"abcde12345!@#$%/\";
+
+            IBackup backup = this.CreateBackup("backup", username, password,  new Dictionary<string, string>());
+            if (removePasswords)
+            {
+                Server.WebServer.RESTMethods.Backup.RemovePasswords(backup);
+            }
+
+            Assert.That(backup.TargetURL, Does.Contain($"{usernameKey}={username}"));
+            if (removePasswords)
+            {
+                Assert.That(backup.TargetURL, Does.Not.Contain(passwordKey));
+                Assert.That(backup.TargetURL, Does.Not.Contain(password));
+            }
+            else
+            {
+                Assert.That(backup.TargetURL, Does.Contain(passwordKey));
+                Assert.That(backup.TargetURL, Does.Contain(password));
+            }
+
+            byte[] jsonByteArray;
+            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
+            {
+                jsonByteArray = Server.WebServer.RESTMethods.Backup.ExportToJSON(backup, null);
+            }
+
+            // The username should not have the '%40' converted to '@' since the import code
+            // cannot handle it (see issue #3619).
+            string json = System.Text.Encoding.Default.GetString(jsonByteArray);
+            Assert.That(json, Does.Not.Contain("user@email.com"));
+
+            ImportExportStructure importedConfiguration = Serializer.Deserialize<ImportExportStructure>(new StreamReader(new MemoryStream(jsonByteArray)));
+            Assert.AreEqual(backup.Description, importedConfiguration.Backup.Description);
+            Assert.AreEqual(backup.Name, importedConfiguration.Backup.Name);
+            Assert.AreEqual(backup.TargetURL, importedConfiguration.Backup.TargetURL);
         }
 
         [Test]
