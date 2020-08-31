@@ -121,7 +121,8 @@ namespace Duplicati.Library.Utility
                 }
                 else if (filter.StartsWith("@", StringComparison.Ordinal))
                 {
-                    // Take filter literally; i.e., don't treat wildcard characters as glogging characters
+                    // Take filter literally; i.e., don't treat wildcard
+                    // characters as globbing characters
                     this.Type = FilterType.Simple;
                     this.Filter = filter.Substring(1);
                     this.Regexp = new Regex(Utility.ConvertLiteralToRegExp(this.Filter), REGEXP_OPTIONS);
