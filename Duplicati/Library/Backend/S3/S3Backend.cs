@@ -114,6 +114,7 @@ namespace Duplicati.Library.Backend
 
         static S3()
         {
+            Console.WriteLine("STATIC CONSTRUCTOR!!");
             var ns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
                 { "(default)", "" },
                 { "Standard", "STANDARD" },
@@ -166,10 +167,15 @@ namespace Duplicati.Library.Backend
 
         public S3()
         {
+            Console.WriteLine("Empty constructor!!");
+            Console.WriteLine(this.GetHashCode());
         }
 
         public S3(string url, Dictionary<string, string> options)
         {
+            Console.WriteLine($"Parameterized constructor with url {url} and options count = {options.Count}");
+            Console.WriteLine(this.GetHashCode());
+            options.Add(new Random().Next().ToString(), "0");
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
@@ -419,6 +425,8 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
+            Console.WriteLine("TEST");
+            Console.WriteLine(this.GetHashCode());
             this.TestList();
         }
 
@@ -443,6 +451,7 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
+            Console.WriteLine("Disposed!!!!");
             s3Client?.Dispose();
             s3Client = null;
         }
