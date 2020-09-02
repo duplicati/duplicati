@@ -239,7 +239,8 @@ namespace Duplicati.CommandLine
             // Prefix all filenames with "*/" so we search all folders
             var specialArgChars = new[] { '*', '?', Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
             return argList.Select(arg => arg.IndexOfAny(specialArgChars) < 0
-                 && !arg.StartsWith("[", StringComparison.Ordinal) ? "*" + Util.DirectorySeparatorString + arg : arg).ToList();
+                 && !arg.StartsWith("[", StringComparison.Ordinal)
+                 && !arg.StartsWith("@", StringComparison.Ordinal) ? "*" + Util.DirectorySeparatorString + arg : arg).ToList();
         }
 
         public static int List(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
@@ -267,7 +268,7 @@ namespace Duplicati.CommandLine
                             options["version"] = v.ToString();
                         }
                     }
-                    else if (args[0].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[0].StartsWith("[", StringComparison.Ordinal))
+                    else if (args[0].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[0].StartsWith("[", StringComparison.Ordinal) && !args[0].StartsWith("@", StringComparison.Ordinal))
                     {
                         try
                         {
@@ -452,7 +453,7 @@ namespace Duplicati.CommandLine
 
             // suffix all folders with "*" so we restore all contents in the folder
             for (var ix = 0; ix < args.Count; ix++)
-                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
+                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal) && !args[ix].StartsWith("@", StringComparison.Ordinal))
                     args[ix] += "*";
 
             using(var output = new ConsoleOutput(outwriter, options))
