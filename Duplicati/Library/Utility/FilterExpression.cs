@@ -123,7 +123,7 @@ namespace Duplicati.Library.Utility
                 {
                     // Take filter literally; i.e., don't treat wildcard
                     // characters as globbing characters
-                    this.Type = FilterType.Regexp;
+                    this.Type = FilterType.Simple;
                     this.Filter = filter.Substring(1);
                     this.Regexp = new Regex(Utility.ConvertLiteralToRegExp(this.Filter), REGEXP_OPTIONS);
                 }
@@ -296,6 +296,8 @@ namespace Duplicati.Library.Utility
                         return "[" + this.Filter + "]";
                     case FilterType.Group:
                         return "{" + this.Filter + "}";
+                    case FilterType.Simple:
+                        return "@" + this.Filter;
                     default:
                         return this.Filter;
                 }
