@@ -24,6 +24,7 @@ namespace Duplicati.Service
         [STAThread]
         public static int Main(string[] args)
         {
+            Console.WriteLine(Environment.CurrentDirectory);
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
 
