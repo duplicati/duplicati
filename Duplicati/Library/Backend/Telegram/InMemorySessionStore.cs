@@ -37,5 +37,20 @@ namespace Duplicati.Library.Backend
 
             return null;
         }
+
+        public Session GetSessionByPhoneNumber(string phone)
+        {
+            foreach (var pair in m_userIdSessionBytesMap)
+            {
+                var session = Session.FromBytes(pair.Value, this, pair.Key);
+                if (session == null)
+                    continue;
+
+                if (session.TLUser.Phone == phone)
+                    return session;
+            }
+
+            return null;
+        }
     }
 }
