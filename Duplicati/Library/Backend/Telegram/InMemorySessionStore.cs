@@ -5,38 +5,38 @@ namespace Duplicati.Library.Backend
 {
     public class InMemorySessionStore : ISessionStore
     {
-        private readonly ConcurrentDictionary<string, byte[]> m_userIdSessionBytesMap = new ConcurrentDictionary<string, byte[]>();
-        private readonly ConcurrentDictionary<string, string> m_userIdPhoneCodeHashMap = new ConcurrentDictionary<string, string>();
+        private readonly ConcurrentDictionary<string, byte[]> m_phoneSessionBytesMap = new ConcurrentDictionary<string, byte[]>();
+        private readonly ConcurrentDictionary<string, string> m_phonePhoneCodeHashMap = new ConcurrentDictionary<string, string>();
 
         public void Save(Session session)
         {
-            m_userIdSessionBytesMap[session.SessionUserId] = session.ToBytes();
+            m_phoneSessionBytesMap[session.SessionUserId] = session.ToBytes();
         }
 
-        public Session Load(string sessionUserId)
+        public Session Load(string phone)
         {
-            if (m_userIdSessionBytesMap.TryGetValue(sessionUserId, out var sessionBytes))
+            if (m_phoneSessionBytesMap.TryGetValue(phone, out var sessionBytes))
             {
-                return Session.FromBytes(sessionBytes, this, sessionUserId);
+                return Session.FromBytes(sessionBytes, this, phone);
             }
 
             return null;
         }
 
-        public void SetPhoneHash(string sessionUserId, string phoneCodeHash)
+        public void SetPhoneHash(string phone, string phoneCodeHash)
         {
             if (phoneCodeHash == null)
             {
-                m_userIdSessionBytesMap.TryRemove(sessionUserId, out _);
+                m_phoneSessionBytesMap.TryRemove(phone, out _);
                 return;
             }
             
-            m_userIdPhoneCodeHashMap[sessionUserId] = phoneCodeHash;
+            m_phonePhoneCodeHashMap[phone] = phoneCodeHash;
         }
 
-        public string GetPhoneHash(string sessionUserId)
+        public string GetPhoneHash(string phone)
         {
-            if (m_userIdPhoneCodeHashMap.TryGetValue(sessionUserId, out var result))
+            if (m_phonePhoneCodeHashMap.TryGetValue(phone, out var result))
             {
                 return result;
             }
@@ -44,16 +44,11 @@ namespace Duplicati.Library.Backend
             return null;
         }
 
-        public Session GetSessionByPhoneNumber(string phone)
+        public Session GetSession(string phone)
         {
-            foreach (var pair in m_userIdSessionBytesMap)
+            if (m_phoneSessionBytesMap.TryGetValue(phone, out var sessionBytes))
             {
-                var session = Session.FromBytes(pair.Value, this, pair.Key);
-                if (session == null)
-                    continue;
-
-                if (session.TLUser.Phone == phone)
-                    return session;
+                return Session.FromBytes(sessionBytes, this, phone);
             }
 
             return null;

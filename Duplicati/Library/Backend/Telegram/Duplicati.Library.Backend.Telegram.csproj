@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</ProjectGuid>
+    <ProjectGuid>{B6BB37DE-1DCA-401B-B92F-202F341916EA}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
