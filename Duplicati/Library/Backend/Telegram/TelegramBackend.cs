@@ -97,6 +97,7 @@ namespace Duplicati.Library.Backend
             catch (Exception e)
             {
                 Console.WriteLine(e);
+                throw;
             }
         }
 
@@ -233,11 +234,11 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                var phoneCodeHash = m_sessionStore.GetPhoneHash(m_telegramClient.Session.SessionUserId);
+                var phoneCodeHash = m_sessionStore.GetPhoneHash(m_phoneNumber);
                 if (phoneCodeHash == null)
                 {
                     phoneCodeHash = await m_telegramClient.SendCodeRequestAsync(m_phoneNumber);
-                    m_sessionStore.SetPhoneHash(m_telegramClient.Session.SessionUserId, phoneCodeHash);
+                    m_sessionStore.SetPhoneHash(m_phoneNumber, phoneCodeHash);
 
                     throw new UserInformationException(Strings.NoAuthCodeError, nameof(Strings.NoAuthCodeError));
                 }
@@ -258,19 +259,7 @@ namespace Duplicati.Library.Backend
 
         private bool IsAuthenticated()
         {
-            var session = m_sessionStore.GetSessionByPhoneNumber(m_phoneNumber);
-            if (session == null)
-            {
-                return false;
-            }
-
-            if (m_telegramClient.IsUserAuthorized() == false || m_telegramClient.Session?.TLUser == null)
-            {
-                return false;
-            }
-        
-
-            return true;
+            return m_telegramClient.IsUserAuthorized();
         }
     }
 }
