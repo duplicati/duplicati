@@ -23,14 +23,17 @@
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using TeleSharp.TL;
 using TeleSharp.TL.Channels;
 using TeleSharp.TL.Messages;
 using TLSharp.Core;
 using TLSharp.Core.Exceptions;
+using TLSharp.Core.Utils;
 
 namespace Duplicati.Library.Backend
 {
@@ -84,6 +87,17 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.NoChannelNameError, nameof(Strings.NoChannelNameError));
 
             m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber);
+            
+            // Do not refactor
+            try
+            {
+
+                Task.Run(async () => { await m_telegramClient.ConnectAsync(true); }).Wait();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         public void Dispose()
@@ -94,22 +108,57 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            throw new NotImplementedException();
+            AuthenticateAsync().GetAwaiter().GetResult();
+            EnsureChannelCreatedAsync().GetAwaiter();
+            
+            var result = new List<FileEntry>();
+            var channel = GetChannelAsync().GetAwaiter().GetResult();
+            if (channel == null)
+            {
+                throw new UserInformationException(Strings.CouldNotCreateChannelError, nameof(Strings.CouldNotCreateChannelError));
+            }
+            
+            var inputPeerChannel = new TLInputPeerChannel { ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
+            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, 0, -1, 0, Int32.MaxValue).GetAwaiter().GetResult();
+            var history = ((TLChannelMessages)absHistory).Messages
+                .Where(msg => msg is TLMessage tlMsg && tlMsg.Media is TLMessageMediaDocument)
+                .Select(msg => (TLMessageMediaDocument)((TLMessage)msg).Media);
+            
+            foreach (var docFile in history)
+            {
+                var typedDoc = (TLDocument)docFile.Document;
+                var fileEntry = new FileEntry(docFile.Caption, typedDoc.Size);
+                result.Add(fileEntry);
+            }
+            
+            return result;
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            throw new NotImplementedException();
+            await AuthenticateAsync();
+            
+            var channel = await GetChannelAsync();
+            var fs = File.OpenRead(filename);
+            var fsReader = new StreamReader(fs);
+            cancelToken.ThrowIfCancellationRequested();
+            var file = await m_telegramClient.UploadFile(filename, fsReader, cancelToken);
+            cancelToken.ThrowIfCancellationRequested();
+            var inputPeerChannel = new TLInputPeerChannel { ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
+            await m_telegramClient.SendUploadedDocument(inputPeerChannel, file, filename, "binary", new TLVector<TLAbsDocumentAttribute>(), cancelToken);
         }
 
         public void Get(string remotename, string filename)
         {
-            throw new NotImplementedException();
+            AuthenticateAsync().GetAwaiter().GetResult();
+            return;
+            var fs = File.OpenWrite(filename);
+            
         }
 
         public void Delete(string remotename)
         {
-            throw new NotImplementedException();
+            AuthenticateAsync().GetAwaiter().GetResult();
         }
 
 
@@ -120,7 +169,7 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(Strings.PHONE_NUMBER_KEY, CommandLineArgument.ArgumentType.String, Strings.PhoneNumberShort, Strings.PhoneNumberLong),
             new CommandLineArgument(Strings.AUTH_CODE_KEY, CommandLineArgument.ArgumentType.String, Strings.AuthCodeShort, Strings.AuthCodeLong),
             new CommandLineArgument(Strings.AUTH_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.PasswordShort, Strings.PasswordLong),
-            new CommandLineArgument(Strings.CHANNEL_NAME, CommandLineArgument.ArgumentType.String, Strings.ChannelNameShort, Strings.ChannelNameLong),
+            new CommandLineArgument(Strings.CHANNEL_NAME, CommandLineArgument.ArgumentType.String, Strings.ChannelNameShort, Strings.ChannelNameLong)
         };
 
         public string Description { get; } = Strings.Description;
@@ -129,22 +178,43 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            AuthenticateAsync().Wait();
+            AuthenticateAsync().GetAwaiter().GetResult();
         }
 
         public void CreateFolder()
         {
-            AuthenticateAsync().Wait();
-            EnsureChannelCreatedAsync().Wait();
+            AuthenticateAsync().GetAwaiter().GetResult();
+            EnsureChannelCreatedAsync().GetAwaiter().GetResult();
+        }
+
+        private async Task<TLChannel> GetChannelAsync()
+        {
+            var absDialogs = await m_telegramClient.GetUserDialogsAsync();
+            var userDialogs = absDialogs as TLDialogs;
+            var userDialogsSlice = absDialogs as TLDialogsSlice;
+            TLVector<TLAbsChat> absChats; 
+
+            if (userDialogs != null)
+            {
+                absChats = userDialogs.Chats;
+            }
+            else
+            {
+                absChats = userDialogsSlice.Chats;
+            }
+            
+            var channel = (TLChannel)absChats.FirstOrDefault(chat =>
+                chat is TLChannel tlChannel && tlChannel.Title == m_channelName);
+
+            return channel;
         }
 
         private async Task EnsureChannelCreatedAsync()
         {
-            var userDialogs = (TLDialogsSlice)await m_telegramClient.GetUserDialogsAsync();
-            var channel = (TLChannel)userDialogs.Chats.FirstOrDefault(chat => chat is TLChannel tlChannel && tlChannel.Title == m_channelName);
+            var channel = await GetChannelAsync();
             if (channel == null)
             {
-                var newGroup = new TLRequestCreateChannel()
+                var newGroup = new TLRequestCreateChannel
                 {
                     Broadcast = false,
                     Megagroup = false,
@@ -155,9 +225,7 @@ namespace Duplicati.Library.Backend
         }
 
         private async Task AuthenticateAsync()
-        {
-            await m_telegramClient.ConnectAsync();
-            
+        {            
             if (IsAuthenticated())
             {
                 return;
@@ -178,7 +246,7 @@ namespace Duplicati.Library.Backend
             }
             catch (CloudPasswordNeededException)
             {
-                if (m_password == null)
+                if (string.IsNullOrEmpty(m_password))
                 {
                     throw new UserInformationException(Strings.NoPasswordError, nameof(Strings.NoPasswordError));
                 }
@@ -190,23 +258,17 @@ namespace Duplicati.Library.Backend
 
         private bool IsAuthenticated()
         {
-            try
-            {
-                var session = m_sessionStore.GetSessionByPhoneNumber(m_phoneNumber);
-                if (session == null)
-                {
-                    return false;
-                }
-
-                if (m_telegramClient.IsConnected == false || m_telegramClient.IsUserAuthorized() == false || m_telegramClient.Session?.TLUser == null)
-                {
-                    return false;
-                }
-            }
-            catch
+            var session = m_sessionStore.GetSessionByPhoneNumber(m_phoneNumber);
+            if (session == null)
             {
                 return false;
             }
+
+            if (m_telegramClient.IsUserAuthorized() == false || m_telegramClient.Session?.TLUser == null)
+            {
+                return false;
+            }
+        
 
             return true;
         }
