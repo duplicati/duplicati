@@ -86,19 +86,8 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(m_channelName))
                 throw new UserInformationException(Strings.NoChannelNameError, nameof(Strings.NoChannelNameError));
 
-            m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber);
-            
-            // Do not refactor
-            try
-            {
-
-                Task.Run(async () => { await m_telegramClient.ConnectAsync(true); }).Wait();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber, dcIpVersion: DataCenterIPVersion.OnlyIPv4);
+            m_telegramClient.Session.SetDataCenterIpAddress("149.154.167.40", 443);
         }
 
         public void Dispose()
@@ -227,6 +216,8 @@ namespace Duplicati.Library.Backend
 
         private async Task AuthenticateAsync()
         {            
+            await m_telegramClient.ConnectAsync(true);
+            
             if (IsAuthenticated())
             {
                 return;
@@ -239,6 +230,7 @@ namespace Duplicati.Library.Backend
                 {
                     phoneCodeHash = await m_telegramClient.SendCodeRequestAsync(m_phoneNumber);
                     m_sessionStore.SetPhoneHash(m_phoneNumber, phoneCodeHash);
+                    m_telegramClient.Session.Save();
 
                     throw new UserInformationException(Strings.NoAuthCodeError, nameof(Strings.NoAuthCodeError));
                 }
@@ -249,12 +241,15 @@ namespace Duplicati.Library.Backend
             {
                 if (string.IsNullOrEmpty(m_password))
                 {
+                    m_telegramClient.Session.Save();
                     throw new UserInformationException(Strings.NoPasswordError, nameof(Strings.NoPasswordError));
                 }
 
                 var passwordSetting = await m_telegramClient.GetPasswordSetting();
                 await m_telegramClient.MakeAuthWithPasswordAsync(passwordSetting, m_password);
             }
+            
+            m_telegramClient.Session.Save();
         }
 
         private bool IsAuthenticated()
