@@ -30,6 +30,7 @@ namespace Duplicati.Library.Backend {
         public static string NoApiHashError => LC.L("The API hash is missing");
         public static string NoPhoneNumberError => LC.L("The phone number is missing");
         public static string ChannelIsNotEmpty => LC.L("The selected channel is not empty");
+        public static string CouldNotCreateChannelError => LC.L("Could not create channel. You can create it manually and try again");
         
         #endregion
         

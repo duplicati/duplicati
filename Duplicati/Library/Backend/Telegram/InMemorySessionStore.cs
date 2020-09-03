@@ -25,6 +25,12 @@ namespace Duplicati.Library.Backend
 
         public void SetPhoneHash(string sessionUserId, string phoneCodeHash)
         {
+            if (phoneCodeHash == null)
+            {
+                m_userIdSessionBytesMap.TryRemove(sessionUserId, out _);
+                return;
+            }
+            
             m_userIdPhoneCodeHashMap[sessionUserId] = phoneCodeHash;
         }
 
