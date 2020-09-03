@@ -25,12 +25,6 @@ namespace Duplicati.Library.Backend
 
         public void SetPhoneHash(string phone, string phoneCodeHash)
         {
-            if (phoneCodeHash == null)
-            {
-                m_phoneSessionBytesMap.TryRemove(phone, out _);
-                return;
-            }
-            
             m_phonePhoneCodeHashMap[phone] = phoneCodeHash;
         }
 
@@ -39,16 +33,6 @@ namespace Duplicati.Library.Backend
             if (m_phonePhoneCodeHashMap.TryGetValue(phone, out var result))
             {
                 return result;
-            }
-
-            return null;
-        }
-
-        public Session GetSession(string phone)
-        {
-            if (m_phoneSessionBytesMap.TryGetValue(phone, out var sessionBytes))
-            {
-                return Session.FromBytes(sessionBytes, this, phone);
             }
 
             return null;
