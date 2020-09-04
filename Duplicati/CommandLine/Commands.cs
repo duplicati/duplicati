@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.CommandLine
@@ -234,14 +235,85 @@ namespace Duplicati.CommandLine
             }
         }
 
-        public static List<string> PrefixArgsWithAsterisk(IList<string> argList)
+        /// <summary>
+        /// For bare file names with no wildcards, replace with the
+        /// equivalent of prefixing with "*/" so we search all folders.
+        /// </summary>
+        public static IEnumerable<string> PrefixArgsWithAsterisk(IEnumerable<string> argList) =>
+            argList.Select(PrefixArgWithAsterisk).ToList();
+
+        /// <summary>
+        /// For bare file names with no wildcards, replace with the
+        /// equivalent of prefixing with "*/" so we search all folders.
+        /// </summary>
+        private static string PrefixArgWithAsterisk(string arg)
         {
-            // Prefix all filenames with "*/" so we search all folders
-            var specialArgChars = new[] { '*', '?', Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
-            return argList.Select(arg => arg.IndexOfAny(specialArgChars) < 0
-                 && !arg.StartsWith("[", StringComparison.Ordinal)
-                 && !arg.StartsWith("@", StringComparison.Ordinal) ? "*" + Util.DirectorySeparatorString + arg : arg).ToList();
+            var containsSeparators = ContainsDirectorySeparators(arg);
+            var containsWildcards = ContainsWildcards(arg);
+
+            if (!containsSeparators && arg.StartsWith("@", StringComparison.Ordinal))
+            {
+                // Convert to Regexp filter and prefix with ".*/"
+                return $"[.*{Regex.Escape(Util.DirectorySeparatorString + arg.Substring(1))}]";
+            }
+            else if (!containsSeparators && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
+            {
+                // Prefix files with "*/"
+                return "*" + Util.DirectorySeparatorString + arg;
+            }
+            else
+            {
+                return arg;
+            }
         }
+
+        /// <summary>
+        /// For folders, replace with the equivalent of suffixing with "/*"
+        /// so we restore contents in the folder.
+        /// </summary>
+        public static IEnumerable<string> SuffixArgsWithAsterisk(IEnumerable<string> argList) =>
+            argList.Select(SuffixArgWithAsterisk).ToList();
+
+        /// <summary>
+        /// For folders, replace with the equivalent of suffixing with "/*"
+        /// so we restore contents in the folder.
+        /// </summary>
+        private static string SuffixArgWithAsterisk(string arg)
+        {
+            var containsWildcards = ContainsWildcards(arg);
+            var endsWithSeparator = arg.EndsWith(Util.DirectorySeparatorString);
+
+            if (endsWithSeparator && arg.StartsWith("@", StringComparison.Ordinal))
+            {
+                // Convert to Regexp filter and suffix with "/.*"
+                return $"[{Regex.Escape(arg.Substring(1))}.*]";
+            }
+            else if (endsWithSeparator && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
+            {
+                // Suffix with "/*"
+                return arg + "*";
+            }
+            else
+            {
+                return arg;
+            }
+        }
+
+        private static readonly char[] pathSeparatorsCharacters = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+
+        /// <summary>
+        /// Returns true if <paramref name="s"/> contains directory separator characters.
+        /// </summary>
+        public static bool ContainsDirectorySeparators(string s) =>
+            s.IndexOfAny(pathSeparatorsCharacters) >= 0;
+
+        private static readonly char[] wildcardCharacters = new[] { '*', '?' };
+
+        /// <summary>
+        /// Returns true if <paramref name="s"/> contains wildcard characters.
+        /// </summary>
+        public static bool ContainsWildcards(string s) =>
+            s.IndexOfAny(wildcardCharacters) >= 0;
 
         public static int List(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
@@ -283,7 +355,7 @@ namespace Duplicati.CommandLine
                     }
                 }
 
-                args = PrefixArgsWithAsterisk(args);
+                args = PrefixArgsWithAsterisk(args).ToList();
 
                 // Support for not adding the --auth-username if possible
                 string dbpath;
@@ -449,12 +521,7 @@ namespace Duplicati.CommandLine
             bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
             options.Remove("control-files");
 
-            args = PrefixArgsWithAsterisk(args);
-
-            // suffix all folders with "*" so we restore all contents in the folder
-            for (var ix = 0; ix < args.Count; ix++)
-                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal) && !args[ix].StartsWith("@", StringComparison.Ordinal))
-                    args[ix] += "*";
+            args = SuffixArgsWithAsterisk(PrefixArgsWithAsterisk(args)).ToList();
 
             using(var output = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(backend, options, output))
