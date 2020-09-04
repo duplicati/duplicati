@@ -236,15 +236,15 @@ namespace Duplicati.CommandLine
         }
 
         /// <summary>
-        /// For bare file names with no wildcards, replace with the
-        /// equivalent of prefixing with "*/" so we search all folders.
+        /// For bare file names with no wildcards, replace argument with
+        /// the equivalent of prefixing with "*/" so we search all folders.
         /// </summary>
         public static IEnumerable<string> PrefixArgsWithAsterisk(IEnumerable<string> argList) =>
             argList.Select(PrefixArgWithAsterisk);
 
         /// <summary>
-        /// For bare file names with no wildcards, replace with the
-        /// equivalent of prefixing with "*/" so we search all folders.
+        /// For bare file names with no wildcards, return argument with
+        /// the equivalent of prefixing with "*/" so we search all folders.
         /// </summary>
         private static string PrefixArgWithAsterisk(string arg)
         {
@@ -268,15 +268,15 @@ namespace Duplicati.CommandLine
         }
 
         /// <summary>
-        /// For folders, replace with the equivalent of suffixing with "/*"
-        /// so we restore contents in the folder.
+        /// For folders, replace argument with the equivalent of suffixing
+        /// with "*" so we restore contents in the folder.
         /// </summary>
         public static IEnumerable<string> SuffixArgsWithAsterisk(IEnumerable<string> argList) =>
             argList.Select(SuffixArgWithAsterisk);
 
         /// <summary>
-        /// For folders, replace with the equivalent of suffixing with "/*"
-        /// so we restore contents in the folder.
+        /// For folders, return argument with the equivalent of suffixing
+        /// with "*" so we restore contents in the folder.
         /// </summary>
         private static string SuffixArgWithAsterisk(string arg)
         {
@@ -285,12 +285,12 @@ namespace Duplicati.CommandLine
 
             if (endsWithSeparator && arg.StartsWith("@", StringComparison.Ordinal))
             {
-                // Convert to Regexp filter and suffix with "/.*"
+                // Convert to Regexp filter and suffix with ".*"
                 return $"[{Regex.Escape(arg.Substring(1))}.*]";
             }
             else if (endsWithSeparator && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
             {
-                // Suffix with "/*"
+                // Suffix with "*"
                 return arg + "*";
             }
             else
