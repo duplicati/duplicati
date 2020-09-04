@@ -346,7 +346,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var paths = [];
         for(var n in $scope.Selected) {
             var item = $scope.Selected[n];
-            if (item.indexOf('*') >= 0 || item.indexOf('?')) {
+            if (item.indexOf('*') >= 0 || item.indexOf('?') >= 0) {
                 // Handle paths with literal wildcard characters
                 // specially
                 if (item.substr(item.length - 1) == dirsep) {
