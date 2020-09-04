@@ -346,10 +346,27 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var paths = [];
         for(var n in $scope.Selected) {
             var item = $scope.Selected[n];
-            if (item.substr(item.length - 1) == dirsep)
-                paths.push(item + '*');
-            else
-                paths.push(item);
+            if (item.indexOf('*') >= 0 || item.indexOf('?')) {
+                // Handle paths with literal wildcard characters
+                // specially
+                if (item.substr(item.length - 1) == dirsep) {
+                    // Switch to a regular expression filter so we can
+                    // preserve the literal wildcard characters and
+                    // also support the equivalent of a globbing '*'
+                    // suffix.
+
+                    // Escape regular expression metacharacters
+                    var itemRegex = item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    paths.push('[' + itemRegex  + '.*]');
+                } else {
+                    paths.push('@' + item);
+                }
+            } else {
+                if (item.substr(item.length - 1) == dirsep)
+                    paths.push(item + '*');
+                else
+                    paths.push(item);
+            }
         }
 
         if (paths.length > 0)
