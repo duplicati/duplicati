@@ -240,7 +240,7 @@ namespace Duplicati.CommandLine
         /// equivalent of prefixing with "*/" so we search all folders.
         /// </summary>
         public static IEnumerable<string> PrefixArgsWithAsterisk(IEnumerable<string> argList) =>
-            argList.Select(PrefixArgWithAsterisk).ToList();
+            argList.Select(PrefixArgWithAsterisk);
 
         /// <summary>
         /// For bare file names with no wildcards, replace with the
@@ -272,7 +272,7 @@ namespace Duplicati.CommandLine
         /// so we restore contents in the folder.
         /// </summary>
         public static IEnumerable<string> SuffixArgsWithAsterisk(IEnumerable<string> argList) =>
-            argList.Select(SuffixArgWithAsterisk).ToList();
+            argList.Select(SuffixArgWithAsterisk);
 
         /// <summary>
         /// For folders, replace with the equivalent of suffixing with "/*"
