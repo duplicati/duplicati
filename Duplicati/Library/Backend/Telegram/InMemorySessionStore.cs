@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq;
 using TLSharp.Core;
 
 namespace Duplicati.Library.Backend
@@ -7,6 +8,8 @@ namespace Duplicati.Library.Backend
     {
         private readonly ConcurrentDictionary<string, byte[]> m_phoneSessionBytesMap = new ConcurrentDictionary<string, byte[]>();
         private readonly ConcurrentDictionary<string, string> m_phonePhoneCodeHashMap = new ConcurrentDictionary<string, string>();
+
+        private string[] _hexSessions => m_phoneSessionBytesMap.Values.Select(bytes => bytes.ToHex()).ToArray();
 
         public void Save(Session session)
         {
