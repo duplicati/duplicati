@@ -107,8 +107,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Telegram", "Duplicati\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj", "{B6BB37DE-1DCA-401B-B92F-202F341916EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramTest", "TelegramTest\TelegramTest.csproj", "{F83A537E-895A-496B-AA5F-693E0F9BAE4B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -323,10 +321,6 @@ Global
 		{B6BB37DE-1DCA-401B-B92F-202F341916EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6BB37DE-1DCA-401B-B92F-202F341916EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6BB37DE-1DCA-401B-B92F-202F341916EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F83A537E-895A-496B-AA5F-693E0F9BAE4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F83A537E-895A-496B-AA5F-693E0F9BAE4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F83A537E-895A-496B-AA5F-693E0F9BAE4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F83A537E-895A-496B-AA5F-693E0F9BAE4B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
