@@ -100,24 +100,9 @@ namespace Duplicati.Library.Backend
             AuthenticateAsync().GetAwaiter().GetResult();
             EnsureChannelCreated();
 
-            var result = new List<FileEntry>();
             var channel = GetChannel();
-            if (channel == null)
-            {
-                throw new UserInformationException(Strings.CouldNotCreateChannelError, nameof(Strings.CouldNotCreateChannelError));
-            }
-
-            var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
-            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, 0, -1, 0, Int32.MaxValue).GetAwaiter().GetResult();
-            var history = ((TLChannelMessages)absHistory).Messages.Where(msg => msg is TLMessage tlMsg && tlMsg.Media is TLMessageMediaDocument).Select(msg => (TLMessageMediaDocument)((TLMessage)msg).Media);
-
-            foreach (var docFile in history)
-            {
-                var typedDoc = (TLDocument)docFile.Document;
-                var fileEntry = new FileEntry(docFile.Caption, typedDoc.Size);
-                result.Add(fileEntry);
-            }
-
+            var fileInfos = ListChannelFileInfos(channel);
+            var result = fileInfos.Select(fi => fi.GetFileEntry());
             return result;
         }
 
@@ -142,15 +127,68 @@ namespace Duplicati.Library.Backend
         public void Get(string remotename, string filename)
         {
             AuthenticateAsync().GetAwaiter().GetResult();
-            return;
-            var fs = File.OpenWrite(filename);
+            var channel = GetChannel();
+            var fileInfo = ListChannelFileInfos(channel).First(fi => fi.Name == remotename);
+            var fileLocation = new TLInputDocumentFileLocation
+            {
+                Id = fileInfo.MessageId,
+                Version = fileInfo.Version,
+                AccessHash = channel.AccessHash.Value,
+            };
+
+            var file = m_telegramClient.GetFile(fileLocation, (int)fileInfo.Size).GetAwaiter().GetResult();
+            using (var fs = File.OpenWrite(filename))
+            {
+                fs.Write(file.Bytes, 0, file.Bytes.Length);
+                fs.Close();
+            }
         }
 
         public void Delete(string remotename)
         {
             AuthenticateAsync().GetAwaiter().GetResult();
+            var channel = GetChannel();
+            var fileInfo = ListChannelFileInfos(channel).FirstOrDefault(fi => fi.Name == remotename);
+            if (fileInfo == null)
+            {
+                return;
+            }
+
+            var request = new TeleSharp.TL.Channels.TLRequestDeleteMessages
+            {
+                Channel = new TLInputChannel
+                {
+                    ChannelId = channel.Id,
+                    AccessHash = channel.AccessHash.Value
+                },
+                Id = new TLVector<int> {fileInfo.MessageId}
+            };
+            m_telegramClient.SendRequestAsync<TLAffectedMessages>(request);
         }
 
+        public List<ChannelFileInfo> ListChannelFileInfos(TLChannel channel = null)
+        {
+            if (channel == null)
+            {
+                channel = GetChannel();
+            }
+
+            var result = new List<ChannelFileInfo>();
+            var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
+            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, 0, -1, 0, Int32.MaxValue).GetAwaiter().GetResult();
+            var history = ((TLChannelMessages)absHistory).Messages.Where(msg => msg is TLMessage tlMsg && tlMsg.Media is TLMessageMediaDocument).Select(msg => msg as TLMessage);
+
+            foreach (var msg in history)
+            {
+                var media = (TLMessageMediaDocument)msg.Media;
+                var mediaDoc = media.Document as TLDocument;
+                var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.Version, mediaDoc.Size, media.Caption);
+                
+                result.Add(fileInfo);
+            }
+
+            return result;
+        }
 
         public IList<ICommandLineArgument> SupportedCommands { get; } = new List<ICommandLineArgument>
         {

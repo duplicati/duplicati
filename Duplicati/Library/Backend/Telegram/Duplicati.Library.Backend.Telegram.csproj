@@ -53,6 +53,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChannelFileInfo.cs" />
     <Compile Include="InMemorySessionStore.cs" />
     <Compile Include="TelegramBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
