@@ -6,6 +6,7 @@ namespace Duplicati.Library.Backend
     public class ChannelFileInfo
     {
         public int MessageId { get; set; }
+        public long DocumentId { get; set; }
         public int Version { get; set; }
         public long Size { get; set; }
         public string Name { get; set; }
@@ -14,9 +15,10 @@ namespace Duplicati.Library.Backend
         public ChannelFileInfo()
         { }
 
-        public ChannelFileInfo(int messageId, int version, long size, string name, DateTime date)
+        public ChannelFileInfo(int messageId, long documentId, int version, long size, string name, DateTime date)
         {
             MessageId = messageId;
+            DocumentId = documentId;
             Version = version;
             Size = size;
             Name = name;

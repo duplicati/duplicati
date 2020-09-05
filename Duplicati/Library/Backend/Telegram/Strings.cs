@@ -12,7 +12,6 @@ namespace Duplicati.Library.Backend
         public const string AUTH_CODE_KEY = "auth-code";
         public const string AUTH_PASSWORD = "auth-password";
         public const string CHANNEL_NAME = "channel-name";
-        public const string SESSION_HEX_BYTES = "session-hex";
 
         #endregion
 
@@ -49,11 +48,8 @@ namespace Duplicati.Library.Backend
         public static string AuthCodeLong => LC.L("The auth code that you received. Input only if you did receive it");
         public static string PasswordShort => LC.L("2FA password (if enabled)");
         public static string PasswordLong => LC.L("The 2 step verification password. Input only if you have set it up");
-
         public static string ChannelNameShort => LC.L("The channel name of the backup");
         public static string ChannelNameLong => LC.L("The channel name used to re/store the backup files from/to");
-        public static string SessionHexBytesShort => LC.L("Advanced: The bytes representation of session hex bytes");
-        public static string SessionHexBytesLong => LC.L("Advanced: The bytes representation of session hex bytes");
 
         #endregion
     }
