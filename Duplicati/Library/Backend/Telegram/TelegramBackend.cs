@@ -111,17 +111,20 @@ namespace Duplicati.Library.Backend
             await AuthenticateAsync();
 
             var channel = GetChannel();
-            var fs = File.OpenRead(filename);
-            var fsReader = new StreamReader(fs);
-            cancelToken.ThrowIfCancellationRequested();
-            var file = await m_telegramClient.UploadFile(remotename, fsReader, cancelToken);
-            cancelToken.ThrowIfCancellationRequested();
-            var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
-            var fileNameAttribute = new TLDocumentAttributeFilename
+            using (var fs = File.OpenRead(filename))
             {
-                FileName = remotename,
-            };
-            await m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken);
+                var fsReader = new StreamReader(fs);
+                cancelToken.ThrowIfCancellationRequested();
+                var file = await m_telegramClient.UploadFile(remotename, fsReader, cancelToken);
+                cancelToken.ThrowIfCancellationRequested();
+                var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
+                var fileNameAttribute = new TLDocumentAttributeFilename
+                {
+                    FileName = remotename,
+                };
+                await m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken);
+                fs.Close();
+            }
         }
 
         public void Get(string remotename, string filename)
@@ -183,7 +186,7 @@ namespace Duplicati.Library.Backend
                 var media = (TLMessageMediaDocument)msg.Media;
                 var mediaDoc = media.Document as TLDocument;
                 var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.Version, mediaDoc.Size, media.Caption);
-                
+
                 result.Add(fileInfo);
             }
 
