@@ -165,7 +165,8 @@ namespace Duplicati.Library.Backend
         private IS3Client s3Client;
 
         public S3()
-        { }
+        {
+        }
 
         public S3(string url, Dictionary<string, string> options)
         {
@@ -442,7 +443,6 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            Console.WriteLine("Disposed!!!!");
             s3Client?.Dispose();
             s3Client = null;
         }

@@ -172,8 +172,6 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(string[] args)
         {
-            Environment.SetEnvironmentVariable("AUTOUPDATER_Duplicati_SKIP_UPDATE", "1");
-
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
 
