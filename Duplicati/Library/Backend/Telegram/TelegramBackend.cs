@@ -118,20 +118,17 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            Console.WriteLine("List start");
             AuthenticateAsync().GetAwaiter().GetResult();
             EnsureChannelCreated();
 
             var channel = GetChannel();
             var fileInfos = ListChannelFileInfos(channel);
-            var result = fileInfos.Select(fi => fi.GetFileEntry());
-            Console.WriteLine("List end");
+            var result = fileInfos.Select(fi => fi.ToFileEntry());
             return result;
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            Console.WriteLine("Put start");
             await AuthenticateAsync();
 
             var channel = GetChannel();
@@ -149,56 +146,36 @@ namespace Duplicati.Library.Backend
                 await m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken);
                 fs.Close();
             }
-
-            Console.WriteLine("Put end");
         }
 
         public void Get(string remotename, string filename)
         {
-            Console.WriteLine("Get start");
             AuthenticateAsync().GetAwaiter().GetResult();
             var channel = GetChannel();
             var fileInfo = ListChannelFileInfos(channel).First(fi => fi.Name == remotename);
-            var fileLocation = new TLInputDocumentFileLocation
-            {
-                Id = fileInfo.DocumentId,
-                Version = fileInfo.Version,
-                AccessHash = channel.AccessHash.Value
-            };
+            var fileLocation = fileInfo.ToFileLocation();
 
             TLFile file = null;
-            
-            try
-            {
-                var mb = 1048576;
-                var upperLimit = (int)Math.Pow(2, Math.Ceiling(Math.Log(fileInfo.Size, 2))) * 4;
-                var limit = Math.Min(mb, upperLimit);
-                
-                var currentOffset = 0;
+            var mb = 1048576;
+            var upperLimit = (int)Math.Pow(2, Math.Ceiling(Math.Log(fileInfo.Size, 2))) * 4;
+            var limit = Math.Min(mb, upperLimit);
 
+            var currentOffset = 0;
+            using (var fs = File.OpenWrite(filename))
+            {
                 while (currentOffset < fileInfo.Size)
                 {
                     file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).ConfigureAwait(false).GetAwaiter().GetResult();
+                    fs.Write(file.Bytes, currentOffset, file.Bytes.Length);
                     currentOffset += file.Bytes.Length;
                 }
-                
-            }
-            catch (Exception e)
-            {
-                
-            }
-            using (var fs = File.OpenWrite(filename))
-            {
-                fs.Write(file.Bytes, 0, file.Bytes.Length);
+
                 fs.Close();
             }
-
-            Console.WriteLine("Get end");
         }
 
         public void Delete(string remotename)
         {
-            Console.WriteLine("Delete start");
             AuthenticateAsync().GetAwaiter().GetResult();
             var channel = GetChannel();
             var fileInfo = ListChannelFileInfos(channel).FirstOrDefault(fi => fi.Name == remotename);
@@ -214,10 +191,9 @@ namespace Duplicati.Library.Backend
                     ChannelId = channel.Id,
                     AccessHash = channel.AccessHash.Value
                 },
-                Id = new TLVector<int> { fileInfo.MessageId }
+                Id = new TLVector<int> {fileInfo.MessageId}
             };
             m_telegramClient.SendRequestAsync<TLAffectedMessages>(request).GetAwaiter().GetResult();
-            Console.WriteLine("Delete end");
         }
 
         public List<ChannelFileInfo> ListChannelFileInfos(TLChannel channel = null)
@@ -236,7 +212,7 @@ namespace Duplicati.Library.Backend
             {
                 var media = (TLMessageMediaDocument)msg.Media;
                 var mediaDoc = media.Document as TLDocument;
-                var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTime.FromFileTimeUtc(msg.Date));
+                var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.AccessHash, mediaDoc.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTime.FromFileTimeUtc(msg.Date));
 
                 result.Add(fileInfo);
             }
@@ -251,7 +227,7 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(Strings.PHONE_NUMBER_KEY, CommandLineArgument.ArgumentType.String, Strings.PhoneNumberShort, Strings.PhoneNumberLong),
             new CommandLineArgument(Strings.AUTH_CODE_KEY, CommandLineArgument.ArgumentType.String, Strings.AuthCodeShort, Strings.AuthCodeLong),
             new CommandLineArgument(Strings.AUTH_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.PasswordShort, Strings.PasswordLong),
-            new CommandLineArgument(Strings.CHANNEL_NAME, CommandLineArgument.ArgumentType.String, Strings.ChannelNameShort, Strings.ChannelNameLong),
+            new CommandLineArgument(Strings.CHANNEL_NAME, CommandLineArgument.ArgumentType.String, Strings.ChannelNameShort, Strings.ChannelNameLong)
         };
 
         public string Description { get; } = Strings.Description;
@@ -260,17 +236,13 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            Console.WriteLine("test start");
             AuthenticateAsync().GetAwaiter().GetResult();
-            Console.WriteLine("test end");
         }
 
         public void CreateFolder()
         {
-            Console.WriteLine("create folder start");
             AuthenticateAsync().GetAwaiter().GetResult();
             EnsureChannelCreated();
-            Console.WriteLine("create folder end");
         }
 
         private TLChannel GetChannel()
