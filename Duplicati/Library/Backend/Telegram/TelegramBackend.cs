@@ -20,20 +20,20 @@
 
 #endregion
 
-using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using TeleSharp.TL;
 using TeleSharp.TL.Channels;
 using TeleSharp.TL.Messages;
 using TLSharp.Core;
 using TLSharp.Core.Exceptions;
 using TLSharp.Core.Utils;
+using TLRequestDeleteMessages = TeleSharp.TL.Channels.TLRequestDeleteMessages;
 
 namespace Duplicati.Library.Backend
 {
@@ -57,34 +57,59 @@ namespace Duplicati.Library.Backend
         public Telegram(string url, Dictionary<string, string> options)
         {
             if (options.TryGetValue(Strings.API_ID_KEY, out var apiId))
+            {
                 m_apiId = int.Parse(apiId);
+            }
 
             if (options.TryGetValue(Strings.API_HASH_KEY, out var apiHash))
+            {
                 m_apiHash = apiHash.Trim();
+            }
 
             if (options.TryGetValue(Strings.PHONE_NUMBER_KEY, out var phoneNumber))
+            {
                 m_phoneNumber = phoneNumber.Trim();
+            }
 
             if (options.TryGetValue(Strings.AUTH_CODE_KEY, out var authCode))
+            {
                 m_authCode = authCode.Trim();
+            }
 
             if (options.TryGetValue(Strings.AUTH_PASSWORD, out var password))
+            {
                 m_password = password.Trim();
+            }
 
             if (options.TryGetValue(Strings.CHANNEL_NAME, out var channelName))
+            {
                 m_channelName = channelName.Trim();
+            }
 
             if (m_apiId == 0)
+            {
                 throw new UserInformationException(Strings.NoApiIdError, nameof(Strings.NoApiIdError));
+            }
 
             if (string.IsNullOrEmpty(m_apiHash))
+            {
                 throw new UserInformationException(Strings.NoApiHashError, nameof(Strings.NoApiHashError));
+            }
 
             if (string.IsNullOrEmpty(m_phoneNumber))
+            {
                 throw new UserInformationException(Strings.NoPhoneNumberError, nameof(Strings.NoPhoneNumberError));
+            }
 
             if (string.IsNullOrEmpty(m_channelName))
+            {
                 throw new UserInformationException(Strings.NoChannelNameError, nameof(Strings.NoChannelNameError));
+            }
+
+            if (options.TryGetValue(Strings.SESSION_HEX_BYTES, out var sessionBytesHex) && string.IsNullOrEmpty(sessionBytesHex) == false && sessionBytesHex.Length > 16)
+            {
+                Session.FromBytes(sessionBytesHex.ToBytes(), m_sessionStore, m_phoneNumber).Save();
+            }
 
             m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber);
         }
@@ -97,17 +122,20 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
+            Console.WriteLine("List start");
             AuthenticateAsync().GetAwaiter().GetResult();
             EnsureChannelCreated();
 
             var channel = GetChannel();
             var fileInfos = ListChannelFileInfos(channel);
             var result = fileInfos.Select(fi => fi.GetFileEntry());
+            Console.WriteLine("List end");
             return result;
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
+            Console.WriteLine("Put start");
             await AuthenticateAsync();
 
             var channel = GetChannel();
@@ -120,15 +148,18 @@ namespace Duplicati.Library.Backend
                 var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
                 var fileNameAttribute = new TLDocumentAttributeFilename
                 {
-                    FileName = remotename,
+                    FileName = remotename
                 };
                 await m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken);
                 fs.Close();
             }
+
+            Console.WriteLine("Put end");
         }
 
         public void Get(string remotename, string filename)
         {
+            Console.WriteLine("Get start");
             AuthenticateAsync().GetAwaiter().GetResult();
             var channel = GetChannel();
             var fileInfo = ListChannelFileInfos(channel).First(fi => fi.Name == remotename);
@@ -136,7 +167,7 @@ namespace Duplicati.Library.Backend
             {
                 Id = fileInfo.MessageId,
                 Version = fileInfo.Version,
-                AccessHash = channel.AccessHash.Value,
+                AccessHash = channel.AccessHash.Value
             };
 
             var file = m_telegramClient.GetFile(fileLocation, (int)fileInfo.Size).GetAwaiter().GetResult();
@@ -145,10 +176,13 @@ namespace Duplicati.Library.Backend
                 fs.Write(file.Bytes, 0, file.Bytes.Length);
                 fs.Close();
             }
+
+            Console.WriteLine("Get end");
         }
 
         public void Delete(string remotename)
         {
+            Console.WriteLine("Delete start");
             AuthenticateAsync().GetAwaiter().GetResult();
             var channel = GetChannel();
             var fileInfo = ListChannelFileInfos(channel).FirstOrDefault(fi => fi.Name == remotename);
@@ -157,7 +191,7 @@ namespace Duplicati.Library.Backend
                 return;
             }
 
-            var request = new TeleSharp.TL.Channels.TLRequestDeleteMessages
+            var request = new TLRequestDeleteMessages
             {
                 Channel = new TLInputChannel
                 {
@@ -166,7 +200,8 @@ namespace Duplicati.Library.Backend
                 },
                 Id = new TLVector<int> {fileInfo.MessageId}
             };
-            m_telegramClient.SendRequestAsync<TLAffectedMessages>(request);
+            m_telegramClient.SendRequestAsync<TLAffectedMessages>(request).GetAwaiter().GetResult();
+            Console.WriteLine("Delete end");
         }
 
         public List<ChannelFileInfo> ListChannelFileInfos(TLChannel channel = null)
@@ -178,14 +213,14 @@ namespace Duplicati.Library.Backend
 
             var result = new List<ChannelFileInfo>();
             var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
-            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, 0, -1, 0, Int32.MaxValue).GetAwaiter().GetResult();
+            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, 0, -1, 0, int.MaxValue).GetAwaiter().GetResult();
             var history = ((TLChannelMessages)absHistory).Messages.Where(msg => msg is TLMessage tlMsg && tlMsg.Media is TLMessageMediaDocument).Select(msg => msg as TLMessage);
 
             foreach (var msg in history)
             {
                 var media = (TLMessageMediaDocument)msg.Media;
                 var mediaDoc = media.Document as TLDocument;
-                var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.Version, mediaDoc.Size, media.Caption);
+                var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTime.FromFileTimeUtc(msg.Date));
 
                 result.Add(fileInfo);
             }
@@ -200,7 +235,8 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(Strings.PHONE_NUMBER_KEY, CommandLineArgument.ArgumentType.String, Strings.PhoneNumberShort, Strings.PhoneNumberLong),
             new CommandLineArgument(Strings.AUTH_CODE_KEY, CommandLineArgument.ArgumentType.String, Strings.AuthCodeShort, Strings.AuthCodeLong),
             new CommandLineArgument(Strings.AUTH_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.PasswordShort, Strings.PasswordLong),
-            new CommandLineArgument(Strings.CHANNEL_NAME, CommandLineArgument.ArgumentType.String, Strings.ChannelNameShort, Strings.ChannelNameLong)
+            new CommandLineArgument(Strings.CHANNEL_NAME, CommandLineArgument.ArgumentType.String, Strings.ChannelNameShort, Strings.ChannelNameLong),
+            new CommandLineArgument(Strings.SESSION_HEX_BYTES, CommandLineArgument.ArgumentType.String, Strings.SessionHexBytesShort, Strings.SessionHexBytesLong)
         };
 
         public string Description { get; } = Strings.Description;
@@ -209,13 +245,17 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
+            Console.WriteLine("test start");
             AuthenticateAsync().GetAwaiter().GetResult();
+            Console.WriteLine("test end");
         }
 
         public void CreateFolder()
         {
+            Console.WriteLine("create folder start");
             AuthenticateAsync().GetAwaiter().GetResult();
             EnsureChannelCreated();
+            Console.WriteLine("create folder end");
         }
 
         private TLChannel GetChannel()
@@ -249,7 +289,7 @@ namespace Duplicati.Library.Backend
                     Broadcast = false,
                     Megagroup = false,
                     Title = m_channelName,
-                    About = string.Empty,
+                    About = string.Empty
                 };
                 m_telegramClient.SendRequestAsync<object>(newGroup).GetAwaiter().GetResult();
             }

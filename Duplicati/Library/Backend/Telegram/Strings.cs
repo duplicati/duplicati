@@ -1,26 +1,28 @@
 using Duplicati.Library.Localization.Short;
 
-namespace Duplicati.Library.Backend {
-    internal static class Strings {
-
+namespace Duplicati.Library.Backend
+{
+    internal static class Strings
+    {
         #region Constants
-        
+
         public const string API_ID_KEY = "api-id";
         public const string API_HASH_KEY = "api-hash";
         public const string PHONE_NUMBER_KEY = "phone-number";
         public const string AUTH_CODE_KEY = "auth-code";
         public const string AUTH_PASSWORD = "auth-password";
         public const string CHANNEL_NAME = "channel-name";
+        public const string SESSION_HEX_BYTES = "session-hex";
 
         #endregion
-        
+
         #region General
-        
+
         public static string DisplayName { get; } = "Telegram";
         public static string Description => LC.L("This backend can read and write data to a Telegram backend");
-        
+
         #endregion
-        
+
         #region Errors
 
         public static string NoAuthCodeError => LC.L("The auth code is missing");
@@ -31,12 +33,12 @@ namespace Duplicati.Library.Backend {
         public static string NoPhoneNumberError => LC.L("The phone number is missing");
         public static string ChannelIsNotEmptyError => LC.L("The selected channel is not empty");
         public static string CouldNotCreateChannelError => LC.L("Could not create channel. You can create it manually and try again");
-        
+
         #endregion
-        
-        
+
+
         #region Descriptions
-        
+
         public static string ApiIdShort => LC.L("The API ID");
         public static string ApiHashShort => LC.L("The API hash");
         public static string ApiIdLong => LC.L("The API ID retrieved from https://my.telegram.org/");
@@ -50,6 +52,8 @@ namespace Duplicati.Library.Backend {
 
         public static string ChannelNameShort => LC.L("The channel name of the backup");
         public static string ChannelNameLong => LC.L("The channel name used to re/store the backup files from/to");
+        public static string SessionHexBytesShort => LC.L("Advanced: The bytes representation of session hex bytes");
+        public static string SessionHexBytesLong => LC.L("Advanced: The bytes representation of session hex bytes");
 
         #endregion
     }
