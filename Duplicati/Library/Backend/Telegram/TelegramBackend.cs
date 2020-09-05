@@ -30,7 +30,6 @@ using Duplicati.Library.Interface;
 using TeleSharp.TL;
 using TeleSharp.TL.Channels;
 using TeleSharp.TL.Messages;
-using TeleSharp.TL.Upload;
 using TLSharp.Core;
 using TLSharp.Core.Exceptions;
 using TLSharp.Core.Utils;
@@ -42,6 +41,8 @@ namespace Duplicati.Library.Backend
     // This class is instantiated dynamically in the BackendLoader.
     public class Telegram : IBackend
     {
+        private const int MEBIBYTE_IN_BYTES = 1048576;
+
         private static readonly InMemorySessionStore m_sessionStore = new InMemorySessionStore();
 
         private readonly int m_apiId;
@@ -113,7 +114,7 @@ namespace Duplicati.Library.Backend
         public void Dispose()
         { }
 
-        public string DisplayName { get; } = "Telegram";
+        public string DisplayName { get; } = Strings.DisplayName;
         public string ProtocolKey { get; } = "https";
 
         public IEnumerable<IFileEntry> List()
@@ -151,21 +152,20 @@ namespace Duplicati.Library.Backend
         public void Get(string remotename, string filename)
         {
             AuthenticateAsync().GetAwaiter().GetResult();
+
             var channel = GetChannel();
             var fileInfo = ListChannelFileInfos(channel).First(fi => fi.Name == remotename);
             var fileLocation = fileInfo.ToFileLocation();
 
-            TLFile file = null;
-            var mb = 1048576;
             var upperLimit = (int)Math.Pow(2, Math.Ceiling(Math.Log(fileInfo.Size, 2))) * 4;
-            var limit = Math.Min(mb, upperLimit);
+            var limit = Math.Min(MEBIBYTE_IN_BYTES, upperLimit);
 
             var currentOffset = 0;
             using (var fs = File.OpenWrite(filename))
             {
                 while (currentOffset < fileInfo.Size)
                 {
-                    file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).ConfigureAwait(false).GetAwaiter().GetResult();
+                    var file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).ConfigureAwait(false).GetAwaiter().GetResult();
                     fs.Write(file.Bytes, currentOffset, file.Bytes.Length);
                     currentOffset += file.Bytes.Length;
                 }
@@ -177,6 +177,7 @@ namespace Duplicati.Library.Backend
         public void Delete(string remotename)
         {
             AuthenticateAsync().GetAwaiter().GetResult();
+
             var channel = GetChannel();
             var fileInfo = ListChannelFileInfos(channel).FirstOrDefault(fi => fi.Name == remotename);
             if (fileInfo == null)
@@ -300,7 +301,7 @@ namespace Duplicati.Library.Backend
                     m_sessionStore.SetPhoneHash(m_phoneNumber, phoneCodeHash);
                     m_telegramClient.Session.Save();
 
-                    throw new UserInformationException(Strings.NoAuthCodeError, nameof(Strings.NoAuthCodeError));
+                    throw new UserInformationException(Strings.NoOrWrongAuthCodeError, nameof(Strings.NoOrWrongAuthCodeError));
                 }
 
                 await m_telegramClient.MakeAuthAsync(m_phoneNumber, phoneCodeHash, m_authCode);
