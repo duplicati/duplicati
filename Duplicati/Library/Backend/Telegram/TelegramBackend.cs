@@ -86,8 +86,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(m_channelName))
                 throw new UserInformationException(Strings.NoChannelNameError, nameof(Strings.NoChannelNameError));
 
-            m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber, dcIpVersion: DataCenterIPVersion.OnlyIPv4);
-            m_telegramClient.Session.SetDataCenterIpAddress("149.154.167.40", 443);
+            m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber);
         }
 
         public void Dispose()
@@ -215,8 +214,8 @@ namespace Duplicati.Library.Backend
         }
 
         private async Task AuthenticateAsync()
-        {            
-            await m_telegramClient.ConnectAsync(true);
+        {
+            await EnsureConnectedAsync();
             
             if (IsAuthenticated())
             {
@@ -252,9 +251,15 @@ namespace Duplicati.Library.Backend
             m_telegramClient.Session.Save();
         }
 
+        private async Task EnsureConnectedAsync()
+        {
+            await m_telegramClient.ConnectAsync();
+        }
+
         private bool IsAuthenticated()
         {
-            return m_telegramClient.IsUserAuthorized();
+            var isAuthorized = m_telegramClient.IsUserAuthorized();
+            return isAuthorized;
         }
     }
 }
