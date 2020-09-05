@@ -24,14 +24,12 @@ namespace Duplicati.Library.Backend
 
         #region Errors
 
-        public static string NoAuthCodeError => LC.L("The auth code is missing");
+        public static string NoOrWrongAuthCodeError => LC.L("The auth code is incorrect or missing");
         public static string NoPasswordError => LC.L("The password is missing");
         public static string NoChannelNameError => LC.L("The channel name is missing");
         public static string NoApiIdError => LC.L("The API ID is missing");
         public static string NoApiHashError => LC.L("The API hash is missing");
         public static string NoPhoneNumberError => LC.L("The phone number is missing");
-        public static string ChannelIsNotEmptyError => LC.L("The selected channel is not empty");
-        public static string CouldNotCreateChannelError => LC.L("Could not create channel. You can create it manually and try again");
 
         #endregion
 
