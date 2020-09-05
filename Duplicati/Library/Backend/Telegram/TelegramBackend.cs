@@ -101,7 +101,7 @@ namespace Duplicati.Library.Backend
             EnsureChannelCreatedAsync().GetAwaiter();
             
             var result = new List<FileEntry>();
-            var channel = GetChannelAsync().GetAwaiter().GetResult();
+            var channel = GetChannel();
             if (channel == null)
             {
                 throw new UserInformationException(Strings.CouldNotCreateChannelError, nameof(Strings.CouldNotCreateChannelError));
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Backend
         {
             await AuthenticateAsync();
             
-            var channel = await GetChannelAsync();
+            var channel = GetChannel();
             var fs = File.OpenRead(filename);
             var fsReader = new StreamReader(fs);
             cancelToken.ThrowIfCancellationRequested();
@@ -176,9 +176,9 @@ namespace Duplicati.Library.Backend
             EnsureChannelCreatedAsync().GetAwaiter().GetResult();
         }
 
-        private async Task<TLChannel> GetChannelAsync()
+        private TLChannel GetChannel()
         {
-            var absDialogs = await m_telegramClient.GetUserDialogsAsync();
+            var absDialogs = m_telegramClient.GetUserDialogsAsync().GetAwaiter().GetResult();
             var userDialogs = absDialogs as TLDialogs;
             var userDialogsSlice = absDialogs as TLDialogsSlice;
             TLVector<TLAbsChat> absChats; 
@@ -200,7 +200,7 @@ namespace Duplicati.Library.Backend
 
         private async Task EnsureChannelCreatedAsync()
         {
-            var channel = await GetChannelAsync();
+            var channel = GetChannel();
             if (channel == null)
             {
                 var newGroup = new TLRequestCreateChannel
@@ -253,7 +253,12 @@ namespace Duplicati.Library.Backend
 
         private async Task EnsureConnectedAsync()
         {
-            await m_telegramClient.ConnectAsync();
+            try
+            {
+                await m_telegramClient.ConnectAsync();
+            }
+            catch
+            { }
         }
 
         private bool IsAuthenticated()
