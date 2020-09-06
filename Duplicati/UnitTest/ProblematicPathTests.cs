@@ -26,25 +26,45 @@ namespace Duplicati.UnitTest
         [Category("ProblematicPath")]
         public void DirectoriesWithWildcards()
         {
-            if (Platform.IsClientWindows)
-            {
-                return;
-            }
-
             const string file = "file";
             List<string> directories = new List<string>();
 
+            // Keep expected match counts since they'll differ between
+            // Linux and Windows.
+            var questionMarkWildcardShouldMatchCount = 0;
+            var verbatimAsteriskShouldMatchCount = 0;
+
             const string asterisk = "*";
             string dirWithAsterisk = Path.Combine(this.DATAFOLDER, asterisk);
-            SystemIO.IO_OS.DirectoryCreate(dirWithAsterisk);
-            WriteFile(SystemIO.IO_OS.PathCombine(dirWithAsterisk, file), new byte[] {0});
-            directories.Add(dirWithAsterisk);
+            // Windows does not support literal asterisks in paths.
+            if (!Platform.IsClientWindows)
+            {
+                SystemIO.IO_OS.DirectoryCreate(dirWithAsterisk);
+                WriteFile(SystemIO.IO_OS.PathCombine(dirWithAsterisk, file), new byte[] {0});
+                directories.Add(dirWithAsterisk);
+                questionMarkWildcardShouldMatchCount++;
+                verbatimAsteriskShouldMatchCount++;
+            }
 
             const string questionMark = "?";
             string dirWithQuestionMark = Path.Combine(this.DATAFOLDER, questionMark);
-            SystemIO.IO_OS.DirectoryCreate(dirWithQuestionMark);
-            WriteFile(SystemIO.IO_OS.PathCombine(dirWithQuestionMark, file), new byte[] {1});
-            directories.Add(dirWithQuestionMark);
+            // Windows does not support literal question marks in paths.
+            if (!Platform.IsClientWindows)
+            {
+                SystemIO.IO_OS.DirectoryCreate(dirWithQuestionMark);
+                WriteFile(SystemIO.IO_OS.PathCombine(dirWithQuestionMark, file), new byte[] { 1 });
+                directories.Add(dirWithQuestionMark);
+                questionMarkWildcardShouldMatchCount++;
+            }
+
+            // Include at least one single character directory in Windows
+            // for a '?' wildcard can match on
+            const string singleCharacterDir = "X";
+            string dirWithSingleCharacter = Path.Combine(this.DATAFOLDER, singleCharacterDir);
+            SystemIO.IO_OS.DirectoryCreate(dirWithSingleCharacter);
+            WriteFile(SystemIO.IO_OS.PathCombine(dirWithSingleCharacter, file), new byte[] { 1 });
+            directories.Add(dirWithSingleCharacter);
+            questionMarkWildcardShouldMatchCount++;
 
             const string dir = "dir";
             string normalDir = Path.Combine(this.DATAFOLDER, dir);
@@ -86,11 +106,14 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, listResults.Warnings.Count());
                 Assert.AreEqual(directories.Count, listResults.Files.Count());
 
-                // List results using ? should return 2 matches, one for the directory with '*' and one for the directory with '?'.
                 listResults = c.List(SystemIO.IO_OS.PathCombine(dirWithQuestionMark, file));
                 Assert.AreEqual(0, listResults.Errors.Count());
                 Assert.AreEqual(0, listResults.Warnings.Count());
-                Assert.AreEqual(2, listResults.Files.Count());
+                // List results using ? should return 3 matches in Linux,
+                // one for the directory with '*' and one for the directory
+                // with '?', plus one for directory 'X'; but should return
+                // 1 matches in Windows just for directory 'X'.
+                Assert.AreEqual(questionMarkWildcardShouldMatchCount, listResults.Files.Count());
             }
 
             SystemIO.IO_OS.DirectoryDelete(this.RESTOREFOLDER, true);
@@ -134,14 +157,15 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(directories.Count, backupResults.ExaminedFiles);
             }
 
-            // Backup with verbatim asterisk in include filter should include one directory.
+            // Backup with verbatim asterisk in include filter should include
+            // one directory in Linux and zero directories in Windows.
             filter = new FilterExpression("@" + SystemIO.IO_OS.PathCombine(dirWithAsterisk, file));
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER}, filter);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
-                Assert.AreEqual(1, backupResults.ExaminedFiles);
+                Assert.AreEqual(verbatimAsteriskShouldMatchCount, backupResults.ExaminedFiles);
             }
         }
 
