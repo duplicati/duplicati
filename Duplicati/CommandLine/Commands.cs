@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine
 {
@@ -254,7 +255,7 @@ namespace Duplicati.CommandLine
             if (!containsSeparators && arg.StartsWith("@", StringComparison.Ordinal))
             {
                 // Convert to Regexp filter and prefix with ".*/"
-                return $"[.*{Regex.Escape(Util.DirectorySeparatorString + arg.Substring(1))}]";
+                return $"[.*{Utility.ConvertLiteralToRegExp(Util.DirectorySeparatorString + arg.Substring(1))}]";
             }
             else if (!containsSeparators && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
             {
@@ -281,12 +282,12 @@ namespace Duplicati.CommandLine
         private static string SuffixArgWithAsterisk(string arg)
         {
             var containsWildcards = ContainsWildcards(arg);
-            var endsWithSeparator = arg.EndsWith(Util.DirectorySeparatorString);
+            var endsWithSeparator = arg.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
 
             if (endsWithSeparator && arg.StartsWith("@", StringComparison.Ordinal))
             {
                 // Convert to Regexp filter and suffix with ".*"
-                return $"[{Regex.Escape(arg.Substring(1))}.*]";
+                return $"[{Utility.ConvertLiteralToRegExp(arg.Substring(1))}.*]";
             }
             else if (endsWithSeparator && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
             {
@@ -304,16 +305,14 @@ namespace Duplicati.CommandLine
         /// <summary>
         /// Returns true if <paramref name="s"/> contains directory separator characters.
         /// </summary>
-        public static bool ContainsDirectorySeparators(string s) =>
-            s.IndexOfAny(pathSeparatorsCharacters) >= 0;
+        public static bool ContainsDirectorySeparators(string s) => s.IndexOfAny(pathSeparatorsCharacters) >= 0;
 
         private static readonly char[] wildcardCharacters = new[] { '*', '?' };
 
         /// <summary>
         /// Returns true if <paramref name="s"/> contains wildcard characters.
         /// </summary>
-        public static bool ContainsWildcards(string s) =>
-            s.IndexOfAny(wildcardCharacters) >= 0;
+        public static bool ContainsWildcards(string s) => s.IndexOfAny(wildcardCharacters) >= 0;
 
         public static int List(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
