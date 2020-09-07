@@ -240,8 +240,7 @@ namespace Duplicati.CommandLine
         /// For bare file names with no wildcards, replace argument with
         /// the equivalent of prefixing with "*/" so we search all folders.
         /// </summary>
-        public static IEnumerable<string> PrefixArgsWithAsterisk(IEnumerable<string> argList) =>
-            argList.Select(PrefixArgWithAsterisk);
+        public static IEnumerable<string> PrefixArgsWithAsterisk(IEnumerable<string> argList) => argList.Select(PrefixArgWithAsterisk);
 
         /// <summary>
         /// For bare file names with no wildcards, return argument with
@@ -272,8 +271,7 @@ namespace Duplicati.CommandLine
         /// For folders, replace argument with the equivalent of suffixing
         /// with "*" so we restore contents in the folder.
         /// </summary>
-        public static IEnumerable<string> SuffixArgsWithAsterisk(IEnumerable<string> argList) =>
-            argList.Select(SuffixArgWithAsterisk);
+        public static IEnumerable<string> SuffixArgsWithAsterisk(IEnumerable<string> argList) => argList.Select(SuffixArgWithAsterisk);
 
         /// <summary>
         /// For folders, return argument with the equivalent of suffixing
@@ -339,7 +337,7 @@ namespace Duplicati.CommandLine
                             options["version"] = v.ToString();
                         }
                     }
-                    else if (args[0].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[0].StartsWith("[", StringComparison.Ordinal) && !args[0].StartsWith("@", StringComparison.Ordinal))
+                    else if (!ContainsWildcards(args[0]) && !args[0].StartsWith("[", StringComparison.Ordinal) && !args[0].StartsWith("@", StringComparison.Ordinal))
                     {
                         try
                         {
