@@ -62,14 +62,14 @@ namespace Duplicati.UnitTest
             const string singleCharacterDir = "X";
             string dirWithSingleCharacter = Path.Combine(this.DATAFOLDER, singleCharacterDir);
             SystemIO.IO_OS.DirectoryCreate(dirWithSingleCharacter);
-            WriteFile(SystemIO.IO_OS.PathCombine(dirWithSingleCharacter, file), new byte[] { 1 });
+            WriteFile(SystemIO.IO_OS.PathCombine(dirWithSingleCharacter, file), new byte[] { 2 });
             directories.Add(dirWithSingleCharacter);
             questionMarkWildcardShouldMatchCount++;
 
             const string dir = "dir";
             string normalDir = Path.Combine(this.DATAFOLDER, dir);
             SystemIO.IO_OS.DirectoryCreate(normalDir);
-            WriteFile(SystemIO.IO_OS.PathCombine(normalDir, file), new byte[] {2});
+            WriteFile(SystemIO.IO_OS.PathCombine(normalDir, file), new byte[] {3});
             directories.Add(normalDir);
 
             // Backup all files.
