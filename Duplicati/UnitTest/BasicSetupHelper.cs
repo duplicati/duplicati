@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO.Compression;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -209,6 +210,17 @@ namespace Duplicati.UnitTest
             else
             {
                 ZipFile.ExtractToDirectory(sourceArchiveFileName, destinationDirectoryName);
+            }
+        }
+
+        /// <summary>
+        /// Write file <paramref name="path"/> with <paramref name="contents"/>.
+        /// </summary>
+        protected static void WriteFile(string path, byte[] contents)
+        {
+            using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(path))
+            {
+                Utility.CopyStream(new MemoryStream(contents), fileStream);
             }
         }
     }

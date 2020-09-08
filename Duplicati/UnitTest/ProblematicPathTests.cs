@@ -13,14 +13,6 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class ProblematicPathTests : BasicSetupHelper
     {
-        private static void WriteFile(string path, byte[] contents)
-        {
-            using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(path))
-            {
-                Utility.CopyStream(new MemoryStream(contents), fileStream);
-            }
-        }
-
         [Test]
         [Category("ProblematicPath")]
         public void ExcludeProblematicPaths()
