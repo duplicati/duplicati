@@ -32,7 +32,7 @@ namespace Duplicati.UnitTest
             if (!Platform.IsClientWindows)
             {
                 SystemIO.IO_OS.DirectoryCreate(dirWithAsterisk);
-                WriteFile(SystemIO.IO_OS.PathCombine(dirWithAsterisk, file), new byte[] {0});
+                TestUtils.WriteFile(SystemIO.IO_OS.PathCombine(dirWithAsterisk, file), new byte[] {0});
                 directories.Add(dirWithAsterisk);
                 questionMarkWildcardShouldMatchCount++;
                 verbatimAsteriskShouldMatchCount++;
@@ -44,7 +44,7 @@ namespace Duplicati.UnitTest
             if (!Platform.IsClientWindows)
             {
                 SystemIO.IO_OS.DirectoryCreate(dirWithQuestionMark);
-                WriteFile(SystemIO.IO_OS.PathCombine(dirWithQuestionMark, file), new byte[] { 1 });
+                TestUtils.WriteFile(SystemIO.IO_OS.PathCombine(dirWithQuestionMark, file), new byte[] { 1 });
                 directories.Add(dirWithQuestionMark);
                 questionMarkWildcardShouldMatchCount++;
             }
@@ -54,14 +54,14 @@ namespace Duplicati.UnitTest
             const string singleCharacterDir = "X";
             string dirWithSingleCharacter = Path.Combine(this.DATAFOLDER, singleCharacterDir);
             SystemIO.IO_OS.DirectoryCreate(dirWithSingleCharacter);
-            WriteFile(SystemIO.IO_OS.PathCombine(dirWithSingleCharacter, file), new byte[] { 2 });
+            TestUtils.WriteFile(SystemIO.IO_OS.PathCombine(dirWithSingleCharacter, file), new byte[] { 2 });
             directories.Add(dirWithSingleCharacter);
             questionMarkWildcardShouldMatchCount++;
 
             const string dir = "dir";
             string normalDir = Path.Combine(this.DATAFOLDER, dir);
             SystemIO.IO_OS.DirectoryCreate(normalDir);
-            WriteFile(SystemIO.IO_OS.PathCombine(normalDir, file), new byte[] {3});
+            TestUtils.WriteFile(SystemIO.IO_OS.PathCombine(normalDir, file), new byte[] {3});
             directories.Add(normalDir);
 
             // Backup all files.
@@ -88,7 +88,7 @@ namespace Duplicati.UnitTest
                     {
                         string fileName = SystemIO.IO_OS.PathGetFileName(expectedFilePath);
                         string restoredFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, directoryName, fileName);
-                        Assert.IsTrue(TestUtils.CompareFiles(expectedFilePath, restoredFilePath, expectedFilePath, false));
+                        TestUtils.AssertFilesAreEqual(expectedFilePath, restoredFilePath, false, expectedFilePath);
                     }
                 }
 
@@ -132,7 +132,7 @@ namespace Duplicati.UnitTest
 
                         string fileName = SystemIO.IO_OS.PathGetFileName(expectedFilePath);
                         string restoredFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, fileName);
-                        Assert.IsTrue(TestUtils.CompareFiles(expectedFilePath, restoredFilePath, expectedFilePath, false));
+                        TestUtils.AssertFilesAreEqual(expectedFilePath, restoredFilePath, false, expectedFilePath);
 
                         SystemIO.IO_OS.FileDelete(restoredFilePath);
                     }
@@ -171,7 +171,7 @@ namespace Duplicati.UnitTest
 
             // A long path to exclude.
             string longFile = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, new string('y', 255));
-            WriteFile(longFile, new byte[] {0, 1});
+            TestUtils.WriteFile(longFile, new byte[] {0, 1});
 
             // A folder that ends with a dot to exclude.
             string folderWithDot = Path.Combine(this.DATAFOLDER, "folder_with_dot.");
@@ -183,11 +183,11 @@ namespace Duplicati.UnitTest
 
             // A file that ends with a dot to exclude.
             string fileWithDot = Path.Combine(this.DATAFOLDER, "file_with_dot.");
-            WriteFile(fileWithDot, new byte[] {0, 1});
+            TestUtils.WriteFile(fileWithDot, new byte[] {0, 1});
 
             // A file that ends with a space to exclude.
             string fileWithSpace = Path.Combine(this.DATAFOLDER, "file_with_space ");
-            WriteFile(fileWithSpace, new byte[] {0, 1});
+            TestUtils.WriteFile(fileWithSpace, new byte[] {0, 1});
 
             FilterExpression filter = new FilterExpression(longFile, false);
             filter = FilterExpression.Combine(filter, new FilterExpression(Util.AppendDirSeparator(folderWithDot), false));
@@ -226,7 +226,7 @@ namespace Duplicati.UnitTest
             string fileName = new string('y', 255);
             string filePath = SystemIO.IO_OS.PathCombine(folderPath, fileName);
             byte[] fileBytes = {0, 1, 2};
-            WriteFile(filePath, fileBytes);
+            TestUtils.WriteFile(filePath, fileBytes);
 
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
@@ -269,7 +269,7 @@ namespace Duplicati.UnitTest
 
             string filePath = SystemIO.IO_OS.PathCombine(folderPath, pathComponent);
             byte[] fileBytes = {0, 1, 2};
-            WriteFile(filePath, fileBytes);
+            TestUtils.WriteFile(filePath, fileBytes);
 
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))

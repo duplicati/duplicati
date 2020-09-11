@@ -25,7 +25,7 @@ namespace Duplicati.UnitTest
             foreach (var file in fileNames)
             {
                 var targetFile = systemIO.PathCombine(targetDir, file);
-                WriteFile(targetFile, Encoding.Default.GetBytes(file));
+                TestUtils.WriteFile(targetFile, Encoding.Default.GetBytes(file));
             }
 
             // Create actual symlink directory linking to the target directory
@@ -75,7 +75,7 @@ namespace Duplicati.UnitTest
                         case Options.SymlinkStrategy.Follow:
                             // Restore should contain a regular directory with copies of the files in the symlink target
                             Assert.That(systemIO.IsSymlink(restoreSymlinkDir), Is.False);
-                            AssertDirectoryTreesAreEquivalent(targetDir, restoreSymlinkDir, $"Symlink policy: {Options.SymlinkStrategy.Store}");
+                            TestUtils.AssertDirectoryTreesAreEquivalent(targetDir, restoreSymlinkDir, true, $"Symlink policy: {Options.SymlinkStrategy.Store}");
                             break;
                         case Options.SymlinkStrategy.Ignore:
                             // Restore should not contain the symlink at all
@@ -99,56 +99,6 @@ namespace Duplicati.UnitTest
                     if (systemIO.FileExists($"{this.DBFILE}-journal"))
                     {
                         systemIO.FileDelete($"{this.DBFILE}-journal");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Asserts that the two directories are equivalent; i.e., they they contain the same subdirectories and files, recursively.
-        /// </summary>
-        private static void AssertDirectoryTreesAreEquivalent(string expectedDir, string actualDir, string contextMessage)
-        {
-            var localMessage = $"{contextMessage}, in directories {expectedDir} and {actualDir}";
-            var expectedSubdirs = systemIO.EnumerateDirectories(expectedDir).OrderBy(systemIO.PathGetFileName);
-            var actualSubdirs = systemIO.EnumerateDirectories(actualDir).OrderBy(systemIO.PathGetFileName);
-            Assert.That(expectedSubdirs.Select(systemIO.PathGetFileName), Is.EquivalentTo(actualSubdirs.Select(systemIO.PathGetFileName)), localMessage);
-            var expectedSubdirsEnumerator = expectedSubdirs.GetEnumerator();
-            var actualSubdirsEnumerator = actualSubdirs.GetEnumerator();
-            while (expectedSubdirsEnumerator.MoveNext() && actualSubdirsEnumerator.MoveNext())
-            {
-                AssertDirectoryTreesAreEquivalent(expectedSubdirsEnumerator.Current, actualSubdirsEnumerator.Current, contextMessage);
-            }
-            var expectedFiles = systemIO.EnumerateFiles(expectedDir).OrderBy(systemIO.PathGetFileName);
-            var actualFiles = systemIO.EnumerateFiles(actualDir).OrderBy(systemIO.PathGetFileName);
-            Assert.That(expectedFiles.Select(systemIO.PathGetFileName), Is.EquivalentTo(actualFiles.Select(systemIO.PathGetFileName)), localMessage);
-            var expectedFilesEnumerator = expectedFiles.GetEnumerator();
-            var actualFilesEnumerator = actualFiles.GetEnumerator();
-            while (expectedFilesEnumerator.MoveNext() && actualFilesEnumerator.MoveNext())
-            {
-                AssertFilesAreEqual(expectedFilesEnumerator.Current, actualFilesEnumerator.Current, contextMessage);
-            }
-        }
-
-        /// <summary>
-        /// Asserts that two files are the same by comparing their size and their contents.
-        /// </summary>
-        private static void AssertFilesAreEqual(string expectedFile, string actualFile, string contextMessage)
-        {
-            using (var expectedFileStream = systemIO.FileOpenRead(expectedFile))
-            using (var actualFileStream = systemIO.FileOpenRead(actualFile))
-            {
-                Assert.That(expectedFileStream.Length, Is.EqualTo(actualFileStream.Length), $"{contextMessage}, file size mismatch for {expectedFile} and {actualFile}");
-                for (long i = 0; i < expectedFileStream.Length; i++)
-                {
-                    var expectedByte = expectedFileStream.ReadByte();
-                    var actualByte = actualFileStream.ReadByte();
-                    // Only generate message if byte comparison fails
-                    if (expectedByte != actualByte)
-                    {
-                        var message =
-                            $"{contextMessage}, file contents mismatch at position {i} for {expectedFile} and {actualFile}";
-                        Assert.That(actualByte, Is.EqualTo(expectedByte), message);
                     }
                 }
             }
