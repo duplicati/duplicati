@@ -224,6 +224,9 @@ namespace Duplicati.UnitTest
                 // The byte-by-byte compare is dog-slow, so we use a fast(-er) check, and then report the first byte diff if required
                 if (!Utility.CompareStreams(expectedFileStream, actualFileStream, true))
                 {
+                    // Reset stream positions
+                    expectedFileStream.Position = 0;
+                    actualFileStream.Position = 0;
                     for (long i = 0; i < expectedFileStreamLength; i++)
                     {
                         var expectedByte = expectedFileStream.ReadByte();
