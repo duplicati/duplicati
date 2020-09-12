@@ -84,12 +84,8 @@ namespace Duplicati.UnitTest
                 foreach (string directory in directories)
                 {
                     string directoryName = SystemIO.IO_OS.PathGetFileName(directory);
-                    foreach (string expectedFilePath in SystemIO.IO_OS.EnumerateFiles(directory))
-                    {
-                        string fileName = SystemIO.IO_OS.PathGetFileName(expectedFilePath);
-                        string restoredFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, directoryName, fileName);
-                        TestUtils.AssertFilesAreEqual(expectedFilePath, restoredFilePath, false, expectedFilePath);
-                    }
+                    string restoredDirectory = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, directoryName);
+                    TestUtils.AssertDirectoryTreesAreEquivalent(directory, restoredDirectory, true, "Restore");
                 }
 
                 // List results using * should return a match for each directory.

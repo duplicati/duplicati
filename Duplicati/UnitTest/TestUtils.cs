@@ -234,8 +234,7 @@ namespace Duplicati.UnitTest
                         // For performance reasons, only exercise Assert mechanism and generate message if byte comparison fails
                         if (expectedByte != actualByte)
                         {
-                            var message =
-                                $"{contextMessage}, file contents mismatch at position {i} for {expectedFile} and {actualFile}";
+                            var message = $"{contextMessage}, file contents mismatch at position {i} for {expectedFile} and {actualFile}";
                             Assert.That(actualByte, Is.EqualTo(expectedByte), message);
                         }
                     }
