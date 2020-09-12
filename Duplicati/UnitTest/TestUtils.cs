@@ -221,16 +221,20 @@ namespace Duplicati.UnitTest
                 var actualFileStreamLength = actualFileStream.Length;
                 Assert.That(actualFileStreamLength, Is.EqualTo(expectedFileStreamLength), $"{contextMessage}, file size mismatch for {expectedFile} and {actualFile}");
                 // Compare file contents
-                for (long i = 0; i < expectedFileStreamLength; i++)
+                // The byte-by-byte compare is dog-slow, so we use a fast(-er) check, and then report the first byte diff if required
+                if (!Utility.CompareStreams(expectedFileStream, actualFileStream, true))
                 {
-                    var expectedByte = expectedFileStream.ReadByte();
-                    var actualByte = actualFileStream.ReadByte();
-                    // For performance reasons, only generate message if byte comparison fails
-                    if (expectedByte != actualByte)
+                    for (long i = 0; i < expectedFileStreamLength; i++)
                     {
-                        var message =
-                            $"{contextMessage}, file contents mismatch at position {i} for {expectedFile} and {actualFile}";
-                        Assert.That(actualByte, Is.EqualTo(expectedByte), message);
+                        var expectedByte = expectedFileStream.ReadByte();
+                        var actualByte = actualFileStream.ReadByte();
+                        // For performance reasons, only exercise Assert mechanism and generate message if byte comparison fails
+                        if (expectedByte != actualByte)
+                        {
+                            var message =
+                                $"{contextMessage}, file contents mismatch at position {i} for {expectedFile} and {actualFile}";
+                            Assert.That(actualByte, Is.EqualTo(expectedByte), message);
+                        }
                     }
                 }
             }
