@@ -237,8 +237,14 @@ namespace Duplicati.UnitTest
             // Compare file metadata
             if (verifymetadata)
             {
-                Assert.That(SystemIO.IO_OS.GetLastWriteTimeUtc(actualFile), Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)), $"{contextMessage}, last write time mismatch for {expectedFile} and {actualFile}");
-                Assert.That(SystemIO.IO_OS.GetCreationTimeUtc(actualFile), Is.EqualTo(SystemIO.IO_OS.GetCreationTimeUtc(expectedFile)), $"{contextMessage}, creation time mismatch for {expectedFile} and {actualFile}");
+                Assert.That(
+                    SystemIO.IO_OS.GetLastWriteTimeUtc(actualFile),
+                    Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)).Within(1).Milliseconds,
+                    $"{contextMessage}, last write time mismatch for {expectedFile} and {actualFile}");
+                Assert.That(
+                    SystemIO.IO_OS.GetCreationTimeUtc(actualFile),
+                    Is.EqualTo(SystemIO.IO_OS.GetCreationTimeUtc(expectedFile)).Within(1).Milliseconds,
+                    $"{contextMessage}, creation time mismatch for {expectedFile} and {actualFile}");
             }
         }
 
