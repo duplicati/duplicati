@@ -215,8 +215,8 @@ namespace Duplicati.UnitTest
                 Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
 
             ProgressWriteLine("Verifying partial restore ...");
-            using (new Library.Logging.Timer(LOGTAG, "VerifiationOfPartialRestore", "Verification of partial restored files"))
-                TestUtils.AssertDirectoryTreesAreEquivalent(rf, RESTOREFOLDER, true, "VerifiationOfPartialRestore");
+            using (new Library.Logging.Timer(LOGTAG, "VerificationOfPartialRestore", "Verification of partial restored files"))
+                TestUtils.AssertDirectoryTreesAreEquivalent(rf, RESTOREFOLDER, true, "VerificationOfPartialRestore");
 
             systemIO.DirectoryDelete(RESTOREFOLDER, true);
 
