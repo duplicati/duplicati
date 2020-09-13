@@ -77,8 +77,9 @@ namespace Duplicati.UnitTest
                         TestUtils.AssertDirectoryTreesAreEquivalent(targetDir, restoreSymlinkDir, true, $"Symlink policy: {Options.SymlinkStrategy.Store}");
                         break;
                     case Options.SymlinkStrategy.Ignore:
-                        // Restore should not contain the symlink at all
+                        // Restore should not contain the symlink or directory at all
                         Assert.That(systemIO.DirectoryExists(restoreSymlinkDir), Is.False);
+                        Assert.That(systemIO.FileExists(restoreSymlinkDir), Is.False);
                         break;
                 }
             }
