@@ -74,12 +74,15 @@ namespace Duplicati.UnitTest
                     case Options.SymlinkStrategy.Follow:
                         // Restore should contain a regular directory with copies of the files in the symlink target
                         Assert.That(systemIO.IsSymlink(restoreSymlinkDir), Is.False);
-                        TestUtils.AssertDirectoryTreesAreEquivalent(targetDir, restoreSymlinkDir, true, $"Symlink policy: {Options.SymlinkStrategy.Store}");
+                        TestUtils.AssertDirectoryTreesAreEquivalent(targetDir, restoreSymlinkDir, true, "Restore");
                         break;
                     case Options.SymlinkStrategy.Ignore:
                         // Restore should not contain the symlink or directory at all
                         Assert.That(systemIO.DirectoryExists(restoreSymlinkDir), Is.False);
                         Assert.That(systemIO.FileExists(restoreSymlinkDir), Is.False);
+                        break;
+                    default:
+                        Assert.Fail($"Unexpected symlink policy");
                         break;
                 }
             }
