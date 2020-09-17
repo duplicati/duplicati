@@ -46,14 +46,14 @@ namespace Duplicati.Library.Backend
         private static readonly InMemorySessionStore m_sessionStore = new InMemorySessionStore();
         private static readonly object m_lockObj = new object();
 
-        private readonly int m_apiId;
-        private readonly string m_apiHash;
-        private readonly string m_authCode;
-        private readonly string m_password;
-        private readonly string m_channelName;
-        private readonly string m_phoneNumber;
-        private TLChannel m_channelCache;
-        private TelegramClient m_telegramClient;
+        private static int m_apiId;
+        private static string m_apiHash;
+        private static string m_authCode;
+        private static string m_password;
+        private static string m_channelName;
+        private static string m_phoneNumber;
+        private static TLChannel m_channelCache;
+        private static TelegramClient m_telegramClient;
 
         public Telegram()
         { }
