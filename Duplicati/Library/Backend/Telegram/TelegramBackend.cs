@@ -44,6 +44,7 @@ namespace Duplicati.Library.Backend
         private const int MEBIBYTE_IN_BYTES = 1048576;
 
         private static readonly InMemorySessionStore m_sessionStore = new InMemorySessionStore();
+        private static readonly object m_lockObj = new object();
 
         private readonly int m_apiId;
         private readonly string m_apiHash;
@@ -51,7 +52,8 @@ namespace Duplicati.Library.Backend
         private readonly string m_password;
         private readonly string m_channelName;
         private readonly string m_phoneNumber;
-        private readonly TelegramClient m_telegramClient;
+        private TLChannel m_channelCache;
+        private TelegramClient m_telegramClient;
 
         public Telegram()
         { }
@@ -122,51 +124,58 @@ namespace Duplicati.Library.Backend
             AuthenticateAsync().GetAwaiter().GetResult();
             EnsureChannelCreated();
 
-            var channel = GetChannel();
-            var fileInfos = ListChannelFileInfos(channel);
+            var fileInfos = ListChannelFileInfos();
             var result = fileInfos.Select(fi => fi.ToFileEntry());
             return result;
         }
 
-        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            await AuthenticateAsync();
-
-            var channel = GetChannel();
-            using (var fs = File.OpenRead(filename))
+            lock (m_lockObj)
             {
-                var fsReader = new StreamReader(fs);
-                cancelToken.ThrowIfCancellationRequested();
-                var file = await m_telegramClient.UploadFile(remotename, fsReader, cancelToken);
-                cancelToken.ThrowIfCancellationRequested();
-                var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
-                var fileNameAttribute = new TLDocumentAttributeFilename
+                m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber);
+
+                Test();
+
+                AuthenticateAsync().GetAwaiter().GetResult();
+
+                var channel = GetChannel();
+                using (var fs = File.OpenRead(filename))
                 {
-                    FileName = remotename
-                };
-                await m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken);
-                fs.Close();
+                    var fsReader = new StreamReader(fs);
+                    cancelToken.ThrowIfCancellationRequested();
+                    var file = m_telegramClient.UploadFile(remotename, fsReader, cancelToken).GetAwaiter().GetResult();
+                    cancelToken.ThrowIfCancellationRequested();
+                    var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
+                    var fileNameAttribute = new TLDocumentAttributeFilename
+                    {
+                        FileName = remotename
+                    };
+                    m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
+                    fs.Close();
+                }
             }
+
+            return Task.CompletedTask;
         }
 
         public void Get(string remotename, string filename)
         {
             AuthenticateAsync().GetAwaiter().GetResult();
 
-            var channel = GetChannel();
-            var fileInfo = ListChannelFileInfos(channel).First(fi => fi.Name == remotename);
+            var fileInfo = ListChannelFileInfos().First(fi => fi.Name == remotename);
             var fileLocation = fileInfo.ToFileLocation();
 
             var upperLimit = (int)Math.Pow(2, Math.Ceiling(Math.Log(fileInfo.Size, 2))) * 4;
             var limit = Math.Min(MEBIBYTE_IN_BYTES, upperLimit);
 
             var currentOffset = 0;
-            using (var fs = File.OpenWrite(filename))
+            using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
             {
                 while (currentOffset < fileInfo.Size)
                 {
                     var file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).ConfigureAwait(false).GetAwaiter().GetResult();
-                    fs.Write(file.Bytes, currentOffset, file.Bytes.Length);
+                    fs.Write(file.Bytes, 0, file.Bytes.Length);
                     currentOffset += file.Bytes.Length;
                 }
 
@@ -179,7 +188,7 @@ namespace Duplicati.Library.Backend
             AuthenticateAsync().GetAwaiter().GetResult();
 
             var channel = GetChannel();
-            var fileInfo = ListChannelFileInfos(channel).FirstOrDefault(fi => fi.Name == remotename);
+            var fileInfo = ListChannelFileInfos().FirstOrDefault(fi => fi.Name == remotename);
             if (fileInfo == null)
             {
                 return;
@@ -197,28 +206,49 @@ namespace Duplicati.Library.Backend
             m_telegramClient.SendRequestAsync<TLAffectedMessages>(request).GetAwaiter().GetResult();
         }
 
-        public List<ChannelFileInfo> ListChannelFileInfos(TLChannel channel = null)
+        public List<ChannelFileInfo> ListChannelFileInfos()
         {
-            if (channel == null)
+            var channel = GetChannel();
+
+            var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
+            var result = new List<ChannelFileInfo>();
+            var cMinId = (int?)0;
+
+            while (cMinId != null)
             {
-                channel = GetChannel();
+                var newCMinId = RetrieveMessages(inputPeerChannel, result, cMinId.Value);
+                if (newCMinId == cMinId)
+                {
+                    break;
+                }
+
+                cMinId = newCMinId;
             }
 
-            var result = new List<ChannelFileInfo>();
-            var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
-            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, 0, -1, 0, int.MaxValue).GetAwaiter().GetResult();
-            var history = ((TLChannelMessages)absHistory).Messages.Where(msg => msg is TLMessage tlMsg && tlMsg.Media is TLMessageMediaDocument).Select(msg => msg as TLMessage);
+            result = result.Distinct().ToList();
+            return result;
+        }
+
+        private int? RetrieveMessages(TLInputPeerChannel inputPeerChannel, List<ChannelFileInfo> result, int maxDate)
+        {
+            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, offsetDate: maxDate).GetAwaiter().GetResult();
+            var history = ((TLChannelMessages)absHistory).Messages.OfType<TLMessage>();
+            var minDate = (int?)null;
 
             foreach (var msg in history)
             {
-                var media = (TLMessageMediaDocument)msg.Media;
-                var mediaDoc = media.Document as TLDocument;
-                var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.AccessHash, mediaDoc.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTime.FromFileTimeUtc(msg.Date));
+                minDate = minDate == null || minDate > msg.Id ? msg.Date : minDate;
 
-                result.Add(fileInfo);
+                if (msg.Media is TLMessageMediaDocument media)
+                {
+                    var mediaDoc = media.Document as TLDocument;
+                    var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.AccessHash, mediaDoc.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTime.FromFileTimeUtc(msg.Date));
+
+                    result.Add(fileInfo);
+                }
             }
 
-            return result;
+            return minDate;
         }
 
         public IList<ICommandLineArgument> SupportedCommands { get; } = new List<ICommandLineArgument>
@@ -248,6 +278,11 @@ namespace Duplicati.Library.Backend
 
         private TLChannel GetChannel()
         {
+            if (m_channelCache != null)
+            {
+                return m_channelCache;
+            }
+
             var absDialogs = m_telegramClient.GetUserDialogsAsync().GetAwaiter().GetResult();
             var userDialogs = absDialogs as TLDialogs;
             var userDialogsSlice = absDialogs as TLDialogsSlice;
@@ -263,7 +298,7 @@ namespace Duplicati.Library.Backend
             }
 
             var channel = (TLChannel)absChats.FirstOrDefault(chat => chat is TLChannel tlChannel && tlChannel.Title == m_channelName);
-
+            m_channelCache = channel;
             return channel;
         }
 
@@ -323,9 +358,18 @@ namespace Duplicati.Library.Backend
 
         private async Task EnsureConnectedAsync()
         {
+            var isConnected = false;
+
             try
             {
-                await m_telegramClient.ConnectAsync().ConfigureAwait(false);
+                while (isConnected == false)
+                {
+                    var timeoutTask = Task.Delay(5000);
+                    var connectTask = m_telegramClient.ConnectAsync();
+                    await Task.WhenAny(timeoutTask, connectTask);
+
+                    isConnected = connectTask.IsCompleted;
+                }
             }
             catch
             { }
