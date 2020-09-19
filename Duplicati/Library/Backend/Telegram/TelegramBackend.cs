@@ -32,6 +32,7 @@ using TeleSharp.TL.Channels;
 using TeleSharp.TL.Messages;
 using TLSharp.Core;
 using TLSharp.Core.Exceptions;
+using TLSharp.Core.Network.Exceptions;
 using TLSharp.Core.Utils;
 using TLRequestDeleteMessages = TeleSharp.TL.Channels.TLRequestDeleteMessages;
 
@@ -110,7 +111,14 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.NoChannelNameError, nameof(Strings.NoChannelNameError));
             }
 
+            InitializeTelegramClient();
+        }
+
+        private void InitializeTelegramClient()
+        {
+            var tmpTelegramClient = m_telegramClient;
             m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber);
+            tmpTelegramClient?.Dispose();
         }
 
         public void Dispose()
@@ -121,89 +129,95 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            AuthenticateAsync().GetAwaiter().GetResult();
-            EnsureChannelCreated();
-
-            var fileInfos = ListChannelFileInfos();
-            var result = fileInfos.Select(fi => fi.ToFileEntry());
-            return result;
+            return SafeExecute<IEnumerable<IFileEntry>>(() =>
+            {
+                Authenticate();
+                EnsureChannelCreated();
+                var fileInfos = ListChannelFileInfos();
+                var result = fileInfos.Select(fi => fi.ToFileEntry());
+                return result;
+            }, nameof(List));
         }
 
         public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            lock (m_lockObj)
+            return SafeExecute(() =>
             {
-                m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_sessionStore, m_phoneNumber);
-
-                Test();
-
-                AuthenticateAsync().GetAwaiter().GetResult();
-
                 var channel = GetChannel();
                 using (var fs = File.OpenRead(filename))
                 {
                     var fsReader = new StreamReader(fs);
+
                     cancelToken.ThrowIfCancellationRequested();
+                    EnsureConnected();
                     var file = m_telegramClient.UploadFile(remotename, fsReader, cancelToken).GetAwaiter().GetResult();
+
                     cancelToken.ThrowIfCancellationRequested();
                     var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
                     var fileNameAttribute = new TLDocumentAttributeFilename
                     {
                         FileName = remotename
                     };
+
+                    EnsureConnected();
                     m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
                     fs.Close();
                 }
-            }
 
-            return Task.CompletedTask;
+                return Task.CompletedTask;
+            }, $"{nameof(PutAsync)}({remotename})");
         }
 
         public void Get(string remotename, string filename)
         {
-            AuthenticateAsync().GetAwaiter().GetResult();
-
-            var fileInfo = ListChannelFileInfos().First(fi => fi.Name == remotename);
-            var fileLocation = fileInfo.ToFileLocation();
-
-            var upperLimit = (int)Math.Pow(2, Math.Ceiling(Math.Log(fileInfo.Size, 2))) * 4;
-            var limit = Math.Min(MEBIBYTE_IN_BYTES, upperLimit);
-
-            var currentOffset = 0;
-            using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
+            SafeExecute(() =>
             {
-                while (currentOffset < fileInfo.Size)
-                {
-                    var file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).ConfigureAwait(false).GetAwaiter().GetResult();
-                    fs.Write(file.Bytes, 0, file.Bytes.Length);
-                    currentOffset += file.Bytes.Length;
-                }
+                var fileInfo = ListChannelFileInfos().First(fi => fi.Name == remotename);
+                var fileLocation = fileInfo.ToFileLocation();
 
-                fs.Close();
-            }
+                var upperLimit = (int)Math.Pow(2, Math.Ceiling(Math.Log(fileInfo.Size, 2))) * 4;
+                var limit = Math.Min(MEBIBYTE_IN_BYTES, upperLimit);
+
+                var currentOffset = 0;
+                using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
+                {
+                    while (currentOffset < fileInfo.Size)
+                    {
+                        EnsureConnected();
+                        var file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).GetAwaiter().GetResult();
+                        fs.Write(file.Bytes, 0, file.Bytes.Length);
+                        currentOffset += file.Bytes.Length;
+                    }
+
+                    fs.Close();
+                }
+            }, $"{nameof(Get)}({remotename})");
         }
 
         public void Delete(string remotename)
         {
-            AuthenticateAsync().GetAwaiter().GetResult();
-
-            var channel = GetChannel();
-            var fileInfo = ListChannelFileInfos().FirstOrDefault(fi => fi.Name == remotename);
-            if (fileInfo == null)
+            SafeExecute(() =>
             {
-                return;
-            }
-
-            var request = new TLRequestDeleteMessages
-            {
-                Channel = new TLInputChannel
+                var channel = GetChannel();
+                var fileInfo = ListChannelFileInfos().FirstOrDefault(fi => fi.Name == remotename);
+                if (fileInfo == null)
                 {
-                    ChannelId = channel.Id,
-                    AccessHash = channel.AccessHash.Value
-                },
-                Id = new TLVector<int> {fileInfo.MessageId}
-            };
-            m_telegramClient.SendRequestAsync<TLAffectedMessages>(request).GetAwaiter().GetResult();
+                    return;
+                }
+
+                var request = new TLRequestDeleteMessages
+                {
+                    Channel = new TLInputChannel
+                    {
+                        ChannelId = channel.Id,
+                        AccessHash = channel.AccessHash.Value
+                    },
+                    Id = new TLVector<int> {fileInfo.MessageId}
+                };
+
+                EnsureConnected();
+                m_telegramClient.SendRequestAsync<TLAffectedMessages>(request).GetAwaiter().GetResult();
+            }, $"{nameof(Delete)}({remotename})");
         }
 
         public List<ChannelFileInfo> ListChannelFileInfos()
@@ -231,6 +245,7 @@ namespace Duplicati.Library.Backend
 
         private int? RetrieveMessages(TLInputPeerChannel inputPeerChannel, List<ChannelFileInfo> result, int maxDate)
         {
+            EnsureConnected();
             var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, offsetDate: maxDate).GetAwaiter().GetResult();
             var history = ((TLChannelMessages)absHistory).Messages.OfType<TLMessage>();
             var minDate = (int?)null;
@@ -267,13 +282,20 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            AuthenticateAsync().GetAwaiter().GetResult();
+            // No need to use our method
+            lock (m_lockObj)
+            {
+                Authenticate();
+            }
         }
 
         public void CreateFolder()
         {
-            AuthenticateAsync().GetAwaiter().GetResult();
-            EnsureChannelCreated();
+            SafeExecute(() =>
+            {
+                Authenticate();
+                EnsureChannelCreated();
+            }, nameof(CreateFolder));
         }
 
         private TLChannel GetChannel()
@@ -283,6 +305,7 @@ namespace Duplicati.Library.Backend
                 return m_channelCache;
             }
 
+            EnsureConnected();
             var absDialogs = m_telegramClient.GetUserDialogsAsync().GetAwaiter().GetResult();
             var userDialogs = absDialogs as TLDialogs;
             var userDialogsSlice = absDialogs as TLDialogsSlice;
@@ -314,13 +337,15 @@ namespace Duplicati.Library.Backend
                     Title = m_channelName,
                     About = string.Empty
                 };
+
+                EnsureConnected();
                 m_telegramClient.SendRequestAsync<object>(newGroup).GetAwaiter().GetResult();
             }
         }
 
-        private async Task AuthenticateAsync()
+        private void Authenticate()
         {
-            await EnsureConnectedAsync();
+            EnsureConnected();
 
             if (IsAuthenticated())
             {
@@ -332,14 +357,15 @@ namespace Duplicati.Library.Backend
                 var phoneCodeHash = m_sessionStore.GetPhoneHash(m_phoneNumber);
                 if (phoneCodeHash == null)
                 {
-                    phoneCodeHash = await m_telegramClient.SendCodeRequestAsync(m_phoneNumber).ConfigureAwait(false);
+                    EnsureConnected();
+                    phoneCodeHash = m_telegramClient.SendCodeRequestAsync(m_phoneNumber).GetAwaiter().GetResult();
                     m_sessionStore.SetPhoneHash(m_phoneNumber, phoneCodeHash);
                     m_telegramClient.Session.Save();
 
                     throw new UserInformationException(Strings.NoOrWrongAuthCodeError, nameof(Strings.NoOrWrongAuthCodeError));
                 }
 
-                await m_telegramClient.MakeAuthAsync(m_phoneNumber, phoneCodeHash, m_authCode);
+                m_telegramClient.MakeAuthAsync(m_phoneNumber, phoneCodeHash, m_authCode).GetAwaiter().GetResult();
             }
             catch (CloudPasswordNeededException)
             {
@@ -349,36 +375,98 @@ namespace Duplicati.Library.Backend
                     throw new UserInformationException(Strings.NoPasswordError, nameof(Strings.NoPasswordError));
                 }
 
-                var passwordSetting = await m_telegramClient.GetPasswordSetting().ConfigureAwait(false);
-                await m_telegramClient.MakeAuthWithPasswordAsync(passwordSetting, m_password).ConfigureAwait(false);
+                EnsureConnected();
+                var passwordSetting = m_telegramClient.GetPasswordSetting().GetAwaiter().GetResult();
+                m_telegramClient.MakeAuthWithPasswordAsync(passwordSetting, m_password).GetAwaiter().GetResult();
             }
 
             m_telegramClient.Session.Save();
         }
 
-        private async Task EnsureConnectedAsync()
+        private void EnsureConnected()
         {
             var isConnected = false;
 
-            try
+            while (isConnected == false)
             {
-                while (isConnected == false)
+                try
                 {
-                    var timeoutTask = Task.Delay(5000);
-                    var connectTask = m_telegramClient.ConnectAsync();
-                    await Task.WhenAny(timeoutTask, connectTask);
-
-                    isConnected = connectTask.IsCompleted;
+                    isConnected = m_telegramClient.ConnectAsync().Wait(TimeSpan.FromSeconds(5));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("On line 390");
+                    Console.WriteLine(e);
+                    InitializeTelegramClient();
+                    isConnected = false;
                 }
             }
-            catch
-            { }
         }
 
         private bool IsAuthenticated()
         {
             var isAuthorized = m_telegramClient.IsUserAuthorized();
             return isAuthorized;
+        }
+
+        private void SafeExecute(Action action, string actionName)
+        {
+            lock (m_lockObj)
+            {
+                Console.WriteLine("Starting executing action {0}", actionName);
+                try
+                {
+                    action();
+                }
+                catch (UserInformationException)
+                {
+                    throw;
+                }
+                catch (FloodException floodExc)
+                {
+                    var randSeconds = new Random().Next(0, 15);
+                    Console.WriteLine("It's required to wait {0} seconds before continuing", floodExc.TimeToWait.TotalSeconds + randSeconds);
+                    Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
+                    SafeExecute(action, actionName);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("An exception was thrown, retrying, {0}, {1}", e, e.StackTrace);
+                    action();
+                }
+            }
+            Console.WriteLine("Done executing action {0}", actionName);
+        }
+
+        private T SafeExecute<T>(Func<T> func, string actionName)
+        {
+            lock (m_lockObj)
+            {
+                Console.WriteLine("Starting executing action {0}", actionName);
+                try
+                {
+                    var res = func();
+                    Console.WriteLine("Done executing action {0}", actionName);
+                    return res;
+                }
+                catch (UserInformationException)
+                {
+                    throw;
+                }
+                catch (FloodException floodExc)
+                {
+                    Console.WriteLine("It's required to wait {0} seconds before continuing", floodExc.TimeToWait.TotalSeconds);
+                    Thread.Sleep(floodExc.TimeToWait);
+                    var res = SafeExecute(func, actionName);
+                    Console.WriteLine("Done executing action {0}", actionName);
+                    return res;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("An exception was thrown, retrying, {0}, {1}", e, e.StackTrace);
+                    return func();
+                }
+            }
         }
     }
 }
