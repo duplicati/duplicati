@@ -24,7 +24,8 @@ namespace Duplicati.Library.Backend
 
         #region Errors
 
-        public static string NoOrWrongAuthCodeError => LC.L("The auth code is incorrect or missing");
+        public static string WrongAuthCodeError => LC.L("The auth code is incorrect");
+        public static string NoAuthCodeError => LC.L("The auth code is missing");
         public static string NoPasswordError => LC.L("The password is missing");
         public static string NoChannelNameError => LC.L("The channel name is missing");
         public static string NoApiIdError => LC.L("The API ID is missing");

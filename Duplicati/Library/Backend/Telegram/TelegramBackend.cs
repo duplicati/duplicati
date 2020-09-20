@@ -20,10 +20,12 @@ namespace Duplicati.Library.Backend
     public class Telegram : IBackend
     {
         private const int MEBIBYTE_IN_BYTES = 1048576;
-        private static readonly string LOG_TAG = Log.LogTagFromType(typeof(Telegram));
 
         private static readonly InMemorySessionStore m_sessionStore = new InMemorySessionStore();
+        private static readonly string m_logTag = Log.LogTagFromType(typeof(Telegram));
         private static readonly object m_lockObj = new object();
+        private static TelegramClient m_telegramClient;
+        
         private readonly int m_apiId;
         private readonly string m_apiHash;
         private readonly string m_authCode;
@@ -31,7 +33,6 @@ namespace Duplicati.Library.Backend
         private readonly string m_channelName;
         private readonly string m_phoneNumber;
         private TLChannel m_channelCache;
-        private static TelegramClient m_telegramClient;
 
         public Telegram()
         { }
@@ -355,7 +356,14 @@ namespace Duplicati.Library.Backend
                     m_sessionStore.SetPhoneHash(m_phoneNumber, phoneCodeHash);
                     m_telegramClient.Session.Save();
 
-                    throw new UserInformationException(Strings.NoOrWrongAuthCodeError, nameof(Strings.NoOrWrongAuthCodeError));
+                    if (string.IsNullOrEmpty(m_authCode))
+                    {
+                        throw new UserInformationException(Strings.NoAuthCodeError, nameof(Strings.NoAuthCodeError));
+                    }
+                    else
+                    {
+                        throw new UserInformationException(Strings.WrongAuthCodeError, nameof(Strings.WrongAuthCodeError));
+                    }
                 }
 
                 m_telegramClient.MakeAuthAsync(m_phoneNumber, phoneCodeHash, m_authCode).GetAwaiter().GetResult();
@@ -386,16 +394,22 @@ namespace Duplicati.Library.Backend
                 {
                     isConnected = m_telegramClient.ConnectAsync().Wait(TimeSpan.FromSeconds(5));
                 }
-                catch (FloodException floodExc)
+                catch (AggregateException e)
                 {
-                    var randSeconds = new Random().Next(0, 15);
-                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
-                    Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
-                }
-                catch (Exception)
-                {
-                    InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
-                    isConnected = false;
+                    foreach (var exception in e.InnerExceptions)
+                    {
+                        if (exception is FloodException floodExc)
+                        {
+                            var randSeconds = new Random().Next(0, 15);
+                            Log.WriteInformationMessage(m_logTag, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
+                            Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
+                        }
+                        else
+                        {
+                            InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
+                            isConnected = false;
+                        }
+                    }
                 }
             }
         }
@@ -410,61 +424,61 @@ namespace Duplicati.Library.Backend
         {
             lock (m_lockObj)
             {
-                Log.WriteInformationMessage(LOG_TAG, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
+                Log.WriteInformationMessage(m_logTag, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
                 try
                 {
                     action();
                 }
                 catch (UserInformationException uiExc)
                 {
-                    Log.WriteWarningMessage(LOG_TAG, nameof(Strings.USER_INFO_EXC), uiExc, Strings.USER_INFO_EXC);
+                    Log.WriteWarningMessage(m_logTag, nameof(Strings.USER_INFO_EXC), uiExc, Strings.USER_INFO_EXC);
                     throw;
                 }
                 catch (FloodException floodExc)
                 {
                     var randSeconds = new Random().Next(0, 15);
-                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
+                    Log.WriteInformationMessage(m_logTag, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
                     SafeExecute(action, actionName);
                 }
                 catch (Exception e)
                 {
-                    Log.WriteErrorMessage(LOG_TAG, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
+                    Log.WriteErrorMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
                     action();
                 }
             }
 
-            Log.WriteInformationMessage(LOG_TAG, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
+            Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
         }
 
         private T SafeExecute<T>(Func<T> func, string actionName)
         {
             lock (m_lockObj)
             {
-                Log.WriteInformationMessage(LOG_TAG, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
+                Log.WriteInformationMessage(m_logTag, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
                 try
                 {
                     var res = func();
-                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
+                    Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
                 }
                 catch (UserInformationException uiExc)
                 {
-                    Log.WriteWarningMessage(LOG_TAG, nameof(Strings.USER_INFO_EXC), uiExc, Strings.USER_INFO_EXC);
+                    Log.WriteWarningMessage(m_logTag, nameof(Strings.USER_INFO_EXC), uiExc, Strings.USER_INFO_EXC);
                     throw;
                 }
                 catch (FloodException floodExc)
                 {
                     var randSeconds = new Random().Next(0, 15);
-                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
+                    Log.WriteInformationMessage(m_logTag, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait);
                     var res = SafeExecute(func, actionName);
-                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
+                    Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
                 }
                 catch (Exception e)
                 {
-                    Log.WriteErrorMessage(LOG_TAG, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
+                    Log.WriteErrorMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
                     return func();
                 }
             }
