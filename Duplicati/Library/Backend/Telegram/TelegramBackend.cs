@@ -415,8 +415,9 @@ namespace Duplicati.Library.Backend
                 {
                     action();
                 }
-                catch (UserInformationException)
+                catch (UserInformationException uiExc)
                 {
+                    Log.WriteWarningMessage(LOG_TAG, nameof(Strings.USER_INFO_EXC), uiExc, Strings.USER_INFO_EXC);
                     throw;
                 }
                 catch (FloodException floodExc)
@@ -447,8 +448,9 @@ namespace Duplicati.Library.Backend
                     Log.WriteInformationMessage(LOG_TAG, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
                 }
-                catch (UserInformationException)
+                catch (UserInformationException uiExc)
                 {
+                    Log.WriteWarningMessage(LOG_TAG, nameof(Strings.USER_INFO_EXC), uiExc, Strings.USER_INFO_EXC);
                     throw;
                 }
                 catch (FloodException floodExc)
