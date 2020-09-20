@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.IO.Compression;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {

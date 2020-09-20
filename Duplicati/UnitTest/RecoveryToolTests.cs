@@ -93,13 +93,13 @@ namespace Duplicati.UnitTest
             foreach (string filepath in Directory.EnumerateFiles(this.DATAFOLDER))
             {
                 string filename = Path.GetFileName(filepath);
-                TestUtils.AssertFilesAreEqual(filepath, Path.Combine(restoreFolder, baseFolder, filename ?? String.Empty), false, filename);
+                Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(restoreFolder, baseFolder, filename ?? String.Empty), filename, false));
             }
 
             foreach (string filepath in Directory.EnumerateFiles(subdirectoryPath))
             {
                 string filename = Path.GetFileName(filepath);
-                TestUtils.AssertFilesAreEqual(filepath, Path.Combine(restoreFolder, baseFolder, subdirectoryName, filename ?? String.Empty), false, filename);
+                Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(restoreFolder, baseFolder, subdirectoryName, filename ?? String.Empty), filename, false));
             }
         }
     }
