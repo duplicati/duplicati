@@ -24,11 +24,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FTP")]
-[assembly: AssemblyDescription("A FTP backend for Duplicati")]
+[assembly: AssemblyTitle("Telegram")]
+[assembly: AssemblyDescription("A Telegram backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Duplicati Team")]
-[assembly: AssemblyProduct("Duplicati.Backend.FTP")]
+[assembly: AssemblyProduct("Duplicati.Backend.Telegram")]
 [assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
