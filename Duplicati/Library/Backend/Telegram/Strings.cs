@@ -53,10 +53,10 @@ namespace Duplicati.Library.Backend
         
         #region Formats
 
-        public static string TelegramFlood = "It's required to wait {0} seconds before continuing";
-        public static string ExceptionRetry = "An exception was thrown, retrying";
-        public static string StartingExecuting = "Starting executing action {0}";
-        public static string DoneExecuting = "Done executing action {0}";
+        public const string TELEGRAM_FLOOD = "It's required to wait {0} seconds before continuing";
+        public const string EXCEPTION_RETRY = "An exception was thrown, retrying";
+        public const string STARTING_EXECUTING = "Starting executing action {0}";
+        public const string DONE_EXECUTING = "Done executing action {0}";
 
         #endregion
     }
