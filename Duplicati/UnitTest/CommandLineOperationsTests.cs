@@ -215,8 +215,8 @@ namespace Duplicati.UnitTest
                 Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
 
             ProgressWriteLine("Verifying partial restore ...");
-            using (new Library.Logging.Timer(LOGTAG, "VerifiationOfPartialRestore", "Verification of partial restored files"))
-                TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
+            using (new Library.Logging.Timer(LOGTAG, "VerificationOfPartialRestore", "Verification of partial restored files"))
+                TestUtils.AssertDirectoryTreesAreEquivalent(rf, RESTOREFOLDER, true, "VerificationOfPartialRestore");
 
             systemIO.DirectoryDelete(RESTOREFOLDER, true);
 
@@ -226,7 +226,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Verifying partial restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfPartialRestore", "Verification of partial restored files"))
-                TestUtils.VerifyDir(rf, RESTOREFOLDER, true);
+                TestUtils.AssertDirectoryTreesAreEquivalent(rf, RESTOREFOLDER, true, "VerificationOfPartialRestore");
 
             systemIO.DirectoryDelete(RESTOREFOLDER, true);
 
@@ -237,7 +237,7 @@ namespace Duplicati.UnitTest
             ProgressWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfFullRestore", "Verification of restored files"))
                 foreach (var s in systemIO.EnumerateDirectories(DATAFOLDER))
-                    TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
+                    TestUtils.AssertDirectoryTreesAreEquivalent(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true, "VerificationOfFullRestore");
 
             systemIO.DirectoryDelete(RESTOREFOLDER, true);
 
@@ -248,7 +248,7 @@ namespace Duplicati.UnitTest
             ProgressWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfFullRestoreWithoutDb", "Verification of restored files"))
                 foreach (var s in systemIO.EnumerateDirectories(DATAFOLDER))
-                    TestUtils.VerifyDir(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true);
+                    TestUtils.AssertDirectoryTreesAreEquivalent(s, Path.Combine(RESTOREFOLDER, Path.GetFileName(s)), true, "VerificationOfFullRestoreWithoutDb");
 
             ProgressWriteLine("Testing data ...");
             using (new Library.Logging.Timer(LOGTAG, "TestRemoteData", "Test remote data"))
