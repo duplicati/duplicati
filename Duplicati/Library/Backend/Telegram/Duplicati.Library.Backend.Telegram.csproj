@@ -60,6 +60,10 @@
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{d10a5fc0-11b4-4e70-86aa-8aea52bd9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
       <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
       <Name>Duplicati.Library.Modules.Builtin</Name>
