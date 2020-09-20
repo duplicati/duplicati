@@ -50,5 +50,14 @@ namespace Duplicati.Library.Backend
         public static string ChannelNameLong => LC.L("The channel name used to re/store the backup files from/to");
 
         #endregion
+        
+        #region Formats
+
+        public static string TelegramFlood = "It's required to wait {0} seconds before continuing";
+        public static string ExceptionRetry = "An exception was thrown, retrying";
+        public static string StartingExecuting = "Starting executing action {0}";
+        public static string DoneExecuting = "Done executing action {0}";
+
+        #endregion
     }
 }
