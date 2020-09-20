@@ -257,7 +257,7 @@ namespace Duplicati.Library.Backend
                 if (msg.Media is TLMessageMediaDocument media)
                 {
                     var mediaDoc = media.Document as TLDocument;
-                    var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.AccessHash, mediaDoc.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTime.FromFileTimeUtc(msg.Date));
+                    var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.AccessHash, mediaDoc.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTimeOffset.FromUnixTimeSeconds(msg.Date).UtcDateTime);
 
                     result.Add(fileInfo);
                 }
@@ -393,10 +393,14 @@ namespace Duplicati.Library.Backend
                 {
                     isConnected = m_telegramClient.ConnectAsync().Wait(TimeSpan.FromSeconds(5));
                 }
+                catch (FloodException floodExc)
+                {
+                    var randSeconds = new Random().Next(0, 15);
+                    Console.WriteLine("It's required to wait {0} seconds before continuing", floodExc.TimeToWait.TotalSeconds + randSeconds);
+                    Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
+                }
                 catch (Exception e)
                 {
-                    Console.WriteLine("On line 390");
-                    Console.WriteLine(e);
                     InitializeTelegramClient();
                     isConnected = false;
                 }
