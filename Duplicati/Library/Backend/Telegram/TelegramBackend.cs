@@ -392,7 +392,7 @@ namespace Duplicati.Library.Backend
                     Log.WriteInformationMessage(LOG_TAG, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
                     isConnected = false;
