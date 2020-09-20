@@ -527,7 +527,7 @@ namespace Duplicati.UnitTest
                 foreach (string filepath in partialVersionFiles)
                 {
                     string filename = Path.GetFileName(filepath);
-                    Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, false));
+                    TestUtils.AssertFilesAreEqual(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), false, filename);
                 }
             }
 
@@ -572,7 +572,7 @@ namespace Duplicati.UnitTest
                 foreach (string filepath in fullVersionFiles)
                 {
                     string filename = Path.GetFileName(filepath);
-                    Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, false));
+                    TestUtils.AssertFilesAreEqual(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), false, filename);
                 }
             }
         }
@@ -639,7 +639,7 @@ namespace Duplicati.UnitTest
                 foreach (string filepath in fullVersionFiles)
                 {
                     string filename = Path.GetFileName(filepath);
-                    Assert.IsTrue(TestUtils.CompareFiles(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), filename, false));
+                    TestUtils.AssertFilesAreEqual(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), false, filename);
                 }
             }
         }

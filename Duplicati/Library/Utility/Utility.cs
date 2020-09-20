@@ -165,6 +165,15 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Convert literal path to the equivalent regular expression.
+        /// </summary>
+        public static string ConvertLiteralToRegExp(string literalPath)
+        {
+            // Escape all special characters
+            return Regex.Escape(literalPath);
+        }
+
+        /// <summary>
         /// Returns a list of all files found in the given folder.
         /// The search is recursive.
         /// </summary>
