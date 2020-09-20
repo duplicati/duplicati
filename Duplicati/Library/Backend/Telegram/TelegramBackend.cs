@@ -25,7 +25,7 @@ namespace Duplicati.Library.Backend
         private static readonly string m_logTag = Log.LogTagFromType(typeof(Telegram));
         private static readonly object m_lockObj = new object();
         private static TelegramClient m_telegramClient;
-        
+
         private readonly int m_apiId;
         private readonly string m_apiHash;
         private readonly string m_authCode;
@@ -159,7 +159,7 @@ namespace Duplicati.Library.Backend
 
                     var limit = MEBIBYTE_IN_BYTES;
                     var currentOffset = 0;
-                    
+
                     using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
                     {
                         while (currentOffset < fileInfo.Size)
@@ -394,22 +394,10 @@ namespace Duplicati.Library.Backend
                 {
                     isConnected = m_telegramClient.ConnectAsync().Wait(TimeSpan.FromSeconds(5));
                 }
-                catch (AggregateException e)
+                catch (Exception e)
                 {
-                    foreach (var exception in e.InnerExceptions)
-                    {
-                        if (exception is FloodException floodExc)
-                        {
-                            var randSeconds = new Random().Next(0, 15);
-                            Log.WriteInformationMessage(m_logTag, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
-                            Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
-                        }
-                        else
-                        {
-                            InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
-                            isConnected = false;
-                        }
-                    }
+                    InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
+                    isConnected = false;
                 }
             }
         }
