@@ -411,7 +411,7 @@ namespace Duplicati.Library.Backend
                 catch (FloodException floodExc)
                 {
                     var randSeconds = new Random().Next(0, 15);
-                    Log.WriteInformationMessage(LOG_TAG, "TelegramFloodWaiting", "It's required to wait {0} seconds before continuing", floodExc.TimeToWait.TotalSeconds + randSeconds);
+                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.TelegramFlood), Strings.TelegramFlood, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
                 }
                 catch (Exception e)
@@ -432,7 +432,7 @@ namespace Duplicati.Library.Backend
         {
             lock (m_lockObj)
             {
-                Log.WriteInformationMessage(LOG_TAG, "SafeExecuteStart", "Starting executing action {0}", actionName);
+                Log.WriteInformationMessage(LOG_TAG, nameof(Strings.StartingExecuting), Strings.StartingExecuting, actionName);
                 try
                 {
                     action();
@@ -444,29 +444,29 @@ namespace Duplicati.Library.Backend
                 catch (FloodException floodExc)
                 {
                     var randSeconds = new Random().Next(0, 15);
-                    Log.WriteInformationMessage(LOG_TAG, "TelegramFloodWaiting", "It's required to wait {0} seconds before continuing", floodExc.TimeToWait.TotalSeconds + randSeconds);
+                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.TelegramFlood), Strings.TelegramFlood, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
                     SafeExecute(action, actionName);
                 }
                 catch (Exception e)
                 {
-                    Log.WriteErrorMessage(LOG_TAG, "ExceptionThrownRetry", e, "An exception was thrown, retrying");
+                    Log.WriteErrorMessage(LOG_TAG, nameof(Strings.ExceptionRetry), e, Strings.ExceptionRetry);
                     action();
                 }
             }
 
-            Log.WriteInformationMessage(LOG_TAG, "SafeExecuteEnd", "Done executing action {0}", actionName);
+            Log.WriteInformationMessage(LOG_TAG, nameof(Strings.DoneExecuting), Strings.DoneExecuting, actionName);
         }
 
         private T SafeExecute<T>(Func<T> func, string actionName)
         {
             lock (m_lockObj)
             {
-                Log.WriteInformationMessage(LOG_TAG, "SafeExecuteStart", "Starting executing action {0}", actionName);
+                Log.WriteInformationMessage(LOG_TAG, nameof(Strings.StartingExecuting), Strings.StartingExecuting, actionName);
                 try
                 {
                     var res = func();
-                    Log.WriteInformationMessage(LOG_TAG, "SafeExecuteEnd", "Done executing action {0}", actionName);
+                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.DoneExecuting), Strings.DoneExecuting, actionName);
                     return res;
                 }
                 catch (UserInformationException)
@@ -476,15 +476,15 @@ namespace Duplicati.Library.Backend
                 catch (FloodException floodExc)
                 {
                     var randSeconds = new Random().Next(0, 15);
-                    Log.WriteInformationMessage(LOG_TAG, "TelegramFloodWaiting", "It's required to wait {0} seconds before continuing", floodExc.TimeToWait.TotalSeconds + randSeconds);
+                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.TelegramFlood), Strings.TelegramFlood, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait);
                     var res = SafeExecute(func, actionName);
-                    Log.WriteInformationMessage(LOG_TAG, "SafeExecuteEnd", "Done executing action {0}", actionName);
+                    Log.WriteInformationMessage(LOG_TAG, nameof(Strings.DoneExecuting), Strings.DoneExecuting, actionName);
                     return res;
                 }
                 catch (Exception e)
                 {
-                    Log.WriteErrorMessage(LOG_TAG, "ExceptionThrownRetry", e, "An exception was thrown, retrying");
+                    Log.WriteErrorMessage(LOG_TAG, nameof(Strings.ExceptionRetry), e, Strings.ExceptionRetry);
                     return func();
                 }
             }
