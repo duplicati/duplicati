@@ -119,6 +119,14 @@ namespace Duplicati.Library.Utility
                     this.Filter = filter.Substring(1, filter.Length - 2);
                     this.Regexp = GetFilterGroupRegex(this.Filter);
                 }
+                else if (filter.StartsWith("@", StringComparison.Ordinal))
+                {
+                    // Take filter literally; i.e., don't treat wildcard
+                    // characters as globbing characters
+                    this.Type = FilterType.Simple;
+                    this.Filter = filter.Substring(1);
+                    this.Regexp = new Regex(Utility.ConvertLiteralToRegExp(this.Filter), REGEXP_OPTIONS);
+                }
                 else
                 {
                     this.Type = (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
@@ -149,6 +157,10 @@ namespace Duplicati.Library.Utility
                         if (filterString.StartsWith("[", StringComparison.Ordinal) && filterString.EndsWith("]", StringComparison.Ordinal))
                         {
                             return filterString.Substring(1, filterString.Length - 2);
+                        }
+                        else if (filterString.StartsWith("@", StringComparison.Ordinal))
+                        {
+                            return Utility.ConvertLiteralToRegExp(filterString.Substring(1));
                         }
                         else
                         {
@@ -284,6 +296,8 @@ namespace Duplicati.Library.Utility
                         return "[" + this.Filter + "]";
                     case FilterType.Group:
                         return "{" + this.Filter + "}";
+                    case FilterType.Simple:
+                        return "@" + this.Filter;
                     default:
                         return this.Filter;
                 }

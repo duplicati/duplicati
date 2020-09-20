@@ -353,7 +353,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(filenames.Count * 3, r.RestoredFiles);
             }
 
-            TestUtils.VerifyDir(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"));
+            TestUtils.AssertDirectoryTreesAreEquivalent(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"), "Restore");
 
             using(var tf = new Library.Utility.TempFolder())
             {

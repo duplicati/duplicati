@@ -1190,7 +1190,7 @@ ORDER BY
                     var args = new List<object>();
                     foreach (var f in ((Library.Utility.FilterExpression)filter).GetSimpleList())
                     {
-                        if (f.Contains('*') || f.Contains('?'))
+                        if (type == FilterType.Wildcard)
                         {
                             sb.Append(@"""Path"" LIKE ? OR ");
                             args.Add(f.Replace('*', '%').Replace('?', '_'));
