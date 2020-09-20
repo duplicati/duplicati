@@ -57,6 +57,7 @@ namespace Duplicati.Library.Backend
         public const string EXCEPTION_RETRY = "An exception was thrown, retrying";
         public const string STARTING_EXECUTING = "Starting executing action {0}";
         public const string DONE_EXECUTING = "Done executing action {0}";
+        public const string USER_INFO_EXC = "Exception thrown that should be shown on UI";
 
         #endregion
     }
