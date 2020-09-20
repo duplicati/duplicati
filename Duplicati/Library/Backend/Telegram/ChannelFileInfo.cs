@@ -66,22 +66,7 @@ namespace Duplicati.Library.Backend
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((ChannelFileInfo)obj);
+            return ReferenceEquals(this, obj) || obj is ChannelFileInfo other && Equals(other);
         }
 
         public override int GetHashCode()
