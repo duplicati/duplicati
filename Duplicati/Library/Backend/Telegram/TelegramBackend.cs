@@ -275,7 +275,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            // No need to use our method
+            // No need to use SafeExecute methods
             lock (m_lockObj)
             {
                 Authenticate();
