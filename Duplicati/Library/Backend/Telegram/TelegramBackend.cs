@@ -17,7 +17,7 @@ using TLRequestDeleteMessages = TeleSharp.TL.Channels.TLRequestDeleteMessages;
 
 namespace Duplicati.Library.Backend
 {
-    public class Telegram : IBackend
+    public class Telegram : IStreamingBackend, IBackend
     {
         private const int MEBIBYTE_IN_BYTES = 1048576;
 
@@ -120,37 +120,35 @@ namespace Duplicati.Library.Backend
                 nameof(List));
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            return SafeExecute(() =>
+            SafeExecute(() =>
                 {
                     var channel = GetChannel();
-                    using (var fs = File.OpenRead(filename))
+                    var fsReader = new StreamReader(stream);
+
+                    cancelToken.ThrowIfCancellationRequested();
+                    EnsureConnected(cancelToken);
+
+                    cancelToken.ThrowIfCancellationRequested();
+                    var file = m_telegramClient.UploadFile(remotename, fsReader, cancelToken).GetAwaiter().GetResult();
+
+                    cancelToken.ThrowIfCancellationRequested();
+                    var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
+                    var fileNameAttribute = new TLDocumentAttributeFilename
                     {
-                        var fsReader = new StreamReader(fs);
+                        FileName = remotename
+                    };
 
-                        cancelToken.ThrowIfCancellationRequested();
-                        EnsureConnected();
-                        var file = m_telegramClient.UploadFile(remotename, fsReader, cancelToken).GetAwaiter().GetResult();
-
-                        cancelToken.ThrowIfCancellationRequested();
-                        var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
-                        var fileNameAttribute = new TLDocumentAttributeFilename
-                        {
-                            FileName = remotename
-                        };
-
-                        EnsureConnected();
-                        m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
-                        fs.Close();
-                    }
-
-                    return Task.CompletedTask;
+                    EnsureConnected(cancelToken);
+                    m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
                 },
-                $"{nameof(PutAsync)}({remotename})");
+                nameof(PutAsync));
+
+            return Task.CompletedTask;
         }
 
-        public void Get(string remotename, string filename)
+        public void Get(string remotename, Stream stream)
         {
             SafeExecute(() =>
                 {
@@ -160,30 +158,44 @@ namespace Duplicati.Library.Backend
                     var limit = MEBIBYTE_IN_BYTES;
                     var currentOffset = 0;
 
-                    using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
+
+                    while (currentOffset < fileInfo.Size)
                     {
-                        while (currentOffset < fileInfo.Size)
+                        try
                         {
-                            try
+                            EnsureConnected();
+                            var file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).GetAwaiter().GetResult();
+                            stream.Write(file.Bytes, 0, file.Bytes.Length);
+                            currentOffset += file.Bytes.Length;
+                        }
+                        catch (InvalidOperationException e)
+                        {
+                            if (e.Message.Contains("Couldn't read the packet length") == false)
                             {
-                                EnsureConnected();
-                                var file = m_telegramClient.GetFile(fileLocation, limit, currentOffset).GetAwaiter().GetResult();
-                                fs.Write(file.Bytes, 0, file.Bytes.Length);
-                                currentOffset += file.Bytes.Length;
-                            }
-                            catch (InvalidOperationException e)
-                            {
-                                if (e.Message.Contains("Couldn't read the packet length") == false)
-                                {
-                                    throw;
-                                }
+                                throw;
                             }
                         }
-
-                        fs.Close();
                     }
                 },
-                $"{nameof(Get)}({remotename})");
+                $"{nameof(Get)}");
+        }
+
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        {
+            using (var fs = File.OpenRead(filename))
+            {
+                PutAsync(remotename, fs, cancelToken).GetAwaiter().GetResult();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public void Get(string remotename, string filename)
+        {
+            using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
+            {
+                Get(remotename, fs);
+            }
         }
 
         public void Delete(string remotename)
@@ -384,17 +396,19 @@ namespace Duplicati.Library.Backend
             m_telegramClient.Session.Save();
         }
 
-        private void EnsureConnected()
+        private void EnsureConnected(CancellationToken? cancelToken = null)
         {
             var isConnected = false;
 
             while (isConnected == false)
             {
+                cancelToken?.ThrowIfCancellationRequested();
+
                 try
                 {
                     isConnected = m_telegramClient.ConnectAsync().Wait(TimeSpan.FromSeconds(5));
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
                     isConnected = false;
@@ -417,6 +431,10 @@ namespace Duplicati.Library.Backend
                 {
                     action();
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch (UserInformationException uiExc)
                 {
                     Log.WriteWarningMessage(m_logTag, nameof(Strings.USER_INFO_EXC), uiExc, Strings.USER_INFO_EXC);
@@ -431,7 +449,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Exception e)
                 {
-                    Log.WriteErrorMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
+                    Log.WriteWarningMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
                     action();
                 }
             }
@@ -449,6 +467,10 @@ namespace Duplicati.Library.Backend
                     var res = func();
                     Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch (UserInformationException uiExc)
                 {
