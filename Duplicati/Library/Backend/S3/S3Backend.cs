@@ -51,6 +51,7 @@ namespace Duplicati.Library.Backend
             { "dinCloud - Chicago", "d3-ord.dincloud.com" },
             { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
             { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi Hot Storage", "s3.wasabisys.com" },
             { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
             { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
