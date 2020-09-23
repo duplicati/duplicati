@@ -281,7 +281,6 @@ namespace Duplicati.Library.Main.Operation
 
     /// <summary>
     /// Remove backups according to the --retention-policy option.
-    /// Backups that are not within any of the specified time frames will will NOT be deleted.
     /// Partial backups are not removed.
     /// </summary>
     public class RetentionPolicyRemover : FilesetRemover
