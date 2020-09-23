@@ -109,8 +109,9 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            return SafeExecute<IEnumerable<IFileEntry>>(() =>
+            return SafeExecute<IEnumerable<IFileEntry>>(tc =>
                 {
+                    m_telegramClient = tc;
                     Authenticate();
                     EnsureChannelCreated();
                     var fileInfos = ListChannelFileInfos();
@@ -122,26 +123,28 @@ namespace Duplicati.Library.Backend
 
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            SafeExecute(() =>
+            SafeExecute(tc =>
                 {
+                    m_telegramClient = tc;
                     var channel = GetChannel();
-                    var fsReader = new StreamReader(stream);
-
-                    cancelToken.ThrowIfCancellationRequested();
-                    EnsureConnected(cancelToken);
-
-                    cancelToken.ThrowIfCancellationRequested();
-                    var file = m_telegramClient.UploadFile(remotename, fsReader, cancelToken).GetAwaiter().GetResult();
-
-                    cancelToken.ThrowIfCancellationRequested();
-                    var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
-                    var fileNameAttribute = new TLDocumentAttributeFilename
+                    using (var fsReader = new StreamReader(stream))
                     {
-                        FileName = remotename
-                    };
+                        cancelToken.ThrowIfCancellationRequested();
+                        EnsureConnected(cancelToken);
 
-                    EnsureConnected(cancelToken);
-                    m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
+                        cancelToken.ThrowIfCancellationRequested();
+                        var file = m_telegramClient.UploadFile(remotename, fsReader, cancelToken).GetAwaiter().GetResult();
+
+                        cancelToken.ThrowIfCancellationRequested();
+                        var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
+                        var fileNameAttribute = new TLDocumentAttributeFilename
+                        {
+                            FileName = remotename
+                        };
+
+                        EnsureConnected(cancelToken);
+                        m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
+                    }
                 },
                 nameof(PutAsync));
 
@@ -150,8 +153,9 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, Stream stream)
         {
-            SafeExecute(() =>
+            SafeExecute(tc =>
                 {
+                    m_telegramClient = tc;
                     var fileInfo = ListChannelFileInfos().First(fi => fi.Name == remotename);
                     var fileLocation = fileInfo.ToFileLocation();
 
@@ -200,8 +204,9 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            SafeExecute(() =>
+            SafeExecute(tc =>
                 {
+                    m_telegramClient = tc;
                     var channel = GetChannel();
                     var fileInfo = ListChannelFileInfos().FirstOrDefault(fi => fi.Name == remotename);
                     if (fileInfo == null)
@@ -296,8 +301,10 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            SafeExecute(() =>
+            SafeExecute(tc =>
                 {
+                    m_telegramClient = tc;
+
                     Authenticate();
                     EnsureChannelCreated();
                 },
@@ -422,14 +429,14 @@ namespace Duplicati.Library.Backend
             return isAuthorized;
         }
 
-        private void SafeExecute(Action action, string actionName)
+        private void SafeExecute(Action<TelegramClient> action, string actionName)
         {
             lock (m_lockObj)
             {
                 Log.WriteInformationMessage(m_logTag, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
                 try
                 {
-                    action();
+                    action(m_telegramClient);
                 }
                 catch (OperationCanceledException)
                 {
@@ -450,21 +457,21 @@ namespace Duplicati.Library.Backend
                 catch (Exception e)
                 {
                     Log.WriteWarningMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
-                    action();
+                    action(m_telegramClient);
                 }
             }
 
             Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
         }
 
-        private T SafeExecute<T>(Func<T> func, string actionName)
+        private T SafeExecute<T>(Func<TelegramClient, T> func, string actionName)
         {
             lock (m_lockObj)
             {
                 Log.WriteInformationMessage(m_logTag, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
                 try
                 {
-                    var res = func();
+                    var res = func(m_telegramClient);
                     Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
                 }
@@ -489,7 +496,7 @@ namespace Duplicati.Library.Backend
                 catch (Exception e)
                 {
                     Log.WriteErrorMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
-                    return func();
+                    return func(m_telegramClient);
                 }
             }
         }
