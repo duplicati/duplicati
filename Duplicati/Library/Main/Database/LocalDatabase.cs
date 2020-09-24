@@ -1360,6 +1360,18 @@ ORDER BY
             }
         }
 
+        public virtual void Analyze()
+        {
+            using (var tr = m_connection.BeginTransaction())
+            using (var cmd = m_connection.CreateCommand(tr))
+            {
+                // See https://www.sqlite.org/lang_analyze.html for details
+                // Allows Analyze on demand before potentially expensive queries.
+                cmd.ExecuteNonQuery(@"ANALYZE");
+                tr.Commit();
+            }
+        }
+
         public virtual void Dispose()
         {
             if (IsDisposed)

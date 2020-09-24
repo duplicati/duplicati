@@ -288,6 +288,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.UpdateChangeJournalData(journalData, lastfilesetid, m_transaction));
         }
 
+        public Task AnalyzeAsync()
+        {
+            return RunOnMain(() => m_database.Analyze());
+        }
+
     }
 }
 

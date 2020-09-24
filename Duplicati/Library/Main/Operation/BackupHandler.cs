@@ -442,6 +442,8 @@ namespace Duplicati.Library.Main.Operation
                         {
                             try
                             {
+
+
                                 // Make sure the database is sane
                                 await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
 
@@ -520,6 +522,15 @@ namespace Duplicati.Library.Main.Operation
 
                         // Add the fileset file to the dlist file
                         filesetvolume.CreateFilesetFile(!token.IsCancellationRequested);
+
+                        var versionCount = (await db.GetFilesetTimesAsync()).Count();
+                        if (versionCount == 1)
+                        {
+                            // If this is the first version then analyze before
+                            // verification in order to optimize subseuent queries.
+                            using (new Logging.Timer(LOGTAG, "Analyze", "Analyze"))
+                                await db.AnalyzeAsync();
+                        }
 
                         // Ensure the database is in a sane state after adding data
                         using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
