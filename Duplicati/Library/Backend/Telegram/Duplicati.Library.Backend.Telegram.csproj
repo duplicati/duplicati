@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="ChannelFileInfo.cs" />
     <Compile Include="InMemorySessionStore.cs" />
+    <Compile Include="StreamReadHelper.cs" />
     <Compile Include="TelegramBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strings.cs" />

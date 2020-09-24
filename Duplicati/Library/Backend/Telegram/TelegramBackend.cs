@@ -109,9 +109,8 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            return SafeExecute<IEnumerable<IFileEntry>>(tc =>
+            return SafeExecute<IEnumerable<IFileEntry>>(() =>
                 {
-                    m_telegramClient = tc;
                     Authenticate();
                     EnsureChannelCreated();
                     var fileInfos = ListChannelFileInfos();
@@ -123,17 +122,18 @@ namespace Duplicati.Library.Backend
 
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            SafeExecute(tc =>
+            SafeExecute(() =>
                 {
-                    m_telegramClient = tc;
+                    cancelToken.ThrowIfCancellationRequested();
                     var channel = GetChannel();
-                    using (var fsReader = new StreamReader(stream))
+
+                    using (var sr = new StreamReader(new StreamReadHelper(stream)))
                     {
                         cancelToken.ThrowIfCancellationRequested();
                         EnsureConnected(cancelToken);
 
                         cancelToken.ThrowIfCancellationRequested();
-                        var file = m_telegramClient.UploadFile(remotename, fsReader, cancelToken).GetAwaiter().GetResult();
+                        var file = m_telegramClient.UploadFile(remotename, sr, cancelToken).GetAwaiter().GetResult();
 
                         cancelToken.ThrowIfCancellationRequested();
                         var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
@@ -153,9 +153,8 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, Stream stream)
         {
-            SafeExecute(tc =>
+            SafeExecute(() =>
                 {
-                    m_telegramClient = tc;
                     var fileInfo = ListChannelFileInfos().First(fi => fi.Name == remotename);
                     var fileLocation = fileInfo.ToFileLocation();
 
@@ -204,9 +203,8 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            SafeExecute(tc =>
+            SafeExecute(() =>
                 {
-                    m_telegramClient = tc;
                     var channel = GetChannel();
                     var fileInfo = ListChannelFileInfos().FirstOrDefault(fi => fi.Name == remotename);
                     if (fileInfo == null)
@@ -301,10 +299,8 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            SafeExecute(tc =>
+            SafeExecute(() =>
                 {
-                    m_telegramClient = tc;
-
                     Authenticate();
                     EnsureChannelCreated();
                 },
@@ -429,14 +425,14 @@ namespace Duplicati.Library.Backend
             return isAuthorized;
         }
 
-        private void SafeExecute(Action<TelegramClient> action, string actionName)
+        private static void SafeExecute(Action action, string actionName)
         {
             lock (m_lockObj)
             {
                 Log.WriteInformationMessage(m_logTag, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
                 try
                 {
-                    action(m_telegramClient);
+                    action();
                 }
                 catch (OperationCanceledException)
                 {
@@ -449,7 +445,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (FloodException floodExc)
                 {
-                    var randSeconds = new Random().Next(0, 15);
+                    var randSeconds = new Random().Next(2, 15);
                     Log.WriteInformationMessage(m_logTag, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
                     SafeExecute(action, actionName);
@@ -457,21 +453,21 @@ namespace Duplicati.Library.Backend
                 catch (Exception e)
                 {
                     Log.WriteWarningMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
-                    action(m_telegramClient);
+                    action();
                 }
             }
 
             Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
         }
 
-        private T SafeExecute<T>(Func<TelegramClient, T> func, string actionName)
+        private static T SafeExecute<T>(Func<T> func, string actionName)
         {
             lock (m_lockObj)
             {
                 Log.WriteInformationMessage(m_logTag, nameof(Strings.STARTING_EXECUTING), Strings.STARTING_EXECUTING, actionName);
                 try
                 {
-                    var res = func(m_telegramClient);
+                    var res = func();
                     Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
                 }
@@ -486,7 +482,7 @@ namespace Duplicati.Library.Backend
                 }
                 catch (FloodException floodExc)
                 {
-                    var randSeconds = new Random().Next(0, 15);
+                    var randSeconds = new Random().Next(2, 15);
                     Log.WriteInformationMessage(m_logTag, nameof(Strings.TELEGRAM_FLOOD), Strings.TELEGRAM_FLOOD, floodExc.TimeToWait.TotalSeconds + randSeconds);
                     Thread.Sleep(floodExc.TimeToWait);
                     var res = SafeExecute(func, actionName);
@@ -496,7 +492,7 @@ namespace Duplicati.Library.Backend
                 catch (Exception e)
                 {
                     Log.WriteErrorMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
-                    return func(m_telegramClient);
+                    return func();
                 }
             }
         }
