@@ -9,7 +9,7 @@
         /// Once the stream has returned 0 as the read count it is disposed,
         /// and subsequent read requests will throw an ObjectDisposedException
         /// </summary>
-        private bool m_empty = false;
+        private bool m_empty;
 
         /// <summary>
         /// Basic initialization, just pass the stream to the super class

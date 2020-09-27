@@ -343,8 +343,7 @@ namespace Duplicati.Library.Backend
                         case TLChannel c:
                             lastDate = c.Date;
                             break;
-                        default:
-                            break;                    }
+                    }
 
                     yield return chat;
                 }
