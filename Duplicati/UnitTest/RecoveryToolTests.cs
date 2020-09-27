@@ -90,17 +90,7 @@ namespace Duplicati.UnitTest
             // last folder in the path.
             string baseFolder = Path.GetFileName(this.DATAFOLDER);
 
-            foreach (string filepath in Directory.EnumerateFiles(this.DATAFOLDER))
-            {
-                string filename = Path.GetFileName(filepath);
-                TestUtils.AssertFilesAreEqual(filepath, Path.Combine(restoreFolder, baseFolder, filename ?? String.Empty), false, filename);
-            }
-
-            foreach (string filepath in Directory.EnumerateFiles(subdirectoryPath))
-            {
-                string filename = Path.GetFileName(filepath);
-                TestUtils.AssertFilesAreEqual(filepath, Path.Combine(restoreFolder, baseFolder, subdirectoryName, filename ?? String.Empty), false, filename);
-            }
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, Path.Combine(restoreFolder, baseFolder), false, "Verifying restore using RecoveryTool.");
         }
     }
 }
