@@ -83,6 +83,11 @@ namespace Duplicati.Library.Backend.Sia
 
         private string getResponseBodyOnError(string context, System.Net.WebException wex)
         {
+            if (wex.Response is null)
+            {
+                return $"{context} failed with error: {wex.Message}";
+            }
+
             string body = "";
             System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)wex.Response;
             using (System.IO.Stream data = response.GetResponseStream())
