@@ -140,6 +140,9 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(directories.Count, backupResults.ExaminedFiles);
             }
 
+            // Block for a small amount of time to avoid clock issues when quickly running successive backups.
+            System.Threading.Thread.Sleep(1000);
+
             // Backup with verbatim asterisk in include filter should include
             // one directory in Linux and zero directories in Windows.
             filter = new FilterExpression("@" + SystemIO.IO_OS.PathCombine(dirWithAsterisk, file));
