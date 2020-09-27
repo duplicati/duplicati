@@ -39,13 +39,11 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="TeleSharp.TL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\..\packages\TLSharp.0.1.0.573\lib\net46\TeleSharp.TL.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="TeleSharp.TL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\TLSharp.0.1.0.574\lib\net46\TeleSharp.TL.dll</HintPath>
     </Reference>
-    <Reference Include="TLSharp.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\..\packages\TLSharp.0.1.0.573\lib\net46\TLSharp.Core.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="TLSharp.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\TLSharp.0.1.0.574\lib\net46\TLSharp.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

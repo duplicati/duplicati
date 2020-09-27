@@ -136,14 +136,14 @@ namespace Duplicati.Library.Backend
                         var file = m_telegramClient.UploadFile(remotename, sr, cancelToken).GetAwaiter().GetResult();
 
                         cancelToken.ThrowIfCancellationRequested();
-                        var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
+                        var inputPeerChannel = new TLInputPeerChannel { ChannelId = channel.Id, AccessHash = (long)channel.AccessHash };
                         var fileNameAttribute = new TLDocumentAttributeFilename
                         {
                             FileName = remotename
                         };
 
                         EnsureConnected(cancelToken);
-                        m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
+                        m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> { fileNameAttribute }, cancelToken).GetAwaiter().GetResult();
                     }
                 },
                 nameof(PutAsync));
@@ -219,7 +219,7 @@ namespace Duplicati.Library.Backend
                             ChannelId = channel.Id,
                             AccessHash = channel.AccessHash.Value
                         },
-                        Id = new TLVector<int> {fileInfo.MessageId}
+                        Id = new TLVector<int> { fileInfo.MessageId }
                     };
 
                     EnsureConnected();
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Backend
         {
             var channel = GetChannel();
 
-            var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
+            var inputPeerChannel = new TLInputPeerChannel { ChannelId = channel.Id, AccessHash = channel.AccessHash.Value };
             var result = new List<ChannelFileInfo>();
             var cMinId = (int?)0;
 
@@ -314,24 +314,47 @@ namespace Duplicati.Library.Backend
                 return m_channelCache;
             }
 
-            EnsureConnected();
-            var absDialogs = m_telegramClient.GetUserDialogsAsync().GetAwaiter().GetResult();
-            var userDialogs = absDialogs as TLDialogs;
-            var userDialogsSlice = absDialogs as TLDialogsSlice;
-            TLVector<TLAbsChat> absChats;
-
-            if (userDialogs != null)
-            {
-                absChats = userDialogs.Chats;
-            }
-            else
-            {
-                absChats = userDialogsSlice.Chats;
-            }
+            var absChats = GetChats();
 
             var channel = (TLChannel)absChats.FirstOrDefault(chat => chat is TLChannel tlChannel && tlChannel.Title == m_channelName);
             m_channelCache = channel;
             return channel;
+        }
+
+        private IEnumerable<TLAbsChat> GetChats()
+        {
+            var lastDate = 0;
+            while (true)
+            {
+                var dialogs = m_telegramClient.GetUserDialogsAsync(lastDate).GetAwaiter().GetResult();
+                var tlDialogs = dialogs as TLDialogs;
+                var tlDialogsSlice = dialogs as TLDialogsSlice;
+
+                foreach (var chat in tlDialogs?.Chats ?? tlDialogsSlice?.Chats)
+                {
+                    switch (chat)
+                    {
+                        case TLChannelForbidden _:
+                        case TLChatForbidden _:
+                            break;
+                        case TLChat c:
+                            lastDate = c.Date;
+                            break;
+                        case TLChannel c:
+                            lastDate = c.Date;
+                            break;
+                        default:
+                            break;                    }
+
+                    yield return chat;
+                }
+
+                if (tlDialogs?.Dialogs?.Count < 100 ||
+                    tlDialogsSlice?.Dialogs?.Count < 100)
+                {
+                    yield break;
+                }
+            }
         }
 
         private void EnsureChannelCreated()
