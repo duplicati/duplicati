@@ -326,6 +326,7 @@ namespace Duplicati.Library.Backend
             var lastDate = 0;
             while (true)
             {
+                EnsureConnected();
                 var dialogs = m_telegramClient.GetUserDialogsAsync(lastDate).GetAwaiter().GetResult();
                 var tlDialogs = dialogs as TLDialogs;
                 var tlDialogsSlice = dialogs as TLDialogsSlice;
