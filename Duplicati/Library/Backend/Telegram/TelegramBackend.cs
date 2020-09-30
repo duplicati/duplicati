@@ -105,7 +105,7 @@ namespace Duplicati.Library.Backend
         }
 
         public string DisplayName { get; } = Strings.DisplayName;
-        public string ProtocolKey { get; } = "https";
+        public string ProtocolKey { get; } = "telegram";
 
         public IEnumerable<IFileEntry> List()
         {

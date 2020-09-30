@@ -30,6 +30,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
+    EditUriBackendConfig.templates['telegram']  = 'templates/backends/telegram.html';
     EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
 
@@ -753,6 +754,26 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
         var url = AppUtils.format('{0}://tardigrade.io/config{1}',
+            scope.Backend.Key,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
+
+    EditUriBackendConfig.builders['telegram'] = function (scope) {
+        var opts = {
+            'api-id': scope.api_id,
+            'api-hash': scope.api_hash,
+            'auth-code': scope.auth_code,
+            'channel-name': scope.channel_name,
+            'phone-number': scope.phone_number,
+            'auth-password': scope.auth_password,
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://t.me/{1}',
             scope.Backend.Key,
             AppUtils.encodeDictAsUrl(opts)
         );
