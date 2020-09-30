@@ -343,6 +343,9 @@ namespace Duplicati.Library.Backend
                         case TLChannel c:
                             lastDate = c.Date;
                             break;
+
+                        default:
+                            throw new NotSupportedException($"Unsupported chat type {chat.GetType()}");
                     }
 
                     yield return chat;
