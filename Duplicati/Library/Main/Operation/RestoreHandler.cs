@@ -415,11 +415,21 @@ namespace Duplicati.Library.Main.Operation
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0))
                 {
-                    SystemIO.IO_OS.DirectoryCreate(SystemIO.IO_OS.PathGetDirectoryName(file.Path));
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "RestoreFile", "restoring empty file \"{0}\"", file.Path);
 
-                    // Just create the file and close it right away, empty statement is intentional.
-                    using (SystemIO.IO_OS.FileCreate(file.Path))
+                    try
                     {
+                        SystemIO.IO_OS.DirectoryCreate(SystemIO.IO_OS.PathGetDirectoryName(file.Path));
+                        // Just create the file and close it right away, empty statement is intentional.
+                        using (SystemIO.IO_OS.FileCreate(file.Path))
+                        {
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\", message: {1}", file.Path, ex.Message);
+                        if (ex is System.Threading.ThreadAbortException)
+                            throw;
                     }
                 }
 
@@ -472,7 +482,7 @@ namespace Duplicati.Library.Main.Operation
                             catch (Exception ex)
                             {
                                 fileErrors++;
-                                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, ex.Message);
+                                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
                                 if (ex is System.Threading.ThreadAbortException)
                                     throw;
                             }
