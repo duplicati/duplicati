@@ -42,8 +42,10 @@
     <Reference Include="System" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SymLinkTests.cs" />
     <Compile Include="ControllerTests.cs" />
     <Compile Include="DeleteHandlerTests.cs" />
     <Compile Include="DisruptionTests.cs" />

@@ -421,11 +421,7 @@ namespace Duplicati.UnitTest
                             throw new Exception("Unittest is broken");
                         }
 
-                        if (!TestUtils.CompareFiles(sourcename, restoredname, s, verifymetadata))
-                        {
-                            Log.WriteErrorMessage(LOGTAG, "PartialRestoreWrongFile", null, "Partial restore file differs: {0}", s);
-                            BasicSetupHelper.ProgressWriteLine("Partial restore file differs: " + s);
-                        }
+                        TestUtils.AssertFilesAreEqual(sourcename, restoredname, verifymetadata, $"Partial restore file differs: {s}");
                     }
                 }
         }
@@ -435,7 +431,7 @@ namespace Duplicati.UnitTest
             using (new Timer(LOGTAG, "SourceVerification", "Verification of " + source))
             {
                 for (int j = 0; j < actualfolders.Length; j++)
-                    TestUtils.VerifyDir(actualfolders[j], restorefoldernames[j], verifymetadata);
+                    TestUtils.AssertDirectoryTreesAreEquivalent(actualfolders[j], restorefoldernames[j], verifymetadata, "VerifyFullRestore");
             }
         }
 

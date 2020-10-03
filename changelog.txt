@@ -1,3 +1,17 @@
+2020-09-26 - 2.0.5.111_canary_2020-09-26
+==========
+* Support for Windows paths starting with "\\?\", thanks @dferreyra
+* Improved performance of USN, thanks @dgehri
+* Improved performance for restoring, thanks @pcmind
+* Added support for filters with literals that would normally be treated as wildcards, thanks @dferreyra
+* Improved build and tests, thanks @warwickmm and @dferreyra
+* Switched to the new built-in .Net support for long paths, thanks @dferreyra
+* Fixed issues with the Docker images by including mono-complete, thanks @warwickmm
+* Fixed an issue with exporting passwords with url-encoding characters, thanks @warwickmm
+* Fixed an issue with displaying icons in the restore tree, thanks @warwickmm
+* Fixed a type that prevented a warning box from showing, thanks @warwickmm
+* Added Storadera as an S3 destination, thanks @warwickmm
+
 2020-08-10 - 2.0.5.110_canary_2020-08-10
 ==========
 * Fixed an issue with snapshot paths, thanks @dferreyra
