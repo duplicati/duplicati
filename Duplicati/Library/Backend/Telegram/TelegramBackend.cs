@@ -19,12 +19,10 @@ namespace Duplicati.Library.Backend
 {
     public class Telegram : IStreamingBackend, IBackend
     {
-        private const int MEBIBYTE_IN_BYTES = 1048576;
+        private TelegramClient m_telegramClient;
+        private readonly EncryptedFileSessionStore m_encSessionStore;
 
-        private static readonly InMemorySessionStore m_sessionStore = new InMemorySessionStore();
-        private static readonly string m_logTag = Log.LogTagFromType(typeof(Telegram));
         private static readonly object m_lockObj = new object();
-        private static TelegramClient m_telegramClient;
 
         private readonly int m_apiId;
         private readonly string m_apiHash;
@@ -33,6 +31,10 @@ namespace Duplicati.Library.Backend
         private readonly string m_channelName;
         private readonly string m_phoneNumber;
         private TLChannel m_channelCache;
+
+        private static string m_phoneCodeHash;
+        private static readonly string m_logTag = Log.LogTagFromType(typeof(Telegram));
+        private const int BYTES_IN_MEBIBYTE = 1048576;
 
         public Telegram()
         { }
@@ -89,19 +91,20 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.NoChannelNameError, nameof(Strings.NoChannelNameError));
             }
 
+            m_encSessionStore = new EncryptedFileSessionStore($"{m_apiHash}_{m_apiId}");
             InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
         }
 
-        private static void InitializeTelegramClient(int apiId, string apiHash, string phoneNumber)
+        private void InitializeTelegramClient(int apiId, string apiHash, string phoneNumber)
         {
             var tmpTelegramClient = m_telegramClient;
-            m_telegramClient = new TelegramClient(apiId, apiHash, m_sessionStore, phoneNumber);
+            m_telegramClient = new TelegramClient(apiId, apiHash, m_encSessionStore, phoneNumber);
             tmpTelegramClient?.Dispose();
         }
 
         public void Dispose()
         {
-            // Do not dispose m_telegramClient because of "session-based" authentication.
+            m_telegramClient?.Dispose();
         }
 
         public string DisplayName { get; } = Strings.DisplayName;
@@ -136,14 +139,14 @@ namespace Duplicati.Library.Backend
                         var file = m_telegramClient.UploadFile(remotename, sr, cancelToken).GetAwaiter().GetResult();
 
                         cancelToken.ThrowIfCancellationRequested();
-                        var inputPeerChannel = new TLInputPeerChannel { ChannelId = channel.Id, AccessHash = (long)channel.AccessHash };
+                        var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
                         var fileNameAttribute = new TLDocumentAttributeFilename
                         {
                             FileName = remotename
                         };
 
                         EnsureConnected(cancelToken);
-                        m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> { fileNameAttribute }, cancelToken).GetAwaiter().GetResult();
+                        m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> {fileNameAttribute}, cancelToken).GetAwaiter().GetResult();
                     }
                 },
                 nameof(PutAsync));
@@ -158,7 +161,7 @@ namespace Duplicati.Library.Backend
                     var fileInfo = ListChannelFileInfos().First(fi => fi.Name == remotename);
                     var fileLocation = fileInfo.ToFileLocation();
 
-                    var limit = MEBIBYTE_IN_BYTES;
+                    var limit = BYTES_IN_MEBIBYTE;
                     var currentOffset = 0;
 
 
@@ -219,7 +222,7 @@ namespace Duplicati.Library.Backend
                             ChannelId = channel.Id,
                             AccessHash = channel.AccessHash.Value
                         },
-                        Id = new TLVector<int> { fileInfo.MessageId }
+                        Id = new TLVector<int> {fileInfo.MessageId}
                     };
 
                     EnsureConnected();
@@ -232,7 +235,7 @@ namespace Duplicati.Library.Backend
         {
             var channel = GetChannel();
 
-            var inputPeerChannel = new TLInputPeerChannel { ChannelId = channel.Id, AccessHash = channel.AccessHash.Value };
+            var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
             var result = new List<ChannelFileInfo>();
             var cMinId = (int?)0;
 
@@ -352,8 +355,7 @@ namespace Duplicati.Library.Backend
                     yield return chat;
                 }
 
-                if (tlDialogs?.Dialogs?.Count < 100 ||
-                    tlDialogsSlice?.Dialogs?.Count < 100)
+                if (tlDialogs?.Dialogs?.Count < 100 || tlDialogsSlice?.Dialogs?.Count < 100)
                 {
                     yield break;
                 }
@@ -389,25 +391,21 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                var phoneCodeHash = m_sessionStore.GetPhoneHash(m_phoneNumber);
-                if (phoneCodeHash == null)
+                if (m_phoneCodeHash == null)
                 {
                     EnsureConnected();
-                    phoneCodeHash = m_telegramClient.SendCodeRequestAsync(m_phoneNumber).GetAwaiter().GetResult();
-                    m_sessionStore.SetPhoneHash(m_phoneNumber, phoneCodeHash);
+                    m_phoneCodeHash = m_telegramClient.SendCodeRequestAsync(m_phoneNumber).GetAwaiter().GetResult();
                     m_telegramClient.Session.Save();
 
                     if (string.IsNullOrEmpty(m_authCode))
                     {
                         throw new UserInformationException(Strings.NoAuthCodeError, nameof(Strings.NoAuthCodeError));
                     }
-                    else
-                    {
-                        throw new UserInformationException(Strings.WrongAuthCodeError, nameof(Strings.WrongAuthCodeError));
-                    }
+
+                    throw new UserInformationException(Strings.WrongAuthCodeError, nameof(Strings.WrongAuthCodeError));
                 }
 
-                m_telegramClient.MakeAuthAsync(m_phoneNumber, phoneCodeHash, m_authCode).GetAwaiter().GetResult();
+                m_telegramClient.MakeAuthAsync(m_phoneNumber, m_phoneCodeHash, m_authCode).GetAwaiter().GetResult();
             }
             catch (CloudPasswordNeededException)
             {
@@ -425,17 +423,28 @@ namespace Duplicati.Library.Backend
             m_telegramClient.Session.Save();
         }
 
+
         private void EnsureConnected(CancellationToken? cancelToken = null)
         {
             var isConnected = false;
-
             while (isConnected == false)
             {
                 cancelToken?.ThrowIfCancellationRequested();
+                var innerCancelTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var innerCancelToken = innerCancelTokenSource.Token;
 
                 try
                 {
-                    isConnected = m_telegramClient.ConnectAsync().Wait(TimeSpan.FromSeconds(5));
+                    var connectTask = m_telegramClient.ConnectAsync(false, innerCancelToken);
+                    connectTask.Wait(cancelToken ?? default);
+                    isConnected = true;
+                }
+                catch (OperationCanceledException canceledException)
+                {
+                    if (canceledException.CancellationToken != innerCancelToken)
+                    {
+                        throw;
+                    }
                 }
                 catch (Exception)
                 {

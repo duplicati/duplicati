@@ -50,7 +50,7 @@ namespace Duplicati.Library.Backend
         public static string ChannelName => LC.L("The channel name of the backup");
 
         #endregion
-        
+
         #region Formats
 
         public const string TELEGRAM_FLOOD = "It's required to wait {0} seconds before continuing";
