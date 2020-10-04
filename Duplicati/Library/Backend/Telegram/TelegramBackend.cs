@@ -436,7 +436,7 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     var connectTask = m_telegramClient.ConnectAsync(false, innerCancelToken);
-                    connectTask.Wait(cancelToken ?? default);
+                    connectTask.Wait(cancelToken ?? default(CancellationToken));
                     isConnected = true;
                 }
                 catch (OperationCanceledException canceledException)
