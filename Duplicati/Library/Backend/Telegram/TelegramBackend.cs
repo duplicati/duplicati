@@ -394,7 +394,8 @@ namespace Duplicati.Library.Backend
                 if (m_phoneCodeHash == null)
                 {
                     EnsureConnected();
-                    m_phoneCodeHash = m_telegramClient.SendCodeRequestAsync(m_phoneNumber).GetAwaiter().GetResult();
+                    var phoneCodeHash = m_telegramClient.SendCodeRequestAsync(m_phoneNumber).GetAwaiter().GetResult();
+                    SetPhoneCodeHash(phoneCodeHash);
                     m_telegramClient.Session.Save();
 
                     if (string.IsNullOrEmpty(m_authCode))
@@ -458,6 +459,11 @@ namespace Duplicati.Library.Backend
         {
             var isAuthorized = m_telegramClient.IsUserAuthorized();
             return isAuthorized;
+        }
+
+        private static void SetPhoneCodeHash(string phoneCodeHash)
+        {
+            m_phoneCodeHash = phoneCodeHash;
         }
 
         private static void SafeExecute(Action action, string actionName)
