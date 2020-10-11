@@ -209,7 +209,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                         var message = ((prev || '').trim().length == 0) ? 
                             (gettextCatalog.getString('No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n\nDo you want to approve the reported host key?', { key: key }))
                             : 
-                            (gettextCatalog.getString('The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n\nDo you want to REPLACE your CURRENT host key "{{prev}}" with the REPORTED host key: {{key}}?', { prev: pref, key: key }));
+                            (gettextCatalog.getString('The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n\nDo you want to REPLACE your CURRENT host key "{{prev}}" with the REPORTED host key: {{key}}?', { prev: prev, key: key }));
 
                         DialogService.dialog(gettextCatalog.getString('Trust host certificate?'), message, [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                             if (ix == 1) {
