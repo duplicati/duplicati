@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Backend.Extensions;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using TeleSharp.TL;
@@ -11,6 +13,7 @@ using TeleSharp.TL.Channels;
 using TeleSharp.TL.Messages;
 using TLSharp.Core;
 using TLSharp.Core.Exceptions;
+using TLSharp.Core.Network;
 using TLSharp.Core.Network.Exceptions;
 using TLSharp.Core.Utils;
 using TLRequestDeleteMessages = TeleSharp.TL.Channels.TLRequestDeleteMessages;
@@ -92,14 +95,14 @@ namespace Duplicati.Library.Backend
             }
 
             m_encSessionStore = new EncryptedFileSessionStore($"{m_apiHash}_{m_apiId}");
-            InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
+            InitializeTelegramClient();
         }
 
-        private void InitializeTelegramClient(int apiId, string apiHash, string phoneNumber)
+        private void InitializeTelegramClient()
         {
-            var tmpTelegramClient = m_telegramClient;
-            m_telegramClient = new TelegramClient(apiId, apiHash, m_encSessionStore, phoneNumber);
-            tmpTelegramClient?.Dispose();
+            m_telegramClient?.Session?.Save();
+            m_telegramClient?.Dispose();
+            m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_encSessionStore, m_phoneNumber);
         }
 
         public void Dispose()
@@ -114,11 +117,19 @@ namespace Duplicati.Library.Backend
         {
             return SafeExecute<IEnumerable<IFileEntry>>(() =>
                 {
-                    Authenticate();
-                    EnsureChannelCreated();
-                    var fileInfos = ListChannelFileInfos();
-                    var result = fileInfos.Select(fi => fi.ToFileEntry());
-                    return result;
+                    try
+                    {
+                        Authenticate();
+                        EnsureChannelCreated();
+                        var fileInfos = ListChannelFileInfos();
+                        var result = fileInfos.Select(fi => fi.ToFileEntry());
+                        return result;
+                    }
+                    catch (Exception nrf)
+                    {
+                        Console.WriteLine(nrf);
+                        throw;
+                    }
                 },
                 nameof(List));
         }
@@ -330,7 +341,14 @@ namespace Duplicati.Library.Backend
             while (true)
             {
                 EnsureConnected();
-                var dialogs = m_telegramClient.GetUserDialogsAsync(lastDate).GetAwaiter().GetResult();
+                var dialogsTask = m_telegramClient.GetUserDialogsAsync(lastDate);
+                var areDialogsRetrieved = dialogsTask.Wait(TimeSpan.FromSeconds(5));
+                if (areDialogsRetrieved == false)
+                {
+                    throw new TimeoutException("Couldn't get dialogs in specified time");
+                }
+
+                var dialogs = dialogsTask.Result;
                 var tlDialogs = dialogs as TLDialogs;
                 var tlDialogsSlice = dialogs as TLDialogsSlice;
 
@@ -427,32 +445,22 @@ namespace Duplicati.Library.Backend
 
         private void EnsureConnected(CancellationToken? cancelToken = null)
         {
-            var isConnected = false;
-            while (isConnected == false)
+            if (m_telegramClient.IsReallyConnected())
             {
-                cancelToken?.ThrowIfCancellationRequested();
-                var innerCancelTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                var innerCancelToken = innerCancelTokenSource.Token;
-
-                try
-                {
-                    var connectTask = m_telegramClient.ConnectAsync(false, innerCancelToken);
-                    connectTask.Wait(cancelToken ?? default(CancellationToken));
-                    isConnected = true;
-                }
-                catch (OperationCanceledException canceledException)
-                {
-                    if (canceledException.CancellationToken != innerCancelToken)
-                    {
-                        throw;
-                    }
-                }
-                catch (Exception)
-                {
-                    InitializeTelegramClient(m_apiId, m_apiHash, m_phoneNumber);
-                    isConnected = false;
-                }
+                ForcePing();
+                return;
             }
+
+            var cts = new CancellationTokenSource();
+            var connectTask = m_telegramClient.ConnectAsync(false, cts.Token);
+
+            do
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(3));
+            } while (m_telegramClient.IsReallyConnected() == false && connectTask.GetAwaiter().IsCompleted == false);
+
+            cts.Cancel();
+            ForcePing();
         }
 
         private bool IsAuthenticated()
@@ -466,7 +474,42 @@ namespace Duplicati.Library.Backend
             m_phoneCodeHash = phoneCodeHash;
         }
 
-        private static void SafeExecute(Action action, string actionName)
+        public void ForcePing()
+        {
+            var senderFieldInfo = typeof(TelegramClient).GetField("sender", BindingFlags.NonPublic | BindingFlags.Instance);
+            var sender = (MtProtoSender)senderFieldInfo.GetValue(m_telegramClient);
+
+            if (sender == null)
+            {
+                return;
+            }
+
+            var pinged = false;
+            var iteration = 0;
+            while (pinged == false)
+            {
+                try
+                {
+                    iteration++;
+                    Console.WriteLine("Starting ping");
+                    pinged = sender.SendPingAsync().Wait(TimeSpan.FromSeconds(5));
+                    Console.WriteLine($"Done ping with result {pinged}");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("{1} TRY Exception thrown, {0}", e, iteration);
+                }
+
+                if (iteration > 5)
+                {
+                    InitializeTelegramClient();
+                    Console.WriteLine("Init done, retrying connection");
+                    EnsureConnected();
+                }
+            }
+        }
+
+        private void SafeExecute(Action action, string actionName)
         {
             lock (m_lockObj)
             {
@@ -474,10 +517,6 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     action();
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
                 }
                 catch (UserInformationException uiExc)
                 {
@@ -491,17 +530,12 @@ namespace Duplicati.Library.Backend
                     Thread.Sleep(floodExc.TimeToWait + TimeSpan.FromSeconds(randSeconds));
                     SafeExecute(action, actionName);
                 }
-                catch (Exception e)
-                {
-                    Log.WriteWarningMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
-                    action();
-                }
             }
 
             Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
         }
 
-        private static T SafeExecute<T>(Func<T> func, string actionName)
+        private T SafeExecute<T>(Func<T> func, string actionName)
         {
             lock (m_lockObj)
             {
@@ -511,10 +545,6 @@ namespace Duplicati.Library.Backend
                     var res = func();
                     Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
                 }
                 catch (UserInformationException uiExc)
                 {
@@ -529,11 +559,6 @@ namespace Duplicati.Library.Backend
                     var res = SafeExecute(func, actionName);
                     Log.WriteInformationMessage(m_logTag, nameof(Strings.DONE_EXECUTING), Strings.DONE_EXECUTING, actionName);
                     return res;
-                }
-                catch (Exception e)
-                {
-                    Log.WriteErrorMessage(m_logTag, nameof(Strings.EXCEPTION_RETRY), e, Strings.EXCEPTION_RETRY);
-                    return func();
                 }
             }
         }

@@ -35,6 +35,11 @@ namespace Duplicati.Library.Backend
 
         public void Save(Session session)
         {
+            if (session.AuthKey == null)
+            {
+                return;
+            }
+            
             var sessionId = session.SessionUserId;
             var filePath = GetSessionFilePath(sessionId);
             var sessionBytes = session.ToBytes();
