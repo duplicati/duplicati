@@ -93,11 +93,14 @@
 .jpg #JPEG Image
 .pamp #PowerAmp Image Cache
 .pdn #Paint.NET Image
+.pld # Photoline Image
+.plb # Photoline Image Cache
 .png #Portable Network Graphic
 .pspimage #PaintShopPro Image
 .tif #TIFF image
 .dng #Adobe Digital Negative
 .cr2 #Canon RAW Image Format (already compressed despite being "RAW")
+.rw2 # Panasonic RAW Image
 .webp #WebP Image
 .nef #Nikon RAW format
 .arw #Sony RAW format
