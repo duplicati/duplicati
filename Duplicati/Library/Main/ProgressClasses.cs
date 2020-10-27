@@ -313,6 +313,8 @@ namespace Duplicati.Library.Main
         /// Occurs when the phase has changed
         /// </summary>
         event PhaseChangedDelegate PhaseChanged;
+
+        OperationPhase CurrentPhase { get; }
     }
     
     /// <summary>
@@ -334,9 +336,10 @@ namespace Duplicati.Library.Main
     
     internal class OperationProgressUpdater : IOperationProgressUpdaterAndReporter
     {
+        public OperationPhase CurrentPhase { get; private set; }
+
         private readonly object m_lock = new object();
         
-        private OperationPhase m_phase;
         private float m_progress;
         private string m_curfilename;
         private long m_curfilesize;
@@ -357,8 +360,8 @@ namespace Duplicati.Library.Main
             OperationPhase prev_phase;
             lock(m_lock)
             {
-                prev_phase = m_phase;
-                m_phase = phase;
+                prev_phase = CurrentPhase;
+                CurrentPhase = phase;
                 m_curfilename = null;
                 m_curfilesize = 0;
                 m_curfileoffset = 0;
@@ -426,7 +429,7 @@ namespace Duplicati.Library.Main
         {
             lock(m_lock)
             {
-                phase = m_phase;
+                phase = CurrentPhase;
                 filesize = m_filesize;
                 progress = m_progress;
                 filesprocessed = m_filesprocessed;

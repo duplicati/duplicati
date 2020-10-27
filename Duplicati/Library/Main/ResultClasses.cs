@@ -163,6 +163,8 @@ namespace Duplicati.Library.Main
         /// </summary>
         protected static readonly int SERIALIZATION_LIMIT = 20;
 
+        private OperationPhase m_PreviousPhase;
+
         protected class DbMessage
         {
             public readonly string Type;
@@ -408,6 +410,9 @@ namespace Duplicati.Library.Main
                     {
                         m_pauseEvent.Reset();
                         m_controlState = TaskControlState.Pause;
+                        m_PreviousPhase = m_operationProgressUpdater.CurrentPhase;
+                        m_operationProgressUpdater.UpdatePhase(OperationPhase.Paused_WaitForUpload);
+                        m_taskController.Pause(alsoNewTransfers: true);
                     }
 
                 if (StateChangedEvent != null)
@@ -429,6 +434,8 @@ namespace Duplicati.Library.Main
                     {
                         m_pauseEvent.Set();
                         m_controlState = TaskControlState.Run;
+                        m_operationProgressUpdater.UpdatePhase(m_PreviousPhase);
+                        m_taskController.Resume();
                     }
 
                 if (StateChangedEvent != null)
@@ -452,7 +459,7 @@ namespace Duplicati.Library.Main
                         m_pauseEvent.Set();
                         if (!allowCurrentFileToFinish)
                         {
-                            m_taskController.Stop(true);
+                            m_taskController.Stop(alsoNewTransfers: true);
                         }
                     }
 
@@ -474,6 +481,7 @@ namespace Duplicati.Library.Main
                 {
                     m_controlState = TaskControlState.Abort;
                     m_pauseEvent.Set();
+                    m_taskController.Terminate();
                 }
 
                 if (StateChangedEvent != null)

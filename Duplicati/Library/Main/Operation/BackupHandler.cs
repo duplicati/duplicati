@@ -31,8 +31,6 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Main.Operation.Backup;
-using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -437,7 +435,8 @@ namespace Duplicati.Library.Main.Operation
                     {
                         long filesetid;
                         var counterToken = new CancellationTokenSource();
-                        var uploader = new Backup.BackendUploader(() => DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions), m_options, db, m_result.TaskReader, stats);
+                        Func<IBackend> backendFactory = () => DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+                        var uploader = new Backup.BackendUploader(backendFactory, m_options, db, m_result.TaskReader, stats, m_result.OperationProgressUpdater);
                         using (var snapshot = GetSnapshot(sources, m_options))
                         {
                             try

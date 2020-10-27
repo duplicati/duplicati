@@ -175,9 +175,13 @@
                                       </div>
                                     </div>
                                 </span>
-                                <span ng-show="StopReqId == activeTaskID">
+
+                                <span ng-show="StopReqId == activeTaskID &amp;&amp; stopEvent == 'stopaftercurrentfile'">
                                     <strong translate>Stopping after the current file:</strong> {{activeBackup.Backup.Name}}
                                 </span>
+                                <span ng-show="StopReqId == activeTaskID &amp;&amp; stopEvent == 'stopnow'">
+                                    <strong translate>Stopping backup ...</strong>
+                                </span>                                
                             </span>
                             <span ng-show="activeBackup == null">
                                 <strong ng-hide="StopReqId == activeTaskID" translate>Running task:</strong>
