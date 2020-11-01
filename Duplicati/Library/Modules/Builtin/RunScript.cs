@@ -153,16 +153,17 @@ namespace Duplicati.Library.Modules.Builtin
 
         public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
         {
+            if (!string.IsNullOrEmpty(m_requiredScript))
+                Execute(m_requiredScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, true, m_options, null, null);
+
+            if (!string.IsNullOrEmpty(m_startScript))
+                Execute(m_startScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, false, m_options, null, null);
+
+            // Save options that might be set by a --run-script-before script so that the OnFinish method
+            // references the same values.
             m_operationName = operationname;
             m_remoteurl = remoteurl;
             m_localpath = localpath;
-
-
-            if (!string.IsNullOrEmpty(m_requiredScript))
-                Execute(m_requiredScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, true, m_options, null, null);
-
-            if (!string.IsNullOrEmpty(m_startScript))
-                Execute(m_startScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, null, null);
         }
 
         public void OnFinish (object result)
