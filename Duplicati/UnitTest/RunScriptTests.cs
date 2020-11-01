@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -147,6 +148,35 @@ namespace Duplicati.UnitTest
             }
         }
 
+        [Test]
+        [Category("Border")]
+        public void CustomRemoteURL()
+        {
+            string customTargetFolder = Path.Combine(this.TARGETFOLDER, "destination");
+            Directory.CreateDirectory(customTargetFolder);
+
+            List<string> customCommands = new List<string>
+            {
+                $"echo --remoteurl = \"{customTargetFolder}\""
+            };
+
+            Dictionary<string, string> options = this.TestOptions;
+            options["run-script-before"] = CreateScript(0, null, null, 0, customCommands);
+            using (Controller c = new Library.Main.Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            string[] targetEntries = Directory.EnumerateFileSystemEntries(this.TARGETFOLDER).ToArray();
+            Assert.AreEqual(1, targetEntries.Length);
+            Assert.AreEqual(customTargetFolder, targetEntries[0]);
+
+            // We expect a dblock, dlist, and dindex file.
+            IEnumerable<string> customTargetEntries = Directory.EnumerateFileSystemEntries(customTargetFolder);
+            Assert.AreEqual(3, customTargetEntries.Count());
+        }
 
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
         {
