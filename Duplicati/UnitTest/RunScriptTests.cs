@@ -148,12 +148,12 @@ namespace Duplicati.UnitTest
         }
 
 
-        private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0)
+        private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);
             if (Platform.IsClientWindows)
             {
-                var commands = new List<string>();
+                var commands = customCommands ?? new List<string>();
                 if (!string.IsNullOrWhiteSpace(stdout))
                     commands.Add($@"echo {stdout}");
                 if (!string.IsNullOrWhiteSpace(stderr))
@@ -172,6 +172,11 @@ namespace Duplicati.UnitTest
             {
                 var commands = new List<string>();
                 commands.Add("#!/bin/sh");
+
+                if (customCommands != null)
+                {
+                    commands.AddRange(customCommands);
+                }
 
                 if (!string.IsNullOrWhiteSpace(stdout))
                     commands.Add($@"echo {stdout}");
