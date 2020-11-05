@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -136,6 +137,7 @@ namespace Duplicati.Library.Backend
 
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
+            Test();
             SafeExecute(() =>
                 {
                     cancelToken.ThrowIfCancellationRequested();
@@ -341,14 +343,7 @@ namespace Duplicati.Library.Backend
             while (true)
             {
                 EnsureConnected();
-                var dialogsTask = m_telegramClient.GetUserDialogsAsync(lastDate);
-                var areDialogsRetrieved = dialogsTask.Wait(TimeSpan.FromSeconds(5));
-                if (areDialogsRetrieved == false)
-                {
-                    throw new TimeoutException("Couldn't get dialogs in specified time");
-                }
-
-                var dialogs = dialogsTask.Result;
+                var dialogs = m_telegramClient.GetUserDialogsAsync(lastDate).GetAwaiter().GetResult();
                 var tlDialogs = dialogs as TLDialogs;
                 var tlDialogsSlice = dialogs as TLDialogsSlice;
 
@@ -447,20 +442,41 @@ namespace Duplicati.Library.Backend
         {
             if (m_telegramClient.IsReallyConnected())
             {
-                ForcePing();
                 return;
             }
 
             var cts = new CancellationTokenSource();
-            var connectTask = m_telegramClient.ConnectAsync(false, cts.Token);
-
-            do
+            var lastException = (Exception)null;
+            for (int i = 0; i < 3; i++)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(3));
-            } while (m_telegramClient.IsReallyConnected() == false && connectTask.GetAwaiter().IsCompleted == false);
+                cancelToken?.ThrowIfCancellationRequested();
+                try
+                {
+                    m_telegramClient.ConnectAsync(false, cts.Token).Wait(TimeSpan.FromSeconds(5));
+                    if (m_telegramClient.IsConnected)
+                    {
+                        break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    lastException = e;
+                }
+            }
 
+            if (m_telegramClient.IsReallyConnected() == false)
+            {
+                if (lastException != null)
+                {
+                    throw lastException;
+                }
+                else
+                {
+                    throw new WebException("Unable to connect to telegram");
+                }
+            }
+            
             cts.Cancel();
-            ForcePing();
         }
 
         private bool IsAuthenticated()
@@ -472,41 +488,6 @@ namespace Duplicati.Library.Backend
         private static void SetPhoneCodeHash(string phoneCodeHash)
         {
             m_phoneCodeHash = phoneCodeHash;
-        }
-
-        public void ForcePing()
-        {
-            var senderFieldInfo = typeof(TelegramClient).GetField("sender", BindingFlags.NonPublic | BindingFlags.Instance);
-            var sender = (MtProtoSender)senderFieldInfo.GetValue(m_telegramClient);
-
-            if (sender == null)
-            {
-                return;
-            }
-
-            var pinged = false;
-            var iteration = 0;
-            while (pinged == false)
-            {
-                try
-                {
-                    iteration++;
-                    Console.WriteLine("Starting ping");
-                    pinged = sender.SendPingAsync().Wait(TimeSpan.FromSeconds(5));
-                    Console.WriteLine($"Done ping with result {pinged}");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("{1} TRY Exception thrown, {0}", e, iteration);
-                }
-
-                if (iteration > 5)
-                {
-                    InitializeTelegramClient();
-                    Console.WriteLine("Init done, retrying connection");
-                    EnsureConnected();
-                }
-            }
         }
 
         private void SafeExecute(Action action, string actionName)

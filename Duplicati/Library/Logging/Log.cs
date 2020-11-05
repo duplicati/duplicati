@@ -326,7 +326,7 @@ namespace Duplicati.Library.Logging
         public static void WriteMessage(LogMessageType type, string tag, string id, Exception ex, string message, params object[] arguments)
         {
             var msg = new LogEntry(message, arguments, type, tag, id, ex);
-
+            Console.WriteLine(message, arguments);
             lock (m_lock)
             {
                 var cs = CurrentScope;
