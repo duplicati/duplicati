@@ -513,9 +513,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.auth_code = options['--auth-code'];
         if (options['--channel-name'])
             scope.channel_name = options['--channel-name'];
-		if (options['--phone-number'])
+        if (options['--phone-number'])
             scope.phone_number = options['--phone-number'];
-		if (options['--auth_password'])
+        if (options['--auth_password'])
             scope.auth_password = options['--auth_password'];
 
         var nukeopts = ['--api-id','--api-hash', '--auth-code', '--channel-name', '--phone-number', '--auth_password'];
