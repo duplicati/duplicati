@@ -427,7 +427,7 @@ namespace Duplicati.Library.Backend
         }
 
 
-        private void EnsureConnected(CancellationToken cancelToken = default)
+        private void EnsureConnected(CancellationToken cancelToken = default(CancellationToken))
         {
             if (m_telegramClient.IsReallyConnected())
             {

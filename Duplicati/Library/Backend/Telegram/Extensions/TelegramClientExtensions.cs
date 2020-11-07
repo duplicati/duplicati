@@ -44,39 +44,5 @@ namespace Duplicati.Library.Backend.Extensions
             
             return true;
         }
-        
-        public static bool FlushStreams(this TelegramClient client)
-        {
-            if (client.IsConnected == false)
-            {
-                return false;
-            }
-
-            var transportFieldInfo = typeof(TelegramClient).GetField("transport", _bindingFlags);
-            var transportField = (TcpTransport)transportFieldInfo.GetValue(client);
-
-            if (transportField == null || transportField.IsConnected == false)
-            {
-                return false;
-            }
-
-            var tcpClientFieldInfo = typeof(TcpTransport).GetField("tcpClient", _bindingFlags);
-            var tcpClient = (TcpClient)tcpClientFieldInfo.GetValue(transportField);
-
-            if (tcpClient == null || tcpClient.Connected == false)
-            {
-                return false;
-            }
-            
-            var availableDataLength = tcpClient.Available;
-            //tcpClient.LingerState.
-            Console.WriteLine($"Available data is {availableDataLength}");
-            if (availableDataLength != 0)
-            {
-                tcpClient.GetStream().Read(new byte[availableDataLength], 0, availableDataLength);
-            }
-
-            return true;
-        }
     }
 }
