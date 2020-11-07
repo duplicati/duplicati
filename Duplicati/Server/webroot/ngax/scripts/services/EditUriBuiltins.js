@@ -504,6 +504,24 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     };
 
+    EditUriBackendConfig.parsers['telegram'] = function (scope, module, server, port, path, options) {
+        if (options['--api-id'])
+            scope.api_id = options['--api-id'];
+        if (options['--api-hash'])
+            scope.api_hash = options['--api-hash'];
+        if (options['--auth-code'])
+            scope.auth_code = options['--auth-code'];
+        if (options['--channel-name'])
+            scope.channel_name = options['--channel-name'];
+		if (options['--phone-number'])
+            scope.phone_number = options['--phone-number'];
+		if (options['--auth_password'])
+            scope.auth_password = options['--auth_password'];
+
+        var nukeopts = ['--api-id','--api-hash', '--auth-code', '--channel-name', '--phone-number', '--auth_password'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    };
 
     EditUriBackendConfig.parsers['cos'] = function (scope, module, server, port, path, options) {
         if (options['--cos-app-id'])
@@ -1128,6 +1146,26 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 	
 	EditUriBackendConfig.validaters['tardigrade'] = function (scope, continuation) {
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['telegram'] = function (scope, continuation) {
+        var opts = {
+            'api-id': scope.api_id,
+            'api-hash': scope.api_hash,
+            'auth-code': scope.auth_code,
+            'channel-name': scope.channel_name,
+            'phone-number': scope.phone_number,
+            'auth-password': scope.auth_password,
+        };
+        
+        var res =
+            EditUriBackendConfig.require_field(scope, 'api_id', gettextCatalog.getString('api_id')) &&
+            EditUriBackendConfig.require_field(scope, 'api_hash', gettextCatalog.getString('api_hash')) &&
+            EditUriBackendConfig.require_field(scope, 'channel_name', gettextCatalog.getString('channel_name')) &&
+            EditUriBackendConfig.require_field(scope, 'phone_number', gettextCatalog.getString('phone_number'));
+			
+		if (res)
             continuation();
     };
 

@@ -99,9 +99,7 @@ namespace Duplicati.Library.Backend
 
         private void InitializeTelegramClient()
         {
-            m_telegramClient?.Session?.Save();
-            m_telegramClient?.Dispose();
-            m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_encSessionStore, m_phoneNumber);
+            m_telegramClient = m_telegramClient ?? new TelegramClient(m_apiId, m_apiHash, m_encSessionStore, m_phoneNumber);
         }
 
         public void Dispose()
@@ -434,8 +432,12 @@ namespace Duplicati.Library.Backend
                 return;
             }
             
+            cancelToken.ThrowIfCancellationRequested();
+            
             m_telegramClient.ConnectAsync(false, cancelToken).GetAwaiter().GetResult();
-
+            
+            cancelToken.ThrowIfCancellationRequested();
+            
             if (m_telegramClient.IsReallyConnected() == false)
             {
                 throw new WebException("Unable to connect to telegram");
