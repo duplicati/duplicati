@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Backend.Extensions;
@@ -14,7 +13,6 @@ using TeleSharp.TL.Channels;
 using TeleSharp.TL.Messages;
 using TLSharp.Core;
 using TLSharp.Core.Exceptions;
-using TLSharp.Core.Network;
 using TLSharp.Core.Network.Exceptions;
 using TLSharp.Core.Utils;
 using TLRequestDeleteMessages = TeleSharp.TL.Channels.TLRequestDeleteMessages;
@@ -23,7 +21,7 @@ namespace Duplicati.Library.Backend
 {
     public class Telegram : IStreamingBackend, IBackend
     {
-        private TelegramClient m_telegramClient;
+        private static TelegramClient m_telegramClient;
         private readonly EncryptedFileSessionStore m_encSessionStore;
 
         private static readonly object m_lockObj = new object();
@@ -108,7 +106,9 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            m_telegramClient?.Dispose();
+            // Do not dispose m_telegramClient.
+            // There are bugs connected with reusing
+            // the old sockets
         }
 
         public string DisplayName { get; } = Strings.DisplayName;
@@ -118,19 +118,11 @@ namespace Duplicati.Library.Backend
         {
             return SafeExecute<IEnumerable<IFileEntry>>(() =>
                 {
-                    try
-                    {
-                        Authenticate();
-                        EnsureChannelCreated();
-                        var fileInfos = ListChannelFileInfos();
-                        var result = fileInfos.Select(fi => fi.ToFileEntry());
-                        return result;
-                    }
-                    catch (Exception nrf)
-                    {
-                        Console.WriteLine(nrf);
-                        throw;
-                    }
+                    Authenticate();
+                    EnsureChannelCreated();
+                    var fileInfos = ListChannelFileInfos();
+                    var result = fileInfos.Select(fi => fi.ToFileEntry());
+                    return result;
                 },
                 nameof(List));
         }
@@ -138,6 +130,7 @@ namespace Duplicati.Library.Backend
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             Test();
+            cancelToken.ThrowIfCancellationRequested();
             SafeExecute(() =>
                 {
                     cancelToken.ThrowIfCancellationRequested();
@@ -150,7 +143,7 @@ namespace Duplicati.Library.Backend
 
                         cancelToken.ThrowIfCancellationRequested();
                         var file = m_telegramClient.UploadFile(remotename, sr, cancelToken).GetAwaiter().GetResult();
-
+                        
                         cancelToken.ThrowIfCancellationRequested();
                         var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
                         var fileNameAttribute = new TLDocumentAttributeFilename
@@ -306,11 +299,7 @@ namespace Duplicati.Library.Backend
 
         public void Test()
         {
-            // No need to use SafeExecute methods
-            lock (m_lockObj)
-            {
-                Authenticate();
-            }
+            SafeExecute(Authenticate, nameof(Authenticate));
         }
 
         public void CreateFolder()
@@ -438,45 +427,19 @@ namespace Duplicati.Library.Backend
         }
 
 
-        private void EnsureConnected(CancellationToken? cancelToken = null)
+        private void EnsureConnected(CancellationToken cancelToken = default)
         {
             if (m_telegramClient.IsReallyConnected())
             {
                 return;
             }
-
-            var cts = new CancellationTokenSource();
-            var lastException = (Exception)null;
-            for (int i = 0; i < 3; i++)
-            {
-                cancelToken?.ThrowIfCancellationRequested();
-                try
-                {
-                    m_telegramClient.ConnectAsync(false, cts.Token).Wait(TimeSpan.FromSeconds(5));
-                    if (m_telegramClient.IsConnected)
-                    {
-                        break;
-                    }
-                }
-                catch (Exception e)
-                {
-                    lastException = e;
-                }
-            }
+            
+            m_telegramClient.ConnectAsync(false, cancelToken).GetAwaiter().GetResult();
 
             if (m_telegramClient.IsReallyConnected() == false)
             {
-                if (lastException != null)
-                {
-                    throw lastException;
-                }
-                else
-                {
-                    throw new WebException("Unable to connect to telegram");
-                }
+                throw new WebException("Unable to connect to telegram");
             }
-            
-            cts.Cancel();
         }
 
         private bool IsAuthenticated()
