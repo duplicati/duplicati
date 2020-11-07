@@ -1164,8 +1164,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'api_hash', gettextCatalog.getString('api_hash')) &&
             EditUriBackendConfig.require_field(scope, 'channel_name', gettextCatalog.getString('channel_name')) &&
             EditUriBackendConfig.require_field(scope, 'phone_number', gettextCatalog.getString('phone_number'));
-			
-		if (res)
+
+        if (res)
             continuation();
     };
 
