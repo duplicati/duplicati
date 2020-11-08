@@ -253,6 +253,11 @@ namespace Duplicati.Library.Backend
             {
                 oldMinDate = newMinDate ?? 0;
                 RetrieveMessages(inputPeerChannel, result, oldMinDate);
+                if (result.Any() == false)
+                {
+                    break;
+                }
+
                 newMinDate = result.Min(cfi => (int)cfi.Date.GetEpochSeconds());
             }
 
