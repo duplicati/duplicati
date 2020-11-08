@@ -246,34 +246,28 @@ namespace Duplicati.Library.Backend
 
             var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
             var result = new List<ChannelFileInfo>();
-            var cMinId = (int?)0;
+            var oldMinDate = 0;
+            var newMinDate = (int?)null;
 
-            while (cMinId != null)
+            while (oldMinDate != newMinDate)
             {
-                var newCMinId = RetrieveMessages(inputPeerChannel, result, cMinId.Value);
-                if (newCMinId == cMinId)
-                {
-                    break;
-                }
-
-                cMinId = newCMinId;
+                oldMinDate = newMinDate ?? 0;
+                RetrieveMessages(inputPeerChannel, result, oldMinDate);
+                newMinDate = result.Min(cfi => (int)cfi.Date.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
             }
 
             result = result.Distinct().ToList();
             return result;
         }
 
-        private int? RetrieveMessages(TLInputPeerChannel inputPeerChannel, List<ChannelFileInfo> result, int maxDate)
+        private void RetrieveMessages(TLInputPeerChannel inputPeerChannel, List<ChannelFileInfo> result, int offsetDate)
         {
             EnsureConnected();
-            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, offsetDate: maxDate).GetAwaiter().GetResult();
+            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, offsetDate: offsetDate).GetAwaiter().GetResult();
             var history = ((TLChannelMessages)absHistory).Messages.OfType<TLMessage>();
-            var minDate = (int?)null;
 
             foreach (var msg in history)
             {
-                minDate = minDate < msg.Id ? minDate : msg.Date;
-
                 if (msg.Media is TLMessageMediaDocument media &&
                     media.Document is TLDocument mediaDoc)
                 {
@@ -289,8 +283,6 @@ namespace Duplicati.Library.Backend
                     result.Add(fileInfo);
                 }
             }
-
-            return minDate;
         }
 
         public IList<ICommandLineArgument> SupportedCommands { get; } = new List<ICommandLineArgument>
