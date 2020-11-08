@@ -52,7 +52,6 @@
   <ItemGroup>
     <Compile Include="ChannelFileInfo.cs" />
     <Compile Include="EncryptedFileSessionStore.cs" />
-    <Compile Include="Extensions\SystemExtensions.cs" />
     <Compile Include="Extensions\TelegramClientExtensions.cs" />
     <Compile Include="StreamReadHelper.cs" />
     <Compile Include="TelegramBackend.cs" />

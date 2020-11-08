@@ -246,29 +246,29 @@ namespace Duplicati.Library.Backend
 
             var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = channel.AccessHash.Value};
             var result = new List<ChannelFileInfo>();
-            var oldMinDate = 0;
-            var newMinDate = (int?)null;
+            var oldMinDate = 0L;
+            var newMinDate = (long?)null;
 
             while (oldMinDate != newMinDate)
             {
-                oldMinDate = newMinDate ?? 0;
+                oldMinDate = newMinDate ?? 0L;
                 RetrieveMessages(inputPeerChannel, result, oldMinDate);
                 if (result.Any() == false)
                 {
                     break;
                 }
 
-                newMinDate = result.Min(cfi => (int)cfi.Date.GetEpochSeconds());
+                newMinDate = result.Min(cfi => Utility.Utility.NormalizeDateTimeToEpochSeconds(cfi.Date));
             }
 
             result = result.Distinct().ToList();
             return result;
         }
 
-        private void RetrieveMessages(TLInputPeerChannel inputPeerChannel, List<ChannelFileInfo> result, int offsetDate)
+        private void RetrieveMessages(TLInputPeerChannel inputPeerChannel, List<ChannelFileInfo> result, long offsetDate)
         {
             EnsureConnected();
-            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, offsetDate: offsetDate).GetAwaiter().GetResult();
+            var absHistory = m_telegramClient.GetHistoryAsync(inputPeerChannel, offsetDate: (int)offsetDate).GetAwaiter().GetResult();
             var history = ((TLChannelMessages)absHistory).Messages.OfType<TLMessage>();
 
             foreach (var msg in history)
