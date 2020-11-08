@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Duplicati.Library.AutoUpdater;
 using TLSharp.Core;
 
 namespace Duplicati.Library.Backend
@@ -26,7 +27,8 @@ namespace Duplicati.Library.Backend
             }
 
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            m_teleDataPath = Path.Combine(appData, nameof(Duplicati), nameof(Telegram));
+            var appName = AutoUpdateSettings.AppName;
+            m_teleDataPath = Path.Combine(appData, appName, nameof(Telegram));
             m_password = password;
 
             Directory.CreateDirectory(m_teleDataPath);

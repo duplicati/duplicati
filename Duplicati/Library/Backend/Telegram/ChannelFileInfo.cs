@@ -6,14 +6,13 @@ namespace Duplicati.Library.Backend
 {
     public class ChannelFileInfo : IEquatable<ChannelFileInfo>
     {
-        public int MessageId { get; set; }
-        public long MediaDocAccessHash { get; set; }
-        public long DocumentId { get; set; }
-        public int Version { get; set; }
-        public long Size { get; set; }
-        public string Name { get; set; }
-        public DateTime Date { get; set; }
-        public long AccessHash { get; set; }
+        public int MessageId { get; }
+        public long MediaDocAccessHash { get; }
+        public long DocumentId { get; }
+        public int Version { get; }
+        public long Size { get; }
+        public string Name { get; }
+        public DateTime Date { get; }
 
         public ChannelFileInfo()
         { }

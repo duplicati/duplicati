@@ -59,6 +59,10 @@
     <Compile Include="Strings.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+      <Project>{7e119745-1f62-43f0-936c-f312a1912c0b}</Project>
+      <Name>Duplicati.Library.AutoUpdater</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj">
       <Project>{d10a5fc0-11b4-4e70-86aa-8aea52bd9798}</Project>
       <Name>Duplicati.Library.Logging</Name>

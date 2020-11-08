@@ -19,7 +19,7 @@ using TLRequestDeleteMessages = TeleSharp.TL.Channels.TLRequestDeleteMessages;
 
 namespace Duplicati.Library.Backend
 {
-    public class Telegram : IStreamingBackend, IBackend
+    public class Telegram : IStreamingBackend
     {
         private static TelegramClient m_telegramClient;
         private readonly EncryptedFileSessionStore m_encSessionStore;
@@ -127,12 +127,17 @@ namespace Duplicati.Library.Backend
 
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            Test();
-            cancelToken.ThrowIfCancellationRequested();
             SafeExecute(() =>
                 {
                     cancelToken.ThrowIfCancellationRequested();
+
+                    Authenticate();
+
+                    cancelToken.ThrowIfCancellationRequested();
+
                     var channel = GetChannel();
+
+                    cancelToken.ThrowIfCancellationRequested();
 
                     using (var sr = new StreamReader(new StreamReadHelper(stream)))
                     {
@@ -267,12 +272,19 @@ namespace Duplicati.Library.Backend
 
             foreach (var msg in history)
             {
-                minDate = minDate == null || minDate > msg.Id ? msg.Date : minDate;
+                minDate = minDate < msg.Id ? minDate : msg.Date;
 
-                if (msg.Media is TLMessageMediaDocument media)
+                if (msg.Media is TLMessageMediaDocument media &&
+                    media.Document is TLDocument mediaDoc)
                 {
-                    var mediaDoc = media.Document as TLDocument;
-                    var fileInfo = new ChannelFileInfo(msg.Id, mediaDoc.AccessHash, mediaDoc.Id, mediaDoc.Version, mediaDoc.Size, media.Caption, DateTimeOffset.FromUnixTimeSeconds(msg.Date).UtcDateTime);
+                    var fileInfo = new ChannelFileInfo(
+                        msg.Id,
+                        mediaDoc.AccessHash,
+                        mediaDoc.Id,
+                        mediaDoc.Version,
+                        mediaDoc.Size,
+                        media.Caption,
+                        DateTimeOffset.FromUnixTimeSeconds(msg.Date).UtcDateTime);
 
                     result.Add(fileInfo);
                 }
