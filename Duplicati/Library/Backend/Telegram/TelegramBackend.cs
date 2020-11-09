@@ -21,7 +21,7 @@ namespace Duplicati.Library.Backend
 {
     public class Telegram : IStreamingBackend
     {
-        private static TelegramClient m_telegramClient;
+        private readonly TelegramClient m_telegramClient;
         private readonly EncryptedFileSessionStore m_encSessionStore;
 
         private static readonly object m_lockObj = new object();
@@ -94,19 +94,12 @@ namespace Duplicati.Library.Backend
             }
 
             m_encSessionStore = new EncryptedFileSessionStore($"{m_apiHash}_{m_apiId}");
-            InitializeTelegramClient();
-        }
-
-        private void InitializeTelegramClient()
-        {
-            m_telegramClient = m_telegramClient ?? new TelegramClient(m_apiId, m_apiHash, m_encSessionStore, m_phoneNumber);
+            m_telegramClient = new TelegramClient(m_apiId, m_apiHash, m_encSessionStore, m_phoneNumber);
         }
 
         public void Dispose()
         {
-            // Do not dispose m_telegramClient.
-            // There are bugs connected with reusing
-            // the old sockets
+            m_telegramClient?.Dispose();
         }
 
         public string DisplayName { get; } = Strings.DisplayName;
@@ -146,7 +139,7 @@ namespace Duplicati.Library.Backend
 
                         cancelToken.ThrowIfCancellationRequested();
                         var file = m_telegramClient.UploadFile(remotename, sr, cancelToken).GetAwaiter().GetResult();
-                        
+
                         cancelToken.ThrowIfCancellationRequested();
                         var inputPeerChannel = new TLInputPeerChannel {ChannelId = channel.Id, AccessHash = (long)channel.AccessHash};
                         var fileNameAttribute = new TLDocumentAttributeFilename
@@ -172,7 +165,6 @@ namespace Duplicati.Library.Backend
 
                     var limit = BYTES_IN_MEBIBYTE;
                     var currentOffset = 0;
-
 
                     while (currentOffset < fileInfo.Size)
                     {
@@ -433,20 +425,19 @@ namespace Duplicati.Library.Backend
             m_telegramClient.Session.Save();
         }
 
-
         private void EnsureConnected(CancellationToken cancelToken = default(CancellationToken))
         {
             if (m_telegramClient.IsReallyConnected())
             {
                 return;
             }
-            
+
             cancelToken.ThrowIfCancellationRequested();
-            
-            m_telegramClient.ConnectAsync(false, cancelToken).GetAwaiter().GetResult();
-            
+
+            m_telegramClient.WrapperConnectAsync(cancelToken).GetAwaiter().GetResult();
+
             cancelToken.ThrowIfCancellationRequested();
-            
+
             if (m_telegramClient.IsReallyConnected() == false)
             {
                 throw new WebException("Unable to connect to telegram");
