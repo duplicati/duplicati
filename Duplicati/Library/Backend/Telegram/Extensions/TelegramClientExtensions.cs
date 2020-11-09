@@ -13,7 +13,7 @@ namespace Duplicati.Library.Backend.Extensions
     {
         private static readonly BindingFlags _bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Default;
 
-        public static async Task WrapperConnectAsync(this TelegramClient client, CancellationToken cancelToken = default)
+        public static async Task WrapperConnectAsync(this TelegramClient client, CancellationToken cancelToken = default(CancellationToken))
         {
             if (client == null)
             {
