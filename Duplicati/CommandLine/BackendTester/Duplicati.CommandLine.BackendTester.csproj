@@ -90,6 +90,10 @@
       <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
       <Name>Duplicati.Library.Backend.Tardigrade</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj">
+      <Project>{f61679a9-e5de-468a-b5a4-05f92d0143d2}</Project>
+      <Name>Duplicati.Library.Backend.Telegram</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
       <Project>{545dd6d4-9476-42d6-b51c-a28e000c489e}</Project>
       <Name>Duplicati.Library.Backend.TencentCOS</Name>

@@ -111,6 +111,10 @@
       <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
       <Name>Duplicati.Library.Backend.Sia</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj">
+      <Project>{f61679a9-e5de-468a-b5a4-05f92d0143d2}</Project>
+      <Name>Duplicati.Library.Backend.Telegram</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
       <Name>Duplicati.Library.Compression</Name>
