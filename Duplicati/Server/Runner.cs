@@ -796,16 +796,12 @@ namespace Duplicati.Server
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
                     Program.DataConnection.RegisterNotification(
-                         r.FilesWithError == 0 && !r.Errors.Any() ? NotificationType.Warning : NotificationType.Error,
-                        backup.IsTemporary ?
-                            "Warning" : string.Format("Warning while running {0}", backup.Name),
-                            r.FilesWithError > 0 ?
-                                string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
-                                (r.Errors.Any() ?
-                                 string.Format("Got {0} error(s)", r.Errors.Count()) :
-                                 string.Format("Got {0} warning(s)", r.Warnings.Count())
-                                )
-                            ,
+                        r.FilesWithError == 0 && !r.Errors.Any() ? NotificationType.Warning : NotificationType.Error,
+                        backup.IsTemporary ? "Warning" : string.Format("Warning while running {0}", backup.Name),
+                        r.FilesWithError > 0 ? string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
+                                (
+                                    r.Errors.Any() ? string.Format("Got {0} error(s)", r.Errors.Count()) : string.Format("Got {0} warning(s)", r.Warnings.Count())
+                                ),
                         null,
                         backup.ID,
                         "backup:show-log",
