@@ -795,13 +795,24 @@ namespace Duplicati.Server
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
+                    string message;
+                    if (r.FilesWithError > 0)
+                    {
+                        message = $"Errors affected {r.FilesWithError} file(s).";
+                    }
+                    else if (r.Errors.Any())
+                    {
+                        message = r.Errors.Count() == 1 ? r.Errors.Single() : $"Encountered {r.Errors.Count()} errors.";
+                    }
+                    else
+                    {
+                        message = r.Warnings.Count() == 1 ? r.Warnings.Single() : $"Encountered {r.Warnings.Count()} warnings.";
+                    }
+
                     Program.DataConnection.RegisterNotification(
                         r.FilesWithError == 0 && !r.Errors.Any() ? NotificationType.Warning : NotificationType.Error,
                         backup.IsTemporary ? "Warning" : string.Format("Warning while running {0}", backup.Name),
-                        r.FilesWithError > 0 ? string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
-                                (
-                                    r.Errors.Any() ? string.Format("Got {0} error(s)", r.Errors.Count()) : string.Format("Got {0} warning(s)", r.Warnings.Count())
-                                ),
+                        message,
                         null,
                         backup.ID,
                         "backup:show-log",
