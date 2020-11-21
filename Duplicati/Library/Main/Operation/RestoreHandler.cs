@@ -736,8 +736,8 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                             
-                            if ((++updateCount) % 20 == 0)
-                                blockmarker.UpdateProcessed(result.OperationProgressUpdater);
+                        if ((++updateCount) % 20 == 0)
+                            blockmarker.UpdateProcessed(result.OperationProgressUpdater);
                     }
                     catch (Exception ex)
                     {

@@ -130,94 +130,98 @@ namespace Duplicati.Server.WebServer
         {
             var ci = ParseRequestCulture(info);
 
-            using ( Library.Localization.LocalizationService.TemporaryContext(ci))
-            try
+            using (Library.Localization.LocalizationService.TemporaryContext(ci))
             {
-                if (ci != null)
-                    info.Response.AddHeader("Content-Language", ci.Name);
-
-                IRESTMethod mod;
-                _modules.TryGetValue(module, out mod);
-
-                if (mod == null)
-                {
-                    info.Response.Status = System.Net.HttpStatusCode.NotFound;
-                    info.Response.Reason = "No such module";
-                }
-                else if (method == HttpServer.Method.Get && mod is IRESTMethodGET get)
-                {
-                    if (info.Request.Form != HttpServer.HttpForm.EmptyForm)
-                    {
-                        if (info.Request.QueryString == HttpServer.HttpInput.Empty)
-                        {
-                            var r = info.Request.GetType().GetField("_queryString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                            r.SetValue(info.Request, new HttpServer.HttpInput("formdata"));
-                        }
-
-                        foreach(HttpServer.HttpInputItem v in info.Request.Form)
-                            if (!info.Request.QueryString.Contains(v.Name))
-                                info.Request.QueryString.Add(v.Name, v.Value);
-                    }
-                    get.GET(key, info);
-                }
-                else if (method == HttpServer.Method.Put && mod is IRESTMethodPUT put)
-                    put.PUT(key, info);
-                else if (method == HttpServer.Method.Post && mod is IRESTMethodPOST post)
-                {
-                    if (info.Request.Form == HttpServer.HttpForm.EmptyForm || info.Request.Form == HttpServer.HttpInput.Empty)
-                    {
-                        var r = info.Request.GetType().GetMethod("AssignForm", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(HttpServer.HttpForm) }, null);
-                        r.Invoke(info.Request, new object[] { new HttpServer.HttpForm(info.Request.QueryString) });
-                    }
-                    else
-                    {
-                        foreach(HttpServer.HttpInputItem v in info.Request.QueryString)
-                            if (!info.Request.Form.Contains(v.Name))
-                                info.Request.Form.Add(v.Name, v.Value);
-                    }
-                    post.POST(key, info);
-                }
-                else if (method == HttpServer.Method.Delete && mod is IRESTMethodDELETE delete)
-                    delete.DELETE(key, info);
-                else if (method == "PATCH" && mod is IRESTMethodPATCH patch)
-                    patch.PATCH(key, info);
-                else
-                {
-                    info.Response.Status = System.Net.HttpStatusCode.MethodNotAllowed;
-                    info.Response.Reason = "Method is not allowed";
-                }
-            }
-            catch(Exception ex)
-            {
-                Program.DataConnection.LogError("", string.Format("Request for {0} gave error", info.Request.Uri), ex);
-                Console.WriteLine(ex);
-
                 try
                 {
-                    if (!info.Response.HeadersSent)
-                    {
-                        info.Response.Status = System.Net.HttpStatusCode.InternalServerError;
-                        info.Response.Reason = "Error";
-                        info.Response.ContentType = "text/plain";
+                    if (ci != null)
+                        info.Response.AddHeader("Content-Language", ci.Name);
 
-                        var wex = ex;
-                        while (wex is System.Reflection.TargetInvocationException && wex.InnerException != wex)
-                            wex = wex.InnerException;
-                        
-                        info.BodyWriter.WriteJsonObject(new
+                    IRESTMethod mod;
+                    _modules.TryGetValue(module, out mod);
+
+                    if (mod == null)
+                    {
+                        info.Response.Status = System.Net.HttpStatusCode.NotFound;
+                        info.Response.Reason = "No such module";
+                    }
+                    else if (method == HttpServer.Method.Get && mod is IRESTMethodGET get)
+                    {
+                        if (info.Request.Form != HttpServer.HttpForm.EmptyForm)
                         {
-                            Message = wex.Message,
-                            Type = wex.GetType().Name,
-                            #if DEBUG
-                            Stacktrace = wex.ToString()
-                            #endif
-                        });
-                        info.BodyWriter.Flush();
+                            if (info.Request.QueryString == HttpServer.HttpInput.Empty)
+                            {
+                                var r = info.Request.GetType().GetField("_queryString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                                r.SetValue(info.Request, new HttpServer.HttpInput("formdata"));
+                            }
+
+                            foreach (HttpServer.HttpInputItem v in info.Request.Form)
+                                if (!info.Request.QueryString.Contains(v.Name))
+                                    info.Request.QueryString.Add(v.Name, v.Value);
+                        }
+
+                        get.GET(key, info);
+                    }
+                    else if (method == HttpServer.Method.Put && mod is IRESTMethodPUT put)
+                        put.PUT(key, info);
+                    else if (method == HttpServer.Method.Post && mod is IRESTMethodPOST post)
+                    {
+                        if (info.Request.Form == HttpServer.HttpForm.EmptyForm || info.Request.Form == HttpServer.HttpInput.Empty)
+                        {
+                            var r = info.Request.GetType().GetMethod("AssignForm", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] {typeof(HttpServer.HttpForm)}, null);
+                            r.Invoke(info.Request, new object[] {new HttpServer.HttpForm(info.Request.QueryString)});
+                        }
+                        else
+                        {
+                            foreach (HttpServer.HttpInputItem v in info.Request.QueryString)
+                                if (!info.Request.Form.Contains(v.Name))
+                                    info.Request.Form.Add(v.Name, v.Value);
+                        }
+
+                        post.POST(key, info);
+                    }
+                    else if (method == HttpServer.Method.Delete && mod is IRESTMethodDELETE delete)
+                        delete.DELETE(key, info);
+                    else if (method == "PATCH" && mod is IRESTMethodPATCH patch)
+                        patch.PATCH(key, info);
+                    else
+                    {
+                        info.Response.Status = System.Net.HttpStatusCode.MethodNotAllowed;
+                        info.Response.Reason = "Method is not allowed";
                     }
                 }
-                catch (Exception flex)
+                catch (Exception ex)
                 {
-                    Program.DataConnection.LogError("", "Reporting error gave error", flex);
+                    Program.DataConnection.LogError("", string.Format("Request for {0} gave error", info.Request.Uri), ex);
+                    Console.WriteLine(ex);
+
+                    try
+                    {
+                        if (!info.Response.HeadersSent)
+                        {
+                            info.Response.Status = System.Net.HttpStatusCode.InternalServerError;
+                            info.Response.Reason = "Error";
+                            info.Response.ContentType = "text/plain";
+
+                            var wex = ex;
+                            while (wex is System.Reflection.TargetInvocationException && wex.InnerException != wex)
+                                wex = wex.InnerException;
+
+                            info.BodyWriter.WriteJsonObject(new
+                            {
+                                Message = wex.Message,
+                                Type = wex.GetType().Name,
+#if DEBUG
+                                Stacktrace = wex.ToString()
+#endif
+                            });
+                            info.BodyWriter.Flush();
+                        }
+                    }
+                    catch (Exception flex)
+                    {
+                        Program.DataConnection.LogError("", "Reporting error gave error", flex);
+                    }
                 }
             }
         }
