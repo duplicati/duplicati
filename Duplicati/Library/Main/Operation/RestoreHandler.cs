@@ -415,7 +415,7 @@ namespace Duplicati.Library.Main.Operation
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0))
                 {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "RestoreFile", "restoring empty file \"{0}\"", file.Path);
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "RestoreFile", "Restoring empty file \"{0}\"", file.Path);
 
                     try
                     {
