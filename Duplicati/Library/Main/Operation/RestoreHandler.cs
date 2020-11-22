@@ -412,6 +412,8 @@ namespace Duplicati.Library.Main.Operation
                             throw;
                     }
 
+                var fileErrors = 0L;
+
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0))
                 {
@@ -427,7 +429,8 @@ namespace Duplicati.Library.Main.Operation
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\", message: {1}", file.Path, ex.Message);
+                        fileErrors++;
+                        Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
                         if (ex is System.Threading.ThreadAbortException)
                             throw;
                     }
@@ -447,8 +450,6 @@ namespace Duplicati.Library.Main.Operation
                     return;
                 
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
-                
-                var fileErrors = 0L;
 
                 if (m_options.PerformRestoredFileVerification)
                 {
