@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 
@@ -27,6 +28,62 @@ namespace Duplicati.UnitTest
 {
     public class FilterTest : BasicSetupHelper
     {
+        [Test]
+        [Category("Filter")]
+        public void ExcludeJobDatabaseFiles()
+        {
+            string filePath = Path.Combine(this.DATAFOLDER, "file");
+            File.WriteAllBytes(filePath, new byte[] {0});
+
+            string databaseFolder = Path.Combine(this.DATAFOLDER, "databaseFolder");
+            Directory.CreateDirectory(databaseFolder);
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dbpath"] = Path.Combine(databaseFolder, "databaseFile")};
+
+            // Normal backup that doesn't include database files in the sources.
+            string[] sources = {filePath};
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(sources);
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            // If we explicitly specify the database file as a source, the backup should still exclude it.
+            sources = new[] {filePath, options["dbpath"]};
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(sources);
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+
+                IListResults lastResults = c.List("*");
+                Assert.AreEqual(0, lastResults.Errors.Count());
+                Assert.AreEqual(0, lastResults.Warnings.Count());
+
+                Assert.AreEqual(lastResults.Files.Single().Path, filePath);
+            }
+
+            // Block for a small amount of time to avoid clock issues when quickly running successive backups.
+            System.Threading.Thread.Sleep(1000);
+
+            // If we include the folder containing the database as a source, the backup should exclude the
+            // database file.
+            sources = new[] {filePath, databaseFolder};
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(sources);
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+
+                IListResults lastResults = c.List("*");
+                Assert.AreEqual(0, lastResults.Errors.Count());
+                Assert.AreEqual(0, lastResults.Warnings.Count());
+
+                Assert.IsTrue(lastResults.Files.Select(x => x.Path).Contains(filePath));
+                Assert.IsFalse(lastResults.Files.Select(x => x.Path).Any(x => x.StartsWith(options["dbpath"])));
+            }
+        }
+
         [Test]
         [Category("Filter")]
         public void TestEmptyFolderExclude()
