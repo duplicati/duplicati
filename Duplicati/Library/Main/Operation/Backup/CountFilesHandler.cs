@@ -27,14 +27,14 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class CountFilesHandler
     {
-        public static async Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
+        public static async Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, ISet<string> forbiddenPaths, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
         {
             // Make sure we create the enumeration process in a separate scope,
             // but keep the log channel from the parent scope
             using(Logging.Log.StartIsolatingScope(true))
             using (new IsolatedChannelScope())
             {
-                var enumeratorTask = Backup.FileEnumerationProcess.Run(sources, snapshot, journalService, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader, token);
+                var enumeratorTask = Backup.FileEnumerationProcess.Run(sources, snapshot, journalService, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, forbiddenPaths, taskreader, token);
                 var counterTask = AutomationExtensions.RunTask(new
                 {
                     Input = Backup.Channels.SourcePaths.ForRead

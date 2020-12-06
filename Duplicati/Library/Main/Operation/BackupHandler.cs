@@ -56,6 +56,7 @@ namespace Duplicati.Library.Main.Operation
 
         private Library.Utility.IFilter m_filter;
         private Library.Utility.IFilter m_sourceFilter;
+        private ISet<string> m_forbiddenPaths;
 
         private readonly BackupResults m_result;
 
@@ -176,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperation(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long filesetid, long lastfilesetid, CancellationToken token)
+        private static async Task RunMainOperation(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, ISet<string> forbiddenPaths, BackupResults result, Common.ITaskReader taskreader, long filesetid, long lastfilesetid, CancellationToken token)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -195,7 +196,7 @@ namespace Duplicati.Library.Main.Operation
                                     Backup.FileEnumerationProcess.Run(sources, snapshot, journalService,
                                         options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy,
                                         options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
-                                        options.ChangedFilelist, taskreader, token),
+                                        options.ChangedFilelist, forbiddenPaths, taskreader, token),
                                     Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
                                     Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid, token),
                                     Backup.SpillCollectorProcess.Run(options, database, taskreader),
@@ -423,6 +424,10 @@ namespace Duplicati.Library.Main.Operation
                 m_filter = filter ?? new Library.Utility.FilterExpression();
                 m_sourceFilter = new Library.Utility.FilterExpression(sources, true);
 
+                // Never back up these paths.  These cannot be specified via filters, since filters
+                // containing both includes and excludes have a tendency to include unmatched paths.
+                m_forbiddenPaths = FilterGroups.CreateForbiddenPaths(m_options.Dbpath);
+
                 Task parallelScanner = null;
                 Task uploaderTask = null;
                 try
@@ -502,13 +507,13 @@ namespace Duplicati.Library.Main.Operation
                                 }
                                 else
                                 {
-                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, journalService, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
+                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, journalService, m_result, m_options, m_sourceFilter, m_filter, m_forbiddenPaths, m_result.TaskReader, counterToken.Token);
                                 }
 
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)
                                 {
-                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, filesetid, lastfilesetid, token).ConfigureAwait(false);
+                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_forbiddenPaths, m_result, m_result.TaskReader, filesetid, lastfilesetid, token).ConfigureAwait(false);
                                 }
                             }
                             finally

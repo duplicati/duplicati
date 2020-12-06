@@ -307,6 +307,23 @@ namespace Duplicati.Library.Utility
             }
         }
 
+        public static HashSet<string> CreateForbiddenPaths(string databasePath)
+        {
+            return new HashSet<string>(FilterGroups.CreateSQLiteDatabaseFilters(databasePath));
+        }
+
+        public static IEnumerable<string> CreateSQLiteDatabaseFilters(string databasePath)
+        {
+            // These paths were gathered from https://sqlite.org/tempfiles.html.
+            return new List<string>
+            {
+                databasePath, // Database
+                $"{databasePath}-journal", // Rollback journals
+                $"{databasePath}-wal", // Write-ahead Log (WAL) files
+                $"{databasePath}-shm", // Shared-memory files
+            };
+        }
+
         /// <summary>
         /// Creates Windows filters
         /// </summary>

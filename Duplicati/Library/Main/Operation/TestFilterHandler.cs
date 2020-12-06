@@ -22,6 +22,7 @@ using System.IO;
 using System.Threading;
 using Duplicati.Library.Snapshots;
 using CoCoL;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -51,7 +52,7 @@ namespace Duplicati.Library.Main.Operation
                 var source = Operation.Backup.FileEnumerationProcess.Run(sources, snapshot, null,
                     m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy,
                     m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames, null,
-                    m_result.TaskReader, token);
+                    FilterGroups.CreateForbiddenPaths(m_options.Dbpath), m_result.TaskReader, token);
 
                 var sink = CoCoL.AutomationExtensions.RunTask(
                     new { source = Operation.Backup.Channels.SourcePaths.ForRead },

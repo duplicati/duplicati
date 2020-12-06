@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, string[] changedfilelist, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, string[] changedfilelist, ISet<string> forbiddenPaths, ITaskReader taskreader, CancellationToken token)
         {
             return AutomationExtensions.RunTask(
             new
@@ -114,6 +114,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     var source = ExpandWorkList(worklist, mixinqueue, emitfilter, enumeratefilter);
+                    source = ExcludeForbiddenPaths(source, forbiddenPaths);
                     if (excludeemptyfolders)
                         source = ExcludeEmptyFolders(source);
 
@@ -208,6 +209,26 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     yield return e.Path;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Exclude forbidden paths.
+        /// </summary>
+        /// <param name="paths">The candidate collection of paths.</param>
+        /// <param name="forbiddenPaths">The paths that should never be included.</param>
+        /// <returns>The collection of paths with the forbidden paths removed.</returns>
+        public static IEnumerable<string> ExcludeForbiddenPaths(IEnumerable<string> paths, ISet<string> forbiddenPaths)
+        {
+            foreach (string path in paths)
+            {
+                if (forbiddenPaths != null && forbiddenPaths.Contains(path))
+                {
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingForbiddenPath", "Excluding forbidden path: {0}", path);
+                    continue;
+                }
+
+                yield return path;
             }
         }
 
