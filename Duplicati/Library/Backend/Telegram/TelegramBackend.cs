@@ -108,14 +108,13 @@ namespace Duplicati.Library.Backend
         public IEnumerable<IFileEntry> List()
         {
             return StartActionAsync<IEnumerable<IFileEntry>>(async () =>
-                    {
-                        await AuthenticateAsync();
-                        await EnsureChannelCreatedAsync();
-                        var fileInfos = await ListChannelFileInfosAsync();
-                        var result = fileInfos.Select(fi => fi.ToFileEntry());
-                        return result;
-                    },
-                    nameof(List)).Result;
+                {
+                    await AuthenticateAsync();
+                    await EnsureChannelCreatedAsync();
+                    var fileInfos = await ListChannelFileInfosAsync();
+                    var result = fileInfos.Select(fi => fi.ToFileEntry());
+                    return result;
+                }, nameof(List)).Result;
         }
 
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
@@ -151,38 +150,37 @@ namespace Duplicati.Library.Backend
                             m_telegramClient.SendUploadedDocument(inputPeerChannel, file, remotename, "application/zip", new TLVector<TLAbsDocumentAttribute> { fileNameAttribute }, cancelToken).GetAwaiter().GetResult();
                         }
                     }
-                },
-                nameof(PutAsync));
+                }, nameof(PutAsync));
         }
 
         public void Get(string remotename, Stream stream)
         {
             StartActionAsync(async () =>
+                {
+                    var fileInfo = ListChannelFileInfosAsync().Result.First(fi => fi.Name == remotename);
+                    var fileLocation = fileInfo.ToFileLocation();
+
+                    var limit = BYTES_IN_MEBIBYTE;
+                    var currentOffset = 0;
+
+                    while (currentOffset < fileInfo.Size)
                     {
-                        var fileInfo = ListChannelFileInfosAsync().Result.First(fi => fi.Name == remotename);
-                        var fileLocation = fileInfo.ToFileLocation();
-
-                        var limit = BYTES_IN_MEBIBYTE;
-                        var currentOffset = 0;
-
-                        while (currentOffset < fileInfo.Size)
+                        try
                         {
-                            try
+                            await EnsureConnectedAsync();
+                            var file = await m_telegramClient.GetFile(fileLocation, limit, currentOffset);
+                            await stream.WriteAsync(file.Bytes, 0, file.Bytes.Length);
+                            currentOffset += file.Bytes.Length;
+                        }
+                        catch (InvalidOperationException e)
+                        {
+                            if (e.Message.Contains("Couldn't read the packet length") == false)
                             {
-                                await EnsureConnectedAsync();
-                                var file = await m_telegramClient.GetFile(fileLocation, limit, currentOffset);
-                                await stream.WriteAsync(file.Bytes, 0, file.Bytes.Length);
-                                currentOffset += file.Bytes.Length;
-                            }
-                            catch (InvalidOperationException e)
-                            {
-                                if (e.Message.Contains("Couldn't read the packet length") == false)
-                                {
-                                    throw;
-                                }
+                                throw;
                             }
                         }
-                    }, $"{nameof(Get)}").Wait();
+                    }
+                }, $"{nameof(Get)}").Wait();
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
@@ -204,19 +202,19 @@ namespace Duplicati.Library.Backend
         public void Delete(string remotename)
         {
             StartActionAsync(async () =>
+                {
+                    var channel = GetChannel();
+                    var fileInfo = ListChannelFileInfosAsync().Result.FirstOrDefault(fi => fi.Name == remotename);
+                    if (fileInfo == null)
                     {
-                        var channel = GetChannel();
-                        var fileInfo = ListChannelFileInfosAsync().Result.FirstOrDefault(fi => fi.Name == remotename);
-                        if (fileInfo == null)
-                        {
-                            return;
-                        }
+                        return;
+                    }
 
-                        var request = new TLRequestDeleteMessages { Channel = new TLInputChannel { ChannelId = channel.Id, AccessHash = channel.AccessHash.Value }, Id = new TLVector<int> { fileInfo.MessageId } };
+                    var request = new TLRequestDeleteMessages { Channel = new TLInputChannel { ChannelId = channel.Id, AccessHash = channel.AccessHash.Value }, Id = new TLVector<int> { fileInfo.MessageId } };
 
-                        await EnsureConnectedAsync();
-                        await m_telegramClient.SendRequestAsync<TLAffectedMessages>(request);
-                    }, $"{nameof(Delete)}({remotename})").Wait();
+                    await EnsureConnectedAsync();
+                    await m_telegramClient.SendRequestAsync<TLAffectedMessages>(request);
+                }, $"{nameof(Delete)}({remotename})").Wait();
         }
 
         public async Task<List<ChannelFileInfo>> ListChannelFileInfosAsync()
@@ -291,10 +289,10 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             StartActionAsync(async () =>
-                    {
-                        await AuthenticateAsync();
-                        await EnsureChannelCreatedAsync();
-                    }, nameof(CreateFolder)).Wait();
+                {
+                    await AuthenticateAsync();
+                    await EnsureChannelCreatedAsync();
+                }, nameof(CreateFolder)).Wait();
         }
 
         private TLChannel GetChannel()
