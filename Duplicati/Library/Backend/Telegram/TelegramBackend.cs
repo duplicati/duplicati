@@ -316,7 +316,7 @@ namespace Duplicati.Library.Backend
             {
                 EnsureConnectedAsync().Wait();
                 var dialogsTask = m_telegramClient.GetUserDialogsAsync(lastDate);
-                var waitTask = Task.WhenAny(dialogsTask, Task.Delay(15000));
+                var waitTask = Task.WhenAny(dialogsTask, Task.Delay(15000)).Result;
                 if (waitTask != dialogsTask as Task)
                 {
                     throw new TimeoutException("Couldn't get user dialogs");
