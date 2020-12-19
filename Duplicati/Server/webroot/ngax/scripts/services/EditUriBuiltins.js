@@ -994,7 +994,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                 res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a domain name to use v3 API'));
 
             if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                res = EditUriBackendCOnfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
 
             if (res && (scope.openstack_apikey || '').trim().length != 0)
                 res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API Key are not supported in v3 keystone API.'));
