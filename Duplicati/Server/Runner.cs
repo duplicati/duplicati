@@ -953,11 +953,11 @@ namespace Duplicati.Server
             if (filters == null || filters.Length == 0)
                 return null;
 
-           return
+            return
                 (from n in filters
-                orderby n.Order
-                let exp = Environment.ExpandEnvironmentVariables(n.Expression)
-                select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
+                    orderby n.Order
+                    let exp = Environment.ExpandEnvironmentVariables(n.Expression)
+                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
     }

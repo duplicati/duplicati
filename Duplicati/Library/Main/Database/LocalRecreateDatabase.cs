@@ -607,12 +607,12 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = ""{RemoteVolumeType.Blocks}"" AND 
                     
                 if (m_tempsmalllist != null)
                     try
-                {
-                    cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempsmalllist);
-                    cmd.ExecuteNonQuery();
-                }
-                catch { }
-                finally { m_tempsmalllist = null; }
+                    {
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempsmalllist);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch { }
+                    finally { m_tempsmalllist = null; }
 
             }
 
