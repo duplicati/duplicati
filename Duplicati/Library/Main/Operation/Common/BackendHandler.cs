@@ -33,8 +33,6 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendHandler>();
 
-        public const string VOLUME_HASH = "SHA256";
-
         /// <summary>
         /// Data storage for an ongoing backend operation
         /// </summary>
@@ -112,7 +110,7 @@ namespace Duplicati.Library.Main.Operation.Common
             public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                using (var hasher = HashAlgorithm.Create(VOLUME_HASH))
+                using (var hasher = VolumeHashFactory.CreateHasher())
                     return Convert.ToBase64String(hasher.ComputeHash(fs));
             }
 

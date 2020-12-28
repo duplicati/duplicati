@@ -20,8 +20,6 @@ namespace Duplicati.Library.Main
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
 
-        public const string VOLUME_HASH = "SHA256";
-
         /// <summary>
         /// Class to represent hash failures
         /// </summary>
@@ -412,14 +410,14 @@ namespace Duplicati.Library.Main
         public static string CalculateFileHash(string filename)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-            using (var hasher = HashAlgorithm.Create(VOLUME_HASH))
+            using (var hasher = VolumeHashFactory.CreateHasher())
                 return Convert.ToBase64String(hasher.ComputeHash(fs));
         }
 
         /// <summary> Calculate file hash directly on stream object (for piping) </summary>
         public static string CalculateFileHash(System.IO.Stream stream)
         {
-            using (var hasher = HashAlgorithm.Create(VOLUME_HASH))
+            using (var hasher = VolumeHashFactory.CreateHasher())
                 return Convert.ToBase64String(hasher.ComputeHash(stream));
         }
 
@@ -428,9 +426,8 @@ namespace Duplicati.Library.Main
         /// with a callback to retrieve the hash when done.
         /// </summary>
         public static System.Security.Cryptography.CryptoStream GetFileHasherStream
-            (System.IO.Stream stream, System.Security.Cryptography.CryptoStreamMode mode, out Func<string> getHash)
+            (System.IO.Stream stream, System.Security.Cryptography.CryptoStreamMode mode, HashAlgorithm hasher, out Func<string> getHash)
         {
-            var hasher = HashAlgorithm.Create(VOLUME_HASH);
             System.Security.Cryptography.CryptoStream retHasherStream =
                 new System.Security.Cryptography.CryptoStream(stream, hasher, mode);
             getHash = () =>
@@ -439,7 +436,6 @@ namespace Duplicati.Library.Main
                     && !retHasherStream.HasFlushedFinalBlock)
                     retHasherStream.FlushFinalBlock();
                 string retHash = Convert.ToBase64String(hasher.Hash);
-                hasher.Dispose();
                 return retHash;
             };
             return retHasherStream;
@@ -902,10 +898,10 @@ namespace Duplicati.Library.Main
                 dlTarget = new Library.Utility.TempFile();
                 if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
                 {
-                    Func<string> getFileHash;
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))
-                    using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, out getFileHash))
+                    using (var hasher = VolumeHashFactory.CreateHasher())
+                    using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, hasher, out var getFileHash))
                     using (var ss = new ShaderStream(hs, true))
                     {
                         using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
