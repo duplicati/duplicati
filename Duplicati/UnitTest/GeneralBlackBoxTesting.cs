@@ -68,7 +68,7 @@ namespace Duplicati.UnitTest
             
             using (WebClient client = new WebClient())
             {
-                client.DownloadFile($"https://s3.amazonaws.com/duplicati-test-file-hosting/{this.zipFilename}", this.zipFilepath);
+                client.DownloadFile($"https://testfiles.duplicati.com/{this.zipFilename}", this.zipFilepath);
             }
             
             System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);

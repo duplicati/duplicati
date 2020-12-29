@@ -118,7 +118,7 @@ namespace Duplicati.Library.Snapshots
                 else if (installed32on64 != null)
                     try { arrInstalledInstances = (string[])installed32on64; }
                     catch { }
-             }
+            }
             
             IsMSSQLInstalled = arrInstalledInstances != null && arrInstalledInstances.Length > 0;
 

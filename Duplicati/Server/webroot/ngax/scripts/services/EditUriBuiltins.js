@@ -30,7 +30,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
+    EditUriBackendConfig.templates['telegram']  = 'templates/backends/telegram.html';
     EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
+	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -502,6 +504,43 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     };
 
+    EditUriBackendConfig.parsers['telegram'] = function (scope, module, server, port, path, options) {
+        if (options['--api-id'])
+            scope.api_id = options['--api-id'];
+        if (options['--api-hash'])
+            scope.api_hash = options['--api-hash'];
+        if (options['--auth-code'])
+            scope.auth_code = options['--auth-code'];
+        if (options['--channel-name'])
+            scope.channel_name = options['--channel-name'];
+        if (options['--phone-number'])
+            scope.phone_number = options['--phone-number'];
+        if (options['--auth_password'])
+            scope.auth_password = options['--auth_password'];
+
+        var nukeopts = ['--api-id','--api-hash', '--auth-code', '--channel-name', '--phone-number', '--auth_password'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    };
+
+    EditUriBackendConfig.parsers['cos'] = function (scope, module, server, port, path, options) {
+        if (options['--cos-app-id'])
+            scope.cos_app_id = options['--cos-app-id'];
+        if (options['--cos-region'])
+            scope.cos_region = options['--cos-region'];
+        if (options['--cos-secret-id'])
+            scope.cos_secret_id = options['--cos-secret-id'];
+		if (options['--cos-secret-key'])
+            scope.cos_secret_key = options['--cos-secret-key'];
+        if (options['--cos-bucket'])
+            scope.cos_bucket = options['--cos-bucket'];
+
+        var nukeopts = ['--cos-app-id', '--cos-region', '--cos-secret-id', '--cos-secret-key', '--cos-bucket'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+		
+		EditUriBackendConfig.mergeServerAndPath(scope);
+    }
 
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function (scope) {
@@ -740,6 +779,26 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         return url;
     };
 
+    EditUriBackendConfig.builders['telegram'] = function (scope) {
+        var opts = {
+            'api-id': scope.api_id,
+            'api-hash': scope.api_hash,
+            'auth-code': scope.auth_code,
+            'channel-name': scope.channel_name,
+            'phone-number': scope.phone_number,
+            'auth-password': scope.auth_password,
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://t.me/{1}',
+            scope.Backend.Key,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
+
     EditUriBackendConfig.builders['rclone'] = function (scope) {
 
         var opts = {
@@ -784,6 +843,27 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         return url;
     };
+
+
+    EditUriBackendConfig.builders['cos'] = function (scope) {
+        var opts = {
+            'cos-app-id': scope.cos_app_id,
+            'cos-region': scope.cos_region,
+            'cos-secret-id': scope.cos_secret_id,
+			'cos-secret-key': scope.cos_secret_key,
+			'cos-bucket': scope.cos_bucket
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+		
+        return url;
+    }
 
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))
@@ -914,7 +994,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                 res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a domain name to use v3 API'));
 
             if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                res = EditUriBackendCOnfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
 
             if (res && (scope.openstack_apikey || '').trim().length != 0)
                 res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API Key are not supported in v3 keystone API.'));
@@ -1069,6 +1149,26 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             continuation();
     };
 
+    EditUriBackendConfig.validaters['telegram'] = function (scope, continuation) {
+        var opts = {
+            'api-id': scope.api_id,
+            'api-hash': scope.api_hash,
+            'auth-code': scope.auth_code,
+            'channel-name': scope.channel_name,
+            'phone-number': scope.phone_number,
+            'auth-password': scope.auth_password,
+        };
+        
+        var res =
+            EditUriBackendConfig.require_field(scope, 'api_id', gettextCatalog.getString('api_id')) &&
+            EditUriBackendConfig.require_field(scope, 'api_hash', gettextCatalog.getString('api_hash')) &&
+            EditUriBackendConfig.require_field(scope, 'channel_name', gettextCatalog.getString('channel_name')) &&
+            EditUriBackendConfig.require_field(scope, 'phone_number', gettextCatalog.getString('phone_number'));
+
+        if (res)
+            continuation();
+    };
+
     EditUriBackendConfig.validaters['rclone'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Remote Repository')) &&
@@ -1079,4 +1179,15 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             continuation();
     };
 
+	EditUriBackendConfig.validaters['cos'] = function (scope, continuation) {
+		var res =
+            EditUriBackendConfig.require_field(scope, 'cos_app_id', gettextCatalog.getString('cos_app_id')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_secret_id', gettextCatalog.getString('cos_secret_id')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_secret_key', gettextCatalog.getString('cos_secret_key')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_region', gettextCatalog.getString('cos_region')) &&
+            EditUriBackendConfig.require_field(scope, 'cos_bucket', gettextCatalog.getString('cos_bucket'));
+			
+		if (res)
+            continuation();
+    };
 });

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
         private const string TARDIGRADE_FOLDER = "tardigrade-folder";
         private const string PROTOCOL_KEY = "tardigrade";
+        private const string TARDIGRADE_PARTNER_ID = "duplicati";
 
         private readonly string _satellite;
         private readonly string _api_key;
@@ -36,13 +38,39 @@ namespace Duplicati.Library.Backend.Tardigrade
         public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
             { "US Central 1", "us-central-1.tardigrade.io:7777" },
             { "Asia East 1", "asia-east-1.tardigrade.io:7777" },
+            { "Saltlake", "saltlake.tardigrade.io:7777" },
             { "Europe West 1", "europe-west-1.tardigrade.io:7777" },
+            { "Europe North 1", "europe-north-1.tardigrade.io:7777" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
             { "API key", "API key" },
             { "Access grant", "Access grant" },
         };
+
+        [DllImport("kernel32.dll")]
+        protected static extern IntPtr LoadLibrary(string filename);
+
+        private static bool _libraryLoaded = false;
+        private static void InitStorjLibrary()
+        {
+            if (_libraryLoaded)
+                return;
+
+            if (Duplicati.Library.Common.Platform.IsClientWindows) //We need to init only on Windows to distinguish between x64 and x86
+            {
+                if (System.Environment.Is64BitProcess)
+                {
+                    var res = LoadLibrary("win-x64/storj_uplink.dll");
+                }
+                else
+                {
+                    var res = LoadLibrary("win-x86/storj_uplink.dll");
+                }
+            }
+            Access.SetTempDirectory(Library.Utility.TempFolder.SystemTempPath);
+            _libraryLoaded = true;
+        }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
@@ -54,15 +82,14 @@ namespace Duplicati.Library.Backend.Tardigrade
         // This constructor is needed by the BackendLoader.
         public Tardigrade(string url, Dictionary<string, string> options)
         {
+            InitStorjLibrary();
+
             var auth_method = options[TARDIGRADE_AUTH_METHOD];
-
-            Access.SetTempDirectory(System.IO.Path.GetTempPath());
-
             if (auth_method == "Access grant")
             {
                 //Create an access from the access grant
                 var shared_access = options[TARDIGRADE_SHARED_ACCESS];
-                _access = new Access(shared_access);
+                _access = new Access(shared_access, new Config() { UserAgent = TARDIGRADE_PARTNER_ID });
             }
             else
             {
@@ -78,7 +105,7 @@ namespace Duplicati.Library.Backend.Tardigrade
                     _secret = options[TARDIGRADE_SECRET];
                 }
 
-                _access = new Access(_satellite, _api_key, _secret);
+                _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = TARDIGRADE_PARTNER_ID });
             }
 
             _bucketService = new BucketService(_access);
@@ -241,7 +268,10 @@ namespace Duplicati.Library.Backend.Tardigrade
             foreach (var obj in objects.Items)
             {
                 TardigradeFile file = new TardigradeFile(obj);
-                file.Name = file.Name.Replace(GetBasePath(), "");
+                if (prefix != "")
+                {
+                    file.Name = file.Name.Replace(prefix, "");
+                }
                 files.Add(file);
             }
 

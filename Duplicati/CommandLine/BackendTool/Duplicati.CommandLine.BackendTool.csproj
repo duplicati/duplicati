@@ -46,6 +46,12 @@
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
     </ProjectReference>
     <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">

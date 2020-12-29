@@ -251,8 +251,12 @@ namespace Duplicati.Server
 
                     List<string> args = new List<string>();
                     using (System.IO.StreamReader sr = new System.IO.StreamReader(Platform.IsClientPosix ? UnixSupport.File.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
-                    while(!sr.EndOfStream)
-                        args.Add(sr.ReadLine());
+                    {
+                        while (!sr.EndOfStream)
+                        {
+                            args.Add(sr.ReadLine());
+                        }
+                    }
 
                     commandline = args.ToArray();
 

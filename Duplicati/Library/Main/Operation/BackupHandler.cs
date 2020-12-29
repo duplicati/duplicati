@@ -442,17 +442,6 @@ namespace Duplicati.Library.Main.Operation
                         {
                             try
                             {
-                                // Start parallel scan, or use the database
-                                if (m_options.DisableFileScanner)
-                                {
-                                    var d = m_database.GetLastBackupFileCountAndSize();
-                                    m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
-                                }
-                                else
-                                {
-                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
-                                }
-
                                 // Make sure the database is sane
                                 await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
 
@@ -504,6 +493,17 @@ namespace Duplicati.Library.Main.Operation
 
                                 // create USN-based scanner if enabled
                                 var journalService = GetJournalService(sources, snapshot, filter, lastfilesetid);
+
+                                // Start parallel scan, or use the database
+                                if (m_options.DisableFileScanner)
+                                {
+                                    var d = m_database.GetLastBackupFileCountAndSize();
+                                    m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
+                                }
+                                else
+                                {
+                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, journalService, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
+                                }
 
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)

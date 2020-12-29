@@ -3,7 +3,7 @@ Duplicati is a free, open source, backup client that securely stores encrypted, 
 
 *Amazon S3, OneDrive, Google Drive, Rackspace Cloud Files, HubiC, Backblaze (B2), Swift / OpenStack, WebDAV, SSH (SFTP), FTP, and more!*
 
-Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 4.6.2+ or Mono 4.8.0+ required).
+Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 4.7.1+ or Mono 4.8.0+ required).
 
 ## Available tags
 
