@@ -5,13 +5,13 @@
     <Version>2.0.0.7</Version>
     <OutputType>Library</OutputType>    
     <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
-    <Product>Duplicati.Backend.AlternativeFTP</Product>
+    <Product>Duplicati.Library.Backend.AlternativeFTP</Product>
     <Company>Duplicati Team</Company>
     <Authors>Duplicati Team</Authors>
     <Description>An alternative FTP backend for Duplicati</Description>
     <PackageId>AlternativeFTP</PackageId>
-    <AssemblyName>Duplicati.Backend.AlternativeFTP</AssemblyName>
-    <RootNamespace>Duplicati.Backend.AlternativeFTP</RootNamespace>
+    <AssemblyName>Duplicati.Library.Backend.AlternativeFTP</AssemblyName>
+    <RootNamespace>Duplicati.Library.Backend.AlternativeFTP</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
