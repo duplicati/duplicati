@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.S3", "Duplicati\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj", "{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Duplicati\CommandLine\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.WEBDAV", "Duplicati\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj", "{BAE27510-8B5D-44B2-B33E-372A98908041}"
 EndProject
@@ -41,7 +41,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SSHv2", "Duplicati\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj", "{FF2BF37C-E502-4C98-BEA0-701671DDFA08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server", "Duplicati\Server\Duplicati.Server.csproj", "{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server", "Duplicati\Server\Main\Duplicati.Server.csproj", "{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{17566860-3D98-4604-AA5B-47661F75609F}"
 EndProject
