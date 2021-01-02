@@ -18,7 +18,7 @@ test_script:
         nuget install coveralls.net -Version 0.7.0 -OutputDirectory packages
         nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory packages
 
-        $testDir = ".\Duplicati\UnitTest\bin\Debug"
+        $testDir = ".\Duplicati\UnitTest\bin\Debug\net471"
         $tests = @("$testDir\Duplicati.UnitTest.dll")
         $testsPassed = $true
 
@@ -58,7 +58,7 @@ test_script:
             --commitEmail "$commitEmail" `
             --commitMessage "$commitMessage" `
             --useRelativePaths `
-            --basePath .\Duplicati\UnitTest\bin\Debug
+            --basePath .\Duplicati\UnitTest\bin\Debug\net471
         }
 
         if (!$testsPassed) {
