@@ -34,16 +34,6 @@
 copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
 </PostBuildEvent>
     <PostBuildEvent />
-    <PreBuildEvent />
-    <PostBuildEvent Condition="' $(OS)'=='Windows_NT' AND $(ConfigurationName) == Debug ">copy /Y  '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\build\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
-copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
-</PostBuildEvent>
-    <PostBuildEvent />
-    <PreBuildEvent />
-    <PostBuildEvent Condition="' $(OS)'=='Windows_NT' AND $(ConfigurationName) == Debug ">copy /Y  '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\build\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
-copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
-</PostBuildEvent>
-    <PostBuildEvent />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug</OutputPath>
@@ -143,7 +133,6 @@ copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' 
     <EmbeddedResource Include="Resources\TrayNormalPause.ico" />
     <EmbeddedResource Include="Resources\TrayWorking.ico" />
     <Compile Update="CocoaRunner.cs">
-      <DependentUpon>CocoaRunner.cs</DependentUpon>
     </Compile>
     <EmbeddedResource Include="OSX Icons\normal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -163,6 +152,7 @@ copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' 
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
     <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj" />
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj" />
     <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
@@ -182,7 +172,6 @@ copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' 
     <ProjectReference Include="..\..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\..\CommandLine\Duplicati.CommandLine.csproj" />
     <ProjectReference Include="..\..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
     <ProjectReference Include="..\..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj" />
     <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj" />

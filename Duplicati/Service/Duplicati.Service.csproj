@@ -21,8 +21,8 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Server\Duplicati.Server.csproj" />
     <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\Server\Main\Duplicati.Server.csproj" />
   </ItemGroup>
 </Project>
