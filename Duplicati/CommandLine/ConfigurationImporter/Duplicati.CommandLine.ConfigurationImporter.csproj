@@ -50,7 +50,7 @@
       <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
       <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Server\Duplicati.Server.csproj">
+    <ProjectReference Include="..\..\Server\Main\Duplicati.Server.csproj">
       <Project>{19e661d2-c5da-4f35-b3ee-7586e5734b5f}</Project>
       <Name>Duplicati.Server</Name>
     </ProjectReference>

@@ -76,10 +76,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj">
-      <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
-      <Name>Duplicati.CommandLine</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
       <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
       <Name>Duplicati.CommandLine.BackendTester</Name>
@@ -87,6 +83,10 @@
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
       <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
       <Name>Duplicati.CommandLine.BackendTool</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\CLI\Duplicati.CommandLine.csproj">
+      <Project>{81765a64-3661-4e3e-b850-2f6f87a51f74}</Project>
+      <Name>Duplicati.CommandLine</Name>
     </ProjectReference>
     <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
       <Project>{4a010589-76e6-4f05-a5c4-4598d5df11f8}</Project>
@@ -180,8 +180,8 @@
       <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
       <Name>Duplicati.License</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Server\Duplicati.Server.csproj">
-      <Project>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</Project>
+    <ProjectReference Include="..\Server\Main\Duplicati.Server.csproj">
+      <Project>{19e661d2-c5da-4f35-b3ee-7586e5734b5f}</Project>
       <Name>Duplicati.Server</Name>
     </ProjectReference>
     <ProjectReference Include="..\Service\Duplicati.Service.csproj">
