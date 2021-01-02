@@ -6,4 +6,4 @@ declare -a FORWARD_OPTS
 
 export UPDATE_SOURCE="${DUPLICATI_ROOT}/Updates/build/${BUILDTAG}_source"
 export UPDATE_TARGET="${DUPLICATI_ROOT}/Updates/build/${BUILDTAG}_target"
-
+export MONO_IMAGE="$(cat "${TRAVIS_BUILD_DIR}/Installer/Docker/mono_image.txt")"

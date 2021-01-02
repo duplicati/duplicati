@@ -55,6 +55,7 @@ docker buildx create --use --name duplicati-multiarch
 docker buildx build \
     ${args} \
     --platform ${PLATFORMS} \
+    --build-arg PARENT_IMAGE="$(cat mono_image.txt)-slim" \
     --build-arg VERSION=${VERSION} \
     --build-arg CHANNEL=${CHANNEL} \
     --file context/Dockerfile \
