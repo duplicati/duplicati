@@ -115,12 +115,10 @@
     </ProjectReference>
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj">
     </ProjectReference>
+    <ProjectReference Include="..\UnixSupport\UnixSupport.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="UnixSupport">
-      <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
-    </Reference>
     <Reference Include="HttpServer">
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
     </Reference>

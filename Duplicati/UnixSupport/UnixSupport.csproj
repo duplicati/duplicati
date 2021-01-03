@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <Version>2.0.0.7</Version>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
     <Product>UnixSupport</Product>
     <Company>Duplicati Team</Company>
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Mono.Posix" />
+    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

@@ -24,14 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\UnixSupport\UnixSupport.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="UnixSupport">
-      <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" />
