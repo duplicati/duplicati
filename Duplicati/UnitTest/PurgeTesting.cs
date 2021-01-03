@@ -285,6 +285,8 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(3, modFilesets);
             }
 
+            //FIXME: Avoid backup from the future
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             // A subsequent backup should be successful.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
             {
