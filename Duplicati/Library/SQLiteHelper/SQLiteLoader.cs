@@ -20,6 +20,7 @@
 using System;
 using System.IO;
 using Duplicati.Library.Common;
+using System.Data.SQLite;
 
 namespace Duplicati.Library.SQLiteHelper
 {
@@ -152,83 +153,7 @@ namespace Duplicati.Library.SQLiteHelper
         {
             get
             {
-                if (m_type != null)
-                    return m_type;
-
-                var filename = "System.Data.SQLite.dll";
-                var basePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SQLite");
-
-                // Set this to make SQLite preload automatically
-                Environment.SetEnvironmentVariable("PreLoadSQLite_BaseDirectory", basePath);
-
-                //Default is to use the pinvoke version which requires a native .dll/.so
-                var assemblyPath = Path.Combine(basePath, "pinvoke");
-                var loadMixedModeAssembly = false;
-
-                if (!Duplicati.Library.Utility.Utility.IsMono)
-                {
-                    //If we run with MS.Net we can use the mixed mode assemblies
-                    if (Environment.Is64BitProcess)
-                    {
-                        if (File.Exists(Path.Combine(Path.Combine(basePath, "win64"), filename)))
-                        {
-                            assemblyPath = Path.Combine(basePath, "win64");
-                            loadMixedModeAssembly = true;
-                        }
-                    }
-                    else
-                    {
-                        if (File.Exists(Path.Combine(Path.Combine(basePath, "win32"), filename)))
-                        {
-                            assemblyPath = Path.Combine(basePath, "win32");
-                            loadMixedModeAssembly = true;
-                        }
-                    }
-
-                    // If we have a new path, try to force load the mixed-mode assembly for the current architecture
-                    // This can be avoided if the preload in SQLite works, but it is easy to do it here as well
-                    if (loadMixedModeAssembly)
-                    {
-                        try { PInvoke.LoadLibraryEx(Path.Combine(assemblyPath, "SQLite.Interop.dll"), IntPtr.Zero, 0); }
-                        catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "LoadMixedModeSQLiteError", ex, "Failed to load the mixed mode SQLite database: {0}", Path.Combine(assemblyPath, "SQLite.Interop.dll")); }
-                    }
-                }
-                else
-                {
-                    //On Mono, we try to find the Mono version of SQLite
-
-                    //This secret environment variable can be used to support older installations
-                    var envvalue = System.Environment.GetEnvironmentVariable("DISABLE_MONO_DATA_SQLITE");
-                    if (!Utility.Utility.ParseBool(envvalue, envvalue != null))
-                    {
-                        foreach (var asmversion in new[] { "4.0.0.0", "2.0.0.0" })
-                        {
-                            var name = string.Format("Mono.Data.Sqlite, Version={0}, Culture=neutral, PublicKeyToken=0738eb9f132ed756", asmversion);
-                            try
-                            {
-                                Type t = System.Reflection.Assembly.Load(name).GetType("Mono.Data.Sqlite.SqliteConnection");
-                                if (t != null && t.GetInterface("System.Data.IDbConnection", false) != null)
-                                {
-                                    Version v = new Version((string)t.GetProperty("SQLiteVersion").GetValue(null, null));
-                                    if (v >= new Version(3, 6, 3))
-                                    {
-                                        return m_type = t;
-                                    }
-                                }
-                            }
-                            catch(Exception ex)
-                            {
-                                Logging.Log.WriteExplicitMessage(LOGTAG, "FailedToLoadSQLiteAssembly", ex, "Failed to load the SQLite assembly: {0}", name);
-                            }
-                        }
-
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadSQLite", "Failed to load Mono.Data.Sqlite.SqliteConnection, reverting to built-in.");
-                    }
-                }
-
-                m_type = System.Reflection.Assembly.LoadFile(Path.Combine(assemblyPath, filename)).GetType("System.Data.SQLite.SQLiteConnection");
-
-                return m_type;
+                return typeof(SQLiteConnection);
             }
         }
 
@@ -306,21 +231,5 @@ namespace Duplicati.Library.SQLiteHelper
                 cmd.ExecuteScalar();
             }
         }
-    }
-
-    /// <summary>
-    /// Helper class with PInvoke methods
-    /// </summary>
-    internal static class PInvoke
-    {
-        /// <summary>
-        /// Loads the specified module into the address space of the calling process.
-        /// </summary>
-        /// <returns>The library ex.</returns>
-        /// <param name="lpFileName">The filename of the module to load.</param>
-        /// <param name="hReservedNull">Reserved for future use.</param>
-        /// <param name="dwFlags">Action to take on load.</param>
-        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint dwFlags);
     }
 }
