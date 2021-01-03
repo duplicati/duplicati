@@ -32,7 +32,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            os: [ ubuntu-latest, windows-latest, macos-latest ]
+            os: [ [ubuntu-latest, linux-x64], [windows-latest, win-x64], [macos-latest, osx-x64] ]
     
         steps:
         - uses: actions/checkout@v2
@@ -43,7 +43,7 @@ jobs:
         - name: Restore dependencies
           run: dotnet restore Duplicati.sln
         - name: Package
-          run: dotnet publish -p:PublishReadyToRun=true --self-contained=true -p:PublishTrimmed=true -o publish Duplicati.sln
+          run: dotnet publish -p:PublishReadyToRun=true --runtime=${{ matrix.os[1] }} --self-contained=true -p:PublishTrimmed=true -o publish Duplicati.sln
         - name: Save Artifacts
           uses: actions/upload-artifact@v2
           with:
