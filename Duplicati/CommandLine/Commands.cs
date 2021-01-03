@@ -115,7 +115,7 @@ namespace Duplicati.CommandLine
 
                         if (m_thread != null && m_thread.IsAlive)
                         {
-                            m_thread.Abort();
+                            m_thread.Interrupt();
                             m_thread.Join(500);
                         }
                     }

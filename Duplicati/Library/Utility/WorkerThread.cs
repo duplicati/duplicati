@@ -232,7 +232,7 @@ namespace Duplicati.Library.Utility
             {
                 try
                 {
-                    m_thread.Abort();
+                    m_thread.Interrupt();
                     m_thread.Join(500);
                 }
                 catch

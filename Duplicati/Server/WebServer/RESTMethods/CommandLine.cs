@@ -190,7 +190,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                 var tr = t.Thread;
                 if (tr != null)
-                    tr.Abort();
+                    tr.Interrupt();
 
                 info.OutputOK();
             }
