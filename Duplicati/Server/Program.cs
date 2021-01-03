@@ -273,8 +273,6 @@ namespace Duplicati.Server
                 
                 Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 return 100;
-
-                throw;
             }
             catch (Exception ex)
             {

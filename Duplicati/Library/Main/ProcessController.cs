@@ -208,12 +208,14 @@ namespace Duplicati.Library.Main
                     if (string.Equals(ioclass, "idle", StringComparison.OrdinalIgnoreCase))
                     {
                         m_originalNiceClass = 3;
+                        // Only allowed for "best-effort" and "realtime"
                         m_originalNiceLevel = -1;
                     }
                     else if (string.Equals(ioclass, "none", StringComparison.OrdinalIgnoreCase))
                     {
                         m_originalNiceClass = 0;
-                        m_originalNiceLevel = int.Parse(results.Last());
+                        // Only allowed for "best-effort" and "realtime"
+                        m_originalNiceLevel = -1; 
                     }
                     else if (string.Equals(ioclass, "best-effort", StringComparison.OrdinalIgnoreCase))
                     {

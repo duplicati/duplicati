@@ -249,7 +249,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                RcloneCommandExecuter(rclone_executable, String.Format("copyto {2}:{3}/{4} {0}:{1}", local_repo, filename, remote_repo, remote_path, remotename), CancellationToken.None).Await();
+                RcloneCommandExecuter(rclone_executable, String.Format("copyto {2}:{3} {0}:{1}", local_repo, filename, remote_repo, Path.Combine(this.remote_path, remotename)), CancellationToken.None).Await();
             }
             catch (FolderMissingException ex) {
                 throw new FileMissingException(ex);
@@ -262,7 +262,7 @@ namespace Duplicati.Library.Backend
             // Will give a "directory not found" error if the file does not exist, need to change that to a missing file exception
             try
             {
-                RcloneCommandExecuter(rclone_executable, String.Format("delete {0}:{1}/{2}", remote_repo, remote_path, remotename), CancellationToken.None).Await();
+                RcloneCommandExecuter(rclone_executable, String.Format("delete {0}:{1}", remote_repo, Path.Combine(remote_path, remotename)), CancellationToken.None).Await();
             }
             catch (FolderMissingException ex) {
                 throw new FileMissingException(ex);

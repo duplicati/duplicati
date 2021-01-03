@@ -85,6 +85,11 @@ namespace Duplicati.Library.Main.Operation
                         SetCount = db.GetFilesetFileCount(x.Item2, tr)
                     }).ToArray();
 
+                    if (m_options.Dryrun)
+                        tr.Rollback();
+                    else
+                        tr.Commit();
+
                     var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
                     var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
 
@@ -166,11 +171,6 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                 }
-
-                if (m_options.Dryrun)
-                    tr.Rollback();
-                else
-                    tr.Commit();
 
                 m_result.OperationProgressUpdater.UpdateProgress(0.95f);
 

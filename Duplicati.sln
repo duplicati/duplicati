@@ -103,7 +103,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Encryptio
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Duplicati\CommandLine\AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{4D1B198B-F773-44F2-872B-2B283053323C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Telegram", "Duplicati\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj", "{B6BB37DE-1DCA-401B-B92F-202F341916EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -315,6 +319,14 @@ Global
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6BB37DE-1DCA-401B-B92F-202F341916EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6BB37DE-1DCA-401B-B92F-202F341916EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6BB37DE-1DCA-401B-B92F-202F341916EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6BB37DE-1DCA-401B-B92F-202F341916EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

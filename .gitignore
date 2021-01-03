@@ -23,6 +23,5 @@ changelog-news.txt
 binfiles.wxs
 .idea/
 .vs/
-launchSettings.json
 
 Installer/debian/*.buildinfo

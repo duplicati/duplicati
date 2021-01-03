@@ -10,8 +10,8 @@
     <Authors>Duplicati Team</Authors>
     <Description>The main Duplicati implementation module</Description>
     <PackageId>Main</PackageId>
-    <AssemblyName>Duplicati.Main</AssemblyName>
-    <RootNamespace>Duplicati.Main</RootNamespace>
+    <AssemblyName>Duplicati.Library.Main</AssemblyName>
+    <RootNamespace>Duplicati.Library.Main</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>

@@ -179,8 +179,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // Not all reparse points are symlinks.
                 // For example, on Windows 10 Fall Creator's Update, the OneDrive folder (and all subfolders)
                 // are reparse points, which allows the folder to hook into the OneDrive service and download things on-demand.
-                // If we can't find a symlink target for the current path, we won't treat it as a symlink.                
-                string symlinkTarget = snapshot.GetSymlinkTarget(path);
+                // If we can't find a symlink target for the current path, we won't treat it as a symlink.
+                string symlinkTarget = null;
+                try
+                {
+                    symlinkTarget = snapshot.GetSymlinkTarget(path);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteExplicitMessage(FILELOGTAG, "SymlinkTargetReadFailure", ex, "Failed to read symlink target for path: {0}", path);
+                }
+
                 if (!string.IsNullOrWhiteSpace(symlinkTarget))
                 {
                     if (options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)

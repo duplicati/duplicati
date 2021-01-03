@@ -10,8 +10,8 @@
     <Authors>Duplicati Team</Authors>
     <Description>AutoUpdater library for Duplicati</Description>
     <PackageId>AutoUpdater</PackageId>
-    <AssemblyName>Duplicati.Backend.AutoUpdater</AssemblyName>
-    <RootNamespace>Duplicati.Backend.AutoUpdater</RootNamespace>
+    <AssemblyName>Duplicati.Library.AutoUpdater</AssemblyName>
+    <RootNamespace>Duplicati.Library.AutoUpdater</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>

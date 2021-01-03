@@ -18,6 +18,7 @@
 using System;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 
 namespace Duplicati.Server.Database
@@ -121,11 +122,19 @@ namespace Duplicati.Server.Database
         public void SanitizeTargetUrl()
         {
             var url = new Duplicati.Library.Utility.Uri(this.TargetURL);
-            var filteredParameters = url.QueryParameters;
-            foreach (string field in UrlPasswords) {
-                filteredParameters.Remove(field);
+            NameValueCollection filteredParameters = new NameValueCollection();
+            if (url.Query != null)
+            {
+                // We cannot use url.QueryParameters since it contains decoded parameter values, which
+                // breaks assumptions made by the decode_uri function in AppUtils.js.  Since we are simply
+                // removing password parameters, we will leave the parameters as they are in the target URL.
+                filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
+                foreach (string field in this.UrlPasswords)
+                {
+                    filteredParameters.Remove(field);
+                }
             }
-            url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(url.QueryParameters));
+            url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(filteredParameters));
             this.TargetURL = url.ToString();
         }
 

@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -43,6 +44,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, options, null))
             {
                 var res = c.Backup(new string[] { DATAFOLDER });
+                Assert.AreEqual(0, res.Errors.Count());
+                Assert.AreEqual(0, res.Warnings.Count());
                 if (res.ParsedResult != ParsedResultType.Success)
                     throw new Exception("Unexpected result from base backup");
                 
@@ -145,13 +148,42 @@ namespace Duplicati.UnitTest
             }
         }
 
+        [Test]
+        [Category("Border")]
+        public void CustomRemoteURL()
+        {
+            string customTargetFolder = Path.Combine(this.TARGETFOLDER, "destination");
+            Directory.CreateDirectory(customTargetFolder);
 
-        private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0)
+            List<string> customCommands = new List<string>
+            {
+                $"echo --remoteurl = \"{customTargetFolder}\""
+            };
+
+            Dictionary<string, string> options = this.TestOptions;
+            options["run-script-before"] = CreateScript(0, null, null, 0, customCommands);
+            using (Controller c = new Library.Main.Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            string[] targetEntries = Directory.EnumerateFileSystemEntries(this.TARGETFOLDER).ToArray();
+            Assert.AreEqual(1, targetEntries.Length);
+            Assert.AreEqual(customTargetFolder, targetEntries[0]);
+
+            // We expect a dblock, dlist, and dindex file.
+            IEnumerable<string> customTargetEntries = Directory.EnumerateFileSystemEntries(customTargetFolder);
+            Assert.AreEqual(3, customTargetEntries.Count());
+        }
+
+        private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);
             if (Platform.IsClientWindows)
             {
-                var commands = new List<string>();
+                var commands = customCommands ?? new List<string>();
                 if (!string.IsNullOrWhiteSpace(stdout))
                     commands.Add($@"echo {stdout}");
                 if (!string.IsNullOrWhiteSpace(stderr))
@@ -170,6 +202,11 @@ namespace Duplicati.UnitTest
             {
                 var commands = new List<string>();
                 commands.Add("#!/bin/sh");
+
+                if (customCommands != null)
+                {
+                    commands.AddRange(customCommands);
+                }
 
                 if (!string.IsNullOrWhiteSpace(stdout))
                     commands.Add($@"echo {stdout}");

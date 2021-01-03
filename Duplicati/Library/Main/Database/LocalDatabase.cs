@@ -56,7 +56,16 @@ namespace Duplicati.Library.Main.Database
 
             var c = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(path);
 
-            Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            try
+            {
+                Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            }
+            catch
+            {
+                //Don't leak database connections when something goes wrong
+                c.Dispose();
+                throw;
+            }
 
             return c;
         }
@@ -1190,7 +1199,7 @@ ORDER BY
                     var args = new List<object>();
                     foreach (var f in ((Library.Utility.FilterExpression)filter).GetSimpleList())
                     {
-                        if (f.Contains('*') || f.Contains('?'))
+                        if (type == FilterType.Wildcard)
                         {
                             sb.Append(@"""Path"" LIKE ? OR ");
                             args.Add(f.Replace('*', '%').Replace('?', '_'));

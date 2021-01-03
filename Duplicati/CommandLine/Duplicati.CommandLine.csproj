@@ -36,6 +36,8 @@
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj">
+    </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">

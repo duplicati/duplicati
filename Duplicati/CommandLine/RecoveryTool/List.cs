@@ -51,7 +51,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             {
                 var file = SelectListFile(args[2], folder);
 
-                var p = Library.Main.Volumes.VolumeBase.ParseFilename(file);
+                var p = Library.Main.Volumes.VolumeBase.ParseFilename(Path.GetFileName(file));
 
                 Library.Main.Volumes.VolumeReaderBase.UpdateOptionsFromManifest(p.CompressionModule, file, new Duplicati.Library.Main.Options(options));
 
@@ -64,7 +64,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
         public static IEnumerable<Duplicati.Library.Main.Volumes.IFileEntry> EnumerateFilesInDList(string file, Duplicati.Library.Utility.IFilter filter, Dictionary<string, string> options)
         {
-            var p = Library.Main.Volumes.VolumeBase.ParseFilename(file);
+            var p = Library.Main.Volumes.VolumeBase.ParseFilename(Path.GetFileName(file));
             using (var fs = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var cm = Library.DynamicLoader.CompressionLoader.GetModule(p.CompressionModule, fs, Library.Interface.ArchiveMode.Read, options))
             using (var filesetreader = new Library.Main.Volumes.FilesetVolumeReader(cm, new Duplicati.Library.Main.Options(options)))
@@ -112,7 +112,7 @@ namespace Duplicati.CommandLine.RecoveryTool
         {
             return (
                 from v in Directory.EnumerateFiles(folder)
-                let p = Library.Main.Volumes.VolumeBase.ParseFilename(v)
+                let p = Library.Main.Volumes.VolumeBase.ParseFilename(Path.GetFileName(v))
                 where p != null && p.FileType == Duplicati.Library.Main.RemoteVolumeType.Files
                 orderby p.Time descending
                 select new KeyValuePair<DateTime, string>(p.Time, v)).ToArray();

@@ -230,11 +230,11 @@ namespace Duplicati.Library.Utility
                         {
                             WebResponse resp = null;
 
-                            try { resp = (WebResponse)r.GetType().GetProperty("Response", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(r); }
+                            try { resp = r.GetType().GetProperty("Response", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(r) as WebResponse; }
                             catch {}
 
                             if (resp == null)
-                                try { resp = (WebResponse)m_owner.m_request.GetType().GetField("webResponse", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(m_owner.m_request); }
+                                try { resp = m_owner.m_request.GetType().GetField("webResponse", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(m_owner.m_request) as WebResponse; }
                                 catch { }
 
                             if (resp != null)

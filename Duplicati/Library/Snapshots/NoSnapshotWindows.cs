@@ -17,6 +17,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -54,6 +55,18 @@ namespace Duplicati.Library.Snapshots
         public override long GetFileSize (string localPath)
         {
             return SystemIO.IO_WIN.FileLength(localPath);
+        }
+
+        /// <summary>
+        /// Enumerates all files and folders in the snapshot, restricted to sources
+        /// </summary>
+        /// <param name="sources">Sources to enumerate</param>
+        /// <param name="callback">The callback to invoke with each found path</param>
+        /// <param name="errorCallback">The callback used to report errors</param>
+        public override IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
+        {
+            // For Windows, ensure we don't store paths with UNC prefix
+            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.StripUNCPrefix), callback, errorCallback);
         }
 
         /// <summary>
@@ -138,7 +151,8 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
-            return localPath;
+            // For Windows, ensure we don't store paths with UNC prefix
+            return SystemIOWindows.StripUNCPrefix(localPath);
         }
     }
 }
