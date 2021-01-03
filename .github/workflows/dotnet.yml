@@ -2,7 +2,7 @@ name: .NET
 
 on:
   push:
-    branches: [ net5, net5ci ]
+    branches: [ net5 ]
   pull_request:
     branches: [ net5 ]
 
@@ -18,8 +18,8 @@ jobs:
       with:
         dotnet-version: 5.0.101
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore Duplicati.sln
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore Duplicati.sln
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal Duplicati.sln
