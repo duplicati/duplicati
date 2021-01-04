@@ -28,11 +28,14 @@ jobs:
       run: dotnet test --no-build --verbosity normal Duplicati.sln
 
   Artifact:
-        runs-on: ${{ matrix.os }}
+        runs-on: ${{ matrix.cfg.os }}
         strategy:
           fail-fast: false
           matrix:
-            os: [ [ubuntu-latest, linux-x64], [windows-latest, win-x64], [macos-latest, osx-x64] ]
+            cfg:
+              - { os: ubuntu-latest, runtime: linux-x64 }
+              - { os: windows-latest, runtime: win-x64 }
+              - { os: macos-latest, runtime: osx-x64 }
     
         steps:
         - uses: actions/checkout@v2
@@ -43,7 +46,7 @@ jobs:
         - name: Restore dependencies
           run: dotnet restore Duplicati.sln
         - name: Package
-          run: dotnet publish -p:PublishReadyToRun=true --runtime=${{ matrix.os[1] }} --self-contained=true -p:PublishTrimmed=true -o publish Duplicati.sln
+          run: dotnet publish -p:PublishReadyToRun=true --runtime=${{ matrix.cfg.runtime }} --self-contained=true -p:PublishTrimmed=true -o publish Duplicati.sln
         - name: Save Artifacts
           uses: actions/upload-artifact@v2
           with:
