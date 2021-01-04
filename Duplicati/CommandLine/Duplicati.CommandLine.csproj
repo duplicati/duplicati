@@ -13,6 +13,8 @@
     <AssemblyName>Duplicati.CommandLine</AssemblyName>
     <RootNamespace>Duplicati.CommandLine</RootNamespace>
     <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
+    <!-- Till we can refactor so we don't link exes as if they are dlls https://stackoverflow.com/a/51087583/2924159 -->
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
   </PropertyGroup>
 
   <ItemGroup>

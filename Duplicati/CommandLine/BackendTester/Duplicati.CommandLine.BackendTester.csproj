@@ -12,6 +12,8 @@
     <PackageId>BackendTester</PackageId>
     <AssemblyName>Duplicati.CommandLine.BackendTester</AssemblyName>
     <RootNamespace>Duplicati.CommandLine.BackendTester</RootNamespace>
+    <!-- Till we can refactor so we don't link exes as if they are dlls https://stackoverflow.com/a/51087583/2924159 -->
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
   </PropertyGroup>
   
   <ItemGroup>
