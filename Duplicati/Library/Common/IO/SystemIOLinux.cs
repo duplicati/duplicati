@@ -54,7 +54,10 @@ namespace Duplicati.Library.Common.IO
 
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
+            Console.WriteLine("Was modify time {0}: {1}", path, File.GetLastWriteTimeUtc(path).Ticks);
+            Console.WriteLine("Set modify time {0}: {1}", path, time.Ticks);
             File.SetLastWriteTimeUtc(path, time);
+            Console.WriteLine("Now modify time {0}: {1}", path, File.GetLastWriteTimeUtc(path).Ticks);
         }
 
         public void FileSetCreationTimeUtc(string path, DateTime time)
@@ -64,7 +67,9 @@ namespace Duplicati.Library.Common.IO
 
         public DateTime FileGetLastWriteTimeUtc(string path)
         {
-            return File.GetLastWriteTimeUtc(path);
+            var time = File.GetLastWriteTimeUtc(path);
+            Console.WriteLine("Get modify time {0}: {1}", path, time.Ticks);
+            return time;
         }
 
         public DateTime FileGetCreationTimeUtc(string path)
@@ -258,7 +263,9 @@ namespace Duplicati.Library.Common.IO
 
         public DateTime GetLastWriteTimeUtc(string path)
         {
-            return File.GetLastWriteTimeUtc(path);
+            var time = File.GetLastWriteTimeUtc(path);
+            Console.WriteLine("Get modify time {0}: {1}", path, time.Ticks);
+            return time;
         }
 
         public IEnumerable<string> EnumerateDirectories(string path)
