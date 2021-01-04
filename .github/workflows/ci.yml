@@ -46,7 +46,7 @@ jobs:
         - name: Restore dependencies
           run: dotnet restore --runtime=${{ matrix.cfg.runtime }} Duplicati.sln
         - name: Package
-          run: dotnet publish -p:PublishReadyToRun=true --runtime=${{ matrix.cfg.runtime }} --self-contained=true -p:PublishTrimmed=true -o publish Duplicati.sln
+          run: dotnet publish --runtime=${{ matrix.cfg.runtime }} -o publish Duplicati.sln
         - name: Save Artifacts
           uses: actions/upload-artifact@v2
           with:
