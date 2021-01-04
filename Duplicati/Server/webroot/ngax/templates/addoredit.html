@@ -56,11 +56,11 @@
 
                     <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="passphrase" translate>Passphrase</label>
-                        <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
+                        <input autocomplete="new-password" type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
                     </div>
                     <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="repeat-passphrase" translate>Repeat Passphrase</label>
-                        <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
+                        <input autocomplete="new-password" type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
 
                         <div class="tools">
                             <ul>
