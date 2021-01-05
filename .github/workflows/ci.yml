@@ -1,4 +1,4 @@
-name: CI
+name: Unit
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ net5 ]
 
 jobs:
-  UnitTest:
+  Tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

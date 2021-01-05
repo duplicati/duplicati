@@ -1,4 +1,4 @@
-name: Atrifacts
+name: Artifacts
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ net5 ]
 
 jobs:
-  Artifact:
+  Zip:
         runs-on: ${{ matrix.cfg.os }}
         strategy:
           fail-fast: false
