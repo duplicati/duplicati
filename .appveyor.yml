@@ -10,9 +10,8 @@ environment:
         secure: szQsrkP5rvra8L60SomD73/dFvRwot0UuyA566zqzI2qmLOr+MhLN0AyC8BTbhYY
 before_build:
     - ps: $env:UNITTEST_BASEFOLDER = "$Env:APPVEYOR_BUILD_FOLDER" + "\testdata"
-build:
-    project: Duplicati.sln
-    verbosity: minimal
+build_script:
+    cmd: dotnet build Duplicati.sln
 test_script:
     - ps: |
         Start-FileDownload https://s3.amazonaws.com/duplicati-test-file-hosting/DSMCBE.zip

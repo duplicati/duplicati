@@ -1,4 +1,6 @@
-language: minimal
+language: csharp
+mono: none
+dotnet: 5.0.101
 services: docker
 before_install:
   - sudo apt-get install moreutils
