@@ -1,0 +1,35 @@
+name: Atrifacts
+
+on:
+  push:
+    branches: [ net5 ]
+  pull_request:
+    branches: [ net5 ]
+
+jobs:
+  Artifact:
+        runs-on: ${{ matrix.cfg.os }}
+        strategy:
+          fail-fast: false
+          matrix:
+            cfg:
+              - { os: ubuntu-latest, runtime: linux-x64 }
+              - { os: windows-latest, runtime: win-x64 }
+              - { os: macos-latest, runtime: osx-x64 }
+    
+        steps:
+        - uses: actions/checkout@v2
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v1
+          with:
+            dotnet-version: 5.0.101
+        - name: Restore dependencies
+          run: dotnet restore --runtime=${{ matrix.cfg.runtime }} Duplicati.sln
+        - name: Package
+          run: dotnet publish --runtime=${{ matrix.cfg.runtime }} -o publish Duplicati.sln
+        - name: Save Artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: duplicati-${{ matrix.cfg.runtime }}
+            path: publish
+    
