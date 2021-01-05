@@ -50,6 +50,6 @@ jobs:
         - name: Save Artifacts
           uses: actions/upload-artifact@v2
           with:
-            name: artifacts
+            name: duplicati-${{ matrix.cfg.runtime }}
             path: publish
     
