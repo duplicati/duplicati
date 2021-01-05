@@ -32,9 +32,6 @@ jobs:
 
 
     - stage: tests
-      cache:
-        directories:
-          - $BUILD_DIR
       script:
         - dotnet test --verbosity normal ${ROOT_DIR}/Duplicati.sln
 
