@@ -12,7 +12,7 @@ function start_test () {
     # export PATH=$PATH:/duplicati/
 
     #echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | tee -a /etc/ssl/certs/ca-
-    mono "${DUPLICATI_ROOT}/Duplicati/Server/bin/Debug/net5.0/Duplicati.Server.exe" &
+    "${DUPLICATI_ROOT}/Duplicati/Server/bin/Debug/net5.0/Duplicati.Server.exe" &
     cd
     python "${DUPLICATI_ROOT}/guiTests/guiTest.py"
 }
