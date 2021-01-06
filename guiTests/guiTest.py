@@ -10,33 +10,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.firefox.options import Options
 
-if "TRAVIS_BUILD_NUMBER" in os.environ:
-    if "SAUCE_USERNAME" not in os.environ:
-        print "No sauce labs login credentials found. Stopping tests..."
-        sys.exit(0)
-
-    capabilities = {'browserName': "firefox"}
-    capabilities['platform'] = "Windows 7"
-    capabilities['version'] = "48.0"
-    capabilities['screenResolution'] = "1280x1024"
-    capabilities["build"] = os.environ["TRAVIS_BUILD_NUMBER"]
-    capabilities["tunnel-identifier"] = os.environ["TRAVIS_JOB_NUMBER"]
-
-    # connect to sauce labs
-    username = os.environ["SAUCE_USERNAME"]
-    access_key = os.environ["SAUCE_ACCESS_KEY"]
-    hub_url = "%s:%s@localhost:4445" % (username, access_key)
-    driver = webdriver.Remote(command_executor="http://%s/wd/hub" % hub_url, desired_capabilities=capabilities)
-else:
-    # local
-    print "Using LOCAL webdriver"
-    profile = webdriver.FirefoxProfile()
-    profile.set_preference("intl.accept_languages", "en")
-    options = Options()
-    options.set_headless(headless=True)
-    driver = webdriver.Firefox(profile, firefox_options=options)
-    driver.maximize_window()
-
+# local
+print("Using LOCAL webdriver")
+profile = webdriver.FirefoxProfile()
+profile.set_preference("intl.accept_languages", "en")
+options = Options()
+options.set_headless(headless=True)
+driver = webdriver.Firefox(profile, firefox_options=options)
+driver.maximize_window()
 
 def write_random_file(size, filename):
     if not os.path.exists(os.path.dirname(filename)):
@@ -142,10 +123,10 @@ driver.find_element_by_link_text(BACKUP_NAME).click()
 wait_for_text(60, "//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ")
 
 # Restore
-if len([n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()]) == 0:
+if len([n for n in driver.find_elements_by_xpath("//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()]) == 0:
     driver.find_element_by_link_text(BACKUP_NAME).click()
 
-[n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()][0].click()
+[n for n in driver.find_elements_by_xpath("//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()][0].click()
 driver.find_element_by_xpath("//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 time.sleep(1)
 driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
@@ -198,9 +179,9 @@ wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and fold
 # hash direct restore files
 sha1_direct_restore = sha1_folder(DIRECT_RESTORE_FOLDER)
 
-print "Source hashes: " + str(sha1_source)
-print "Restore hashes: " + str(sha1_restore)
-print "Direct Restore hashes: " + str(sha1_direct_restore)
+print("Source hashes: " + str(sha1_source))
+print("Restore hashes: " + str(sha1_restore))
+print("Direct Restore hashes: " + str(sha1_direct_restore))
 
 # Tell Sauce Labs to stop the test
 driver.quit()
