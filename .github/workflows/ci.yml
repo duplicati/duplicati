@@ -26,3 +26,18 @@ jobs:
       run: dotnet build --no-restore Duplicati.sln
     - name: Test
       run: dotnet test --no-build --verbosity normal Duplicati.sln
+      jobs:
+
+  Selenium:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.101
+    - name: Build
+      run: dotnet publish -r linux-x64 -o publish/ Duplicati.sln
+    - name: Selenium
+      run: docker images
+      
