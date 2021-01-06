@@ -13,7 +13,7 @@ function start_test () {
 
     #echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | tee -a /etc/ssl/certs/ca-
     ls ${DUPLICATI_ROOT}
-    "${DUPLICATI_ROOT}/Duplicati.Server.exe" &
+    "${DUPLICATI_ROOT}/Duplicati.Server" &
     cd
     python "${DUPLICATI_ROOT}/guiTests/guiTest.py"
 }
