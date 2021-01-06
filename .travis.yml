@@ -27,7 +27,7 @@ jobs:
         directories:
           - $BUILD_DIR
       script:
-        - dotnet build -o $BUILD_DIR ${ROOT_DIR}/Duplicati.sln
+        - dotnet publish -r linux-x64 -o $BUILD_DIR ${ROOT_DIR}/Duplicati.sln
         - cp -R ${ROOT_DIR}/guiTests $BUILD_DIR/
 
 
