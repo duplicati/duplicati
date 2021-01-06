@@ -26,7 +26,6 @@ jobs:
       run: dotnet build --no-restore Duplicati.sln
     - name: Test
       run: dotnet test --no-build --verbosity normal Duplicati.sln
-      jobs:
 
   Selenium:
     runs-on: ubuntu-latest
