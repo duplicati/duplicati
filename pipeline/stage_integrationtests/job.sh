@@ -12,8 +12,8 @@ function start_test () {
     # export PATH=$PATH:/duplicati/
 
     #echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | tee -a /etc/ssl/certs/ca-
-    AUTOUPDATER_Duplicati_SKIP_UPDATE=1 "${DUPLICATI_ROOT}/Duplicati.Server" &
     cd
+    AUTOUPDATER_Duplicati_SKIP_UPDATE=1 "${DUPLICATI_ROOT}/Duplicati.Server" &
     python3 "${DUPLICATI_ROOT}/guiTests/guiTest.py"
 }
 
