@@ -74,7 +74,7 @@ driver.implicitly_wait(10)
 driver.get("http://localhost:8200/ngax/index.html")
 
 if "Duplicati" not in driver.title:
-    raise Exception("Unable to load duplicati GUI!")
+    raise Exception("Unable to load duplicati GUI! Got: " + driver.title)
 
 # Create and hash random files in the source folder
 write_random_file(1024 * 1024, SOURCE_FOLDER + os.sep + "1MB.test")
