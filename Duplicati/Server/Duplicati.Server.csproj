@@ -132,7 +132,10 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Folder Include="webroot\" />
+    <Content Include="webroot\**">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
