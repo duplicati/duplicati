@@ -26,6 +26,7 @@ jobs:
         - name: Restore dependencies
           run: dotnet restore --runtime=${{ matrix.cfg.runtime }} Duplicati.sln
         - name: Package
+          #TODO: investigate #if __WindowsGTK__ || ENABLE_GTK  via  -p:DefineConstants=ENABLE_GTK    Maybe needed for GUI?
           run: dotnet publish -c Release --runtime=${{ matrix.cfg.runtime }} -o publish Duplicati.sln
         - name: Save Artifacts
           uses: actions/upload-artifact@v2
