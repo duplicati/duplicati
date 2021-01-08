@@ -13,6 +13,7 @@
     <AssemblyName>Duplicati.UnitTest</AssemblyName>
     <RootNamespace>Duplicati.UnitTest</RootNamespace>
     <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
   </PropertyGroup>
   
   <ItemGroup>
