@@ -29,6 +29,58 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Border")]
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        public void RunScriptAfter(int exitCode)
+        {
+            const string expectedMessage = "Hello";
+            string expectedFile = Path.Combine(this.RESTOREFOLDER, "hello.txt");
+            List<string> customCommands = new List<string>
+            {
+                $"echo \"{expectedMessage}\" > \"{expectedFile}\""
+            };
+
+            Dictionary<string, string> options = this.TestOptions;
+            options["run-script-after"] = CreateScript(exitCode, null, null, 0, customCommands);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+
+                switch (exitCode)
+                {
+                    case 0:
+                    case 1:
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        break;
+                    case 2:
+                    case 3:
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(1, backupResults.Warnings.Count());
+                        break;
+                    default:
+                        Assert.AreEqual(1, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        break;
+                }
+
+                string[] targetEntries = Directory.EnumerateFileSystemEntries(this.RESTOREFOLDER).ToArray();
+                Assert.AreEqual(1, targetEntries.Length);
+                Assert.AreEqual(expectedFile, targetEntries[0]);
+
+                string[] lines = File.ReadAllLines(expectedFile);
+                Assert.AreEqual(1, lines.Length);
+                Assert.AreEqual(expectedMessage, lines[0]);
+            }
+        }
+
+        [Test]
+        [Category("Border")]
         public void RunScriptBefore()
         {
             var blocksize = 10 * 1024;
