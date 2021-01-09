@@ -42,7 +42,7 @@ namespace Duplicati.UnitTest
             string expectedFile = Path.Combine(this.RESTOREFOLDER, "hello.txt");
             List<string> customCommands = new List<string>
             {
-                $"echo {expectedMessage} > \"{expectedFile}\""
+                $"echo {expectedMessage}>\"{expectedFile}\""
             };
 
             Dictionary<string, string> options = this.TestOptions;
