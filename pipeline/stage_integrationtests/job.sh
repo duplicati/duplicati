@@ -12,8 +12,8 @@ function update_mono () {
 }
 
 function start_test () {
-    pip install selenium
-    pip install --upgrade urllib3
+    pip3 install selenium
+    pip3 install --upgrade urllib3
 
     # wget "https://github.com/mozilla/geckodriver/releases/download/v0.23.0/geckodriver-v0.23.0-linux32.tar.gz"
     # tar -xvzf geckodriver*
