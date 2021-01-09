@@ -12,7 +12,7 @@ from selenium.webdriver.firefox.options import Options
 
 if "TRAVIS_BUILD_NUMBER" in os.environ:
     if "SAUCE_USERNAME" not in os.environ:
-        print "No sauce labs login credentials found. Stopping tests..."
+        print("No sauce labs login credentials found. Stopping tests...")
         sys.exit(0)
 
     capabilities = {'browserName': "firefox"}
@@ -29,7 +29,7 @@ if "TRAVIS_BUILD_NUMBER" in os.environ:
     driver = webdriver.Remote(command_executor="http://%s/wd/hub" % hub_url, desired_capabilities=capabilities)
 else:
     # local
-    print "Using LOCAL webdriver"
+    print("Using LOCAL webdriver")
     profile = webdriver.FirefoxProfile()
     profile.set_preference("intl.accept_languages", "en")
     options = Options()
@@ -198,9 +198,9 @@ wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and fold
 # hash direct restore files
 sha1_direct_restore = sha1_folder(DIRECT_RESTORE_FOLDER)
 
-print "Source hashes: " + str(sha1_source)
-print "Restore hashes: " + str(sha1_restore)
-print "Direct Restore hashes: " + str(sha1_direct_restore)
+print("Source hashes: " + str(sha1_source))
+print("Restore hashes: " + str(sha1_restore))
+print("Direct Restore hashes: " + str(sha1_direct_restore))
 
 # Tell Sauce Labs to stop the test
 driver.quit()
