@@ -89,7 +89,7 @@ namespace Duplicati.UnitTest
                 if (res.ExaminedFiles <= 0)
                     throw new Exception("Backup did not examine any files for code 4?");
 
-                foreach (int exitCode in new[] {-1, 5, 10})
+                foreach (int exitCode in new[] {5, 6, 10, 99})
                 {
                     System.Threading.Thread.Sleep(PAUSE_TIME);
                     options["run-script-before"] = CreateScript(exitCode);
