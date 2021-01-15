@@ -180,7 +180,25 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is Exception)
+            if (result is OperationAbortException oae)
+            {
+                switch (oae.AbortReason)
+                {
+                    case OperationAbortReason.Error:
+                        level = ParsedResultType.Error;
+                        break;
+                    case OperationAbortReason.Normal:
+                        level = ParsedResultType.Success;
+                        break;
+                    case OperationAbortReason.Warning:
+                        level = ParsedResultType.Warning;
+                        break;
+                    default:
+                        level = ParsedResultType.Unknown;
+                        break;
+                }
+            }
+            else if (result is Exception)
                 level = ParsedResultType.Fatal;
             else if (result != null && result is IBasicResults results)
                 level = results.ParsedResult;
