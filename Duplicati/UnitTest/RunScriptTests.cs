@@ -160,10 +160,15 @@ namespace Duplicati.UnitTest
         public void RunScriptParsedResult(int exitCode)
         {
             string parsedResultFile = Path.Combine(this.RESTOREFOLDER, "result.txt");
-            List<string> customCommands = new List<string>
+            List<string> customCommands = new List<string>();
+            if (Platform.IsClientWindows)
             {
-                $"echo $DUPLICATI__PARSED_RESULT>\"{parsedResultFile}\""
-            };
+                customCommands.Add($"echo %DUPLICATI__PARSED_RESULT%>\"{parsedResultFile}\"");
+            }
+            else
+            {
+                customCommands.Add($"echo $DUPLICATI__PARSED_RESULT>\"{parsedResultFile}\"");
+            }
 
             Dictionary<string, string> options = this.TestOptions;
             options["run-script-before"] = this.CreateScript(exitCode);
