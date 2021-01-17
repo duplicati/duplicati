@@ -38,34 +38,11 @@ Source4: 	%{namer}.default
 BuildRequires:  desktop-file-utils
 BuildRequires:  dos2unix
 BuildRequires:  systemd
+BuildRequires:  dotnet
 
 Requires:	desktop-file-utils
 Requires:	bash
-Requires:	sqlite >= 3.6.12
-Requires:	mono(appindicator-sharp)
 Requires:	libappindicator
-Requires:	mono-core >= 3.0
-Requires:	mono-data-sqlite
-Requires:	mono(System)
-Requires:	mono(System.Configuration)
-Requires:	mono(System.Configuration.Install)
-Requires:	mono(System.Core)
-Requires:	mono(System.Data)
-Requires:	mono(System.Drawing)
-Requires:	mono(System.Net)
-Requires:	mono(System.Net.Http)
-Requires:	mono(System.Net.Http.WebRequest)
-Requires:	mono(System.Runtime.Serialization)
-Requires:	mono(System.ServiceModel)
-Requires:	mono(System.ServiceModel.Discovery)
-Requires:	mono(System.ServiceProcess)
-Requires:	mono(System.Transactions)
-Requires:	mono(System.Web)
-Requires:	mono(System.Web.Services)
-Requires:	mono(System.Xml)
-Requires:	mono(System.Xml.Linq)
-Requires:	mono(Mono.Security)
-Requires:	mono(Mono.Posix)
 
 Provides:	duplicati
 Provides:	duplicati-cli
@@ -104,9 +81,6 @@ rm -rf libstorj_uplink.dylib
 
 
 %install
-
-# Mono binaries are installed in /usr/lib, not /usr/lib64, even on x86_64:
-# https://fedoraproject.org/wiki/Packaging:Mono
 
 install -d %{buildroot}%{_datadir}/pixmaps/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/

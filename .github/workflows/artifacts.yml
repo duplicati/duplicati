@@ -33,4 +33,15 @@ jobs:
           with:
             name: duplicati-${{ matrix.cfg.runtime }}
             path: publish
+  Deb:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Package
+      run: Installer/debian/build.sh
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: duplicati*.deb
+        path: publish
     
