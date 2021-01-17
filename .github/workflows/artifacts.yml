@@ -42,6 +42,6 @@ jobs:
     - name: Save Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: duplicati*.deb
-        path: publish
+        name: deb package
+        path: duplicati*.deb
     
