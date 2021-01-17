@@ -1,3 +1,3 @@
 *.sh text eol=lf
-#The #! won't work if CRLF
-/Installer/debian/docker/debian/rules text eol=lf
+#The #! in rules won't work if CRLF
+/Installer/debian/docker/debian/* text eol=lf
