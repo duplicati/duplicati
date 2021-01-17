@@ -7,7 +7,7 @@ docker build $SCRIPTDIR/docker -t duplicati-debian
 
 VERSION=`grep '<Version>' < $SCRIPTDIR/../../Duplicati/Server/Duplicati.Server.csproj | sed 's/.*<Version>\(.*\)<\/Version>/\1/'`
 VERSION=${VERSION//$'\n'}
-echo Building version: $VERSION
+echo Building version: ("$VERSION")
 
 export MSYS_NO_PATHCONV=1
 docker run --rm -eVERSION=$VERSION -v $SCRIPTDIR/../../:/sources duplicati-debian
