@@ -233,6 +233,11 @@ install -p -D -m 644 Installer/fedora/%{namer}.default %{_sysconfdir}/sysconfig/
 
 
 %changelog
+* Thu Jan 21 2021 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20210121.git
+- Updated patch files
+- Fixed minor build issues
+- Changed to use msbuild instead of xbuild
+
 * Wed Jun 21 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170621.git
 - Added the service file to the install
 
