@@ -11,6 +11,9 @@
 # Then load overrides
 %include %{_topdir}/SOURCES/%{namer}-buildinfo.spec
 
+# The mangler detects executable bits, but `ls` says the files are not executable...
+%global __brp_mangle_shebangs_exclude_from ^(.*/(webroot|licenses)/.*)|(.*\\.(config|bat|txt|ps1|desktop))$
+
 Name:	%{namer}
 Version:	%{_buildversion}
 Release:	%{_gittag}%{?alphatag}%{?dist}
@@ -118,15 +121,15 @@ find -type f -name "*dll" -or -name "*DLL" -or -name "*exe"
 
 nuget restore Duplicati.sln
 
-xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
+msbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=%{_buildversion}
 
-xbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
+msbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
 cp thirdparty/UnixSupport/bin/Release/UnixSupport.dll thirdparty/UnixSupport/UnixSupport.dll
 
-xbuild /property:Configuration=Release Duplicati.sln
+msbuild /property:Configuration=Release Duplicati.sln
 
-# xbuild BuildTools/LocalizationTool/LocalizationTool.sln
+# msbuild BuildTools/LocalizationTool/LocalizationTool.sln
 
 # update l10n
 
@@ -153,14 +156,14 @@ rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/licenses/gpg
 # Mono binaries are installed in /usr/lib, not /usr/lib64, even on x86_64:
 # https://fedoraproject.org/wiki/Packaging:Mono
 
-install -d %{buildroot}%{_datadir}/pixmaps/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
+install -d -m 755 %{buildroot}%{_datadir}/pixmaps/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
 
 install -p -D -m 755 Installer/debian/duplicati-launcher.sh %{buildroot}%{_bindir}/%{namer}
 install -p -D -m 755 Installer/debian/duplicati-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
