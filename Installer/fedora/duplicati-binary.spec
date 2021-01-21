@@ -12,7 +12,7 @@
 %include %{_topdir}/SOURCES/%{namer}-buildinfo.spec
 
 # The mangler detects executable bits, but `ls` says the files are not executable...
-%global __brp_mangle_shebangs_exclude_from ^(.*/(webroot|licenses)/.*)|(.*\\.(config|bat|txt|ps1|desktop))|(.*/DuplicatiVerify\\.py)$
+%global __brp_mangle_shebangs_exclude_from ^(.*/(webroot|licenses)/.*)|(.*\\.(config|bat|txt|ps1|desktop))$
 
 # Make sure it does not break because we have som arch-dependant libraries bundled
 %define _binaries_in_noarch_packages_terminate_build 0
