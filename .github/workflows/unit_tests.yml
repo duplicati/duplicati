@@ -10,11 +10,20 @@ jobs:
   test:
     name: Run tests
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
 
     steps:
     - name: Install mono
+      if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install mono-complete
+
+    - name: Add msbuild to PATH
+      if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Checkout Source
       uses: actions/checkout@v2
