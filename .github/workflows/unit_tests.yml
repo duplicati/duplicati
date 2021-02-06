@@ -16,3 +16,6 @@ jobs:
 
     - name: Checkout $GITHUB_SHA from $GITHUB_REF
       uses: actions/checkout@v2
+
+    - name: Restore NuGet packages
+      run: nuget restore Duplicati.sln
