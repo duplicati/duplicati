@@ -206,7 +206,7 @@ namespace Duplicati.UnitTest
         {
             DateTime baseDateTime = new DateTime(2000, 1, 2, 3, 4, 5);
             DateTime baseDateTimeUTC = baseDateTime.ToUniversalTime();
-            Assert.AreEqual(baseDateTimeUTC, Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(1)));
+            Assert.AreNotEqual(baseDateTimeUTC, Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(1)));
             Assert.AreEqual(baseDateTimeUTC, Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(500)));
             Assert.AreEqual(baseDateTimeUTC, Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(999)));
             Assert.AreEqual(baseDateTimeUTC.AddSeconds(-1), Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(-1)));
