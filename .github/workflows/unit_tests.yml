@@ -22,10 +22,10 @@ jobs:
         nuget restore BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln
         msbuild -p:Configuration=Release BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln
 
-    - name: Build DependencyFinder
-      run: |
-        nuget restore BuildTools/DependencyFinder/DependencyFinder.sln
-        msbuild -p:Configuration=Release BuildTools/DependencyFinder/DependencyFinder.sln
+    # - name: Build DependencyFinder
+    #   run: |
+    #     nuget restore BuildTools/DependencyFinder/DependencyFinder.sln
+    #     msbuild -p:Configuration=Release BuildTools/DependencyFinder/DependencyFinder.sln
 
     - name: Build GnupgSigningTool
       run: |
