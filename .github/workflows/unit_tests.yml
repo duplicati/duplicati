@@ -11,5 +11,5 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Insall mono
+    - name: Install mono
       run: sudo apt-get install mono-complete
