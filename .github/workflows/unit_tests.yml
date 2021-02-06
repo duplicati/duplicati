@@ -30,7 +30,7 @@ jobs:
         mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --work=TestResults
 
     - name: Publish Unit Test Results
-      uses: MirrorNG/nunit-reporter@v1.0.9
+      uses: MirrorNG/nunit-reporter@v1.0.11
       if: always()
       with:
         path: TestResults/**/*.xml
