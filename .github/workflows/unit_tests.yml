@@ -42,3 +42,7 @@ jobs:
         nuget restore Duplicati.sln
         msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
 
+    - name: Run Unit Tests
+      run: |
+        nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
+        mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility
