@@ -12,4 +12,4 @@ jobs:
 
     steps:
     - name: Insall mono
-      run: apt-get install mono-complete
+      run: sudo apt-get install mono-complete
