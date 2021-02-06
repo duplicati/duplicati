@@ -50,9 +50,8 @@ jobs:
         mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --work=TestResults
 
     - name: Publish Unit Test Results
-      uses: dorny/test-reporter@v1
+      uses: MirrorNG/nunit-reporter@v1.0.9
       if: always()
       with:
-        name: JEST Tests            # Name of the check run which will be created
         path: TestResults/**/*.xml
-        reporter: jest-junit
+        access-token: ${{ secrets.GITHUB_TOKEN }}
