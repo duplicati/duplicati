@@ -37,16 +37,24 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
-        mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --work=TestResults
+        mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --work=TestResultsLinux
 
     - name: Run Unit Tests (Windows)
       if: matrix.os == 'windows-latest'
-      run: nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --work=TestResults
+      run: nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --work=TestResultsWindows
 
-    - name: Report Unit Test Results
+    - name: Report Unit Test Results (Linux)
       uses: MirrorNG/nunit-reporter@v1.0.11
       if: always()
       with:
-        path: TestResults/**/*.xml
-        reportTitle: Unit Test Results
+        path: TestResultsLinux/**/*.xml
+        reportTitle: Unit Test Results (Linux)
+        access-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Report Unit Test Results (Windows)
+      uses: MirrorNG/nunit-reporter@v1.0.11
+      if: always()
+      with:
+        path: TestResultsWindows/**/*.xml
+        reportTitle: Unit Test Results (Windows)
         access-token: ${{ secrets.GITHUB_TOKEN }}
