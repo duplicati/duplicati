@@ -17,5 +17,28 @@ jobs:
     - name: Checkout $GITHUB_SHA from $GITHUB_REF
       uses: actions/checkout@v2
 
-    - name: Restore NuGet packages
-      run: nuget restore Duplicati.sln
+    - name: Build AutoUpdateBuilder
+      run: |
+        nuget restore BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln
+        msbuild -p:Configuration=Release BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln
+
+    - name: Build DependencyFinder
+      run: |
+        nuget restore BuildTools/DependencyFinder/DependencyFinder.sln
+        msbuild -p:Configuration=Release BuildTools/DependencyFinder/DependencyFinder.sln
+
+    - name: Build GnupgSigningTool
+      run: |
+        nuget restore BuildTools/GnupgSigningTool/GnupgSigningTool.sln
+        msbuild -p:Configuration=Release BuildTools/GnupgSigningTool/GnupgSigningTool.sln
+
+    - name: Build UpdateVersionStamp
+      run: |
+        nuget restore BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln
+        msbuild -p:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln
+
+    - name: Build Duplicati
+      run: |
+        nuget restore Duplicati.sln
+        msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
+
