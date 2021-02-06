@@ -13,3 +13,6 @@ jobs:
     steps:
     - name: Install mono
       run: sudo apt-get install mono-complete
+
+    - name: Checkout $GITHUB_SHA from $GITHUB_REF
+      uses: actions/checkout@v2
