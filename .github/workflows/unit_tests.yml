@@ -1,0 +1,15 @@
+on:
+  push:
+    branches: "*"
+  pull_request:
+    branches: "*"
+
+jobs:
+  test:
+    name: Run tests
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Insall mono
+      run: apt-get install mono-complete
