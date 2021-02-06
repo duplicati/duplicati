@@ -34,4 +34,5 @@ jobs:
       if: always()
       with:
         path: TestResults/**/*.xml
+        reportTitle: Unit Test Results
         access-token: ${{ secrets.GITHUB_TOKEN }}
