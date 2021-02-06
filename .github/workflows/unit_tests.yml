@@ -40,11 +40,11 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
-        mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --work=TestResults --result=test_results_linux.xml
+        mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --result=TestResults/test_results_linux.xml
 
     - name: Run Unit Tests (Windows)
       if: matrix.os == 'windows-latest'
-      run: nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility  --work=TestResults --result=test_results_windows.xml
+      run: nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility --result=TestResults/test_results_windows.xml
 
     - name: Report Unit Test Results
       uses: MirrorNG/nunit-reporter@v1.0.11
