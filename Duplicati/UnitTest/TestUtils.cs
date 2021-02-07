@@ -25,6 +25,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using NUnit.Framework;
+using System.Runtime.InteropServices;
+using Duplicati.Library.Common;
 
 namespace Duplicati.UnitTest
 {
@@ -243,13 +245,17 @@ namespace Duplicati.UnitTest
             // Compare file metadata
             if (verifymetadata)
             {
+                // OSX seem to like to actually set the time to some value earlier than what you set by tens of milliseconds.
+                // Reading the time right after it is set gives the expected value but when read later it is slightly different.
+                // Maybe a bug in .net?
+                int granularity = Platform.IsClientOSX ? 250 : 1;
                 Assert.That(
                     SystemIO.IO_OS.GetLastWriteTimeUtc(actualFile),
-                    Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)).Within(1).Milliseconds,
+                    Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)).Within(granularity).Milliseconds,
                     $"{contextMessage}, last write time mismatch for {expectedFile} and {actualFile}");
                 Assert.That(
                     SystemIO.IO_OS.GetCreationTimeUtc(actualFile),
-                    Is.EqualTo(SystemIO.IO_OS.GetCreationTimeUtc(expectedFile)).Within(1).Milliseconds,
+                    Is.EqualTo(SystemIO.IO_OS.GetCreationTimeUtc(expectedFile)).Within(granularity).Milliseconds,
                     $"{contextMessage}, creation time mismatch for {expectedFile} and {actualFile}");
             }
         }
