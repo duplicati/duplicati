@@ -7,9 +7,8 @@ on:
     branches: "*"
 
 jobs:
-  test:
-    name: Run tests
-
+  unit_tests:
+    name: Unit tests
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -47,3 +46,41 @@ jobs:
       run: |
         nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
         nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll --where:cat==Utility
+
+  ui_tests:
+    name: UI tests
+    runs-on: ubuntu-latest
+
+    # Some of these steps duplicate those in the unit_tests job above.  This
+    # can be cleaned up using a composite run steps action once it supports
+    # what we need (https://github.com/actions/runner/issues/646).
+    steps:
+    - name: Install mono
+      run: sudo apt-get install mono-complete
+
+    - name: Checkout Source
+      uses: actions/checkout@v2
+
+    - name: Install NuGet
+      uses: nuget/setup-nuget@v1.0.5
+
+    - name: Build Duplicati
+      run: |
+        nuget restore Duplicati.sln
+        msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Install dependencies
+      run: |
+        pip3 install selenium
+        pip3 install --upgrade urllib3
+
+    - name: Run UI tests
+      run: |
+        cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+        mono Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
+        python3 guiTests/guiTest.py
