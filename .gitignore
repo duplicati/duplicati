@@ -25,3 +25,5 @@ binfiles.wxs
 .vs/
 
 Installer/debian/*.buildinfo
+/*.deb
+/*.rpm
