@@ -16,10 +16,6 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
-    - name: Install Mono (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install mono-complete
-
     - name: Add msbuild to PATH (Windows)
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v1.0.2
@@ -55,9 +51,6 @@ jobs:
     # can be cleaned up using a composite run steps action once it supports
     # what we need (https://github.com/actions/runner/issues/646).
     steps:
-    - name: Install Mono
-      run: sudo apt-get install mono-complete
-
     - name: Checkout Source
       uses: actions/checkout@v2.3.4
 
