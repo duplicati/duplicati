@@ -24,11 +24,11 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v1.0.2
 
-    - name: Checkout Source
-      uses: actions/checkout@v2.3.4
-
     - name: Install NuGet
       uses: nuget/setup-nuget@v1.0.5
+
+    - name: Checkout Source
+      uses: actions/checkout@v2.3.4
 
     - name: Build Duplicati
       run: |
