@@ -31,6 +31,12 @@ jobs:
         nuget restore Duplicati.sln
         msbuild -p:Configuration=Release Duplicati.sln
 
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build artifacts (${{ matrix.os }})
+        path: Duplicati/UnitTest/bin/Release
+
     - name: Run Unit Tests (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
@@ -42,12 +48,6 @@ jobs:
       run: |
         nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
         nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
-
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: build artifacts (${{ matrix.os }})
-        path: Duplicati/UnitTest/bin/Release
 
   ui_tests:
     name: UI tests
