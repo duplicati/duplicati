@@ -90,15 +90,6 @@
     <Content Include="..\..\thirdparty\Tencentyun\LICENSE.txt">
       <Link>licenses\Tencentyun\LICENSE.txt</Link>
     </Content>
-    <Content Include="..\..\thirdparty\TLSharp\Homepage.txt">
-      <Link>licenses\TLSharp\Homepage.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\TLSharp\License.txt">
-      <Link>licenses\TLSharp\License.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\TLSharp\licensedata.json">
-      <Link>licenses\TLSharp\licensedata.json</Link>
-    </Content>
     <Content Include="..\..\thirdparty\uplink.NET\Homepage.txt">
       <Link>licenses\uplink.NET\Homepage.txt</Link>
     </Content>
