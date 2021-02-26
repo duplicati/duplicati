@@ -20,17 +20,17 @@ from hashlib import sha256
 import argparse
 
 """ Utility function to return byte chunks from a binary file """
-def bytes_from_file(filename, chunksize=8192*1024):
+def bytes_from_file(filename, buffer_size=8192):
     with open(filename, "rb") as f:
         while True:
-            chunk = f.read(chunksize)
+            chunk = f.read(buffer_size)
             if chunk:
                 yield chunk
             else:
                 break
 
 """ Verifies a single -verification.json file """               
-def verifyHashes(filename, quiet):
+def verifyHashes(filename, quiet = True, buffer_size=8192):
     errorCount = 0
     checked = 0
 
@@ -56,7 +56,7 @@ def verifyHashes(filename, quiet):
             if not quiet:
                 print("Verifying file", filename)
             hashalg = sha256()
-            for b in bytes_from_file(fullpath):
+            for b in bytes_from_file(fullpath, buffer_size):
                 hashalg.update(b)
             hashval =  base64.b64encode(hashalg.digest())
             hashval = hashval.decode('utf-8')
@@ -76,6 +76,9 @@ def verifyHashes(filename, quiet):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Verify hashes of backup files.')
     parser.add_argument("--quiet", action='store_true', help="Be noisy about each file being verified")
+    parser.add_argument("--buffer_size", type=int, default=8, help="Buffer size for file IO (in kb). \
+        Default value is 8. \
+        Increasing to size of blockfile can increase verification speed")
     parser.add_argument("path", type=str, nargs='?',
                     help="""path to the verification file or folder containing the verification file.\
                         Defaulf is curent path""")
@@ -88,13 +91,13 @@ if __name__ == "__main__":
         print("No such file or directory: ", args.path)
     else:
         if os.path.isfile(args.path):
-            verifyHashes(args.path, args.quiet)
+            verifyHashes(args.path, args.quiet, args.buffer_size * 1024)
         else:
             files = 0
             for f in os.listdir(args.path):
                 if (f.endswith("-verification.json")):
                     print("Verifying file:", f)
                     files += 1
-                    verifyHashes(os.path.join(args.path, f), args.quiet)
+                    verifyHashes(os.path.join(args.path, f), args.quiet, args.buffer_size *1024)
             if files == 0:
                 print("No verification files in folder:", args.path)
