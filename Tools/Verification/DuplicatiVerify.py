@@ -25,8 +25,6 @@ def bytes_from_file(filename, chunksize=8192*1024):
         while True:
             chunk = f.read(chunksize)
             if chunk:
-                #for b in chunk:
-                #    yield b
                 yield chunk
             else:
                 break
@@ -79,7 +77,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Verify hashes of backup files.')
     parser.add_argument("--quiet", action='store_true', help="Be noisy about each file being verified")
     parser.add_argument("path", type=str, nargs='?',
-                    help="""path to the verification fole or folder containing the verification folder.\
+                    help="""path to the verification file or folder containing the verification file.\
                         Defaulf is curent path""")
     args = parser.parse_args()
 
