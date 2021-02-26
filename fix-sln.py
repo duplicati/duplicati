@@ -1,9 +1,10 @@
+#!/usr/bin/env python
+from __future__ import print_function
 import re
 import io
 
-f = open('Duplicati.sln')
-c = f.read()
-f.close()
+with open('Duplicati.sln', 'r') as f:
+    c = f.read()
 
 p = re.compile(r"\{[0-9a-fA-F\-]*\}")
 
@@ -19,4 +20,4 @@ for n in tags:
 
 for n in d:
     if d[n] > 7:
-        print n
+        print(n)
