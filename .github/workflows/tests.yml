@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: "*"
 
+env:
+  build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
+
 jobs:
   unit_tests:
     name: Unit tests
@@ -40,20 +43,20 @@ jobs:
     - name: Prepare Artifacts
       shell: bash
       run: |
-        cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+        cp -r Duplicati/Server/webroot "${{ env.build_directory }}"/webroot
 
         # Copy some files for alphavss manually that are not picked up by the build.
-        mkdir Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/alphavss
-        cp Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/alphavss
+        mkdir "${{ env.build_directory }}"/alphavss
+        cp Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll "${{ env.build_directory }}"/alphavss
 
         # Copy some support libraries (e.g., for Azure) that are not picked up by the build.
-        for BACKEND in Duplicati/Library/Backend/*; do if [ -d "${BACKEND}/bin/Release/" ]; then cp "${BACKEND}/bin/Release/"*.dll Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release fi done
+        for BACKEND in Duplicati/Library/Backend/*; do if [ -d "${BACKEND}/bin/Release/" ]; then cp "${BACKEND}/bin/Release/"*.dll "${{ env.build_directory }}" fi done
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: build artifacts (${{ matrix.os }})
-        path: Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release
+        path: "${{ env.build_directory }}"
 
     - name: Run Unit Tests (Linux and macOS)
       if: matrix.os != 'windows-latest'
@@ -98,6 +101,6 @@ jobs:
 
     - name: Run UI tests
       run: |
-        cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
-        mono Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/Duplicati.Server.exe &
+        cp -r Duplicati/Server/webroot "${{ env.build_directory }}"/webroot
+        mono "${{ env.build_directory }}"/Duplicati.Server.exe &
         python3 guiTests/guiTest.py
