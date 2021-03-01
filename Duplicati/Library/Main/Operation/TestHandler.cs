@@ -20,6 +20,7 @@ using Duplicati.Library.Main.Database;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -199,7 +200,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
         public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent)
         {
-            var blockhasher = Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm);
+            var blockhasher = HashAlgorithm.Create(options.BlockHashAlgorithm);
  
             if (blockhasher == null)
                 throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm), "BlockHashAlgorithmInvalid");

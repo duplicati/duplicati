@@ -1,123 +1,30 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.Library.Utility</RootNamespace>
-    <AssemblyName>Duplicati.Library.Utility</AssemblyName>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
+    <TargetFramework>net5.0</TargetFramework>
+    <Version>2.0.0.7</Version>
+    
+    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
+    <Product>Duplicati.Library.Utility</Product>
+    <Company>Duplicati Team</Company>
+    <Authors>Duplicati Team</Authors>
+    <Description>A collection of utility functions used extensively in Duplicati</Description>
+    <PackageId>Utility</PackageId>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Management" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="FasterHashing">
-      <HintPath>..\..\..\packages\FasterHashing.1.3.0\lib\net45\FasterHashing.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
+    <PackageReference Include="System.Management" Version="4.7.0" />
   </ItemGroup>
+  
   <ItemGroup>
-    <Compile Include="AsyncHttpRequest.cs" />
-    <Compile Include="WinTools.cs" />
-    <Compile Include="FilterGroups.cs" />
-    <Compile Include="KeyGenerator.cs" />
-    <Compile Include="MD5HashHelper.cs" />
-    <Compile Include="OverrideableStream.cs" />
-    <Compile Include="ProgressReportingStream.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RegistryUtility.cs" />
-    <Compile Include="ReadLimitLengthStream.cs" />
-    <Compile Include="ShaderStream.cs" />
-    <Compile Include="Sizeparser.cs" />
-    <Compile Include="SslCertificateValidator.cs" />
-    <Compile Include="TempFile.cs" />
-    <Compile Include="TempFolder.cs" />
-    <Compile Include="ThrottledStream.cs" />
-    <Compile Include="Timeparser.cs" />
-    <Compile Include="UrlUtility.cs" />
-    <Compile Include="Utility.cs" />
-    <Compile Include="Win32.cs" />
-    <Compile Include="WorkerThread.cs" />
-    <Compile Include="CommandLineParser.cs" />
-    <Compile Include="BlockingQueue.cs" />
-    <Compile Include="Uri.cs" />
-    <Compile Include="IFilter.cs" />
-    <Compile Include="FilterExpression.cs" />
-    <Compile Include="FileBackedList.cs" />
-    <Compile Include="JoinedFilterExpression.cs" />
-    <Compile Include="Strings.cs" />
-    <Compile Include="FilterCollector.cs" />
-    <Compile Include="HashCalculatingStream.cs" />
-    <Compile Include="DirectStreamLink.cs" />
-    <Compile Include="HostKeyException.cs" />
-    <Compile Include="CallContextSettings.cs" />
-    <Compile Include="HashAlgorithmHelper.cs" />
-    <Compile Include="Power\PowerSupply.cs" />
-    <Compile Include="Power\IPowerSupplyState.cs" />
-    <Compile Include="Power\DefaultPowerSupplyState.cs" />
-    <Compile Include="Power\LinuxPowerSupplyState.cs" />
-    <Compile Include="Power\WindowsPowerSupplyState.cs" />
-    <Compile Include="Power\MacOSPowerSupplyState.cs" />
-    <Compile Include="UrlPath.cs" />
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="Duplicati.snk" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
-  <ItemGroup>
-    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj">
-      <Project>{d63e53e4-a458-4c2f-914d-92f715f58acf}</Project>
-      <Name>Duplicati.Library.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
-      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
-      <Name>Duplicati.Library.Localization</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
-      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
-      <Name>Duplicati.Library.Interface</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup />
+
 </Project>

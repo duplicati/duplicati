@@ -14,7 +14,6 @@ namespace Duplicati.WindowsService
         private const string LOG_NAME = "Application";
         public const string SERVICE_NAME = "Duplicati";
         public const string DISPLAY_NAME = "Duplicati service";
-        public const string DESCRIPTION = "Runs Duplicati as a service";
 
         private readonly System.Diagnostics.EventLog m_eventLog;
 

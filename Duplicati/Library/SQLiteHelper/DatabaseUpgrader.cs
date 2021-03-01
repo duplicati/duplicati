@@ -140,23 +140,24 @@ namespace Duplicati.Library.SQLiteHelper
             var asm = eltype.Assembly;
 
             string schema;
-            using (var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(eltype, FOLDER_NAME + "." + SCHEMA_NAME)))
+            using (var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(eltype, $"{FOLDER_NAME}.{SCHEMA_NAME}")))
                 schema = rd.ReadToEnd();
 
             //Get updates, and sort them according to version
             //This enables upgrading through several versions
             //ea, from 1 to 8, by stepping 2->3->4->5->6->7->8
             SortedDictionary<int, string> upgrades = new SortedDictionary<int, string>();
-            string prefix = eltype.Namespace + "." + FOLDER_NAME + ".";
+            string prefix = FOLDER_NAME + ".";
             foreach (string s in asm.GetManifestResourceNames())
             {
-                //The resource name will be "Duplicati.GUI.Database_schema.1.Sample upgrade.sql"
+                //The resource name will be "Duplicati.Library.Main.Database.Database_schema.1.Sample upgrade.sql"
                 //The number indicates the version that will be upgraded to
-                if (s.StartsWith(prefix, StringComparison.Ordinal) && !s.Equals(prefix + SCHEMA_NAME))
+                //Could be ""Duplicati.Server.Database.Database_schema.1. Add Notifications.sql""
+                if (s.Contains(prefix, StringComparison.Ordinal) && !s.EndsWith(prefix + SCHEMA_NAME))
                 {
                     try
                     {
-                        string version = s.Substring(prefix.Length, s.IndexOf(".", prefix.Length + 1, StringComparison.Ordinal) - prefix.Length);
+                        string version = s.Substring(s.IndexOf(prefix) + prefix.Length, s.IndexOf(".", s.IndexOf(prefix) + prefix.Length + 1, StringComparison.Ordinal) - s.IndexOf(prefix) - prefix.Length);
                         int fileversion = int.Parse(version);
 
                         string prev;

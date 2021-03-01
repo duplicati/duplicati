@@ -64,14 +64,15 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public AzureBlobWrapper(string accountName, string accessKey, string containerName)
         {
-            OperationContext.GlobalSendingRequest += (sender, args) =>
-            {
-                args.Request.UserAgent = string.Format(
-                    "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
-                    Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
-                );
-            };
+            //TODO-DNC Missing UserAgent property in DNC
+            //OperationContext.GlobalSendingRequest += (sender, args) =>
+            //{
+            //    args.Request.UserAgent = string.Format(
+            //        "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
+            //        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
+            //        Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
+            //    );
+            //};
 
             var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
                 accountName, accessKey);
@@ -84,27 +85,45 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public void AddContainer()
         {
-            _container.Create(BlobContainerPublicAccessType.Off);
+            _container.CreateAsync().GetAwaiter().GetResult();
+            _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off });
         }
 
         public virtual void GetFileStream(string keyName, Stream target)
         {
-            _container.GetBlockBlobReference(keyName).DownloadToStream(target);
+            _container.GetBlockBlobReference(keyName).DownloadToStreamAsync(target).GetAwaiter().GetResult();
         }
 
         public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
-            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, cancelToken);
+            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default(AccessCondition), default(BlobRequestOptions), new OperationContext(), cancelToken);
         }
 
         public void DeleteObject(string keyName)
         {
-            _container.GetBlockBlobReference(keyName).DeleteIfExists();
+            _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync().GetAwaiter().GetResult();
+        }
+
+        private async Task<List<IListBlobItem>> ListContainerEntriesAsync()
+        {
+            var segment = await _container.ListBlobsSegmentedAsync(null);
+            var list = new List<IListBlobItem>();
+
+            list.AddRange(segment.Results);
+
+            while (segment.ContinuationToken != null)
+            {
+                // TODO-DNC do we need BlobListingDetails.Metadata ???
+                segment = await _container.ListBlobsSegmentedAsync(segment.ContinuationToken);
+                list.AddRange(segment.Results);
+            }
+
+            return list;
         }
 
         public virtual List<IFileEntry> ListContainerEntries()
         {
-            var listBlobItems = _container.ListBlobs(blobListingDetails: BlobListingDetails.Metadata);
+            var listBlobItems = ListContainerEntriesAsync().GetAwaiter().GetResult();
             try
             {
                 return listBlobItems.Select(x =>

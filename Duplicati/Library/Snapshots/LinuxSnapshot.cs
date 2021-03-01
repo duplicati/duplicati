@@ -216,7 +216,7 @@ namespace Duplicati.Library.Snapshots
             /// <returns>A string with the combined output of the stdout and stderr</returns>
             private static string ExecuteCommand(string program, string commandline, int expectedExitCode)
             {
-                program = System.IO.Path.Combine(System.IO.Path.Combine(AutoUpdater.UpdaterManager.InstalledBaseDir, "lvm-scripts"), program);
+                program = System.IO.Path.Combine(System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "lvm-scripts"), program);
                 var inf = new ProcessStartInfo(program, commandline)
                 {
                     CreateNoWindow = true,

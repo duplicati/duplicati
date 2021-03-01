@@ -21,6 +21,7 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Localization.Short;
+using Duplicati.Logging.Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Localization
 {
@@ -93,7 +94,8 @@ namespace Duplicati.Library.Localization
         { 
             get 
             {
-                var lc = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LOGICAL_CONTEXT_KEY) as string;
+                var lc = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
+
                 if (!string.IsNullOrWhiteSpace(lc))
                     return Get(new CultureInfo(lc));
                 return Get(CultureInfo.CurrentCulture); 

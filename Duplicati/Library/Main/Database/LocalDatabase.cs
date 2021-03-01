@@ -56,7 +56,16 @@ namespace Duplicati.Library.Main.Database
 
             var c = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(path);
 
-            Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            try
+            {
+                Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            }
+            catch
+            {
+                //Don't leak database connections when something goes wrong
+                c.Dispose();
+                throw;
+            }
 
             return c;
         }

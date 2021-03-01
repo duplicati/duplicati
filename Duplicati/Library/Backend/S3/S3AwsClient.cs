@@ -94,7 +94,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            m_client.PutBucket(request);
+            m_client.PutBucketAsync(request).GetAwaiter().GetResult();
         }
 
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
@@ -105,17 +105,11 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
-            using (System.IO.Stream s = objectGetResponse.ResponseStream)
+            using (GetObjectResponse objectGetResponse = m_client.GetObjectAsync(objectGetRequest).GetAwaiter().GetResult())
+            using(System.IO.Stream s = objectGetResponse.ResponseStream)
             {
-                try
-                {
-                    s.ReadTimeout = (int) TimeSpan.FromMinutes(1).TotalMilliseconds;
-                }
-                catch
-                {
-                    // We don't care about this timeout
-                }
+                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
+                catch { }
 
                 Utility.Utility.CopyStream(s, target);
             }
@@ -161,7 +155,7 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            m_client.DeleteObject(objectDeleteRequest);
+            m_client.DeleteObjectAsync(objectDeleteRequest).GetAwaiter().GetResult();
         }
 
         public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -189,7 +183,7 @@ namespace Duplicati.Library.Backend
                 ListObjectsResponse listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjects(listRequest);
+                    listResponse = m_client.ListObjectsAsync(listRequest).GetAwaiter().GetResult();
                 }
                 catch (AmazonS3Exception e)
                 {
@@ -227,7 +221,7 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            m_client.CopyObject(copyObjectRequest);
+            m_client.CopyObjectAsync(copyObjectRequest).GetAwaiter().GetResult();
 
             DeleteObject(bucketName, source);
         }

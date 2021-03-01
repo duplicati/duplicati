@@ -39,7 +39,7 @@ namespace DependencyFinder
 					//Console.WriteLine("Probing for {0}", dllname);
 					try { return AssemblyDefinition.ReadAssembly(dllname); }
 					catch { } 
-					try { return resolver.Resolve(asm.FullName); }
+					try { return resolver.Resolve(asm); }
 					catch { }
 
 					return null;

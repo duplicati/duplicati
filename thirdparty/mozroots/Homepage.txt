@@ -1,1 +1,0 @@
-https://github.com/mono/mono/blob/master/mcs/tools/security/mozroots.cs

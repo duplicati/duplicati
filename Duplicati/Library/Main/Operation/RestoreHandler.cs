@@ -24,6 +24,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -160,7 +161,7 @@ namespace Duplicati.Library.Main.Operation
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
             var fullblockverification = options.FullBlockVerification;
-            var blockhasher = fullblockverification ? Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm) : null;
+            var blockhasher = fullblockverification ? HashAlgorithm.Create(options.BlockHashAlgorithm) : null;
 
             using (var blockmarker = database.CreateBlockMarker())
             using(var volumekeeper = database.GetMissingBlockData(blocks, options.Blocksize))
@@ -318,8 +319,8 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
                 
-                var blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-                var filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
+                var blockhasher = HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                var filehasher = HashAlgorithm.Create(m_options.FileHashAlgorithm);
                 if (blockhasher == null)
                     throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
                 if (!blockhasher.CanReuseTransform)

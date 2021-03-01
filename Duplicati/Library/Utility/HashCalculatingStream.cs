@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Duplicati.Library.Utility
@@ -49,7 +50,7 @@ namespace Duplicati.Library.Utility
         private int m_hashbufferLength = 0;
 
         public HashCalculatingStream(System.IO.Stream basestream, string hashalgorithm)
-            : this(basestream, HashAlgorithmHelper.Create(hashalgorithm))
+            : this(basestream, HashAlgorithm.Create(hashalgorithm))
         {
         }
 

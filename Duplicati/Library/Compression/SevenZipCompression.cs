@@ -7,6 +7,8 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Compression
 {
+//TODO-DNC
+#if !NETSTANDARD2_1
     public class SevenZipCompression : ICompressionHinting
     {
         // next file starts a new stream if the previous stream is larger than this
@@ -421,4 +423,5 @@ namespace Duplicati.Library.Compression
 
         #endregion
     }
+#endif
 }

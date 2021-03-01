@@ -150,7 +150,7 @@ namespace Duplicati.Library.Backend
                 ActionNames = new[] { "iam:CreateUser" }.ToList()
             };
 
-            return cl.SimulatePrincipalPolicy(simulatePrincipalPolicy).
+            return cl.SimulatePrincipalPolicyAsync(simulatePrincipalPolicy).GetAwaiter().GetResult().
                                         EvaluationResults.First().
                                         EvalDecision == PolicyEvaluationDecisionType.Allowed;
 
@@ -190,7 +190,7 @@ namespace Duplicati.Library.Backend
             User user;
             try
             {
-                user = cl.GetUser().User;
+                user = cl.GetUserAsync().GetAwaiter().GetResult().User;
             }
             catch (Exception ex) when (ex is NoSuchEntityException || ex is ServiceFailureException)
             {
@@ -212,13 +212,13 @@ namespace Duplicati.Library.Backend
             var policydoc = GeneratePolicyDoc(path);
 
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
-            var user = cl.CreateUser(new CreateUserRequest(username)).User;
-            cl.PutUserPolicy(new PutUserPolicyRequest(
+            var user = cl.CreateUserAsync(new CreateUserRequest(username)).GetAwaiter().GetResult().User;
+            cl.PutUserPolicyAsync(new PutUserPolicyRequest(
                 user.UserName,
                 policyname,
                 policydoc
             ));
-            var key = cl.CreateAccessKey(new CreateAccessKeyRequest { UserName = user.UserName }).AccessKey;
+            var key = cl.CreateAccessKeyAsync(new CreateAccessKeyRequest { UserName = user.UserName }).GetAwaiter().GetResult().AccessKey;
 
             return new Dictionary<string, string>
             {

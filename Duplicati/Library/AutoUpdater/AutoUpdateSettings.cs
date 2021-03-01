@@ -38,8 +38,8 @@ namespace Duplicati.Library.AutoUpdater
         private const string OEM_UPDATE_README = "oem-update-readme.txt";
         private const string OEM_UPDATE_INSTALL_FILE = "oem-update-installid.txt";
 
-        internal const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
-        internal const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
+        public const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
+        public const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
 
         internal const string MATCH_UPDATE_URL_PREFIX_GROUP = "prefix";
         internal const string MATCH_UPDATE_URL_CHANNEL_GROUP = "channel";

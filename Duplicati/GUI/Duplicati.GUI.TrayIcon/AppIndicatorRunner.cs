@@ -34,7 +34,7 @@ namespace Duplicati.GUI.TrayIcon
                 
         protected override void CreateTrayInstance()
         {
-            m_themeFolder = SystemIO.IO_OS.PathCombine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
+            m_themeFolder = SystemIO.IO_OS.PathCombine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), @"TrayResources\SVGIcons");
             m_themeFolder = SystemIO.IO_OS.PathCombine(m_themeFolder, "dark");
             
             m_appIndicator = new ApplicationIndicator("duplicati", "normal", Category.ApplicationStatus, m_themeFolder);
