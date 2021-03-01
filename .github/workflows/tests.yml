@@ -31,15 +31,14 @@ jobs:
 
     - name: Build Duplicati (Linux and macOS)
       if: matrix.os != 'windows-latest'
-      run: |
-        msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
-        cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+      run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
 
     - name: Build Duplicati (Windows)
       if: matrix.os == 'windows-latest'
-      run: |
-        msbuild -p:Configuration=Release Duplicati.sln
-        cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+      run: msbuild -p:Configuration=Release Duplicati.sln
+
+    - name: Prepare Artifacts
+      run: cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v2
