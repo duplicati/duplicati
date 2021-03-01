@@ -26,17 +26,18 @@ jobs:
     - name: Checkout Source
       uses: actions/checkout@v2.3.4
 
+    - name: Restore NuGet Packages
+      run: nuget restore Duplicati.sln
+
     - name: Build Duplicati (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
-        nuget restore Duplicati.sln
         msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
         cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 
     - name: Build Duplicati (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        nuget restore Duplicati.sln
         msbuild -p:Configuration=Release Duplicati.sln
         cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
 
