@@ -38,7 +38,16 @@ jobs:
       run: msbuild -p:Configuration=Release Duplicati.sln
 
     - name: Prepare Artifacts
-      run: cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+      shell: bash
+      run: |
+        cp -r Duplicati/Server/webroot Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/webroot
+
+        # Copy some files for alphavss manually that are not picked up by the build.
+        mkdir Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/alphavss
+        cp Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/alphavss
+
+        # Copy some support libraries (e.g., for Azure) that are not picked up by the build.
+        for BACKEND in Duplicati/Library/Backend/*; do if [ -d "${BACKEND}/bin/Release/" ]; then cp "${BACKEND}/bin/Release/"*.dll Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release fi done
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v2
