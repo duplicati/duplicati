@@ -643,23 +643,23 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
+        /// Formats a size into a human readable format, eg. 2000 becomes &quot;2 KB&quot; or -223 becomes &quot;-2.23 KB%quot.
         /// </summary>
         /// <param name="size">The size to format</param>
         /// <returns>A human readable string representing the size</returns>
         public static string FormatSizeString(double size)
         {
             double sizeAbs = Math.Abs(size);  // Allow formatting of negative sizes
-            if (sizeAbs >= 1024 * 1024 * 1024 * 1024L)
-                return Strings.Utility.FormatStringTB(size / (1024 * 1024 * 1024 * 1024L));
-            else if (sizeAbs >= 1024 * 1024 * 1024)
-                return Strings.Utility.FormatStringGB(size / (1024 * 1024 * 1024));
-            else if (sizeAbs >= 1024 * 1024)
-                return Strings.Utility.FormatStringMB(size / (1024 * 1024));
-            else if (sizeAbs >= 1024)
-                return Strings.Utility.FormatStringKB(size / 1024);
+            if (sizeAbs >= 1000 * 1000 * 1000 * 1000L)
+                return Strings.Utility.FormatStringTB(size / (1000 * 1000 * 1000 * 1000L));
+            else if (sizeAbs >= 1000 * 1000 * 1000)
+                return Strings.Utility.FormatStringGB(size / (1000 * 1000 * 1000));
+            else if (sizeAbs >= 1000 * 1000)
+                return Strings.Utility.FormatStringMB(size / (1000 * 1000));
+            else if (sizeAbs >= 1000)
+                return Strings.Utility.FormatStringKB(size / 1000);
             else
-                return Strings.Utility.FormatStringB((long) size); // safe to cast because lower than 1024 and thus well within range of long
+                return Strings.Utility.FormatStringB((long) size); // safe to cast because lower than 1000 and thus well within range of long
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)
