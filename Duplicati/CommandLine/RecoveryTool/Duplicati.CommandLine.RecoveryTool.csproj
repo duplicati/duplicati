@@ -134,10 +134,6 @@
       <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
       <Name>Duplicati.Library.Backend.TahoeLAFS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj">
-      <Project>{f61679a9-e5de-468a-b5a4-05f92d0143d2}</Project>
-      <Name>Duplicati.Library.Backend.Telegram</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
       <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
       <Name>Duplicati.Library.Backend.WEBDAV</Name>
