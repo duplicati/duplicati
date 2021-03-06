@@ -40,24 +40,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: msbuild -p:Configuration=Release Duplicati.sln
 
-    - name: Prepare Artifacts
-      shell: bash
-      run: |
-        cp -r Duplicati/Server/webroot "${{ env.build_directory }}"/webroot
-
-        # Copy some files for alphavss manually that are not picked up by the build.
-        mkdir "${{ env.build_directory }}"/alphavss
-        cp Duplicati/Library/Snapshots/bin/Release/AlphaVSS.*.dll "${{ env.build_directory }}"/alphavss
-
-        # Copy some support libraries (e.g., for Azure) that are not picked up by the build.
-        for BACKEND in Duplicati/Library/Backend/*; do if [ -d "${BACKEND}/bin/Release/" ]; then cp "${BACKEND}/bin/Release/"*.dll "${{ env.build_directory }}"; fi; done
-
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: build artifacts (${{ matrix.os }})
-        path: "${{ env.build_directory }}"
-
     - name: Run Unit Tests (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
