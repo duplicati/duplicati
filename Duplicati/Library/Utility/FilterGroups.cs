@@ -547,7 +547,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"/sbin/");
                 yield return FilterGroups.CreateWildcardFilter(@"/var/");
             }
-                
+
             if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
                 yield return FilterGroups.CreateWildcardFilter(@"*/lost+found/");
@@ -556,6 +556,11 @@ namespace Duplicati.Library.Utility
             }
             if (group.HasFlag(FilterGroup.CacheFiles))
             {
+                string cacheHome = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
+                if (cacheHome != null)
+                {
+                    yield return FilterGroups.CreateWildcardFilter(cacheHome);
+                }
                 yield return FilterGroups.CreateWildcardFilter(@"*/.cache/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/.config/google-chrome/Default/Cookies");
                 yield return FilterGroups.CreateWildcardFilter(@"*/.config/google-chrome/Default/Cookies-journal");
