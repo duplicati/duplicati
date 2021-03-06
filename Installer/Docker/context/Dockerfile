@@ -1,4 +1,5 @@
-FROM --platform=$TARGETPLATFORM mono:5-slim
+ARG PARENT_IMAGE
+FROM --platform=$TARGETPLATFORM ${PARENT_IMAGE}
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
