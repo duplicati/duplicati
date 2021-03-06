@@ -304,11 +304,15 @@ namespace Duplicati.Library.Modules.Builtin
                                 {
                                     switch (p.ExitCode)
                                     {
-                                        case 1:
+                                        case 0: // OK, run operation
+                                        case 2: // Warning, run operation
+                                        case 4: // Error, run operation
+                                            break;
+                                        case 1: // OK, don't run operation
                                             throw new OperationAbortException(OperationAbortReason.Normal, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
-                                        case 3:
+                                        case 3: // Warning, don't run operation
                                             throw new OperationAbortException(OperationAbortReason.Warning, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
-                                        case 5:
+                                        default: // Error don't run operation
                                             throw new OperationAbortException(OperationAbortReason.Error, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
                                     }
                                 }

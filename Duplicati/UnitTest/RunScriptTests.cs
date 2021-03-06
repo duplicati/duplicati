@@ -88,15 +88,17 @@ namespace Duplicati.UnitTest
                     throw new Exception("Unexpected result from backup with return code 4");
                 if (res.ExaminedFiles <= 0)
                     throw new Exception("Backup did not examine any files for code 4?");
-                
-                System.Threading.Thread.Sleep(PAUSE_TIME);
-                options["run-script-before"] = CreateScript(5);
-                res = c.Backup(new string[] { DATAFOLDER });
-                if (res.ParsedResult != ParsedResultType.Error)
-                    throw new Exception("Unexpected result from backup with return code 5");
-                if (res.ExaminedFiles > 0)
-                    throw new Exception("Backup did examine files for code 5?");
 
+                foreach (int exitCode in new[] {5, 6, 10, 99})
+                {
+                    System.Threading.Thread.Sleep(PAUSE_TIME);
+                    options["run-script-before"] = CreateScript(exitCode);
+                    res = c.Backup(new string[] {DATAFOLDER});
+                    if (res.ParsedResult != ParsedResultType.Error)
+                        throw new Exception($"Unexpected result from backup with return code {exitCode}");
+                    if (res.ExaminedFiles > 0)
+                        throw new Exception($"Backup did examine files for code {exitCode}?");
+                }
 
                 System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(2, "TEST WARNING MESSAGE");
