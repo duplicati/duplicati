@@ -390,6 +390,16 @@ Options:
 
 
 # =============================================================================
+> duplicati.commandline.exe help azure
+
+Duplicati can use Azure blob storage to store backups. The following target URL format is used:
+  azure://bucketname
+
+Options:
+%MODULEOPTIONS%
+
+
+# =============================================================================
 > duplicati.commandline.exe help onedrive
 
 Duplicati can use Microsoft Onedrive to store backups. The following target URL format is used:
