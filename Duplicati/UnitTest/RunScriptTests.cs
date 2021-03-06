@@ -150,6 +150,94 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        public void RunScriptParsedResult(int exitCode)
+        {
+            string parsedResultFile = Path.Combine(this.RESTOREFOLDER, "result.txt");
+            List<string> customCommands = new List<string>();
+            if (Platform.IsClientWindows)
+            {
+                customCommands.Add($"echo %DUPLICATI__PARSED_RESULT%>\"{parsedResultFile}\"");
+            }
+            else
+            {
+                customCommands.Add($"echo $DUPLICATI__PARSED_RESULT>\"{parsedResultFile}\"");
+            }
+
+            Dictionary<string, string> options = this.TestOptions;
+            options["run-script-before"] = this.CreateScript(exitCode);
+            options["run-script-after"] = this.CreateScript(0, null, null, 0, customCommands);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+
+                bool expectBackup;
+                string expectedParsedResult;
+                switch (exitCode)
+                {
+                    case 0: // OK, run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = true;
+                        expectedParsedResult = ParsedResultType.Success.ToString();
+                        break;
+                    case 1: // OK, don't run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = false;
+                        expectedParsedResult = ParsedResultType.Success.ToString();
+                        break;
+                    case 2: // Warning, run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(1, backupResults.Warnings.Count());
+                        expectBackup = true;
+                        expectedParsedResult = ParsedResultType.Warning.ToString();
+                        break;
+                    case 3: // Warning, don't run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(1, backupResults.Warnings.Count());
+                        expectBackup = false;
+                        expectedParsedResult = ParsedResultType.Warning.ToString();
+                        break;
+                    case 4: // Error, run operation
+                        Assert.AreEqual(1, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = true;
+                        expectedParsedResult = ParsedResultType.Error.ToString();
+                        break;
+                    default: // Error don't run operation
+                        Assert.AreEqual(1, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = false;
+                        expectedParsedResult = ParsedResultType.Error.ToString();
+                        break;
+                }
+
+                IEnumerable<string> targetEntries = Directory.EnumerateFileSystemEntries(this.TARGETFOLDER);
+                if (expectBackup)
+                {
+                    // We expect a dblock, dlist, and dindex file.
+                    Assert.AreEqual(3, targetEntries.Count());
+                }
+                else
+                {
+                    Assert.AreEqual(0, targetEntries.Count());
+                }
+
+                string[] lines = File.ReadAllLines(parsedResultFile);
+                Assert.AreEqual(1, lines.Length);
+                Assert.AreEqual(expectedParsedResult, lines[0]);
+            }
+        }
+
+        [Test]
+        [Category("Border")]
         public void CustomRemoteURL()
         {
             string customTargetFolder = Path.Combine(this.TARGETFOLDER, "destination");
