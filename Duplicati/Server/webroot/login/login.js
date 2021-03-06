@@ -27,7 +27,7 @@ $(document).ready(function() {
                 data: {'password': noncedpwd }
             })
             .done(function(data) {
-                window.location = '/';
+                window.location = './';
             })
             .fail(function(data) {
                 var txt = data;
