@@ -68,7 +68,7 @@ find -type f -name "*dll" -or -name "*DLL" -or -name "*exe"
 
 %build
 
-dotnet publish -c Release --runtime=linux-x64 -o publish Duplicati.sln
+dotnet publish -c Release --runtime=linux-x64 -p:DefineConstants=ENABLE_GTK -o publish Duplicati.sln
 
 %install
 
@@ -95,9 +95,13 @@ install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
 
-install -p -D -m 755 Installer/debian/duplicati-launcher.sh %{buildroot}%{_bindir}/%{namer}
-install -p -D -m 755 Installer/debian/duplicati-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
-install -p -D -m 755 Installer/debian/duplicati-server-launcher.sh %{buildroot}%{_bindir}/%{namer}-server
+install -d %{buildroot}%{_unitdir}/
+install -d %{buildroot}%{_sysconfdir}/sysconfig/
+install -d %{buildroot}%{_bindir}/
+
+ln -sf /usr/lib/%{namer}/Duplicati.GUI.TrayIcon %{buildroot}%{_bindir}/%{namer}
+ln -sf /usr/lib/%{namer}/Duplicati.CommandLine %{buildroot}%{_bindir}/%{namer}-cli
+ln -sf /usr/lib/%{namer}/Duplicati.Server %{buildroot}%{_bindir}/%{namer}-server
 
 # Install oem overrides
 if [ -f "oem-app-name.txt" ]; then install -p -m 644 "oem-app-name.txt" %{buildroot}%{_exec_prefix}/lib/%{namer}/; fi
@@ -108,6 +112,13 @@ if [ -f "oem-update-installid.txt" ]; then install -p -m 644 "oem-update-install
 
 /bin/bash Installer/fedora/%{namer}-install-recursive.sh "publish/" "%{buildroot}%{_exec_prefix}/lib/%{namer}/"
 
+install -p Installer/debian/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
+
+chmod 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/Duplicati.GUI.TrayIcon
+chmod 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/Duplicati.CommandLine
+chmod 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/Duplicati.Server
+find "%{buildroot}%{_exec_prefix}/lib/%{namer}"/* -type f -name \*.sh | xargs chmod 755
+
 desktop-file-install Installer/debian/%{namer}.desktop 
 
 mv Duplicati/Library/Snapshots/lvm-scripts/remove-lvm-snapshot.sh Tools/
@@ -116,34 +127,25 @@ mv Duplicati/Library/Snapshots/lvm-scripts/find-volume.sh Tools/
 mv Duplicati/Library/Modules/Builtin/run-script-example.sh Tools/
 
 # Install the service:
-install -p -D -m 755 Installer/fedora/%{namer}.service %{_unitdir}
-install -p -D -m 644 Installer/fedora/%{namer}.default %{_sysconfdir}/sysconfig/
+install -p -D -m 755 Installer/fedora/%{namer}.service %{buildroot}%{_unitdir}/
+install -p -D -m 644 Installer/fedora/%{namer}.default %{buildroot}%{_sysconfdir}/sysconfig/
 
 
 %post
-/bin/touch --no-create %{_datadir}/icons/hicolor || :
-%{_bindir}/gtk-update-icon-cache \
-  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
 %systemd_post %{namer}.service
 
 %preun
 %systemd_preun %{namer}.service
 
 %postun
-/bin/touch --no-create %{_datadir}/icons/hicolor || :
-%{_bindir}/gtk-update-icon-cache \
-  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
-%systemd_postun_with_restart %{namer}.service
-
-%posttrans
-/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
-
+%systemd_postun %{namer}.service
 
 %files
 %doc changelog.txt Duplicati/license.txt Tools
 %{_bindir}/*
 %{_datadir}/*/*
 %{_exec_prefix}/lib/*
+%{_sysconfdir}/sysconfig/*
 
 
 %changelog
