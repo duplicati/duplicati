@@ -339,10 +339,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     ];
 
     EditUriBackendConfig.parsers['s3'] = function (scope, module, server, port, path, options) {
-        if (options['--aws_access_key_id'])
-            scope.Username = options['--aws_access_key_id'];
-        if (options['--aws_secret_access_key'])
-            scope.Password = options['--aws_secret_access_key'];
+        if (options['--aws-access-key-id'])
+            scope.Username = options['--aws-access-key-id'];
+        if (options['--aws-secret-access-key'])
+            scope.Password = options['--aws-secret-access-key'];
 
         if (options['--s3-use-rrs'] && !options['--s3-storage-class']) {
             delete options['--s3-use-rrs'];
@@ -371,7 +371,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         scope.s3_storageclass = scope.s3_storageclass_custom = options['--s3-storage-class'];
 
-        var nukeopts = ['--aws_access_key_id', '--aws_secret_access_key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint', '--s3-storage-class', '--s3-client'];
+        var nukeopts = ['--aws-access-key-id', '--aws-secret-access-key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint', '--s3-storage-class', '--s3-client'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
