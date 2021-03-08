@@ -233,6 +233,7 @@ namespace Duplicati.UnitTest
             }
 
             File.Delete(dblock_file);
+            var last_ts = DateTime.Now;
 
             long[] affectedfiles;
 
@@ -284,6 +285,12 @@ namespace Duplicati.UnitTest
 
                 Assert.AreEqual(3, modFilesets);
             }
+
+
+            // Since we make the operations back-to-back, the purge timestamp can drift beyond the current time
+            var wait_target = last_ts.AddSeconds(10) - DateTime.Now;
+            if (wait_target.TotalMilliseconds > 0)
+                System.Threading.Thread.Sleep(wait_target);
 
             // A subsequent backup should be successful.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
