@@ -304,10 +304,10 @@ namespace Duplicati.Server
 
             if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
             {
-                if (WindowsServiceExists("Duplicati"))
+                if (Platform.IsClientWindows && WindowsServiceExists("Duplicati"))
                 {
                     RestartWindowsService("Duplicati");
-                }
+                }                
                 
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
             }
