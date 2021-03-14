@@ -304,9 +304,9 @@ namespace Duplicati.Server
 
             if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
             {
-                if (Platform.IsClientWindows && WindowsServiceExists("Duplicati"))
+                if (Platform.IsClientWindows && WindowsServiceExists(WindowsService.ServiceControl.SERVICE_NAME))
                 {
-                    RestartWindowsService("Duplicati");
+                    RestartWindowsService(WindowsService.ServiceControl.SERVICE_NAME);
                 }                
                 
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
@@ -322,8 +322,8 @@ namespace Duplicati.Server
             {
                 p.StartInfo.UseShellExecute = false;
                 p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.FileName = "cmd.exe";
-                p.StartInfo.Arguments = "/c net start | find \"" + serviceName + "\"";
+                p.StartInfo.FileName = @"C:\Windows\System32\cmd.exe";
+                p.StartInfo.Arguments = "/C net start | find \"" + serviceName + "\"";
                 p.Start();
                 cmdOutput = p.StandardOutput.ReadToEnd();
                 p.WaitForExit();
