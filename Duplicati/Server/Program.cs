@@ -304,7 +304,7 @@ namespace Duplicati.Server
 
             if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
             {
-                if (Platform.IsClientWindows && WindowsServiceExists(WindowsService.ServiceControl.SERVICE_NAME))
+                if (Platform.IsClientWindows && !String.IsNullOrWhiteSpace(WindowsService.ServiceControl.SERVICE_NAME) && WindowsServiceExists(WindowsService.ServiceControl.SERVICE_NAME))
                 {
                     RestartWindowsService(WindowsService.ServiceControl.SERVICE_NAME);
                 }                
