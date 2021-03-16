@@ -81,29 +81,6 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             }
         }
 
-        public RetryConditionHeaderValue RetryAfter
-        {
-            get
-            {
-                if (this.responseMessage != null)
-                {
-                    return this.responseMessage.Headers.RetryAfter;
-                }
-                else
-                {
-                    string header = this.webResponse.Headers[HttpResponseHeader.RetryAfter];
-                    if (header != null && RetryConditionHeaderValue.TryParse(header, out RetryConditionHeaderValue retryAfter))
-                    {
-                        return retryAfter;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-            }
-        }
-        
         protected static string ResponseToString(HttpResponseMessage response)
         {
             if (response != null)
