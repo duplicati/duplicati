@@ -451,68 +451,133 @@ namespace Duplicati.Library.Backend
                         // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
                         int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
 
-                        byte[] fragmentBuffer = new byte[bufferSize];
-                        int read = 0;
-                        for (int offset = 0; offset < stream.Length; offset += read)
+                        long read = 0;
+                        for (long offset = 0; offset < stream.Length; offset += read)
                         {
-                            read = await stream.ReadAsync(fragmentBuffer, 0, bufferSize, cancelToken).ConfigureAwait(false);
-
-                            int retryCount = this.fragmentRetryCount;
-                            for (int attempt = 0; attempt < retryCount; attempt++)
+                            using (Stream subStream = new SubStream(stream, offset, bufferSize))
                             {
-                                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, uploadSession.UploadUrl))
-                                using (ByteArrayContent fragmentContent = new ByteArrayContent(fragmentBuffer, 0, read))
+                                read = subStream.Length;
+
+                                int retryCount = this.fragmentRetryCount;
+                                for (int attempt = 0; attempt < retryCount; attempt++)
                                 {
-                                    fragmentContent.Headers.ContentLength = read;
-                                    fragmentContent.Headers.ContentRange = new ContentRangeHeaderValue(offset, offset + read - 1, stream.Length);
-
-                                    request.Content = fragmentContent;
-
-                                    try
+                                    using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, uploadSession.UploadUrl))
+                                    using (StreamContent fragmentContent = new StreamContent(subStream))
                                     {
-                                        // The uploaded put requests will error if they are authenticated
-                                        using (HttpResponseMessage response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
-                                        {
-                                            // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                                            this.ParseResponse<UploadSession>(response);
-                                        }
-                                    }
-                                    catch (MicrosoftGraphException ex)
-                                    {
-                                        // Error handling based on recommendations here:
-                                        // https://docs.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession#best-practices
-                                        if (attempt >= retryCount - 1)
-                                        {
-                                            // We've used up all our retry attempts
-                                            throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
-                                        }
-                                        else if ((int)ex.StatusCode >= 500 && (int)ex.StatusCode < 600)
-                                        {
-                                            // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
-                                            // To make things simpler, we just use the current attempt number as the exponential factor.
-                                            Thread.Sleep((int)Math.Pow(2, attempt) * this.fragmentRetryDelay); // If this is changed to use tasks, this should be changed to Task.Await()
-                                            continue;
-                                        }
-                                        else if (ex.StatusCode == HttpStatusCode.NotFound)
-                                        {
-                                            // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
-                                            // Instead we'll let the caller re-attempt the whole file.
-                                            throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
-                                        }
-                                        else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
-                                        {
-                                            // If a 4xx error code is hit, we should retry without the backoff attempt
-                                            continue;
-                                        }
-                                        else
-                                        {
-                                            // Other errors should be rethrown
-                                            throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
-                                        }
-                                    }
+                                        fragmentContent.Headers.ContentLength = read;
+                                        fragmentContent.Headers.ContentRange = new ContentRangeHeaderValue(offset, offset + read - 1, stream.Length);
 
-                                    // If we successfully sent this piece, then we can break out of the retry loop
-                                    break;
+                                        request.Content = fragmentContent;
+
+                                        try
+                                        {
+                                            // The uploaded put requests will error if they are authenticated
+                                            using (HttpResponseMessage response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
+                                            {
+                                                // Note: On the last request, the json result includes the default properties of the item that was uploaded
+                                                this.ParseResponse<UploadSession>(response);
+                                            }
+                                        }
+                                        catch (MicrosoftGraphException ex)
+                                        {
+                                            if (subStream.Position != 0)
+                                            {
+                                                if (subStream.CanSeek)
+                                                {
+                                                    // Make sure to reset the substream to its start in case this is a retry
+                                                    subStream.Seek(0, SeekOrigin.Begin);
+                                                }
+                                                else
+                                                {
+                                                    // If any of the source stream was read and the substream can't be seeked back to the beginning,
+                                                    // then the internal retry mechanism can't be used and the caller will have to retry this whole file.
+                                                    // Should we consider signaling to the graph API that we're abandoning this upload session?
+                                                    await this.ThrowUploadSessionException(
+                                                        uploadSession,
+                                                        createSessionResponse,
+                                                        (int)(offset / bufferSize),
+                                                        (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                        ex,
+                                                        cancelToken);
+                                                }
+                                            }
+                                            
+                                            // Error handling based on recommendations here:
+                                            // https://docs.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession#best-practices
+                                            if (attempt >= retryCount - 1)
+                                            {
+                                                // We've used up all our retry attempts
+                                                await this.ThrowUploadSessionException(
+                                                    uploadSession,
+                                                    createSessionResponse,
+                                                    (int)(offset / bufferSize),
+                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    ex,
+                                                    cancelToken);
+                                            }
+                                            else if ((int)ex.StatusCode >= 500 && (int)ex.StatusCode < 600)
+                                            {
+                                                // If there was a Retry-After header, then wait for that amount of time first.
+                                                // Interestingly, this isn't mentioned in the recommendations above, but is documented
+                                                // in some of the other OneDrive general docs.
+                                                bool waited = await this.WaitForRetryAfter(ex.RetryAfter, cancelToken);
+
+                                                // If we didn't wait due to a Retry-After header, wait using the strategy defined in the recommendations.
+                                                if (!waited)
+                                                {
+                                                    // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
+                                                    // To make things simpler, we just use the current attempt number as the exponential factor.
+                                                    await Task.Delay((int)Math.Pow(2, attempt) * this.fragmentRetryDelay);
+                                                }
+
+                                                continue;
+                                            }
+                                            else if (ex.StatusCode == HttpStatusCode.NotFound)
+                                            {
+                                                // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
+                                                // Instead we'll let the caller re-attempt the whole file.
+                                                await this.ThrowUploadSessionException(
+                                                    uploadSession,
+                                                    createSessionResponse,
+                                                    (int)(offset / bufferSize),
+                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    ex,
+                                                    cancelToken);
+                                            }
+                                            else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
+                                            {
+                                                // If a 4xx error code is hit, we should retry without the exponential backoff attempt.
+                                                // However, we should still wait for any Retry-After header limits.
+                                                await this.WaitForRetryAfter(ex.RetryAfter, cancelToken);
+                                                continue;
+                                            }
+                                            else
+                                            {
+                                                // Other errors should be rethrown
+                                                await this.ThrowUploadSessionException(
+                                                    uploadSession,
+                                                    createSessionResponse,
+                                                    (int)(offset / bufferSize),
+                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    ex,
+                                                    cancelToken);
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            // Any other exceptions should also cause the upload session to be canceled.
+                                            await this.ThrowUploadSessionException(
+                                                uploadSession,
+                                                createSessionResponse,
+                                                (int)(offset / bufferSize),
+                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                ex,
+                                                cancelToken);
+                                        }
+
+                                        // If we successfully sent this piece, then we can break out of the retry loop
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -527,70 +592,135 @@ namespace Duplicati.Library.Backend
                         // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
                         int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
 
-                        byte[] fragmentBuffer = new byte[bufferSize];
-                        int read = 0;
-                        for (int offset = 0; offset < stream.Length; offset += read)
+                        long read = 0;
+                        for (long offset = 0; offset < stream.Length; offset += read)
                         {
-                            read = await stream.ReadAsync(fragmentBuffer, 0, bufferSize, cancelToken).ConfigureAwait(false);
-
-                            int retryCount = this.fragmentRetryCount;
-                            for (int attempt = 0; attempt < retryCount; attempt++)
+                            using (Stream subStream = new SubStream(stream, offset, bufferSize))
                             {
-                                // The uploaded put requests will error if they are authenticated
-                                var request = new AsyncHttpRequest(this.m_oAuthHelper.CreateRequest(uploadSession.UploadUrl, HttpMethod.Put.ToString(), true));
-                                request.Request.ContentLength = read;
-                                request.Request.Headers.Set(HttpRequestHeader.ContentRange, new ContentRangeHeaderValue(offset, offset + read - 1, stream.Length).ToString());
-                                request.Request.ContentType = "application/octet-stream";
+                                read = subStream.Length;
 
-                                using (var requestStream = request.GetRequestStream(read))
+                                int retryCount = this.fragmentRetryCount;
+                                for (int attempt = 0; attempt < retryCount; attempt++)
                                 {
-                                    await requestStream.WriteAsync(fragmentBuffer, 0, read, cancelToken);
-                                }
+                                    // The uploaded put requests will error if they are authenticated
+                                    var request = new AsyncHttpRequest(this.m_oAuthHelper.CreateRequest(uploadSession.UploadUrl, HttpMethod.Put.ToString(), true));
+                                    request.Request.ContentLength = read;
+                                    request.Request.Headers.Set(HttpRequestHeader.ContentRange, new ContentRangeHeaderValue(offset, offset + read - 1, stream.Length).ToString());
+                                    request.Request.ContentType = "application/octet-stream";
 
-                                try
-                                {
-                                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(request, cancelToken))
+                                    using (var requestStream = request.GetRequestStream(read))
                                     {
-                                        // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                                        this.ParseResponse<UploadSession>(response);
+                                        await Utility.Utility.CopyStreamAsync(subStream, requestStream, cancelToken);
                                     }
-                                }
-                                catch (MicrosoftGraphException ex)
-                                {
-                                    // Error handling based on recommendations here:
-                                    // https://docs.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession#best-practices
-                                    if (attempt >= retryCount - 1)
-                                    {
-                                        // We've used up all our retry attempts
-                                        throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
-                                    }
-                                    else if ((int)ex.StatusCode >= 500 && (int)ex.StatusCode < 600)
-                                    {
-                                        // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
-                                        // To make things simpler, we just use the current attempt number as the exponential factor.
-                                        Thread.Sleep((int)Math.Pow(2, attempt) * this.fragmentRetryDelay); // If this is changed to use tasks, this should be changed to Task.Await()
-                                        continue;
-                                    }
-                                    else if (ex.StatusCode == HttpStatusCode.NotFound)
-                                    {
-                                        // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
-                                        // Instead we'll let the caller re-attempt the whole file.
-                                        throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
-                                    }
-                                    else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
-                                    {
-                                        // If a 4xx error code is hit, we should retry without the backoff attempt
-                                        continue;
-                                    }
-                                    else
-                                    {
-                                        // Other errors should be rethrown
-                                        throw new UploadSessionException(createSessionResponse, offset / bufferSize, (int)Math.Ceiling((double)stream.Length / bufferSize), ex);
-                                    }
-                                }
 
-                                // If we successfully sent this piece, then we can break out of the retry loop
-                                break;
+                                    try
+                                    {
+                                        using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(request, cancelToken))
+                                        {
+                                            // Note: On the last request, the json result includes the default properties of the item that was uploaded
+                                            this.ParseResponse<UploadSession>(response);
+                                        }
+                                    }
+                                    catch (MicrosoftGraphException ex)
+                                    {
+                                        if (subStream.Position != 0)
+                                        {
+                                            if (subStream.CanSeek)
+                                            {
+                                                // Make sure to reset the substream to its start in case this is a retry
+                                                subStream.Seek(0, SeekOrigin.Begin);
+                                            }
+                                            else
+                                            {
+                                                // If any of the source stream was read and the substream can't be seeked back to the beginning,
+                                                // then the internal retry mechanism can't be used and the caller will have to retry this whole file.
+                                                // Should we consider signaling to the graph API that we're abandoning this upload session?
+                                                await this.ThrowUploadSessionException(
+                                                    uploadSession,
+                                                    createSessionResponse,
+                                                    (int)(offset / bufferSize),
+                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    ex,
+                                                    cancelToken);
+                                            }
+                                        }
+
+                                        // Error handling based on recommendations here:
+                                        // https://docs.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession#best-practices
+                                        if (attempt >= retryCount - 1)
+                                        {
+                                            // We've used up all our retry attempts
+                                            await this.ThrowUploadSessionException(
+                                                uploadSession,
+                                                createSessionResponse,
+                                                (int)(offset / bufferSize),
+                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                ex,
+                                                cancelToken);
+                                        }
+                                        else if ((int)ex.StatusCode >= 500 && (int)ex.StatusCode < 600)
+                                        {
+                                            // If there was a Retry-After header, then wait for that amount of time first.
+                                            // Interestingly, this isn't mentioned in the recommendations above, but is documented
+                                            // in some of the other OneDrive general docs.
+                                            bool waited = await this.WaitForRetryAfter(ex.RetryAfter, cancelToken);
+
+                                            // If we didn't wait due to a Retry-After header, wait using the strategy defined in the recommendations.
+                                            if (!waited)
+                                            {
+                                                // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
+                                                // To make things simpler, we just use the current attempt number as the exponential factor.
+                                                await Task.Delay((int)Math.Pow(2, attempt) * this.fragmentRetryDelay);
+                                            }
+
+                                            continue;
+                                        }
+                                        else if (ex.StatusCode == HttpStatusCode.NotFound)
+                                        {
+                                            // 404 is a special case indicating the upload session no longer exists, so the fragment shouldn't be retried.
+                                            // Instead we'll let the caller re-attempt the whole file.
+                                            await this.ThrowUploadSessionException(
+                                                uploadSession,
+                                                createSessionResponse,
+                                                (int)(offset / bufferSize),
+                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                ex,
+                                                cancelToken);
+                                        }
+                                        else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
+                                        {
+                                            // If a 4xx error code is hit, we should retry without the exponential backoff attempt.
+                                            // However, we should still wait for any Retry-After header limits.
+                                            await this.WaitForRetryAfter(ex.RetryAfter, cancelToken);
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            // Other errors should be rethrown
+                                            await this.ThrowUploadSessionException(
+                                                uploadSession,
+                                                createSessionResponse,
+                                                (int)(offset / bufferSize),
+                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                ex,
+                                                cancelToken);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        // Any other exceptions should also cause the upload session to be canceled.
+                                        await this.ThrowUploadSessionException(
+                                            uploadSession,
+                                            createSessionResponse,
+                                            (int)(offset / bufferSize),
+                                            (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                            ex,
+                                            cancelToken);
+                                    }
+
+                                    // If we successfully sent this piece, then we can break out of the retry loop
+                                    break;
+                                }
                             }
                         }
                     }
@@ -794,6 +924,81 @@ namespace Duplicati.Library.Backend
             {
                 return this.m_serializer.Deserialize<T>(jsonReader);
             }
+        }
+
+        private async Task ThrowUploadSessionException(
+            UploadSession uploadSession,
+            HttpResponseMessage createSessionResponse,
+            int fragment,
+            int fragmentCount,
+            Exception ex,
+            CancellationToken cancelToken)
+        {
+            // Before throwing the exception, cancel the upload session
+            // The uploaded delete request will error if it is authenticated
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
+            using (HttpResponseMessage response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
+            {
+                // Note that the response body should always be empty in this case.
+                this.ParseResponse<UploadSession>(response);
+            }
+
+            throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);
+        }
+
+        private async Task ThrowUploadSessionException(
+            UploadSession uploadSession,
+            HttpWebResponse createSessionResponse,
+            int fragment,
+            int fragmentCount,
+            Exception ex,
+            CancellationToken cancelToken)
+        {
+            // Before throwing the exception, cancel the upload session
+            // The uploaded delete request will error if it is authenticated
+            var request = new AsyncHttpRequest(this.m_oAuthHelper.CreateRequest(uploadSession.UploadUrl, HttpMethod.Delete.ToString(), true));
+            using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(request, cancelToken))
+            {
+                // Note that the response body should always be empty in this case.
+                this.ParseResponse<UploadSession>(response);
+            }
+
+            throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);
+        }
+
+        private async Task<bool> WaitForRetryAfter(RetryConditionHeaderValue retryAfter, CancellationToken cancelToken)
+        {
+            if (retryAfter != null)
+            {
+                TimeSpan delay = TimeSpan.Zero;
+                if (retryAfter.Delta.HasValue)
+                {
+                    delay = retryAfter.Delta.Value;
+                }
+                else if (retryAfter.Date.HasValue)
+                {
+                    DateTimeOffset now = DateTimeOffset.UtcNow;
+                    DateTimeOffset delayUntil = retryAfter.Date.Value;
+
+                    // Make sure delayUntil is in the future
+                    if (delayUntil >= now)
+                    {
+                        delay = now - delayUntil;
+                    }
+                    else
+                    {
+                        // If the date given was in the past then don't wait at all
+                    }
+                }
+
+                if (delay != TimeSpan.Zero)
+                {
+                    await Task.Delay(delay);
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
