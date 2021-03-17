@@ -25,7 +25,6 @@ using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
-using System.Threading;
 
 namespace Duplicati.Library.Utility
 {

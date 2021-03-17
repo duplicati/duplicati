@@ -74,7 +74,7 @@ namespace Duplicati.Library.Utility
 
         public override void Flush()
         {
-            this.m_stream.Flush();
+            // No-op, since writing is not supported
         }
 
         public override int Read(byte[] buffer, int offset, int count)
