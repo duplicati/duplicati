@@ -50,7 +50,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHttpRequest.cs" />
-    <Compile Include="SubStream.cs" />
     <Compile Include="WinTools.cs" />
     <Compile Include="FilterGroups.cs" />
     <Compile Include="KeyGenerator.cs" />

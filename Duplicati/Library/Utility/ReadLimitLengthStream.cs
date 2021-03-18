@@ -8,20 +8,48 @@ namespace Duplicati.Library.Utility
     // StreamReadLimitLengthWrapper() based on code from Matt Smith (Oct 26 '15 at 20:38)
     // https://stackoverflow.com/questions/33354822/how-to-set-length-in-stream-without-truncated
 
+    /// <summary>
+    /// This class wraps a Stream but only allows reading a limited number of bytes from the underlying stream.
+    /// This can be used to create split a source stream into multiple smaller buffers that can be used as independent streams.
+    /// </summary>
     public class ReadLimitLengthStream : Stream
     {
-        readonly Stream m_innerStream;
-        readonly long m_endPosition;
+        private readonly Stream m_innerStream;
+        private readonly long m_start;
+        private readonly long m_length;
 
-        public ReadLimitLengthStream(Stream innerStream, long size)
+        public ReadLimitLengthStream(Stream innerStream, long length)
+            : this(innerStream, innerStream.Position, length)
         {
-            if (size < 0)
+        }
+
+        public ReadLimitLengthStream(Stream innerStream, long start, long length)
+        {
+            if (start < 0 || start >= innerStream.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(size));
+                throw new ArgumentOutOfRangeException(nameof(start));
+            }
+            if (length < 0 || innerStream.Length < start + length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
             }
 
             m_innerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
-            m_endPosition = m_innerStream.Position + size;
+            m_start = start;
+            m_length = length;
+
+            // Make sure the stream is starting at the expected point
+            if (m_innerStream.Position != m_start)
+            {
+                if (m_innerStream.CanSeek)
+                {
+                    m_innerStream.Seek(m_start, SeekOrigin.Begin);
+                }
+                else
+                {
+                    throw new ArgumentException("Cannot seek stream to starting position", nameof(innerStream));
+                }
+            }
         }
 
         public override bool CanRead => m_innerStream.CanRead;
@@ -35,12 +63,12 @@ namespace Duplicati.Library.Utility
             // NOOP
         }
 
-        public override long Length => m_endPosition;
+        public override long Length => m_length;
 
         public override long Position
         {
-            get => m_innerStream.Position;
-            set => m_innerStream.Position = value;
+            get => ClampInnerStreamPosition(m_innerStream.Position) - m_start;
+            set => m_innerStream.Position = ClampInnerStreamPosition(value + m_start);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -51,7 +79,17 @@ namespace Duplicati.Library.Utility
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return m_innerStream.Seek(offset, origin);
+            switch (origin)
+            {
+                case SeekOrigin.Begin:
+                    return m_innerStream.Seek(m_start + offset, SeekOrigin.Begin);
+                case SeekOrigin.Current:
+                    return m_innerStream.Seek(offset, SeekOrigin.Current);
+                case SeekOrigin.End:
+                    return m_innerStream.Seek(m_start + m_length + offset, SeekOrigin.Begin);
+                default:
+                    throw new ArgumentException("Unknown SeekOrigin", nameof(origin));
+            }
         }
 
         public override void SetLength(long value)
@@ -106,7 +144,7 @@ namespace Duplicati.Library.Utility
 
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
-            return m_innerStream.FlushAsync(cancellationToken);
+            return Task.CompletedTask;
         }
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
@@ -138,8 +176,15 @@ namespace Duplicati.Library.Utility
 
         private int GetAllowedCount(int count)
         {
-            long pos = m_innerStream.Position;
-            long maxCount = m_endPosition - pos;
+            long pos = m_innerStream.Position - m_start;
+            long maxCount = m_length - pos;
+            if (pos < 0 || maxCount < 0)
+            {
+                // The stream is somehow positioned before the starting point or after the end.
+                // Nothing can be read.
+                return 0;
+            }
+
             if (count > maxCount)
             {
                 return (int)maxCount;
@@ -147,5 +192,20 @@ namespace Duplicati.Library.Utility
 
             return count;
         }
+
+        private long ClampInnerStreamPosition(long position)
+        {
+            if (position < m_start)
+            {
+                return m_start;
+            }
+
+            if (position > m_start + m_length)
+            {
+                return m_start + m_length;
+            }
+
+            return position;
+            }
     }
 }

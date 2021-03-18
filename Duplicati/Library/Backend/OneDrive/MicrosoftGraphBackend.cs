@@ -463,7 +463,14 @@ namespace Duplicati.Library.Backend
                         long read = 0;
                         for (long offset = 0; offset < stream.Length; offset += read)
                         {
-                            using (Stream subStream = new SubStream(stream, offset, bufferSize))
+                            // If the stream isn't long enough for this to be a full buffer, then limit the length
+                            long currentBufferSize = bufferSize;
+                            if (stream.Length < offset + bufferSize)
+                            {
+                                currentBufferSize = stream.Length - offset;
+                            }
+
+                            using (Stream subStream = new ReadLimitLengthStream(stream, offset, currentBufferSize))
                             {
                                 read = subStream.Length;
 
@@ -595,7 +602,14 @@ namespace Duplicati.Library.Backend
                         long read = 0;
                         for (long offset = 0; offset < stream.Length; offset += read)
                         {
-                            using (Stream subStream = new SubStream(stream, offset, bufferSize))
+                            // If the stream isn't long enough for this to be a full buffer, then limit the length
+                            long currentBufferSize = bufferSize;
+                            if (stream.Length < offset + bufferSize)
+                            {
+                                currentBufferSize = stream.Length - offset;
+                            }
+
+                            using (Stream subStream = new ReadLimitLengthStream(stream, offset, currentBufferSize))
                             {
                                 read = subStream.Length;
 
