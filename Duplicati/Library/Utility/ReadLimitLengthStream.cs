@@ -19,13 +19,13 @@ namespace Duplicati.Library.Utility
         private readonly long m_length;
 
         public ReadLimitLengthStream(Stream innerStream, long length)
-            : this(innerStream, innerStream.Position, length)
+            : this(innerStream, 0, length)
         {
         }
 
         public ReadLimitLengthStream(Stream innerStream, long start, long length)
         {
-            if (start < 0 || start >= innerStream.Length)
+            if (start < 0 || start > innerStream.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(start));
             }
@@ -38,16 +38,19 @@ namespace Duplicati.Library.Utility
             m_start = start;
             m_length = length;
 
-            // Make sure the stream is starting at the expected point
-            if (m_innerStream.Position != m_start)
+            if (m_start != 0)
             {
-                if (m_innerStream.CanSeek)
+                // Make sure the stream is starting at the expected point
+                if (m_innerStream.Position != m_start)
                 {
-                    m_innerStream.Seek(m_start, SeekOrigin.Begin);
-                }
-                else
-                {
-                    throw new ArgumentException("Cannot seek stream to starting position", nameof(innerStream));
+                    if (m_innerStream.CanSeek)
+                    {
+                        m_innerStream.Seek(m_start, SeekOrigin.Begin);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Cannot seek stream to starting position", nameof(innerStream));
+                    }
                 }
             }
         }
@@ -79,17 +82,23 @@ namespace Duplicati.Library.Utility
 
         public override long Seek(long offset, SeekOrigin origin)
         {
+            long innerPosition;
             switch (origin)
             {
                 case SeekOrigin.Begin:
-                    return m_innerStream.Seek(m_start + offset, SeekOrigin.Begin);
+                    innerPosition = m_innerStream.Seek(m_start + offset, SeekOrigin.Begin);
+                    break;
                 case SeekOrigin.Current:
-                    return m_innerStream.Seek(offset, SeekOrigin.Current);
+                    innerPosition = m_innerStream.Seek(offset, SeekOrigin.Current);
+                    break;
                 case SeekOrigin.End:
-                    return m_innerStream.Seek(m_start + m_length + offset, SeekOrigin.Begin);
+                    innerPosition = m_innerStream.Seek(m_start + m_length + offset, SeekOrigin.Begin);
+                    break;
                 default:
                     throw new ArgumentException("Unknown SeekOrigin", nameof(origin));
             }
+
+            return ClampInnerStreamPosition(innerPosition) - m_start;
         }
 
         public override void SetLength(long value)
@@ -180,7 +189,7 @@ namespace Duplicati.Library.Utility
             long maxCount = m_length - pos;
             if (pos < 0 || maxCount < 0)
             {
-                // The stream is somehow positioned before the starting point or after the end.
+                // The stream is positioned before the starting point or after the end.
                 // Nothing can be read.
                 return 0;
             }
@@ -195,9 +204,11 @@ namespace Duplicati.Library.Utility
 
         private long ClampInnerStreamPosition(long position)
         {
-            if (position < m_start)
+            // Note that this allows this stream to have positions in the range -1 to m_length.
+            // Reading at -1 or m_length should return nothing.
+            if (position < m_start - 1)
             {
-                return m_start;
+                return m_start - 1;
             }
 
             if (position > m_start + m_length)
@@ -206,6 +217,6 @@ namespace Duplicati.Library.Utility
             }
 
             return position;
-            }
+        }
     }
 }
