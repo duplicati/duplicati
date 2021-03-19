@@ -173,7 +173,7 @@ namespace Duplicati.UnitTest
 
                     // Set the position directly and read a shorter range
                     stream.Position = 2;
-                    Assert.AreEqual(2, stream.ReadAsync(readBuffer, 0, 2, CancellationToken.None).Await(), "Read count");
+                    Assert.AreEqual(2, stream.ReadAsync(readBuffer, 0, 2).Await(), "Read count");
                     assertArray(Enumerable.Range(2, 2), readBuffer.Take(2));
                 }
 
@@ -188,8 +188,23 @@ namespace Duplicati.UnitTest
                     Assert.AreEqual(4, stream.Read(readBuffer, 0, 4), "Read count");
                     assertArray(Enumerable.Range(2, 4), readBuffer.Take(4));
 
+                    // Test CopyTo
+                    using (MemoryStream destination = new MemoryStream())
+                    {
+                        stream.Position = 0;
+                        stream.CopyTo(destination);
+                        assertArray(Enumerable.Range(2, 4), destination.ToArray());
+                    }
+
+                    // Test CopyToAsync
+                    using (MemoryStream destination = new MemoryStream())
+                    {
+                        stream.Position = 0;
+                        stream.CopyToAsync(destination).Await();
+                        assertArray(Enumerable.Range(2, 4), destination.ToArray());
+                    }
+
                     // Test seeking
-                    testSeek(stream, -1, -1);
                     testSeek(stream, 0, 2);
                     testSeek(stream, 1, 3);
                     testSeek(stream, 2, 4);
@@ -203,8 +218,8 @@ namespace Duplicati.UnitTest
 
                     // Test clamping of position
                     stream.Position = -2;
-                    Assert.AreEqual(-1, stream.Position);
-                    Assert.AreEqual(1, baseStream.Position);
+                    Assert.AreEqual(0, stream.Position);
+                    Assert.AreEqual(2, baseStream.Position);
 
                     stream.Position = 9;
                     Assert.AreEqual(4, stream.Position);
@@ -212,13 +227,19 @@ namespace Duplicati.UnitTest
 
                     // Make sure changing the base stream still shows clamped positions
                     baseStream.Position = 0;
-                    Assert.AreEqual(-1, stream.Position);
+                    Assert.AreEqual(0, stream.Position);
 
                     baseStream.Position = 4;
                     Assert.AreEqual(2, stream.Position);
 
                     baseStream.Position = 10;
                     Assert.AreEqual(4, stream.Position);
+
+                    // Reading when the baseStream is positioned before the start of the limit
+                    // should still be possible, and should seek to return the correct values.
+                    baseStream.Position = 0;
+                    Assert.AreEqual(0, stream.Position);
+                    Assert.AreEqual(2, stream.ReadByte());
                 }
 
                 // Check a stream with length 0
@@ -232,7 +253,7 @@ namespace Duplicati.UnitTest
                     Assert.AreEqual(0, stream.Read(readBuffer, 0, 4), "Read count");
 
                     // Test seeking
-                    testSeek(stream, -1, -1);
+                    testSeek(stream, 0, -1);
                     testSeek(stream, 0, -1);
 
                     // Test seeking from current
@@ -242,8 +263,8 @@ namespace Duplicati.UnitTest
 
                     // Test clamping of position
                     stream.Position = -2;
-                    Assert.AreEqual(-1, stream.Position);
-                    Assert.AreEqual(1, baseStream.Position);
+                    Assert.AreEqual(0, stream.Position);
+                    Assert.AreEqual(2, baseStream.Position);
 
                     stream.Position = 9;
                     Assert.AreEqual(0, stream.Position);
@@ -251,7 +272,7 @@ namespace Duplicati.UnitTest
 
                     // Make sure changing the base stream still shows clamped positions
                     baseStream.Position = 0;
-                    Assert.AreEqual(-1, stream.Position);
+                    Assert.AreEqual(0, stream.Position);
 
                     baseStream.Position = 4;
                     Assert.AreEqual(0, stream.Position);

@@ -47,6 +47,17 @@ namespace Duplicati.Library.Utility
                     {
                         m_innerStream.Seek(m_start, SeekOrigin.Begin);
                     }
+                    else if (m_innerStream.Position < m_start)
+                    {
+                        // If the underlying stream doesn't support seeking,
+                        // this will instead simulate the seek by reading until
+                        // the underlying stream is at the start position.
+                        long bytesToRead = m_start - m_innerStream.Position;
+                        for (long i = 0; i < bytesToRead; i++)
+                        {
+                            m_innerStream.ReadByte();
+                        }
+                    }
                     else
                     {
                         throw new ArgumentException("Cannot seek stream to starting position", nameof(innerStream));
@@ -98,7 +109,7 @@ namespace Duplicati.Library.Utility
                     throw new ArgumentException("Unknown SeekOrigin", nameof(origin));
             }
 
-            return ClampInnerStreamPosition(innerPosition) - m_start;
+            return this.Position;
         }
 
         public override void SetLength(long value)
@@ -141,11 +152,6 @@ namespace Duplicati.Library.Utility
             // Since this wrapper does not own the underlying stream, we do not want it to close the underlying stream
         }
 
-        public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
-        {
-            return m_innerStream.CopyToAsync(destination, bufferSize, cancellationToken);
-        }
-
         public override int EndRead(IAsyncResult asyncResult)
         {
             return m_innerStream.EndRead(asyncResult);
@@ -185,15 +191,36 @@ namespace Duplicati.Library.Utility
 
         private int GetAllowedCount(int count)
         {
-            long pos = m_innerStream.Position - m_start;
-            long maxCount = m_length - pos;
-            if (pos < 0 || maxCount < 0)
+            if (m_innerStream.Position < m_start)
             {
-                // The stream is positioned before the starting point or after the end.
-                // Nothing can be read.
+                // The stream is positioned before the starting point.
+                // This state is exposed externally as having Position==0,
+                // so if possible, seek to the start and then read from there.
+                if (CanSeek)
+                {
+                    this.Position = 0;
+                }
+                else
+                {
+                    // If the underlying stream doesn't support seeking though,
+                    // this will instead simulate the seek by reading until the underlying stream is at the start position.
+                    long bytesToRead = m_start - m_innerStream.Position;
+                    for (long i = 0; i < bytesToRead; i++)
+                    {
+                        m_innerStream.ReadByte();
+                    }
+                }
+            }
+
+            long pos = this.Position;
+            if (pos >= m_length)
+            {
+                // The stream is at or past the end of the limit.
+                // Nothing should be read.
                 return 0;
             }
 
+            long maxCount = m_length - pos;
             if (count > maxCount)
             {
                 return (int)maxCount;
@@ -204,16 +231,17 @@ namespace Duplicati.Library.Utility
 
         private long ClampInnerStreamPosition(long position)
         {
-            // Note that this allows this stream to have positions in the range -1 to m_length.
-            // Reading at -1 or m_length should return nothing.
-            if (position < m_start - 1)
+            // Note that this allows this stream to have positions in the range 0 to m_length.
+            // Reading at m_length should return nothing.
+            if (position < m_start)
             {
-                return m_start - 1;
+                return m_start;
             }
 
-            if (position > m_start + m_length)
+            long maxPosition = m_start + m_length;
+            if (position > maxPosition)
             {
-                return m_start + m_length;
+                return maxPosition;
             }
 
             return position;
