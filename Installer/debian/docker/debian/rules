@@ -34,9 +34,9 @@ override_dh_auto_install:
 	mkdir build/share
 	mkdir build/share/applications
 	mkdir build/share/pixmaps
-	cp /sources/Installer/debian/duplicati-launcher.sh build/bin/duplicati
-	cp /sources/Installer/debian/duplicati-commandline-launcher.sh build/bin/duplicati-cli
-	cp /sources/Installer/debian/duplicati-server-launcher.sh build/bin/duplicati-server
+	ln -sf /usr/lib/duplicati/Duplicati.GUI.TrayIcon build/bin/duplicati
+	ln -sf /usr/lib/duplicati/Duplicati.CommandLine build/bin/duplicati-cli
+	ln -sf /usr/lib/duplicati/Duplicati.Server build/bin/duplicati-server
 	cp /sources/Tools/Verification/DuplicatiVerify.py build/lib/duplicati/
 	cp /sources/Installer/debian/duplicati.desktop build/share/applications
 	cp /sources/Installer/debian/duplicati.xpm build/share/pixmaps
@@ -51,6 +51,9 @@ override_dh_auto_install:
 	find build/lib/duplicati/* -type d | xargs chmod 755
 	find build/lib/duplicati/* -type f -name \*.sh | xargs chmod 755
 	find build/lib/duplicati/* -type f -name \*.py | xargs chmod 755
+	chmod 755 build/lib/duplicati/Duplicati.GUI.TrayIcon
+	chmod 755 build/lib/duplicati/Duplicati.CommandLine
+	chmod 755 build/lib/duplicati/Duplicati.Server
 	dh_install
 
 override_dh_systemd_enable:
