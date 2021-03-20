@@ -1000,7 +1000,26 @@ namespace Duplicati.Library.Backend
                 if (delayUntil.HasValue)
                 {
                     // Set the retry timestamp to the UTC version of the timestamp.
-                    Interlocked.Exchange(ref this.retryAfter, delayUntil.Value.UtcTicks);
+                    long newRetryAfter = delayUntil.Value.UtcTicks;
+
+                    // Update the persisted retry after timestamp
+                    long replacedRetryAfter;
+                    long currentRetryAfter;
+                    do
+                    {
+                        currentRetryAfter = Interlocked.Read(ref this.retryAfter);
+
+                        if (newRetryAfter < currentRetryAfter)
+                        {
+                            // If the current retry after is already past the new value, then no need to update it again.
+                            break;
+                        }
+                        else
+                        {
+                            replacedRetryAfter = Interlocked.CompareExchange(ref this.retryAfter, newRetryAfter, currentRetryAfter);
+                        }
+                    }
+                    while (replacedRetryAfter != currentRetryAfter);
                 }
             }
         }

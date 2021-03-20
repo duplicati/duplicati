@@ -30,7 +30,7 @@ namespace Duplicati.Library.Utility
         {
             if (innerStream == null)
             {
-                throw new ArgumentNullException(nameof(innerStream))
+                throw new ArgumentNullException(nameof(innerStream));
             }
             if (start < 0 || start > innerStream.Length)
             {
