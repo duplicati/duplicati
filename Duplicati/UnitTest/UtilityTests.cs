@@ -149,10 +149,21 @@ namespace Duplicati.UnitTest
 
                 Assert.AreEqual(position, stream.Seek(position, SeekOrigin.Begin));
                 Assert.AreEqual(position, stream.Position);
-                Assert.AreEqual(readByte >= 0 ? 1 : 0, stream.Read(readBuffer, 0, 1), "Read count");
+                Array.Clear(readBuffer, 0, 10);
+                Assert.AreEqual(readByte >= 0 ? 1 : 0, stream.Read(readBuffer, 1, 1), "Read count");
                 if (readByte >= 0)
                 {
-                    Assert.AreEqual(readBuffer[0], readByte);
+                    // Make sure nothing was read before or after the offset byte given as well.
+                    Assert.AreEqual(readBuffer[0], 0);
+                    Assert.AreEqual(readBuffer[1], readByte);
+                    Assert.AreEqual(readBuffer[2], 0);
+                }
+                else
+                {
+                    // Make sure nothing was read
+                    Assert.AreEqual(readBuffer[0], 0);
+                    Assert.AreEqual(readBuffer[1], 0);
+                    Assert.AreEqual(readBuffer[2], 0);
                 }
 
                 Assert.AreEqual(position, stream.Seek(position - stream.Length, SeekOrigin.End));
