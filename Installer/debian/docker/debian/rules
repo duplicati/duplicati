@@ -27,7 +27,7 @@ override_dh_clean:
 	find /sources -type d -name obj | xargs rm -rf
 
 override_dh_auto_build:
-	dotnet publish -c Release -o build/lib/duplicati/ /sources/Duplicati.sln
+	dotnet publish -c Release --runtime=linux-x64  -p:DefineConstants=ENABLE_GTK -o build/lib/duplicati/ /sources/Duplicati.sln
 
 override_dh_auto_install:
 	mkdir build/bin
