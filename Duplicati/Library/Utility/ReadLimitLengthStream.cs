@@ -10,7 +10,10 @@ namespace Duplicati.Library.Utility
 
     /// <summary>
     /// This class wraps a Stream but only allows reading a limited number of bytes from the underlying stream.
-    /// This can be used to create split a source stream into multiple smaller buffers that can be used as independent streams.
+    /// This can be used to create a stream that exposes only a small window of a source stream.
+    /// Having multiple copies of this wrapper on the same base stream at the same time is not ideal
+    /// (as the position will move around), but creating multiple of these streams one after another
+    /// can be used to create a sliding window over a base stream.
     /// </summary>
     public class ReadLimitLengthStream : Stream
     {
@@ -25,6 +28,10 @@ namespace Duplicati.Library.Utility
 
         public ReadLimitLengthStream(Stream innerStream, long start, long length)
         {
+            if (innerStream == null)
+            {
+                throw new ArgumentNullException(nameof(innerStream))
+            }
             if (start < 0 || start > innerStream.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(start));
@@ -34,7 +41,7 @@ namespace Duplicati.Library.Utility
                 throw new ArgumentOutOfRangeException(nameof(length));
             }
 
-            m_innerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
+            m_innerStream = innerStream;
             m_start = start;
             m_length = length;
 
@@ -93,17 +100,16 @@ namespace Duplicati.Library.Utility
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            long innerPosition;
             switch (origin)
             {
                 case SeekOrigin.Begin:
-                    innerPosition = m_innerStream.Seek(m_start + offset, SeekOrigin.Begin);
+                    m_innerStream.Seek(m_start + offset, SeekOrigin.Begin);
                     break;
                 case SeekOrigin.Current:
-                    innerPosition = m_innerStream.Seek(offset, SeekOrigin.Current);
+                    m_innerStream.Seek(offset, SeekOrigin.Current);
                     break;
                 case SeekOrigin.End:
-                    innerPosition = m_innerStream.Seek(m_start + m_length + offset, SeekOrigin.Begin);
+                    m_innerStream.Seek(m_start + m_length + offset, SeekOrigin.Begin);
                     break;
                 default:
                     throw new ArgumentException("Unknown SeekOrigin", nameof(origin));
