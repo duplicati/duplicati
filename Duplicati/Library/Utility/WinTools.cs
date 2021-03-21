@@ -18,6 +18,8 @@
 // 
 #endregion
 using Duplicati.Library.Common;
+using Microsoft.Win32.SafeHandles;
+using System;
 
 namespace Duplicati.Library.Utility
 {
@@ -53,5 +55,110 @@ namespace Duplicati.Library.Utility
                 "win-tools", "gpg.exe");
             return string.IsNullOrEmpty(wintoolsPath) ? null : wintoolsPath;
         }
+
+
+        /// <summary>
+        /// On Windows platforms, tries to add <see cref="Win32.SE_BACKUP_NAME"/> privilege to the process
+        /// before executing the specified <paramref name="action"/>.
+        /// Executes the specified <paramref name="action"/> as-is if the additional process privilege cannot be added
+        /// to the process security context (eg current user is not allowed to enable this privilege).
+        /// </summary>
+        /// <param name="action">Action to execute.</param>
+        /// <remarks>
+        /// In Windows platforms, the <see cref="Win32.SE_BACKUP_NAME"/>
+        /// privilege allows users to bypass file and directory object permissions for the purposes of backing up the system.
+        /// 
+        /// The privilege is available to user accounts (and security groups) specified in the 
+        /// 'Back up files and directories' group policy (GPO =&gt; Computer Configuration =&gt;
+        /// Windows Settings =&gt; Security Settings =&gt; Local Policies =&gt; User Rights Assignment).
+        /// 
+        /// By default, the 'Administrators' and 'Backup Operators' security groups are specified
+        /// in the 'Back up files and directories' group policy.
+        /// 
+        /// To take advantage of this functionality, configure the Duplicati service to use its own dedicated user account,
+        /// and add this user account to the 'Backup Operators' security group. The process will be able to access ALL files on the system,
+        /// without any other admin permissions.
+        /// </remarks>
+        public static void WithBackupPrivileges(Action action)
+        {
+            if (Platform.IsClientWindows)
+            {
+                var addedPrivilege = AddPrivilege(Win32.SE_BACKUP_NAME);
+                try
+                {
+                    action();
+                }
+                finally
+                {
+                    if (addedPrivilege)
+                    {
+                        RemovePrivilege(Win32.SE_BACKUP_NAME);
+                    }
+                }
+            }
+            else
+            {
+                action();
+            }
+        }
+
+
+        private static bool AddPrivilege(string privilege)
+        {
+            bool retVal;
+            Win32.TOKEN_PRIVILEGES tp;
+            using (var hproc = new SafeProcessHandle(Win32.GetCurrentProcess(), true))
+            {
+                IntPtr htok = IntPtr.Zero;
+                retVal = Win32.OpenProcessToken(hproc.DangerousGetHandle(), Win32.TOKEN_ADJUST_PRIVILEGES | Win32.TOKEN_QUERY, ref htok);
+                if (!retVal)
+                {
+                    return false;
+                }
+                using (var safeTokenHandle = new SafeProcessHandle(htok, true))
+                {
+                    tp.Count = 1;
+                    tp.Luid = 0;
+                    tp.Attr = Win32.SE_PRIVILEGE_ENABLED;
+
+                    retVal = Win32.LookupPrivilegeValue(null, privilege, ref tp.Luid);
+                    if (!retVal)
+                    {
+                        return false;
+                    }
+                    retVal = Win32.AdjustTokenPrivileges(htok, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+                    return retVal;
+                }
+            }
+        }
+        private static bool RemovePrivilege(string privilege)
+        {
+            bool retVal;
+            Win32.TOKEN_PRIVILEGES tp;
+            using (var hproc = new SafeProcessHandle(Win32.GetCurrentProcess(), true))
+            {
+                IntPtr htok = IntPtr.Zero;
+                retVal = Win32.OpenProcessToken(hproc.DangerousGetHandle(), Win32.TOKEN_ADJUST_PRIVILEGES | Win32.TOKEN_QUERY, ref htok);
+                if (!retVal)
+                {
+                    return false;
+                }
+                using (var safeTokenHandle = new SafeProcessHandle(htok, true))
+                {
+                    tp.Count = 1;
+                    tp.Luid = 0;
+                    tp.Attr = Win32.SE_PRIVILEGE_DISABLED;
+
+                    retVal = Win32.LookupPrivilegeValue(null, privilege, ref tp.Luid);
+                    if (!retVal)
+                    {
+                        return false;
+                    }
+                    retVal = Win32.AdjustTokenPrivileges(htok, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+                    return retVal;
+                }
+            }
+        }
+
     }
 }
