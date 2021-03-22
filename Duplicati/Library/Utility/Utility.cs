@@ -38,7 +38,10 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Buffer of the default size which can be reused.
         /// </summary>
-        private static byte[] defaultBufferCache = null;
+        /// <remarks>
+        /// This is stored as a weak reference so that it may be reclaimed in low memory.
+        /// </remarks>
+        private static WeakReference<byte[]> defaultBufferCache = null;
 
         /// <summary>
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
@@ -170,20 +173,24 @@ namespace Duplicati.Library.Utility
 
         private static byte[] GetDefaultBuffer()
         {
-            byte[] cachedBuffer = Interlocked.Exchange(ref defaultBufferCache, null);
-            if (cachedBuffer != null)
+            byte[] buffer = null;
+            WeakReference<byte[]> cachedBuffer = Interlocked.Exchange(ref defaultBufferCache, null);
+            if (cachedBuffer != null && cachedBuffer.TryGetTarget(out buffer))
             {
-                Array.Clear(cachedBuffer, 0, cachedBuffer.Length);
+                // Clear the buffer only when it is being reused, instead of when it is put in the cache.
+                // This prevents doing unnecessary work to clear the buffer in cases where it isn't reused
+                // (e.g., when the garbage collector reclaims the buffer before it is needed again.)
+                Array.Clear(buffer, 0, buffer.Length);
             }
 
-            return cachedBuffer ?? new byte[DEFAULT_BUFFER_SIZE];
+            return buffer ?? new byte[DEFAULT_BUFFER_SIZE];
         }
 
         private static void ReturnDefaultBuffer(byte[] buffer)
         {
             if (buffer.Length == DEFAULT_BUFFER_SIZE)
             {
-                Interlocked.Exchange(ref defaultBufferCache, buffer);
+                Interlocked.Exchange(ref defaultBufferCache, new WeakReference<byte[]>(buffer));
             }
         }
 
