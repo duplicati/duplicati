@@ -225,6 +225,28 @@ namespace Duplicati.CommandLine.BackendTester
                 bool skipOverwriteTest = Library.Utility.Utility.ParseBoolOption(options, "skip-overwrite-test");
                 bool trimFilenameSpaces = Library.Utility.Utility.ParseBoolOption(options, "trim-filename-spaces");
 
+                long throttleUpload = 0;
+                if (options.TryGetValue("throttle-upload", out string throttleUploadString))
+                {
+                    if (!(backend is IStreamingBackend) || disableStreaming)
+                    {
+                        Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
+                    }
+
+                    throttleUpload = long.Parse(throttleUploadString);
+                }
+
+                long throttleDownload = 0;
+                if (options.TryGetValue("throttle-upload", out string throttleDownloadString))
+                {
+                    if (!(backend is IStreamingBackend) || disableStreaming)
+                    {
+                        Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
+                    }
+
+                    throttleDownload = long.Parse(throttleDownloadString);
+                }
+
                 if (options.ContainsKey("number-of-files"))
                     number_of_files = int.Parse(options["number-of-files"]);
                 if (options.ContainsKey("min-file-size"))
@@ -266,9 +288,9 @@ namespace Duplicati.CommandLine.BackendTester
 
                             //Upload a dummy file for entry 0 and the last one, they will be replaced by the real files afterwards
                             //We upload entry 0 twice just to try to freak any internal cache list
-                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming);
-                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming);
-                            Uploadfile(dummy, files.Count - 1, files[files.Count - 1].remotefilename, backend, disableStreaming);
+                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload);
+                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload);
+                            Uploadfile(dummy, files.Count - 1, files[files.Count - 1].remotefilename, backend, disableStreaming, throttleUpload);
                         }
 
                     }
@@ -276,7 +298,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine("Uploading files ...");
 
                     for (int i = 0; i < files.Count; i++)
-                        Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming);
+                        Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming, throttleUpload);
 
                     TempFile originalRenamedFile = null;
                     string renamedFileNewName = null;
@@ -345,7 +367,8 @@ namespace Duplicati.CommandLine.BackendTester
                                 if (backend is IStreamingBackend streamingBackend && !disableStreaming)
                                 {
                                     using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                                    using (NonSeekableStream nss = new NonSeekableStream(fs))
+                                    using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttleDownload, throttleDownload))
+                                    using (NonSeekableStream nss = new NonSeekableStream(ts))
                                         streamingBackend.Get(files[i].remotefilename, nss);
                                 }
                                 else
@@ -484,7 +507,7 @@ namespace Duplicati.CommandLine.BackendTester
             return true;
         }
 
-        private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming)
+        private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming, long throttle)
         {
             Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(localfilename).Length));
             Exception e = null;
@@ -494,7 +517,8 @@ namespace Duplicati.CommandLine.BackendTester
                 if (backend is IStreamingBackend streamingBackend && !disableStreaming)
                 {
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                    using (NonSeekableStream nss = new NonSeekableStream(fs))
+                    using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttle, throttle))
+                    using (NonSeekableStream nss = new NonSeekableStream(ts))
                         streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Wait();
                 }
                 else
