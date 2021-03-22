@@ -233,7 +233,7 @@ namespace Duplicati.CommandLine.BackendTester
                         Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
                     }
 
-                    throttleUpload = long.Parse(throttleUploadString);
+                    throttleUpload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleUploadString, "kb");
                 }
 
                 long throttleDownload = 0;
@@ -244,7 +244,7 @@ namespace Duplicati.CommandLine.BackendTester
                         Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
                     }
 
-                    throttleDownload = long.Parse(throttleDownloadString);
+                    throttleDownload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleDownloadString, "kb");
                 }
 
                 if (options.ContainsKey("number-of-files"))
