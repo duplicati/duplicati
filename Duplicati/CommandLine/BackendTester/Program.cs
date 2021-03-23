@@ -237,7 +237,7 @@ namespace Duplicati.CommandLine.BackendTester
                 }
 
                 long throttleDownload = 0;
-                if (options.TryGetValue("throttle-upload", out string throttleDownloadString))
+                if (options.TryGetValue("throttle-download", out string throttleDownloadString))
                 {
                     if (!(backend is IStreamingBackend) || disableStreaming)
                     {
