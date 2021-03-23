@@ -97,15 +97,15 @@ namespace Duplicati.Library.Backend
         private readonly int fragmentRetryCount;
         private readonly int fragmentRetryDelay; // In milliseconds
 
+        // Whenever a response includes a Retry-After header, we'll update this timestamp with when we can next
+        // send a request. And before sending any requests, we'll make sure to wait until at least this time.
+        // Since this may be read and written by multiple threads, it is stored as a long and updated using Interlocked.Exchange.
+        private readonly RetryAfterHelper m_retryAfter;
+
         private string[] dnsNames = null;
 
         private readonly Lazy<string> rootPathFromURL;
         private string RootPath => this.rootPathFromURL.Value;
-
-        // Whenever a response includes a Retry-After header, we'll update this timestamp with when we can next
-        // send a request. And before sending any requests, we'll make sure to wait until at least this time.
-        // Since this may be read and written by multiple threads, it is stored as a long and updated using Interlocked.Exchange.
-        private long retryAfter = DateTimeOffset.MinValue.UtcTicks;
 
         protected MicrosoftGraphBackend() { } // Constructor needed for dynamic loading to find it
 
@@ -165,6 +165,8 @@ namespace Duplicati.Library.Backend
                 this.m_oAuthHelper.AutoAuthHeader = true;
             }
 
+            this.m_retryAfter = new RetryAfterHelper();
+
             // Extract out the path to the backup root folder from the given URI.  Since this can be an expensive operation, 
             // we will cache the value using a lazy initializer.
             this.rootPathFromURL = new Lazy<string>(() => MicrosoftGraphBackend.NormalizeSlashes(this.GetRootPathFromUrl(url)));
@@ -217,7 +219,7 @@ namespace Duplicati.Library.Backend
                     UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), MicrosoftGraphBackend.dummyUploadSession);
 
                     // Canceling an upload session is done by sending a DELETE to the upload URL
-                    this.WaitForRetryAfter();
+                    m_retryAfter.WaitForRetryAfter();
                     if (this.m_client != null)
                     {
                         using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
@@ -363,7 +365,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                this.WaitForRetryAfter();
+                m_retryAfter.WaitForRetryAfter();
                 string getUrl = string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
@@ -421,7 +423,7 @@ namespace Duplicati.Library.Backend
             // PUT only supports up to 4 MB file uploads. There's a separate process for larger files.
             if (stream.Length < PUT_MAX_SIZE)
             {
-                await this.WaitForRetryAfter(cancelToken).ConfigureAwait(false);
+                await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                 string putUrl = string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
@@ -454,7 +456,7 @@ namespace Duplicati.Library.Backend
                 string createSessionUrl = string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
-                    await this.WaitForRetryAfter(cancelToken).ConfigureAwait(false);
+                    await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                     using (HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, createSessionUrl))
                     using (HttpResponseMessage createSessionResponse = await this.m_client.SendAsync(createSessionRequest, cancelToken).ConfigureAwait(false))
                     {
@@ -481,7 +483,7 @@ namespace Duplicati.Library.Backend
                                 int retryCount = this.fragmentRetryCount;
                                 for (int attempt = 0; attempt < retryCount; attempt++)
                                 {
-                                    await this.WaitForRetryAfter(cancelToken).ConfigureAwait(false);
+                                    await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
 
                                     int fragmentNumber = (int)(offset / bufferSize);
                                     Log.WriteVerboseMessage(
@@ -626,7 +628,7 @@ namespace Duplicati.Library.Backend
                 }
                 else
                 {
-                    await this.WaitForRetryAfter(cancelToken).ConfigureAwait(false);
+                    await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                     using (HttpWebResponse createSessionResponse = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(createSessionUrl, cancelToken, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Post.ToString()).ConfigureAwait(false))
                     {
                         UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
@@ -652,7 +654,7 @@ namespace Duplicati.Library.Backend
                                 int retryCount = this.fragmentRetryCount;
                                 for (int attempt = 0; attempt < retryCount; attempt++)
                                 {
-                                    await this.WaitForRetryAfter(cancelToken).ConfigureAwait(false);
+                                    await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
 
                                     int fragmentNumber = (int)(offset / bufferSize);
                                     Log.WriteVerboseMessage(
@@ -803,7 +805,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                this.WaitForRetryAfter();
+                m_retryAfter.WaitForRetryAfter();
                 string deleteUrl = string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
@@ -883,7 +885,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                this.WaitForRetryAfter();
+                m_retryAfter.WaitForRetryAfter();
                 using (var response = this.m_oAuthHelper.GetResponseWithoutException(url, null, method.ToString()))
                 {
                     return this.ParseResponse<T>(response);
@@ -903,7 +905,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                this.WaitForRetryAfter();
+                m_retryAfter.WaitForRetryAfter();
                 using (var response = this.m_oAuthHelper.GetResponseWithoutException(url, body, method.ToString()))
                 {
                     return this.ParseResponse<T>(response);
@@ -913,7 +915,7 @@ namespace Duplicati.Library.Backend
 
         private T SendRequest<T>(HttpRequestMessage request)
         {
-            this.WaitForRetryAfter();
+            m_retryAfter.WaitForRetryAfter();
             using (var response = this.m_client.SendAsync(request).Await())
             {
                 return this.ParseResponse<T>(response);
@@ -947,7 +949,7 @@ namespace Duplicati.Library.Backend
 
         private void CheckResponse(HttpResponseMessage response)
         {
-            this.SetRetryAfter(response.Headers.RetryAfter);
+            m_retryAfter.SetRetryAfter(response.Headers.RetryAfter);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -969,7 +971,7 @@ namespace Duplicati.Library.Backend
             string retryAfterHeader = response.Headers[HttpResponseHeader.RetryAfter];
             if (retryAfterHeader != null && RetryConditionHeaderValue.TryParse(retryAfterHeader, out RetryConditionHeaderValue retryAfter))
             {
-                this.SetRetryAfter(retryAfter);
+                m_retryAfter.SetRetryAfter(retryAfter);
             }
 
             if (!((int)response.StatusCode >= 200 && (int)response.StatusCode < 300))
@@ -1047,85 +1049,6 @@ namespace Duplicati.Library.Backend
             }
 
             throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);
-        }
-
-        private void SetRetryAfter(RetryConditionHeaderValue retryAfter)
-        {
-            if (retryAfter != null)
-            {
-                DateTimeOffset? delayUntil = null;
-                if (retryAfter.Delta.HasValue)
-                {
-                    delayUntil = DateTimeOffset.UtcNow + retryAfter.Delta.Value;
-                }
-                else if (retryAfter.Date.HasValue)
-                {
-                    delayUntil = retryAfter.Date.Value;
-                }
-
-                if (delayUntil.HasValue)
-                {
-                    // Set the retry timestamp to the UTC version of the timestamp.
-                    long newRetryAfter = delayUntil.Value.UtcTicks;
-
-                    // Update the persisted retry after timestamp
-                    long replacedRetryAfter;
-                    long currentRetryAfter;
-                    do
-                    {
-                        currentRetryAfter = Interlocked.Read(ref this.retryAfter);
-
-                        if (newRetryAfter < currentRetryAfter)
-                        {
-                            // If the current retry after is already past the new value, then no need to update it again.
-                            break;
-                        }
-                        else
-                        {
-                            replacedRetryAfter = Interlocked.CompareExchange(ref this.retryAfter, newRetryAfter, currentRetryAfter);
-                        }
-                    }
-                    while (replacedRetryAfter != currentRetryAfter);
-                }
-            }
-        }
-
-        private void WaitForRetryAfter()
-        {
-            this.WaitForRetryAfter(CancellationToken.None).Await();
-        }
-
-        private async Task WaitForRetryAfter(CancellationToken cancelToken)
-        {
-            // Make sure this is thread safe in case multiple calls are made concurrently to this backend
-            // This is done by reading the value into a local value which is then parsed and operated on locally.
-            long retryAfterTicks = Interlocked.Read(ref this.retryAfter);
-            DateTimeOffset delayUntil = new DateTimeOffset(retryAfterTicks, TimeSpan.Zero);
-
-            TimeSpan delay;
-            DateTimeOffset now = DateTimeOffset.UtcNow;
-
-            // Make sure delayUntil is in the future and delay until then if so
-            if (delayUntil >= now)
-            {
-                delay = delayUntil - now;
-            }
-            else
-            {
-                // If the date given was in the past then don't wait at all
-                delay = TimeSpan.Zero;
-            }
-
-            if (delay > TimeSpan.Zero)
-            {
-                Log.WriteProfilingMessage(
-                    LOGTAG,
-                    "MicrosoftGraphRetryAfterWait",
-                    "Waiting for {0} to respect Retry-After header",
-                    delay);
-
-                await Task.Delay(delay).ConfigureAwait(false);
-            }
         }
 
         /// <summary>

@@ -43,12 +43,17 @@
     <Compile Include="OAuthHttpMessageHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="OAuthHelper.cs" />
+    <Compile Include="RetryAfterHelper.cs" />
     <Compile Include="Strings.cs" />
     <Compile Include="JSONWebHelper.cs" />
     <Compile Include="MultipartItem.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
+    <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{d10a5fc0-11b4-4e70-86aa-8aea52bd9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
