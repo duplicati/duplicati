@@ -1,6 +1,7 @@
 ﻿using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
@@ -30,6 +31,8 @@ namespace Duplicati.Library.Backend
     /// </remarks>
     public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
+        private static readonly string LOGTAG = Log.LogTagFromType<MicrosoftGraphBackend>();
+
         private const string SERVICES_AGREEMENT = "https://www.microsoft.com/en-us/servicesagreement";
         private const string PRIVACY_STATEMENT = "https://privacy.microsoft.com/en-us/privacystatement";
 
@@ -474,10 +477,21 @@ namespace Duplicati.Library.Backend
                             {
                                 read = subStream.Length;
 
+                                int fragmentCount = (int)Math.Ceiling((double)stream.Length / bufferSize);
                                 int retryCount = this.fragmentRetryCount;
                                 for (int attempt = 0; attempt < retryCount; attempt++)
                                 {
                                     await this.WaitForRetryAfter(cancelToken).ConfigureAwait(false);
+
+                                    int fragmentNumber = (int)(offset / bufferSize);
+                                    Log.WriteVerboseMessage(
+                                        LOGTAG,
+                                        "MicrosoftGraphFragmentUpload",
+                                        "Uploading fragment {0}/{1} of remote file {2}",
+                                        fragmentNumber,
+                                        fragmentCount,
+                                        remotename);
+
                                     using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, uploadSession.UploadUrl))
                                     using (StreamContent fragmentContent = new StreamContent(subStream))
                                     {
@@ -512,8 +526,8 @@ namespace Duplicati.Library.Backend
                                                     await this.ThrowUploadSessionException(
                                                         uploadSession,
                                                         createSessionResponse,
-                                                        (int)(offset / bufferSize),
-                                                        (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                        fragmentNumber,
+                                                        fragmentCount,
                                                         ex,
                                                         cancelToken).ConfigureAwait(false);
                                                 }
@@ -527,8 +541,8 @@ namespace Duplicati.Library.Backend
                                                 await this.ThrowUploadSessionException(
                                                     uploadSession,
                                                     createSessionResponse,
-                                                    (int)(offset / bufferSize),
-                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    fragmentNumber,
+                                                    fragmentCount,
                                                     ex,
                                                     cancelToken).ConfigureAwait(false);
                                             }
@@ -537,7 +551,19 @@ namespace Duplicati.Library.Backend
                                                 // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
                                                 // To make things simpler, we just use the current attempt number as the exponential factor.
                                                 // If there was a Retry-After header, we'll wait for that right before sending the next request as well.
-                                                await Task.Delay((int)Math.Pow(2, attempt) * this.fragmentRetryDelay).ConfigureAwait(false);
+                                                TimeSpan delay = TimeSpan.FromMilliseconds((int)Math.Pow(2, attempt) * this.fragmentRetryDelay);
+
+                                                Log.WriteRetryMessage(
+                                                    LOGTAG,
+                                                    "MicrosoftGraphFragmentRetryIn",
+                                                    ex,
+                                                    "Uploading fragment {0}/{1} of remote file {2} failed and will be retried in {3}",
+                                                    fragmentNumber,
+                                                    fragmentCount,
+                                                    remotename,
+                                                    delay);
+
+                                                await Task.Delay(delay).ConfigureAwait(false);
                                                 continue;
                                             }
                                             else if (ex.StatusCode == HttpStatusCode.NotFound)
@@ -547,14 +573,23 @@ namespace Duplicati.Library.Backend
                                                 await this.ThrowUploadSessionException(
                                                     uploadSession,
                                                     createSessionResponse,
-                                                    (int)(offset / bufferSize),
-                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    fragmentNumber,
+                                                    fragmentCount,
                                                     ex,
                                                     cancelToken).ConfigureAwait(false);
                                             }
                                             else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
                                             {
                                                 // If a 4xx error code is hit, we should retry without the exponential backoff attempt.
+                                                Log.WriteRetryMessage(
+                                                    LOGTAG,
+                                                    "MicrosoftGraphFragmentRetry",
+                                                    ex,
+                                                    "Uploading fragment {0}/{1} of remote file {2} failed and will be retried",
+                                                    fragmentNumber,
+                                                    fragmentCount,
+                                                    remotename);
+
                                                 continue;
                                             }
                                             else
@@ -563,8 +598,8 @@ namespace Duplicati.Library.Backend
                                                 await this.ThrowUploadSessionException(
                                                     uploadSession,
                                                     createSessionResponse,
-                                                    (int)(offset / bufferSize),
-                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    fragmentNumber,
+                                                    fragmentCount,
                                                     ex,
                                                     cancelToken).ConfigureAwait(false);
                                             }
@@ -575,8 +610,8 @@ namespace Duplicati.Library.Backend
                                             await this.ThrowUploadSessionException(
                                                 uploadSession,
                                                 createSessionResponse,
-                                                (int)(offset / bufferSize),
-                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                fragmentNumber,
+                                                fragmentCount,
                                                 ex,
                                                 cancelToken).ConfigureAwait(false);
                                         }
@@ -613,10 +648,20 @@ namespace Duplicati.Library.Backend
                             {
                                 read = subStream.Length;
 
+                                int fragmentCount = (int)Math.Ceiling((double)stream.Length / bufferSize);
                                 int retryCount = this.fragmentRetryCount;
                                 for (int attempt = 0; attempt < retryCount; attempt++)
                                 {
                                     await this.WaitForRetryAfter(cancelToken).ConfigureAwait(false);
+
+                                    int fragmentNumber = (int)(offset / bufferSize);
+                                    Log.WriteVerboseMessage(
+                                        LOGTAG,
+                                        "MicrosoftGraphFragmentUpload",
+                                        "Uploading fragment {0}/{1} of remote file {2}",
+                                        fragmentNumber,
+                                        fragmentCount,
+                                        remotename);
 
                                     // The uploaded put requests will error if they are authenticated
                                     var request = new AsyncHttpRequest(this.m_oAuthHelper.CreateRequest(uploadSession.UploadUrl, HttpMethod.Put.ToString(), true));
@@ -654,8 +699,8 @@ namespace Duplicati.Library.Backend
                                                 await this.ThrowUploadSessionException(
                                                     uploadSession,
                                                     createSessionResponse,
-                                                    (int)(offset / bufferSize),
-                                                    (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                    fragmentNumber,
+                                                    fragmentCount,
                                                     ex,
                                                     cancelToken).ConfigureAwait(false);
                                             }
@@ -669,8 +714,8 @@ namespace Duplicati.Library.Backend
                                             await this.ThrowUploadSessionException(
                                                 uploadSession,
                                                 createSessionResponse,
-                                                (int)(offset / bufferSize),
-                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                fragmentNumber,
+                                                fragmentCount,
                                                 ex,
                                                 cancelToken).ConfigureAwait(false);
                                         }
@@ -679,7 +724,19 @@ namespace Duplicati.Library.Backend
                                             // If a 5xx error code is hit, we should use an exponential backoff strategy before retrying.
                                             // To make things simpler, we just use the current attempt number as the exponential factor.
                                             // If there was a Retry-After header, we'll wait for that right before sending the next request as well.
-                                            await Task.Delay((int)Math.Pow(2, attempt) * this.fragmentRetryDelay).ConfigureAwait(false);
+                                            TimeSpan delay = TimeSpan.FromMilliseconds((int)Math.Pow(2, attempt) * this.fragmentRetryDelay);
+
+                                            Log.WriteRetryMessage(
+                                                LOGTAG,
+                                                "MicrosoftGraphFragmentRetryIn",
+                                                ex,
+                                                "Uploading fragment {0}/{1} of remote file {2} failed and will be retried in {3}",
+                                                fragmentNumber,
+                                                fragmentCount,
+                                                remotename,
+                                                delay);
+
+                                            await Task.Delay(delay).ConfigureAwait(false);
                                             continue;
                                         }
                                         else if (ex.StatusCode == HttpStatusCode.NotFound)
@@ -689,14 +746,23 @@ namespace Duplicati.Library.Backend
                                             await this.ThrowUploadSessionException(
                                                 uploadSession,
                                                 createSessionResponse,
-                                                (int)(offset / bufferSize),
-                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                fragmentNumber,
+                                                fragmentCount,
                                                 ex,
                                                 cancelToken).ConfigureAwait(false);
                                         }
                                         else if ((int)ex.StatusCode >= 400 && (int)ex.StatusCode < 500)
                                         {
                                             // If a 4xx error code is hit, we should retry without the exponential backoff attempt.
+                                            Log.WriteRetryMessage(
+                                                LOGTAG,
+                                                "MicrosoftGraphFragmentRetry",
+                                                ex,
+                                                "Uploading fragment {0}/{1} of remote file {2} failed and will be retried",
+                                                fragmentNumber,
+                                                fragmentCount,
+                                                remotename);
+
                                             continue;
                                         }
                                         else
@@ -705,8 +771,8 @@ namespace Duplicati.Library.Backend
                                             await this.ThrowUploadSessionException(
                                                 uploadSession,
                                                 createSessionResponse,
-                                                (int)(offset / bufferSize),
-                                                (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                                fragmentNumber,
+                                                fragmentCount,
                                                 ex,
                                                 cancelToken).ConfigureAwait(false);
                                         }
@@ -717,8 +783,8 @@ namespace Duplicati.Library.Backend
                                         await this.ThrowUploadSessionException(
                                             uploadSession,
                                             createSessionResponse,
-                                            (int)(offset / bufferSize),
-                                            (int)Math.Ceiling((double)stream.Length / bufferSize),
+                                            fragmentNumber,
+                                            fragmentCount,
                                             ex,
                                             cancelToken).ConfigureAwait(false);
                                     }
@@ -1052,6 +1118,12 @@ namespace Duplicati.Library.Backend
 
             if (delay > TimeSpan.Zero)
             {
+                Log.WriteProfilingMessage(
+                    LOGTAG,
+                    "MicrosoftGraphRetryAfterWait",
+                    "Waiting for {0} to respect Retry-After header",
+                    delay);
+
                 await Task.Delay(delay).ConfigureAwait(false);
             }
         }
