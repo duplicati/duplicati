@@ -7,7 +7,7 @@ on:
     branches: [ net5 ]
 
 jobs:
-  Zip:
+  zip:
         runs-on: ${{ matrix.cfg.os }}
         strategy:
           fail-fast: false
@@ -33,7 +33,7 @@ jobs:
           with:
             name: duplicati-${{ matrix.cfg.runtime }}
             path: publish
-  Deb:
+  deb:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -44,4 +44,33 @@ jobs:
       with:
         name: deb package
         path: duplicati*.deb
-    
+  msi:
+    runs-on: windows-latest
+    needs: zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download zip
+        uses: actions/download-artifact@v2
+        with:
+          name: duplicati-win-x64
+      - name: Install go-msi
+        run: choco install -y "go-msi"
+      - name: Prepare PATH
+        shell: bash
+        run: |
+          echo "$WIX\\bin" >> $GITHUB_PATH
+          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+      - name: Build MSI
+        id: buildmsi
+        shell: bash
+        run: |
+          mkdir -p build
+          msi="duplicati-win-x64.msi"
+          printf "::set-output name=msi::%s\n" "$msi"
+          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version "${GITHUB_REF#refs/tags/}"
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: duplicati-win-x64-msi
+          path: msi #${{ steps.buildmsi.outputs.msi }}
