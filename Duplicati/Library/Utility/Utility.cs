@@ -34,15 +34,7 @@ namespace Duplicati.Library.Utility
         /// Size of buffers for copying stream
         /// </summary>
         public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
-
-        /// <summary>
-        /// Buffer of the default size which can be reused.
-        /// </summary>
-        /// <remarks>
-        /// This is stored as a weak reference so that it may be reclaimed in low memory.
-        /// </remarks>
-        private static WeakReference<byte[]> defaultBufferCache = null;
-
+        
         /// <summary>
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
         /// </summary>
@@ -98,13 +90,8 @@ namespace Duplicati.Library.Utility
                     // ignored
                 }
 
-            bool returnBuffer = false;
-            if (buf == null)
-            {
-                buf = GetDefaultBuffer();
-                returnBuffer = true;
-            }
-
+            buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
+            
             int read;
 			long total = 0;
 			while ((read = source.Read(buf, 0, buf.Length)) != 0)
@@ -112,12 +99,7 @@ namespace Duplicati.Library.Utility
 				target.Write(buf, 0, read);
 				total += read;
             }
-
-            if (returnBuffer)
-            {
-                ReturnDefaultBuffer(buf);
-            }
-
+            
             return total;
         }
 
@@ -146,12 +128,7 @@ namespace Duplicati.Library.Utility
                 try { source.Position = 0; }
                 catch {}
 
-            bool returnBuffer = false;
-            if (buf == null)
-            {
-                buf = GetDefaultBuffer();
-                returnBuffer = true;
-            }
+            buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
 
             int read;
             long total = 0;
@@ -162,38 +139,9 @@ namespace Duplicati.Library.Utility
                 await target.WriteAsync(buf, 0, read, cancelToken).ConfigureAwait(false);
                 total += read;
             }
-
-            if (returnBuffer)
-            {
-                ReturnDefaultBuffer(buf);
-            }
-
+            
             return total;
         }
-
-        private static byte[] GetDefaultBuffer()
-        {
-            byte[] buffer = null;
-            WeakReference<byte[]> cachedBuffer = Interlocked.Exchange(ref defaultBufferCache, null);
-            if (cachedBuffer != null && cachedBuffer.TryGetTarget(out buffer))
-            {
-                // Clear the buffer only when it is being reused, instead of when it is put in the cache.
-                // This prevents doing unnecessary work to clear the buffer in cases where it isn't reused
-                // (e.g., when the garbage collector reclaims the buffer before it is needed again.)
-                Array.Clear(buffer, 0, buffer.Length);
-            }
-
-            return buffer ?? new byte[DEFAULT_BUFFER_SIZE];
-        }
-
-        private static void ReturnDefaultBuffer(byte[] buffer)
-        {
-            if (buffer.Length == DEFAULT_BUFFER_SIZE)
-            {
-                Interlocked.Exchange(ref defaultBufferCache, new WeakReference<byte[]>(buffer));
-            }
-        }
-
 
         /// <summary>
         /// These are characters that must be escaped when using a globbing expression
