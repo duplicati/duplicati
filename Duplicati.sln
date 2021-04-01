@@ -3,105 +3,107 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Main", "Duplicati\Library\Main\Duplicati.Library.Main.csproj", "{10D2D1B7-C664-41D8-9B3A-00040C3D421B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Main", "Duplicati\Library\Main\Duplicati.Library.Main.csproj", "{10D2D1B7-C664-41D8-9B3A-00040C3D421B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.File", "Duplicati\Library\Backend\File\Duplicati.Library.Backend.File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.File", "Duplicati\Library\Backend\File\Duplicati.Library.Backend.File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.FTP", "Duplicati\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj", "{F61679A9-E5DE-468A-B5A4-05F92D0143D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.FTP", "Duplicati\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj", "{F61679A9-E5DE-468A-B5A4-05F92D0143D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.S3", "Duplicati\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj", "{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.S3", "Duplicati\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj", "{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Duplicati\CommandLine\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Duplicati\CommandLine\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.WEBDAV", "Duplicati\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj", "{BAE27510-8B5D-44B2-B33E-372A98908041}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.WEBDAV", "Duplicati\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj", "{BAE27510-8B5D-44B2-B33E-372A98908041}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.CloudFiles", "Duplicati\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj", "{1BFAE226-8364-4086-825C-BB83F6F3EE4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.CloudFiles", "Duplicati\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj", "{1BFAE226-8364-4086-825C-BB83F6F3EE4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTester", "Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{E7280DCA-7776-4A73-B9B5-41FD77FC8799}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{E7280DCA-7776-4A73-B9B5-41FD77FC8799}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Interface", "Duplicati\Library\Interface\Duplicati.Library.Interface.csproj", "{C5899F45-B0FF-483C-9D38-24A9FCAAB237}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Interface", "Duplicati\Library\Interface\Duplicati.Library.Interface.csproj", "{C5899F45-B0FF-483C-9D38-24A9FCAAB237}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.DynamicLoader", "Duplicati\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.DynamicLoader", "Duplicati\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Snapshots", "Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Snapshots", "Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.License", "Duplicati\License\Duplicati.License.csproj", "{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.License", "Duplicati\License\Duplicati.License.csproj", "{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Modules.Builtin", "Duplicati\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj", "{52826615-7964-47FE-B4B3-1B2DBDF605B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Modules.Builtin", "Duplicati\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj", "{52826615-7964-47FE-B4B3-1B2DBDF605B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TahoeLAFS", "Duplicati\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj", "{C0270709-2A40-43B5-8CF1-69581B9FA2A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.TahoeLAFS", "Duplicati\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj", "{C0270709-2A40-43B5-8CF1-69581B9FA2A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.OneDrive", "Duplicati\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj", "{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.OneDrive", "Duplicati\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj", "{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SSHv2", "Duplicati\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj", "{FF2BF37C-E502-4C98-BEA0-701671DDFA08}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.SSHv2", "Duplicati\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj", "{FF2BF37C-E502-4C98-BEA0-701671DDFA08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server", "Duplicati\Server\Duplicati.Server.csproj", "{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server", "Duplicati\Server\Duplicati.Server.csproj", "{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{17566860-3D98-4604-AA5B-47661F75609F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.GUI.TrayIcon", "Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{17566860-3D98-4604-AA5B-47661F75609F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server.Serialization", "Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj", "{33FD1D24-C28F-4C71-933F-98F1586EA76C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server.Serialization", "Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj", "{33FD1D24-C28F-4C71-933F-98F1586EA76C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTool", "Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTool", "Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SQLiteHelper", "Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.SQLiteHelper", "Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localization", "Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Localization", "Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Service", "Duplicati\Service\Duplicati.Service.csproj", "{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Duplicati\Service\Duplicati.Service.csproj", "{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AzureBlob", "Duplicati\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj", "{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AzureBlob", "Duplicati\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj", "{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.OAuthHelper", "Duplicati\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj", "{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.OAuthHelper", "Duplicati\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj", "{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleServices", "Duplicati\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj", "{5489181D-950C-44AF-873C-45EB0A3B6BD2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.GoogleServices", "Duplicati\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj", "{5489181D-950C-44AF-873C-45EB0A3B6BD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.OpenStack", "Duplicati\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj", "{D9E4E686-423C-48EC-A392-404E7C00860C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.OpenStack", "Duplicati\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj", "{D9E4E686-423C-48EC-A392-404E7C00860C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.HubiC", "Duplicati\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj", "{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.HubiC", "Duplicati\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj", "{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Backblaze", "Duplicati\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj", "{61C43D61-4368-4942-84A3-1EB623F4EF2A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Backblaze", "Duplicati\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj", "{61C43D61-4368-4942-84A3-1EB623F4EF2A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Mega", "Duplicati\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj", "{6643A5AE-AB38-453F-ADCE-408E35A81A83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Mega", "Duplicati\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj", "{6643A5AE-AB38-453F-ADCE-408E35A81A83}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.UsageReporter", "Duplicati\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj", "{BB014EA5-CE2C-4444-8D30-38983A0E8553}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.UsageReporter", "Duplicati\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj", "{BB014EA5-CE2C-4444-8D30-38983A0E8553}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SharePoint", "Duplicati\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj", "{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.SharePoint", "Duplicati\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj", "{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsService", "Duplicati\WindowsService\WindowsService.csproj", "{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsService", "Duplicati\WindowsService\WindowsService.csproj", "{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AlternativeFTP", "Duplicati\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj", "{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AlternativeFTP", "Duplicati\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj", "{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Dropbox", "Duplicati\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj", "{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Dropbox", "Duplicati\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj", "{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Tools", "Duplicati\Tools\Duplicati.Tools.csproj", "{0797AA22-C5DD-4950-BB60-34765AB8C6DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Tools", "Duplicati\Tools\Duplicati.Tools.csproj", "{0797AA22-C5DD-4950-BB60-34765AB8C6DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Jottacloud", "Duplicati\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj", "{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Jottacloud", "Duplicati\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj", "{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Sia", "Duplicati\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj", "{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Sia", "Duplicati\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj", "{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Rclone", "Duplicati\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj", "{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Rclone", "Duplicati\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj", "{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", "Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Common", "Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ConfigurationImporter", "Duplicati\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{B93E3BF0-DAA7-49B7-B07D-0559C5816735}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.ConfigurationImporter", "Duplicati\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{B93E3BF0-DAA7-49B7-B07D-0559C5816735}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Duplicati\CommandLine\AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{4D1B198B-F773-44F2-872B-2B283053323C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
 EndProject
@@ -307,6 +309,10 @@ Global
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.ActiveCfg = Release|Any CPU

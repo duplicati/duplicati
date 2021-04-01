@@ -378,7 +378,7 @@ namespace Duplicati.Server
                 if (m_pausedForSuspend)
                 {
                     long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
-                    
+
                     var appset = Program.DataConnection.ApplicationSettings;
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
                         try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }

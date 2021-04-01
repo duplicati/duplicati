@@ -159,22 +159,22 @@ namespace Duplicati.Library.Common.IO
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
-            return System.IO.Directory.GetAccessControl(PrefixWithUNC(path));
+            return new DirectoryInfo(PrefixWithUNC(path)).GetAccessControl();
         }
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
-            return System.IO.File.GetAccessControl(PrefixWithUNC(path));
+            return new FileInfo(PrefixWithUNC(path)).GetAccessControl();
         }
 
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
-            System.IO.File.SetAccessControl(PrefixWithUNC(path), rules);
+            new FileInfo(PrefixWithUNC(path)).SetAccessControl(rules);
         }
 
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
-            System.IO.Directory.SetAccessControl(PrefixWithUNC(path), rules);
+            new DirectoryInfo(PrefixWithUNC(path)).SetAccessControl(rules);
         }
 
         #region ISystemIO implementation

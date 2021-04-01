@@ -32,7 +32,7 @@ namespace Duplicati.GUI.TrayIcon
         /// </summary>
         static GtkRunner()
         {
-            m_svgfolder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
+            m_svgfolder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), @"TrayResources\SVGIcons");
             m_svgfolder = System.IO.Path.Combine(m_svgfolder, "dark");
 
             Gtk.Application.Init();

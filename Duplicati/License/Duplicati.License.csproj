@@ -1,65 +1,22 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.License</RootNamespace>
+    <TargetFramework>net5.0</TargetFramework>
+    <Version>2.0.0.7</Version>
+    
+    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
+    <Product>Duplicati.License</Product>
+    <Company>Duplicati Team</Company>
+    <Authors>Duplicati Team</Authors>
+    <Description>A license text reader for Duplicati</Description>
+    <PackageId>License</PackageId>
     <AssemblyName>Duplicati.License</AssemblyName>
-    <FileAlignment>512</FileAlignment>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <UpgradeBackupLocation />
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
-    <UseMSBuildEngine>false</UseMSBuildEngine>
+    <RootNamespace>Duplicati.License</RootNamespace>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  
   <ItemGroup>
     <Content Include="..\..\thirdparty\alphavss\Homepage.txt">
       <Link>licenses\alphavss\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\alphavss\License.txt">
-      <Link>licenses\alphavss\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
-      <Link>licenses\FluentFTP\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\FluentFTP\License.txt">
-      <Link>licenses\FluentFTP\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\gpg\Homepage.txt">
@@ -88,19 +45,24 @@
     </Content>
     <Content Include="..\..\thirdparty\Tencentyun\download.txt">
       <Link>licenses\Tencentyun\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\Tencentyun\LICENSE.txt">
       <Link>licenses\Tencentyun\LICENSE.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\TLSharp\Homepage.txt">
+      <Link>licenses\TLSharp\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\TLSharp\License.txt">
+      <Link>licenses\TLSharp\License.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\TLSharp\licensedata.json">
+      <Link>licenses\TLSharp\licensedata.json</Link>
     </Content>
     <Content Include="..\..\thirdparty\uplink.NET\Homepage.txt">
       <Link>licenses\uplink.NET\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\uplink.NET\license.txt">
       <Link>licenses\uplink.NET\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\license.txt">
       <Link>licenses\license.txt</Link>
@@ -217,20 +179,16 @@
       <Link>licenses\WindowsAzure\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\download.txt">
-      <Link>licenses\\SharePointCSOM\download.txt</Link>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\download.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\license.txt">
-      <Link>licenses\\SharePointCSOM\license.txt</Link>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\license.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\MicrosoftSharePointClientComponentsEULA.rtf">
-      <Link>licenses\\SharePointCSOM\MicrosoftSharePointClientComponentsEULA.rtf</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePoint.CSOM\licensedata.json">
-      <Link>licenses\\SharePointCSOM\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\licensedata.json">
+      <Link>licenses\SharePointPnP-Sites-Core\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="acknowledgements.txt">
@@ -320,6 +278,18 @@
       <Link>licenses\rumps\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
+      <Link>licenses\FluentFTP\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FluentFTP\License.txt">
+      <Link>licenses\FluentFTP\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FluentFTP\licensedata.json">
+      <Link>licenses\FluentFTP\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\MailKit\Homepage.txt">
       <Link>licenses\MailKit\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -368,84 +338,26 @@
       <Link>licenses\AngularGettext\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\mozroots\Homepage.txt">
-      <Link>licenses\mozroots\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\mozroots\License.txt">
-      <Link>licenses\mozroots\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\mozroots\licensedata.json">
-      <Link>licenses\mozroots\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\TlsTest\Homepage.txt">
-      <Link>licenses\TlsTest\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\TlsTest\License.txt">
-      <Link>licenses\TlsTest\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\TlsTest\licensedata.json">
-      <Link>licenses\TlsTest\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\FasterHashing\download.txt">
-      <Link>licenses\FasterHashing\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\FasterHashing\license.txt">
-      <Link>licenses\FasterHashing\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\FasterHashing\licensedata.json">
-      <Link>licenses\FasterHashing\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="LicenseEntry.cs" />
-    <Compile Include="LicenseReader.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VersionNumbers.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\thirdparty\FluentFTP\licensedata.json">
-      <Link>licenses\FluentFTP\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\thirdparty\Tencentyun\licensedata.json">
-      <Link>licenses\Tencentyun\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\thirdparty\uplink.NET\licensedata.json">
-      <Link>licenses\uplink.NET\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Duplicati.snk" />
-    <None Include="..\..\thirdparty\SharpCompress\licensedata.json">
+	<Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
       <Link>licenses\SharpCompress\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
-  <ItemGroup />
+  
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-  <ItemGroup />
+  
   <ItemGroup>
-    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj">
-      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
-      <Name>Duplicati.Library.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
-      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Utility</Name>
-    </ProjectReference>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
+
 </Project>

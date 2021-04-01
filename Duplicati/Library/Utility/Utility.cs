@@ -25,6 +25,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
 using System.Threading;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
@@ -43,7 +44,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Gets the hash algorithm used for calculating a hash
         /// </summary>
-        public static string HashAlgorithm => "SHA256";
+        private static string BlockHashAlgorithm => "SHA256";
 
         /// <summary>
         /// The EPOCH offset (unix style)
@@ -603,7 +604,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The base64 encoded hash</returns>
         public static string CalculateHash(Stream stream)
         {
-            return Convert.ToBase64String(HashAlgorithmHelper.Create(HashAlgorithm).ComputeHash(stream));
+            return Convert.ToBase64String(HashAlgorithm.Create(BlockHashAlgorithm).ComputeHash(stream));
         }
 
         /// <summary>

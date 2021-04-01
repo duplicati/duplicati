@@ -1,472 +1,161 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{17566860-3D98-4604-AA5B-47661F75609F}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Duplicati.GUI.TrayIcon</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <Version>2.0.0.7</Version>
+    <Copyright>LGPL, Copyright ? Duplicati Team 2019</Copyright>
+    <Product>Duplicati.GUI.TrayIcon</Product>
+    <Company>Duplicati Team</Company>
+    <Authors>Duplicati Team</Authors>
+    <Description>The Duplicati Tray implementation</Description>
+    <PackageId>TrayIcon</PackageId>
     <AssemblyName>Duplicati.GUI.TrayIcon</AssemblyName>
-    <FileAlignment>512</FileAlignment>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <RootNamespace>Duplicati.GUI.TrayIcon</RootNamespace>
     <ApplicationIcon>Duplicati.ico</ApplicationIcon>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <OutputPath>bin\Debug</OutputPath>
-    <DebugType>full</DebugType>
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
-    <WarningLevel>4</WarningLevel>
-    <Optimize>false</Optimize>
-    <DefineConstants>DEBUG</DefineConstants>
-    <DebugSymbols>true</DebugSymbols>
-    <EnvironmentVariables>
-      <EnvironmentVariables>
-        <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
-      </EnvironmentVariables>
-    </EnvironmentVariables>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>bin\Release</OutputPath>
-    <Optimize>false</Optimize>
-    <DebugType>none</DebugType>
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
     <StartupObject>Duplicati.GUI.TrayIcon.Program</StartupObject>
+    <StartupObject></StartupObject>
+    <ApplicationIcon />
   </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Data.SQLite, Version=1.0.111.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\lib\net46\System.Data.SQLite.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.EF6, Version=1.0.111.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\System.Data.SQLite.EF6.1.0.111.0\lib\net46\System.Data.SQLite.EF6.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.Linq, Version=1.0.111.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\System.Data.SQLite.Linq.1.0.111.0\lib\net46\System.Data.SQLite.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="appindicator-sharp">
-      <HintPath>..\..\..\thirdparty\appindicator-sharp\appindicator-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
-      <HintPath>..\..\..\thirdparty\appindicator-sharp\gdk-sharp.dll</HintPath>
-      <Package>gtk-sharp-2.0</Package>
-    </Reference>
-    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
-      <HintPath>..\..\..\thirdparty\appindicator-sharp\gtk-sharp.dll</HintPath>
-      <Package>gtk-sharp-2.0</Package>
-    </Reference>
-    <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
-      <Package>glib-sharp-2.0</Package>
-    </Reference>
-    <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
-      <Package>gtk-sharp-2.0</Package>
-    </Reference>
-    <Reference Include="MonoMac">
-      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
-    </Reference>
-    <Reference Include="notify-sharp">
-      <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System.Drawing" />
-    <Reference Include="CoCoL">
-      <HintPath>..\..\..\packages\CoCoL.1.7.1\lib\net45\CoCoL.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="IBrowserWindow.cs" />
-    <Compile Include="HostedInstanceKeeper.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="HttpServerConnection.cs" />
-    <None Include="app.config" />
-    <None Include="app.manifest" />
-    <None Include="Duplicati.snk" />
-    <None Include="packages.config" />
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-    <Compile Include="AppIndicatorRunner.cs" />
-    <None Include="Info.plist" />
-    <Compile Include="TrayIconBase.cs" />
-    <EmbeddedResource Include="Resources\TrayNormal.ico" />
-    <EmbeddedResource Include="Resources\TrayNormalWarning.ico" />
-    <EmbeddedResource Include="Resources\TrayNormalError.ico" />
-    <EmbeddedResource Include="Resources\TrayNormalPause.ico" />
-    <EmbeddedResource Include="Resources\TrayWorking.ico" />
-    <Compile Include="ImageLoader.cs" />
-    <Compile Include="GtkRunner.cs" />
-    <Compile Include="CocoaRunner.cs">
-      <DependentUpon>CocoaRunner.cs</DependentUpon>
-    </Compile>
-    <EmbeddedResource Include="OSX Icons\normal.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OSX Icons\normal-error.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OSX Icons\normal-pause.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OSX Icons\normal-running.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <Compile Include="WinFormsRunner.cs" />
-    <Compile Include="RumpsRunner.cs" />
-    <EmbeddedResource Include="Resources\context_menu_open.ico" />
-    <EmbeddedResource Include="Resources\context_menu_pause.ico" />
-    <EmbeddedResource Include="Resources\context_menu_play.ico" />
-    <EmbeddedResource Include="Resources\context_menu_quit.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
-      <Project>{b93e3bf0-daa7-49b7-b07d-0559c5816735}</Project>
-      <Name>Duplicati.CommandLine.ConfigurationImporter</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
-      <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
-      <Name>Duplicati.Library.Backend.CloudFiles</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
-      <Project>{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}</Project>
-      <Name>Duplicati.Library.Backend.AzureBlob</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
-      <Project>{FC9B7611-836F-4127-8B44-A7C31F506807}</Project>
-      <Name>Duplicati.Library.Backend.File</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
-      <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
-      <Name>Duplicati.Library.Backend.FTP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
-      <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
-      <Name>Duplicati.Library.Backend.Jottacloud</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
-      <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
-      <Name>Duplicati.Library.OAuthHelper</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj">
-      <Project>{851a1cb8-3ceb-41b4-956f-34d760d2a8e5}</Project>
-      <Name>Duplicati.Library.Backend.Rclone</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
-      <Project>{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}</Project>
-      <Name>Duplicati.Library.Backend.S3</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
-      <Project>{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}</Project>
-      <Name>Duplicati.Library.Backend.SharePoint</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
-      <Project>{FF2BF37C-E502-4C98-BEA0-701671DDFA08}</Project>
-      <Name>Duplicati.Library.Backend.SSHv2</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
-      <Project>{C0270709-2A40-43B5-8CF1-69581B9FA2A1}</Project>
-      <Name>Duplicati.Library.Backend.TahoeLAFS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
-      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
-      <Name>Duplicati.Library.Backend.Tardigrade</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
-      <Project>{545dd6d4-9476-42d6-b51c-a28e000c489e}</Project>
-      <Name>Duplicati.Library.Backend.TencentCOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
-      <Project>{BAE27510-8B5D-44B2-B33E-372A98908041}</Project>
-      <Name>Duplicati.Library.Backend.WEBDAV</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Server\Duplicati.Server.csproj">
-      <Project>{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}</Project>
-      <Name>Duplicati.Server</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
-      <Project>{33FD1D24-C28F-4C71-933F-98F1586EA76C}</Project>
-      <Name>Duplicati.Server.Serialization</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
-      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
-      <Name>Duplicati.Library.Utility</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
-      <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
-      <Name>Duplicati.Library.Interface</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CommandLine\Duplicati.CommandLine.csproj">
-      <Project>{81765A64-3661-4E3E-B850-2F6F87A51F74}</Project>
-      <Name>Duplicati.CommandLine</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
-      <Project>{E7280DCA-7776-4A73-B9B5-41FD77FC8799}</Project>
-      <Name>Duplicati.CommandLine.BackendTester</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
-      <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
-      <Name>Duplicati.CommandLine.BackendTool</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
-      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
-      <Name>Duplicati.Library.Compression</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
-      <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
-      <Name>Duplicati.Library.SQLiteHelper</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
-      <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
-      <Name>Duplicati.Library.DynamicLoader</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj">
-      <Project>{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}</Project>
-      <Name>Duplicati.Library.Logging</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj">
-      <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
-      <Name>Duplicati.Library.Main</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
-      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
-      <Name>Duplicati.Library.Modules.Builtin</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Snapshots\Duplicati.Library.Snapshots.csproj">
-      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACE}</Project>
-      <Name>Duplicati.Library.Snapshots</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\License\Duplicati.License.csproj">
-      <Project>{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}</Project>
-      <Name>Duplicati.License</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj">
-      <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
-      <Name>Duplicati.Library.Localization</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
-      <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
-      <Name>Duplicati.Library.AutoUpdater</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
-      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
-      <Name>Duplicati.Library.Backend.OneDrive</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Service\Duplicati.Service.csproj">
-      <Project>{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}</Project>
-      <Name>Duplicati.Service</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj">
-      <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
-      <Name>Duplicati.Library.Backend.GoogleServices</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
-      <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
-      <Name>Duplicati.Library.Backend.OpenStack</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
-      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
-      <Name>Duplicati.Library.Backend.HubiC</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
-      <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>
-      <Name>Duplicati.CommandLine.RecoveryTool</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj">
-      <Project>{61C43D61-4368-4942-84A3-1EB623F4EF2A}</Project>
-      <Name>Duplicati.Library.Backend.Backblaze</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj">
-      <Project>{6643A5AE-AB38-453F-ADCE-408E35A81A83}</Project>
-      <Name>Duplicati.Library.Backend.Mega</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj">
-      <Project>{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}</Project>
-      <Name>Duplicati.Library.Backend.Box</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj">
-      <Project>{BB014EA5-CE2C-4444-8D30-38983A0E8553}</Project>
-      <Name>Duplicati.Library.UsageReporter</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\WindowsService\WindowsService.csproj">
-      <Project>{bef7af9a-3978-4f90-8592-198bf6ea6c6b}</Project>
-      <Name>WindowsService</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
-      <Project>{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}</Project>
-      <Name>Duplicati.Library.Backend.AlternativeFTP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
-      <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
-      <Name>Duplicati.Library.Backend.Sia</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
-      <Project>{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}</Project>
-      <Name>Duplicati.Library.Backend.Dropbox</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Tools\Duplicati.Tools.csproj">
-      <Project>{0797AA22-C5DD-4950-BB60-34765AB8C6DD}</Project>
-      <Name>Duplicati.Tools</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
-      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
-      <Name>Duplicati.Library.Common</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.0">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <ItemGroup />
-  <ItemGroup>
-    <Content Include="SVGIcons\dark\normal-warning.svg">
+    <Content Include="TrayResources\SVGIcons\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="SVGIcons\light\normal-error.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\normal-pause.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\normal-running.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\normal-warning.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\normal.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\dark\normal-error.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\dark\normal-pause.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\dark\normal-running.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\dark\normal.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="OSXTrayHost\osx-trayicon-rumps.py">
+    <Content Include="TrayResources\WinIcons\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\..\thirdparty\rumps\rumps.py">
       <Link>OSXTrayHost\rumps.py</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="SVGIcons\dark\context_menu_open.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\dark\context_menu_pause.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\dark\context_menu_quit.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\dark\context_menu_resume.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\context_menu_open.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\context_menu_pause.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\context_menu_quit.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SVGIcons\light\context_menu_resume.svg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
-  <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PostBuildEvent Condition="' $(OS)'=='Windows_NT' AND $(ConfigurationName) == Debug ">copy /Y  '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\build\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
-copy /Y '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\lib\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
-</PostBuildEvent>
-  </PropertyGroup>
-  <Import Project="..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\System.Data.SQLite.Core.1.0.111.0\build\net46\System.Data.SQLite.Core.targets'))" />
-  </Target>
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="TrayResources\OSXIcons\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="appindicator-sharp">
+      <HintPath>..\..\..\thirdparty\appindicator-sharp\appindicator-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <HintPath>..\..\..\thirdparty\appindicator-sharp\gdk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <HintPath>..\..\..\thirdparty\appindicator-sharp\gtk-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="MonoMac">
+      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
+    </Reference>
+    <Reference Include="notify-sharp">
+      <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
+      <Name>Duplicati.Library.Backend.Tardigrade</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Server\Duplicati.Server.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\Duplicati.CommandLine.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Snapshots\Duplicati.Library.Snapshots.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Tools\Duplicati.Tools.csproj">
+    </ProjectReference>
+  </ItemGroup>
+
 </Project>

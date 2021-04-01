@@ -18,10 +18,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
-using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography.X509Certificates;
 
 using Duplicati.Library.Interface;
+using Duplicati.Logging.Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Utility
 {
@@ -316,8 +316,7 @@ namespace Duplicati.Library.Utility
             /// </summary>
             public ContextGuard()
             {
-
-                CallContext.LogicalSetData(contextSettingsType, ID);
+                CallContext.SetData(contextSettingsType, ID);
             }
 
             /// <summary>
@@ -339,7 +338,7 @@ namespace Duplicati.Library.Utility
                     _settings.Remove(ID);
                 }
 
-                CallContext.LogicalSetData(contextSettingsType, null);
+                CallContext.SetData(contextSettingsType, null);
             }
         }
 
@@ -351,7 +350,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return contextSettingsType != null ? CallContext.LogicalGetData(contextSettingsType) as string : null;
+                return contextSettingsType != null ? CallContext.GetData(contextSettingsType) as string : null;
             }
         }
     }
