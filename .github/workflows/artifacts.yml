@@ -54,6 +54,12 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: duplicati-win-x64
+      - name: Unpack zip
+        shell: bash
+        run: |
+          mkdir -p bin
+          cd bin
+          unzip -o ../duplicati-win-x64.zip
       - name: Install go-msi
         run: choco install -y "go-msi"
       - name: Prepare PATH
@@ -65,12 +71,9 @@ jobs:
         id: buildmsi
         shell: bash
         run: |
-          mkdir -p build
-          msi="duplicati-win-x64.msi"
-          printf "::set-output name=msi::%s\n" "$msi"
-          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version "${GITHUB_REF#refs/tags/}"
+          Installer/Windows/MSI/build.sh
       - name: Save Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: duplicati-win-x64-msi
-          path: msi #${{ steps.buildmsi.outputs.msi }}
+          path: duplicati-win-x64.msi
