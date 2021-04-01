@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <Version>2.0.0.7</Version>
     
-    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
+    <Copyright>LGPL, Copyright ï¿½ Duplicati Team 2015</Copyright>
     <Product>UpdateVersion</Product>
     <Company>UpdateVersion</Company>
     <Authors>Duplicati Team</Authors>
