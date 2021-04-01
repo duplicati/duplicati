@@ -1075,7 +1075,9 @@ namespace Duplicati.Library.AutoUpdater
 
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
-                return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
+            // TODO: Disabled auto-updater as it does not currently work
+            return RunMethod(method, cmdargs);
+            //return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
         }
 
         public static int RunFromMostRecentSpawn(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
