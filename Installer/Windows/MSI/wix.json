@@ -6,7 +6,6 @@
   "files": {
     "guid": "95dd9d6c-89e7-4fc7-bfdc-708ffa99c68d",
     "items": [
-      "bin/Duplicati.GUI.TrayIcon.exe"
     ]
   },
   "directories": [
@@ -18,7 +17,7 @@
       {
         "name": "Duplicati",
         "description": "Launch Duplicati",
-        "target": "[INSTALLDIR]\\Duplicati.GUI.TrayIcon.exe",
+        "target": "[INSTALLDIR]\\bin\\Duplicati.GUI.TrayIcon.exe",
         "wdir": "INSTALLDIR",
         "arguments": "",
         "icon": "Assets/application icon/application_icon.ico"
