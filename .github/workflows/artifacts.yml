@@ -54,14 +54,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: duplicati-win-x64
-      - name: Unpack zip
-        shell: bash
-        run: |
-          mkdir -p bin
-          pwd
-          ls
-          cd bin
-          unzip -o ../duplicati-win-x64.zip
+          path: bin
       - name: Install go-msi
         run: choco install -y "go-msi"
       - name: Prepare PATH
