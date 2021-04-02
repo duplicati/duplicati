@@ -44,6 +44,17 @@ jobs:
       with:
         name: deb package
         path: duplicati*.deb
+  rpm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Package
+      run: Installer/fedora/build.sh
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: rpm package
+        path: duplicati*.rpm
   msi:
     runs-on: windows-latest
     needs: zip
