@@ -58,6 +58,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p bin
+          pwd
+          ls
           cd bin
           unzip -o ../duplicati-win-x64.zip
       - name: Install go-msi
