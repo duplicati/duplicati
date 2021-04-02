@@ -158,7 +158,8 @@ a {
     border: 1px solid lightgray;
     padding: 2px;
     height: 100%;
-    overflow: auto;
+    overflow: scroll;
+    box-sizing: border-box;
 }
 
 .not-clickable {
@@ -673,6 +674,8 @@ body {
                         background: url('../img/progress-stop.png');
                         background-size: 26px;
                         cursor: pointer;
+                        z-index: 10; 
+                        position: relative;
 
                         @media
                         only screen and (-webkit-min-device-pixel-ratio: 1.25),

@@ -11,13 +11,12 @@
     <Description>SSHv2 backend for Duplicati</Description>
     <PackageId>SSHv2</PackageId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SSH.NET" Version="2016.1.0" />
+    <PackageReference Include="SSH.NET" Version="2020.0.1" />
   </ItemGroup>
   
   <ItemGroup>

@@ -30,7 +30,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
-    EditUriBackendConfig.templates['telegram']  = 'templates/backends/telegram.html';
     EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
 
@@ -340,9 +339,13 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     ];
 
     EditUriBackendConfig.parsers['s3'] = function (scope, module, server, port, path, options) {
-        if (options['--aws_access_key_id'])
+        if (options['--aws-access-key-id'])
+            scope.Username = options['--aws-access-key-id'];
+        else if (options['--aws_access_key_id'])
             scope.Username = options['--aws_access_key_id'];
-        if (options['--aws_secret_access_key'])
+        if (options['--aws-secret-access-key'])
+            scope.Password = options['--aws-secret-access-key'];
+        else if (options['--aws_secret_access_key'])
             scope.Password = options['--aws_secret_access_key'];
 
         if (options['--s3-use-rrs'] && !options['--s3-storage-class']) {
@@ -372,7 +375,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         scope.s3_storageclass = scope.s3_storageclass_custom = options['--s3-storage-class'];
 
-        var nukeopts = ['--aws_access_key_id', '--aws_secret_access_key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint', '--s3-storage-class', '--s3-client'];
+        var nukeopts = ['--aws-access-key-id', '--aws-secret-access-key', '--aws_access_key_id', '--aws_secret_access_key', '--s3-use-rrs', '--s3-server-name', '--s3-location-constraint', '--s3-storage-class', '--s3-client'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
@@ -504,24 +507,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     };
 
-    EditUriBackendConfig.parsers['telegram'] = function (scope, module, server, port, path, options) {
-        if (options['--api-id'])
-            scope.api_id = options['--api-id'];
-        if (options['--api-hash'])
-            scope.api_hash = options['--api-hash'];
-        if (options['--auth-code'])
-            scope.auth_code = options['--auth-code'];
-        if (options['--channel-name'])
-            scope.channel_name = options['--channel-name'];
-        if (options['--phone-number'])
-            scope.phone_number = options['--phone-number'];
-        if (options['--auth_password'])
-            scope.auth_password = options['--auth_password'];
-
-        var nukeopts = ['--api-id','--api-hash', '--auth-code', '--channel-name', '--phone-number', '--auth_password'];
-        for (var x in nukeopts)
-            delete options[nukeopts[x]];
-    };
 
     EditUriBackendConfig.parsers['cos'] = function (scope, module, server, port, path, options) {
         if (options['--cos-app-id'])
@@ -772,26 +757,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
 
         var url = AppUtils.format('{0}://tardigrade.io/config{1}',
-            scope.Backend.Key,
-            AppUtils.encodeDictAsUrl(opts)
-        );
-
-        return url;
-    };
-
-    EditUriBackendConfig.builders['telegram'] = function (scope) {
-        var opts = {
-            'api-id': scope.api_id,
-            'api-hash': scope.api_hash,
-            'auth-code': scope.auth_code,
-            'channel-name': scope.channel_name,
-            'phone-number': scope.phone_number,
-            'auth-password': scope.auth_password,
-        };
-
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
-
-        var url = AppUtils.format('{0}://t.me/{1}',
             scope.Backend.Key,
             AppUtils.encodeDictAsUrl(opts)
         );
@@ -1146,26 +1111,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 	
 	EditUriBackendConfig.validaters['tardigrade'] = function (scope, continuation) {
-            continuation();
-    };
-
-    EditUriBackendConfig.validaters['telegram'] = function (scope, continuation) {
-        var opts = {
-            'api-id': scope.api_id,
-            'api-hash': scope.api_hash,
-            'auth-code': scope.auth_code,
-            'channel-name': scope.channel_name,
-            'phone-number': scope.phone_number,
-            'auth-password': scope.auth_password,
-        };
-        
-        var res =
-            EditUriBackendConfig.require_field(scope, 'api_id', gettextCatalog.getString('api_id')) &&
-            EditUriBackendConfig.require_field(scope, 'api_hash', gettextCatalog.getString('api_hash')) &&
-            EditUriBackendConfig.require_field(scope, 'channel_name', gettextCatalog.getString('channel_name')) &&
-            EditUriBackendConfig.require_field(scope, 'phone_number', gettextCatalog.getString('phone_number'));
-
-        if (res)
             continuation();
     };
 

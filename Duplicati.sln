@@ -107,8 +107,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Telegram", "Duplicati\Library\Backend\Telegram\Duplicati.Library.Backend.Telegram.csproj", "{B6BB37DE-1DCA-401B-B92F-202F341916EA}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnixSupport", "Duplicati\UnixSupport\UnixSupport.csproj", "{70AEA9C1-108D-447B-B53C-E4F8370B1C04}"
 EndProject
 Global

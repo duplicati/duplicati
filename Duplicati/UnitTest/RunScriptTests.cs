@@ -29,6 +29,58 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Border")]
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        public void RunScriptAfter(int exitCode)
+        {
+            const string expectedMessage = "Hello";
+            string expectedFile = Path.Combine(this.RESTOREFOLDER, "hello.txt");
+            List<string> customCommands = new List<string>
+            {
+                $"echo {expectedMessage}>\"{expectedFile}\""
+            };
+
+            Dictionary<string, string> options = this.TestOptions;
+            options["run-script-after"] = CreateScript(exitCode, null, null, 0, customCommands);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+
+                switch (exitCode)
+                {
+                    case 0:
+                    case 1:
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        break;
+                    case 2:
+                    case 3:
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(1, backupResults.Warnings.Count());
+                        break;
+                    default:
+                        Assert.AreEqual(1, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        break;
+                }
+
+                string[] targetEntries = Directory.EnumerateFileSystemEntries(this.RESTOREFOLDER).ToArray();
+                Assert.AreEqual(1, targetEntries.Length);
+                Assert.AreEqual(expectedFile, targetEntries[0]);
+
+                string[] lines = File.ReadAllLines(expectedFile);
+                Assert.AreEqual(1, lines.Length);
+                Assert.AreEqual(expectedMessage, lines[0]);
+            }
+        }
+
+        [Test]
+        [Category("Border")]
         public void RunScriptBefore()
         {
             var blocksize = 10 * 1024;
@@ -88,15 +140,17 @@ namespace Duplicati.UnitTest
                     throw new Exception("Unexpected result from backup with return code 4");
                 if (res.ExaminedFiles <= 0)
                     throw new Exception("Backup did not examine any files for code 4?");
-                
-                System.Threading.Thread.Sleep(PAUSE_TIME);
-                options["run-script-before"] = CreateScript(5);
-                res = c.Backup(new string[] { DATAFOLDER });
-                if (res.ParsedResult != ParsedResultType.Error)
-                    throw new Exception("Unexpected result from backup with return code 5");
-                if (res.ExaminedFiles > 0)
-                    throw new Exception("Backup did examine files for code 5?");
 
+                foreach (int exitCode in new[] {5, 6, 10, 99})
+                {
+                    System.Threading.Thread.Sleep(PAUSE_TIME);
+                    options["run-script-before"] = CreateScript(exitCode);
+                    res = c.Backup(new string[] {DATAFOLDER});
+                    if (res.ParsedResult != ParsedResultType.Error)
+                        throw new Exception($"Unexpected result from backup with return code {exitCode}");
+                    if (res.ExaminedFiles > 0)
+                        throw new Exception($"Backup did examine files for code {exitCode}?");
+                }
 
                 System.Threading.Thread.Sleep(PAUSE_TIME);
                 options["run-script-before"] = CreateScript(2, "TEST WARNING MESSAGE");
@@ -145,6 +199,94 @@ namespace Duplicati.UnitTest
                     throw new Exception("Unexpected result from backup with timeout script");
                 if (res.ExaminedFiles <= 0)
                     throw new Exception("Backup did not examine any files after timeout?");
+            }
+        }
+
+        [Test]
+        [Category("Border")]
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        public void RunScriptParsedResult(int exitCode)
+        {
+            string parsedResultFile = Path.Combine(this.RESTOREFOLDER, "result.txt");
+            List<string> customCommands = new List<string>();
+            if (Platform.IsClientWindows)
+            {
+                customCommands.Add($"echo %DUPLICATI__PARSED_RESULT%>\"{parsedResultFile}\"");
+            }
+            else
+            {
+                customCommands.Add($"echo $DUPLICATI__PARSED_RESULT>\"{parsedResultFile}\"");
+            }
+
+            Dictionary<string, string> options = this.TestOptions;
+            options["run-script-before"] = this.CreateScript(exitCode);
+            options["run-script-after"] = this.CreateScript(0, null, null, 0, customCommands);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+
+                bool expectBackup;
+                string expectedParsedResult;
+                switch (exitCode)
+                {
+                    case 0: // OK, run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = true;
+                        expectedParsedResult = ParsedResultType.Success.ToString();
+                        break;
+                    case 1: // OK, don't run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = false;
+                        expectedParsedResult = ParsedResultType.Success.ToString();
+                        break;
+                    case 2: // Warning, run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(1, backupResults.Warnings.Count());
+                        expectBackup = true;
+                        expectedParsedResult = ParsedResultType.Warning.ToString();
+                        break;
+                    case 3: // Warning, don't run operation
+                        Assert.AreEqual(0, backupResults.Errors.Count());
+                        Assert.AreEqual(1, backupResults.Warnings.Count());
+                        expectBackup = false;
+                        expectedParsedResult = ParsedResultType.Warning.ToString();
+                        break;
+                    case 4: // Error, run operation
+                        Assert.AreEqual(1, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = true;
+                        expectedParsedResult = ParsedResultType.Error.ToString();
+                        break;
+                    default: // Error don't run operation
+                        Assert.AreEqual(1, backupResults.Errors.Count());
+                        Assert.AreEqual(0, backupResults.Warnings.Count());
+                        expectBackup = false;
+                        expectedParsedResult = ParsedResultType.Error.ToString();
+                        break;
+                }
+
+                IEnumerable<string> targetEntries = Directory.EnumerateFileSystemEntries(this.TARGETFOLDER);
+                if (expectBackup)
+                {
+                    // We expect a dblock, dlist, and dindex file.
+                    Assert.AreEqual(3, targetEntries.Count());
+                }
+                else
+                {
+                    Assert.AreEqual(0, targetEntries.Count());
+                }
+
+                string[] lines = File.ReadAllLines(parsedResultFile);
+                Assert.AreEqual(1, lines.Length);
+                Assert.AreEqual(expectedParsedResult, lines[0]);
             }
         }
 

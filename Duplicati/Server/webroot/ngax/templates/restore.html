@@ -134,7 +134,7 @@
                     or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by
                     invoking your system's keychain.
                 </p>
-                <input type="password" name="restore_path" id="passphrase" ng-model="passphrase"
+                <input autocomplete="new-password" type="password" name="restore_path" id="passphrase" ng-model="passphrase"
                 placeholder="{{'Type passphrase here.' | translate}}" />
             </div>
 

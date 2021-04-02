@@ -1,7 +1,0 @@
-{
-    "name": "TLSharp",
-    "description": "Unofficial Telegram (http://telegram.org) client library implemented in C#",
-    "link": "https://github.com/sochix/TLSharp",
-    "license": "MIT",
-    "notes": ""
-}

@@ -65,6 +65,8 @@
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
     </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
+    </ProjectReference>
     <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">

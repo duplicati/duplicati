@@ -17,7 +17,6 @@ profile.set_preference("intl.accept_languages", "en")
 options = Options()
 options.set_headless(headless=True)
 driver = webdriver.Firefox(profile, firefox_options=options)
-driver.maximize_window()
 
 def write_random_file(size, filename):
     if not os.path.exists(os.path.dirname(filename)):
@@ -71,6 +70,7 @@ DIRECT_RESTORE_FOLDER = os.path.abspath("duplicati_gui_test_direct_restore")
 time.sleep(5)
 
 driver.implicitly_wait(10)
+driver.maximize_window()
 driver.get("http://localhost:8200/ngax/index.html")
 
 if "Duplicati" not in driver.title:

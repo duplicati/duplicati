@@ -343,7 +343,6 @@ namespace Duplicati.Library.Main.Database
             var blockhasher = HashAlgorithm.Create(blockhashalgorithm);
             var hashsize = blockhasher.HashSize / 8;
             var blocklistbuffer = new byte[blocksize];
-            int blocklistoffset = 0;
 
             blockhasher.Initialize();
 
@@ -372,6 +371,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             var blocksetid = e.ConvertValueToInt64(0);
                             var ix = 0L;
+                            int blocklistoffset = 0;
 
                             c2.ExecuteNonQuery(@"DELETE FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ?", blocksetid);
 
