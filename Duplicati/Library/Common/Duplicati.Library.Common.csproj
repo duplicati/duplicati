@@ -7,9 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- <PackageReference Include="AlphaFS" Version="2.2.6" />
+    <PackageReference Include="AlphaVSS" Version="2.0.0" /> -->
+    <Reference Include="AlphaFS">
+      <HintPath>..\..\..\thirdparty\alphafs\AlphaFS.dll</HintPath>
+    </Reference>
+    <Reference Include="AlphaVSS">
+      <HintPath>..\..\..\thirdparty\alphavss\AlphaVSS.Common.dll</HintPath>
+    </Reference>
+
+    <!-- TODO: Include the native files -->
+    <!-- <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" /> -->
+
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="AlphaFS" Version="2.2.6" />
-    <PackageReference Include="AlphaVSS" Version="2.0.0" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
   </ItemGroup>
 
@@ -24,7 +34,6 @@
     </Reference>
   </ItemGroup>
 
-  <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" />
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>

@@ -1,0 +1,5 @@
+The build here is taken from 13462e657f7993da5c80f835d219bbe82079ce75, and only the netstandard2.0 library is used.
+The diff shows the changes to the source code.
+
+The native libraries are extracted from the NuGet package:
+https://www.nuget.org/packages/AlphaVSS.Native.NetCore/2.0.0
