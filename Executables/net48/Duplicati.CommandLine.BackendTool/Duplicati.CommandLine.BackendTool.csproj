@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
+    <Description>Tool for file-level access to remote destinations</Description>
+  </PropertyGroup>
+
+  <ItemGroup>	
+    <ProjectReference Include="..\..\..\Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+    </ProjectReference>
+  </ItemGroup>
+
+
+</Project>

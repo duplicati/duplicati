@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
+    <Description>The Server Duplicati implementation</Description>
+    <AssemblyName>Duplicati.Server</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>	
+    <ProjectReference Include="..\..\..\Duplicati\Server\Duplicati.Server.csproj" />
+  </ItemGroup>
+
+
+</Project>

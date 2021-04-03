@@ -153,7 +153,7 @@ namespace Duplicati.Library.SQLiteHelper
                 //The resource name will be "Duplicati.Library.Main.Database.Database_schema.1.Sample upgrade.sql"
                 //The number indicates the version that will be upgraded to
                 //Could be ""Duplicati.Server.Database.Database_schema.1. Add Notifications.sql""
-                if (s.Contains(prefix, StringComparison.Ordinal) && !s.EndsWith(prefix + SCHEMA_NAME))
+                if ((s.IndexOf(prefix, 0, StringComparison.Ordinal) >= 0) && !s.EndsWith(prefix + SCHEMA_NAME))
                 {
                     try
                     {

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
+    <Description>RecoveryTool for Duplicati</Description>
+  </PropertyGroup>
+  
+  <ItemGroup>	
+    <ProjectReference Include="..\..\..\Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+    </ProjectReference>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,9 @@
+namespace Duplicati.CommandLine.AutoUpdater.Net5
+{
+    // Wrapper class to keep code independent
+    public static class Program
+    {
+        public static int Main(string[] args)
+            => Duplicati.CommandLine.AutoUpdater.Program.Main(args);
+    }
+}

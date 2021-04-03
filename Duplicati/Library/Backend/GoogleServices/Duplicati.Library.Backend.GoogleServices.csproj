@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>    
+    <TargetFramework>netstandard2.0</TargetFramework>    
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>GoogleCloudStorage backend for Duplicati</Description>
   </PropertyGroup>
