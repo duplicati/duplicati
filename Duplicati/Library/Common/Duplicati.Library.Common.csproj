@@ -25,5 +25,11 @@
   </ItemGroup>
 
   <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

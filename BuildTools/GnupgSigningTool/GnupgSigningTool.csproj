@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <Version>2.0.0.7</Version>
     
-    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
+    <Copyright>LGPL, Copyright Â© Duplicati Team 2021</Copyright>
     <Product>GnupgSigningTool</Product>
     <Company>Duplicati Team</Company>
     <Authors>Duplicati Team</Authors>
@@ -16,6 +16,13 @@
     <ProjectReference Include="..\..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj" />
     <ProjectReference Include="..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
