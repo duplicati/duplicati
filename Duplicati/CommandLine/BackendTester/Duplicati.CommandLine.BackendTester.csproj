@@ -1,27 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
-    <Version>2.0.0.7</Version>
-    <Copyright>LGPL, Copyright ? Duplicati Team 2019</Copyright>
-    <Product>Duplicati.CommandLine.BackendTester</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>A backend debugging tool for Duplicati</Description>
-    <PackageId>BackendTester</PackageId>
-    <AssemblyName>Duplicati.CommandLine.BackendTester</AssemblyName>
+    <AssemblyName>Duplicati.CommandLine.BackendTester.Implementation</AssemblyName>
     <RootNamespace>Duplicati.CommandLine.BackendTester</RootNamespace>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-  </ItemGroup>
-  
+    
   <ItemGroup>	
 	<ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
     </ProjectReference>
@@ -36,8 +22,6 @@
     <ProjectReference Include="..\..\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj">
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
-      <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
-      <Name>Duplicati.Library.Backend.Tardigrade</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
     </ProjectReference>
@@ -90,16 +74,10 @@
     <ProjectReference Include="..\..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
-      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
-      <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
-      <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
-      <Name>Duplicati.Library.Compression</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
-      <Project>{2C838169-B187-4B09-8768-1C24C2521C8D}</Project>
-      <Name>Duplicati.Library.SQLiteHelper</Name>
     </ProjectReference>
   </ItemGroup>
 

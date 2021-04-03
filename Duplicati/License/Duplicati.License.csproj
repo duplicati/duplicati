@@ -1,17 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    
-    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
-    <Product>Duplicati.License</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>    
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>A license text reader for Duplicati</Description>
-    <PackageId>License</PackageId>
-    <AssemblyName>Duplicati.License</AssemblyName>
-    <RootNamespace>Duplicati.License</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
@@ -347,14 +339,7 @@
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-  
+    
   <ItemGroup>
     <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />

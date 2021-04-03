@@ -26,7 +26,7 @@ namespace Duplicati.CommandLine.ConfigurationImporter
     {
         private static readonly string usageString = $"Usage: {nameof(ConfigurationImporter)}.exe <configuration-file> --import-metadata=(true | false) --server-datafolder=<folder containing Duplicati-server.sqlite>";
 
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
             if (args.Length != 3)
             {
@@ -53,6 +53,8 @@ namespace Duplicati.CommandLine.ConfigurationImporter
 
             ImportExportStructure importedStructure = Backups.ImportBackup(configurationFile, importMetadata, () => ConfigurationImporter.ReadPassword($"Password for {configurationFile}: "), advancedOptions);
             Console.WriteLine($"Imported \"{importedStructure.Backup.Name}\" with ID {importedStructure.Backup.ID} and local database at {importedStructure.Backup.DBPath}.");
+
+            return 0;
         }
 
         private static string ReadPassword(string prompt)

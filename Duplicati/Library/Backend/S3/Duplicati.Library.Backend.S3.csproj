@@ -1,25 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    
-    <Copyright>LGPL, Copyright � Duplicati Team 2015</Copyright>
-    <Product>Duplicati.Library.Backend.S3</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>    
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>S3 backend for Duplicati</Description>
-    <PackageId>S3</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.Core" Version="3.3.104.11" />
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.104.18" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.110.7" />
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Minio" Version="3.1.8" />
     <PackageReference Include="System.Reactive.Linq" Version="4.3.2" />
   </ItemGroup>

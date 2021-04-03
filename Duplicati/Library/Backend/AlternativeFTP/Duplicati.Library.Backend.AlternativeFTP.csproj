@@ -2,24 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    <OutputType>Library</OutputType>    
-    <Copyright>LGPL, Copyright © Duplicati Team 2015</Copyright>
-    <Product>Duplicati.Library.Backend.AlternativeFTP</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>An alternative FTP backend for Duplicati</Description>
-    <PackageId>AlternativeFTP</PackageId>
-    <AssemblyName>Duplicati.Library.Backend.AlternativeFTP</AssemblyName>
-    <RootNamespace>Duplicati.Library.Backend.AlternativeFTP</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentFTP" Version="28.0.5" />
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

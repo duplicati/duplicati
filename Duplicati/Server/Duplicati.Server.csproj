@@ -1,17 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
-    <Version>2.0.0.7</Version>
-    <Copyright>LGPL, Copyright ? Duplicati Team 2019</Copyright>
-    <Product>Duplicati.Server</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>The Server Duplicati implementation</Description>
-    <PackageId>Server</PackageId>
-    <AssemblyName>Duplicati.Server</AssemblyName>
-    <RootNamespace>Duplicati.Server</RootNamespace>
+    <AssemblyName>Duplicati.Server.Implementation</AssemblyName>
   </PropertyGroup>
   
   <ItemGroup>
@@ -19,10 +12,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="4.7.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.5.2" />
@@ -35,7 +24,7 @@
     </ProjectReference>
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
     </ProjectReference>
-    <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj">
+    <ProjectReference Include="..\CommandLine\CLI\Duplicati.CommandLine.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj">
     </ProjectReference>

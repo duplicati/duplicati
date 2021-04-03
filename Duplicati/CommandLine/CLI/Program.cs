@@ -36,7 +36,6 @@ namespace Duplicati.CommandLine
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
-        [STAThread]
         public static int Main(string[] args)
         {
             Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;

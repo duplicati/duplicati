@@ -1,16 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
-    <Version>2.0.0.7</Version>
-    <Copyright>LGPL, Copyright © Duplicati Team 2019</Copyright>
-    <Product>Duplicati.WindowsService</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
-    <Description>WindowsService for Duplicati</Description>
-    <PackageId>WindowsService</PackageId>
-    <AssemblyName>Duplicati.WindowsService</AssemblyName>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
+    <AssemblyName>Duplicati.WindowsService.Implementation</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,11 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.7.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="5.0.0" />
   </ItemGroup>
-
 </Project>

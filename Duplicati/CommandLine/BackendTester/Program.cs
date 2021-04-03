@@ -27,7 +27,7 @@ using System.Threading;
 
 namespace Duplicati.CommandLine.BackendTester
 {
-    class Program
+    public class Program
     {
 
         /// <summary>

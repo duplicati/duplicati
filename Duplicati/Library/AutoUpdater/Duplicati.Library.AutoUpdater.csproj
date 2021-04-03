@@ -2,23 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    <OutputType>Library</OutputType>
-    <Copyright>LGPL, Copyright © Duplicati Team 2019</Copyright>
-    <Product>Duplicati.Library.AutoUpdater</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>AutoUpdater library for Duplicati</Description>
-    <PackageId>AutoUpdater</PackageId>
-    <AssemblyName>Duplicati.Library.AutoUpdater</AssemblyName>
-    <RootNamespace>Duplicati.Library.AutoUpdater</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 

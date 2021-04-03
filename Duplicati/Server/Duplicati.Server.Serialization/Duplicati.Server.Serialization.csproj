@@ -2,26 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    
-    <Copyright>LGPL, Copyright ? Duplicati Team 2015</Copyright>
-    <Product>Duplicati.Server.Serialization</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>Serialization module for Duplicati</Description>
-    <PackageId>Serialization</PackageId>
-    <AssemblyName>Duplicati.Server.Serialization</AssemblyName>
-    <RootNamespace>Duplicati.Server.Serialization</RootNamespace>
   </PropertyGroup>
   
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-  </ItemGroup>
-
   <ItemGroup>	
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj" />	
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />

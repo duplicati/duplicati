@@ -1,17 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    
-    <Copyright>LGPL, Copyright ? Duplicati Team 2015</Copyright>
-    <Product>Duplicati.SQLiteHelper</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>    
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>SQLiteHelper for Duplicati</Description>
-    <PackageId>SQLiteHelper</PackageId>
-    <AssemblyName>Duplicati.SQLiteHelper</AssemblyName>
-    <RootNamespace>Duplicati.SQLiteHelper</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
@@ -36,14 +28,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-  
+    
   <ItemGroup>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />

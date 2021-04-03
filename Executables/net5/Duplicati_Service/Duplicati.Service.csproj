@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
+    <Description>Service controller for Duplicati</Description>
+  </PropertyGroup>
+
+  <ItemGroup>	
+    <ProjectReference Include="..\..\..\Duplicati\Service\Duplicati.Service.csproj" />
+  </ItemGroup>
+
+</Project>

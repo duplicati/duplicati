@@ -1,23 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    
-    <Copyright>LGPL, Copyright � Duplicati Team 2015</Copyright>
-    <Product>Duplicati.Library.Backend.CloudFiles</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>    
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>CloudFiles backend for Duplicati</Description>
-    <PackageId>CloudFiles</PackageId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />

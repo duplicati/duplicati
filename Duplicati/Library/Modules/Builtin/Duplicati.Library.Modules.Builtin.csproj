@@ -1,25 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
-    
-    <Copyright>LGPL, Copyright ? Duplicati Team 2015</Copyright>
-    <Product>Duplicati.Library.Modules.Builtin</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <TargetFramework>netstandard2.1</TargetFramework>    
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>Buildin modules for Duplicati</Description>
-    <PackageId>ModulesBuiltin</PackageId>
-    <AssemblyName>Duplicati.Library.Modules.Builtin</AssemblyName>
-    <RootNamespace>Duplicati.Library.Modules.Builtin</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="Matrix.vNext" Version="2.2.1" />
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="MailKit" Version="2.4.1" />
     <PackageReference Include="MimeKit" Version="2.4.1" />

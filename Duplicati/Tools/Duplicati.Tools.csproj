@@ -2,16 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>2.0.0.7</Version>
     
-    <Copyright>LGPL, Copyright � Duplicati Team 2015</Copyright>
-    <Product>Duplicati.Tools</Product>
-    <Company>Duplicati Team</Company>
-    <Authors>Duplicati Team</Authors>
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>Dummy Tools copy library</Description>
-    <PackageId>Tools</PackageId>
-    <AssemblyName>Duplicati.Tools</AssemblyName>
-    <RootNamespace>Duplicati.Tools</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
@@ -62,11 +55,5 @@
       <Link>utility-scripts\pause-resume.py</Link>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
+  
 </Project>
