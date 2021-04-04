@@ -72,6 +72,7 @@
     </ProjectReference>
     <ProjectReference Include="..\License\Duplicati.License.csproj">
     </ProjectReference>
+    <ProjectReference Include="..\UnixSupport\UnixSupport.csproj" />
     <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
     </ProjectReference>
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
@@ -107,9 +108,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="UnixSupport">
-      <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
-    </Reference>
     <Reference Include="HttpServer">
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
     </Reference>

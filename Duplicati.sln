@@ -103,55 +103,57 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoU
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Executables", "Executables", "{FA88A246-EF8E-46E3-90AF-539B8C0A6ADE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net5", "net5", "{6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net5\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net5\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Service", "Executables\net5\Duplicati_Service\Duplicati.Service.csproj", "{34149709-F3ED-4FB5-A087-43EB195C948B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Executables\net5\Duplicati_Service\Duplicati.Service.csproj", "{34149709-F3ED-4FB5-A087-43EB195C948B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTester", "Executables\net5\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Executables\net5\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTool", "Executables\net5\Duplicati.CommandLine.BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTool", "Executables\net5\Duplicati.CommandLine.BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ConfigurationImporter", "Executables\net5\Duplicati.CommandLine.ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{156B9B77-C2B7-4169-8FE7-1171D221446C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.ConfigurationImporter", "Executables\net5\Duplicati.CommandLine.ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{156B9B77-C2B7-4169-8FE7-1171D221446C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Executables\net5\Duplicati.CommandLine.RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.RecoveryTool", "Executables\net5\Duplicati.CommandLine.RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "Executables\net5\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{AF32C621-30DC-40F5-8CE6-DD69053068E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.GUI.TrayIcon", "Executables\net5\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{AF32C621-30DC-40F5-8CE6-DD69053068E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server", "Executables\net5\Duplicati.Server\Duplicati.Server.csproj", "{55EEEBD2-CE45-45D6-9838-958F1C7354E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server", "Executables\net5\Duplicati.Server\Duplicati.Server.csproj", "{55EEEBD2-CE45-45D6-9838-958F1C7354E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsService", "Duplicati\WindowsService\WindowsService.csproj", "{8A651E2D-A7C8-4EC7-B421-7A457654811D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsService", "Duplicati\WindowsService\WindowsService.csproj", "{8A651E2D-A7C8-4EC7-B421-7A457654811D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.WindowsService", "Executables\net5\Duplicati.WindowsService\Duplicati.WindowsService.csproj", "{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.WindowsService", "Executables\net5\Duplicati.WindowsService\Duplicati.WindowsService.csproj", "{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Executables\net5\Duplicati.CommandLine\Duplicati.CommandLine.csproj", "{0F5A1F4E-25FA-4D02-920D-CA2138498081}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Executables\net5\Duplicati.CommandLine\Duplicati.CommandLine.csproj", "{0F5A1F4E-25FA-4D02-920D-CA2138498081}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net48", "net48", "{E858B0D8-ADA9-4288-8C46-1DF696E07046}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Service", "Executables\net48\Duplicati_Service\Duplicati.Service.csproj", "{6C3CD6B6-2A2D-4266-AE16-5F24EA48844B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Executables\net48\Duplicati_Service\Duplicati.Service.csproj", "{6C3CD6B6-2A2D-4266-AE16-5F24EA48844B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Executables\net48\Duplicati.CommandLine\Duplicati.CommandLine.csproj", "{7A51E705-9D09-434A-8E69-AA6B2C926BD1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Executables\net48\Duplicati.CommandLine\Duplicati.CommandLine.csproj", "{7A51E705-9D09-434A-8E69-AA6B2C926BD1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net48\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{A0BF82B2-A742-4DD7-BF68-43967E763EF5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net48\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{A0BF82B2-A742-4DD7-BF68-43967E763EF5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTester", "Executables\net48\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{1B392058-4534-4812-879C-17C548469558}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Executables\net48\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{1B392058-4534-4812-879C-17C548469558}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTool", "Executables\net48\Duplicati.CommandLine.BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{F110D89E-23B9-4346-BAD9-BED352CF1CC9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTool", "Executables\net48\Duplicati.CommandLine.BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{F110D89E-23B9-4346-BAD9-BED352CF1CC9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ConfigurationImporter", "Executables\net48\Duplicati.CommandLine.ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{42876A0B-03DA-4149-9BEF-83372C15C699}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.ConfigurationImporter", "Executables\net48\Duplicati.CommandLine.ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{42876A0B-03DA-4149-9BEF-83372C15C699}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Executables\net48\Duplicati.CommandLine.RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{F863361E-64E6-4602-ABAF-7300DF79E690}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.RecoveryTool", "Executables\net48\Duplicati.CommandLine.RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{F863361E-64E6-4602-ABAF-7300DF79E690}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "Executables\net48\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{BB8EFA2D-63AA-4629-87D5-460CC9439487}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.GUI.TrayIcon", "Executables\net48\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{BB8EFA2D-63AA-4629-87D5-460CC9439487}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server", "Executables\net48\Duplicati.Server\Duplicati.Server.csproj", "{26BC9AEE-E156-4246-BFF8-21E3424DC4F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server", "Executables\net48\Duplicati.Server\Duplicati.Server.csproj", "{26BC9AEE-E156-4246-BFF8-21E3424DC4F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.WindowsService", "Executables\net48\Duplicati.WindowsService\Duplicati.WindowsService.csproj", "{E7E7C3BF-9724-4DE9-A61B-87BE69A1A9D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.WindowsService", "Executables\net48\Duplicati.WindowsService\Duplicati.WindowsService.csproj", "{E7E7C3BF-9724-4DE9-A61B-87BE69A1A9D9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnixSupport", "Duplicati\UnixSupport\UnixSupport.csproj", "{2B605B81-353F-43CD-BF3A-29B3926A204F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -447,24 +449,13 @@ Global
 		{E7E7C3BF-9724-4DE9-A61B-87BE69A1A9D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7E7C3BF-9724-4DE9-A61B-87BE69A1A9D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E7E7C3BF-9724-4DE9-A61B-87BE69A1A9D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B605B81-353F-43CD-BF3A-29B3926A204F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B605B81-353F-43CD-BF3A-29B3926A204F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B605B81-353F-43CD-BF3A-29B3926A204F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B605B81-353F-43CD-BF3A-29B3926A204F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}
-	EndGlobalSection
-	GlobalSection(MonoDevelopProperties) = preSolution
-		Policies = $0
-		$0.StandardHeader = $1
-		$1.Text = @ Copyright (C) ${Year}, The Duplicati Team\n http://www.duplicati.com, info@duplicati.com\n \n This library is free software; you can redistribute it and/or modify\n it under the terms of the GNU Lesser General Public License as\n published by the Free Software Foundation; either version 2.1 of the\n License, or (at your option) any later version.\n\n This library is distributed in the hope that it will be useful, but\n WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n Lesser General Public License for more details.\n\n You should have received a copy of the GNU Lesser General Public\n License along with this library; if not, write to the Free Software\n Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-		$0.DotNetNamingPolicy = $2
-		$2.DirectoryNamespaceAssociation = PrefixedHierarchical
-		$0.TextStylePolicy = $5
-		$5.FileWidth = 80
-		$5.TabsToSpaces = True
-		$5.EolMarker = Windows
-		$5.scope = text/plain
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3} = {FA88A246-EF8E-46E3-90AF-539B8C0A6ADE}
@@ -489,5 +480,20 @@ Global
 		{BB8EFA2D-63AA-4629-87D5-460CC9439487} = {E858B0D8-ADA9-4288-8C46-1DF696E07046}
 		{26BC9AEE-E156-4246-BFF8-21E3424DC4F7} = {E858B0D8-ADA9-4288-8C46-1DF696E07046}
 		{E7E7C3BF-9724-4DE9-A61B-87BE69A1A9D9} = {E858B0D8-ADA9-4288-8C46-1DF696E07046}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.StandardHeader = $1
+		$1.Text = @ Copyright (C) ${Year}, The Duplicati Team\n http://www.duplicati.com, info@duplicati.com\n \n This library is free software; you can redistribute it and/or modify\n it under the terms of the GNU Lesser General Public License as\n published by the Free Software Foundation; either version 2.1 of the\n License, or (at your option) any later version.\n\n This library is distributed in the hope that it will be useful, but\n WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n Lesser General Public License for more details.\n\n You should have received a copy of the GNU Lesser General Public\n License along with this library; if not, write to the Free Software\n Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+		$0.DotNetNamingPolicy = $2
+		$2.DirectoryNamespaceAssociation = PrefixedHierarchical
+		$0.TextStylePolicy = $5
+		$5.FileWidth = 80
+		$5.TabsToSpaces = True
+		$5.EolMarker = Windows
+		$5.scope = text/plain
 	EndGlobalSection
 EndGlobal
