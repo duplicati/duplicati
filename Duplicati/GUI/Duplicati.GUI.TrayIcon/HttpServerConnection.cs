@@ -211,11 +211,11 @@ namespace Duplicati.GUI.TrayIcon
         {
             m_shutdown = true;
             m_waitLock.Set();
-            m_pollThread.Abort();
+            m_pollThread.Interrupt();
             m_pollThread.Join(TimeSpan.FromSeconds(10));
             if (!m_requestThread.Join(TimeSpan.FromSeconds(10)))
             {
-                m_requestThread.Abort();
+                m_requestThread.Interrupt();
                 m_requestThread.Join(TimeSpan.FromSeconds(10));
             }
         }
