@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -340,18 +341,17 @@ namespace Duplicati.Library.Main.Database
 
         public void FixMissingBlocklistHashes(string blockhashalgorithm, long blocksize)
         {
-            var blockhasher = HashAlgorithm.Create(blockhashalgorithm);
-            var hashsize = blockhasher.HashSize / 8;
             var blocklistbuffer = new byte[blocksize];
-
-            blockhasher.Initialize();
-
-            var sql = string.Format(@"SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {0} - 1) / {0}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual""", blocksize / hashsize);
-            var countsql = @"SELECT COUNT(*) FROM (" + sql + @")";
 
             using(var tr = m_connection.BeginTransaction())
             using(var cmd = m_connection.CreateCommand(tr))
+            using(var blockhasher = HashFactory.CreateHasher(blockhashalgorithm))
             {
+                var hashsize = blockhasher.HashSize / 8;
+
+                var sql = string.Format(@"SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {0} - 1) / {0}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual""", blocksize / hashsize);
+                var countsql = @"SELECT COUNT(*) FROM (" + sql + @")";
+
                 var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                 if (itemswithnoblocklisthash != 0)
                 {

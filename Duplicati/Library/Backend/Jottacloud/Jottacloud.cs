@@ -23,6 +23,7 @@ using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 namespace Duplicati.Library.Backend
@@ -496,7 +497,8 @@ namespace Duplicati.Library.Backend
                 // No seeking possible, use a temp file
                 tmpFile = new Duplicati.Library.Utility.TempFile();
                 using (var os = System.IO.File.OpenWrite(tmpFile))
-                using (var md5 = new Utility.MD5CalculatingStream(baseStream))
+                using(var hasher = MD5.Create())
+                using (var md5 = new Utility.HashCalculatingStream(baseStream, hasher))
                 {
                     await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken, m_copybuffer);
                     md5Hash = md5.GetFinalHashString();

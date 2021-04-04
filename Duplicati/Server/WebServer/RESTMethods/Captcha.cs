@@ -118,7 +118,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var bytes = System.Text.Encoding.UTF8.GetBytes(answer + nonce);
                     ms.Write(bytes, 0, bytes.Length);
                     ms.Position = 0;
-                    token = Library.Utility.Utility.Base64PlainToBase64Url(Library.Utility.Utility.CalculateHash(ms));
+                    using(var hasher = Library.Utility.HashFactory.CreateHasher(Library.Utility.HashFactory.SHA256)){
+                        token = Library.Utility.Utility.Base64PlainToBase64Url(Convert.ToBase64String(hasher.ComputeHash(ms)));
+                    }
                 }
 
                 lock (m_lock)

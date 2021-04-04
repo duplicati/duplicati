@@ -653,7 +653,7 @@ namespace Duplicati.Library.Main
                 IndexVolumeWriter wr = null;
                 try
                 {
-                    var hashsize = HashAlgorithm.Create(m_options.BlockHashAlgorithm).HashSize / 8;
+                    var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);
                     wr = new IndexVolumeWriter(m_options);
                     using (var rd = new IndexVolumeReader(p.CompressionModule, item.Indexfile.Item2.LocalFilename, m_options, hashsize))
                         wr.CopyFrom(rd, x => x == oldname ? newname : x);
