@@ -25,6 +25,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using System.Security.Cryptography;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -161,8 +162,8 @@ namespace Duplicati.Library.Main.Operation
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
             var fullblockverification = options.FullBlockVerification;
-            var blockhasher = fullblockverification ? HashAlgorithm.Create(options.BlockHashAlgorithm) : null;
-
+            
+            using(var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             using (var blockmarker = database.CreateBlockMarker())
             using(var volumekeeper = database.GetMissingBlockData(blocks, options.Blocksize))
             {
@@ -199,7 +200,6 @@ namespace Duplicati.Library.Main.Operation
                                         var valid = !fullblockverification;
                                         if (!valid)
                                         {
-                                            blockhasher.Initialize();
                                             var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
                                             if (targetblock.Key == key)
                                                 valid = true;
@@ -318,18 +318,6 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyParameters(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
-                
-                var blockhasher = HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                var filehasher = HashAlgorithm.Create(m_options.FileHashAlgorithm);
-                if (blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                if (!blockhasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-
-                if (filehasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-                if (!filehasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
 
                 if (!m_options.NoBackendverification)
                 {
@@ -349,11 +337,14 @@ namespace Duplicati.Library.Main.Operation
                 
                 //If we are patching an existing target folder, do not touch stuff that is already updated
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForExistingFiles);
+                using(var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                using(var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
                 using(new Logging.Timer(LOGTAG, "ScanForExistingTargetBlocks", "ScanForExistingTargetBlocks"))
                     ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, result);
 
                 //Look for existing blocks in the original source files only
-                using(new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
+                using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
                     if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
                     {
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
@@ -370,7 +361,8 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.PatchWithLocalBlocks)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
-                    using(new Logging.Timer(LOGTAG, "PatchWithLocalBlocks", "PatchWithLocalBlocks"))
+                    using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                    using (new Logging.Timer(LOGTAG, "PatchWithLocalBlocks", "PatchWithLocalBlocks"))
                         ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result, metadatastorage);
                 }
 
@@ -444,9 +436,6 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.SkipMetadata)
                     ApplyStoredMetadata(m_options, metadatastorage);
                 
-                // Reset the filehasher if it was used to verify existing files
-                filehasher.Initialize();
-                    
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     return;
                 
@@ -455,7 +444,8 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.PerformRestoredFileVerification)
                 {
                     // After all blocks in the files are restored, verify the file hash
-                    using(new Logging.Timer(LOGTAG, "RestoreVerification", "RestoreVerification"))
+                    using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
+                    using (new Logging.Timer(LOGTAG, "RestoreVerification", "RestoreVerification"))
                         foreach(var file in database.GetFilesToRestore(true))
                         {
                             try

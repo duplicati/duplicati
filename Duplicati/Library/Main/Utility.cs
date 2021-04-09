@@ -22,6 +22,7 @@ using System.Security.Cryptography;
 using Newtonsoft.Json;
 using System.Text;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
 {
@@ -51,7 +52,7 @@ namespace Duplicati.Library.Main
                     
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
-                using(var filehasher = HashAlgorithm.Create(options.FileHashAlgorithm))
+                using(var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
                 {
                     if (filehasher == null)
                         throw new Duplicati.Library.Interface.UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");

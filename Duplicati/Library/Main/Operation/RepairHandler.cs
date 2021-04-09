@@ -6,6 +6,7 @@ using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -118,14 +119,8 @@ namespace Duplicati.Library.Main.Operation
 
                 var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
                 var buffer = new byte[m_options.Blocksize];
-                var blockhasher = HashAlgorithm.Create(m_options.BlockHashAlgorithm);
-                var hashsize = blockhasher.HashSize / 8;
+                var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);
 
-                if (blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                if (!blockhasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
 
@@ -149,7 +144,7 @@ namespace Duplicati.Library.Main.Operation
                     if (tp.VerificationRequiredVolumes.Any())
                     {
                         using(var testdb = new LocalTestDatabase(db))
-                        {
+                        { 
                             foreach(var n in tp.VerificationRequiredVolumes)
                                 try
                                 {
@@ -314,27 +309,28 @@ namespace Duplicati.Library.Main.Operation
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
 
-                                    var h = HashAlgorithm.Create(m_options.BlockHashAlgorithm);
+                                using(var h = HashFactory.CreateHasher(m_options.BlockHashAlgorithm)) {
 
-                                foreach (var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
-                                {
-                                    w.StartVolume(blockvolume.Name);
-                                    var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
+                                    foreach (var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
+                                    {
+                                        w.StartVolume(blockvolume.Name);
+                                        var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
 
-                                    foreach (var b in db.GetBlocks(volumeid))
-                                        w.AddBlock(b.Hash, b.Size);
+                                        foreach (var b in db.GetBlocks(volumeid))
+                                            w.AddBlock(b.Hash, b.Size);
 
-                                    w.FinishVolume(blockvolume.Hash, blockvolume.Size);
+                                        w.FinishVolume(blockvolume.Hash, blockvolume.Size);
 
-                                    if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                                        foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
-                                        {
-                                            var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
-                                            if (bh != b.Item1)
-                                                throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
+                                        if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                                            foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                                            {
+                                                var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
+                                                if (bh != b.Item1)
+                                                    throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
 
-                                            w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
-                                        }
+                                                w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
+                                            }
+                                    }
                                 }
 
                                 w.Close();
@@ -374,12 +370,14 @@ namespace Duplicati.Library.Main.Operation
                                                         f.Position = offset;
                                                         if (size == Library.Utility.Utility.ForceStreamRead(f, buffer, size))
                                                         {
-                                                            var newhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, size));
-                                                            if (newhash == hash)
-                                                            {
-                                                                if (mbl.SetBlockRestored(hash, size))
-                                                                    w.AddBlock(hash, buffer, 0, size, Duplicati.Library.Interface.CompressionHint.Default);
-                                                                break;
+                                                            using(var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm)) {
+                                                                var newhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, size));
+                                                                if (newhash == hash)
+                                                                {
+                                                                    if (mbl.SetBlockRestored(hash, size))
+                                                                        w.AddBlock(hash, buffer, 0, size, Duplicati.Library.Interface.CompressionHint.Default);
+                                                                    break;
+                                                                }
                                                             }
                                                         }
                                                     }

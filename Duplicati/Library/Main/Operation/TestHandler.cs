@@ -21,6 +21,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using System.Security.Cryptography;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -200,14 +201,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
         public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent)
         {
-            var blockhasher = HashAlgorithm.Create(options.BlockHashAlgorithm);
- 
-            if (blockhasher == null)
-                throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm), "BlockHashAlgorithmInvalid");
-            if (!blockhasher.CanReuseTransform)
-                throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm), "BlockHashAlgorithmInvalid");
-                
-            var hashsize = blockhasher.HashSize / 8;
+            var hashsize = HashFactory.HashSizeBytes(options.BlockHashAlgorithm);
             var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
             sample_percent = Math.Min(1, Math.Max(sample_percent, 0.01));
 
@@ -253,6 +247,7 @@ namespace Duplicati.Library.Main.Operation
 
                     return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined.ToList());
                 case RemoteVolumeType.Blocks:
+                    using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
                     using (var bl = db.CreateBlocklist(vol.Name))
                     using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                     {

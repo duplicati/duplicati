@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 var p = measure.Position;
 
                 // Compute the hash
-                using(var hashalg = HashAlgorithm.Create("sha1"))
+                using(var hashalg = SHA1.Create())
                     sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
 
                 measure.Position = p;
@@ -219,7 +219,8 @@ namespace Duplicati.Library.Backend.Backblaze
                 // No seeking possible, use a temp file
                 tmp = new TempFile();
                 using(var sr = System.IO.File.OpenWrite(tmp))
-                using(var hc = new HashCalculatingStream(measure, "sha1"))
+                using(var hasher = HashFactory.CreateHasher("SHA1"))
+                using(var hc = new HashCalculatingStream(measure, hasher))
                 {
                     await Utility.Utility.CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
                     sha1 = hc.GetFinalHashString();

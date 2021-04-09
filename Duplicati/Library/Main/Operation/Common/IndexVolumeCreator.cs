@@ -19,6 +19,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -135,7 +136,7 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database)
         {
-            using(var h = HashAlgorithm.Create(options.BlockHashAlgorithm))
+            using(var h = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             {
                 var w = new IndexVolumeWriter(options);
                 w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
@@ -168,7 +169,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         /*public static async Task<IndexVolumeWriter> ReCreateIndexVolume(string selfname, Options options, Repair.RepairDatabase database)
         {
-            using(var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm))
+            using(var h = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             {
                 var w = new IndexVolumeWriter(options);
                 w.SetRemoteFilename(selfname);

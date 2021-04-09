@@ -48,21 +48,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             async self =>
             {
                 var blocksize = options.Blocksize;
-                var filehasher = HashAlgorithm.Create(options.FileHashAlgorithm);
-                var blockhasher = HashAlgorithm.Create(options.BlockHashAlgorithm);
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
                 var maxmetadatasize = (options.Blocksize / (long) options.BlockhashSize) * options.Blocksize;
 
-                if (blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                if (filehasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-
-                if (!blockhasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                if (!filehasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-
+                using(var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
+                using(var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
                 using (var empty_metadata_stream = new MemoryStream(emptymetadata.Blob))
                 {
                     while (await taskreader.ProgressAsync)
