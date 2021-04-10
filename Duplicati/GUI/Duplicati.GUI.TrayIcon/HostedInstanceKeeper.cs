@@ -63,7 +63,7 @@ namespace Duplicati.GUI.TrayIcon
                 Duplicati.Server.Program.ApplicationExitEvent.Set();
                 if (!m_runner.Join(TimeSpan.FromSeconds(10)))
                 {
-                    m_runner.Abort();
+                    m_runner.Interrupt();
                     m_runner.Join(TimeSpan.FromSeconds(10));
                 }
             }
