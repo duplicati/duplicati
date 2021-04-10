@@ -102,10 +102,14 @@ namespace Duplicati.Library.Main.Database
 
                 if (deleted != updated)
                     throw new Exception(string.Format("Unexpected number of remote volumes marked as deleted. Found {0} filesets, but {1} volumes", deleted, updated));
-    
+
                 using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
-                while (rd.Read())
-                    yield return new KeyValuePair<string, long>(rd.GetString(0), rd.ConvertValueToInt64(1));
+                {
+                    while (rd.Read())
+                    {
+                        yield return new KeyValuePair<string, long>(rd.GetString(0), rd.ConvertValueToInt64(1));
+                    }
+                }
             }
         }
 

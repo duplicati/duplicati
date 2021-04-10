@@ -19,7 +19,6 @@ using System;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
-using System.Web;
 
 namespace Duplicati.Library.Utility
 {
@@ -446,6 +445,18 @@ namespace Duplicati.Library.Utility
         /// <param name="query">The query to parse</param>
         public static NameValueCollection ParseQueryString(string query)
         {
+            return Library.Utility.Uri.ParseQueryString(query, true);
+        }
+
+        /// <summary>
+        /// Parses the query string.
+        /// This is a duplicate of the System.Web.HttpUtility.ParseQueryString that does not work well on Mono
+        /// </summary>
+        /// <returns>The parsed query string</returns>
+        /// <param name="query">The query to parse</param>
+        /// <param name="decodeValues">Whether to the parameter values should be decoded or not.</param>
+        public static NameValueCollection ParseQueryString(string query, bool decodeValues)
+        {
             if (query == null)
                 throw new ArgumentNullException(nameof(query));
             if (query.StartsWith("?", StringComparison.Ordinal))
@@ -455,7 +466,15 @@ namespace Duplicati.Library.Utility
 
             var result = new NameValueCollection(StringComparer.OrdinalIgnoreCase);
             foreach (System.Text.RegularExpressions.Match m in RE_URLPARAM.Matches(query))
-                result.Add(UrlDecode(m.Groups["key"].Value), UrlDecode(m.Groups["value"].Success ? m.Groups["value"].Value : ""));
+            {
+                string value = m.Groups["value"].Success ? m.Groups["value"].Value : "";
+                if (decodeValues)
+                {
+                    value = UrlDecode(value);
+                }
+
+                result.Add(UrlDecode(m.Groups["key"].Value), value);
+            }
 
             return result;
         }

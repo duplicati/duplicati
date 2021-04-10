@@ -64,7 +64,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 try
                 {
-                    var p = Library.Main.Volumes.VolumeBase.ParseFilename(file);
+                    var p = Library.Main.Volumes.VolumeBase.ParseFilename(Path.GetFileName(file));
                     if (p == null)
                     {
                         Console.WriteLine(" - Not a Duplicati file, ignoring");

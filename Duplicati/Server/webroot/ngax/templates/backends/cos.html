@@ -1,0 +1,35 @@
+<div class="input text">
+    <label for="cos_app_id" translate>COS App Id</label>
+    <input type="text" name="cos_app_id" id="cos_app_id" ng-model="$parent.cos_app_id"
+           placeholder="{{'Tencent Cloud Account APPID' | translate}}"/>
+</div>
+
+<div class="input text">
+    <label for="cos_secret_id" translate>COS Secret Id</label>
+    <input type="text" name="cos_secret_id" id="cos_secret_id" ng-model="$parent.cos_secret_id"
+           placeholder="{{'Cloud API Secret Id' | translate}}"/>
+</div>
+
+<div class="input password">
+    <label for="cos_secret_key" translate>COS Secret Key</label>
+    <input autocomplete="new-password" type="password" name="cos_secret_key" id="cos_secret_key" ng-model="$parent.cos_secret_key"
+           placeholder="{{'Cloud API Secret Key' | translate}}"/>
+</div>
+
+<div class="input text">
+    <label for="cos_region" translate>Region</label>
+    <input type="text" name="cos_region" id="cos_region" ng-model="$parent.cos_region" placeholder="{{'Bucket region ap-guangzhou' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="cos_bucket" translate>Bucket name</label>
+    <input type="text" name="cos_bucket" id="cos_bucket" ng-model="$parent.cos_bucket" placeholder="{{'Bucket, format: BucketName-APPID' | translate}}"/>
+</div>
+
+<div class="input text">
+    <label for="cos_path" translate>Folder path</label>
+    <input type="text" name="cos_path" id="cos_path" ng-model="$parent.Path"
+           placeholder="{{'COS Path or subfolder in the bucket' | translate}}"/>
+</div>
+
+<div><a target="_blank" href="https://cloud.tencent.com/product/cos/document">Tencent Cloud COS documents and resources</a></div>

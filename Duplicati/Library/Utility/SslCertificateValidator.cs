@@ -65,12 +65,16 @@ namespace Duplicati.Library.Utility
             try
             {
                 certHash = Utility.ByteArrayAsHexString(cert.GetCertHash());
-                if (certHash != null && m_validHashes != null) 
-                    foreach(var hash in m_validHashes)
+                if (certHash != null && m_validHashes != null)
+                {
+                    foreach (var hash in m_validHashes)
                     {
                         if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase))
-                        return true;
+                        {
+                            return true;
+                        }
                     }
+                }
             }
             catch (Exception ex)
             {

@@ -122,6 +122,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
             info.OutputOK(new { inuse = Library.Main.DatabaseLocator.IsDatabasePathInUse(backup.DBPath) });
         }
 
+        public static void RemovePasswords(IBackup backup)
+        {
+            backup.SanitizeSettings();
+            backup.SanitizeTargetUrl();
+        }
+
         private void Export(IBackup backup, RequestInfo info)
         {
             var cmdline = Library.Utility.Utility.ParseBool(info.Request.QueryString["cmdline"].Value, false);
@@ -129,8 +135,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var exportPasswords = Library.Utility.Utility.ParseBool(info.Request.QueryString["export-passwords"].Value, false);
             if (!exportPasswords)
             {
-                backup.SanitizeSettings();
-                backup.SanitizeTargetUrl();
+                Backup.RemovePasswords(backup);
             }
 
             if (cmdline)

@@ -1,7 +1,7 @@
 #!/bin/bash
 . error_handling.sh
 
-PACKAGES="python-pip rsync mono-complete"
+PACKAGES="python3-pip rsync mono-complete"
 docker-run --image selenium/standalone-firefox \
 --packages "$PACKAGES" \
 --asroot \

@@ -153,16 +153,17 @@ namespace Duplicati.Library.Modules.Builtin
 
         public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
         {
+            if (!string.IsNullOrEmpty(m_requiredScript))
+                Execute(m_requiredScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, true, m_options, null, null);
+
+            if (!string.IsNullOrEmpty(m_startScript))
+                Execute(m_startScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, false, m_options, null, null);
+
+            // Save options that might be set by a --run-script-before script so that the OnFinish method
+            // references the same values.
             m_operationName = operationname;
             m_remoteurl = remoteurl;
             m_localpath = localpath;
-
-
-            if (!string.IsNullOrEmpty(m_requiredScript))
-                Execute(m_requiredScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, true, m_options, null, null);
-
-            if (!string.IsNullOrEmpty(m_startScript))
-                Execute(m_startScript, "BEFORE", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, null, null);
         }
 
         public void OnFinish (object result)
@@ -179,7 +180,25 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is Exception)
+            if (result is OperationAbortException oae)
+            {
+                switch (oae.AbortReason)
+                {
+                    case OperationAbortReason.Error:
+                        level = ParsedResultType.Error;
+                        break;
+                    case OperationAbortReason.Normal:
+                        level = ParsedResultType.Success;
+                        break;
+                    case OperationAbortReason.Warning:
+                        level = ParsedResultType.Warning;
+                        break;
+                    default:
+                        level = ParsedResultType.Unknown;
+                        break;
+                }
+            }
+            else if (result is Exception)
                 level = ParsedResultType.Fatal;
             else if (result != null && result is IBasicResults results)
                 level = results.ParsedResult;
@@ -285,11 +304,15 @@ namespace Duplicati.Library.Modules.Builtin
                                 {
                                     switch (p.ExitCode)
                                     {
-                                        case 1:
+                                        case 0: // OK, run operation
+                                        case 2: // Warning, run operation
+                                        case 4: // Error, run operation
+                                            break;
+                                        case 1: // OK, don't run operation
                                             throw new OperationAbortException(OperationAbortReason.Normal, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
-                                        case 3:
+                                        case 3: // Warning, don't run operation
                                             throw new OperationAbortException(OperationAbortReason.Warning, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
-                                        case 5:
+                                        default: // Error don't run operation
                                             throw new OperationAbortException(OperationAbortReason.Error, Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode));
                                     }
                                 }

@@ -17,7 +17,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
     internal static class CheckMonoSSL {
         public static string Description { get { return LC.L(@"When running with Mono, this module will check if any certificates are installed and suggest installing them otherwise"); } }
         public static string Displayname { get { return LC.L(@"Check for SSL certificates"); } }
-        public static string ErrorMessage { get { return LC.L(@"No certificates found, you can install some with one of these commands:{0}    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}    curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync --user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}", Environment.NewLine, "http://www.mono-project.com/docs/about-mono/releases/3.12.0/#cert-sync"); } }
+        public static string ErrorMessage { get { return LC.L(@"No certificates found, you can install some with one of these commands:{0}    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}    curl -LO https://curl.se/ca/cacert.pem; cert-sync --user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}", Environment.NewLine, "http://www.mono-project.com/docs/about-mono/releases/3.12.0/#cert-sync"); } }
     }
     internal static class HttpOptions {
         public static string Description { get { return LC.L(@"This module exposes a number of properties that can be used to change the way http requests are issued"); } }
@@ -90,8 +90,6 @@ Example with 3 recipients:
 
 Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"); } }
         public static string OptionRecipientShort { get { return LC.L(@"Email recipient(s)"); } }
-        public static string OptionSendallLong { get { return LC.L(@"By default, mail will only be sent after a Backup operation. Use this option to send mail for all operations."); } }
-        public static string OptionSendallShort { get { return LC.L(@"Send email for all operations"); } }
         public static string OptionSenderLong { get { return LC.L(@"Address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:
 
 sender
@@ -110,7 +108,6 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
         public static string OptionSubjectShort { get { return LC.L(@"The email subject"); } }
         public static string OptionUsernameLong { get { return LC.L(@"The username used to authenticate with the SMTP server if required."); } }
         public static string OptionUsernameShort { get { return LC.L(@"SMTP Username"); } }
-        public static string SendMailFailedError(string message) { return LC.L(@"Failed to send email: {0}", message); }
         public static string SendMailLog(string message) { return LC.L(@"Whole SMTP communication: {0}", message); }
         public static string SendMailFailedRetryError(string failedserver, string message, string retryserver) { return LC.L(@"Failed to send email with server: {0}, message: {1}, retrying with {2}", failedserver, message, retryserver); }
         public static string SendMailSuccess(string server) { return LC.L(@"Email sent successfully using server: {0}", server); }
@@ -140,7 +137,6 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string DisplayName { get { return LC.L(@"XMPP report module"); } }
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messages"); } }
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
-        public static string SendMessageError(string message) { return LC.L(@"Failed to send jabber message: {0}", message); }
     }
 
     internal static class SendHttpMessage {
@@ -167,9 +163,6 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
-        public static string SendMessageError(string message) { return LC.L(@"Failed to send http message: {0}", message); }
-        public static string SendasjsonShort { get { return LC.L(@"Send data as JSON body"); } }
-        public static string SendasjsonLong { get { return LC.L(@"Use this flag to send the result data as a JSON object"); } }
         public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }
         public static string HttpverbLong { get { return LC.L(@"Use this option to change the default HTTP verb used to submit a report"); } }
     }

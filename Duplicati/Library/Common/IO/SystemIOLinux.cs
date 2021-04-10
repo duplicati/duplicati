@@ -32,9 +32,19 @@ namespace Duplicati.Library.Common.IO
             Directory.CreateDirectory(NormalizePath(path));
         }
 
+        public void DirectoryDelete(string path, bool recursive)
+        {
+            Directory.Delete(NormalizePath(path), recursive);
+        }
+
         public bool DirectoryExists(string path)
         {
             return Directory.Exists(NormalizePath(path));
+        }
+
+        public void DirectoryMove(string sourceDirName, string destDirName)
+        {
+            System.IO.Directory.Move(NormalizePath(sourceDirName), NormalizePath(destDirName));
         }
 
         public void FileDelete(string path)
@@ -117,6 +127,10 @@ namespace Duplicati.Library.Common.IO
             return Directory.EnumerateFiles(path);
         }
 
+        public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
+        {
+            return Directory.EnumerateFiles(path, searchPattern, searchOption);
+        }
 
         public string PathGetFileName(string path)
         {

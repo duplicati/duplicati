@@ -51,6 +51,7 @@ namespace Duplicati.Library.Backend
             { "dinCloud - Chicago", "d3-ord.dincloud.com" },
             { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
             { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi Hot Storage", "s3.wasabisys.com" },
             { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
             { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
@@ -65,6 +66,7 @@ namespace Duplicati.Library.Backend
             { "Europe (EU, London)", "eu-west-2" },
             { "Europe (EU, Paris)", "eu-west-3" },
             { "Europe (EU, Stockholm)", "eu-north-1" },
+            { "Europe (EU, Milan)", "eu-south-1" },
             { "US East (Northern Virginia)", "us-east-1" },
             { "US East (Ohio)", "us-east-2" },
             { "US West (Northern California)", "us-west-1" },
@@ -90,6 +92,7 @@ namespace Duplicati.Library.Backend
             { "eu-west-2", "s3.eu-west-2.amazonaws.com" },
             { "eu-west-3", "s3.eu-west-3.amazonaws.com" },
             { "eu-north-1", "s3.eu-north-1.amazonaws.com" },
+            { "eu-south-1", "s3.eu-south-1.amazonaws.com" },
             { "eu-central-1", "s3.eu-central-1.amazonaws.com" },
             { "us-east-1", "s3.amazonaws.com" },
             { "us-east-2", "s3.us-east-2.amazonaws.com" },
@@ -105,7 +108,7 @@ namespace Duplicati.Library.Backend
             { "sa-east-1", "s3.sa-east-1.amazonaws.com" },
             { "cn-north-1", "s3.cn-north-1.amazonaws.com.cn" },
             { "cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn" },
-            { "me-south-1", "s3.me-south-1.amazonaws.com.cn" },
+            { "me-south-1", "s3.me-south-1.amazonaws.com" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_S3_STORAGE_CLASSES;
@@ -182,10 +185,10 @@ namespace Duplicati.Library.Backend
             if (options.ContainsKey("auth-password"))
                 awsKey = options["auth-password"];
 
-            if (options.ContainsKey("aws_access_key_id"))
-                awsID = options["aws_access_key_id"];
-            if (options.ContainsKey("aws_secret_access_key"))
-                awsKey = options["aws_secret_access_key"];
+            if (options.ContainsKey("aws_access_key_id") || options.ContainsKey("aws-access-key-id"))
+                awsID = options["aws_access_key_id"] ?? options["aws-access-key-id"];
+            if (options.ContainsKey("aws_secret_access_key") || options.ContainsKey("aws-secret-access-key"))
+                awsKey = options["aws_secret_access_key"] ?? options["aws-secret-access-key"];
             if (!string.IsNullOrEmpty(uri.Username))
                 awsID = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -353,26 +356,7 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            try
-            {
-                Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
-            }
-            catch
-            {
-                //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
-                try
-                {
-                    if (!remotename.StartsWith("/", StringComparison.Ordinal))
-                        Connection.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
-                    return;
-                }
-                catch
-                {
-                }
-
-                //Throw original error
-                throw;
-            }
+            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
         }
 
         public void Delete(string remotename)
@@ -407,8 +391,10 @@ namespace Duplicati.Library.Backend
 
 
                 var normal = new ICommandLineArgument[] {
-                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, new string[] {"auth-password"}, null),
-                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
+                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, null, null,"This is deprecated, use aws-secret-access-key instead"),
+                    new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, new string[] {"auth-password"}, null ),
+                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong,null, null, null, "This is deprecated, use aws-access-key-id instead"),
+                    new CommandLineArgument("aws-access-key-id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
                     new CommandLineArgument(EU_BUCKETS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false", null, null, Strings.S3Backend.S3EurobucketDeprecationDescription(LOCATION_OPTION, S3_EU_REGION_NAME)),
                     new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false", null, null, Strings.S3Backend.S3RRSDeprecationDescription(STORAGECLASS_OPTION, S3_RRS_CLASS_NAME)),
                     new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3StorageclassDescriptionShort, Strings.S3Backend.S3StorageclassDescriptionLong),
@@ -416,7 +402,6 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.DescriptionS3ClientLong),
-
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };

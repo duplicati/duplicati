@@ -490,7 +490,8 @@ namespace Duplicati.CommandLine
 
             List<string> lines = new List<string>();
             foreach(Duplicati.Library.Interface.ICommandLineArgument arg in args)
-                lines.Add(PrintArgSimple(arg, arg.Name));
+                if (!arg.Deprecated)
+                    lines.Add(PrintArgSimple(arg, arg.Name));
 
             return string.Join(Environment.NewLine, lines.ToArray());
         }

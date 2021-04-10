@@ -25,6 +25,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main
 {
@@ -205,8 +206,6 @@ namespace Duplicati.Library.Main
             return RunAction(new ListRemoteResults(), (result) =>
             {
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
-                using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
-                using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
                 using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
                 {
                     // Only delete files that match the expected pattern and prefix
@@ -215,6 +214,20 @@ namespace Duplicati.Library.Main
                         .Where(x => x != null)
                         .Where(x => x.Prefix == m_options.Prefix)
                         .ToList();
+
+                    // If the local database is available, we will use it to avoid deleting unrelated files
+                    // from the backend.  Otherwise, we may accidentally delete non-Duplicati files, or
+                    // files from a different Duplicati configuration that points to the same backend location
+                    // and uses the same prefix (see issues #2678, #3845, and #4244).
+                    if (System.IO.File.Exists(m_options.Dbpath))
+                    {
+                        using (LocalDatabase db = new LocalDatabase(m_options.Dbpath, "list-remote", true))
+                        {
+                            IEnumerable<RemoteVolumeEntry> dbRemoteVolumes = db.GetRemoteVolumes();
+                            HashSet<string> dbRemoteFiles = new HashSet<string>(dbRemoteVolumes.Select(x => x.Name));
+                            list = list.Where(x => dbRemoteFiles.Contains(x.File.Name)).ToList();
+                        }
+                    }
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
                     result.OperationProgressUpdater.UpdateProgress(0);

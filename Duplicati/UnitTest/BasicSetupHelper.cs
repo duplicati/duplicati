@@ -18,6 +18,10 @@ using System;
 using NUnit.Framework;
 using System.IO;
 using System.Collections.Generic;
+using System.IO.Compression;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -61,6 +65,8 @@ namespace Duplicati.UnitTest
         /// </summary>
         public static readonly bool DEBUG_OUTPUT = Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("DEBUG_OUTPUT"), false);
 
+        protected static readonly ISystemIO systemIO = SystemIO.IO_OS;
+
         /// <summary>
         /// Writes a message to TestContext.Progress and Console.Out
         /// </summary>
@@ -81,7 +87,7 @@ namespace Duplicati.UnitTest
                 Console.SetOut(TestContext.Progress);
             }
 
-            Directory.CreateDirectory(BASEFOLDER);
+            systemIO.DirectoryCreate(BASEFOLDER);
             this.TearDown();
             this.OneTimeTearDown();
         }
@@ -95,37 +101,37 @@ namespace Duplicati.UnitTest
         [SetUp]
         public virtual void SetUp()
         {
-            Directory.CreateDirectory(this.DATAFOLDER);
-            Directory.CreateDirectory(this.TARGETFOLDER);
-            Directory.CreateDirectory(this.RESTOREFOLDER);
+            systemIO.DirectoryCreate(this.DATAFOLDER);
+            systemIO.DirectoryCreate(this.TARGETFOLDER);
+            systemIO.DirectoryCreate(this.RESTOREFOLDER);
         }
 
         [TearDown]
         public virtual void TearDown()
         {
-            if (Directory.Exists(this.DATAFOLDER))
+            if (systemIO.DirectoryExists(this.DATAFOLDER))
             {
-                Directory.Delete(this.DATAFOLDER, true);
+                systemIO.DirectoryDelete(this.DATAFOLDER, true);
             }
-            if (Directory.Exists(this.TARGETFOLDER))
+            if (systemIO.DirectoryExists(this.TARGETFOLDER))
             {
-                Directory.Delete(this.TARGETFOLDER, true);
+                systemIO.DirectoryDelete(this.TARGETFOLDER, true);
             }
-            if (Directory.Exists(this.RESTOREFOLDER))
+            if (systemIO.DirectoryExists(this.RESTOREFOLDER))
             {
-                Directory.Delete(this.RESTOREFOLDER, true);
+                systemIO.DirectoryDelete(this.RESTOREFOLDER, true);
             }
-            if (File.Exists(this.LOGFILE))
+            if (systemIO.FileExists(this.LOGFILE))
             {
-                File.Delete(this.LOGFILE);
+                systemIO.FileDelete(this.LOGFILE);
             }
-            if (File.Exists(this.DBFILE))
+            if (systemIO.FileExists(this.DBFILE))
             {
-                File.Delete(this.DBFILE);
+                systemIO.FileDelete(this.DBFILE);
             }
-            if (File.Exists($"{this.DBFILE}-journal"))
+            if (systemIO.FileExists($"{this.DBFILE}-journal"))
             {
-                File.Delete($"{this.DBFILE}-journal");
+                systemIO.FileDelete($"{this.DBFILE}-journal");
             }
         }
 
@@ -153,6 +159,59 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// Alternative to System.IO.Compression.ZipFile.ExtractToDirectory()
+        /// that handles long paths.
+        /// </summary>
+        protected static void ZipFileExtractToDirectory(string sourceArchiveFileName, string destinationDirectoryName)
+        {
+            if (Platform.IsClientWindows)
+            {
+                // Handle long paths under Windows by extracting to a
+                // temporary file and moving the resulting file to the
+                // actual destination using functions that support
+                // long paths.
+                using (var archive = ZipFile.OpenRead(sourceArchiveFileName))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        // By the ZIP spec, directories end in a forward slash
+                        var isDirectory = entry.FullName.EndsWith("/");
+                        var destination =
+                            systemIO.PathGetFullPath(systemIO.PathCombine(destinationDirectoryName, entry.FullName));
+                        if (isDirectory)
+                        {
+                            systemIO.DirectoryCreate(destination);
+                        }
+                        else
+                        {
+                            // Not every directory is recorded separately,
+                            // so create directories if needed
+                            systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(destination));
+                            // Extract file to temporary file, then move to
+                            // the (possibly) long path destination
+                            var tempFile = Path.GetTempFileName();
+                            try
+                            {
+                                entry.ExtractToFile(tempFile, true);
+                                systemIO.FileMove(tempFile, destination);
+                            }
+                            finally
+                            {
+                                if (systemIO.FileExists(tempFile))
+                                {
+                                    systemIO.FileDelete(tempFile);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                ZipFile.ExtractToDirectory(sourceArchiveFileName, destinationDirectoryName);
+            }
+        }
     }
 }
 

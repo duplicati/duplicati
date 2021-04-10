@@ -76,6 +76,10 @@ rm -rf ./OSX\ Icons
 rm -rf ./OSXTrayHost
 rm -rf ./licenses/MonoMac
 rm -rf ./licenses/gpg
+rm -rf ./win-x64/storj_uplink.dll
+rm -rf ./win-x86/storj_uplink.dll
+rm -rf ./storj_uplink.dll
+rm -rf ./libstorj_uplink.dylib
 
 # Install extra items for Synology
 cp -R ../web-extra/* webroot/

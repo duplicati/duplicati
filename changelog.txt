@@ -1,3 +1,116 @@
+2021-03-10 - 2.0.5.114_canary_2021-03-10
+==========
+## This build intends to remove some erronous warnings from the S3 backend introduced in the previous canary.
+
+## Detailed changes
+
+* Fixed the cURL error message url, thanks @warwickmm
+* Fixed the S3 warning messages, thanks @warwickmm
+
+2021-03-07 - 2.0.5.113_canary_2021-03-07
+==========
+## This build has two potentially breaking changes:
+
+### The Telegram backend is no longer included
+If you rely on this backend, do not upgrade.
+
+### The SSH backend has been updated
+This update increases the security by prefering stronger encryption algorithms.
+However, this _can_ cause failing backups as the host key is reported as "changed".
+If this happens, edit the backup and update the host key.
+
+
+## Detailed list of changes
+
+* Fixed case where the stop button in the UI would be hidden behind the progress bar, thanks @jfparis
+* Fixed tools to be Python3 compatible, thanks @jfparis
+* Removed the Telegram backend, due to poor user feedback, thanks @warwickmm
+* Reduced build sized by clearing unused Tardigrade library, thanks @warwickmm
+* Fixed issue where license files were not correctly included in build, thanks @warwickmm
+* Fixed cases where the `run-script` would get incorrect result values, thanks @warwickmm
+* Updated SSH.Net to 2020.0.1, thanks @warwickmm
+* Fixed an error when repairing a database, thanks @warwickmm
+* Changed options to use `-` instead of `_` for consistency, thanks @julianohubel
+* Fixed help output to hide deprecated options in some cases, thanks @kenkendk
+* Updated login page to redirect better when a proxy is in use, thanks @scambra
+* Fixed layout issues with scrollbars, thanks @warwickmm
+* Updated to using specific Mono versions when building images and testing, thanks @warwickmm
+* Improved unittesting, thanks @warwickmm
+* Exclude `$XDG_CACHE_HOME` as part of the normal filters, thanks @warwickmm
+
+2021-01-20 - 2.0.5.112_canary_2021-01-20
+==========
+Hightlights for this update:
+* Stability improvements
+* Error/help message improvemens
+* New Telegram backend
+
+Detailed list:
+* Improved testing, thanks @warwickmm
+* Disabled legacy path handling, thanks @dferreyra
+* Bugfix for rclone backend (wrong paths), thanks @warwickmm
+* Bugfix for Sia backend, thanks @warwickmm
+* Fixed check for admin privileges on Synology, thanks @warwickmm
+* Defer uploading fileset to guard against missing blocks error, thanks @seantempleton
+* Fixed setting background-io-priority, thanks @achims311
+* Added Telegram backend, thanks @martikyan
+* Improved error logging on restore, thanks @barfoo4711
+* Improved commandline documentation, thanks @apreiml
+* Bugfix for run-script-before ignoring remoteurl, thanks @warwickmm
+* Better error messages, thanks @warwickmm
+* Code quality improvements, thanks @warwickmm
+* Fixed error that occured when using the dry-run option of purge-broken-files, thanks @warwickmm
+* Fixed logging errors when reading symlink targers, thanks @warwickmm
+* Fixed error in OpenStack configuration UI, thanks @warwickmm
+* Better error messages if webrequests return null, thanks @Gurthurb
+* Fixed password manager autofill, thanks @drwtsn32x
+* Updated CI GUI tests to work again and use Python3, thanks @warwickmm
+* Fixed an issue that caused restore errors when running in Docker, thanks @warwickmm
+
+2020-09-26 - 2.0.5.111_canary_2020-09-26
+==========
+* Support for Windows paths starting with "\\?\", thanks @dferreyra
+* Improved performance of USN, thanks @dgehri
+* Improved performance for restoring, thanks @pcmind
+* Added support for filters with literals that would normally be treated as wildcards, thanks @dferreyra
+* Improved build and tests, thanks @warwickmm and @dferreyra
+* Switched to the new built-in .Net support for long paths, thanks @dferreyra
+* Fixed issues with the Docker images by including mono-complete, thanks @warwickmm
+* Fixed an issue with exporting passwords with url-encoding characters, thanks @warwickmm
+* Fixed an issue with displaying icons in the restore tree, thanks @warwickmm
+* Fixed a type that prevented a warning box from showing, thanks @warwickmm
+* Added Storadera as an S3 destination, thanks @warwickmm
+
+2020-08-10 - 2.0.5.110_canary_2020-08-10
+==========
+* Fixed an issue with snapshot paths, thanks @dferreyra
+
+2020-08-07 - 2.0.5.109_canary_2020-08-07
+==========
+* Fixed hiding compression errors, thanks @jpschewe
+* Fixed Tardigrade backend issues, thanks @TopperDEL
+* Fixed a case where the recovery tool would fail to recover files witth dashes in the name, thanks @dferreyra
+* Improved handling of "problematic" filenames on Windows and increased test coverage, thanks @dferreyra
+* Improved test coverage for invalid paths and removed unused code, thanks @warwickmm
+* Improved code to remove remote files to better support remote folders that are not exclusively used by Duplicati, thanks @warwickmm
+* Updated to use and require .Net 4.7.1, thanks @warwickmm
+* Updated USN support to work with the newer Windows features for moving instead of deleting files, thanks @dgehri
+
+2020-07-09 - 2.0.5.108_canary_2020-07-09
+==========
+* Removed unsupported compiler directives, thanks @kenkendk
+* Removed incorrect missing SSL certificate warnings, thanks @kenkendk
+* Upograded to retina icons, thanks @baumerdev
+* Updates to Tardigrade support, thanks @TopperDEL
+* Added Tencent Cloud Object Storage (COS) backend, thanks @trueai-org
+* Improved error reporting for S3 backend, thanks @jpschewe
+* Added the Milan EU region to AWS S3 regions, thanks @warwickmm
+* Fixed incorrect documentation on OpenStack help, thanks @warwickmm
+* Fixed an incorrect endpoint for AWS S3 Bahrain, thanks @warwickmm
+* Code cleanup, thanks @warwickmm
+* Fixed a case where restoring files could fail if the containing folder was not restored, thanks @warwickmm
+* Improved unittests, thanks @warwickmm
+
 2020-05-26 - 2.0.5.107_canary_2020-05-26
 ==========
 * Added a backend for Tardigrade.io, thanks @TopperDEL
