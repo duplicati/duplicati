@@ -38,13 +38,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 // Add built-in defaults
                 Newtonsoft.Json.Linq.JObject n;
-                using(var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + ".newbackup.json")))
+                using(var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Program), "newbackup.json")))
                     n = (Newtonsoft.Json.Linq.JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(s.ReadToEnd());
 
                 MergeJsonObjects(o, n);
             }
-            catch
+            catch (Exception e)
             {
+                Console.Error.WriteLine(e.Message);
             }
 
             try
@@ -59,8 +60,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     MergeJsonObjects(o, n);
                 }
             }
-            catch
+            catch (Exception e)
             {
+                Console.Error.WriteLine(e.Message);
             }
 
             info.OutputOK(new
