@@ -23,6 +23,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class BackupDefaults : IRESTMethodGET
     {
+        
+		private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<BackupDefaults>();
+
         public void GET(string key, RequestInfo info)
         {
             // Start with a scratch object
@@ -45,7 +48,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e.Message);
+                Library.Logging.Log.WriteErrorMessage(LOGTAG, "BackupDefaultsError", e, "Failed to locate embeded backup defaults");
             }
 
             try
@@ -62,7 +65,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e.Message);
+                Library.Logging.Log.WriteErrorMessage(LOGTAG, "BackupDefaultsError", e, "Failed to process newbackup.json");
             }
 
             info.OutputOK(new
