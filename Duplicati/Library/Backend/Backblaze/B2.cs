@@ -1,4 +1,6 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+﻿using System.Net.Http.Headers;
+using System.Net.Http;
+//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -28,7 +30,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Backblaze
 {
-    public class B2 : IBackend, IStreamingBackend
+    public class B2 : IBackend
     {
         private const string B2_ID_OPTION = "b2-accountid";
         private const string B2_KEY_OPTION = "b2-applicationkey";
@@ -114,63 +116,60 @@ namespace Duplicati.Library.Backend.Backblaze
             }
 		}
 
-        private BucketEntity Bucket
+        private async Task<BucketEntity> GetBucketAsync(CancellationToken cancelToken)
         {
-            get
+            if (m_bucket == null)
             {
+                var buckets = await m_helper.PostAndGetJSONDataAsync<ListBucketsResponse>(
+                    string.Format("{0}/b2api/v1/b2_list_buckets", await m_helper.GetAPIUrlAsync(cancelToken)),
+                    new ListBucketsRequest() {
+                        AccountID = await m_helper.GetAccountIDAsync(cancelToken)
+                    },
+                    null,
+                    cancelToken
+                );
+
+                if (buckets != null && buckets.Buckets != null)
+                    m_bucket = buckets.Buckets.FirstOrDefault(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase));
+
                 if (m_bucket == null)
-                {
-                    var buckets = m_helper.PostAndGetJSONData<ListBucketsResponse>(
-                        string.Format("{0}/b2api/v1/b2_list_buckets", m_helper.APIUrl),
-                        new ListBucketsRequest() {
-                            AccountID = m_helper.AccountID
-                        }
-                    );
-
-                    if (buckets != null && buckets.Buckets != null)
-                        m_bucket = buckets.Buckets.FirstOrDefault(x => string.Equals(x.BucketName, m_bucketname, StringComparison.OrdinalIgnoreCase));
-
-                    if (m_bucket == null)
-                        throw new FolderMissingException();
-                }
-
-                return m_bucket;
+                    throw new FolderMissingException();
             }
+
+            return m_bucket;
         }
 
-        private UploadUrlResponse UploadUrlData
+        private async Task<UploadUrlResponse> GetUploadUrlDataAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_uploadUrl == null)
-                    m_uploadUrl = m_helper.PostAndGetJSONData<UploadUrlResponse>(
-                        string.Format("{0}/b2api/v1/b2_get_upload_url", m_helper.APIUrl),
-                        new UploadUrlRequest() { BucketID = Bucket.BucketID }
-                    );
+            if (m_uploadUrl == null)
+                m_uploadUrl = await m_helper.PostAndGetJSONDataAsync<UploadUrlResponse>(
+                    string.Format("{0}/b2api/v1/b2_get_upload_url", await m_helper.GetAPIUrlAsync(cancelToken)),
+                    new UploadUrlRequest() { BucketID = (await GetBucketAsync(cancelToken)).BucketID },
+                    null,
+                    cancelToken
+                );
 
-                return m_uploadUrl;
-            }
+            return m_uploadUrl;
         }
 
-        private string GetFileID(string filename)
+        private async Task<string> GetFileIDAsync(string filename, CancellationToken cancelToken)
         {
             if (m_filecache != null && m_filecache.ContainsKey(filename))
                 return m_filecache[filename].OrderByDescending(x => x.UploadTimestamp).First().FileID;
 
-            List();
+            await ListAsync(cancelToken);
+
             if (m_filecache.ContainsKey(filename))
                 return m_filecache[filename].OrderByDescending(x => x.UploadTimestamp).First().FileID;
 
             throw new FileMissingException();
         }
 
-        private string DownloadUrl {
-            get {
-                if (string.IsNullOrEmpty(m_downloadUrl)) {
-                    return m_helper.DownloadUrl;
-                } else {
-                    return m_downloadUrl;
-                }
+        private async Task<string> GetDownloadUrlAsync(CancellationToken cancelToken) {
+            if (string.IsNullOrEmpty(m_downloadUrl)) {
+                return await m_helper.GetDownloadUrlAsync(cancelToken);
+            } else {
+                return m_downloadUrl;
             }
         }
 
@@ -229,33 +228,30 @@ namespace Duplicati.Library.Backend.Backblaze
             }
 
             if (m_filecache == null)
-                List();
+                await ListAsync(cancelToken);
 
             try
             {
+                var updata = await GetUploadUrlDataAsync(cancelToken);
                 var fileinfo = await m_helper.GetJSONDataAsync<UploadFileResponse>(
-                    UploadUrlData.UploadUrl,
-                    cancelToken,
+                    updata.UploadUrl,                    
                     req =>
                     {
-                        req.Method = "POST";
-                        req.Headers["Authorization"] = UploadUrlData.AuthorizationToken;
-                        req.Headers["X-Bz-Content-Sha1"] = sha1;
-                        req.Headers["X-Bz-File-Name"] = m_urlencodedprefix + Utility.Uri.UrlPathEncode(remotename);
-                        req.ContentType = "application/octet-stream";
-                        req.ContentLength = stream.Length;
+                        req.Method = new HttpMethod("POST");
+                        req.Headers.Add("Authorization", updata.AuthorizationToken);
+                        req.Headers.Add("X-Bz-Content-Sha1", sha1);
+                        req.Headers.Add("X-Bz-File-Name", m_urlencodedprefix + Utility.Uri.UrlPathEncode(remotename));
+                        var body = new StreamContent(stream);
+                        body.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+                        body.Headers.ContentLength = stream.Length;
+                        req.Content = body;
                     },
-
-                    async (req, reqCancelToken) =>
-                    {
-                        using (var rs = req.GetRequestStream())
-                            await Utility.Utility.CopyStreamAsync(stream, rs, reqCancelToken);
-                    }
+                    cancelToken
                 ).ConfigureAwait(false);
 
                 // Delete old versions
                 if (m_filecache.ContainsKey(remotename))
-                    Delete(remotename);
+                    await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);;
 
                 m_filecache[remotename] = new List<FileEntity>();                
                 m_filecache[remotename].Add(new FileEntity() {
@@ -282,35 +278,34 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            AsyncHttpRequest req;
+            HttpRequestMessage req;
             if (m_filecache == null || !m_filecache.ContainsKey(remotename))
-                List();
+                await ListAsync(cancelToken);
 
             if (m_filecache != null && m_filecache.ContainsKey(remotename))
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", DownloadUrl, Library.Utility.Uri.UrlEncode(GetFileID(remotename)))));
+                req = await m_helper.CreateRequestAsync(string.Format("{0}/b2api/v1/b2_download_file_by_id?fileId={1}", await GetDownloadUrlAsync(cancelToken), Library.Utility.Uri.UrlEncode(await GetFileIDAsync(remotename, cancelToken))), null , cancelToken);
             else
-                req = new AsyncHttpRequest(m_helper.CreateRequest(string.Format("{0}/{1}{2}", DownloadUrl, m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename))));
+                req = await m_helper.CreateRequestAsync(string.Format("{0}/{1}{2}", await GetDownloadUrlAsync(cancelToken), m_urlencodedprefix, Library.Utility.Uri.UrlPathEncode(remotename)), null, cancelToken);
 
             try
             {
-                using(var resp = req.GetResponse())
-                using(var rs = req.GetResponseStream())
-                    Library.Utility.Utility.CopyStream(rs, stream);
+                using(var resp =  await m_helper.SendAsync(req, cancelToken))
+                    await Duplicati.Library.Utility.Utility.CopyStreamAsync(await resp.Content.ReadAsStreamAsync(), stream, cancelToken);
             }
             catch (Exception ex)
             {
                 if (B2AuthHelper.GetExceptionStatusCode(ex) == HttpStatusCode.NotFound)
                     throw new FileMissingException();
 
-                B2AuthHelper.AttemptParseAndThrowException(ex);
+                await B2AuthHelper.AttemptParseAndThrowExceptionAsync(ex);
 
                 throw;
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        public async Task<IList<IFileEntry>> ListAsync(CancellationToken cancelToken)
         {
             m_filecache = null;
             var cache = new Dictionary<string, List<FileEntity>>();
@@ -318,15 +313,17 @@ namespace Duplicati.Library.Backend.Backblaze
             string nextFileName = null;
             do
             {
-                var resp = m_helper.PostAndGetJSONData<ListFilesResponse>(
-                    string.Format("{0}/b2api/v1/b2_list_file_versions", m_helper.APIUrl),
+                var resp = await m_helper.PostAndGetJSONDataAsync<ListFilesResponse>(
+                    string.Format("{0}/b2api/v1/b2_list_file_versions", await m_helper.GetAPIUrlAsync(cancelToken)),
                     new ListFilesRequest() {
-                        BucketID = Bucket.BucketID,
+                        BucketID = (await GetBucketAsync(cancelToken)).BucketID,
                         MaxFileCount = m_pagesize,
                         Prefix = m_prefix,
                         StartFileID = nextFileID,
                         StartFileName = nextFileName
-                    }
+                    },
+                    null,
+                    cancelToken
                 );
 
                 nextFileID = resp.NextFileID;
@@ -364,35 +361,25 @@ namespace Duplicati.Library.Backend.Backblaze
                 ).ToList();
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
-        {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                return PutAsync(remotename, fs, cancelToken);
-        }
-
-        public void Get(string remotename, string filename)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
-        }
-
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 if (m_filecache == null || !m_filecache.ContainsKey(remotename))
-                    List();
+                    await ListAsync(cancelToken);
 
                 if (!m_filecache.ContainsKey(remotename))
                     throw new FileMissingException();
                 
                 foreach(var n in m_filecache[remotename].OrderBy(x => x.UploadTimestamp))
-                    m_helper.PostAndGetJSONData<DeleteResponse>(
-                        string.Format("{0}/b2api/v1/b2_delete_file_version", m_helper.APIUrl),
+                    await m_helper.PostAndGetJSONDataAsync<DeleteResponse>(
+                        string.Format("{0}/b2api/v1/b2_delete_file_version", await m_helper.GetAPIUrlAsync(cancelToken)),
                         new DeleteRequest() {
                             FileName = m_prefix + remotename,
                             FileID = n.FileID
-                        }
+                        },
+                        null,
+                        cancelToken
                     );
 
                 m_filecache[remotename].Clear();
@@ -404,20 +391,20 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public void Test()
-        {
-            this.TestList();
-        }
+        public Task TestAsync(CancellationToken cancelToken)
+            => this.TestListAsync(cancelToken);
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_bucket = m_helper.PostAndGetJSONData<BucketEntity>(
-                string.Format("{0}/b2api/v1/b2_create_bucket", m_helper.APIUrl),
+            m_bucket = await m_helper.PostAndGetJSONDataAsync<BucketEntity>(
+                string.Format("{0}/b2api/v1/b2_create_bucket", await m_helper.GetAPIUrlAsync(cancelToken)),
                 new BucketEntity() {
-                    AccountID = m_helper.AccountID,
+                    AccountID = await m_helper.GetAccountIDAsync(cancelToken),
                     BucketName = m_bucketname,
                     BucketType = m_bucketType
-                }
+                },
+                null,
+                cancelToken
             );
         }
 
@@ -440,6 +427,9 @@ namespace Duplicati.Library.Backend.Backblaze
         {
             get { return new string[] { new System.Uri(B2AuthHelper.AUTH_URL).Host, m_helper?.APIDnsName, m_helper?.DownloadDnsName} ; }
         }
+
+        public bool SupportsStreaming => true;
+
 
         public void Dispose()
         {

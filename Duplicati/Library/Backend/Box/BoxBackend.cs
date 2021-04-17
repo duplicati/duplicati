@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend.Box
 {
     // ReSharper disable once ClassNeverInstantiated.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class BoxBackend : IBackend, IStreamingBackend
+    public class BoxBackend : IBackend, IBackendPagination
     {
 		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
 
@@ -55,17 +55,14 @@ namespace Duplicati.Library.Backend.Box
                 AutoAuthHeader = true;
             }
 
-            protected override void ParseException(Exception ex)
+            protected override async Task ParseExceptionAsync(Exception ex)
             {
                 Exception newex = null;
                 try
                 {
-                    if (ex is WebException exception && exception.Response is HttpWebResponse hs)
+                    if (ex is HttpRequestStatusException exception)
                     {
-                        string rawdata = null;
-                        using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
-                        using(var sr = new System.IO.StreamReader(rs))
-                            rawdata = sr.ReadToEnd();
+                        var rawdata = await exception.Response.Content.ReadAsStringAsync();
 
                         if (string.IsNullOrWhiteSpace(rawdata))
                             return;
@@ -113,32 +110,53 @@ namespace Duplicati.Library.Backend.Box
             m_oauth = new BoxHelper(authid);
         }
 
-        private string CurrentFolder
+        private async Task<string> GetCurrentFolderAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_currentfolder == null)
-                    GetCurrentFolder(false);
-                
-                return m_currentfolder;
-            }
+            if (m_currentfolder == null)
+                await GetCurrentFolderAsync(false, cancelToken);
+            
+            return m_currentfolder;
         }
 
-        private void GetCurrentFolder(bool create)
+        // Include the async enumerable library instead?
+
+        private static async Task<T> FirstOrDefaultAsync<T>(IAsyncEnumerable<T> src, Func<T, bool> predicate = null)
+        {
+            await foreach(var x in src)
+                if (predicate == null || predicate(x))
+                    return x;
+
+            return default(T);
+        }
+
+        private static async Task<T> LastOrDefaultAsync<T>(IAsyncEnumerable<T> src, Func<T, bool> predicate = null)
+        {
+            var res = default(T);
+            await foreach(var x in src)
+                if (predicate == null || predicate(x))
+                    res = x;
+
+            return res;
+        }
+
+
+        private async Task GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
         {
             var parentid = "0";
 
             foreach(var p in m_path.Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries))
             {
-                var el = (MiniFolder)PagedFileListResponse(parentid, true).FirstOrDefault(x => x.Name == p);
+                var el = (MiniFolder)await FirstOrDefaultAsync(PagedFileListResponseAsync(parentid, true, cancelToken), x => x.Name == p);
                 if (el == null)
                 {
                     if (!create)
                         throw new FolderMissingException();
 
-                    el = m_oauth.PostAndGetJSONData<ListFolderResponse>(
+                    el = await m_oauth.PostAndGetJSONDataAsync<ListFolderResponse>(
                         string.Format("{0}/folders", BOX_API_URL),
-                        new CreateItemRequest() { Name = p, Parent = new IDReference() { ID = parentid } }
+                        new CreateItemRequest() { Name = p, Parent = new IDReference() { ID = parentid } },
+                        null,
+                        cancelToken
                     );
                 }
 
@@ -148,13 +166,13 @@ namespace Duplicati.Library.Backend.Box
             m_currentfolder = parentid;
         }
 
-        private string GetFileID(string name)
+        private async Task<string> GetFileIDAsync(string name, CancellationToken cancelToken)
         {
             if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
 
             // Make sure we enumerate this, otherwise the m_filecache is empty.
-            PagedFileListResponse(CurrentFolder, false).LastOrDefault();
+            await LastOrDefaultAsync(PagedFileListResponseAsync(await GetCurrentFolderAsync(cancelToken), false, cancelToken));
 
             if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
@@ -162,7 +180,7 @@ namespace Duplicati.Library.Backend.Box
             throw new FileMissingException();
         }
 
-        private IEnumerable<FileEntity> PagedFileListResponse(string parentid, bool onlyfolders)
+        private async IAsyncEnumerable<FileEntity> PagedFileListResponseAsync(string parentid, bool onlyfolders, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancelToken)
         {
             var offset = 0;
             var done = false;
@@ -172,7 +190,7 @@ namespace Duplicati.Library.Backend.Box
             
             do
             {
-                var resp = m_oauth.GetJSONData<ShortListResponse>(string.Format("{0}/folders/{1}/items?limit={2}&offset={3}&fields=name,size,modified_at", BOX_API_URL, parentid, PAGE_SIZE, offset));
+                var resp = await m_oauth.GetJSONDataAsync<ShortListResponse>(string.Format("{0}/folders/{1}/items?limit={2}&offset={3}&fields=name,size,modified_at", BOX_API_URL, parentid, PAGE_SIZE, offset), cancelToken);
 
                 if (resp.Entries == null || resp.Entries.Length == 0)
                     break;
@@ -208,12 +226,12 @@ namespace Duplicati.Library.Backend.Box
             var createreq = new CreateItemRequest() {
                 Name = remotename,
                 Parent = new IDReference() {
-                    ID = CurrentFolder
+                    ID = await GetCurrentFolderAsync(cancelToken)
                 }
             };
 
             if (m_filecache.Count == 0)
-                PagedFileListResponse(CurrentFolder, false);
+                await LastOrDefaultAsync(PagedFileListResponseAsync(await GetCurrentFolderAsync(cancelToken), false, cancelToken));
 
             var existing = m_filecache.ContainsKey(remotename);
 
@@ -242,47 +260,31 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using (var resp = m_oauth.GetResponse(string.Format("{0}/files/{1}/content", BOX_API_URL, GetFileID(remotename))))
-            using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-                Library.Utility.Utility.CopyStream(rs, stream);
+            using (var resp = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/content", BOX_API_URL, await GetFileIDAsync(remotename, cancelToken)), null, null, cancelToken))
+            using (var rs = await resp.Content.ReadAsStreamAsync())
+                await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken);
         }
 
         #endregion
 
         #region IBackend implementation
 
-        public System.Collections.Generic.IEnumerable<IFileEntry> List()
-        {
-            return
-                from n in PagedFileListResponse(CurrentFolder, false)
-                select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
-        }
+        public Task<IList<IFileEntry>> ListAsync(CancellationToken cancelToken)
+            => this.CondensePaginatedListAsync(cancelToken);
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                return PutAsync(remotename, fs, cancelToken);
-        }
-
-        public void Get(string remotename, string filename)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
-        }
-
-        public void Delete(string remotename)
-        {
-            var fileid = GetFileID(remotename);
+            var fileid = await GetFileIDAsync(remotename, cancelToken);
             try
             {
-                using(var r = m_oauth.GetResponse(string.Format("{0}/files/{1}", BOX_API_URL, fileid), null, "DELETE"))
+                using(var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}", BOX_API_URL, fileid), null, "DELETE", cancelToken))
                 {
                 }
 
                 if (m_deleteFromTrash)
-                    using(var r = m_oauth.GetResponse(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), null, "DELETE"))
+                    using(var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), null, "DELETE", cancelToken))
                     {
                     }
             }
@@ -293,14 +295,12 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public void Test()
-        {
-            this.TestList();
-        }
+        public Task TestAsync(CancellationToken cancelToken)
+            => this.TestListAsync(cancelToken);
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            GetCurrentFolder(true);
+            await GetCurrentFolderAsync(true, cancelToken);
         }
 
         public string DisplayName
@@ -342,12 +342,20 @@ namespace Duplicati.Library.Backend.Box
             get { return new string[] { new Uri(BOX_API_URL).Host, new Uri(BOX_UPLOAD_URL).Host }; }
         }
 
+        public bool SupportsStreaming => true;
+
         #endregion
 
         #region IDisposable implementation
 
         public void Dispose()
         {
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListEnumerableAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancelToken)            
+        {
+            await foreach(var p in PagedFileListResponseAsync(await GetCurrentFolderAsync(cancelToken), false, cancelToken))
+                yield return (IFileEntry)p;
         }
 
         #endregion

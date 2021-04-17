@@ -83,30 +83,25 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container = blobClient.GetContainerReference(containerName);
         }
 
-        public void AddContainer()
+        public async Task AddContainerAsync(CancellationToken cancelToken)
         {
-            _container.CreateAsync().GetAwaiter().GetResult();
-            _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off });
+            await _container.CreateAsync(default(BlobContainerPublicAccessType), default(BlobRequestOptions), new OperationContext(), cancelToken);
+            await _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off }, default(AccessCondition), default(BlobRequestOptions), new OperationContext(), cancelToken);
         }
 
-        public virtual void GetFileStream(string keyName, Stream target)
-        {
-            _container.GetBlockBlobReference(keyName).DownloadToStreamAsync(target).GetAwaiter().GetResult();
-        }
+        public virtual Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancelToken)
+            => _container.GetBlockBlobReference(keyName).DownloadToStreamAsync(target, default(AccessCondition), default(BlobRequestOptions), new OperationContext(), cancelToken);
 
-        public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
-        {
-            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default(AccessCondition), default(BlobRequestOptions), new OperationContext(), cancelToken);
-        }
 
-        public void DeleteObject(string keyName)
-        {
-            _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync().GetAwaiter().GetResult();
-        }
+        public virtual Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
+            => _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default(AccessCondition), default(BlobRequestOptions), new OperationContext(), cancelToken);
 
-        private async Task<List<IListBlobItem>> ListContainerEntriesAsync()
+        public Task DeleteObjectAsync(string keyName, CancellationToken cancelToken)
+            =>  _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync(default(DeleteSnapshotsOption), default(AccessCondition), default(BlobRequestOptions), new OperationContext(), cancelToken);
+
+        private async Task<List<IListBlobItem>> ListBlobEntriesAsync(CancellationToken cancelToken)
         {
-            var segment = await _container.ListBlobsSegmentedAsync(null);
+            var segment = await _container.ListBlobsSegmentedAsync(null, false, default(BlobListingDetails), null, null, default(BlobRequestOptions), new OperationContext(), cancelToken);
             var list = new List<IListBlobItem>();
 
             list.AddRange(segment.Results);
@@ -114,16 +109,16 @@ namespace Duplicati.Library.Backend.AzureBlob
             while (segment.ContinuationToken != null)
             {
                 // TODO-DNC do we need BlobListingDetails.Metadata ???
-                segment = await _container.ListBlobsSegmentedAsync(segment.ContinuationToken);
+                segment = await _container.ListBlobsSegmentedAsync(null, false, default(BlobListingDetails), null,  segment.ContinuationToken, default(BlobRequestOptions), new OperationContext(), cancelToken);
                 list.AddRange(segment.Results);
             }
 
             return list;
         }
 
-        public virtual List<IFileEntry> ListContainerEntries()
+        public virtual async Task<List<IFileEntry>> ListContainerEntriesAsync(CancellationToken cancelToken)
         {
-            var listBlobItems = ListContainerEntriesAsync().GetAwaiter().GetResult();
+            var listBlobItems = await ListBlobEntriesAsync(cancelToken);
             try
             {
                 return listBlobItems.Select(x =>

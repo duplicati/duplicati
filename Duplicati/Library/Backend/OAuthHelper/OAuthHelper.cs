@@ -1,4 +1,6 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+﻿using System.Linq;
+using System.Threading;
+//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -18,7 +20,9 @@ using System;
 using System.Net;
 using Duplicati.Library.Utility;
 using System.Collections.Generic;
-using System.Web;
+using System.Net.Http;
+using System.Threading.Tasks;
+
 namespace Duplicati.Library
 {
 	/// <summary>
@@ -94,87 +98,86 @@ namespace Duplicati.Library
                 throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl), "MissingAuthID");
         }
 
-        public T GetTokenResponse<T>()
+        public async Task<T> GetTokenResponseAsync<T>(CancellationToken cancelToken)
         {
-            var req = CreateRequest(OAuthContextSettings.ServerURL);
-            req.Headers["X-AuthID"] = m_authid;
-            req.Timeout = (int)TimeSpan.FromSeconds(25).TotalMilliseconds;
+            var req = await CreateRequestAsync(OAuthContextSettings.ServerURL, null, cancelToken);
+            req.Headers.Add("X-AuthID",  m_authid);
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+            if (cancelToken.CanBeCanceled)
+                cancelToken.Register(() => cts.Cancel());
 
-            return ReadJSONResponse<T>(req);
+            return await ReadJSONResponseAsync<T>(req, cts.Token);
         }
 
-        public override HttpWebRequest CreateRequest(string url, string method = null)
+        public override Task<HttpRequestMessage> CreateRequestAsync(string url, string method, CancellationToken cancelToken)
         {
-            return this.CreateRequest(url, method, false);
+            return this.CreateRequestAsync(url, method, false, cancelToken);
         }
 
-        public HttpWebRequest CreateRequest(string url, string method, bool noAuthorization)
+        public async Task<HttpRequestMessage> CreateRequestAsync(string url, string method, bool noAuthorization, CancellationToken cancelToken)
         {
-            var r = base.CreateRequest(url, method);
+            var r = await base.CreateRequestAsync(url, method, cancelToken);
             if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url))
-                r.Headers["Authorization"] = string.Format("Bearer {0}", AccessToken);
+                r.Headers.Add("Authorization", string.Format("Bearer {0}", GetAccessTokenAsync(new CancellationTokenSource(TimeSpan.FromSeconds(25)).Token).Result));
             return r;
         } 
 
-        public string AccessToken
+        public async Task<string> GetAccessTokenAsync(CancellationToken cancelToken)
         {
-            get
+            if (AccessTokenOnly)
+                return m_authid;
+
+            if (m_token == null || m_tokenExpires < DateTime.UtcNow)
             {
-                if (AccessTokenOnly)
-                    return m_authid;
+                var retries = 0;
 
-                if (m_token == null || m_tokenExpires < DateTime.UtcNow)
+                while(true)
                 {
-                    var retries = 0;
-
-                    while(true)
+                    try
                     {
-                        try
-                        {
-                            var res = GetTokenResponse<OAuth_Service_Response>();
+                        var res = await GetTokenResponseAsync<OAuth_Service_Response>(cancelToken);
 
-                            m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
-                            if (!string.IsNullOrWhiteSpace(res.v2_authid))
-                                m_authid = res.v2_authid;
-                            return m_token = res.access_token;
-                        }
-                        catch (Exception ex)
+                        m_tokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
+                        if (!string.IsNullOrWhiteSpace(res.v2_authid))
+                            m_authid = res.v2_authid;
+                        return m_token = res.access_token;
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = ex.Message;
+                        var clienterror = false;
+                        if (ex is HttpRequestStatusException exception)
                         {
-                            var msg = ex.Message;
-                            var clienterror = false;
-                            if (ex is WebException exception)
+                            var resp = exception.Response;
+                            if (resp != null)
                             {
-                                var resp = exception.Response as HttpWebResponse;
-                                if (resp != null)
+                                msg = resp.Headers.GetValues("X-Reason").FirstOrDefault();
+                                if (string.IsNullOrWhiteSpace(msg))
+                                    msg = resp.ReasonPhrase;
+
+                                if (resp.StatusCode == HttpStatusCode.ServiceUnavailable)
                                 {
-                                    msg = resp.Headers["X-Reason"];
-                                    if (string.IsNullOrWhiteSpace(msg))
-                                        msg = resp.StatusDescription;
-
-                                    if (resp.StatusCode == HttpStatusCode.ServiceUnavailable)
-                                    {
-                                        if (msg == resp.StatusDescription)
-                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError, "OAuthOverQuotaError");
-                                        else
-                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", exception);
-                                    }
-
-                                    //Fail faster on client errors
-                                    clienterror = (int)resp.StatusCode >= 400 && (int)resp.StatusCode <= 499;
+                                    if (msg == resp.ReasonPhrase)
+                                        throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError, "OAuthOverQuotaError");
+                                    else
+                                        throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", exception);
                                 }
+
+                                //Fail faster on client errors
+                                clienterror = (int)resp.StatusCode >= 400 && (int)resp.StatusCode <= 499;
                             }
-
-                            if (retries >= (clienterror ? 1 : 5))
-                                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
-
-                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
-                            retries++;
                         }
+
+                        if (retries >= (clienterror ? 1 : 5))
+                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
+
+                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                        retries++;
                     }
                 }
-
-                return m_token;
             }
+
+            return m_token;
         }
 
         public void ThrowOverQuotaError()

@@ -1,4 +1,5 @@
-﻿//  Copyright (C) 2018, The Duplicati Team
+﻿using System;
+//  Copyright (C) 2018, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -46,14 +47,14 @@ namespace Duplicati.Library
             return request;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (!request.Properties.ContainsKey(DISABLE_AUTHENTICATION_PROPERTY))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.m_oauth.AccessToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await this.m_oauth.GetAccessTokenAsync(cancellationToken));
             }
 
-            return base.SendAsync(request, cancellationToken);
+            return await base.SendAsync(request, cancellationToken);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class AzureBlobBackend : IStreamingBackend
+    public class AzureBlobBackend : IBackend
     {
         private readonly AzureBlobWrapper _azureBlob;
 
@@ -84,44 +84,17 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return "azure"; }
         }
 
-        public IEnumerable<IFileEntry> List()
-        {
-            return _azureBlob.ListContainerEntries();
-        }
+        public async Task<IList<IFileEntry>> ListAsync(CancellationToken cancelToken)
+            => await _azureBlob.ListContainerEntriesAsync(cancelToken);
 
-        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
-        {
-            using (var fs = File.Open(localname,
-                FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                return PutAsync(remotename, fs, cancelToken);
-            }
-        }
+        public Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
+            => _azureBlob.AddFileStream(remotename, input, cancelToken);
 
-        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
-        {
-            await _azureBlob.AddFileStream(remotename, input, cancelToken);
-        }
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
+            => _azureBlob.GetFileStreamAsync(remotename, output, cancelToken);
 
-        public void Get(string remotename, string localname)
-        {
-            using (var fs = File.Open(localname,
-                FileMode.Create, FileAccess.Write,
-                FileShare.None))
-            {
-                Get(remotename, fs);
-            }
-        }
-
-        public void Get(string remotename, Stream output)
-        {
-            _azureBlob.GetFileStream(remotename, output);
-        }
-
-        public void Delete(string remotename)
-        {
-            _azureBlob.DeleteObject(remotename);
-        }
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
+            => _azureBlob.DeleteObjectAsync(remotename, cancelToken);
 
         public IList<ICommandLineArgument> SupportedCommands
         {
@@ -181,15 +154,13 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return _azureBlob.DnsNames; }
         }
 
-        public void Test()
-        {
-            this.TestList();
-        }
+        public bool SupportsStreaming => true;
 
-        public void CreateFolder()
-        {
-            _azureBlob.AddContainer();
-        }
+        public Task TestAsync(CancellationToken cancelToken)
+            => this.TestListAsync(cancelToken);
+
+        public Task CreateFolderAsync(CancellationToken cancelToken)
+            => _azureBlob.AddContainerAsync(cancelToken);
 
         public void Dispose()
         {

@@ -2,7 +2,7 @@ using System;
 using Duplicati.Library.Localization.Short;
 using System.Collections.Generic;
 
-namespace Duplicati.Library.Backend.Strings {
+namespace Duplicati.Library.Backend.FTP.Strings {
     internal static class FTPBackend {
         public static string Description { get { return LC.L(@"This backend can read and write data to an FTP based backend. Allowed formats are ""ftp://hostname/folder"" or ""ftp://username:password@hostname/folder"""); } }
         public static string DescriptionFTPActiveLong { get { return LC.L(@"If this flag is set, the FTP connection is made in active mode. Even if the ""ftp-passive"" flag is also set, the connection will be made in active mode"); } }

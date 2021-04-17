@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class FTP : IBackend, IStreamingBackend
+    public class FTP : IBackend
     {
         private System.Net.NetworkCredential m_userInfo;
         private readonly string m_url;
@@ -167,19 +167,28 @@ namespace Duplicati.Library.Backend
             get { return "ftp"; }
         }
 
-        private T HandleListExceptions<T>(Func<T> func, System.Net.FtpWebRequest req)
+        private async Task<T> HandleListExceptionsAsync<T>(Func<T> func, System.Net.FtpWebRequest req)
         {
             T ret = default(T);
-            Action action = () => ret = func();
-            HandleListExceptions(action, req);
+            Func<Task> action = () => Task.FromResult(ret = func());
+            await HandleListExceptionsAsync(action, req);
             return ret;
         }
 
-        private void HandleListExceptions(Action action, System.Net.FtpWebRequest req)
+
+        private async Task<T> HandleListExceptionsAsync<T>(Func<Task<T>> func, System.Net.FtpWebRequest req)
+        {
+            T ret = default(T);
+            Func<Task> action = async () => ret = await func();
+            await HandleListExceptionsAsync(action, req);
+            return ret;
+        }
+
+        private async Task HandleListExceptionsAsync(Func<Task> action, System.Net.FtpWebRequest req)
         {
             try
             {
-                action();
+                await action();
             }
             catch (System.Net.WebException wex)
             {
@@ -190,12 +199,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IEnumerable<IFileEntry> List()
-        {
-            return List("");
-        }
+        public IAsyncEnumerable<IFileEntry> ListEnumerableAsync(CancellationToken cancelToken)
+            => ListEnumerableAsync("", cancelToken);
 
-        public IEnumerable<IFileEntry> List(string filename)
+        public async IAsyncEnumerable<IFileEntry> ListEnumerableAsync(string filename, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancelToken)
         {
             var req = CreateRequest(filename);
             req.Method = System.Net.WebRequestMethods.Ftp.ListDirectoryDetails;
@@ -207,18 +214,17 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                HandleListExceptions(
-                    () =>
+                await HandleListExceptionsAsync(
+                    async () =>
                         {
-                            var areq = new Utility.AsyncHttpRequest(req);
-                            resp = areq.GetResponse();
-                            rs = areq.GetResponseStream();
+                            resp = await req.GetResponseAsync();
+                            rs = resp.GetResponseStream();
                             sr = new System.IO.StreamReader(new StreamReadHelper(rs));
                         },
                     req);
                 
                 string line;
-                while ((line = HandleListExceptions(sr.ReadLine, req)) != null)
+                while ((line = await HandleListExceptionsAsync(sr.ReadLine, req)) != null)
                 {
                     FileEntry f = ParseLine(line);
                     if (f != null)
@@ -267,14 +273,14 @@ namespace Duplicati.Library.Backend
                 try { streamLen = input.Length; }
                 catch {}
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream rs = areq.GetRequestStream(streamLen))
+                using (System.IO.Stream rs = await req.GetRequestStreamAsync())
                     await Utility.Utility.CopyStreamAsync(input, rs, true, cancelToken, m_copybuffer).ConfigureAwait(false);
                 
                 if (m_listVerify)
                 {
-                    IEnumerable<IFileEntry> files = List(remotename);
-                    foreach(IFileEntry fe in files)
+                    var filenames = new List<string>();
+                    await foreach(IFileEntry fe in ListEnumerableAsync(cancelToken))
+                    {
                         if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fe.Name.EndsWith("\\" + remotename, StringComparison.Ordinal)) 
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
@@ -282,8 +288,10 @@ namespace Duplicati.Library.Backend
 
                             throw new Exception(Strings.FTPBackend.ListVerifySizeFailure(remotename, fe.Size, streamLen));
                         } 
+                        filenames.Add(fe.Name);
+                    }
 
-                    throw new Exception(Strings.FTPBackend.ListVerifyFailure(remotename, files.Select(n => n.Name)));
+                    throw new Exception(Strings.FTPBackend.ListVerifyFailure(remotename, filenames));
                 }
                 
             }
@@ -296,36 +304,22 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                return PutAsync(remotename, fs, cancelToken);
-        }
-
-        public void Get(string remotename, System.IO.Stream output)
+        public async Task GetAsync(string remotename, System.IO.Stream output, CancellationToken cancelToken)
         {
             var req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
             req.UseBinary = true;
 
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var resp = areq.GetResponse())
-            using (var rs = areq.GetResponseStream())
-                Utility.Utility.CopyStream(rs, output, false, m_copybuffer);
+            using (var resp = await req.GetResponseAsync())
+            using (var rs = resp.GetResponseStream())
+                await Utility.Utility.CopyStreamAsync(rs, output, false, cancelToken, m_copybuffer);
         }
 
-        public void Get(string remotename, string localname)
-        {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Get(remotename, fs);
-        }
-
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (areq.GetResponse())
+            using (await req.GetResponseAsync())
             { }
         }
 
@@ -357,18 +351,17 @@ namespace Duplicati.Library.Backend
             get { return new string[] { new Uri(m_url).Host }; }
         }
 
-        public void Test()
-        {
-            this.TestList();
-        }
+        public bool SupportsStreaming => true;
 
-        public void CreateFolder()
+        public Task TestAsync(CancellationToken cancelToken)
+            => this.TestListAsync(cancelToken);
+
+        public async Task CreateFolder()
         {
             System.Net.FtpWebRequest req = CreateRequest("", true);
             req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
             req.KeepAlive = false;
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (areq.GetResponse())
+            using (await req.GetResponseAsync())
             { }
         }
 
@@ -408,6 +401,16 @@ namespace Duplicati.Library.Backend
                 req.EnableSsl = m_useSSL;
 
             return req;
+        }
+
+        public Task<IList<IFileEntry>> ListAsync(CancellationToken cancelToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task CreateFolderAsync(CancellationToken cancelToken)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>

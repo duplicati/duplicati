@@ -19,63 +19,66 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Http.Headers;
 
 namespace Duplicati.Library
 {
-    public class JSONWebHelper
+    public class JSONWebHelper : IDisposable
     {
+        /// <summary>
+        /// The User-Agent default value
+        /// </summary>
         public static readonly string USER_AGENT = string.Format("Duplicati v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+        /// <summary>
+        /// The currently set User-Agent value
+        /// </summary>
         private readonly string m_user_agent;
+        /// <summary>
+        /// The URL to perform the OAuth login
+        /// </summary>
         public string OAuthLoginUrl { get; protected set; }
+        /// <summary>
+        /// Gets the current User-Agent value
+        /// </summary>
         public string UserAgent { get { return m_user_agent; } }
-        public event Action<HttpWebRequest> CreateSetupHelper;
-        private static readonly byte[] crlf = Encoding.UTF8.GetBytes("\r\n");
+        /// <summary>
+        /// A callback method to help set up the request
+        /// </summary>
+        public event Action<HttpRequestMessage> CreateSetupHelper;
+        /// <summary>
+        /// The internal client used to perform the requests
+        /// </summary>
+        protected readonly HttpClient m_client = new HttpClient();
 
+        /// <summary>
+        /// Constructs a new JSONWebHelper
+        /// </summary>
+        /// <param name="useragent">The User-Agent string to use</param>
         public JSONWebHelper(string useragent = null)
         {
             m_user_agent = useragent ?? USER_AGENT;
         }
 
-        public virtual HttpWebRequest CreateRequest(string url, string method = null)
+        /// <summary>
+        /// Method used to create the request
+        /// </summary>
+        /// <param name="url">The target url</param>
+        /// <param name="method">The method to use</param>
+        /// <returns>A created request</returns>
+        public virtual Task<HttpRequestMessage> CreateRequestAsync(string url, string method, CancellationToken cancelToken)
         {
-            var req = (HttpWebRequest)WebRequest.Create(url);
-            req.UserAgent = UserAgent;
-            if (method != null)
-                req.Method = method;
+            var req = new HttpRequestMessage(new HttpMethod(method ?? "GET"), url);
+            req.Headers.UserAgent.Clear();
+            req.Headers.UserAgent.ParseAdd(UserAgent);
 
             if (CreateSetupHelper != null)
                 CreateSetupHelper(req);
 
-            return req;
-        }
-
-        /// <summary>
-        /// Performs a multipart post and parses the response as JSON
-        /// </summary>
-        /// <returns>The parsed JSON item.</returns>
-        /// <param name="url">The url to post to.</param>
-        /// <param name="parts">The multipart items.</param>
-        /// <typeparam name="T">The return type parameter.</typeparam>
-        public virtual T PostMultipartAndGetJSONData<T>(string url, params MultipartItem[] parts)
-        {
-            return ReadJSONResponse<T>(PostMultipart(url, null, parts));
-        }
-
-        /// <summary>
-        /// Performs a multipart post and parses the response as JSON
-        /// </summary>
-        /// <returns>The parsed JSON item.</returns>
-        /// <param name="url">The url to post to.</param>
-        /// <param name="parts">The multipart items.</param>
-        /// <param name="setup">The optional setup callback method.</param>
-        /// <typeparam name="T">The return type parameter.</typeparam>
-        public virtual T PostMultipartAndGetJSONData<T>(string url, Action<HttpWebRequest> setup = null, params MultipartItem[] parts)
-        {
-            return ReadJSONResponse<T>(PostMultipart(url, setup, parts));
+            return Task.FromResult(req);
         }
 
         /// <summary>
@@ -87,40 +90,20 @@ namespace Duplicati.Library
         /// <param name="cancelToken">Token to cancel the operation.</param>
         /// <param name="parts">The multipart items.</param>
         /// <typeparam name="T">The return type parameter.</typeparam>
-        public virtual async Task<T> PostMultipartAndGetJSONDataAsync<T>(string url, Action<HttpWebRequest> setup, CancellationToken cancelToken, params MultipartItem[] parts)
+        public virtual async Task<T> PostMultipartAndGetJSONDataAsync<T>(string url, Action<HttpRequestMessage> setup, CancellationToken cancelToken, params MultipartItem[] parts)
         {
             var response = await PostMultipartAsync(url, setup, cancelToken, parts).ConfigureAwait(false);
-            return ReadJSONResponse<T>(response);
+            return await ReadJSONResponseAsync<T>(response, cancelToken);
         }
 
         /// <summary>
-        /// Performs a multipart post
+        /// List of protected headers that need special handling to se
         /// </summary>
-        /// <returns>The response.</returns>
-        /// <param name="url">The url to post to.</param>
-        /// <param name="parts">The multipart items.</param>
-        /// <param name="setup">The optional setup callback method.</param>
-        public virtual HttpWebResponse PostMultipart(string url, Action<HttpWebRequest> setup = null, params MultipartItem[] parts)
-        {
-            CreateBoundary(out var boundary, out var bodyTerminator);
-
-            var req = PreparePostMultipart(url, setup, boundary, bodyTerminator, out var headers, parts);
-            var areq = new AsyncHttpRequest(req);
-
-            using (var rs = areq.GetRequestStream())
-            {
-                foreach(var p in headers)
-                {
-                    rs.Write(p.Header, 0, p.Header.Length);
-                    Utility.Utility.CopyStream(p.Part.ContentData, rs);
-                    rs.Write(crlf, 0, crlf.Length);
-                }
-
-                rs.Write(bodyTerminator, 0, bodyTerminator.Length);
-            }
-
-            return GetResponse(areq);
-        }
+        /// <param name="k">The header name</param>
+        /// <returns><c>true</c> if the header is protected; <c>false</c> otherwise</returns>
+        private static bool IsProtectedHeader(string k)
+            => new [] { "Content-Type", "Content-Disposition", "Content-Length" }
+                .Any(x => string.Equals(x, k, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// Performs a multipart post
@@ -130,84 +113,43 @@ namespace Duplicati.Library
         /// <param name="parts">The multipart items.</param>
         /// <param name="setup">The optional setup callback method.</param>
         /// <param name="cancelToken">Token to cancel the operation.</param>
-        public virtual async Task<HttpWebResponse> PostMultipartAsync(string url, Action<HttpWebRequest> setup, CancellationToken cancelToken, params MultipartItem[] parts)
+        public virtual async Task<HttpResponseMessage> PostMultipartAsync(string url, Action<HttpRequestMessage> setup, CancellationToken cancelToken, params MultipartItem[] parts)
         {
-            CreateBoundary(out var boundary, out var bodyTerminator);
-
-            var req = PreparePostMultipart(url, setup, boundary, bodyTerminator, out var headers, parts);
-            var areq = new AsyncHttpRequest(req);
-            var buffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
-
-            using (var rs = areq.GetRequestStream())
+            using(var mpdata = new MultipartFormDataContent(CreateBoundary()))
             {
-                foreach (var p in headers)
+                foreach(var p in parts)
                 {
-                    await rs.WriteAsync(p.Header, 0, p.Header.Length, cancelToken).ConfigureAwait(false);
-                    await Utility.Utility.CopyStreamAsync(p.Part.ContentData, rs, tryRewindSource: true, cancelToken:cancelToken, buf: buffer).ConfigureAwait(false);
-                    await rs.WriteAsync(crlf, 0, crlf.Length, cancelToken).ConfigureAwait(false);
+                    var sc = new StreamContent(p.ContentData);
+                    foreach(var h in p.Headers)
+                        if (!IsProtectedHeader(h.Key))
+                            sc.Headers.Add(h.Key, h.Value);
+
+                    if (p.ContentLength >= 0)
+                        sc.Headers.ContentLength = p.ContentLength;
+
+                    if (!string.IsNullOrWhiteSpace(p.ContentTypeName))
+                        sc.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse(p.Headers["Content-Disposition"]);
+
+                    if (!string.IsNullOrWhiteSpace(p.ContentType))
+                        sc.Headers.ContentType = MediaTypeHeaderValue.Parse(p.ContentType);
+
+                    mpdata.Add(sc);
                 }
 
-                await rs.WriteAsync(bodyTerminator, 0, bodyTerminator.Length, cancelToken).ConfigureAwait(false);
+                var req = await CreateRequestAsync(url, "POST", cancelToken);
+                setup?.Invoke(req);
+
+                req.Content = mpdata;
+
+                return await m_client.SendAsync(req, cancelToken);
             }
-
-            return (HttpWebResponse)(await req.GetResponseAsync().ConfigureAwait(false));
         }
-
-        protected virtual HttpWebRequest PreparePostMultipart(string url, Action<HttpWebRequest> setup, string boundary, byte[] bodyTerminator, out HeaderPart[] headers, params MultipartItem[] parts)
-        {
-            headers =
-                (from p in parts
-                 select new HeaderPart(
-                         Encoding.UTF8.GetBytes(
-                         "--" + boundary + "\r\n"
-                         + string.Join("",
-                             from n in p.Headers
-                             select string.Format("{0}: {1}\r\n", n.Key, n.Value)
-                         ) + "\r\n"),
-                         p)).ToArray();
-
-            var envelopesize = headers.Sum(x => x.Header.Length + crlf.Length) + bodyTerminator.Length;
-            var datasize = parts.Sum(x => x.ContentData.Length);
-
-            var req = CreateRequest(url);
-
-            req.Method = "POST";
-            req.ContentType = "multipart/form-data; boundary=" + boundary;
-            req.ContentLength = envelopesize + datasize;
-
-            setup?.Invoke(req);
-            return req;
-        }
-
-        private static void CreateBoundary(out string boundary, out byte[] bodyterminator)
-        {
-            boundary = "----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N");
-            bodyterminator = Encoding.UTF8.GetBytes("--" + boundary + "--");
-        }
-
 
         /// <summary>
-        /// Executes a web request and json-deserializes the results as the specified type
+        /// Creates a random form bondary string
         /// </summary>
-        /// <returns>The deserialized JSON data.</returns>
-        /// <param name="url">The remote URL</param>
-        /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
-        /// <param name="setupbodyreq">A callback method that can be used to submit data into the body of the request.</param>
-        /// <typeparam name="T">The type of data to return.</typeparam>
-        public virtual T GetJSONData<T>(string url, Action<HttpWebRequest> setup = null, Action<AsyncHttpRequest> setupbodyreq = null)
-        {
-            var req = CreateRequest(url);
-
-            if (setup != null)
-                setup(req);
-
-            var areq = new AsyncHttpRequest(req);
-
-            if (setupbodyreq != null)
-                setupbodyreq(areq);
-
-            return ReadJSONResponse<T>(areq);
-        }
+        private static string CreateBoundary()
+            => "----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N");
 
         /// <summary>
         /// Executes a web request and json-deserializes the results as the specified type
@@ -218,16 +160,24 @@ namespace Duplicati.Library
         /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
         /// <param name="setupbodyreq">A callback method that can be used to submit data into the body of the request.</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
-        public virtual async Task<T> GetJSONDataAsync<T>(string url, CancellationToken cancelToken, Action<HttpWebRequest> setup = null, Func<AsyncHttpRequest, CancellationToken, Task> setupbodyreq = null)
+        public virtual Task<T> GetJSONDataAsync<T>(string url, CancellationToken cancelToken)
+            => GetJSONDataAsync<T>(url, null, cancelToken);
+
+        /// <summary>
+        /// Executes a web request and json-deserializes the results as the specified type
+        /// </summary>
+        /// <returns>The deserialized JSON data.</returns>
+        /// <param name="url">The remote URL</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <param name="setup">A callback method that can be used to customize the request, e.g. by setting the method, content-type and headers.</param>
+        /// <param name="setupbodyreq">A callback method that can be used to submit data into the body of the request.</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
+        public virtual async Task<T> GetJSONDataAsync<T>(string url, Action<HttpRequestMessage> setup, CancellationToken cancelToken)
         {
-            var req = CreateRequest(url);
+            var req = await CreateRequestAsync(url, null, cancelToken);
             setup?.Invoke(req);
 
-            var areq = new AsyncHttpRequest(req);
-            if (setupbodyreq != null)
-                await setupbodyreq(areq, cancelToken).ConfigureAwait(false);
-
-            return await ReadJSONResponseAsync<T>(areq, cancelToken).ConfigureAwait(false);
+            return await ReadJSONResponseAsync<T>(req, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -237,29 +187,36 @@ namespace Duplicati.Library
         /// <param name="url">The remote URL</param>
         /// <param name="item">The data to json-serialize and POST in the request</param>
         /// <param name="method">Alternate HTTP method to use</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
-        public virtual T PostAndGetJSONData<T>(string url, object item, string method = null)
+        public virtual Task<T> PostAndGetJSONDataAsync<T>(string url, object item, string method, CancellationToken cancelToken)
         {
             var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
 
-            return GetJSONData<T>(
+            return GetJSONDataAsync<T>(
                 url,
                 req =>
-                {
-                    req.Method = method ?? "POST";
-                    req.ContentType = "application/json; charset=utf-8";
-                    req.ContentLength = data.Length;
+                {                    
+                    req.Method = new HttpMethod(method ?? "POST");
+                    var sc = new StreamContent(new MemoryStream(data));
+                    sc.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=utf-8"); 
+                    sc.Headers.ContentLength = data.Length;
+                    req.Content = sc;
                 },
-
-                req =>
-                {
-                    using(var rs = req.GetRequestStream())
-                        rs.Write(data, 0, data.Length);
-                }
+                cancelToken
             );
         }
 
-        public virtual T ReadJSONResponse<T>(string url, object requestdata = null, string method = null)
+        /// <summary>
+        /// Performs a POST request with the given data, serialized as JSON, and returns the deserialized JSON result
+        /// </summary>
+        /// <param name="url">The remote URL</param>
+        /// <param name="requestdata">The JSON object</param>
+        /// <param name="method">The alternate method</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
+        /// <returns>The deserialized JSON data.</returns>
+        public virtual Task<T> ReadJSONResponseAsync<T>(string url, object requestdata, string method, CancellationToken cancelToken)
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
@@ -267,30 +224,29 @@ namespace Duplicati.Library
             if (method == null && requestdata != null)
                 method = "POST";
                 
-            return ReadJSONResponse<T>(CreateRequest(url, method), requestdata);
+            return PostAndGetJSONDataAsync<T>(url, requestdata, method, cancelToken);
         }
 
-        public virtual T ReadJSONResponse<T>(HttpWebRequest req, object requestdata = null)
-        {
-            return ReadJSONResponse<T>(new AsyncHttpRequest(req), requestdata);   
-        }
+        /// <summary>
+        /// Performs the request and returns the deserialized JSON result
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
+        /// <returns>The deserialized JSON data.</returns>
+        public virtual async Task<T> ReadJSONResponseAsync<T>(HttpRequestMessage req, CancellationToken cancelToken)
+            => await ReadJSONResponseAsync<T>(await m_client.SendAsync(req, cancelToken), cancelToken);
 
-        public virtual T ReadJSONResponse<T>(AsyncHttpRequest req, object requestdata = null)
+        /// <summary>
+        /// Extracts the JSON data an deserializes it, handling invalid JSON data with an improved exception message
+        /// </summary>
+        /// <param name="resp">The response to read from</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
+        /// <returns>The deserialized JSON data.</returns>
+        public virtual async Task<T> ReadJSONResponseAsync<T>(HttpResponseMessage resp, CancellationToken cancelToken)
         {
-            using(var resp = GetResponse(req, requestdata))
-                return ReadJSONResponse<T>(resp);
-        }
-
-        public virtual async Task<T> ReadJSONResponseAsync<T>(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
-        {
-            using (var resp = await GetResponseAsync(req, cancelToken, requestdata).ConfigureAwait(false))
-                return ReadJSONResponse<T>(resp);
-        }
-
-        public virtual T ReadJSONResponse<T>(HttpWebResponse resp)
-        {
-            using (var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-            using(var ps = new StreamPeekReader(rs))
+            using(var ps = new StreamPeekReader(await resp.Content.ReadAsStreamAsync()))
             {
                 try
                 {
@@ -314,11 +270,20 @@ namespace Duplicati.Library
         /// which can throw another, more meaningful exception
         /// </summary>
         /// <param name="ex">The exception being processed.</param>
-        protected virtual void ParseException(Exception ex)
+        protected virtual Task ParseExceptionAsync(Exception ex)
         {
+            return Task.FromResult(true);
         }
 
-        public HttpWebResponse GetResponseWithoutException(string url, object requestdata = null, string method = null)
+        /// <summary>
+        /// Performs a POST request with the given data, response even if the error code is an error
+        /// </summary>
+        /// <param name="url">The remote URL</param>
+        /// <param name="requestdata">The JSON object</param>
+        /// <param name="method">The alternate method</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The response.</returns>
+        public async Task<HttpResponseMessage> GetResponseWithoutExceptionAsync(string url, object requestdata, string method, CancellationToken cancelToken)
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
@@ -326,52 +291,44 @@ namespace Duplicati.Library
             if (method == null && requestdata != null)
                 method = "POST";
 
-            return GetResponseWithoutException(CreateRequest(url, method), requestdata);
+            return await GetResponseWithoutExceptionAsync(await CreateRequestAsync(url, method, cancelToken), requestdata, cancelToken);
         }
 
-        public HttpWebResponse GetResponseWithoutException(HttpWebRequest req, object requestdata = null)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="req">The request to execute</param>
+        /// <param name="requestdata">The content, either a stream or an object</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The response.</returns>
+        public async Task<HttpResponseMessage> GetResponseWithoutExceptionAsync(HttpRequestMessage req, object requestdata, CancellationToken cancelToken)
         {
-            return GetResponseWithoutException(new AsyncHttpRequest(req), requestdata);
-        }
-
-        public HttpWebResponse GetResponseWithoutException(AsyncHttpRequest req, object requestdata = null)
-        {
-            try
+            if (requestdata != null)
             {
-                if (requestdata != null)
+                if (requestdata is Stream stream)
                 {
-                    if (requestdata is Stream stream)
-                    {
-                        req.Request.ContentLength = stream.Length;
-                        if (string.IsNullOrEmpty(req.Request.ContentType))
-                            req.Request.ContentType = "application/octet-stream";
-
-                        using (var rs = req.GetRequestStream())
-                            Library.Utility.Utility.CopyStream(stream, rs);
-                    }
-                    else
-                    {
-                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
-                        req.Request.ContentLength = data.Length;
-                        req.Request.ContentType = "application/json; charset=UTF-8";
-
-                        using (var rs = req.GetRequestStream())
-                            rs.Write(data, 0, data.Length);
-                    }
+                    var sc = new StreamContent(stream);
+                    sc.Headers.ContentLength = stream.Length;
+                    sc.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+                    req.Content = sc;
                 }
+                else
+                {
+                    var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
+                    var sc = new StreamContent(new MemoryStream(data));
+                    sc.Headers.ContentLength = data.Length;
 
-                return (HttpWebResponse)req.GetResponse();
-            }
-            catch(WebException wex)
-            {
-                if (wex.Response is HttpWebResponse response)
-                    return response;
+                    sc.Headers.ContentLength  = data.Length;
+                    sc.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=UTF-8");
 
-                throw;
+                    req.Content = sc;
+                }
             }
+
+            return await m_client.SendAsync(req, cancelToken);
         }
 
-        public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(string url, CancellationToken cancelToken, object requestdata = null, string method = null)
+        public async Task<HttpResponseMessage> GetResponseAsync(string url, object requestdata, string method, CancellationToken cancelToken)
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
@@ -379,158 +336,39 @@ namespace Duplicati.Library
             if (method == null && requestdata != null)
                 method = "POST";
 
-            return await GetResponseWithoutExceptionAsync(CreateRequest(url, method), cancelToken, requestdata).ConfigureAwait(false);
+            return await GetResponseAsync(await CreateRequestAsync(url, method, cancelToken), requestdata, cancelToken);
         }
 
-        public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(HttpWebRequest req, CancellationToken cancelToken, object requestdata = null)
-        {
-            return await GetResponseWithoutExceptionAsync(new AsyncHttpRequest(req), cancelToken, requestdata).ConfigureAwait(false);
-        }
-
-        public async Task<HttpWebResponse> GetResponseWithoutExceptionAsync(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
+        public async Task<HttpResponseMessage> GetResponseAsync(HttpRequestMessage req, object requestdata, CancellationToken cancelToken)
         {
             try
             {
-                if (requestdata != null)
-                {
-                    if (requestdata is System.IO.Stream stream)
-                    {
-                        req.Request.ContentLength = stream.Length;
-                        if (string.IsNullOrEmpty(req.Request.ContentType))
-                            req.Request.ContentType = "application/octet-stream";
-
-                        using (var rs = req.GetRequestStream())
-                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
-                        req.Request.ContentLength = data.Length;
-                        req.Request.ContentType = "application/json; charset=UTF-8";
-
-                        using (var rs = req.GetRequestStream())
-                            await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
-                    }
-                }
-
-                return (HttpWebResponse)req.GetResponse();
-            }
-            catch (WebException wex)
-            {
-                if (wex.Response is HttpWebResponse response)
-                    return response;
-
-                throw;
-            }
-        }
-
-        public HttpWebResponse GetResponse(string url, object requestdata = null, string method = null)
-        {
-            if (requestdata is string)
-                throw new ArgumentException("Cannot send string object as data");
-
-            if (method == null && requestdata != null)
-                method = "POST";
-
-            return GetResponse(CreateRequest(url, method), requestdata);
-        }
-
-        public HttpWebResponse GetResponse(HttpWebRequest req, object requestdata = null)
-        {
-            return GetResponse(new AsyncHttpRequest(req), requestdata);
-        }
-
-        public HttpWebResponse GetResponse(AsyncHttpRequest req, object requestdata = null)
-        {
-            try
-            {
-                if (requestdata != null)
-                {
-                    if (requestdata is Stream stream)
-                    {
-                        req.Request.ContentLength = stream.Length;
-                        if (string.IsNullOrEmpty(req.Request.ContentType))
-                            req.Request.ContentType = "application/octet-stream";
-
-                        using (var rs = req.GetRequestStream())
-                            Library.Utility.Utility.CopyStream(stream, rs);
-                    }
-                    else
-                    {
-                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
-                        req.Request.ContentLength = data.Length;
-                        req.Request.ContentType = "application/json; charset=UTF-8";
-
-                        using (var rs = req.GetRequestStream())
-                            rs.Write(data, 0, data.Length);
-                    }
-                }
-
-                return (HttpWebResponse)req.GetResponse();
+                var resp = await GetResponseWithoutExceptionAsync(req, requestdata, cancelToken);
+                if (!resp.IsSuccessStatusCode)
+                    throw new HttpRequestStatusException(resp);
+                resp.EnsureSuccessStatusCode();
+                return resp;
             }
             catch (Exception ex)
             {
-                ParseException(ex);
+                await ParseExceptionAsync(ex);
                 throw;
             }
         }
 
-        public async Task<HttpWebResponse> GetResponseAsync(string url, CancellationToken cancelToken, object requestdata = null, string method = null)
+        public void Dispose()
         {
-            if (requestdata is string)
-                throw new ArgumentException("Cannot send string object as data");
-            
-            if (method == null && requestdata != null)
-                method = "POST";
-
-            var areq = new AsyncHttpRequest(CreateRequest(url, method));
-            return await GetResponseAsync(areq, cancelToken, requestdata).ConfigureAwait(false);
+            m_client.Dispose();
         }
 
-        public async Task<HttpWebResponse> GetResponseAsync(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
+        public class HttpRequestStatusException : HttpRequestException
         {
-            try
+            public readonly HttpResponseMessage Response;
+
+            public HttpRequestStatusException(HttpResponseMessage resp)
+                : base(resp.ReasonPhrase)
             {
-                if (requestdata != null)
-                {
-                    if (requestdata is System.IO.Stream stream)
-                    {
-                        req.Request.ContentLength = stream.Length;
-                        if (string.IsNullOrEmpty(req.Request.ContentType))
-                            req.Request.ContentType = "application/octet-stream";
-
-                        using (var rs = req.GetRequestStream())
-                            await Utility.Utility.CopyStreamAsync(stream, rs, cancelToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestdata));
-                        req.Request.ContentLength = data.Length;
-                        req.Request.ContentType = "application/json; charset=UTF-8";
-
-                        using (var rs = req.GetRequestStream())
-                            await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
-                    }
-                }
-
-                return (HttpWebResponse)req.GetResponse();
-            }
-            catch (Exception ex)
-            {
-                ParseException(ex);
-                throw;
-            }
-        }
-
-        protected class HeaderPart
-        {
-            public readonly byte[] Header;
-            public readonly MultipartItem Part;
-
-            public HeaderPart(byte[] header, MultipartItem part)
-            {
-                Header = header;
-                Part = part;
+                Response = resp;
             }
         }
 

@@ -1,5 +1,5 @@
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings {
+namespace Duplicati.Library.Backend.File.Strings {
     internal static class FileBackend {
         public static string AlternateDestinationMarkerLong(string optionname) { return LC.L(@"This option only works when the --{0} option is also specified. If there are alternate paths specified, this option indicates the name of a marker file that must be present in the folder. This can be used to handle situations where an external drive changes drive letter or mount point. By ensuring that a certain file exists, it is possible to prevent writing data to an unwanted external drive. The contents of the file are never examined, only file existence.", optionname); }
         public static string AlternateDestinationMarkerShort { get { return LC.L(@"Look for a file in the destination folder"); } }

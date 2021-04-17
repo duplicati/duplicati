@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Backend.File
 {
     internal class Win32
     {

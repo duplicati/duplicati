@@ -1,5 +1,5 @@
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings {
+namespace Duplicati.Library.Backend.CloudFiles.Strings {
     internal static class CloudFiles {
         public static string DescriptionAuthenticationURLLong_v2(string optionname) { return LC.L(@"CloudFiles use different servers for authentication based on where the account resides, use this option to set an alternate authentication URL. This option overrides --{0}.", optionname); }
         public static string DescriptionAuthenticationURLShort { get { return LC.L(@"Provide another authentication URL"); } }

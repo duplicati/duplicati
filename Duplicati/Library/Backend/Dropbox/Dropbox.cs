@@ -6,11 +6,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Backend.Dropbox
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class Dropbox : IBackend, IStreamingBackend
+    public class Dropbox : IBackend, IBackendPagination
     {
         private const string AUTHID_OPTION = "authid";
 
@@ -77,11 +77,11 @@ namespace Duplicati.Library.Backend
             return ife;
         }
 
-        private T HandleListExceptions<T>(Func<T> func)
+        private async Task<T> HandleListExceptionsAsync<T>(Func<Task<T>> func)
         {
             try
             {
-                return func();
+                return await func();
             }
             catch (DropboxException de)
             {
@@ -92,39 +92,30 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        public async IAsyncEnumerable<IFileEntry> ListEnumerableAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var lfr = HandleListExceptions(() => dbx.ListFiles(m_path));
+            var lfr = await HandleListExceptionsAsync(() => dbx.ListFilesAsync(m_path, cancelToken));
               
             foreach (var md in lfr.entries)
                 yield return ParseEntry(md);
 
             while (lfr.has_more)
             {
-                lfr = HandleListExceptions(() => dbx.ListFilesContinue(lfr.cursor));
+                lfr = await HandleListExceptionsAsync(() => dbx.ListFilesContinueAsync(lfr.cursor, cancelToken));
                 foreach (var md in lfr.entries)
                     yield return ParseEntry(md);
             }
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
-        {
-            using(FileStream fs = File.OpenRead(filename))
-                return PutAsync(remotename, fs, cancelToken);
-        }
+        public Task<IList<IFileEntry>> ListAsync(CancellationToken cancelToken)
+            => this.CondensePaginatedListAsync(cancelToken);
 
-        public void Get(string remotename, string filename)
-        {
-            using(FileStream fs = File.Create(filename))
-                Get(remotename, fs);
-        }
-
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 string path = String.Format("{0}/{1}", m_path, remotename);
-                dbx.Delete(path);
+                await dbx.DeleteAsync(path, cancelToken);
             }
             catch (DropboxException)
             {
@@ -150,16 +141,16 @@ namespace Duplicati.Library.Backend
             get { return WebApi.Dropbox.Hosts(); }
         }
 
-        public void Test()
-        {
-            this.TestList();
-        }
+        public bool SupportsStreaming => true;
 
-        public void CreateFolder()
+        public Task TestAsync(CancellationToken cancelToken)
+            => this.TestListAsync(cancelToken);
+
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             try
             {
-                dbx.CreateFolder(m_path);
+                await dbx.CreateFolderAsync(m_path, cancelToken);
             }
             catch (DropboxException de)
             {
@@ -184,12 +175,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
                 string path = string.Format("{0}/{1}", m_path, remotename);
-                dbx.DownloadFile(path, stream);
+                await dbx.DownloadFileAsync(path, stream, cancelToken);
             }
             catch (DropboxException)
             {

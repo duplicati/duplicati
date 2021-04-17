@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,31 +48,42 @@ namespace Duplicati.Library.Interface
         string ProtocolKey { get; }
 
         /// <summary>
+        /// A flag indicating if the backend supports streaming data, or requires a local file target/source
+        /// </summary>
+        bool SupportsStreaming { get; }
+
+        /// <summary>
         /// Enumerates a list of files found on the remote location
         /// </summary>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
         /// <returns>The list of files</returns>
-        IEnumerable<IFileEntry> List();
+        Task<IList<IFileEntry>> ListAsync(CancellationToken cancelToken);
 
         /// <summary>
         /// Puts the content of the file to the url passed
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
-        /// <param name="filename">The local filename</param>
+        /// <param name="source">The stream to read data from</param>
         /// <param name="cancelToken">Token to cancel the operation.</param>
-        Task PutAsync(string remotename, string filename, CancellationToken cancelToken);
+        /// <returns>An awaitable task</returns>
+        Task PutAsync(string remotename, Stream source, CancellationToken cancelToken);
 
         /// <summary>
         /// Downloads a file with the remote data
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
-        /// <param name="filename">The local filename</param>
-        void Get(string remotename, string filename);
+        /// <param name="destination">The stream to write data into</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>An awaitable task</returns>
+        Task GetAsync(string remotename, Stream destination, CancellationToken cancelToken);
 
         /// <summary>
         /// Deletes the specified file
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
-        void Delete(string remotename);
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>An awaitable task</returns>
+        Task DeleteAsync(string remotename, CancellationToken cancelToken);
 
         /// <summary>
         /// Gets a list of supported commandline arguments
@@ -94,7 +106,9 @@ namespace Duplicati.Library.Interface
         /// If the encountered problem is a missing target &quot;folder&quot;,
         /// this method should throw a <see cref="FolderMissingException"/>.
         /// </summary>
-        void Test();
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>An awaitable task</returns>
+        Task TestAsync(CancellationToken cancelToken);
 
         /// <summary>
         /// The purpose of this method is to create the underlying &quot;folder&quot;.
@@ -104,6 +118,8 @@ namespace Duplicati.Library.Interface
         /// a <see cref="FolderMissingException"/> during <see cref="Test"/>, 
         /// and this method should throw a <see cref="MissingMethodException"/>.
         /// </summary>
-        void CreateFolder();
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>An awaitable task</returns>
+        Task CreateFolderAsync(CancellationToken cancelToken);
     }
 }

@@ -1,4 +1,7 @@
-﻿using Duplicati.Library.Utility;
+﻿using System.Net.Http.Headers;
+using System.Net.Http;
+using System.Security.AccessControl;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -7,7 +10,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Backend.Dropbox
 {
     public class DropboxHelper : OAuthHelper
     {
@@ -21,7 +24,7 @@ namespace Duplicati.Library.Backend
             base.AccessTokenOnly = true;
         }
 
-        public ListFolderResult ListFiles(string path)
+        public async Task<ListFolderResult> ListFilesAsync(string path, CancellationToken cancelToken)
         {
             var pa = new PathArg
             {
@@ -30,41 +33,41 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), pa);
+                return await PostAndGetJSONDataAsync<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), pa, null, cancelToken);
             }
             catch (Exception ex)
             {
-                HandleDropboxException(ex, false);
+                await HandleDropboxExceptionAsync(ex, false, cancelToken);
                 throw;
             }
         }
 
-        public ListFolderResult ListFilesContinue(string cursor)
+        public async Task<ListFolderResult> ListFilesContinueAsync(string cursor, CancellationToken cancelToken)
         {
             var lfca = new ListFolderContinueArg() { cursor = cursor };
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), lfca);
+                return await PostAndGetJSONDataAsync<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), lfca, null, cancelToken);
             }
             catch (Exception ex)
             {
-                HandleDropboxException(ex, false);
+                await HandleDropboxExceptionAsync(ex, false, cancelToken);
                 throw;
             }
         }
 
-        public FolderMetadata CreateFolder(string path)
+        public async Task<FolderMetadata> CreateFolderAsync(string path, CancellationToken cancelToken)
         {
             var pa = new PathArg() { path = path };
 
             try
             {
-                return PostAndGetJSONData<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), pa);
+                return await PostAndGetJSONDataAsync<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), pa, null, cancelToken);
             }
             catch (Exception ex)
             {
-                HandleDropboxException(ex, false);
+                await HandleDropboxExceptionAsync(ex, false, cancelToken);
                 throw;
             }
         }
@@ -75,58 +78,57 @@ namespace Duplicati.Library.Backend
             var ussa = new UploadSessionStartArg();
 
             var chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, stream.Length);
+            long globalBytesRead = 0;
 
-            var req = CreateRequest(WebApi.Dropbox.UploadSessionStartUrl(), "POST");
-            req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(ussa);
-            req.ContentType = "application/octet-stream";
-            req.ContentLength = chunksize;
-            req.Timeout = 200000;
+            var req = await CreateRequestAsync(WebApi.Dropbox.UploadSessionStartUrl(), "POST", cancelToken);
+            req.Headers.Add(API_ARG_HEADER, JsonConvert.SerializeObject(ussa));
 
-            var areq = new AsyncHttpRequest(req);
+            var body = new StreamContent(new PartialStream(stream, globalBytesRead, chunksize));
+            body.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+            body.Headers.ContentLength = chunksize;
+
+            req.Content = body;
+
+            var tcs = new CancellationTokenSource(200000);
+            if (cancelToken.CanBeCanceled)
+                cancelToken.Register(() => tcs.Cancel());
 
             byte[] buffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
             int sizeToRead = Math.Min((int)Utility.Utility.DEFAULT_BUFFER_SIZE, chunksize);
 
-            ulong globalBytesRead = 0;
-            using (var rs = areq.GetRequestStream())
-            {
-                int bytesRead = 0;
-                do
-                {
-                    bytesRead = await stream.ReadAsync(buffer, 0, sizeToRead, cancelToken).ConfigureAwait(false);
-                    globalBytesRead += (ulong)bytesRead;
-                    await rs.WriteAsync(buffer, 0, bytesRead, cancelToken).ConfigureAwait(false);
-                }
-                while (bytesRead > 0 && globalBytesRead < (ulong)chunksize);
-            }
-
-            var ussr = await ReadJSONResponseAsync<UploadSessionStartResult>(areq, cancelToken); // pun intended
+            var ussr = await ReadJSONResponseAsync<UploadSessionStartResult>(req, tcs.Token); // pun intended
+            globalBytesRead += chunksize;
 
             // keep appending until finished
             // 1) read into buffer
-            while (globalBytesRead < (ulong)stream.Length)
+            while (globalBytesRead < stream.Length)
             {
-                var remaining = (ulong)stream.Length - globalBytesRead;
+                var remaining = stream.Length - globalBytesRead;
 
                 // start an append request
                 var usaa = new UploadSessionAppendArg();
                 usaa.cursor.session_id = ussr.session_id;
-                usaa.cursor.offset = globalBytesRead;
+                usaa.cursor.offset = (ulong)globalBytesRead;
                 usaa.close = remaining < DROPBOX_MAX_CHUNK_UPLOAD;
 
                 chunksize = (int)Math.Min(DROPBOX_MAX_CHUNK_UPLOAD, (long)remaining);
 
-                req = CreateRequest(WebApi.Dropbox.UploadSessionAppendUrl(), "POST");
-                req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usaa);
-                req.ContentType = "application/octet-stream";
-                req.ContentLength = chunksize;
-                req.Timeout = 200000;
+                req = await CreateRequestAsync(WebApi.Dropbox.UploadSessionAppendUrl(), "POST", cancelToken);
+                req.Headers.Add(API_ARG_HEADER, JsonConvert.SerializeObject(usaa));
 
-                areq = new AsyncHttpRequest(req);
+                body = new StreamContent(new PartialStream(stream, globalBytesRead, chunksize));
+                body.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+                body.Headers.ContentLength = chunksize;
+
+                req.Content = body;
+
+                tcs = new CancellationTokenSource(200000);
+                if (cancelToken.CanBeCanceled)
+                    cancelToken.Register(() => tcs.Cancel());
 
                 int bytesReadInRequest = 0;
                 sizeToRead = Math.Min(chunksize, (int)Utility.Utility.DEFAULT_BUFFER_SIZE);
-                using (var rs = areq.GetRequestStream())
+                using (var rs = req.GetRequestStream())
                 {
                     int bytesRead = 0;
                     do
@@ -140,9 +142,10 @@ namespace Duplicati.Library.Backend
                     while (bytesRead > 0 && bytesReadInRequest < chunksize);
                 }
 
-                using (var response = GetResponse(areq))
-                using (var sr = new StreamReader(response.GetResponseStream()))
-                    await sr.ReadToEndAsync().ConfigureAwait(false);
+                using (var response = await GetResponseAsync(req, null, tcs.Token))
+                    await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                globalBytesRead += (uint)chunksize;
             }
 
             // finish session and commit
@@ -150,84 +153,86 @@ namespace Duplicati.Library.Backend
             {
                 var usfa = new UploadSessionFinishArg();
                 usfa.cursor.session_id = ussr.session_id;
-                usfa.cursor.offset = globalBytesRead;
+                usfa.cursor.offset = (ulong)globalBytesRead;
                 usfa.commit.path = path;
 
-                req = CreateRequest(WebApi.Dropbox.UploadSessionFinishUrl(), "POST");
-                req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(usfa);
-                req.ContentType = "application/octet-stream";
-                req.Timeout = 200000;
+                req = await CreateRequestAsync(WebApi.Dropbox.UploadSessionFinishUrl(), "POST", cancelToken);
+                req.Headers.Add(API_ARG_HEADER, JsonConvert.SerializeObject(usfa));                
+                //req.ContentType = "application/octet-stream";
 
-                return ReadJSONResponse<FileMetaData>(req);
+                tcs = new CancellationTokenSource(200000);
+                if (cancelToken.CanBeCanceled)
+                    cancelToken.Register(() => tcs.Cancel());
+
+                return await ReadJSONResponseAsync<FileMetaData>(req, tcs.Token);
             }
             catch (Exception ex)
             {
-                HandleDropboxException(ex, true);
+                await HandleDropboxExceptionAsync(ex, true, cancelToken);
                 throw;
             }
         }
 
-        public void DownloadFile(string path, Stream fs)
+        public async Task DownloadFileAsync(string path, Stream fs, CancellationToken cancelToken)
         {
             try
             {
                 var pa = new PathArg { path = path };
 
-                var req = CreateRequest(WebApi.Dropbox.DownloadFilesUrl(), "POST");
-                req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
+                var req = await CreateRequestAsync(WebApi.Dropbox.DownloadFilesUrl(), "POST", cancelToken);
+                req.Headers.Add(API_ARG_HEADER, JsonConvert.SerializeObject(pa));
 
-                using (var response = GetResponse(req))
-                    Utility.Utility.CopyStream(response.GetResponseStream(), fs);
+                using (var response = await GetResponseAsync(req, null, cancelToken))
+                using (var rs = await response.Content.ReadAsStreamAsync())
+                    await Utility.Utility.CopyStreamAsync(rs, fs, cancelToken);
             }
             catch (Exception ex)
             {
-                HandleDropboxException(ex, true);
+                await HandleDropboxExceptionAsync(ex, true, cancelToken);
                 throw;
             }
         }
 
-        public void Delete(string path)
+        public async Task DeleteAsync(string path, CancellationToken cancelToken)
         {
             try
             {
                 var pa = new PathArg() { path = path };
-                using (var response = GetResponse(WebApi.Dropbox.DeleteUrl(), pa))
-                using(var sr = new StreamReader(response.GetResponseStream()))
-                    sr.ReadToEnd();
+                using (var response = await GetResponseAsync(WebApi.Dropbox.DeleteUrl(), pa, null, cancelToken))
+                    await response.Content.ReadAsStringAsync();
             }
             catch (Exception ex)
             {
-                HandleDropboxException(ex, true);
+                await HandleDropboxExceptionAsync(ex, true, cancelToken);
                 throw;
             }
         }
 
-        private void HandleDropboxException(Exception ex, bool filerequest)
+        private async Task HandleDropboxExceptionAsync(Exception ex, bool filerequest, CancellationToken cancelToken)
         {
-            if (ex is WebException exception)
+            if (ex is HttpRequestStatusException exception)
             {
                 string json = string.Empty;
 
                 try
                 {
-                    using (var sr = new StreamReader(exception.Response.GetResponseStream()))
-                        json = sr.ReadToEnd();
+                    json = await exception.Response.Content.ReadAsStringAsync();
                 }
                 catch { }
 
                 // Special mapping for exceptions:
                 //    https://www.dropbox.com/developers-v1/core/docs
 
-                if (exception.Response is HttpWebResponse httpResp)
+                if (exception.Response != null)
                 {
-                    if (httpResp.StatusCode == HttpStatusCode.NotFound)
+                    if (exception.Response.StatusCode == HttpStatusCode.NotFound)
                     {
                         if (filerequest)
                             throw new Duplicati.Library.Interface.FileMissingException(json);
                         else
                             throw new Duplicati.Library.Interface.FolderMissingException(json);
                     }
-                    if (httpResp.StatusCode == HttpStatusCode.Conflict)
+                    if (exception.Response.StatusCode == HttpStatusCode.Conflict)
                     {
                         //TODO: Should actually parse and see if something else happens
                         if (filerequest)
@@ -235,9 +240,9 @@ namespace Duplicati.Library.Backend
                         else
                             throw new Duplicati.Library.Interface.FolderMissingException(json);
                     }
-                    if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
+                    if (exception.Response.StatusCode == HttpStatusCode.Unauthorized)
                         ThrowAuthException(json, exception);
-                    if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
+                    if ((int)exception.Response.StatusCode == 429 || (int)exception.Response.StatusCode == 507)
                         ThrowOverQuotaError();
                 }
 
@@ -256,6 +261,63 @@ namespace Duplicati.Library.Backend
                 else
                     throw new InvalidDataException($"Non-json response: {json}");
             }
+        }
+    }
+
+    public class PartialStream : Stream
+    {
+        private readonly Stream m_source;
+        private readonly long m_offset;
+        private readonly long m_length;
+        private long m_position;
+
+        public PartialStream(Stream source, long offset, long length)
+        {
+            m_source = source ?? throw new ArgumentNullException(nameof(source));
+            m_offset = offset;
+            m_length = length;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => m_length;
+        public override long Position { get => m_position; set => throw new NotSupportedException(); }
+
+        public override void Flush()
+        {
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            var c = (int)Math.Min(count, m_length - m_position);
+            var r = await m_source.ReadAsync(buffer, offset, c, cancellationToken);
+            m_position += r;
+            return r;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            var c = (int)Math.Min(count, m_length - m_position);
+            var r = m_source.Read(buffer, offset, c);
+            m_position += r;
+            return r;
+        }
+
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException();
         }
     }
 

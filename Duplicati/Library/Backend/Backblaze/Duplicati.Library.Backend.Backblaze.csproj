@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>    
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>Backblaze backend for Duplicati</Description>
+    <RootNamespace>Duplicati.Library.Backend.Backblaze</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
@@ -16,7 +17,7 @@
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>

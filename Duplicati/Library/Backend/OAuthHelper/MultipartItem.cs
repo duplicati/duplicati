@@ -100,6 +100,20 @@ namespace Duplicati.Library
             }
         }
 
+        public string ContentTypeFileName 
+        {
+            get
+            {
+                string v;
+                Headers.TryGetValue("Content-Disposition", out v);
+                if (string.IsNullOrWhiteSpace(v))
+                    return null;
+                
+                var m = new System.Text.RegularExpressions.Regex("filename=\"(?<name>[^\"]+)\"").Match(v);
+                return m.Success ? m.Groups["name"].Value : null;
+            }
+        }
+
         public long ContentLength
         {
             get

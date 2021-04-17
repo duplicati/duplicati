@@ -1,4 +1,5 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+﻿using System.Threading;
+//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -15,10 +16,12 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
 using Duplicati.Library.Utility;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Backblaze
 {
@@ -35,17 +38,21 @@ namespace Duplicati.Library.Backend.Backblaze
             m_credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes(userid + ":" + password));
         }
 
-        public override HttpWebRequest CreateRequest(string url, string method = null)
+        public override async Task<HttpRequestMessage> CreateRequestAsync(string url, string method, CancellationToken cancelToken)
         {
-            var r = base.CreateRequest(url, method);
-            r.Headers["Authorization"] = AuthorizationToken;
+            var r = await base.CreateRequestAsync(url, method, cancelToken);
+            r.Headers.Add("Authorization", await GetAuthorizationTokenAsync(cancelToken));
             return r;
         }
 
-        public string AuthorizationToken { get { return Config.AuthorizationToken; } }
-        public string APIUrl { get { return Config.APIUrl; } }
-        public string DownloadUrl { get { return Config.DownloadUrl; } }
-        public string AccountID { get { return Config.AccountID; } }
+        public async Task<string> GetAuthorizationTokenAsync(CancellationToken cancelToken) 
+            => (await GetConfigAsync(cancelToken)).AuthorizationToken;
+        public async Task<string> GetAPIUrlAsync(CancellationToken cancelToken) 
+            => (await GetConfigAsync(cancelToken)).APIUrl;
+        public async Task<string> GetDownloadUrlAsync(CancellationToken cancelToken) 
+            => (await GetConfigAsync(cancelToken)).DownloadUrl;
+        public async Task<string> GetAccountIDAsync(CancellationToken cancelToken) 
+            => (await GetConfigAsync(cancelToken)).AccountID;
 
         private string DropTrailingSlashes(string url)
         {
@@ -74,76 +81,69 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        private AuthResponse Config
+        private async Task<AuthResponse> GetConfigAsync(CancellationToken cancelToken)
         {
-            get
+            if (m_config == null || m_configExpires < DateTime.UtcNow)
             {
-                if (m_config == null || m_configExpires < DateTime.UtcNow)
-                {
-                    var retries = 0;
+                var retries = 0;
 
-                    while(true)
+                while(true)
+                {
+                    try
                     {
+                        var req = await base.CreateRequestAsync(AUTH_URL, null, cancelToken);
+                        req.Headers.Add("Authorization", string.Format("Basic {0}", m_credentials));
+                        //req.ContentType = "application/json; charset=utf-8";
+                        
+                        using(var resp = await m_client.SendAsync(req, cancelToken))
+                            m_config = await ReadJSONResponseAsync<AuthResponse>(resp, cancelToken);
+
+                        m_config.APIUrl = DropTrailingSlashes(m_config.APIUrl);
+                        m_config.DownloadUrl = DropTrailingSlashes(m_config.DownloadUrl);
+
+                        m_configExpires = DateTime.UtcNow + TimeSpan.FromHours(1);
+                        return m_config;
+                    }
+                    catch (Exception ex)
+                    {
+                        var clienterror = false;
+
                         try
                         {
-                            var req = base.CreateRequest(AUTH_URL);
-                            req.Headers.Add("Authorization", string.Format("Basic {0}", m_credentials));
-                            req.ContentType = "application/json; charset=utf-8";
-
-                            using(var resp = (HttpWebResponse)new AsyncHttpRequest(req).GetResponse())
-                                m_config = ReadJSONResponse<AuthResponse>(resp);
-
-                            m_config.APIUrl = DropTrailingSlashes(m_config.APIUrl);
-                            m_config.DownloadUrl = DropTrailingSlashes(m_config.DownloadUrl);
-
-                            m_configExpires = DateTime.UtcNow + TimeSpan.FromHours(1);
-                            return m_config;
+                            // Only retry once on client errors
+                            if (ex is HttpRequestStatusException exception)
+                            {
+                                var sc = (int)exception.Response.StatusCode;
+                                clienterror = (sc >= 400 && sc <= 499);
+                            }
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            var clienterror = false;
-
-                            try
-                            {
-                                // Only retry once on client errors
-                                if (ex is WebException exception && exception.Response is HttpWebResponse response)
-                                {
-                                    var sc = (int)response.StatusCode;
-                                    clienterror = (sc >= 400 && sc <= 499);
-                                }
-                            }
-                            catch
-                            {
-                            }
-
-                            if (retries >= (clienterror ? 1 : 5))
-                            {
-                                AttemptParseAndThrowException(ex);
-                                throw;
-                            }
-
-                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
-                            retries++;
                         }
+
+                        if (retries >= (clienterror ? 1 : 5))
+                        {
+                            await AttemptParseAndThrowExceptionAsync(ex);
+                            throw;
+                        }
+
+                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                        retries++;
                     }
                 }
-
-                return m_config;
             }
+
+            return m_config;
         }
 
-        public static void AttemptParseAndThrowException(Exception ex)
+        public static async Task AttemptParseAndThrowExceptionAsync(Exception ex)
         {
             Exception newex = null;
             try
             {
-                if (ex is WebException exception && exception.Response is HttpWebResponse hs)
+                if (ex is HttpRequestStatusException exception)
                 {
-                    string rawdata = null;
-                    using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
-                    using(var sr = new System.IO.StreamReader(rs))
-                        rawdata = sr.ReadToEnd();
-
+                    var rawdata = await exception.Response.Content.ReadAsStringAsync();
                     newex = new Exception("Raw message: " + rawdata);
 
                     var msg = JsonConvert.DeserializeObject<ErrorResponse>(rawdata);
@@ -158,18 +158,19 @@ namespace Duplicati.Library.Backend.Backblaze
                 throw newex;
         }
 
-        protected override void ParseException(Exception ex)
-        {
-            AttemptParseAndThrowException(ex);
-        }
+        protected override Task ParseExceptionAsync(Exception ex)
+            => AttemptParseAndThrowExceptionAsync(ex);
 
         public static HttpStatusCode GetExceptionStatusCode(Exception ex)
         {
-            if (ex is WebException exception && exception.Response is HttpWebResponse response)
-                return response.StatusCode;
+            if (ex is HttpRequestStatusException exception)
+                return exception.Response.StatusCode;
             else
                 return default(HttpStatusCode);
         }
+
+        public Task<HttpResponseMessage> SendAsync(HttpRequestMessage requestMessage, CancellationToken cancelToken)
+            => m_client.SendAsync(requestMessage, cancelToken);
             
 
         private class ErrorResponse

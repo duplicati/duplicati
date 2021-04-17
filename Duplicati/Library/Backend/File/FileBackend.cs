@@ -26,11 +26,11 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Backend.File
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
+    public class File : IBackend, IBackendPagination, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
@@ -165,9 +165,12 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
-        public IEnumerable<IFileEntry> List()
+        public async IAsyncEnumerable<IFileEntry> ListEnumerableAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancelToken)
         {
             PreAuthenticate();
+
+            // Remove warning about no awaits in method
+            await Task.FromResult(true);
 
             if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
@@ -183,9 +186,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public Task<IList<IFileEntry>> ListAsync(CancellationToken cancelToken)
+            => this.CondensePaginatedListAsync(cancelToken);
+
 #if DEBUG_RETRY
         private static Random random = new Random();
-        public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
             {
@@ -197,42 +203,57 @@ namespace Duplicati.Library.Backend
 #else
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
-                await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
+            if (SupportsStreaming)
+            {
+                using (var writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+                    await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
+            }
+            else
+            {
+                var filename = (stream as FauxStream).Filename;
+                var path = GetRemoteName(remotename);
+                if (m_moveFile)
+                {
+                    if (systemIO.FileExists(path))
+                        systemIO.FileDelete(path);
+                    
+                    systemIO.FileMove(filename, path);
+                }
+                else
+                    systemIO.FileCopy(filename, path, true);
+            }
         }
 #endif
 
-        public void Get(string remotename, System.IO.Stream stream)
-        {
-            // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
-            using (System.IO.FileStream readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
-                Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
-        }
-
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
-        {
-            string path = GetRemoteName(remotename);
-            if (m_moveFile)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        {            
+            if (SupportsStreaming)
             {
-                if (systemIO.FileExists(path))
-                    systemIO.FileDelete(path);
-                
-                systemIO.FileMove(filename, path);
+                // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
+                using (var readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
+                    await Utility.Utility.CopyStreamAsync(readstream, stream, true, cancelToken, m_copybuffer);
             }
             else
-                systemIO.FileCopy(filename, path, true);
-
-            return Task.FromResult(true);
+            {
+                var filename = (stream as FauxStream).Filename;
+                var path = GetRemoteName(remotename);
+                if (m_moveFile)
+                {
+                    if (systemIO.FileExists(filename))
+                        systemIO.FileDelete(filename);
+                    
+                    systemIO.FileMove(path, filename);
+                }
+                else
+                    systemIO.FileCopy(path, filename, true);
+            }
         }
 
-        public void Get(string remotename, string filename)
-        {
-            systemIO.FileCopy(GetRemoteName(remotename), filename, true);
-        }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             systemIO.FileDelete(GetRemoteName(remotename));
+            return Task.FromResult(true);
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -259,17 +280,16 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
-        {
-            this.TestList();
-        }
+        public Task TestAsync(CancellationToken cancelToken)
+            =>this.TestListAsync(cancelToken);
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (systemIO.DirectoryExists(m_path))
                 throw new FolderAreadyExistedException();
 
             systemIO.DirectoryCreate(m_path);
+            return Task.FromResult(true);
         }
 
         #endregion
@@ -346,6 +366,8 @@ namespace Duplicati.Library.Backend
         {
             get { return null; }
         }
+
+        public bool SupportsStreaming => !(m_no_streaming || m_moveFile);
 
         public void Rename(string oldname, string newname)
         {

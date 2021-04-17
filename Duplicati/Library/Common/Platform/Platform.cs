@@ -1,4 +1,5 @@
-﻿//  Copyright (C) 2018, The Duplicati Team
+﻿using System.Runtime.InteropServices;
+//  Copyright (C) 2018, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //
 //  This library is free software; you can redistribute it and/or modify
@@ -15,6 +16,8 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.Runtime.InteropServices;
+
 namespace Duplicati.Library.Common
 {
     public static class Platform
@@ -38,9 +41,9 @@ namespace Duplicati.Library.Common
 
         static Platform()
         {
-            IsClientPosix = Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
+            IsClientOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+            IsClientPosix = IsClientOSX || RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             IsClientWindows = !IsClientPosix;
-            IsClientOSX = IsClientPosix && "Darwin".Equals(_RetrieveUname(false));
         }
 
         /// <value>

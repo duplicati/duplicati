@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <LangVersion>8.0</LangVersion> 
     <TargetFramework>netstandard2.0</TargetFramework>    
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>A FTP backend for Duplicati</Description>
+    <RootNamespace>Duplicati.Library.Backend.FTP</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

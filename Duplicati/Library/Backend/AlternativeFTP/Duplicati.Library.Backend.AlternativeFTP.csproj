@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>An alternative FTP backend for Duplicati</Description>
+    <RootNamespace>Duplicati.Library.Backend.AlternativeFTP</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
