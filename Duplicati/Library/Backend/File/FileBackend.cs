@@ -187,7 +187,7 @@ namespace Duplicati.Library.Backend
         private static Random random = new Random();
         public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using(System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+            using(System.IO.FileStream writestream = systemIO.FileCreate(GetRemoteName(remotename)))
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
@@ -197,7 +197,7 @@ namespace Duplicati.Library.Backend
 #else
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream writestream = systemIO.FileOpenWrite(GetRemoteName(remotename)))
+            using (System.IO.FileStream writestream = systemIO.FileCreate(GetRemoteName(remotename)))
                 await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
         }
 #endif
