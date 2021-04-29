@@ -1115,8 +1115,25 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 	
 	EditUriBackendConfig.validaters['tardigrade'] = function (scope, continuation) {
 		var res = true;
+		
+		if(res && !scope['tardigrade_auth_method']){
+			res = EditUriBackendConfig.require_field(scope, 'tardigrade_auth_method', gettextCatalog.getString('Authentication method'));
+		}
 
-		if(scope['tardigrade_auth_method'] == 'API key' && scope['tardigrade_secret'] != scope['tardigrade_secret_verify'])
+		if(res && scope['tardigrade_auth_method'] == 'Access grant'){
+			res = EditUriBackendConfig.require_field(scope, 'tardigrade_shared_access', gettextCatalog.getString('tardigrade_shared_access'));
+		}
+		
+		if(res && scope['tardigrade_auth_method'] == 'API key'){
+			res = EditUriBackendConfig.require_field(scope, 'tardigrade_api_key', gettextCatalog.getString('API key')) &&
+				  EditUriBackendConfig.require_field(scope, 'tardigrade_secret', gettextCatalog.getString('Encryption passphrase'));
+		}
+		
+		if(res && scope['tardigrade_auth_method'] == 'API key' && !scope['tardigrade_satellite']){
+			res = EditUriBackendConfig.require_field(scope, 'tardigrade_satellite_custom', gettextCatalog.getString('Custom Satellite'));
+		}
+
+		if(res && scope['tardigrade_auth_method'] == 'API key' && scope['tardigrade_secret'] != scope['tardigrade_secret_verify'])
 			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The encryption passphrases do not match'));
 		
 		if (res)
