@@ -36,11 +36,9 @@ namespace Duplicati.Library.Backend.Tardigrade
         private IObjectService _objectService;
 
         public static readonly Dictionary<string, string> KNOWN_TARDIGRADE_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
-            { "US Central 1", "us-central-1.tardigrade.io:7777" },
-            { "Asia East 1", "asia-east-1.tardigrade.io:7777" },
-            { "Saltlake", "saltlake.tardigrade.io:7777" },
-            { "Europe West 1", "europe-west-1.tardigrade.io:7777" },
-            { "Europe North 1", "europe-north-1.tardigrade.io:7777" },
+            { "US Central", "us1.storj.io:7777" },
+            { "Asia East", "ap1.storj.io:7777" },
+            { "Europe", "eu1.storj.io:7777" },
         };
 
         public static readonly Dictionary<string, string> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
@@ -140,7 +138,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(TARDIGRADE_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAuthMethodDescriptionShort, Strings.Tardigrade.TardigradeAuthMethodDescriptionLong, "API key"),
-                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionLong, "us-central-1.tardigrade.io:7777"),
+                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionLong, "us1.storj.io:7777"),
                     new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAPIKeyDescriptionShort, Strings.Tardigrade.TardigradeAPIKeyDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Tardigrade.TardigradeSecretDescriptionShort, Strings.Tardigrade.TardigradeSecretDescriptionLong),
                     new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSharedAccessDescriptionShort, Strings.Tardigrade.TardigradeSharedAccessDescriptionLong),

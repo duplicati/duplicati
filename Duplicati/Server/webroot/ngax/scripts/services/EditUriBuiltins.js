@@ -162,12 +162,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             AppService.post('/webmodule/tardigrade-getconfig', {'tardigrade-config': 'Satellites'}).then(function (data) {
                 scope.tardigrade_satellites = data.data.Result;
                 if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
-                    scope.tardigrade_satellite = 'us-central-1.tardigrade.io:7777';
+                    scope.tardigrade_satellite = 'us1.storj.io:7777';
 
             }, AppUtils.connectionError);
         } else {
             if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
-                scope.tardigrade_satellite = 'us-central-1.tardigrade.io:7777';
+                scope.tardigrade_satellite = 'us1.storj.io:7777';
         }
 		
 		if (scope.tardigrade_auth_methods == null) {
