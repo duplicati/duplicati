@@ -495,6 +495,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.tardigrade_api_key = options['--tardigrade-api-key'];
         if (options['--tardigrade-secret'])
             scope.tardigrade_secret = options['--tardigrade-secret'];
+		if (options['--tardigrade-secret-verify'])
+            scope.tardigrade_secret_verify = options['--tardigrade-secret-verify'];
 		if (options['--tardigrade-shared-access'])
             scope.tardigrade_shared_access = options['--tardigrade-shared-access'];
 		if (options['--tardigrade-bucket'])
@@ -502,7 +504,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 		if (options['--tardigrade-folder'])
             scope.tardigrade_folder = options['--tardigrade-folder'];
 
-        var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder'];
+        var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-secret-verify', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
@@ -749,6 +751,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'tardigrade-satellite': scope.tardigrade_satellite,
             'tardigrade-api-key': scope.tardigrade_api_key,
             'tardigrade-secret': scope.tardigrade_secret,
+			'tardigrade-secret-verify': scope.tardigrade_secret_verify,
             'tardigrade-shared-access': scope.tardigrade_shared_access,
 			'tardigrade-bucket': scope.tardigrade_bucket,
 			'tardigrade-folder': scope.tardigrade_folder
@@ -1111,6 +1114,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 	
 	EditUriBackendConfig.validaters['tardigrade'] = function (scope, continuation) {
+		var res = true;
+
+		if(scope['tardigrade_auth_method'] == 'API key' && scope['tardigrade_secret'] != scope['tardigrade_secret_verify'])
+			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The encryption passphrases do not match'));
+		
+		if (res)
             continuation();
     };
 
