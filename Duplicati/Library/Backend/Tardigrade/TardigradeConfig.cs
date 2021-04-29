@@ -23,9 +23,9 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public string Key { get { return "tardigrade-getconfig"; } }
 
-        public string DisplayName { get { return "Tardigrade configuration module"; } }
+        public string DisplayName { get { return "Storj DCS configuration module"; } }
 
-        public string Description { get { return "Exposes Tardigrade configuration as a web module"; } }
+        public string Description { get { return "Exposes Storj DCS configuration as a web module"; } }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
