@@ -32,6 +32,10 @@ jobs:
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
 
+    - name: Install Additional Dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install gtk-sharp2
+
     - name: Build Duplicati (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
@@ -66,10 +70,14 @@ jobs:
     - name: Install NuGet
       uses: nuget/setup-nuget@v1.0.5
 
+    - name: Restore NuGet Packages
+      run: nuget restore Duplicati.sln
+
+    - name: Install Additional Dependencies
+      run: sudo apt-get install gtk-sharp2
+
     - name: Build Duplicati
-      run: |
-        nuget restore Duplicati.sln
-        msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
+      run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
 
     - name: Set up Python
       uses: actions/setup-python@v2
