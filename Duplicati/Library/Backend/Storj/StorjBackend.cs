@@ -127,7 +127,7 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public string DisplayName
         {
-            get { return Strings.Tardigrade.DisplayName; }
+            get { return Strings.Storj.DisplayName; }
         }
 
         public string ProtocolKey => PROTOCOL_KEY;
@@ -137,13 +137,13 @@ namespace Duplicati.Library.Backend.Tardigrade
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(TARDIGRADE_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAuthMethodDescriptionShort, Strings.Tardigrade.TardigradeAuthMethodDescriptionLong, "API key"),
-                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSatelliteDescriptionShort, Strings.Tardigrade.TardigradeSatelliteDescriptionLong, "us1.storj.io:7777"),
-                    new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeAPIKeyDescriptionShort, Strings.Tardigrade.TardigradeAPIKeyDescriptionLong),
-                    new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Tardigrade.TardigradeSecretDescriptionShort, Strings.Tardigrade.TardigradeSecretDescriptionLong),
-                    new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeSharedAccessDescriptionShort, Strings.Tardigrade.TardigradeSharedAccessDescriptionLong),
-                    new CommandLineArgument(TARDIGRADE_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeBucketDescriptionShort, Strings.Tardigrade.TardigradeBucketDescriptionLong),
-                    new CommandLineArgument(TARDIGRADE_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Tardigrade.TardigradeFolderDescriptionShort, Strings.Tardigrade.TardigradeFolderDescriptionLong),
+                    new CommandLineArgument(TARDIGRADE_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, "API key"),
+                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, "us1.storj.io:7777"),
+                    new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong),
+                    new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong),
+                    new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong),
+                    new CommandLineArgument(TARDIGRADE_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong),
+                    new CommandLineArgument(TARDIGRADE_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong),
                 });
             }
         }
@@ -152,7 +152,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             get
             {
-                return Strings.Tardigrade.Description;
+                return Strings.Storj.Description;
             }
         }
 
@@ -166,7 +166,7 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public void CreateFolder()
         {
-            //Tardigrade has no folders
+            //Storj DCS has no folders
         }
 
         public void Delete(string remotename)
@@ -258,14 +258,14 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         private async Task<IEnumerable<IFileEntry>> ListAsync()
         {
-            List<TardigradeFile> files = new List<TardigradeFile>();
+            List<StorjFile> files = new List<StorjFile>();
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
             var prefix = GetBasePath();
             var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix });
 
             foreach (var obj in objects.Items)
             {
-                TardigradeFile file = new TardigradeFile(obj);
+                StorjFile file = new StorjFile(obj);
                 if (prefix != "")
                 {
                     file.Name = file.Name.Replace(prefix, "");
@@ -286,8 +286,8 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             var bucket = await _bucketService.EnsureBucketAsync(_bucket);
             CustomMetadata custom = new CustomMetadata();
-            custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            custom.Entries.Add(new CustomMetadataEntry { Key = TardigradeFile.TARDIGRADE_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
+            custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.TARDIGRADE_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
+            custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.TARDIGRADE_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false);
             await upload.StartUploadAsync();
         }
@@ -298,7 +298,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             testTask.Wait(10000);
             if (!testTask.Result)
             {
-                throw new Exception(Strings.Tardigrade.TestConnectionFailed);
+                throw new Exception(Strings.Storj.TestConnectionFailed);
             }
         }
 

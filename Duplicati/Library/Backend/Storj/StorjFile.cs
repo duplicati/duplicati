@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Tardigrade
 {
-    public class TardigradeFile : IFileEntry
+    public class StorjFile : IFileEntry
     {
         public static readonly string TARDIGRADE_LAST_ACCESS = "DUPLICATI:LAST-ACCESS";
         public static readonly string TARDIGRADE_LAST_MODIFICATION = "DUPLICATI:LAST-MODIFICATION";
@@ -21,12 +21,12 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         public long Size { get; set; }
 
-        public TardigradeFile()
+        public StorjFile()
         {
 
         }
 
-        public TardigradeFile(uplink.NET.Models.Object tardigradeObject)
+        public StorjFile(uplink.NET.Models.Object tardigradeObject)
         {
             IsFolder = tardigradeObject.IsPrefix;
             var lastAccess = tardigradeObject.CustomMetaData.Entries.Where(e => e.Key == TARDIGRADE_LAST_ACCESS).FirstOrDefault();

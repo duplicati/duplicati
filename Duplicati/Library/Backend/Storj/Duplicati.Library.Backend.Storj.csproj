@@ -76,11 +76,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TardigradeFile.cs" />
+    <Compile Include="StorjFile.cs" />
     <Compile Include="Strings.cs" />
-    <Compile Include="TardigradeBackend.cs" />
+    <Compile Include="StorjBackend.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TardigradeConfig.cs" />
+    <Compile Include="StorjConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj">

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Tardigrade
 {
-    public class TardigradeConfig : IWebModule
+    public class StorjConfig : IWebModule
     {
         private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.Satellites;
         private const string KEY_CONFIGTYPE = "tardigrade-config";

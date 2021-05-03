@@ -231,9 +231,9 @@
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
       <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+    <ProjectReference Include="..\Library\Backend\Storj\Duplicati.Library.Backend.Storj.csproj">
       <Project>{AE035E01-C917-4F13-A35E-78F21C1A2F17}</Project>
-      <Name>Duplicati.Library.Backend.Tardigrade</Name>
+      <Name>Duplicati.Library.Backend.Storj</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
