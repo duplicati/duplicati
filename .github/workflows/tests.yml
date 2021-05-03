@@ -32,7 +32,7 @@ jobs:
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
 
-    - name: Install additional dependencies
+    - name: Install Additional Dependencies
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install gtk-sharp2
 
@@ -73,7 +73,7 @@ jobs:
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
 
-    - name: Install additional dependencies
+    - name: Install Additional Dependencies
       run: sudo apt-get install gtk-sharp2
 
     - name: Build Duplicati
