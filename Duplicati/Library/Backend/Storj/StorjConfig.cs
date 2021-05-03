@@ -10,7 +10,7 @@ namespace Duplicati.Library.Backend.Tardigrade
     public class StorjConfig : IWebModule
     {
         private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.Satellites;
-        private const string KEY_CONFIGTYPE = "tardigrade-config";
+        private const string KEY_CONFIGTYPE = "storj-config";
         private static readonly string DEFAULT_CONFIG_TYPE_STR = Enum.GetName(typeof(ConfigType), DEFAULT_CONFIG_TYPE);
 
         public enum ConfigType
@@ -21,7 +21,7 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         #region IWebModule implementation
 
-        public string Key { get { return "tardigrade-getconfig"; } }
+        public string Key { get { return "storj-getconfig"; } }
 
         public string DisplayName { get { return "Storj DCS configuration module"; } }
 
@@ -56,11 +56,11 @@ namespace Duplicati.Library.Backend.Tardigrade
             switch (ct)
             {
                 case ConfigType.Satellites:
-                    return Tardigrade.KNOWN_TARDIGRADE_SATELLITES;
+                    return Tardigrade.KNOWN_STORJ_SATELLITES;
                 case ConfigType.AuthenticationMethods:
                     return Tardigrade.KNOWN_AUTHENTICATION_METHODS;
                 default:
-                    return Tardigrade.KNOWN_TARDIGRADE_SATELLITES;
+                    return Tardigrade.KNOWN_STORJ_SATELLITES;
             }
         }
         #endregion

@@ -9,8 +9,8 @@ namespace Duplicati.Library.Backend.Tardigrade
 {
     public class StorjFile : IFileEntry
     {
-        public static readonly string TARDIGRADE_LAST_ACCESS = "DUPLICATI:LAST-ACCESS";
-        public static readonly string TARDIGRADE_LAST_MODIFICATION = "DUPLICATI:LAST-MODIFICATION";
+        public static readonly string STORJ_LAST_ACCESS = "DUPLICATI:LAST-ACCESS";
+        public static readonly string STORJ_LAST_MODIFICATION = "DUPLICATI:LAST-MODIFICATION";
         public bool IsFolder { get; set; }
 
         public DateTime LastAccess { get; set; }
@@ -29,7 +29,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         public StorjFile(uplink.NET.Models.Object tardigradeObject)
         {
             IsFolder = tardigradeObject.IsPrefix;
-            var lastAccess = tardigradeObject.CustomMetaData.Entries.Where(e => e.Key == TARDIGRADE_LAST_ACCESS).FirstOrDefault();
+            var lastAccess = tardigradeObject.CustomMetaData.Entries.Where(e => e.Key == STORJ_LAST_ACCESS).FirstOrDefault();
             if (lastAccess != null && !string.IsNullOrEmpty(lastAccess.Value))
             {
                 LastAccess = DateTime.Parse(lastAccess.Value);
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Tardigrade
                 LastAccess = DateTime.MinValue;
             }
 
-            var lastMod = tardigradeObject.CustomMetaData.Entries.Where(e => e.Key == TARDIGRADE_LAST_MODIFICATION).FirstOrDefault();
+            var lastMod = tardigradeObject.CustomMetaData.Entries.Where(e => e.Key == STORJ_LAST_MODIFICATION).FirstOrDefault();
             if (lastMod != null && !string.IsNullOrEmpty(lastMod.Value))
             {
                 LastModification = DateTime.Parse(lastMod.Value);
