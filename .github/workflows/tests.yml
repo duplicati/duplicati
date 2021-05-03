@@ -66,10 +66,11 @@ jobs:
     - name: Install NuGet
       uses: nuget/setup-nuget@v1.0.5
 
+    - name: Restore NuGet Packages
+      run: nuget restore Duplicati.sln
+
     - name: Build Duplicati
-      run: |
-        nuget restore Duplicati.sln
-        msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
+      run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
 
     - name: Set up Python
       uses: actions/setup-python@v2
