@@ -1,0 +1,88 @@
+name: Tests
+
+on:
+  push:
+    branches: "*"
+  pull_request:
+    branches: "*"
+
+env:
+  build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
+
+jobs:
+  unit_tests:
+    name: Unit tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+
+    steps:
+    - name: Add msbuild to PATH (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Install NuGet
+      uses: nuget/setup-nuget@v1.0.5
+
+    - name: Checkout Source
+      uses: actions/checkout@v2.3.4
+
+    - name: Restore NuGet Packages
+      run: nuget restore Duplicati.sln
+
+    - name: Build Duplicati (Linux and macOS)
+      if: matrix.os != 'windows-latest'
+      run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
+
+    - name: Build Duplicati (Windows)
+      if: matrix.os == 'windows-latest'
+      run: msbuild -p:Configuration=Release Duplicati.sln
+
+    - name: Run Unit Tests (Linux and macOS)
+      if: matrix.os != 'windows-latest'
+      run: |
+        nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
+        mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
+
+    - name: Run Unit Tests (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
+        nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
+
+  ui_tests:
+    name: UI tests
+    runs-on: ubuntu-latest
+
+    # Some of these steps duplicate those in the unit_tests job above.  This
+    # can be cleaned up using a composite run steps action once it supports
+    # what we need (https://github.com/actions/runner/issues/646).
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v2.3.4
+
+    - name: Install NuGet
+      uses: nuget/setup-nuget@v1.0.5
+
+    - name: Build Duplicati
+      run: |
+        nuget restore Duplicati.sln
+        msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Install dependencies
+      run: |
+        pip3 install selenium
+        pip3 install --upgrade urllib3
+
+    - name: Run UI tests
+      run: |
+        cp -r Duplicati/Server/webroot "${{ env.build_directory }}"/webroot
+        mono "${{ env.build_directory }}"/Duplicati.Server.exe &
+        python3 guiTests/guiTest.py
