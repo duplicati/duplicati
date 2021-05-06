@@ -145,7 +145,7 @@ namespace Duplicati.Library.Backend.Tardigrade
             if (options.ContainsKey(TARDIGRADE_FOLDER) || options.ContainsKey(STORJ_FOLDER))
             {
                 options.TryGetValue(STORJ_FOLDER, out _folder);
-                if (string.IsNullOrEmpty(_bucket))
+                if (string.IsNullOrEmpty(_folder))
                     _folder = options[TARDIGRADE_FOLDER];
             }
         }
