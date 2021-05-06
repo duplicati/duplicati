@@ -93,25 +93,35 @@ namespace Duplicati.Library.Backend.Tardigrade
         {
             InitStorjLibrary();
 
-            var auth_method = options[STORJ_AUTH_METHOD] ?? options[TARDIGRADE_AUTH_METHOD];
+            options.TryGetValue(STORJ_AUTH_METHOD, out string auth_method);
+            if (string.IsNullOrEmpty(auth_method))
+                auth_method = options[TARDIGRADE_AUTH_METHOD];
             if (auth_method == "Access grant")
             {
                 //Create an access from the access grant
-                var shared_access = options[STORJ_SHARED_ACCESS] ?? options[TARDIGRADE_SHARED_ACCESS];
+                options.TryGetValue(STORJ_SHARED_ACCESS, out string shared_access);
+                if (string.IsNullOrEmpty(shared_access))
+                    shared_access = options[TARDIGRADE_SHARED_ACCESS];
                 _access = new Access(shared_access, new Config() { UserAgent = STORJ_PARTNER_ID });
             }
             else
             {
                 //Create an access for a satellite, API key and encryption passphrase
-                _satellite = options[STORJ_SATELLITE] ?? options[TARDIGRADE_SATELLITE];
+                options.TryGetValue(STORJ_SATELLITE, out _satellite);
+                if (string.IsNullOrEmpty(_satellite))
+                    _satellite = options[TARDIGRADE_SATELLITE];
 
                 if (options.ContainsKey(TARDIGRADE_API_KEY) || options.ContainsKey(STORJ_API_KEY))
                 {
-                    _api_key = options[STORJ_API_KEY] ?? options[TARDIGRADE_API_KEY];
+                    options.TryGetValue(STORJ_API_KEY, out _api_key);
+                    if (string.IsNullOrEmpty(_api_key))
+                        _api_key = options[TARDIGRADE_API_KEY];
                 }
                 if (options.ContainsKey(TARDIGRADE_SECRET) || options.ContainsKey(STORJ_SECRET))
                 {
-                    _secret = options[STORJ_SECRET] ?? options[TARDIGRADE_SECRET];
+                    options.TryGetValue(STORJ_SECRET, out _secret);
+                    if (string.IsNullOrEmpty(_secret))
+                        _secret = options[TARDIGRADE_SECRET];
                 }
 
                 _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = STORJ_PARTNER_ID });
@@ -123,7 +133,9 @@ namespace Duplicati.Library.Backend.Tardigrade
             //If no bucket was provided use the default "duplicati"-bucket
             if (options.ContainsKey(TARDIGRADE_BUCKET) || options.ContainsKey(STORJ_BUCKET))
             {
-                _bucket = options[STORJ_BUCKET] ?? options[TARDIGRADE_BUCKET];
+                options.TryGetValue(STORJ_BUCKET, out _bucket);
+                if (string.IsNullOrEmpty(_bucket))
+                    _bucket = options[TARDIGRADE_BUCKET];
             }
             else
             {
@@ -132,7 +144,9 @@ namespace Duplicati.Library.Backend.Tardigrade
 
             if (options.ContainsKey(TARDIGRADE_FOLDER) || options.ContainsKey(STORJ_FOLDER))
             {
-                _folder = options[STORJ_FOLDER] ?? options[TARDIGRADE_FOLDER];
+                options.TryGetValue(STORJ_FOLDER, out _folder);
+                if (string.IsNullOrEmpty(_bucket))
+                    _folder = options[TARDIGRADE_FOLDER];
             }
         }
 
