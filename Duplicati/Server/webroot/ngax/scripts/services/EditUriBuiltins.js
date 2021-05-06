@@ -512,13 +512,13 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.storj_api_key = options['--storj-api-key'];
         if (options['--storj-secret'])
             scope.storj_secret = options['--storj-secret'];
-		if (options['--storj-secret-verify'])
+        if (options['--storj-secret-verify'])
             scope.storj_secret_verify = options['--storj-secret-verify'];
-		if (options['--storj-shared-access'])
+        if (options['--storj-shared-access'])
             scope.storj_shared_access = options['--storj-shared-access'];
-		if (options['--storj-bucket'])
+        if (options['--storj-bucket'])
             scope.storj_bucket = options['--storj-bucket'];
-		if (options['--storj-folder'])
+        if (options['--storj-folder'])
             scope.storj_folder = options['--storj-folder'];
 
         var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-secret-verify', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder',
@@ -765,23 +765,23 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 	
 	EditUriBackendConfig.builders['tardigrade'] = function (scope) {
         var opts = {
-			'tardigrade-auth-method': scope.tardigrade_auth_method,
+            'tardigrade-auth-method': scope.tardigrade_auth_method,
             'tardigrade-satellite': scope.tardigrade_satellite,
             'tardigrade-api-key': scope.tardigrade_api_key,
             'tardigrade-secret': scope.tardigrade_secret,
-			'tardigrade-secret-verify': scope.tardigrade_secret_verify,
+            'tardigrade-secret-verify': scope.tardigrade_secret_verify,
             'tardigrade-shared-access': scope.tardigrade_shared_access,
-			'tardigrade-bucket': scope.tardigrade_bucket,
-			'tardigrade-folder': scope.tardigrade_folder,
+            'tardigrade-bucket': scope.tardigrade_bucket,
+            'tardigrade-folder': scope.tardigrade_folder,
 			
-			'storj-auth-method': scope.storj_auth_method,
+            'storj-auth-method': scope.storj_auth_method,
             'storj-satellite': scope.storj_satellite,
             'storj-api-key': scope.storj_api_key,
             'storj-secret': scope.storj_secret,
-			'storj-secret-verify': scope.storj_secret_verify,
+            'storj-secret-verify': scope.storj_secret_verify,
             'storj-shared-access': scope.storj_shared_access,
-			'storj-bucket': scope.storj_bucket,
-			'storj-folder': scope.storj_folder
+            'storj-bucket': scope.storj_bucket,
+            'storj-folder': scope.storj_folder
         };
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
