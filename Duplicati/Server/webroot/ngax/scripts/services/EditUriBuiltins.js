@@ -1148,12 +1148,14 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 		}
 
 		if(res && scope['storj_auth_method'] == 'Access grant'){
-			res = EditUriBackendConfig.require_field(scope, 'storj_shared_access', gettextCatalog.getString('storj_shared_access'));
+			res = EditUriBackendConfig.require_field(scope, 'storj_shared_access', gettextCatalog.getString('storj_shared_access')) &&
+				  EditUriBackendConfig.require_field(scope, 'storj_bucket', gettextCatalog.getString('Bucket'));
 		}
 		
 		if(res && scope['storj_auth_method'] == 'API key'){
 			res = EditUriBackendConfig.require_field(scope, 'storj_api_key', gettextCatalog.getString('API key')) &&
-				  EditUriBackendConfig.require_field(scope, 'storj_secret', gettextCatalog.getString('Encryption passphrase'));
+				  EditUriBackendConfig.require_field(scope, 'storj_secret', gettextCatalog.getString('Encryption passphrase')) &&
+				  EditUriBackendConfig.require_field(scope, 'storj_bucket', gettextCatalog.getString('Bucket'));
 		}
 		
 		if(res && scope['storj_auth_method'] == 'API key' && !scope['storj_satellite']){
