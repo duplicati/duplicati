@@ -1839,7 +1839,7 @@ namespace Duplicati.Library.Main
             {
                 if (m_compressionHints == null)
                 {
-                    var hints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
+                    var hints = new Dictionary<string, CompressionHint>(StringComparer.OrdinalIgnoreCase);
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))
