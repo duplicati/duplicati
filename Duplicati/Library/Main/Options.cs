@@ -1839,7 +1839,7 @@ namespace Duplicati.Library.Main
             {
                 if (m_compressionHints == null)
                 {
-                    var hints = new Dictionary<string, CompressionHint>(StringComparer.OrdinalIgnoreCase); // Since file extensions are case insensitive
+                    var hints = new Dictionary<string, CompressionHint>(StringComparer.OrdinalIgnoreCase); // Ignore file system case sensitivity, since file extensions case rarely indicates type
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))
