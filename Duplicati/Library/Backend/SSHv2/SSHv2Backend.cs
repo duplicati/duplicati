@@ -351,7 +351,7 @@ namespace Duplicati.Library.Backend
                 // See https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs
                 if (Utility.Utility.IsMono)
                 {
-                    IEnumerable<string> ecdsaKeys = client.ConnectionInfo.HostKeyAlgorithms.Keys.Where(x => x.StartsWith("ecdsa"));
+                    List<string> ecdsaKeys = client.ConnectionInfo.HostKeyAlgorithms.Keys.Where(x => x.StartsWith("ecdsa")).ToList();
                     foreach (string key in ecdsaKeys)
                     {
                         client.ConnectionInfo.HostKeyAlgorithms.Remove(key);
