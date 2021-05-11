@@ -273,7 +273,7 @@ namespace Duplicati.Library.Backend
 
             if (m_con != null && !m_con.IsConnected)
             {
-                m_con.Connect();
+                this.TryConnect(m_con);
                 return;
             }
 
@@ -328,9 +328,42 @@ namespace Duplicati.Library.Backend
             if (m_keepaliveinterval.Ticks != 0)
                 con.KeepAliveInterval = m_keepaliveinterval;
 
-            con.Connect();
+            this.TryConnect(con);
 
             m_con = con;
+        }
+
+        private void TryConnect(SftpClient client)
+        {
+            try
+            {
+                client.Connect();
+            }
+            catch (NotImplementedException)
+            {
+                // SSH.NET relies on the System.Security.Cryptography.ECDsaCng class for
+                // ECDSA algorithms, which is not implemented in Mono (as of 6.12.0.144).
+                // This prevents clients from connecting if one of the ECDSA algorithms is
+                // chosen as the host key algorithm.  In the event that this causes a
+                // connection failure, we will prevent the client from advertising support
+                // for ECDSA algorithms and make another connection attempt.
+                //
+                // See https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs
+                if (Utility.Utility.IsMono)
+                {
+                    IEnumerable<string> ecdsaKeys = client.ConnectionInfo.HostKeyAlgorithms.Keys.Where(x => x.StartsWith("ecdsa"));
+                    foreach (string key in ecdsaKeys)
+                    {
+                        client.ConnectionInfo.HostKeyAlgorithms.Remove(key);
+                    }
+
+                    client.Connect();
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         private void ChangeDirectory(string path)
