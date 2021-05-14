@@ -282,15 +282,7 @@ namespace Duplicati.UnitTest
             }
 
             string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, pathComponent);
-            Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
-
-            MemoryStream restoredStream = new MemoryStream();
-            using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
-            {
-                Utility.CopyStream(fileStream, restoredStream);
-            }
-
-            Assert.AreEqual(fileBytes, restoredStream.ToArray());
+            TestUtils.AssertFilesAreEqual(filePath, restoreFilePath, true, pathComponent);
         }
     }
 }
