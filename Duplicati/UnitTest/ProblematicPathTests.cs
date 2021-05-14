@@ -274,6 +274,8 @@ namespace Duplicati.UnitTest
             }
 
             Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
+
+            // Restore just the file.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 IRestoreResults restoreResults = c.Restore(new[] {filePath});
@@ -283,6 +285,18 @@ namespace Duplicati.UnitTest
 
             string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, pathComponent);
             TestUtils.AssertFilesAreEqual(filePath, restoreFilePath, true, pathComponent);
+            SystemIO.IO_OS.FileDelete(restoreFilePath);
+
+            // Restore the entire directory.
+            string pathSpec = $"[{Util.AppendDirSeparator(this.DATAFOLDER)}.*]";
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IRestoreResults restoreResults = c.Restore(new[] {pathSpec});
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+            }
+
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, pathComponent);
         }
     }
 }
