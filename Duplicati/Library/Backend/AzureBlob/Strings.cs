@@ -9,7 +9,9 @@ namespace Duplicati.Library.Backend.AzureBlob.Strings {
         public static string StorageAccountNameDescriptionShort { get { return LC.L(@"The storage account name"); } }
         public static string AccessKeyDescriptionLong { get { return LC.L(@"The Azure access key which can be obtained by clicking the ""Manage Access Keys"" button on the storage account dashboard"); } }
         public static string AccessKeyDescriptionShort { get { return LC.L(@"The access key"); } }
-        public static string NoAccessKey { get { return LC.L(@"No Azure access key given"); } }
+        public static string SasTokenDescriptionLong { get { return LC.L(@"The Azure shared access signature (SAS) token which can be obtained by selecting the ""Shared access signature"" blade on the storage account dashboard, or inside a container blade"); } }
+        public static string SasTokenDescriptionShort { get { return LC.L(@"The SAS token"); } }
+        public static string NoAccessKeyOrSasToken { get { return LC.L(@"No Azure access key or SAS token given"); } }
         public static string AuthPasswordDescriptionLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
