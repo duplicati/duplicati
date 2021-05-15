@@ -20,11 +20,36 @@
 using Duplicati.Library.Common;
 using Microsoft.Win32.SafeHandles;
 using System;
+using System.Runtime.InteropServices;
 
 namespace Duplicati.Library.Utility
 {
     public static class WinTools
     {
+        /// <summary>
+        /// Windows security privileges.
+        /// Multiple privileges can be specified using bitwise addition.
+        /// </summary>
+        [Flags]
+        public enum Privileges
+        {
+            /// <summary>
+            /// No additional privileges.
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// SeBackupPrivilege privilege.
+            /// </summary>
+            SeBackupPrivilege = 1,
+
+            /// <summary>
+            /// SeRestorePrivilege privilege.
+            /// </summary>
+            SeRestorePrivilege = 2
+        }
+
+
         public static string GetWindowsGpgExePath()
         {
             if (!Platform.IsClientWindows)
@@ -58,17 +83,20 @@ namespace Duplicati.Library.Utility
 
 
         /// <summary>
-        /// On Windows platforms, tries to add <see cref="Win32.SE_BACKUP_NAME"/> privilege to the process
+        /// On Windows platforms, tries to add specified privileges to the process
         /// before executing the specified <paramref name="action"/>.
         /// Executes the specified <paramref name="action"/> as-is if the additional process privilege cannot be added
         /// to the process security context (eg current user is not allowed to enable this privilege).
         /// </summary>
+        /// <param name="privileges">Desired security privileges.</param>
         /// <param name="action">Action to execute.</param>
         /// <remarks>
-        /// In Windows platforms, the <see cref="Win32.SE_BACKUP_NAME"/>
-        /// privilege allows users to bypass file and directory object permissions for the purposes of backing up the system.
+        /// In Windows platforms, the <see cref="Privileges.SeBackupPrivilege"/>
+        /// privilege allows processes to bypass file and directory object permissions and read all objects for the purposes of backing up the system.
+        /// Similarly, the <see cref="Privileges.SeRestorePrivilege"/> 
+        /// privilege allows processes to write all objects for the purposes of backing up the system.
         /// 
-        /// The privilege is available to user accounts (and security groups) specified in the 
+        /// The privileges are available to user accounts (and security groups) specified in the 
         /// 'Back up files and directories' group policy (GPO =&gt; Computer Configuration =&gt;
         /// Windows Settings =&gt; Security Settings =&gt; Local Policies =&gt; User Rights Assignment).
         /// 
@@ -79,20 +107,20 @@ namespace Duplicati.Library.Utility
         /// and add this user account to the 'Backup Operators' security group. The process will be able to access ALL files on the system,
         /// without any other admin permissions.
         /// </remarks>
-        public static void WithBackupPrivileges(Action action)
+        public static void WithPrivileges(Privileges privileges, Action action)
         {
             if (Platform.IsClientWindows)
             {
-                var addedPrivilege = AddPrivilege(Win32.SE_BACKUP_NAME);
+                var addedPrivileges = ToggleProcessPrivileges(privileges, true);
                 try
                 {
                     action();
                 }
                 finally
                 {
-                    if (addedPrivilege)
+                    if (addedPrivileges != Privileges.None)
                     {
-                        RemovePrivilege(Win32.SE_BACKUP_NAME);
+                        ToggleProcessPrivileges(addedPrivileges, false);
                     }
                 }
             }
@@ -102,62 +130,79 @@ namespace Duplicati.Library.Utility
             }
         }
 
+        /// <summary>
+        /// Enables or disables one or more process privileges.
+        /// </summary>
+        /// <param name="privileges">Privileges to enable/disable.</param>
+        /// <param name="enable">True to enable; false to disable.</param>
+        /// <returns>Privileges that were successfully enabled/disabled.</returns>
+        private static Privileges ToggleProcessPrivileges(Privileges privileges, bool enable)
+        {
+            Privileges result = Privileges.None;
+            if (privileges == Privileges.None)
+                return result;
 
-        private static bool AddPrivilege(string privilege)
+            using (var safeHandle = GetPrivilegeAdjustProcessToken())
+            {
+                if (privileges.HasFlag(Privileges.SeBackupPrivilege))
+                {
+                    if (AdjustPrivilege(safeHandle.DangerousGetHandle(), Win32.SE_BACKUP_NAME, enable))
+                        result |= Privileges.SeBackupPrivilege;
+                }
+
+                if (privileges.HasFlag(Privileges.SeRestorePrivilege))
+                {
+                    if (AdjustPrivilege(safeHandle.DangerousGetHandle(), Win32.SE_RESTORE_NAME, enable))
+                        result |= Privileges.SeRestorePrivilege;
+                }
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Obtains a process access token that can be used to adjust process privileges.
+        /// </summary>
+        /// <returns></returns>
+        private static SafeProcessHandle GetPrivilegeAdjustProcessToken()
         {
             bool retVal;
-            Win32.TOKEN_PRIVILEGES tp;
             using (var hproc = new SafeProcessHandle(Win32.GetCurrentProcess(), true))
             {
                 IntPtr htok = IntPtr.Zero;
                 retVal = Win32.OpenProcessToken(hproc.DangerousGetHandle(), Win32.TOKEN_ADJUST_PRIVILEGES | Win32.TOKEN_QUERY, ref htok);
                 if (!retVal)
                 {
-                    return false;
+                    return null;
                 }
-                using (var safeTokenHandle = new SafeProcessHandle(htok, true))
-                {
-                    tp.Count = 1;
-                    tp.Luid = 0;
-                    tp.Attr = Win32.SE_PRIVILEGE_ENABLED;
-
-                    retVal = Win32.LookupPrivilegeValue(null, privilege, ref tp.Luid);
-                    if (!retVal)
-                    {
-                        return false;
-                    }
-                    retVal = Win32.AdjustTokenPrivileges(htok, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
-                    return retVal;
-                }
+                return new SafeProcessHandle(htok, true);
             }
         }
-        private static bool RemovePrivilege(string privilege)
+
+        private static bool AdjustPrivilege(IntPtr processPointer, string privilege, bool enable)
         {
             bool retVal;
             Win32.TOKEN_PRIVILEGES tp;
-            using (var hproc = new SafeProcessHandle(Win32.GetCurrentProcess(), true))
-            {
-                IntPtr htok = IntPtr.Zero;
-                retVal = Win32.OpenProcessToken(hproc.DangerousGetHandle(), Win32.TOKEN_ADJUST_PRIVILEGES | Win32.TOKEN_QUERY, ref htok);
-                if (!retVal)
-                {
-                    return false;
-                }
-                using (var safeTokenHandle = new SafeProcessHandle(htok, true))
-                {
-                    tp.Count = 1;
-                    tp.Luid = 0;
-                    tp.Attr = Win32.SE_PRIVILEGE_DISABLED;
+            tp.Count = 1;
+            tp.Luid = 0;
+            tp.Attr = enable
+                ? Win32.SE_PRIVILEGE_ENABLED
+                : Win32.SE_PRIVILEGE_DISABLED;
 
-                    retVal = Win32.LookupPrivilegeValue(null, privilege, ref tp.Luid);
-                    if (!retVal)
-                    {
-                        return false;
-                    }
-                    retVal = Win32.AdjustTokenPrivileges(htok, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
-                    return retVal;
-                }
+            Win32.TOKEN_PRIVILEGES prev = new Win32.TOKEN_PRIVILEGES();
+
+            retVal = Win32.LookupPrivilegeValue(null, privilege, ref tp.Luid);
+            if (!retVal)
+            {
+                return false;
             }
+
+            IntPtr retSize = IntPtr.Zero;
+            retVal = Win32.AdjustTokenPrivileges(processPointer, false, ref tp, Marshal.SizeOf(prev), ref prev, ref retSize);
+
+            // API call successful and previous value != current value (ie we actually enabled/disabled the privilege)
+            return retVal && prev.Attr != tp.Attr;
         }
 
     }

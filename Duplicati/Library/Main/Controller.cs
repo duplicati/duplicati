@@ -542,7 +542,8 @@ namespace Duplicati.Library.Main
         {
             if (Platform.IsClientWindows)
             {
-                WinTools.WithBackupPrivileges(action);
+                var desiredPrivileges = WinTools.Privileges.SeBackupPrivilege | WinTools.Privileges.SeRestorePrivilege;
+                WinTools.WithPrivileges(desiredPrivileges, action);
             }
             else
             {

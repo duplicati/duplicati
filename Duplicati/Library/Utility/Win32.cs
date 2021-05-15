@@ -41,6 +41,7 @@ namespace Duplicati.Library.Utility
         public const int ATTACH_PARENT_PROCESS = -1;
 
         internal const string SE_BACKUP_NAME = "SeBackupPrivilege";
+        internal const string SE_RESTORE_NAME = "SeRestorePrivilege";
 
         #endregion
 
@@ -281,9 +282,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="htok"></param>
         /// <param name="disall"></param>
-        /// <param name="newst"></param>
+        /// <param name="newState"></param>
         /// <param name="len"></param>
-        /// <param name="prev"></param>
+        /// <param name="prevState"></param>
         /// <param name="relen"></param>
         /// <returns></returns>
         /// <remarks>
@@ -291,7 +292,7 @@ namespace Duplicati.Library.Utility
         /// </remarks>
         [DllImport("advapi32.dll", ExactSpelling = true, SetLastError = true)]
         internal static extern bool AdjustTokenPrivileges(IntPtr htok, bool disall,
-        ref TOKEN_PRIVILEGES newst, int len, IntPtr prev, IntPtr relen);
+        ref TOKEN_PRIVILEGES newState, int len, ref TOKEN_PRIVILEGES prevState, ref IntPtr relen);
 
         /// <summary>
         /// Retrieves a pseudo handle for the current process.
