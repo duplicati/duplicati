@@ -495,11 +495,11 @@ namespace Duplicati.Server
             //Log various information in the logfile
             if (!commandlineOptions.ContainsKey("log-file"))
             {
-                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, "Duplicati.debug.log");
-                commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
-                if (System.IO.File.Exists(commandlineOptions["log-file"]))
+                var logFile = FindWritableLogfileDestination();
+                if (logFile != null)
                 {
-                    System.IO.File.Delete(commandlineOptions["log-file"]);
+                    commandlineOptions["log-file"] = logFile;
+                    commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
                 }
             }
 #endif
@@ -516,6 +516,31 @@ namespace Duplicati.Server
 
                 LogHandler.SetServerFile(commandlineOptions["log-file"], loglevel);
             }
+        }
+
+        private static string FindWritableLogfileDestination()
+        {
+            var folders = new string[] { StartupPath, System.IO.Path.GetTempPath() };
+
+            for (int i = 0; i < folders.Length; i++)
+            {
+                try
+                {
+                    var filepath = System.IO.Path.Combine(folders[i], "Duplicati.debug.log");
+                    if (System.IO.File.Exists(filepath))
+                    {
+                        System.IO.File.Delete(filepath);
+                    }
+                    System.IO.File.WriteAllText(filepath, "", System.Text.Encoding.ASCII);
+                    return filepath;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Try the next folder
+                    continue;
+                }
+            }
+            return null;
         }
 
         private static int ShowHelp(bool writeConsole)
