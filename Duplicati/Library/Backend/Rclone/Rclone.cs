@@ -103,7 +103,7 @@ namespace Duplicati.Library.Backend
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
-                Arguments = $"{arguments} {opt_rclone}",
+                Arguments = String.Format("{0} {1}", arguments, opt_rclone),
                 CreateNoWindow = true,
                 FileName = command,
                 RedirectStandardError = true,
@@ -181,7 +181,7 @@ namespace Duplicati.Library.Backend
 
             if (errorBuilder.ToString().Contains(RCLONE_ERROR_CONFIG_NOT_FOUND))
             {
-                throw new Exception($"Missing config file? {errorBuilder}");
+                throw new Exception(String.Format("Missing config file? {0}", errorBuilder));
             }
 
             if (errorBuilder.Length > 0) {
@@ -199,7 +199,7 @@ namespace Duplicati.Library.Backend
             try
             {
 
-                str_result = RcloneCommandExecuter(rclone_executable, $"lsjson {remote_repo}:{remote_path}", CancellationToken.None).Await();
+                str_result = RcloneCommandExecuter(rclone_executable, String.Format("lsjson {0}:{1}", remote_repo, remote_path), CancellationToken.None).Await();
                 // this will give an error if the executable does not exist.
             }
 
@@ -237,7 +237,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                return RcloneCommandExecuter(rclone_executable, $"copyto {local_repo}:{filename} {remote_repo}:{remote_path}/{remotename}", cancelToken);
+                return RcloneCommandExecuter(rclone_executable, String.Format("copyto {0}:{1} {2}:{3}/{4}", local_repo, filename, remote_repo, remote_path, remotename), cancelToken);
             }
             catch (FolderMissingException ex)
             {
@@ -249,7 +249,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                RcloneCommandExecuter(rclone_executable, $"copyto {local_repo}:{filename} {remote_repo}:{Path.Combine(this.remote_path, remotename)}", CancellationToken.None).Await();
+                RcloneCommandExecuter(rclone_executable, String.Format("copyto {2}:{3} {0}:{1}", local_repo, filename, remote_repo, Path.Combine(this.remote_path, remotename)), CancellationToken.None).Await();
             }
             catch (FolderMissingException ex) {
                 throw new FileMissingException(ex);
@@ -262,7 +262,7 @@ namespace Duplicati.Library.Backend
             // Will give a "directory not found" error if the file does not exist, need to change that to a missing file exception
             try
             {
-                RcloneCommandExecuter(rclone_executable, $"delete {remote_repo}:{Path.Combine(remote_path, remotename)}", CancellationToken.None).Await();
+                RcloneCommandExecuter(rclone_executable, String.Format("delete {0}:{1}", remote_repo, Path.Combine(remote_path, remotename)), CancellationToken.None).Await();
             }
             catch (FolderMissingException ex) {
                 throw new FileMissingException(ex);
@@ -308,7 +308,7 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            RcloneCommandExecuter(rclone_executable, $"mkdir {remote_repo}:{remote_path}", CancellationToken.None).Await();
+            RcloneCommandExecuter(rclone_executable, String.Format("mkdir {0}:{1}", remote_repo, remote_path), CancellationToken.None).Await();
         }
 
 #endregion

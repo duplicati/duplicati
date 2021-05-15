@@ -175,9 +175,9 @@ namespace Duplicati.UnitTest
                 Console.WriteLine("Listing final version information");
 
                 Console.WriteLine("Versions:");
-                Console.WriteLine("  " + string.Join(Environment.NewLine + "  ", filesets.Select(x => $"{x.Version}: {x.Time}, {x.FileCount} {x.FileSizes}")));
+                Console.WriteLine("  " + string.Join(Environment.NewLine + "  ", filesets.Select(x => string.Format("{0}: {1}, {2} {3}", x.Version, x.Time, x.FileCount, x.FileSizes))));
                 Console.WriteLine("Files:");
-                Console.WriteLine("  " + string.Join(Environment.NewLine + "  ", files.Select(x => $"{x.Path}: {string.Join(" - ", x.Sizes.Select(y => y.ToString()))}")));
+                Console.WriteLine("  " + string.Join(Environment.NewLine + "  ", files.Select(x => string.Format("{0}: {1}", x.Path, string.Join(" - ", x.Sizes.Select(y => y.ToString()))))));
 
                 Assert.AreEqual(4, filesets.Length, "Incorrect number of filesets after final backup");
                 Assert.AreEqual(filenames.Count + 1, filecount, "Incorrect number of files after final backup");
