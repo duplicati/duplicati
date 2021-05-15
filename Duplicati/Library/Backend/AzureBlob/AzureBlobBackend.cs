@@ -53,10 +53,14 @@ namespace Duplicati.Library.Backend.AzureBlob
                 storageAccountName = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 accessKey = options["auth-password"];
-            if (options.ContainsKey("azure_account_name") || options.ContainsKey("azure-account-name"))
-                storageAccountName = options["azure_account_name"] ?? options["azure-account-name"];
-            if (options.ContainsKey("azure_access_key") || options.ContainsKey("azure-access-key"))
-                accessKey = options["azure_access_key"] ?? options["azure-access-key"];
+            if (options.ContainsKey("azure_account_name"))
+                storageAccountName = options["azure_account_name"];
+            if (options.ContainsKey("azure-account-name"))
+                storageAccountName = options["azure-account-name"];
+            if (options.ContainsKey("azure_access_key"))
+                accessKey = options["azure_access_key"];
+            if (options.ContainsKey("azure-access-key"))
+                accessKey = options["azure-access-key"];
             if (!string.IsNullOrEmpty(uri.Username))
                 storageAccountName = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
