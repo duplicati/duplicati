@@ -64,7 +64,7 @@ namespace Duplicati.Library.AutoUpdater
                         var selfdir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                         if (string.Equals(Util.AppendDirSeparator(selfdir), Util.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
                             versions = versions.Union(new KeyValuePair<string, UpdateInfo>[] { new KeyValuePair<string, UpdateInfo>(selfdir, UpdaterManager.SelfVersion) });
-                        Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => string.Format(" {0} {1} ({2})", (x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-"), x.Value.Displayname, x.Value.Version))));
+                        Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => $" {(x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-")} {x.Value.Displayname} ({x.Value.Version})")));
                         return 0;
                     }
 
