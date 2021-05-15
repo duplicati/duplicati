@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -252,12 +253,18 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("ProblematicPath")]
-        [TestCase("ends_with_dot.")]
-        [TestCase("ends_with_dots..")]
-        [TestCase("ends_with_space ")]
-        [TestCase("ends_with_spaces  ")]
-        public void ProblematicSuffixes(string pathComponent)
+        [TestCase("ends_with_dot.", false)]
+        [TestCase("ends_with_dots..", false)]
+        [TestCase("ends_with_space ", false)]
+        [TestCase("ends_with_spaces  ", false)]
+        [TestCase("ends_with_newline\n", true)]
+        public void ProblematicSuffixes(string pathComponent, bool skipOnWindows)
         {
+            if (Platform.IsClientWindows && skipOnWindows)
+            {
+                return;
+            }
+
             string folderPath = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, pathComponent);
             SystemIO.IO_OS.DirectoryCreate(folderPath);
 
@@ -288,7 +295,7 @@ namespace Duplicati.UnitTest
             SystemIO.IO_OS.FileDelete(restoreFilePath);
 
             // Restore the entire directory.
-            string pathSpec = $"[{Util.AppendDirSeparator(this.DATAFOLDER)}.*]";
+            string pathSpec = $"[{Regex.Escape(Util.AppendDirSeparator(this.DATAFOLDER))}.*]";
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 IRestoreResults restoreResults = c.Restore(new[] {pathSpec});
