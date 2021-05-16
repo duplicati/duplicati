@@ -249,7 +249,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                RcloneCommandExecuter(rclone_executable, $"copyto {local_repo}:{filename} {remote_repo}:{Path.Combine(this.remote_path, remotename)}", CancellationToken.None).Await();
+                RcloneCommandExecuter(rclone_executable, $"copyto {remote_repo}:{Path.Combine(this.remote_path, remotename)} {local_repo}:{filename}", CancellationToken.None).Await();
             }
             catch (FolderMissingException ex) {
                 throw new FileMissingException(ex);
