@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -335,35 +336,30 @@ namespace Duplicati.Library.Backend
 
         private void TryConnect(SftpClient client)
         {
-            try
-            {
-                client.Connect();
-            }
-            catch (NotImplementedException)
+            if (Utility.Utility.IsMono)
             {
                 // SSH.NET relies on the System.Security.Cryptography.ECDsaCng class for
                 // ECDSA algorithms, which is not implemented in Mono (as of 6.12.0.144).
                 // This prevents clients from connecting if one of the ECDSA algorithms is
-                // chosen as the host key algorithm.  In the event that this causes a
-                // connection failure, we will prevent the client from advertising support
-                // for ECDSA algorithms and make another connection attempt.
+                // chosen as the host key algorithm.  In this case, we will prevent the
+                // client from advertising support for ECDSA algorithms.
                 //
                 // See https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs
-                if (Utility.Utility.IsMono)
+                try
+                {
+                    ECDsa.Create(default(ECCurve));
+                }
+                catch (NotImplementedException)
                 {
                     List<string> ecdsaKeys = client.ConnectionInfo.HostKeyAlgorithms.Keys.Where(x => x.StartsWith("ecdsa")).ToList();
                     foreach (string key in ecdsaKeys)
                     {
                         client.ConnectionInfo.HostKeyAlgorithms.Remove(key);
                     }
-
-                    client.Connect();
-                }
-                else
-                {
-                    throw;
                 }
             }
+
+            client.Connect();
         }
 
         private void ChangeDirectory(string path)
