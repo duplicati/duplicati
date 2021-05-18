@@ -75,13 +75,9 @@ namespace Duplicati.Library.Backend
                 ECDsaCng unused = new ECDsaCng();
                 SSHv2.supportsECDSA = true;
             }
-            catch (NotImplementedException)
-            {
-                SSHv2.supportsECDSA = false;
-            }
             catch
             {
-                SSHv2.supportsECDSA = true;
+                SSHv2.supportsECDSA = false;
             }
         }
 
