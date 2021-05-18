@@ -347,7 +347,7 @@ namespace Duplicati.Library.Backend
                 // See https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs
                 try
                 {
-                    ECDsa.Create(default(ECCurve));
+                    ECDsaCng unused = new ECDsaCng();
                 }
                 catch (NotImplementedException)
                 {
