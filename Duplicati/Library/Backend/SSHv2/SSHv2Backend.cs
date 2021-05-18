@@ -357,6 +357,10 @@ namespace Duplicati.Library.Backend
                         client.ConnectionInfo.HostKeyAlgorithms.Remove(key);
                     }
                 }
+                catch
+                {
+                    // Ignore other exceptions and assume that we have ECDSA support.
+                }
             }
 
             client.Connect();
