@@ -59,7 +59,31 @@ namespace Duplicati.Library.Backend
 
         private SftpClient m_con;
 
-        private readonly Lazy<bool> supportsECDSA = new Lazy<bool>(SSHv2.SupportsECDSA, true);
+        private static readonly bool supportsECDSA;
+
+        static SSHv2()
+        {
+            // SSH.NET relies on the System.Security.Cryptography.ECDsaCng class for
+            // ECDSA algorithms, which is not implemented in Mono (as of 6.12.0.144).
+            // This prevents clients from connecting if one of the ECDSA algorithms is
+            // chosen as the host key algorithm.  In this case, we will prevent the
+            // client from advertising support for ECDSA algorithms.
+            //
+            // See https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs.
+            try
+            {
+                ECDsaCng unused = new ECDsaCng();
+                SSHv2.supportsECDSA = true;
+            }
+            catch (NotImplementedException)
+            {
+                SSHv2.supportsECDSA = false;
+            }
+            catch
+            {
+                SSHv2.supportsECDSA = true;
+            }
+        }
 
         public SSHv2()
         {
@@ -336,35 +360,9 @@ namespace Duplicati.Library.Backend
             m_con = con;
         }
 
-        /// <summary>
-        /// SSH.NET relies on the System.Security.Cryptography.ECDsaCng class for
-        /// ECDSA algorithms, which is not implemented in Mono (as of 6.12.0.144).
-        /// This prevents clients from connecting if one of the ECDSA algorithms is
-        /// chosen as the host key algorithm.  In this case, we will prevent the
-        /// client from advertising support for ECDSA algorithms.
-        /// </summary>
-        /// <seealso href="https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs">Mono ECDsaCng implementation.</seealso>
-        /// <returns>Whether ECDSA algorithms are supported or not.</returns>
-        private static bool SupportsECDSA()
-        {
-            try
-            {
-                ECDsaCng unused = new ECDsaCng();
-                return true;
-            }
-            catch (NotImplementedException)
-            {
-                return false;
-            }
-            catch
-            {
-                return true;
-            }
-        }
-
         private void TryConnect(SftpClient client)
         {
-            if (!this.supportsECDSA.Value)
+            if (!SSHv2.supportsECDSA)
             {
                 List<string> ecdsaKeys = client.ConnectionInfo.HostKeyAlgorithms.Keys.Where(x => x.StartsWith("ecdsa")).ToList();
                 foreach (string key in ecdsaKeys)
