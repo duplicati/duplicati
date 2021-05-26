@@ -20,6 +20,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 
@@ -34,8 +36,9 @@ namespace Duplicati.CommandLine
             private readonly System.Threading.ManualResetEvent m_readyEvent;
             private readonly System.Threading.ManualResetEvent m_finishEvent;
             private readonly ConsoleOutput m_output;
-            private System.Threading.Thread m_thread;
             private readonly TimeSpan m_updateFrequency;
+            private Task m_task;
+            private readonly CancellationTokenSource m_cancellationTokenSource;
 
             public PeriodicOutput(ConsoleOutput messageSink, TimeSpan updateFrequency)
             {
@@ -43,10 +46,8 @@ namespace Duplicati.CommandLine
                 m_readyEvent = new System.Threading.ManualResetEvent(false);
                 m_finishEvent = new System.Threading.ManualResetEvent(false);
                 m_updateFrequency = updateFrequency;
-                m_thread = new System.Threading.Thread(this.ThreadMain);
-                m_thread.IsBackground = true;
-                m_thread.Name = "Periodic console writer";
-                m_thread.Start();
+                m_cancellationTokenSource = new CancellationTokenSource();
+                m_task = Task.Run(() => this.ThreadMain(m_cancellationTokenSource.Token), m_cancellationTokenSource.Token);
             }
 
             public void SetReady() { m_readyEvent.Set(); }
@@ -54,13 +55,13 @@ namespace Duplicati.CommandLine
 
             public bool Join(TimeSpan wait)
             {
-                if (m_thread != null)
-                    return m_thread.Join(wait);
+                if (m_task != null)
+                    return this.m_task.Wait(wait);
 
                 return true;
             }
 
-            private void ThreadMain()
+            private void ThreadMain(CancellationToken cancellationToken)
             {
                 m_readyEvent.WaitOne();
                 if (m_finishEvent.WaitOne(TimeSpan.FromMilliseconds(10), true))
@@ -69,7 +70,7 @@ namespace Duplicati.CommandLine
                 var last_count = -1L;
                 var finished = false;
 
-                while (true)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     float progress;
                     long filesprocessed;
@@ -106,22 +107,22 @@ namespace Duplicati.CommandLine
 
             public void Dispose()
             {
-                if (m_thread != null)
+                if (m_task != null)
                 {
                     try
                     {
                         m_finishEvent.Set();
                         m_readyEvent.Set();
 
-                        if (m_thread != null && m_thread.IsAlive)
+                        if (m_task != null)
                         {
-                            m_thread.Interrupt();
-                            m_thread.Join(500);
+                            m_cancellationTokenSource.Cancel();
+                            m_task.Wait(500);
                         }
                     }
                     finally
                     {
-                        m_thread = null;
+                        m_task = null;
                     }
                 }
             }
