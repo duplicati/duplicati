@@ -185,10 +185,14 @@ namespace Duplicati.Library.Backend
             if (options.ContainsKey("auth-password"))
                 awsKey = options["auth-password"];
 
-            if (options.ContainsKey("aws_access_key_id") || options.ContainsKey("aws-access-key-id"))
-                awsID = options["aws_access_key_id"] ?? options["aws-access-key-id"];
-            if (options.ContainsKey("aws_secret_access_key") || options.ContainsKey("aws-secret-access-key"))
-                awsKey = options["aws_secret_access_key"] ?? options["aws-secret-access-key"];
+            if (options.ContainsKey("aws_access_key_id"))
+                awsID = options["aws_access_key_id"];
+            if (options.ContainsKey("aws-access-key-id"))
+                awsID = options["aws-access-key-id"];
+            if (options.ContainsKey("aws_secret_access_key"))
+                awsKey = options["aws_secret_access_key"];
+            if (options.ContainsKey("aws-secret-access-key"))
+                awsKey = options["aws-secret-access-key"];
             if (!string.IsNullOrEmpty(uri.Username))
                 awsID = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
