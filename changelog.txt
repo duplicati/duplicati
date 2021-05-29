@@ -1,3 +1,10 @@
+2021-05-29 - 2.0.6.2_experimental_2021-05-29
+==========
+This is a minor bugfix release with only two changes:
+
+* Disabled SSH backend ECDSA keys on Mono as it does not work (see issue #4506)
+* Fixed priority of options from AWS and Azure backend if both underscore and dashed version were used (see issue #4513)
+
 2021-05-03 - 2.0.6.1_beta_2021-05-03
 ==========
 ## First beta build in over a year!
