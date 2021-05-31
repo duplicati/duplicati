@@ -116,44 +116,54 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
             var listBlobItems = _container.ListBlobs(prefix: prefix, blobListingDetails: BlobListingDetails.Metadata);
 
-            IFileEntry fileEntry = null;
+            var itemsEnumerator = listBlobItems.GetEnumerator();
 
-            foreach (var listBlobItem in listBlobItems)
+            while (true)
             {
                 try
                 {
-                    var absolutePath = listBlobItem.StorageUri.PrimaryUri.AbsolutePath;
-                    var containerSegment = string.Concat("/", _containerName, "/");
-                    var blobName = absolutePath.Substring(absolutePath.IndexOf(
-                        containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
-
-                    try
-                    {
-                        if (listBlobItem is CloudBlockBlob cb)
-                        {
-                            var lastModified = new System.DateTime();
-                            if (cb.Properties.LastModified != null)
-                                lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
-                            fileEntry = new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
-                        }
-                    }
-                    catch
-                    {
-                        // If the metadata fails to parse, return the basic entry
-                        fileEntry = new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
-                    }
+                    if (!itemsEnumerator.MoveNext())
+                        break;
                 }
                 catch (StorageException ex)
+                when (ex.RequestInformation.HttpStatusCode == 404)
                 {
-                    if (ex.RequestInformation.HttpStatusCode == 404)
-                    {
-                        throw new FolderMissingException(Strings.AzureBlobBackend.MissingContainerError(_containerName, ex.Message), ex);
-                    }
+                    itemsEnumerator.Dispose();
+                    throw new FolderMissingException(Strings.AzureBlobBackend.MissingContainerError(_containerName, ex.Message), ex);
+                }
+                catch
+                {
+                    itemsEnumerator.Dispose();
                     throw;
                 }
-                yield return fileEntry;
+
+                yield return ParseBlobItem(itemsEnumerator.Current);
             }
 
+            itemsEnumerator.Dispose();
+        }
+
+        private IFileEntry ParseBlobItem(IListBlobItem listBlobItem)
+        {
+            var absolutePath = listBlobItem.StorageUri.PrimaryUri.AbsolutePath;
+            var containerSegment = string.Concat("/", _containerName, "/");
+            var blobName = absolutePath.Substring(absolutePath.IndexOf(
+                containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
+
+            try
+            {
+                if (listBlobItem is CloudBlockBlob cb)
+                {
+                    var lastModified = new System.DateTime();
+                    if (cb.Properties.LastModified != null)
+                        lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
+                    return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
+                }
+            }
+            catch { }
+
+            // If the metadata fails to parse, return the basic entry
+            return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
         }
     }
 }
