@@ -112,46 +112,48 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container.GetBlockBlobReference(keyName).DeleteIfExists();
         }
 
-        public virtual List<IFileEntry> ListContainerEntries()
+        public virtual IEnumerable<IFileEntry> ListContainerEntries(string prefix = null)
         {
-            var listBlobItems = _container.ListBlobs(blobListingDetails: BlobListingDetails.Metadata);
-            try
+            var listBlobItems = _container.ListBlobs(prefix: prefix, blobListingDetails: BlobListingDetails.Metadata);
+
+            IFileEntry fileEntry = null;
+
+            foreach (var listBlobItem in listBlobItems)
             {
-                return listBlobItems.Select(x =>
+                try
                 {
-                    var absolutePath = x.StorageUri.PrimaryUri.AbsolutePath;
+                    var absolutePath = listBlobItem.StorageUri.PrimaryUri.AbsolutePath;
                     var containerSegment = string.Concat("/", _containerName, "/");
                     var blobName = absolutePath.Substring(absolutePath.IndexOf(
                         containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
 
                     try
                     {
-                        if (x is CloudBlockBlob cb)
+                        if (listBlobItem is CloudBlockBlob cb)
                         {
                             var lastModified = new System.DateTime();
                             if (cb.Properties.LastModified != null)
                                 lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
-                            return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
+                            fileEntry = new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
                         }
                     }
                     catch
                     {
                         // If the metadata fails to parse, return the basic entry
+                        fileEntry = new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
                     }
-
-                    return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
-                })
-                .Cast<IFileEntry>()
-                .ToList();
-            }
-            catch (StorageException ex)
-            {
-                if (ex.RequestInformation.HttpStatusCode == 404)
-                {
-                    throw new FolderMissingException(ex);
                 }
-                throw;
+                catch (StorageException ex)
+                {
+                    if (ex.RequestInformation.HttpStatusCode == 404)
+                    {
+                        throw new FolderMissingException(Strings.AzureBlobBackend.MissingContainerError(_containerName, ex.Message), ex);
+                    }
+                    throw;
+                }
+                yield return fileEntry;
             }
+
         }
     }
 }
