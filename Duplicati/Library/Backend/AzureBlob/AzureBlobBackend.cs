@@ -19,8 +19,10 @@
 #endregion
 
 using Duplicati.Library.Interface;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,6 +32,10 @@ namespace Duplicati.Library.Backend.AzureBlob
     // This class is instantiated dynamically in the BackendLoader.
     public class AzureBlobBackend : IStreamingBackend
     {
+        private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
+        private const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
+        private const int TEST_FILE_ENUM_COUNT = 5;
+
         private readonly AzureBlobWrapper _azureBlob;
 
         // ReSharper disable once UnusedMember.Global
@@ -197,9 +203,83 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return _azureBlob.DnsNames; }
         }
 
+
         public void Test()
         {
-            this.TestList();
+            // Test enumeration
+            var entriesEnumerator = _azureBlob.ListContainerEntries().GetEnumerator();
+            try
+            {
+                for (int i = 0; i < TEST_FILE_ENUM_COUNT && entriesEnumerator.MoveNext(); i++)
+                {
+                    var fileEntry = entriesEnumerator.Current;
+                }
+            }
+            finally
+            {
+                entriesEnumerator.Dispose();
+            }
+
+
+
+            // Test delete
+            IFileEntry remoteTestFile = _azureBlob.ListContainerEntries(TEST_FILE_NAME)
+                    .FirstOrDefault(f => f.Name == TEST_FILE_NAME);
+
+            if (remoteTestFile != null)
+            {
+                try
+                {
+                    Delete(TEST_FILE_NAME);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(string.Format(Strings.AzureBlobBackend.ErrorDeleteFile, e.Message), e);
+                }
+            }
+
+
+            // Test write
+            using (var testStream = StringToStream(TEST_FILE_CONTENT))
+            {
+                try
+                {
+                    PutAsync(TEST_FILE_NAME, testStream, CancellationToken.None).Wait();
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(string.Format(Strings.AzureBlobBackend.ErrorWriteFile, e.Message), e);
+                }
+            }
+
+
+
+            // Test read permissions
+            using (var testStream = new MemoryStream())
+            {
+                try
+                {
+                    Get(TEST_FILE_NAME, testStream);
+
+                    var readValue = System.Text.Encoding.Default.GetString(testStream.ToArray());
+                    if (readValue != TEST_FILE_CONTENT)
+                        throw new Exception("Test file corrupted.");
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(string.Format(Strings.AzureBlobBackend.ErrorReadFile, e.Message), e);
+                }
+            }
+
+            // Cleanup
+            try
+            {
+                Delete(TEST_FILE_NAME);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(string.Format(Strings.AzureBlobBackend.ErrorDeleteFile, e.Message), e);
+            }
         }
 
         public void CreateFolder()
@@ -211,5 +291,15 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
 
         }
+
+        private static Stream StringToStream(string str)
+        {
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream) { AutoFlush = true };
+            writer.Write(str);
+            stream.Position = 0;
+            return stream;
+        }
+
     }
 }
