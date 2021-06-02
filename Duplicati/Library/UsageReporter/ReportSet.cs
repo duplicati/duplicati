@@ -64,10 +64,7 @@ namespace Duplicati.Library.UsageReporter
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void DoInitCLR()
         {
-            if (Utility.Utility.IsMono)
-                Cached_CLRVersion = string.Format("Mono {0} ({1}), CLR: {2}", Utility.Utility.MonoDisplayVersion, Utility.Utility.MonoVersion, Environment.Version);
-            else
-                Cached_CLRVersion = string.Format(".Net {0}", Environment.Version);
+            Cached_CLRVersion = string.Format(".Net {0}", Environment.Version);
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]

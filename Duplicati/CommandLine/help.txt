@@ -30,7 +30,7 @@ Show the last changes to Duplicati
 ==================================
   Duplicati updates automatically when a newer version is available. The following command will show a list of versions and changes. 
   
-  %MONO%"%APP_PATH%" changelog
+  "%APP_PATH%" changelog
 
 # =============================================================================
 > duplicati.commandline.exe help system-info
@@ -40,7 +40,7 @@ Show system information as seen by Duplicati
 ============================================
   Issue the following command to see a variety of system information relevant to Duplicati. 
   
-  %MONO%"%APP_PATH%" system-info
+  "%APP_PATH%" system-info
 
 # =============================================================================
 > duplicati.commandline.exe help example
@@ -50,19 +50,19 @@ Make an encrypted backup
 ========================
   The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than one month are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default). 
   
-  %MONO%"%APP_PATH%" backup ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_PATH%" --throttle=500kB
+  "%APP_PATH%" backup ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_PATH%" --throttle=500kB
   
 Search for files in a backup
 ============================
   The backup can be searched for specific files. The following command returns all files "%EXAMPLE_SOURCE_FILE%" of the last backup. File names can also contain the wildcards * and ?. 
   
-  %MONO%"%APP_PATH%" find ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%"
+  "%APP_PATH%" find ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%"
 
 Restore a specific file
 =======================
   The following command will restore "%EXAMPLE_SOURCE_FILE%" from the backup in the latest version to its original destination and overwrite an existing file.
   
-  %MONO%"%APP_PATH%" restore ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%" --overwrite
+  "%APP_PATH%" restore ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%" --overwrite
     
 
 # =============================================================================
@@ -469,7 +469,7 @@ Duplicati has several built-in groups of filters, which include commonly exclude
 
 Duplicati can send email notifications after each operation. Use the send-mail command to test this:
   
-  %MONO%"%APP_PATH%" send-mail --send-mail-to=<email-address>
+  "%APP_PATH%" send-mail --send-mail-to=<email-address>
 
 
   --send-mail-to=<email-address>

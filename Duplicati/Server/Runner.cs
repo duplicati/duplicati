@@ -362,8 +362,6 @@ namespace Duplicati.Server
                 );
 
             var cmd = new System.Text.StringBuilder();
-            if (Library.Utility.Utility.IsMono)
-                cmd.Append("mono ");
 
             cmd.Append(Library.Utility.Utility.WrapAsCommandLine(new string[] { exe, "backup", backup.TargetURL }, false));
 

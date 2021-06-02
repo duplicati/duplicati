@@ -46,7 +46,6 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Machinename: {0}", Environment.MachineName);
             yield return string.Format("Processors: {0}", Environment.ProcessorCount);
             yield return string.Format(".Net Version: {0}", Environment.Version);
-            yield return string.Format("Mono: {0} ({1}) ({2})", Duplicati.Library.Utility.Utility.IsMono, Duplicati.Library.Utility.Utility.MonoVersion, Duplicati.Library.Utility.Utility.MonoDisplayVersion);
             yield return string.Format("Locale: {0}, {1}, {2}", System.Threading.Thread.CurrentThread.CurrentCulture, System.Threading.Thread.CurrentThread.CurrentUICulture, System.Globalization.CultureInfo.InstalledUICulture);
             yield return string.Format("Date/time strings: {0} - {1}", System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongDatePattern, System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongTimePattern);
             yield return string.Format("Tempdir: {0}", Library.Utility.TempFolder.SystemTempPath);

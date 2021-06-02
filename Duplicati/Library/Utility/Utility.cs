@@ -852,64 +852,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Returns a value indicating if the app is running under Mono
-        /// </summary>
-        public static bool IsMono => Type.GetType("Mono.Runtime") != null;
-
-        /// <summary>
-        /// Gets the current Mono runtime version, will return 0.0 if not running Mono
-        /// </summary>
-        public static Version MonoVersion
-        {
-            get
-            {
-                try
-                {
-                    var v = MonoDisplayVersion;
-                    if (v != null)
-                    {
-                        var regex = new Regex(@"\d+\.\d+(\.\d+)?(\.\d+)?");
-                        var match = regex.Match(v);
-                        if (match.Success)
-                            return new Version(match.Value);
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return new Version();
-            }
-        }
-
-        /// <summary>
-        /// Gets the Mono display version, or null if not running Mono
-        /// </summary>
-        public static string MonoDisplayVersion
-        {
-            get
-            {
-                try
-                {
-                    var t = Type.GetType("Mono.Runtime");
-                    if (t != null)
-                    {
-                        var mi = t.GetMethod("GetDisplayName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-                        if (mi != null)
-                            return (string)mi.Invoke(null, null);
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Gets a string comparer that matches the client filesystems case sensitivity
         /// </summary>
         public static StringComparer ClientFilenameStringComparer => IsFSCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
