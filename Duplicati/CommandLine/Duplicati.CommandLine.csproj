@@ -13,6 +13,7 @@
     <AssemblyName>Duplicati.CommandLine</AssemblyName>
     <RootNamespace>Duplicati.CommandLine</RootNamespace>
     <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,8 +23,8 @@
     <Compile Remove="RecoveryTool\**" />
     <Compile Remove="ConfigurationImporter\**" />
   </ItemGroup>
-  
-  <ItemGroup>	
+
+  <ItemGroup>
     <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj">
@@ -99,16 +100,20 @@
     <ProjectReference Include="..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
     </ProjectReference>
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Include="help.txt" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
 
+  </ItemGroup>
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
 </Project>
