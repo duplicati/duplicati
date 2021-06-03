@@ -143,49 +143,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                         DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: ') + message);
                         return;                         
                     }
-
-                    if ($scope.SystemInfo.MonoVersion != null && !hasTriedMozroots) {
-                        
-                        hasTriedMozroots = true;
-
-                        AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'List'}).then(function(data) {
-                            if (data.data.Result.count == 0) {
-                                if (confirm(gettextCatalog.getString('You appear to be running Mono with no SSL certificates loaded.\nDo you want to import the list of trusted certificates from Mozilla?')))
-                                {
-                                    scope.Testing = true;
-                                    AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'Install'}).then(function(data) {
-                                        scope.Testing = false;
-                                        if (data.data.Result.count == 0) {
-                                            DialogService.dialog(gettextCatalog.getString('Import failed'), gettextCatalog.getString('Import completed, but no certificates were found after the import'));
-                                        } else {
-                                            testConnection();
-                                        }
-                                    }, function(resp) {
-
-                                        scope.Testing = false;
-                                        message = resp.statusText;
-                                        if (data.data != null && data.data.Message != null)
-                                            message = data.data.Message;
-                                        
-                                        DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to import: ') + message);
-
-                                    });
-                                }
-                                else
-                                {
-                                    askApproveCert(hash);
-                                }
-                            } else {
-                                askApproveCert(hash);
-                            }
-
-                        }, AppUtils.connectionError);
-
-                    }
-                    else
-                    {
-                        askApproveCert(hash);
-                    }
+                    askApproveCert(hash);
                 }
                 else if (!hasTriedHostkey && message.indexOf('incorrect-host-key:') == 0)
                 {
