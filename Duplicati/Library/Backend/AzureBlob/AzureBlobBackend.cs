@@ -47,16 +47,27 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             string storageAccountName = null;
             string accessKey = null;
+            string sasToken = null;
             string containerName = uri.Host.ToLowerInvariant();
 
             if (options.ContainsKey("auth-username"))
                 storageAccountName = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 accessKey = options["auth-password"];
-            if (options.ContainsKey("azure_account_name") || options.ContainsKey("azure-account-name"))
-                storageAccountName = options["azure_account_name"] ?? options["azure-account-name"];
-            if (options.ContainsKey("azure_access_key") || options.ContainsKey("azure-access-key"))
-                accessKey = options["azure_access_key"] ?? options["azure-access-key"];
+
+            if (options.ContainsKey("azure_account_name"))
+                storageAccountName = options["azure_account_name"];
+            if (options.ContainsKey("azure-account-name"))
+                storageAccountName = options["azure-account-name"];
+
+            if (options.ContainsKey("azure_access_key"))
+                accessKey = options["azure_access_key"];
+            if (options.ContainsKey("azure-access-key"))
+                accessKey = options["azure-access-key"];
+
+            if (options.ContainsKey("azure-access-sas-token"))
+                sasToken = options["azure-access-sas-token"];
+
             if (!string.IsNullOrEmpty(uri.Username))
                 storageAccountName = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -66,12 +77,13 @@ namespace Duplicati.Library.Backend.AzureBlob
             {
                 throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
             }
-            if (string.IsNullOrWhiteSpace(accessKey))
+            if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(sasToken))
             {
-                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKey, "AzureNoAccessKey");
+                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
             }
 
-            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, containerName);
+
+            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, sasToken, containerName);
         }
 
         public string DisplayName
@@ -151,6 +163,10 @@ namespace Duplicati.Library.Backend.AzureBlob
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.AccessKeyDescriptionShort,
                         Strings.AzureBlobBackend.AccessKeyDescriptionLong),
+                    new CommandLineArgument("azure-access-sas-token",
+                        CommandLineArgument.ArgumentType.Password,
+                        Strings.AzureBlobBackend.SasTokenDescriptionShort,
+                        Strings.AzureBlobBackend.SasTokenDescriptionLong),
                     new CommandLineArgument("azure-blob-container-name",
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.ContainerNameDescriptionShort,

@@ -18,13 +18,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
-using System.Threading;
 
 namespace Duplicati.Library.Utility
 {
@@ -34,7 +34,7 @@ namespace Duplicati.Library.Utility
         /// Size of buffers for copying stream
         /// </summary>
         public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
-
+        
         /// <summary>
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
         /// </summary>
@@ -91,16 +91,16 @@ namespace Duplicati.Library.Utility
                 }
 
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
-
+            
             int read;
 			long total = 0;
 			while ((read = source.Read(buf, 0, buf.Length)) != 0)
 			{
 				target.Write(buf, 0, read);
 				total += read;
-			}
-
-			return total;
+            }
+            
+            return total;
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace Duplicati.Library.Utility
                 await target.WriteAsync(buf, 0, read, cancelToken).ConfigureAwait(false);
                 total += read;
             }
-
+            
             return total;
         }
 

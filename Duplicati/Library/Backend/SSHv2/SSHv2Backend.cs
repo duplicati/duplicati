@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -57,6 +58,28 @@ namespace Duplicati.Library.Backend
         private readonly int m_port = 22;
 
         private SftpClient m_con;
+
+        private static readonly bool supportsECDSA;
+
+        static SSHv2()
+        {
+            // SSH.NET relies on the System.Security.Cryptography.ECDsaCng class for
+            // ECDSA algorithms, which is not implemented in Mono (as of 6.12.0.144).
+            // This prevents clients from connecting if one of the ECDSA algorithms is
+            // chosen as the host key algorithm.  In this case, we will prevent the
+            // client from advertising support for ECDSA algorithms.
+            //
+            // See https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs.
+            try
+            {
+                ECDsaCng unused = new ECDsaCng();
+                SSHv2.supportsECDSA = true;
+            }
+            catch
+            {
+                SSHv2.supportsECDSA = false;
+            }
+        }
 
         public SSHv2()
         {
@@ -273,7 +296,7 @@ namespace Duplicati.Library.Backend
 
             if (m_con != null && !m_con.IsConnected)
             {
-                m_con.Connect();
+                this.TryConnect(m_con);
                 return;
             }
 
@@ -328,9 +351,23 @@ namespace Duplicati.Library.Backend
             if (m_keepaliveinterval.Ticks != 0)
                 con.KeepAliveInterval = m_keepaliveinterval;
 
-            con.Connect();
+            this.TryConnect(con);
 
             m_con = con;
+        }
+
+        private void TryConnect(SftpClient client)
+        {
+            if (!SSHv2.supportsECDSA)
+            {
+                List<string> ecdsaKeys = client.ConnectionInfo.HostKeyAlgorithms.Keys.Where(x => x.StartsWith("ecdsa")).ToList();
+                foreach (string key in ecdsaKeys)
+                {
+                    client.ConnectionInfo.HostKeyAlgorithms.Remove(key);
+                }
+            }
+
+            client.Connect();
         }
 
         private void ChangeDirectory(string path)
