@@ -207,20 +207,13 @@ namespace Duplicati.Library.Backend.AzureBlob
         public void Test()
         {
             // Test enumeration
-            var entriesEnumerator = _azureBlob.ListContainerEntries().GetEnumerator();
-            try
+            using (var entriesEnumerator = _azureBlob.ListContainerEntries().GetEnumerator())
             {
                 for (int i = 0; i < TEST_FILE_ENUM_COUNT && entriesEnumerator.MoveNext(); i++)
                 {
                     var fileEntry = entriesEnumerator.Current;
                 }
             }
-            finally
-            {
-                entriesEnumerator.Dispose();
-            }
-
-
 
             // Test delete
             IFileEntry remoteTestFile = _azureBlob.ListContainerEntries(TEST_FILE_NAME)
@@ -240,7 +233,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 
 
             // Test write
-            using (var testStream = StringToStream(TEST_FILE_CONTENT))
+            using (var testStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(TEST_FILE_CONTENT)))
             {
                 try
                 {
@@ -251,8 +244,6 @@ namespace Duplicati.Library.Backend.AzureBlob
                     throw new Exception(string.Format(Strings.AzureBlobBackend.ErrorWriteFile, e.Message), e);
                 }
             }
-
-
 
             // Test read permissions
             using (var testStream = new MemoryStream())
@@ -290,15 +281,6 @@ namespace Duplicati.Library.Backend.AzureBlob
         public void Dispose()
         {
 
-        }
-
-        private static Stream StringToStream(string str)
-        {
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream) { AutoFlush = true };
-            writer.Write(str);
-            stream.Position = 0;
-            return stream;
         }
 
     }
