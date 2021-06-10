@@ -376,7 +376,7 @@ namespace Duplicati.Library.Backend
                 foreach (var s in KNOWN_S3_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
-                var defaults = new Amazon.S3.AmazonS3Config();
+                var defaults = S3AwsClient.GetDefaultAmazonS3Config();
 
                 var exts =
                     typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
