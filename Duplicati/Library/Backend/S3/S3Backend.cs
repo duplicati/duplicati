@@ -341,10 +341,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)

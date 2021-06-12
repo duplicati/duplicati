@@ -186,10 +186,10 @@ namespace Duplicati.Library.Backend.Mega
                 select new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                return PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
