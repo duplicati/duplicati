@@ -315,6 +315,13 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetWinformsInstance() { return new Win32Runner(); }
 
+#if __WindowsGTK__ || ENABLE_GTK
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
+#endif
+
         private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
 
         //The functions below simply load the requested type,
