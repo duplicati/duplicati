@@ -143,18 +143,6 @@
       <Link>licenses\ManagedLZMA\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\MonoMac\licensedata.json">
-      <Link>licenses\MonoMac\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MonoMac\download.txt">
-      <Link>licenses\MonoMac\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MonoMac\license.txt">
-      <Link>licenses\MonoMac\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\..\thirdparty\SQLite\licensedata.json">
       <Link>licenses\SQLite\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

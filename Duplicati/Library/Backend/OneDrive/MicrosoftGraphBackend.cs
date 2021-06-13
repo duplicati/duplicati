@@ -69,13 +69,6 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private const int UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE = 320 * 1024;
 
-        /// <summary>
-        /// Whether to use the HttpClient class for HTTP requests.
-        /// Default is false when running under Mono (as it seems it might be causing a memory leak in some environments / versions)
-        /// but true in other cases (where these memory leaks haven't been reproduced).
-        /// </summary>
-        private static readonly bool USE_HTTP_CLIENT_DEFAULT = Utility.Utility.IsMono ? false : true;
-
         private static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
 
         /// <summary>
@@ -139,11 +132,11 @@ namespace Duplicati.Library.Backend
             string useHttpClientStr;
             if (options.TryGetValue(USE_HTTP_CLIENT, out useHttpClientStr))
             {
-                useHttpClient = Utility.Utility.ParseBool(useHttpClientStr, USE_HTTP_CLIENT_DEFAULT);
+                useHttpClient = Utility.Utility.ParseBool(useHttpClientStr, true);
             }
             else
             {
-                useHttpClient = USE_HTTP_CLIENT_DEFAULT;
+                useHttpClient = true;
             }
 
             if (useHttpClient)
@@ -188,7 +181,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_SIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentSizeShort, Strings.MicrosoftGraph.FragmentSizeLong, Library.Utility.Utility.FormatSizeString(UPLOAD_SESSION_FRAGMENT_DEFAULT_SIZE)),
                     new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_RETRY_COUNT_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentRetryCountShort, Strings.MicrosoftGraph.FragmentRetryCountLong, UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_COUNT.ToString()),
                     new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentRetryDelayShort, Strings.MicrosoftGraph.FragmentRetryDelayLong, UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY.ToString()),
-                    new CommandLineArgument(USE_HTTP_CLIENT, CommandLineArgument.ArgumentType.Boolean, Strings.MicrosoftGraph.UseHttpClientShort, Strings.MicrosoftGraph.UseHttpClientLong, USE_HTTP_CLIENT_DEFAULT.ToString()),
+                    new CommandLineArgument(USE_HTTP_CLIENT, CommandLineArgument.ArgumentType.Boolean, Strings.MicrosoftGraph.UseHttpClientShort, Strings.MicrosoftGraph.UseHttpClientLong, true.ToString()),
                 }
                 .Concat(this.AdditionalSupportedCommands).ToList();
             }

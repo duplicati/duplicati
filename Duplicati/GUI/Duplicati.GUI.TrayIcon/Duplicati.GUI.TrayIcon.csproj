@@ -55,9 +55,6 @@
     </Reference>
     <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <Reference Include="MonoMac">
-      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
-    </Reference>
     <Reference Include="notify-sharp">
       <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
     </Reference>

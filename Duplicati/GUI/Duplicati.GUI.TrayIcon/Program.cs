@@ -20,7 +20,6 @@ namespace Duplicati.GUI.TrayIcon
         private const string TOOLKIT_WINDOWS_FORMS = "winforms";
         private const string TOOLKIT_GTK = "gtk";
         private const string TOOLKIT_GTK_APP_INDICATOR = "gtk-appindicator";
-        private const string TOOLKIT_COCOA = "cocoa";
         private const string TOOLKIT_RUMPS = "rumps";
 
         private const string HOSTURL_OPTION = "hosturl";
@@ -131,8 +130,6 @@ namespace Duplicati.GUI.TrayIcon
                 else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_GTK_APP_INDICATOR;
 #endif
-                else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
-                    toolkit = TOOLKIT_COCOA;
                 else if (TOOLKIT_RUMPS.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_RUMPS;
                 else
@@ -302,8 +299,6 @@ namespace Duplicati.GUI.TrayIcon
             else if (toolkit == TOOLKIT_GTK_APP_INDICATOR)
                 return GetAppIndicatorInstance();
 #endif
-            else if (toolkit == TOOLKIT_COCOA)
-                return GetCocoaRunnerInstance();
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
             else 
@@ -319,14 +314,13 @@ namespace Duplicati.GUI.TrayIcon
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetWinformsInstance() { return new Win32Runner(); }
-#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
+
+#if __WindowsGTK__ || ENABLE_GTK
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
 
         private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
 
@@ -361,12 +355,6 @@ namespace Duplicati.GUI.TrayIcon
             return false;
 #endif
         }
-        
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static bool TryGetMonoMac()
-        {
-            return !Environment.Is64BitProcess && typeof(MonoMac.AppKit.NSApplication) != null;
-        }
   
         //The functions below here, simply wrap the call to the above functions,
         // converting the exception to a simple boolean value, so the calling
@@ -387,17 +375,6 @@ namespace Duplicati.GUI.TrayIcon
             get 
             {
                 try { return TryGetAppIndicator(); }
-                catch {}
-                
-                return false;
-            }
-        }
-
-        private static bool SupportsCocoa
-        {
-            get 
-            {
-                try { return TryGetMonoMac(); }
                 catch {}
                 
                 return false;
@@ -438,8 +415,6 @@ namespace Duplicati.GUI.TrayIcon
                     toolkits.Add(TOOLKIT_GTK);
                 if (SupportsAppIndicator)
                     toolkits.Add(TOOLKIT_GTK_APP_INDICATOR);
-                if (SupportsCocoa)
-                    toolkits.Add(TOOLKIT_COCOA);
                 if (SupportsRumps)
                     toolkits.Add(TOOLKIT_RUMPS);
                 

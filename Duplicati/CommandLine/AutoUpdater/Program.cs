@@ -127,7 +127,7 @@ namespace Duplicati.CommandLine.AutoUpdater
 
         private static void WriteUsage()
         {
-            Console.WriteLine("Usage:{0}\t{1}{2} [LIST|VERIFY|CHECK|INSTALL|HELP]", Environment.NewLine, Duplicati.Library.Utility.Utility.IsMono ? "mono " : "", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            Console.WriteLine("Usage:{0}\t{1} [LIST|VERIFY|CHECK|INSTALL|HELP]", Environment.NewLine, System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
             Console.WriteLine();
             Console.WriteLine("Environment variables:");
             Console.WriteLine();

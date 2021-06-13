@@ -14,11 +14,6 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string ForcepassphrasefromstdinShort { get { return LC.L(@"Read passphrase from STDIN"); } }
         public static string ForcepassphrasefromstdinLong { get { return LC.L(@"By default, the passphrase is attempted read from the TTY device directly, increasing the security by not copying the passphrase into a stream. In some setups, such as when running detached from a console, this does not work. Set this flag to prevent trying a TTY read and only read the passphrase from STDIN."); } }
     }
-    internal static class CheckMonoSSL {
-        public static string Description { get { return LC.L(@"When running with Mono, this module will check if any certificates are installed and suggest installing them otherwise"); } }
-        public static string Displayname { get { return LC.L(@"Check for SSL certificates"); } }
-        public static string ErrorMessage { get { return LC.L(@"No certificates found, you can install some with one of these commands:{0}    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}    curl -LO https://curl.se/ca/cacert.pem; cert-sync --user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}", Environment.NewLine, "http://www.mono-project.com/docs/about-mono/releases/3.12.0/#cert-sync"); } }
-    }
     internal static class HttpOptions {
         public static string Description { get { return LC.L(@"This module exposes a number of properties that can be used to change the way http requests are issued"); } }
         public static string DescriptionAcceptAnyCertificateLong { get { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible."); } }

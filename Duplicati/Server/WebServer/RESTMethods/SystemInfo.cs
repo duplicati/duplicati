@@ -80,7 +80,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
                 PathSeparator = System.IO.Path.PathSeparator,
                 CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
-                MonoVersion = Duplicati.Library.Utility.Utility.IsMono ? Duplicati.Library.Utility.Utility.MonoVersion.ToString() : null,
                 MachineName = System.Environment.MachineName,
                 UserName = System.Environment.UserName,
                 NewLine = System.Environment.NewLine,
