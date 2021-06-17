@@ -18,36 +18,27 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Duplicati.Library.Utility
+namespace Duplicati.Library.Utility.Win32
 {
     //The signatures in this file are from http://pinvoke.net
 
     /// <summary>
     /// Various Windows specific calls 
     /// </summary>
-    public static class Win32
+    public static class ProcessNativeMethods
     {
 
         #region Consts
-        internal const int SE_PRIVILEGE_DISABLED = 0x00000000;
-        internal const int SE_PRIVILEGE_ENABLED = 0x00000002;
-        internal const int TOKEN_QUERY = 0x00000008;
-        internal const int TOKEN_ADJUST_PRIVILEGES = 0x00000020;
-
+ 
         public const int ATTACH_PARENT_PROCESS = -1;
-
-        internal const string SE_BACKUP_NAME = "SeBackupPrivilege";
-        internal const string SE_RESTORE_NAME = "SeRestorePrivilege";
-
+  
         #endregion
 
         #region Enums
 
-        [FlagsAttribute]
+        [Flags]
         public enum EXECUTION_STATE : uint
         {
             ES_AWAYMODE_REQUIRED = 0x00000040,
@@ -192,24 +183,6 @@ namespace Duplicati.Library.Utility
 
         #endregion
 
-        #region Structs
-
-        /// <summary>
-        /// The TOKEN_PRIVILEGES structure contains information about a set of privileges for an access token.
-        /// </summary>
-        /// <remarks>
-        /// See https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-token_privileges.
-        /// </remarks>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        internal struct TOKEN_PRIVILEGES
-        {
-            public int Count;
-            public long Luid;
-            public int Attr;
-        }
-
-        #endregion
-
         #region Function calls
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -274,63 +247,6 @@ namespace Duplicati.Library.Utility
         [DllImport("ntdll.dll")]
         public static extern PHCM_VALUES RtlSetProcessPlaceholderCompatibilityMode(PHCM_VALUES pcm);
 
-
-
-        /// <summary>
-        /// The AdjustTokenPrivileges function enables or disables privileges in the specified access token.
-        /// Enabling or disabling privileges in an access token requires TOKEN_ADJUST_PRIVILEGES access.
-        /// </summary>
-        /// <param name="htok"></param>
-        /// <param name="disall"></param>
-        /// <param name="newState"></param>
-        /// <param name="len"></param>
-        /// <param name="prevState"></param>
-        /// <param name="relen"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// See https://docs.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges.
-        /// </remarks>
-        [DllImport("advapi32.dll", ExactSpelling = true, SetLastError = true)]
-        internal static extern bool AdjustTokenPrivileges(IntPtr htok, bool disall,
-        ref TOKEN_PRIVILEGES newState, int len, ref TOKEN_PRIVILEGES prevState, ref IntPtr relen);
-
-        /// <summary>
-        /// Retrieves a pseudo handle for the current process.
-        /// </summary>
-        /// <returns></returns>
-        /// <remarks>
-        /// See https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess
-        /// </remarks>
-        [DllImport("kernel32.dll", ExactSpelling = true)]
-        internal static extern IntPtr GetCurrentProcess();
-
-        /// <summary>
-        /// The OpenProcessToken function opens the access token associated with a process.
-        /// </summary>
-        /// <param name="h"></param>
-        /// <param name="acc"></param>
-        /// <param name="phtok"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// See https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocesstoken.
-        /// </remarks>
-        [DllImport("advapi32.dll", ExactSpelling = true, SetLastError = true)]
-        internal static extern bool OpenProcessToken(IntPtr h, int acc, ref IntPtr
-        phtok);
-
-        /// <summary>
-        /// The LookupPrivilegeValue function retrieves the locally unique identifier (LUID) used on a specified system to locally represent the specified privilege name.
-        /// </summary>
-        /// <param name="host"></param>
-        /// <param name="name"></param>
-        /// <param name="pluid"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// See https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-lookupprivilegevaluea.
-        /// </remarks>
-        [DllImport("advapi32.dll", SetLastError = true)]
-        internal static extern bool LookupPrivilegeValue(string host, string name,
-        ref long pluid);
         #endregion
     }
 }

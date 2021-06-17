@@ -15,7 +15,7 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         public static HttpServerConnection Connection;
-    
+
         private const string TOOLKIT_OPTION = "toolkit";
         private const string TOOLKIT_WINDOWS_FORMS = "winforms";
         private const string TOOLKIT_GTK = "gtk";
@@ -31,7 +31,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
         private const string DEFAULT_HOSTURL = "http://localhost:8200";
-        
+
         private static string _browser_command = null;
         private static bool disableTrayIconLogin = false;
         private static bool openui = false;
@@ -72,14 +72,14 @@ namespace Duplicati.GUI.TrayIcon
             Duplicati.Library.AutoUpdater.UpdaterManager.RequiresRespawn = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
-        
+
         public static void RealMain(string[] _args)
         {
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
             if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
-                Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+                Duplicati.Library.Utility.Win32.ProcessNativeMethods.AttachConsole(Duplicati.Library.Utility.Win32.ProcessNativeMethods.ATTACH_PARENT_PROCESS);
 
             foreach (string s in args)
                 if (
@@ -306,10 +306,10 @@ namespace Duplicati.GUI.TrayIcon
                 return GetCocoaRunnerInstance();
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
-            else 
+            else
                 throw new UserInformationException(string.Format("The selected toolkit '{0}' is invalid", toolkit), "TrayIconInvalidToolKit");
         }
-        
+
         //We keep these in functions to avoid attempting to load the instance,
         // because the required assemblies may not exist on the machine 
         //
@@ -326,9 +326,9 @@ namespace Duplicati.GUI.TrayIcon
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
+        private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); }
 
-        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
+        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); }
 
         //The functions below simply load the requested type,
         // and if the type is not present, calling the function will result in an exception.
@@ -361,55 +361,55 @@ namespace Duplicati.GUI.TrayIcon
             return false;
 #endif
         }
-        
+
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetMonoMac()
         {
             return !Environment.Is64BitProcess && typeof(MonoMac.AppKit.NSApplication) != null;
         }
-  
+
         //The functions below here, simply wrap the call to the above functions,
         // converting the exception to a simple boolean value, so the calling
         // code can be kept free of error handling
         private static bool SupportsGtk
         {
-            get 
+            get
             {
                 try { return TryGetGtk(); }
-                catch {}
-                
+                catch { }
+
                 return false;
             }
         }
 
         private static bool SupportsAppIndicator
         {
-            get 
+            get
             {
                 try { return TryGetAppIndicator(); }
-                catch {}
-                
+                catch { }
+
                 return false;
             }
         }
 
         private static bool SupportsCocoa
         {
-            get 
+            get
             {
                 try { return TryGetMonoMac(); }
-                catch {}
-                
+                catch { }
+
                 return false;
             }
         }
-        
+
         private static bool SupportsRumps
         {
-            get 
+            get
             {
                 try { return RumpsRunner.CanRun(); }
-                catch {}
+                catch { }
 
                 return false;
             }
@@ -418,11 +418,11 @@ namespace Duplicati.GUI.TrayIcon
 
         private static bool SupportsWinForms
         {
-            get 
+            get
             {
                 try { return TryGetWinforms(); }
-                catch {}
-                
+                catch { }
+
                 return false;
             }
         }
@@ -442,13 +442,13 @@ namespace Duplicati.GUI.TrayIcon
                     toolkits.Add(TOOLKIT_COCOA);
                 if (SupportsRumps)
                     toolkits.Add(TOOLKIT_RUMPS);
-                
+
                 var args = new List<Duplicati.Library.Interface.ICommandLineArgument>()
                 {
                     new Duplicati.Library.Interface.CommandLineArgument(TOOLKIT_OPTION, CommandLineArgument.ArgumentType.Enumeration, "Selects the toolkit to use", "Choose the toolkit used to generate the TrayIcon, note that it will fail if the selected toolkit is not supported on this machine", GetDefaultToolKit(), null, toolkits.ToArray()),
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
-                    new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),               
+                    new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
                 };
 

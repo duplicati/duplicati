@@ -123,7 +123,7 @@ namespace Duplicati.Library.Main
 
             return RunAction(new BackupResults(), ref inputsources, ref filter, (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     using (var h = new Operation.BackupHandler(m_backend, m_options, result))
                     {
@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new RestoreResults(), ref paths, ref filter, (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
 
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new RestoreControlFilesResults(), ref filter, (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.RestoreControlFilesHandler(m_backend, m_options, result).Run(files, filter);
                 });
@@ -169,7 +169,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new DeleteResults(), (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.DeleteHandler(m_backend, m_options, result).Run();
                 });
@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new RepairResults(), ref filter, (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.RepairHandler(m_backend, m_options, result).Run(filter);
                 });
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListResults(), ref filter, (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
                 });
@@ -212,7 +212,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListResults(), ref filter, (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
                 });
@@ -223,7 +223,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListRemoteResults(), (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
                     using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
@@ -237,7 +237,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListRemoteResults(), (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
                     using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
@@ -289,7 +289,7 @@ namespace Duplicati.Library.Main
 
             return RunAction(new CompactResults(), (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.CompactHandler(m_backend, m_options, result).Run();
                 });
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main
 
             return RunAction(new ListChangesResults(), ref t, ref filter, (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter, callback);
                 });
@@ -334,7 +334,7 @@ namespace Duplicati.Library.Main
         {
             return RunAction(new ListAffectedResults(), (result) =>
             {
-                WithBackupPrivileges(() =>
+                ThreadPrivilege.ExecuteWithBackupPrivileges(() =>
                 {
                     new Operation.ListAffected(m_options, result).Run(args, callback);
                 });
@@ -526,28 +526,6 @@ namespace Duplicati.Library.Main
                     m_currentTask = null;
                     m_currentTaskThread = null;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Execute action with backup privileges.
-        /// </summary>
-        /// <param name="action">Action to execute.</param>
-        /// <remarks>
-        /// On platforms that implement in-process security context changes,
-        /// obtains additional privileges before executing the specified <paramref name="action"/>,
-        /// and reverts the privileges afterwards.
-        /// </remarks>
-        private void WithBackupPrivileges(Action action)
-        {
-            if (Platform.IsClientWindows)
-            {
-                var desiredPrivileges = WinTools.Privileges.SeBackupPrivilege | WinTools.Privileges.SeRestorePrivilege;
-                WinTools.WithPrivileges(desiredPrivileges, action);
-            }
-            else
-            {
-                action();
             }
         }
 

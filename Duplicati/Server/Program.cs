@@ -26,7 +26,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
         /// </summary>
-        private static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_HOME";
+        public static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_HOME";
 
         /// <summary>
         /// The environment variable that holds the database key used to encrypt the SQLite database
@@ -244,7 +244,7 @@ namespace Duplicati.Server
                 {
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
-                
+
                 UpdatePoller = new UpdatePollThread();
 
                 SetPurgeTempFilesTimer(commandlineOptions);
@@ -257,7 +257,7 @@ namespace Duplicati.Server
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, "ping-pong-keepalive"))
                 {
-                    PingPongThread = new System.Threading.Thread(PingPongMethod) {IsBackground = true};
+                    PingPongThread = new System.Threading.Thread(PingPongMethod) { IsBackground = true };
                     PingPongThread.Start();
                 }
 
@@ -268,7 +268,7 @@ namespace Duplicati.Server
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (!writeToConsole) throw;
-                
+
                 Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 return 100;
             }
@@ -588,58 +588,8 @@ namespace Duplicati.Server
             if (commandlineOptions.ContainsKey("server-encryption-key"))
                 dbPassword = commandlineOptions["server-encryption-key"];
 
-            var serverDataFolder = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
-            if (commandlineOptions.ContainsKey("server-datafolder"))
-                serverDataFolder = commandlineOptions["server-datafolder"];
-
-            if (string.IsNullOrEmpty(serverDataFolder))
-            {
-#if DEBUG
-                //debug mode uses a lock file located in the app folder
-                DataFolder = StartupPath;
-#else
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
-
-                if (portableMode)
-                {
-                    //Portable mode uses a data folder in the application home dir
-                    DataFolder = System.IO.Path.Combine(StartupPath, "data");
-                    System.IO.Directory.SetCurrentDirectory(StartupPath);
-                }
-                else
-                {
-                    //Normal release mode uses the systems "(Local) Application Data" folder
-                    // %LOCALAPPDATA% on Windows, ~/.config on Linux
-
-                    // Special handling for Windows:
-                    //   - Older versions use %APPDATA%
-                    //   - but new versions use %LOCALAPPDATA%
-                    //
-                    //  If we find a new version, lets use that
-                    //    otherwise use the older location
-                    //
-
-                    serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
-                    if (Platform.IsClientWindows)
-                    {
-                        var localappdata = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
-
-                        var prefile = System.IO.Path.Combine(serverDataFolder, "Duplicati-server.sqlite");
-                        var curfile = System.IO.Path.Combine(localappdata, "Duplicati-server.sqlite");
-
-                        // If the new file exists, we use that
-                        // If the new file does not exist, and the old file exists we use the old
-                        // Otherwise we use the new location
-                        if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prefile))
-                            serverDataFolder = localappdata;
-                    }
-
-                    DataFolder = serverDataFolder;
-                }
-#endif
-            }
-            else
-                DataFolder = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
+            var dfm = new DataFolderManager(commandlineOptions);
+            DataFolder = dfm.GetDataFolder();
 
             var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
 
@@ -656,8 +606,6 @@ namespace Duplicati.Server
             {
                 DatabasePath = System.IO.Path.Combine(DataFolder, "Duplicati-server.sqlite");
 
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
 #if DEBUG
                 //Default is to not use encryption for debugging
                 var useDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") && !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
@@ -681,6 +629,7 @@ namespace Duplicati.Server
 
             return new Database.Connection(con);
         }
+
 
         public static void StartOrStopUsageReporter()
         {
@@ -757,7 +706,7 @@ namespace Duplicati.Server
 
             StatusEventNotifyer.SignalNewEvent();
         }
-               
+
         /// <summary>
         /// Simple method for tracking if the server has crashed
         /// </summary>
@@ -794,7 +743,7 @@ namespace Duplicati.Server
         {
             get
             {
-                var lst = new List<Duplicati.Library.Interface.ICommandLineArgument> (new Duplicati.Library.Interface.ICommandLineArgument[] {
+                var lst = new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument("tempdir", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.TempdirShort, Strings.Program.TempdirLong, System.IO.Path.GetTempPath()),
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
@@ -833,7 +782,8 @@ namespace Duplicati.Server
                 string appendfilter = null;
                 string replacefilter = null;
 
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) =>
+                {
                     if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
                     {
                         newsource.Add(value);
