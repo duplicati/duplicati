@@ -19,7 +19,6 @@ using System.Text;
 using NUnit.Framework;
 
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 using Duplicati.Library.Common;
 
 namespace Duplicati.UnitTest
@@ -37,7 +36,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetPathRootWithLongPath()
         {
-            var pathRoot =  Platform.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = Platform.IsClientWindows ? "C:\\" : "/";
             var root = SystemIO.IO_OS.GetPathRoot(LongPath(pathRoot));
 
             Assert.AreEqual(pathRoot, root);
@@ -65,6 +64,35 @@ namespace Duplicati.UnitTest
             var filePathRoot = SystemIO.IO_WIN.GetPathRoot(filePath);
             Assert.AreEqual(root, filePathRoot);
         }
+
+        [Test]
+        public void TestFileOpenWriteFileOpenRead()
+        {
+            var content = "This is a temp file from " + typeof(IOTests).FullName +
+                " created at " + System.DateTime.Now.ToString("O") +
+                System.Environment.NewLine;
+
+            var tempFile = System.IO.Path.GetTempFileName();
+
+            using (var stream = SystemIO.IO_OS.FileOpenWrite(tempFile))
+            using (var writer = new System.IO.StreamWriter(stream))
+            {
+                writer.Write(content);
+                writer.Flush();
+                stream.Flush();
+
+                writer.Close();
+                stream.Close();
+            }
+
+            using (var stream = SystemIO.IO_OS.FileOpenRead(tempFile))
+            using (var reader = new System.IO.StreamReader(stream))
+            {
+                var fileContent = reader.ReadToEnd();
+                Assert.AreEqual(content, fileContent);
+            }
+        }
+
 
         [Test]
         public void TestGetFilesWhenDirectoryDoesNotExist()

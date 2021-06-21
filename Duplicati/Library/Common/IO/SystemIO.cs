@@ -31,7 +31,7 @@ namespace Duplicati.Library.Common.IO
 
         static SystemIO()
         {
-            IO_WIN = new SystemIOWindows();
+            IO_WIN = new SystemIOWindowsAlfaFs();
             IO_SYS = new SystemIOLinux();
             IO_OS = Platform.IsClientWindows ? IO_WIN : IO_SYS;
         }

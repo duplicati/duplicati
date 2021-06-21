@@ -18,10 +18,11 @@
 // 
 #endregion
 using Duplicati.Library.Common;
+using System.Security.Principal;
 
 namespace Duplicati.Library.Utility
 {
-    public static class WinTools
+    public static partial class WinTools
     {
         public static string GetWindowsGpgExePath()
         {
@@ -52,6 +53,17 @@ namespace Duplicati.Library.Utility
                 System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
                 "win-tools", "gpg.exe");
             return string.IsNullOrEmpty(wintoolsPath) ? null : wintoolsPath;
+        }
+
+        public static WindowsIdentity GetWindowsIdentity()
+        {
+            if (!Platform.IsClientWindows)
+            {
+                return null;
+            }
+
+            return WindowsIdentity.GetCurrent();
+
         }
     }
 }

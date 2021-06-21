@@ -18,29 +18,27 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Duplicati.Library.Utility
+namespace Duplicati.Library.Utility.Win32
 {
     //The signatures in this file are from http://pinvoke.net
 
     /// <summary>
     /// Various Windows specific calls 
     /// </summary>
-    public static class Win32
+    public static class ProcessNativeMethods
     {
 
         #region Consts
-
+ 
         public const int ATTACH_PARENT_PROCESS = -1;
-
+  
         #endregion
 
         #region Enums
 
-        [FlagsAttribute]
+        [Flags]
         public enum EXECUTION_STATE : uint
         {
             ES_AWAYMODE_REQUIRED = 0x00000040,

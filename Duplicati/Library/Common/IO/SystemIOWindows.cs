@@ -23,140 +23,12 @@ using System.Linq;
 
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
-using Newtonsoft.Json;
+using Duplicati.Library.IO.WindowsFileMetadata;
 
 namespace Duplicati.Library.Common.IO
 {
-    public struct SystemIOWindows : ISystemIO
+    public class SystemIOWindows : SystemIOWindowsBase, ISystemIO
     {
-        private const string UNCPREFIX = @"\\?\";
-        private const string UNCPREFIX_SERVER = @"\\?\UNC\";
-        private const string PATHPREFIX_SERVER = @"\\";
-        private static readonly string DIRSEP = Util.DirectorySeparatorString;
-
-        public static string PrefixWithUNC(string path)
-        {
-            if (IsPrefixedWithUNC(path))
-            {
-                return path;
-            }
-            return path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal)
-                ? UNCPREFIX_SERVER + path.Substring(PATHPREFIX_SERVER.Length)
-                : UNCPREFIX + path;
-        }
-
-        private static bool IsPrefixedWithUNC(string path)
-        {
-            return path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) ||
-                path.StartsWith(UNCPREFIX, StringComparison.Ordinal);
-        }
-
-        public static string StripUNCPrefix(string path)
-        {
-            if (path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal))
-            {
-                // @"\\?\UNC\example.com\share\file.txt" to @"\\example.com\share\file.txt"
-                return PATHPREFIX_SERVER + path.Substring(UNCPREFIX_SERVER.Length);
-            }
-            else if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal))
-            {
-                // @"\\?\C:\file.txt" to @"C:\file.txt"
-                return path.Substring(UNCPREFIX.Length);
-            }
-            else
-            {
-                return path;
-            }
-        }
-
-        /// <summary>
-        /// Convert forward slashes to backslashes.
-        /// </summary>
-        /// <returns>Path with forward slashes replaced by backslashes.</returns>
-        private static string ConvertSlashes(string path)
-        {
-            return path.Replace("/", Util.DirectorySeparatorString);
-        }
-
-        private class FileSystemAccess
-        {
-            // Use JsonProperty Attribute to allow readonly fields to be set by deserializer
-            // https://github.com/duplicati/duplicati/issues/4028
-            [JsonProperty]
-            public readonly FileSystemRights Rights;
-            [JsonProperty]
-            public readonly AccessControlType ControlType;
-            [JsonProperty]
-            public readonly string SID;
-            [JsonProperty]
-            public readonly bool Inherited;
-            [JsonProperty]
-            public readonly InheritanceFlags Inheritance;
-            [JsonProperty]
-            public readonly PropagationFlags Propagation;
-
-            public FileSystemAccess()
-            {
-            }
-
-            public FileSystemAccess(FileSystemAccessRule rule)
-            {
-                Rights = rule.FileSystemRights;
-                ControlType = rule.AccessControlType;
-                SID = rule.IdentityReference.Value;
-                Inherited = rule.IsInherited;
-                Inheritance = rule.InheritanceFlags;
-                Propagation = rule.PropagationFlags;
-            }
-
-            public FileSystemAccessRule Create(System.Security.AccessControl.FileSystemSecurity owner)
-            {
-                return (FileSystemAccessRule)owner.AccessRuleFactory(
-                    new System.Security.Principal.SecurityIdentifier(SID),
-                    (int)Rights,
-                    Inherited,
-                    Inheritance,
-                    Propagation,
-                    ControlType);
-            }
-        }
-
-        private static Newtonsoft.Json.JsonSerializer _cachedSerializer;
-
-        private Newtonsoft.Json.JsonSerializer Serializer
-        {
-            get
-            {
-                if (_cachedSerializer != null)
-                {
-                    return _cachedSerializer;
-                }
-
-                _cachedSerializer = Newtonsoft.Json.JsonSerializer.Create(
-                    new Newtonsoft.Json.JsonSerializerSettings { Culture = System.Globalization.CultureInfo.InvariantCulture });
-
-                return _cachedSerializer;
-            }
-        }
-
-        private string SerializeObject<T>(T o)
-        {
-            using (var tw = new System.IO.StringWriter())
-            {
-                Serializer.Serialize(tw, o);
-                tw.Flush();
-                return tw.ToString();
-            }
-        }
-
-        private T DeserializeObject<T>(string data)
-        {
-            using (var tr = new System.IO.StringReader(data))
-            {
-                return (T)Serializer.Deserialize(tr, typeof(T));
-            }
-        }
-
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
             return System.IO.Directory.GetAccessControl(PrefixWithUNC(path));
@@ -287,7 +159,7 @@ namespace Duplicati.Library.Common.IO
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
         {
-            return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path), searchPattern,  searchOption).Select(StripUNCPrefix);
+            return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path), searchPattern, searchOption).Select(StripUNCPrefix);
         }
 
         public string PathGetFileName(string path)
@@ -439,11 +311,11 @@ namespace Duplicati.Library.Common.IO
             var dict = new Dictionary<string, string>();
 
             FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
-            var objs = new List<FileSystemAccess>();
+            var objs = new List<FileSystemAccessModel>();
             foreach (var f in rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier)))
-                objs.Add(new FileSystemAccess((FileSystemAccessRule)f));
+                objs.Add(new FileSystemAccessModel((FileSystemAccessRule)f));
 
-            dict["win-ext:accessrules"] = SerializeObject(objs);
+            dict[MetadataAccessRulesKey] = SerializeObject(objs);
 
             // Only include the following key when its value is True.
             // This prevents unnecessary 'metadata change' detections when upgrading from
@@ -451,7 +323,7 @@ namespace Duplicati.Library.Common.IO
             // When key is not present, its value is presumed False by the restore code.
             if (rules.AreAccessRulesProtected)
             {
-                dict["win-ext:accessrulesprotected"] = "True";
+                dict[MetadataAccessRulesIsProtectedKey] = "True";
             }
 
             return dict;
@@ -466,18 +338,18 @@ namespace Duplicati.Library.Common.IO
             {
                 FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
 
-                if (data.ContainsKey("win-ext:accessrulesprotected"))
+                if (data.ContainsKey(MetadataAccessRulesIsProtectedKey))
                 {
-                    bool isProtected = bool.Parse(data["win-ext:accessrulesprotected"]);
+                    bool isProtected = bool.Parse(data[MetadataAccessRulesIsProtectedKey]);
                     if (rules.AreAccessRulesProtected != isProtected)
                     {
                         rules.SetAccessRuleProtection(isProtected, false);
                     }
                 }
 
-                if (data.ContainsKey("win-ext:accessrules"))
+                if (data.ContainsKey(MetadataAccessRulesKey))
                 {
-                    var content = DeserializeObject<FileSystemAccess[]>(data["win-ext:accessrules"]);
+                    var content = DeserializeObject<FileSystemAccessModel[]>(data[MetadataAccessRulesKey]);
                     var c = rules.GetAccessRules(true, false, typeof(System.Security.Principal.SecurityIdentifier));
                     for (var i = c.Count - 1; i >= 0; i--)
                         rules.RemoveAccessRule((System.Security.AccessControl.FileSystemAccessRule)c[i]);

@@ -66,6 +66,8 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataFolderManager.cs" />
+    <Compile Include="DataFolderManager.WindowsFolder.cs" />
     <Compile Include="EventPollNotify.cs" />
     <Compile Include="LiveControls.cs" />
     <Compile Include="Program.cs" />

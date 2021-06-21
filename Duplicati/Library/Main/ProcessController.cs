@@ -17,7 +17,7 @@
 using System;
 using System.Linq;
 using Duplicati.Library.Common;
-using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Win32;
 
 namespace Duplicati.Library.Main
 {
@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The priority class to restore the process to
         /// </summary>
-        private Win32.IO_PRIORITY_HINT m_originalWinPriorityClass;
+        private ProcessNativeMethods.IO_PRIORITY_HINT m_originalWinPriorityClass;
 
         /// <summary>
         /// A flag indicating if the Windows background mode is started
@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+                    ProcessNativeMethods.SetThreadExecutionState(ProcessNativeMethods.EXECUTION_STATE.ES_CONTINUOUS | ProcessNativeMethods.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
                     m_runningSleepPrevention = true;
                 }
                 catch (Exception ex)
@@ -151,14 +151,14 @@ namespace Duplicati.Library.Main
 
                 try
                 {
-                    var mode = Win32.IO_PRIORITY_HINT.IoPriorityLow;
-                    var res = Win32.NtQueryInformationProcess(handle, Win32.PROCESS_INFORMATION_CLASS.ProcessIoPriority, ref mode, sizeof(Win32.IO_PRIORITY_HINT), IntPtr.Zero);
+                    var mode = ProcessNativeMethods.IO_PRIORITY_HINT.IoPriorityLow;
+                    var res = ProcessNativeMethods.NtQueryInformationProcess(handle, ProcessNativeMethods.PROCESS_INFORMATION_CLASS.ProcessIoPriority, ref mode, sizeof(ProcessNativeMethods.IO_PRIORITY_HINT), IntPtr.Zero);
                     if (res != 0)
                         throw new Library.Interface.UserInformationException($"Failed to read process priority {res:x}", "BackgroundPriorityEnableError", new System.ComponentModel.Win32Exception());
 
                     m_originalWinPriorityClass = mode;
-                    mode = Win32.IO_PRIORITY_HINT.IoPriorityVeryLow;
-                    res = Win32.NtSetInformationProcess(handle, Win32.PROCESS_INFORMATION_CLASS.ProcessIoPriority, ref mode, sizeof(Win32.IO_PRIORITY_HINT));
+                    mode = ProcessNativeMethods.IO_PRIORITY_HINT.IoPriorityVeryLow;
+                    res = ProcessNativeMethods.NtSetInformationProcess(handle, ProcessNativeMethods.PROCESS_INFORMATION_CLASS.ProcessIoPriority, ref mode, sizeof(ProcessNativeMethods.IO_PRIORITY_HINT));
                     if (res != 0)
                         throw new Library.Interface.UserInformationException($"Failed to set process priority {res:x}", "BackgroundPriorityEnableError", new System.ComponentModel.Win32Exception());
 
@@ -171,7 +171,7 @@ namespace Duplicati.Library.Main
 
                 try
                 {
-                    if (!Win32.SetPriorityClass(handle, Win32.PROCESS_PRIORITY_CLASS.PROCESS_MODE_BACKGROUND_BEGIN))
+                    if (!ProcessNativeMethods.SetPriorityClass(handle, ProcessNativeMethods.PROCESS_PRIORITY_CLASS.PROCESS_MODE_BACKGROUND_BEGIN))
                         throw new Library.Interface.UserInformationException($"Failed to start process background mode", "BackgroundPriorityEnableError", new System.ComponentModel.Win32Exception());
                     m_hasStartedBackgroundMode = true;
                 }
@@ -252,7 +252,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Win32.RtlSetProcessPlaceholderCompatibilityMode(Win32.PHCM_VALUES.PHCM_EXPOSE_PLACEHOLDERS);
+                    ProcessNativeMethods.RtlSetProcessPlaceholderCompatibilityMode(ProcessNativeMethods.PHCM_VALUES.PHCM_EXPOSE_PLACEHOLDERS);
                 }
                 catch
                 {
@@ -288,7 +288,7 @@ namespace Duplicati.Library.Main
                     if (m_runningSleepPrevention)
                     {
                         m_runningSleepPrevention = false;
-                        Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS);
+                        ProcessNativeMethods.SetThreadExecutionState(ProcessNativeMethods.EXECUTION_STATE.ES_CONTINUOUS);
                     }
                 }
                 catch (Exception ex)
@@ -337,7 +337,7 @@ namespace Duplicati.Library.Main
                     {
                         m_hasStartedBackgroundMode = false;
                         var handle = System.Diagnostics.Process.GetCurrentProcess().Handle;
-                        if (!Win32.SetPriorityClass(handle, Win32.PROCESS_PRIORITY_CLASS.PROCESS_MODE_BACKGROUND_END))
+                        if (!ProcessNativeMethods.SetPriorityClass(handle, ProcessNativeMethods.PROCESS_PRIORITY_CLASS.PROCESS_MODE_BACKGROUND_END))
                             throw new Library.Interface.UserInformationException($"Failed to stop process background mode", "BackgroundPriorityEnableError", new System.ComponentModel.Win32Exception());
                     }
                 }
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Main
 
                         var handle = System.Diagnostics.Process.GetCurrentProcess().Handle;
                         var mode = m_originalWinPriorityClass;
-                        var res = Win32.NtSetInformationProcess(handle, Win32.PROCESS_INFORMATION_CLASS.ProcessIoPriority, ref mode, sizeof(Win32.IO_PRIORITY_HINT));
+                        var res = ProcessNativeMethods.NtSetInformationProcess(handle, ProcessNativeMethods.PROCESS_INFORMATION_CLASS.ProcessIoPriority, ref mode, sizeof(ProcessNativeMethods.IO_PRIORITY_HINT));
                         if (res != 0)
                             Logging.Log.WriteWarningMessage(LOGTAG, "BackgroundPriorityDisableError", new System.ComponentModel.Win32Exception(), "Failed to reset background IO priority, status code {0}", res);
                     }
