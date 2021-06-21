@@ -46,6 +46,7 @@
     <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IOWinPrivilegeTests.cs" />
     <Compile Include="SymLinkTests.cs" />
     <Compile Include="ControllerTests.cs" />
     <Compile Include="DeleteHandlerTests.cs" />

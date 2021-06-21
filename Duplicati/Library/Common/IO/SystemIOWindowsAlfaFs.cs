@@ -197,14 +197,20 @@ namespace Duplicati.Library.Common.IO
 
         public FileStream FileOpenRead(string path)
         {
-            return AlphaFsFile.Open(PrefixWithUNC(path), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
+            return AlphaFsFile.Open(PrefixWithUNC(path),
+                System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite,
+                ExtendedFileAttributes.BackupSemantics | ExtendedFileAttributes.SequentialScan | ExtendedFileAttributes.ReadOnly,
+                PathFormat.RelativePath);
         }
 
         public FileStream FileOpenWrite(string path)
         {
             return !FileExists(path)
                 ? FileCreate(path)
-                : AlphaFsFile.OpenWrite(PrefixWithUNC(path));
+                : AlphaFsFile.Open(PrefixWithUNC(path),
+                            System.IO.FileMode.Open, System.IO.FileAccess.Write, System.IO.FileShare.None,
+                            ExtendedFileAttributes.BackupSemantics,
+                            PathFormat.RelativePath);
         }
 
         public void FileSetCreationTimeUtc(string path, DateTime time)

@@ -19,7 +19,6 @@ using System.Text;
 using NUnit.Framework;
 
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 using Duplicati.Library.Common;
 
 namespace Duplicati.UnitTest
@@ -67,19 +66,22 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TestGetFileReadWrite()
+        public void TestFileOpenWriteFileOpenRead()
         {
-            var tempFile = System.IO.Path.GetTempFileName();
+            var content = "This is a temp file from " + typeof(IOTests).FullName +
+                " created at " + System.DateTime.Now.ToString("O") +
+                System.Environment.NewLine;
 
-            var content = "This is a temp file from " + typeof(IOTests).FullName;
+            var tempFile = System.IO.Path.GetTempFileName();
 
             using (var stream = SystemIO.IO_OS.FileOpenWrite(tempFile))
             using (var writer = new System.IO.StreamWriter(stream))
             {
-                writer.WriteLine(content);
+                writer.Write(content);
                 writer.Flush();
-                writer.Close();
                 stream.Flush();
+
+                writer.Close();
                 stream.Close();
             }
 
