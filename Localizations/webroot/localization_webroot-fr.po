@@ -561,7 +561,7 @@ msgstr "Connexion perdue"
 #: scripts/directives/backupEditUri.js:51
 #: scripts/directives/backupEditUri.js:54
 msgid "Connection worked!"
-msgstr "Connection fonctionnelle !"
+msgstr "Connexion fonctionnelle !"
 
 #: scripts/services/EditUriBuiltins.js:895 templates/backends/azure.html:2
 msgid "Container name"
