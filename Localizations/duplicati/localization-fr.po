@@ -1272,7 +1272,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:36 Library/Backend/WEBDAV/Strings.cs:20
 #: Library/Backend/TahoeLAFS/Strings.cs:6
 msgid "Instructs Duplicati to use an SSL (https) connection"
-msgstr "Indiquez à Duplicati d'utiliser des connections SSL (https)"
+msgstr "Indiquez à Duplicati d'utiliser des connexions SSL (https)"
 
 #: Library/Backend/S3/Strings.cs:38
 msgid ""
