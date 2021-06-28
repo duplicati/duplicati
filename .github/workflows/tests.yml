@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: "*"
+    branches: "experiment/net5-split"
   pull_request:
-    branches: "*"
+    branches: "experiment/net5-split"
 
 jobs:
   unit_tests:
