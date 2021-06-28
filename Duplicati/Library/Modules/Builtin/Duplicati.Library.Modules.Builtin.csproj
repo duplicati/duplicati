@@ -7,6 +7,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <PackageReference Include="DnsClient" Version="1.4.0" />
     <PackageReference Include="Matrix.vNext" Version="2.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="MailKit" Version="2.4.1" />
@@ -24,9 +25,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Include="..\..\..\..\thirdparty\DnsLite\DnsLite.cs">
-      <Link>DnsLite.cs</Link>
-    </Compile>
     <Content Include="run-script-example.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

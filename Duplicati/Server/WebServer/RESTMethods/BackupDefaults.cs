@@ -23,6 +23,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class BackupDefaults : IRESTMethodGET
     {
+        
+		private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<BackupDefaults>();
+
         public void GET(string key, RequestInfo info)
         {
             // Start with a scratch object
@@ -38,13 +41,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 // Add built-in defaults
                 Newtonsoft.Json.Linq.JObject n;
-                using(var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + ".newbackup.json")))
+                using(var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Program), "newbackup.json")))
                     n = (Newtonsoft.Json.Linq.JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(s.ReadToEnd());
 
                 MergeJsonObjects(o, n);
             }
-            catch
+            catch (Exception e)
             {
+                Library.Logging.Log.WriteErrorMessage(LOGTAG, "BackupDefaultsError", e, "Failed to locate embeded backup defaults");
             }
 
             try
@@ -59,8 +63,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     MergeJsonObjects(o, n);
                 }
             }
-            catch
+            catch (Exception e)
             {
+                Library.Logging.Log.WriteErrorMessage(LOGTAG, "BackupDefaultsError", e, "Failed to process newbackup.json");
             }
 
             info.OutputOK(new
