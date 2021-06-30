@@ -283,6 +283,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
                 }
+
+                // TODO(cmpute): also add parity here for blocks
             }
         }
 
@@ -293,6 +295,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             fileEntry.Encrypt(m_options);
             fileEntry.UpdateHashAndSize(m_options);
 
+            // TODO(cmpute): also add parity creation here
             await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
         }
 

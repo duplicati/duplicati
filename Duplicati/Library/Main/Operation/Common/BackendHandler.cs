@@ -108,6 +108,12 @@ namespace Duplicati.Library.Main.Operation.Common
                 }
             }
 
+            public TempFile CreateParity(Options options)
+            {
+                // TODO(cmpute): implement
+                return null;
+            }
+
             public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))

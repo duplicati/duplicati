@@ -200,6 +200,12 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            public TempFile CreateParity(Library.Interface.IParity parity)
+            {
+                // TODO(cmpute): implement
+                return null;
+            }
+
             public bool UpdateHashAndSize(Options options)
             {
                 if (Hash == null || Size < 0)
@@ -1023,6 +1029,7 @@ namespace Duplicati.Library.Main
                 {
                     if (item.Size >= 0)
                     {
+                        // TODO(cmpute): repair here
                         if (dataSizeDownloaded != item.Size)
                             throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size));
                     }
@@ -1031,6 +1038,7 @@ namespace Duplicati.Library.Main
 
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
+                        // TODO(cmpute): repair here
                         if (fileHash != item.Hash)
                             throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
                     }
@@ -1196,8 +1204,6 @@ namespace Duplicati.Library.Main
             if (m_lastException != null)
                 throw m_lastException;
 
-            FileEntryItem req2 = null;
-
             // As the network link is the bottleneck,
             // we encrypt the dblock volume before the
             // upload is enqueued (i.e. on the worker thread)
@@ -1210,6 +1216,7 @@ namespace Duplicati.Library.Main
 
             // We do not encrypt the dindex volume, because it is small,
             // and may need to be re-written if the dblock upload is retried
+            FileEntryItem req2 = null;
             if (indexfile != null)
             {
                 m_db.LogDbUpdate(indexfile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
@@ -1221,6 +1228,14 @@ namespace Duplicati.Library.Main
                 indexVolumeFinishedCallback?.Invoke();
                 indexfile.Close();
                 req.IndexfileUpdated = true;
+            }
+
+            // TODO(cmpute): create parity here as req3, enqueue as a new upload task?
+            FileEntryItem req3 = null;
+            if (m_options.EnableParityFile)
+            {
+                var remoteParityName = item.RemoteFilename;
+                req3 = new FileEntryItem(OperationType.Put, remoteParityName);
             }
 
             try
@@ -1240,6 +1255,13 @@ namespace Duplicati.Library.Main
                     req2.WaitForComplete();
                     if (req2.Exception != null)
                         throw req2.Exception;
+                }
+
+                if (req3 != null && m_queue.Enqueue(req3) && (m_options.SynchronousUpload || synchronous))
+                {
+                    req3.WaitForComplete();
+                    if (req3.Exception != null)
+                        throw req3.Exception;
                 }
             }
             finally
