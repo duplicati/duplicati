@@ -173,6 +173,12 @@ namespace Duplicati.CommandLine
                         PrintCompressionModule(mod, lines);
 
                     lines.Add("");
+                    lines.Add("");
+                    lines.Add(Strings.Program.SupportedParityModulesHeader);
+                    foreach (Duplicati.Library.Interface.IParity mod in Library.DynamicLoader.ParityLoader.Modules)
+                        PrintParityModule(mod, lines);
+
+                    lines.Add("");
 
                     lines.Add("");
                     lines.Add("");
@@ -348,6 +354,19 @@ namespace Duplicati.CommandLine
         }
 
         private static void PrintCompressionModule(Duplicati.Library.Interface.ICompression mod, List<string> lines)
+        {
+            lines.Add(mod.DisplayName + " (." + mod.FilenameExtension + "):");
+            lines.Add(" " + mod.Description);
+            if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
+            {
+                lines.Add(" " + Strings.Program.SupportedOptionsHeader);
+                foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
+                    Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
+            }
+            lines.Add("");
+        }
+
+        private static void PrintParityModule(Duplicati.Library.Interface.IParity mod, List<string> lines)
         {
             lines.Add(mod.DisplayName + " (." + mod.FilenameExtension + "):");
             lines.Add(" " + mod.Description);

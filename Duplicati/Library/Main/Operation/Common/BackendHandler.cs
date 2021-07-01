@@ -110,7 +110,10 @@ namespace Duplicati.Library.Main.Operation.Common
 
             public TempFile CreateParity(Options options)
             {
-                // TODO(cmpute): implement
+                var tempfile = new Library.Utility.TempFile();
+                using (var par = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.RawOptions))
+                    par.Create(LocalFilename, tempfile.Name);
+
                 return null;
             }
 

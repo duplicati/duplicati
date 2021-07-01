@@ -53,5 +53,19 @@ namespace Duplicati.Library.Utility
                 "win-tools", "gpg.exe");
             return string.IsNullOrEmpty(wintoolsPath) ? null : wintoolsPath;
         }
+
+        public static string GetWindowsPar2ExePath()
+        {
+            if (!Platform.IsClientWindows)
+            {
+                return null;
+            }
+
+            // return our included win-tools
+            var wintoolsPath = System.IO.Path.Combine(
+                System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                "win-tools", "par2cmdline.exe");
+            return string.IsNullOrEmpty(wintoolsPath) ? null : wintoolsPath;
+        }
     }
 }

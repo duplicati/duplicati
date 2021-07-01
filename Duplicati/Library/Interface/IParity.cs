@@ -18,7 +18,7 @@ namespace Duplicati.Library.Interface
     /// An instance can be used to create or check parity for multiple files/streams.
     /// It's required that the parity can be generated externally as a single file.
     /// </summary>
-    public interface IParity
+    public interface IParity : IDisposable
     {
         /// <summary>
         /// Create parity data for the inputfile, and store them in outputfile.
@@ -30,5 +30,20 @@ namespace Duplicati.Library.Interface
         void Repair(string inputfile, string parityfile, string outputfile);
 
         string FilenameExtension { get; }
+
+        /// <summary>
+        /// Gets a list of supported commandline arguments
+        /// </summary>
+        IList<ICommandLineArgument> SupportedCommands { get; }
+
+        /// <summary>
+        /// A localized string describing the parity module with a friendly name
+        /// </summary>
+        string DisplayName { get; }
+
+        /// <summary>
+        /// A localized description of the parity module
+        /// </summary>
+        string Description { get; }
     }
 }

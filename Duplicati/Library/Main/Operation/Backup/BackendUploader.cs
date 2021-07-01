@@ -284,7 +284,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                     await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
                 }
 
-                // TODO(cmpute): also add parity here for blocks
+                if (m_options.EnableParityFile)
+                {
+                    var parityEntry = new FileEntryItem(BackendActionType.Put, upload.BlockEntry.RemoteFilename + "." + m_options.ParityModule);
+                    parityEntry.SetLocalfilename(upload.BlockEntry.CreateParity(m_options));
+                    parityEntry.UpdateHashAndSize(m_options);
+
+                    await UploadFileAsync(parityEntry, worker, cancelToken).ConfigureAwait(false);
+                }
             }
         }
 
@@ -295,8 +302,16 @@ namespace Duplicati.Library.Main.Operation.Backup
             fileEntry.Encrypt(m_options);
             fileEntry.UpdateHashAndSize(m_options);
 
-            // TODO(cmpute): also add parity creation here
             await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
+
+            if (m_options.EnableParityFile)
+            {
+                var parityEntry = new FileEntryItem(BackendActionType.Put, volumeWriter.RemoteFilename + "." + m_options.ParityModule);
+                parityEntry.SetLocalfilename(fileEntry.CreateParity(m_options));
+                parityEntry.UpdateHashAndSize(m_options);
+
+                await UploadFileAsync(parityEntry, worker, cancelToken).ConfigureAwait(false);
+            }    
         }
 
         private async Task<bool> UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)
