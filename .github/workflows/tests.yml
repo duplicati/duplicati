@@ -1,10 +1,6 @@
 name: Tests
 
-on:
-  push:
-    branches: "*"
-  pull_request:
-    branches: "*"
+on: [push, pull_request]
 
 env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
