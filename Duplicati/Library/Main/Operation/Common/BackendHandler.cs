@@ -111,10 +111,17 @@ namespace Duplicati.Library.Main.Operation.Common
             public TempFile CreateParity(Options options)
             {
                 var tempfile = new Library.Utility.TempFile();
-                using (var par = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.RawOptions))
-                    par.Create(LocalFilename, tempfile.Name);
+                using (var tmpfolder = new Library.Utility.TempFolder())
+                {
+                    // Move to temporary folder and make the file name the actual remote name
+                    var movedfile = Path.Combine(tmpfolder, RemoteFilename);
+                    File.Move(LocalFilename, movedfile);
+                    using (var par = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.SmallFileSize, options.RawOptions))
+                        par.Create(movedfile, tempfile.Name);
+                    File.Move(movedfile, LocalFilename);
+                }
 
-                return null;
+                return tempfile;
             }
 
             public static string CalculateFileHash(string filename)

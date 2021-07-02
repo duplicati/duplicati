@@ -39,10 +39,10 @@ namespace Duplicati.Library.DynamicLoader
             /// Instanciates a specific parity module, given the file extension and options
             /// </summary>
             /// <param name="fileExtension">The file extension to create the instance for</param>
-            /// <param name="passphrase">The passphrase used to encrypt contents</param>
+            /// <param name="redundancy_level">The redundancy level of parity file in percentage</param>
             /// <param name="options">The options to pass to the instance constructor</param>
             /// <returns>The instanciated encryption module or null if the file extension is not supported</returns>
-            public IParity GetModule(string fileExtension, Dictionary<string, string> options)
+            public IParity GetModule(string fileExtension, int redundancy_level, long small_file_size, Dictionary<string, string> options)
             {
                 if (string.IsNullOrEmpty(fileExtension))
                     throw new ArgumentNullException(nameof(fileExtension));
@@ -52,7 +52,7 @@ namespace Duplicati.Library.DynamicLoader
                 lock (m_lock)
                 {
                     if (m_interfaces.ContainsKey(fileExtension))
-                        return (IParity)Activator.CreateInstance(m_interfaces[fileExtension].GetType(), options);
+                        return (IParity)Activator.CreateInstance(m_interfaces[fileExtension].GetType(), redundancy_level, small_file_size, options);
                     else
                         return null;
                 }
@@ -111,9 +111,9 @@ namespace Duplicati.Library.DynamicLoader
         /// <param name="fileextension">The file extension to create the instance for</param>
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <returns>The instanciated parity module or null if the file extension is not supported</returns>
-        public static IParity GetModule(string fileextension, Dictionary<string, string> options)
+        public static IParity GetModule(string fileextension, int redundancy_level, long small_file_size, Dictionary<string, string> options)
         {
-            return _parityLoader.GetModule(fileextension, options);
+            return _parityLoader.GetModule(fileextension, redundancy_level, small_file_size, options);
         }
         #endregion
     }

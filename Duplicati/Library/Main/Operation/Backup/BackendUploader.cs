@@ -273,6 +273,16 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker, CancellationToken cancelToken)
         {
+            // Create parity file before uploading, since data volumes will be deleted after uploading
+            FileEntryItem parityEntry = null;
+            if (m_options.EnableParityFile)
+            {
+                parityEntry = new FileEntryItem(BackendActionType.Put, upload.BlockEntry.RemoteFilename + "." + m_options.ParityModule);
+                parityEntry.TrackedInDb = false;
+                parityEntry.LocalTempfile = upload.BlockEntry.CreateParity(m_options);
+                parityEntry.UpdateHashAndSize(m_options);
+            }
+
             if (await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false))
             {
                 // We must use the BlockEntry's RemoteFilename and not the BlockVolume's since the
@@ -284,14 +294,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                     await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
                 }
 
-                if (m_options.EnableParityFile)
-                {
-                    var parityEntry = new FileEntryItem(BackendActionType.Put, upload.BlockEntry.RemoteFilename + "." + m_options.ParityModule);
-                    parityEntry.SetLocalfilename(upload.BlockEntry.CreateParity(m_options));
-                    parityEntry.UpdateHashAndSize(m_options);
-
+                if (parityEntry != null)
                     await UploadFileAsync(parityEntry, worker, cancelToken).ConfigureAwait(false);
-                }
             }
         }
 
@@ -301,17 +305,20 @@ namespace Duplicati.Library.Main.Operation.Backup
             fileEntry.SetLocalfilename(volumeWriter.LocalFilename);
             fileEntry.Encrypt(m_options);
             fileEntry.UpdateHashAndSize(m_options);
-
-            await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
+            FileEntryItem parityEntry = null;
 
             if (m_options.EnableParityFile)
             {
-                var parityEntry = new FileEntryItem(BackendActionType.Put, volumeWriter.RemoteFilename + "." + m_options.ParityModule);
-                parityEntry.SetLocalfilename(fileEntry.CreateParity(m_options));
+                parityEntry = new FileEntryItem(BackendActionType.Put, volumeWriter.RemoteFilename + "+." + m_options.ParityModule);
+                parityEntry.TrackedInDb = false;
+                parityEntry.LocalTempfile = fileEntry.CreateParity(m_options);
                 parityEntry.UpdateHashAndSize(m_options);
+            }
 
+            await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
+
+            if (parityEntry != null)
                 await UploadFileAsync(parityEntry, worker, cancelToken).ConfigureAwait(false);
-            }    
         }
 
         private async Task<bool> UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)

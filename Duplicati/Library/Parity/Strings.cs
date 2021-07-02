@@ -29,5 +29,7 @@ namespace Duplicati.Library.Parity.Strings
         public static string BlocksizesmallfileShort => LC.L(@"Set the block size for parity of small files (<4MB)");
         public static string BlocksizelargefileLong => LC.L(@"Use this option to set block size used for parity calculation of large files (larger than 4 MB). The block size must be a multiply of 4.");
         public static string BlocksizelargefileShort => LC.L(@"Set the block size for parity of large files (>=4MB)");
+        public static string Par2programpathLong => LC.L(@"The path to the Par2 program. If not supplied, Duplicati will assume that the program ""par2"" is available in the system path.");
+        public static string Par2programpathShort => LC.L(@"The path to Par2 program");
     }
 }

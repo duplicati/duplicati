@@ -64,7 +64,7 @@ namespace Duplicati.Library.Utility
             // return our included win-tools
             var wintoolsPath = System.IO.Path.Combine(
                 System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                "win-tools", "par2cmdline.exe");
+                "win-tools", "par2.exe");
             return string.IsNullOrEmpty(wintoolsPath) ? null : wintoolsPath;
         }
     }

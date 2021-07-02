@@ -353,7 +353,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
-                    new CommandLineArgument("parity-file-redundancy", CommandLineArgument.ArgumentType.Integer, Strings.Options.ParityfileredundancyShort, Strings.Options.ParityfileredundancyLong, "0"),
+                    new CommandLineArgument("parity-redundancy-level", CommandLineArgument.ArgumentType.Integer, Strings.Options.ParityredundancylevelShort, Strings.Options.ParityredundancylevelLong, "0"),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
                     new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
@@ -1512,16 +1512,16 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A value indicating if a parity file is to be created for a remote file
         /// </summary>
-        public bool EnableParityFile => ParityFileRedundancy > 0;
+        public bool EnableParityFile => ParityRedundancyLevel > 0;
 
         /// <summary>
         /// A value indicating the percentage of redundancy for the parity file, if enabled.
         /// </summary>
-        public int ParityFileRedundancy
+        public int ParityRedundancyLevel
         {
             get
             {
-                m_options.TryGetValue("parity-file-redundancy", out var v);
+                m_options.TryGetValue("parity-redundancy-level", out var v);
                 return string.IsNullOrEmpty(v) ? 0 : Math.Max(0, int.Parse(v));
             }
         }
