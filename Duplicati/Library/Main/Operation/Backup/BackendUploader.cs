@@ -274,14 +274,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker, CancellationToken cancelToken)
         {
             // Create parity file before uploading, since data volumes will be deleted after uploading
-            FileEntryItem parityEntry = null;
-            if (m_options.EnableParityFile)
-            {
-                parityEntry = new FileEntryItem(BackendActionType.Put, upload.BlockEntry.RemoteFilename + "." + m_options.ParityModule);
-                parityEntry.TrackedInDb = false;
-                parityEntry.LocalTempfile = upload.BlockEntry.CreateParity(m_options);
-                parityEntry.UpdateHashAndSize(m_options);
-            }
+            FileEntryItem parityEntry = upload.BlockEntry.CreateParity(m_options);
 
             if (await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false))
             {
@@ -305,15 +298,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             fileEntry.SetLocalfilename(volumeWriter.LocalFilename);
             fileEntry.Encrypt(m_options);
             fileEntry.UpdateHashAndSize(m_options);
-            FileEntryItem parityEntry = null;
 
-            if (m_options.EnableParityFile)
-            {
-                parityEntry = new FileEntryItem(BackendActionType.Put, volumeWriter.RemoteFilename + "+." + m_options.ParityModule);
-                parityEntry.TrackedInDb = false;
-                parityEntry.LocalTempfile = fileEntry.CreateParity(m_options);
-                parityEntry.UpdateHashAndSize(m_options);
-            }
+            // Create parity file before uploading
+            FileEntryItem parityEntry = fileEntry.CreateParity(m_options);
 
             await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
 

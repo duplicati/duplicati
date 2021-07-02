@@ -24,10 +24,12 @@ namespace Duplicati.Library.Interface
         /// Create parity data for the inputfile, and store them in outputfile.
         /// </summary>
         /// <param name="inputfile">The data file to create parity</param>
-        /// <param name="output">The created parity file</param>
-        void Create(string inputfile, string outputfile);
+        /// <param name="outputfile">The destination of created parity file</param>
+        /// <param name="inputname">Some parity provider can also protect file name,
+        /// specify this parameter to provide the actual file name to be protected</param>
+        void Create(string inputfile, string outputfile, string inputname = null);
 
-        void Repair(string inputfile, string parityfile, string outputfile);
+        void Repair(string inputfile, string parityfile, string outputfile = null);
 
         string FilenameExtension { get; }
 

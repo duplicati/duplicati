@@ -200,10 +200,22 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            public TempFile CreateParity(Library.Interface.IParity parity)
+            public FileEntryItem CreateParity(Library.Interface.IParity parity, Options options)
             {
-                // TODO(cmpute): implement
-                return null;
+                if (!options.EnableParityFile)
+                    return null;
+                if (Operation != OperationType.Put) // only support put yet
+                    return null;
+
+                var tempfile = new Library.Utility.TempFile();
+                parity.Create(LocalTempfile, tempfile.Name, RemoteFilename);
+
+                var newEntry = new FileEntryItem(Operation, RemoteFilename + "+." + options.ParityModule);
+                newEntry.NotTrackedInDb = true;
+                newEntry.Encrypted = true;
+                newEntry.LocalTempfile = tempfile;
+                newEntry.UpdateHashAndSize(options);
+                return newEntry;
             }
 
             public bool UpdateHashAndSize(Options options)
@@ -359,6 +371,7 @@ namespace Duplicati.Library.Main
         private volatile Exception m_lastException;
         private readonly Library.Interface.IEncryption m_encryption;
         private readonly object m_encryptionLock = new object();
+        private readonly Library.Interface.IParity m_parity;
         private Library.Interface.IBackend m_backend;
         private readonly string m_backendurl;
         private readonly IBackendWriter m_statwriter;
@@ -400,6 +413,13 @@ namespace Duplicati.Library.Main
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
                 if (m_encryption == null)
                     throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule), "EncryptionMethodNotSupported");
+            }
+
+            if (m_options.EnableParityFile)
+            {
+                m_parity = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.SmallFileSize, options.RawOptions);
+                if (m_parity == null)
+                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Parity provider not supported: {0}", m_options.ParityModule), "ParityProviderNotSupported");
             }
 
             if (m_taskControl != null)
@@ -627,7 +647,7 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            //Make sure everything in the queue is signalled
+            //Make sure everything in the queue is signaled
             FileEntryItem i;
             while ((i = m_queue.Dequeue()) != null)
                 i.SignalComplete();
@@ -959,6 +979,12 @@ namespace Duplicati.Library.Main
             return retTarget;
         }
 
+        private TempFile coreDoGetRepair(FileEntryItem item, TempFile downloadedFile)
+        {
+            // TODO(cmpute): implement
+            return null;
+        }
+
         private void DoGet(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
@@ -1029,18 +1055,22 @@ namespace Duplicati.Library.Main
                 {
                     if (item.Size >= 0)
                     {
-                        // TODO(cmpute): repair here
                         if (dataSizeDownloaded != item.Size)
-                            throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size));
+                            if (m_options.EnableParityFile)
+                                throw new NotImplementedException(); // TODO(cmpute): repair here
+                            else
+                                throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size));
                     }
                     else
                         item.Size = dataSizeDownloaded;
 
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
-                        // TODO(cmpute): repair here
                         if (fileHash != item.Hash)
-                            throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
+                            if (m_options.EnableParityFile)
+                                throw new NotImplementedException(); // TODO(cmpute): repair here
+                            else
+                                throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
                     }
                     else
                         item.Hash = fileHash;
@@ -1230,13 +1260,8 @@ namespace Duplicati.Library.Main
                 req.IndexfileUpdated = true;
             }
 
-            // TODO(cmpute): create parity here as req3, enqueue as a new upload task?
-            FileEntryItem req3 = null;
-            if (m_options.EnableParityFile)
-            {
-                var remoteParityName = item.RemoteFilename;
-                req3 = new FileEntryItem(OperationType.Put, remoteParityName);
-            }
+            // create parity file if needded
+            FileEntryItem req3 = req.CreateParity(m_parity, m_options);
 
             try
             {

@@ -36,22 +36,23 @@ namespace Duplicati.Library.Parity
         /// <summary>
         /// The default block size for small files, use "small-file-size" option to split large and small files
         /// </summary>
-        private static readonly string DEFAULT_BLOCK_SIZE_SF = "5000";
+        private static readonly string DEFAULT_BLOCK_SIZE_SF = "4kb";
 
         /// <summary>
         /// The default block size for large files
         /// </summary>
-        private static readonly string DEFAULT_BLOCK_SIZE_LF = "50000";
+        private static readonly string DEFAULT_BLOCK_SIZE_LF = "50kb";
 
         /// <summary>
         /// The PGP program to use, should be with absolute path
         /// </summary>
         private string m_programpath { get; set; } = GetPar2ProgramPath();
 
-        private readonly int m_block_size_sf;
-        private readonly int m_block_size_lf;
+        private readonly long m_block_size_sf;
+        private readonly long m_block_size_lf;
         private readonly int m_parity_redundancy;
         private readonly long m_small_file_size;
+        private TempFolder m_work_dir = new Library.Utility.TempFolder();
 
         public IList<ICommandLineArgument> SupportedCommands
         {
@@ -96,33 +97,34 @@ namespace Duplicati.Library.Parity
             options.TryGetValue(COMMANDLINE_BLOCK_SIZE_SF, out string strBlockSizeSF);
             if (string.IsNullOrWhiteSpace(strBlockSizeSF))
                 strBlockSizeSF = DEFAULT_BLOCK_SIZE_SF;
-            if (int.TryParse(strBlockSizeSF, out int blockSizeSF))
-            {
-                if (blockSizeSF % 4 != 0)
-                    blockSizeSF += 4 - (blockSizeSF % 4);
-                m_block_size_sf = Math.Max(4, blockSizeSF);
-            }
+            long blockSizeSF = Library.Utility.Sizeparser.ParseSize(strBlockSizeSF);
+            if (blockSizeSF % 4 != 0)
+                blockSizeSF += 4 - (blockSizeSF % 4);
+            m_block_size_sf = Math.Max(4, blockSizeSF);
 
             options.TryGetValue(COMMANDLINE_BLOCK_SIZE_LF, out string strBlockSizeLF);
             if (string.IsNullOrWhiteSpace(strBlockSizeLF))
                 strBlockSizeLF = DEFAULT_BLOCK_SIZE_LF;
-            if (int.TryParse(strBlockSizeLF, out int blockSizeLF))
-            {
-                if (blockSizeLF % 4 != 0)
-                    blockSizeLF += 4 - (blockSizeLF % 4);
-                m_block_size_lf = Math.Max(4, blockSizeLF);
-            }
+            long blockSizeLF = Library.Utility.Sizeparser.ParseSize(strBlockSizeLF);
+            if (blockSizeLF % 4 != 0)
+                blockSizeLF += 4 - (blockSizeLF % 4);
+            m_block_size_lf = Math.Max(4, blockSizeLF);
 
             if (options.ContainsKey(COMMANDLINE_OPTIONS_PATH))
                 m_programpath = Environment.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
         }
 
-        public void Create(string inputfile, string outputfile)
+        public void Create(string inputfile, string outputfile, string inputname = null)
         {
+            // Move input to working directory
+            if (string.IsNullOrEmpty(inputname))
+                inputname = Path.GetFileName(inputfile);
+            var movedfile = Path.Combine(m_work_dir, inputname);
+            File.Move(inputfile, movedfile);
+
+            // Start PAR2 process
             Process proc;
-            var blocksize = new FileInfo(inputfile).Length >= m_small_file_size ? m_block_size_lf : m_block_size_sf;
-            var inputname = Path.GetFileName(inputfile);
-            var outputname = Path.GetFileName(outputfile);
+            var blocksize = new FileInfo(movedfile).Length >= m_small_file_size ? m_block_size_lf : m_block_size_sf;
             var args = $@"create -q -r{m_parity_redundancy} -s{blocksize} -n1 ""{inputname + ".par2"}"" ""{inputname}""";
 
             ProcessStartInfo psi = new ProcessStartInfo
@@ -131,7 +133,7 @@ namespace Duplicati.Library.Parity
                 UseShellExecute = false,
                 FileName = m_programpath,
                 Arguments = args,
-                WorkingDirectory = Directory.GetParent(inputfile).FullName
+                WorkingDirectory = m_work_dir
             };
 
 #if DEBUG
@@ -148,21 +150,27 @@ namespace Duplicati.Library.Parity
                 {
                     proc.WaitForExit();
                     if (proc.ExitCode != 0)
-                        throw new Exception($"Failed to create parity file for {inputfile}.");
-                }
-
-                // Find the actual parity file with recovery blocks and rename it as the output file
-                foreach (var filename in Directory.GetFiles(psi.WorkingDirectory))
-                {
-                    var filestem = Path.GetFileNameWithoutExtension(filename);
-                    if (filestem.StartsWith(inputname) && filestem.Contains("vol"))
-                        File.Copy(filename, outputfile, true);
+                        throw new Exception($"Failed to create parity file for {inputname}.");
                 }
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "Par2CreateFailure", ex, "Error occurred while creating parity file with Par2:" + ex.Message);
                 throw;
+            }
+
+            // Move the input file back
+            File.Move(movedfile, inputfile);
+
+            // Find the actual parity file with recovery blocks and rename it as the output file
+            foreach (var filename in Directory.GetFiles(m_work_dir))
+            {
+                var filestem = Path.GetFileNameWithoutExtension(filename);
+                if (filestem.StartsWith(inputname) && filestem.Contains("vol"))
+                {
+                    File.Copy(filename, outputfile, true);
+                    break;
+                }
             }
         }
 
@@ -182,13 +190,9 @@ namespace Duplicati.Library.Parity
         }
 
         #region IDisposable Members
-        protected virtual void Dispose(bool disposing) { }
-
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            m_work_dir.Dispose();
         }
         #endregion
     }
