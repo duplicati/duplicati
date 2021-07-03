@@ -12,6 +12,38 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Parity
 {
+    /// <summary>
+    /// Possible return code defined in par2cmdline.
+    /// </summary>
+    /// <see cref="https://github.com/Parchive/par2cmdline/blob/master/src/libpar2.h#L109-L136"/>
+    public enum Par2CommandlineResult
+    {
+        eSuccess = 0,
+
+        eRepairPossible = 1,  // Data files are damaged and there is
+                              // enough recovery data available to
+                              // repair them.
+
+        eRepairNotPossible = 2,  // Data files are damaged and there is
+                                 // insufficient recovery data available
+                                 // to be able to repair them.
+
+        eInvalidCommandLineArguments = 3,  // There was something wrong with the
+                                           // command line arguments
+
+        eInsufficientCriticalData = 4,  // The PAR2 files did not contain sufficient
+                                        // information about the data files to be able
+                                        // to verify them.
+
+        eRepairFailed = 5,  // Repair completed but the data files
+                            // still appear to be damaged.
+
+
+        eFileIOError = 6,  // An error occurred when accessing files
+        eLogicError = 7,   // In internal error occurred
+        eMemoryError = 8,  // Out of memory
+    }
+
     public class Par2Parity : IParity
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<Par2Parity>();
@@ -114,6 +146,32 @@ namespace Duplicati.Library.Parity
                 m_programpath = Environment.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
         }
 
+        protected string ParseErrorCodeMessage(int retcode)
+        {
+            if (!Enum.IsDefined(typeof(Par2CommandlineResult), retcode))
+                return "";
+
+            var result = (Par2CommandlineResult)retcode;
+            switch(result)
+            {
+                default:
+                    return "";
+                case Par2CommandlineResult.eRepairPossible:
+                    return "There was something wrong with the command line arguments";
+                case Par2CommandlineResult.eRepairNotPossible:
+                case Par2CommandlineResult.eInsufficientCriticalData:
+                    return "Insufficient information contained for repairing";
+                case Par2CommandlineResult.eRepairFailed:
+                    return "Repair completed but the data file still appears to be damaged.";
+                case Par2CommandlineResult.eFileIOError:
+                    return "An error occurred when accessing files";
+                case Par2CommandlineResult.eLogicError:
+                    return "Internal error occurred";
+                case Par2CommandlineResult.eMemoryError:
+                    return "Out of memory";
+            }
+        }
+
         public void Create(string inputfile, string outputfile, string inputname = null)
         {
             // Move input to working directory
@@ -139,23 +197,22 @@ namespace Duplicati.Library.Parity
 #if DEBUG
             psi.CreateNoWindow = false;
             psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-            Console.Error.WriteLine("Running command: {0} {1}", m_programpath, args);
+            Console.Error.WriteLine("Running PAR2 command: {0} {1}", m_programpath, args);
 #endif
 
             try
             {
-                // Logging.Log.WriteProfilingMessage
-
+                Log.WriteProfilingMessage(LOGTAG, "CreatePar2File", $"Command: {m_programpath} {args}");
                 using (proc = Process.Start(psi))
                 {
                     proc.WaitForExit();
                     if (proc.ExitCode != 0)
-                        throw new Exception($"Failed to create parity file for {inputname}.");
+                        throw new Exception($"Failed to create parity file for {inputname}. Explanation: " + ParseErrorCodeMessage(proc.ExitCode));
                 }
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "Par2CreateFailure", ex, "Error occurred while creating parity file with Par2:" + ex.Message);
+                Log.WriteErrorMessage(LOGTAG, "CreatePar2File", ex, "Error occurred while creating parity file with Par2:" + ex.Message);
                 throw;
             }
 
@@ -174,9 +231,76 @@ namespace Duplicati.Library.Parity
             }
         }
 
-        public void Repair(string inputfile, string parityfile, string outputfile)
+        public bool Repair(string inputfile, string parityfile, out string repairedname, string outputfile = null)
         {
-            throw new NotImplementedException();
+            using (var workdir = new TempFolder()) // make sure we have a clean workspace to find the repaired file
+            {
+                // Move input to working directory
+                if (string.IsNullOrEmpty(outputfile))
+                    outputfile = inputfile;
+                var inputname = Path.GetFileName(inputfile);
+                var parityname = Path.GetFileName(parityfile);
+                var movedinput = Path.Combine(workdir, inputname);
+                var movedparity = Path.Combine(workdir, parityname);
+                File.Move(inputfile, movedinput);
+                File.Move(parityfile, movedparity);
+
+                // Start PAR2 process
+                Process proc;
+                var args = $@"repair -q ""{parityname}"" ""{inputname}""";
+
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    FileName = m_programpath,
+                    Arguments = args,
+                    WorkingDirectory = workdir
+                };
+
+#if DEBUG
+                psi.CreateNoWindow = false;
+                psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
+                Console.Error.WriteLine("Running PAR2 command: {0} {1}", m_programpath, args);
+#endif
+
+                Log.WriteProfilingMessage(LOGTAG, "RepairWithPar2File", $"Command: {m_programpath} {args}");
+                try
+                {
+                    using (proc = Process.Start(psi))
+                    {
+                        proc.WaitForExit();
+                        if (proc.ExitCode != 0)
+                            throw new Exception($"Par2 returned {proc.ExitCode}: {ParseErrorCodeMessage(proc.ExitCode)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteErrorMessage(LOGTAG, "RepairWithPar2File", ex, $"Failed to repair {inputname}");
+                    repairedname = null;
+                    return false;
+                }
+
+                // Move the input file back
+                if (File.Exists(movedinput + ".1"))
+                {
+                    // The input file name is correct
+                    File.Move(movedinput + ".1", inputfile);
+                    File.Move(movedparity, parityfile);
+                    File.Copy(movedinput, outputfile, true);
+                    repairedname = inputname;
+                }
+                else
+                {
+                    // The input file name is incorrect
+                    File.Move(movedinput, inputfile);
+                    File.Move(movedparity, parityfile);
+                    var fixedFile = Directory.GetFiles(workdir).First();
+                    File.Copy(fixedFile, outputfile, true);
+                    repairedname = Path.GetFileName(fixedFile);
+                }
+                return true;
+            }
         }
 
         /// <summary>

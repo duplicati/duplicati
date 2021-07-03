@@ -9,6 +9,10 @@ using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
 using System.Threading;
+using System.IO;
+using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Logging;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Main
 {
@@ -979,10 +983,54 @@ namespace Duplicati.Library.Main
             return retTarget;
         }
 
-        private TempFile coreDoGetRepair(FileEntryItem item, TempFile downloadedFile)
+        private bool coreDoGetRepair(FileEntryItem item, TempFile downloadedFile)
         {
-            // TODO(cmpute): implement
-            return null;
+            // Select files with parity extensions
+            var r = m_backend.List().Where(x => ParityLoader.Keys.Contains(Path.GetExtension(x.Name).TrimStart('.'))).ToList();
+            if (r.Count == 0)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "No parity files found in the remote.");
+                return false;
+            }
+
+            // Select parity file by matching file name
+            var parname = r.Where(x => Path.GetFileName(x.Name) == item.RemoteFilename).Select(x => x.Name).FirstOrDefault();
+            if (string.IsNullOrEmpty(parname))
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Found parity files in the remote but none of them matches.");
+                return false;
+            }
+
+            // Download the parity file
+            TempFile parfile;
+            FileEntryItem paritem = new FileEntryItem(OperationType.Get, parname);
+            if (m_options.DisablePipedStreaming)
+                parfile = coreDoGetSequential(paritem, null, out _, out _);
+            else
+                parfile = coreDoGetPiping(paritem, null, out _, out _);
+
+            // Call parity module to repair
+            using (var par = ParityLoader.GetModule(Path.GetExtension(parname).TrimStart('.'), m_options.ParityRedundancyLevel, m_options.SmallFileSize, m_options.RawOptions))
+            {
+                if (!par.Repair(downloadedFile, parfile, out _))  // Repair inplace
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Parity repair failed in the parity module.");
+                    return false;
+                }
+            }
+
+            if (item.Size >= 0 && new FileInfo(downloadedFile).Length != item.Size)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Size check still failed after fixing");
+                return false;
+            }
+            if (!string.IsNullOrEmpty(item.Hash) && CalculateFileHash(downloadedFile) != item.Hash)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Hash check still failed after fixing");
+                return false;
+            }
+
+            return true;
         }
 
         private void DoGet(FileEntryItem item)
@@ -1056,10 +1104,13 @@ namespace Duplicati.Library.Main
                     if (item.Size >= 0)
                     {
                         if (dataSizeDownloaded != item.Size)
-                            if (m_options.EnableParityFile)
-                                throw new NotImplementedException(); // TODO(cmpute): repair here
+                        {
+                            var errmsg = Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size);
+                            if (m_options.EnableParityFile && !coreDoGetRepair(item, tmpfile))
+                                throw new Exception(errmsg + Strings.Controller.ParityRepairFailed);
                             else
-                                throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size));
+                                throw new Exception(errmsg);
+                        }
                     }
                     else
                         item.Size = dataSizeDownloaded;
@@ -1067,10 +1118,13 @@ namespace Duplicati.Library.Main
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (fileHash != item.Hash)
-                            if (m_options.EnableParityFile)
-                                throw new NotImplementedException(); // TODO(cmpute): repair here
+                        {
+                            var errmsg = Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash);
+                            if (m_options.EnableParityFile && !coreDoGetRepair(item, tmpfile))
+                                throw new HashMismatchException(errmsg + Strings.Controller.ParityRepairFailed);
                             else
-                                throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
+                                throw new HashMismatchException(errmsg);
+                        }
                     }
                     else
                         item.Hash = fileHash;
@@ -1519,6 +1573,11 @@ namespace Duplicati.Library.Main
                 m_backend.Dispose();
                 m_backend = null;
             }
+
+            if (m_encryption != null)
+                m_encryption.Dispose();
+            if (m_parity != null)
+                m_parity.Dispose();
 
             try { m_db.FlushDbMessages(true); }
             catch (Exception ex) { Logging.Log.WriteErrorMessage(LOGTAG, "ShutdownError", ex, "Backend Shutdown error: {0}", ex.Message); }

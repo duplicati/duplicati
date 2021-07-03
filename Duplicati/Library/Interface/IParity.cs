@@ -29,7 +29,16 @@ namespace Duplicati.Library.Interface
         /// specify this parameter to provide the actual file name to be protected</param>
         void Create(string inputfile, string outputfile, string inputname = null);
 
-        void Repair(string inputfile, string parityfile, string outputfile = null);
+        /// <summary>
+        /// Fix the input data with the provided parity file.
+        /// If output file is not specified, the fix is in-place.
+        /// </summary>
+        /// <param name="inputfile">The data file to be fixed</param>
+        /// <param name="parityfile">The parity file providing information for repairing</param>
+        /// <param name="repairedname">The correct file name of the input file identified by the parity file</param>
+        /// <param name="outputfile">Optiona output location for fixed data file</param>
+        /// <returns>Whether the repair succeeded</returns>
+        bool Repair(string inputfile, string parityfile, out string repairedname, string outputfile = null);
 
         string FilenameExtension { get; }
 

@@ -115,6 +115,10 @@
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
       <Name>Duplicati.Library.Compression</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Parity\Duplicati.Library.Parity.csproj">
+      <Project>{41ceb2a6-3e7d-463c-9fcc-bbc8774ee722}</Project>
+      <Name>Duplicati.Library.Parity</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>
@@ -178,10 +182,6 @@
     <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
       <Project>{7E119745-1F62-43F0-936C-F312A1912C0B}</Project>
       <Name>Duplicati.Library.AutoUpdater</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj">
-      <Project>{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}</Project>
-      <Name>Duplicati.Library.Backend.OneDrive</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj">
       <Project>{B68F2214-951F-4F78-8488-66E1ED3F50BF}</Project>
