@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     return null;
 
                 var tempfile = new Library.Utility.TempFile();
-                using (var par = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.SmallFileSize, options.RawOptions))
+                using (var par = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.RawOptions))
                     par.Create(LocalTempfile, tempfile.Name, RemoteFilename);
 
                 var newEntry = new FileEntryItem(Operation, RemoteFilename + "+." + options.ParityModule);

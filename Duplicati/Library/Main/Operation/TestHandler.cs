@@ -62,6 +62,7 @@ namespace Duplicati.Library.Main.Operation
         
         public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
         {
+            // TODO(cmpute): generate parity file if not present in remote
             var files = db.SelectTestTargets(samples, m_options).ToList();
 
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);

@@ -287,8 +287,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
                 }
 
+                // Upload parity file for block and index volumes
                 if (parityEntry != null)
                     await UploadFileAsync(parityEntry, worker, cancelToken).ConfigureAwait(false);
+                FileEntryItem indexParityEntry = indexEntry.CreateParity(m_options);
+                if (indexParityEntry != null)
+                    await UploadFileAsync(indexParityEntry, worker, cancelToken).ConfigureAwait(false);
             }
         }
 

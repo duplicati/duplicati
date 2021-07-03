@@ -223,6 +223,15 @@ namespace Duplicati.CommandLine
                             }
 
                     if (args == null)
+                        foreach (Duplicati.Library.Interface.IParity module in Library.DynamicLoader.ParityLoader.Modules)
+                            if (string.Equals(module.FilenameExtension, topic, StringComparison.OrdinalIgnoreCase))
+                            {
+                                args = module.SupportedCommands;
+                                found = true;
+                                break;
+                            }
+
+                    if (args == null)
                         foreach (Duplicati.Library.Interface.IGenericModule module in Library.DynamicLoader.GenericLoader.Modules)
                             if (string.Equals(module.Key, topic, StringComparison.OrdinalIgnoreCase))
                             {
@@ -274,6 +283,14 @@ namespace Duplicati.CommandLine
                         if (string.Equals(mod.FilenameExtension, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             PrintCompressionModule(mod, lines);
+                            break;
+                        }
+
+                if (lines.Count == 0)
+                    foreach (Duplicati.Library.Interface.IParity mod in Library.DynamicLoader.ParityLoader.Modules)
+                        if (string.Equals(mod.FilenameExtension, topic, StringComparison.OrdinalIgnoreCase))
+                        {
+                            PrintParityModule(mod, lines);
                             break;
                         }
 
@@ -465,6 +482,9 @@ namespace Duplicati.CommandLine
                     if (mod.SupportedCommands != null)
                         foundArgs.Add(mod.SupportedCommands);
                 foreach (Duplicati.Library.Interface.ICompression mod in Library.DynamicLoader.CompressionLoader.Modules)
+                    if (mod.SupportedCommands != null)
+                        foundArgs.Add(mod.SupportedCommands);
+                foreach (Duplicati.Library.Interface.IParity mod in Library.DynamicLoader.ParityLoader.Modules)
                     if (mod.SupportedCommands != null)
                         foundArgs.Add(mod.SupportedCommands);
                 foreach (Duplicati.Library.Interface.IGenericModule mod in Library.DynamicLoader.GenericLoader.Modules)

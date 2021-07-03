@@ -53,43 +53,52 @@ namespace Duplicati.Library.Parity
         public string DisplayName { get { return Strings.Par2Parity.DisplayName; } }
 
         /// <summary>
-        /// The commandline option supplied, setting the block size used for parity calculation of small file (--par2-block-size-small-file)
+        /// The commandline option supplied, setting the block count used for parity calculation of small file (--par2-block-size-small-file)
         /// </summary>
-        private const string COMMANDLINE_BLOCK_SIZE_SF = "par2-block-size-small-file";
+        private const string COMMANDLINE_OPTIONS_BLOCK_COUNT_SF = "par2-small-file-block-count";
         /// <summary>
-        /// The commandline option supplied, setting the block size used for parity calculation of large file (--par2-block-large-file)
+        /// The commandline option supplied, setting the block count used for parity calculation of large file (--par2-block-large-file)
         /// </summary>
-        private const string COMMANDLINE_BLOCK_SIZE_LF = "par2-block-size-large-file";
+        private const string COMMANDLINE_OPTIONS_BLOCK_COUNT_LF = "par2-large-file-block-count";
+        /// <summary>
+        /// The commandline option supplied, setting the size threshold of a file being regarded as small or large file (--par2-block-large-file)
+        /// </summary>
+        private const string COMMANDLINE_OPTIONS_FILE_SIZE_THRES = "par2-file-size-threshold";
         /// <summary>
         /// The commandline option supplied, indicating the path to the par2 program executable (--par2-program-path)
         /// </summary>
         private const string COMMANDLINE_OPTIONS_PATH = "par2-program-path";
 
         /// <summary>
-        /// The default block size for small files, use "small-file-size" option to split large and small files
+        /// The default block count for small files, use "par2-file-size-threshold" option to split large and small files
         /// </summary>
-        private static readonly string DEFAULT_BLOCK_SIZE_SF = "4kb";
+        private static readonly string DEFAULT_BLOCK_COUNT_SF = "25";
 
         /// <summary>
-        /// The default block size for large files
+        /// The default block count for large files
         /// </summary>
-        private static readonly string DEFAULT_BLOCK_SIZE_LF = "50kb";
+        private static readonly string DEFAULT_BLOCK_COUNT_LF = "500";
 
         /// <summary>
-        /// The PGP program to use, should be with absolute path
+        /// The default size threshold for splitting small and large files
+        /// </summary>
+        private static readonly string DEFAULT_FILE_SIZE_THRES = "4mb";
+
+        /// <summary>
+        /// The PAR2 program to use, should be with absolute path
         /// </summary>
         private string m_programpath { get; set; } = GetPar2ProgramPath();
 
-        private readonly long m_block_size_sf;
-        private readonly long m_block_size_lf;
+        private readonly long m_block_count_sf = long.Parse(DEFAULT_BLOCK_COUNT_SF);
+        private readonly long m_block_count_lf = long.Parse(DEFAULT_BLOCK_COUNT_LF);
         private readonly int m_parity_redundancy;
-        private readonly long m_small_file_size;
+        private readonly long m_file_size_thres = Utility.Sizeparser.ParseSize(DEFAULT_FILE_SIZE_THRES);
         private TempFolder m_work_dir = new Library.Utility.TempFolder();
 
 #if DEBUG
-        const string m_verbose_level = "-q";
+        private const string m_verbose_level = "-q";
 #else
-        const string m_verbose_level = "-qq";
+        private const string m_verbose_level = "-qq";
 #endif
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -98,17 +107,23 @@ namespace Duplicati.Library.Parity
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(
-                        COMMANDLINE_BLOCK_SIZE_SF,
-                        CommandLineArgument.ArgumentType.Integer,
-                        Strings.Par2Parity.BlocksizesmallfileShort,
-                        Strings.Par2Parity.BlocksizesmallfileLong,
-                        DEFAULT_BLOCK_SIZE_SF),
+                        COMMANDLINE_OPTIONS_FILE_SIZE_THRES,
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.Par2Parity.FilesizethresholdShort,
+                        Strings.Par2Parity.FilesizethresholdLong,
+                        DEFAULT_FILE_SIZE_THRES),
                     new CommandLineArgument(
-                        COMMANDLINE_BLOCK_SIZE_LF,
+                        COMMANDLINE_OPTIONS_BLOCK_COUNT_SF,
                         CommandLineArgument.ArgumentType.Integer,
-                        Strings.Par2Parity.BlocksizelargefileShort,
-                        Strings.Par2Parity.BlocksizelargefileLong,
-                        DEFAULT_BLOCK_SIZE_LF),
+                        Strings.Par2Parity.BlockcountsmallfileShort,
+                        Strings.Par2Parity.BlockcountsmallfileLong,
+                        DEFAULT_BLOCK_COUNT_SF),
+                    new CommandLineArgument(
+                        COMMANDLINE_OPTIONS_BLOCK_COUNT_LF,
+                        CommandLineArgument.ArgumentType.Integer,
+                        Strings.Par2Parity.BlockcountlargefileShort,
+                        Strings.Par2Parity.BlockcountlargefileLong,
+                        DEFAULT_BLOCK_COUNT_LF),
                     new CommandLineArgument(
                         COMMANDLINE_OPTIONS_PATH,
                         CommandLineArgument.ArgumentType.Path,
@@ -127,26 +142,26 @@ namespace Duplicati.Library.Parity
         /// Constructs a new Par2 instance
         /// </summary>
         /// <param name="options">The options passed on the commandline</param>
-        public Par2Parity(int redundancy_level, long small_file_size, Dictionary<string, string> options)
+        public Par2Parity(int redundancy_level, Dictionary<string, string> options)
         {
             m_parity_redundancy = redundancy_level;
-            m_small_file_size = small_file_size;
 
-            options.TryGetValue(COMMANDLINE_BLOCK_SIZE_SF, out string strBlockSizeSF);
-            if (string.IsNullOrWhiteSpace(strBlockSizeSF))
-                strBlockSizeSF = DEFAULT_BLOCK_SIZE_SF;
-            long blockSizeSF = Library.Utility.Sizeparser.ParseSize(strBlockSizeSF);
-            if (blockSizeSF % 4 != 0)
-                blockSizeSF += 4 - (blockSizeSF % 4);
-            m_block_size_sf = Math.Max(4, blockSizeSF);
+            options.TryGetValue(COMMANDLINE_OPTIONS_FILE_SIZE_THRES, out string strFileSizeThres);
+            if (string.IsNullOrWhiteSpace(strFileSizeThres))
+                strFileSizeThres = DEFAULT_FILE_SIZE_THRES;
+            m_file_size_thres = Sizeparser.ParseSize(strFileSizeThres);
 
-            options.TryGetValue(COMMANDLINE_BLOCK_SIZE_LF, out string strBlockSizeLF);
-            if (string.IsNullOrWhiteSpace(strBlockSizeLF))
-                strBlockSizeLF = DEFAULT_BLOCK_SIZE_LF;
-            long blockSizeLF = Library.Utility.Sizeparser.ParseSize(strBlockSizeLF);
-            if (blockSizeLF % 4 != 0)
-                blockSizeLF += 4 - (blockSizeLF % 4);
-            m_block_size_lf = Math.Max(4, blockSizeLF);
+            options.TryGetValue(COMMANDLINE_OPTIONS_BLOCK_COUNT_SF, out string strBlockCountSF);
+            if (string.IsNullOrWhiteSpace(strBlockCountSF))
+                strBlockCountSF = DEFAULT_BLOCK_COUNT_SF;
+            if (long.TryParse(strBlockCountSF, out long blockCountSF))
+                m_block_count_sf = blockCountSF;
+
+            options.TryGetValue(COMMANDLINE_OPTIONS_BLOCK_COUNT_LF, out string strBlockCountLF);
+            if (string.IsNullOrWhiteSpace(strBlockCountLF))
+                strBlockCountLF = DEFAULT_BLOCK_COUNT_LF;
+            if (long.TryParse(strBlockCountLF, out long blockCountLF))
+                m_block_count_lf = blockCountLF;
 
             if (options.ContainsKey(COMMANDLINE_OPTIONS_PATH))
                 m_programpath = Environment.ExpandEnvironmentVariables(options[COMMANDLINE_OPTIONS_PATH]);
@@ -188,8 +203,8 @@ namespace Duplicati.Library.Parity
 
             // Start PAR2 process
             Process proc;
-            var blocksize = new FileInfo(movedfile).Length >= m_small_file_size ? m_block_size_lf : m_block_size_sf;
-            var args = $@"create {m_verbose_level} -r{m_parity_redundancy} -s{blocksize} -n1 ""{inputname + ".par2"}"" ""{inputname}""";
+            var blockcount = new FileInfo(movedfile).Length >= m_file_size_thres ? m_block_count_lf : m_block_count_sf;
+            var args = $@"create {m_verbose_level} -r{m_parity_redundancy} -b{blockcount} -n1 ""{inputname + ".par2"}"" ""{inputname}""";
 
             ProcessStartInfo psi = new ProcessStartInfo
             {

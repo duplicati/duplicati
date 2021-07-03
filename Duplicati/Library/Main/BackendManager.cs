@@ -420,7 +420,7 @@ namespace Duplicati.Library.Main
 
             if (m_options.EnableParityFile)
             {
-                m_parity = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.SmallFileSize, options.RawOptions);
+                m_parity = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.RawOptions);
                 if (m_parity == null)
                     throw new Duplicati.Library.Interface.UserInformationException(string.Format("Parity provider not supported: {0}", m_options.ParityModule), "ParityProviderNotSupported");
             }
@@ -1009,7 +1009,7 @@ namespace Duplicati.Library.Main
                 parfile = coreDoGetPiping(paritem, null, out _, out _);
 
             // Call parity module to repair
-            using (var par = ParityLoader.GetModule(Path.GetExtension(parname).TrimStart('.'), m_options.ParityRedundancyLevel, m_options.SmallFileSize, m_options.RawOptions))
+            using (var par = ParityLoader.GetModule(Path.GetExtension(parname).TrimStart('.'), m_options.ParityRedundancyLevel, m_options.RawOptions))
             {
                 if (!par.Repair(downloadedFile, parfile, out _))  // Repair inplace
                 {
