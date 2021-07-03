@@ -994,7 +994,7 @@ namespace Duplicati.Library.Main
             }
 
             // Select parity file by matching file name
-            var parname = r.Where(x => Path.GetFileName(x.Name) == item.RemoteFilename).Select(x => x.Name).FirstOrDefault();
+            var parname = r.Where(x => Path.GetFileName(x.Name).StartsWith(item.RemoteFilename)).Select(x => x.Name).FirstOrDefault();
             if (string.IsNullOrEmpty(parname))
             {
                 Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Found parity files in the remote but none of them matches.");
@@ -1106,10 +1106,10 @@ namespace Duplicati.Library.Main
                         if (dataSizeDownloaded != item.Size)
                         {
                             var errmsg = Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size);
-                            if (m_options.EnableParityFile && !coreDoGetRepair(item, tmpfile))
-                                throw new Exception(errmsg + Strings.Controller.ParityRepairFailed);
+                            if (coreDoGetRepair(item, tmpfile))
+                                ; // TODO(cmpute): re-upload if data is repaired
                             else
-                                throw new Exception(errmsg);
+                                throw new Exception(errmsg + Strings.Controller.ParityRepairFailed);
                         }
                     }
                     else
@@ -1120,10 +1120,10 @@ namespace Duplicati.Library.Main
                         if (fileHash != item.Hash)
                         {
                             var errmsg = Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash);
-                            if (m_options.EnableParityFile && !coreDoGetRepair(item, tmpfile))
-                                throw new HashMismatchException(errmsg + Strings.Controller.ParityRepairFailed);
+                            if (coreDoGetRepair(item, tmpfile))
+                                ; // TODO(cmpute): re-upload if data is repaired
                             else
-                                throw new HashMismatchException(errmsg);
+                                throw new HashMismatchException(errmsg + Strings.Controller.ParityRepairFailed);
                         }
                     }
                     else

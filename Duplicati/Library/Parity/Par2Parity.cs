@@ -241,7 +241,7 @@ namespace Duplicati.Library.Parity
                 var inputname = Path.GetFileName(inputfile);
                 var parityname = Path.GetFileName(parityfile);
                 var movedinput = Path.Combine(workdir, inputname);
-                var movedparity = Path.Combine(workdir, parityname);
+                var movedparity = Path.Combine(workdir, parityname) + ".par2"; // ensure it ends with .par2 suffix
                 File.Move(inputfile, movedinput);
                 File.Move(parityfile, movedparity);
 
