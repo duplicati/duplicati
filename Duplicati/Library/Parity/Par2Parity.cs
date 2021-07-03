@@ -86,6 +86,12 @@ namespace Duplicati.Library.Parity
         private readonly long m_small_file_size;
         private TempFolder m_work_dir = new Library.Utility.TempFolder();
 
+#if DEBUG
+        const string m_verbose_level = "-q";
+#else
+        const string m_verbose_level = "-qq";
+#endif
+
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -183,7 +189,7 @@ namespace Duplicati.Library.Parity
             // Start PAR2 process
             Process proc;
             var blocksize = new FileInfo(movedfile).Length >= m_small_file_size ? m_block_size_lf : m_block_size_sf;
-            var args = $@"create -q -r{m_parity_redundancy} -s{blocksize} -n1 ""{inputname + ".par2"}"" ""{inputname}""";
+            var args = $@"create {m_verbose_level} -r{m_parity_redundancy} -s{blocksize} -n1 ""{inputname + ".par2"}"" ""{inputname}""";
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
@@ -247,7 +253,7 @@ namespace Duplicati.Library.Parity
 
                 // Start PAR2 process
                 Process proc;
-                var args = $@"repair -q ""{parityname}"" ""{inputname}""";
+                var args = $@"repair {m_verbose_level} ""{parityname}"" ""{inputname}""";
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
@@ -313,11 +319,11 @@ namespace Duplicati.Library.Parity
             return Platform.IsClientWindows ? WinTools.GetWindowsPar2ExePath() : "par2";
         }
 
-        #region IDisposable Members
+#region IDisposable Members
         public void Dispose()
         {
             m_work_dir.Dispose();
         }
-        #endregion
+#endregion
     }
 }

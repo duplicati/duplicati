@@ -12,7 +12,6 @@ using System.Threading;
 using System.IO;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Logging;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Main
 {
@@ -208,7 +207,7 @@ namespace Duplicati.Library.Main
             {
                 if (!options.EnableParityFile)
                     return null;
-                if (Operation != OperationType.Put) // only support put yet
+                if (Operation != OperationType.Put) // TODO(cmpute): ensure only supporting is enough
                     return null;
 
                 var tempfile = new Library.Utility.TempFile();
@@ -1101,13 +1100,14 @@ namespace Duplicati.Library.Main
 
                 if (!m_options.SkipFileHashChecks)
                 {
+                    bool reupload = false;
                     if (item.Size >= 0)
                     {
                         if (dataSizeDownloaded != item.Size)
                         {
                             var errmsg = Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size);
                             if (coreDoGetRepair(item, tmpfile))
-                                ; // TODO(cmpute): re-upload if data is repaired
+                                reupload = true;
                             else
                                 throw new Exception(errmsg + Strings.Controller.ParityRepairFailed);
                         }
@@ -1121,13 +1121,27 @@ namespace Duplicati.Library.Main
                         {
                             var errmsg = Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash);
                             if (coreDoGetRepair(item, tmpfile))
-                                ; // TODO(cmpute): re-upload if data is repaired
+                                reupload = true;
                             else
                                 throw new HashMismatchException(errmsg + Strings.Controller.ParityRepairFailed);
                         }
                     }
                     else
                         item.Hash = fileHash;
+
+                    if (reupload)
+                    {
+                        // TODO(cmpute): ensure this is the correct way to re-upload
+                        TempFile newitem;
+                        if (m_encryption != null)
+                        {
+                            newitem = new TempFile();
+                            lock (m_encryptionLock)
+                                m_encryption.Encrypt(tmpfile, newitem);
+                        }
+                        else newitem = tmpfile;
+                        PutUnencrypted(item.RemoteFilename, newitem);
+                    }
                 }
 
                 if (item.VerifyHashOnly)
@@ -1247,6 +1261,11 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Completed, null, -1);
         }
 
+        /// <summary>
+        /// Put a file on the remote backend without compression, encryption and parity protection
+        /// </summary>
+        /// <param name="remotename">Target remote file name</param>
+        /// <param name="localpath">Path to the local file to be put</param>
         public void PutUnencrypted(string remotename, string localpath)
         {
             if (m_lastException != null)
@@ -1521,11 +1540,21 @@ namespace Duplicati.Library.Main
 
         public void Delete(string remotename, long size, bool synchronous = false)
         {
+            // TODO(cmpute): also remove parity files
             if (m_lastException != null)
                 throw m_lastException;
 
             m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, size, null);
             var req = new FileEntryItem(OperationType.Delete, remotename, size, null);
+
+            // Find corresponding parity file
+            var parfile = m_backend.List()
+                .Where(x => Path.GetFileName(x.Name).StartsWith(remotename))
+                .Where(x => ParityLoader.Keys.Contains(Path.GetExtension(x.Name).TrimStart('.'))).FirstOrDefault();
+            FileEntryItem req2 = null;
+            if (parfile != null)
+                req2 = new FileEntryItem(OperationType.Delete, parfile.Name, parfile.Size, null);
+
             try
             {
                 m_statwriter.BackendProgressUpdater.SetBlocking(true);
@@ -1534,6 +1563,13 @@ namespace Duplicati.Library.Main
                     req.WaitForComplete();
                     if (req.Exception != null)
                         throw req.Exception;
+                }
+
+                if (req2 != null && m_queue.Enqueue(req2) && synchronous)
+                {
+                    req2.WaitForComplete();
+                    if (req2.Exception != null)
+                        throw req2.Exception;
                 }
             }
             finally
