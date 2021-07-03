@@ -1,0 +1,7 @@
+{
+    "name": "par2cmdline",
+    "description": "par2cmdline is a PAR 2.0 compatible file verification and repair tool",
+    "link": "https://github.com/Parchive/par2cmdline",
+    "license": "GPL",
+    "notes": "Only Windows Binaries are included"
+}
