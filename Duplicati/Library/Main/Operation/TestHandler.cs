@@ -35,20 +35,12 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private readonly string m_backendurl;
         private readonly TestResults m_results;
-        private readonly IParity m_parity = null;
         
         public TestHandler(string backendurl, Options options, TestResults results)
         {
             m_options = options;
             m_backendurl = backendurl;
             m_results = results;
-
-            if (m_options.EnableParityFile)
-            {
-                m_parity = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.RawOptions);
-                if (m_parity == null)
-                    throw new UserInformationException(string.Format("Parity provider not supported: {0}", m_options.ParityModule), "ParityProviderNotSupported");
-            }
         }
         
         public void Run(long samples)
@@ -125,7 +117,11 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         if (m_options.EnableParityFile && (res.Value == null || !res.Value.Any()))
-                            UploadParity(vol, tf, backend);
+                        {
+                            if (backend.ListParityFile(vol.Name) != null)
+                                return;
+                            backend.PutParity(vol.Name, tf);
+                        }
 
                         db.UpdateVerificationCount(vol.Name);
                     }
@@ -190,7 +186,11 @@ namespace Duplicati.Library.Main.Operation
                             }
 
                             if (m_options.EnableParityFile && (res.Value == null || !res.Value.Any()))
-                                UploadParity(f, tf, backend);
+                            {
+                                if (backend.ListParityFile(f.Name) != null)
+                                    return;
+                                backend.PutParity(f.Name, tf);
+                            }
                         }
                         else
                             backend.GetForTesting(f.Name, f.Size, f.Hash);
@@ -218,26 +218,6 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_results.EndTime = DateTime.UtcNow;
-        }
-
-        /// <summary>
-        /// Generate and upload parity file for the volume
-        /// </summary>
-        /// <param name="vol">The remote volume to create parity of</param>
-        /// <param name="tf">The path to the downloaded copy of the file</param>
-        public void UploadParity(IRemoteVolume vol, string tf, BackendManager backend)
-        {
-            var hasParFile = (from f in backend.List()
-                              let n = Path.GetFileName(f.Name)
-                              where n.StartsWith(vol.Name, StringComparison.OrdinalIgnoreCase) &&
-                              DynamicLoader.ParityLoader.Keys.Contains(Path.GetExtension(n).TrimStart('.'))
-                              select f).Any();
-            if (hasParFile)
-                return;
-
-            var tempFile = new TempFile();
-            m_parity.Create(tf, tempFile, vol.Name);
-            backend.PutUnencrypted(vol.Name + "+." + m_options.ParityModule, tempFile);
         }
 
         /// <summary>

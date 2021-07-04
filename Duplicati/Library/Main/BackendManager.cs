@@ -12,6 +12,7 @@ using System.Threading;
 using System.IO;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Logging;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main
 {
@@ -197,24 +198,6 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            public FileEntryItem CreateParity(Library.Interface.IParity parity, Options options)
-            {
-                if (!options.EnableParityFile)
-                    return null;
-                if (Operation != OperationType.Put) // parity is only created when uploading file
-                    return null;
-
-                var tempfile = new Library.Utility.TempFile();
-                parity.Create(LocalTempfile, tempfile, RemoteFilename);
-
-                var newEntry = new FileEntryItem(Operation, RemoteFilename + "+." + options.ParityModule);
-                newEntry.NotTrackedInDb = true;
-                newEntry.Encrypted = true;
-                newEntry.LocalTempfile = tempfile;
-                newEntry.UpdateHashAndSize(options);
-                return newEntry;
-            }
-
             public bool UpdateHashAndSize(Options options)
             {
                 if (Hash == null || Size < 0)
@@ -231,7 +214,7 @@ namespace Duplicati.Library.Main
             {
                 if (this.LocalTempfile != null)
                     try { this.LocalTempfile.Dispose(); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
                     finally { this.LocalTempfile = null; }
             }
 
@@ -650,6 +633,20 @@ namespace Duplicati.Library.Main
                 i.SignalComplete();
         }
 
+        /// <summary>
+        /// Get the parity file entry associated with a given remote file
+        /// </summary>
+        /// <param name="remotename">The name of the remote file</param>
+        /// <returns>Associated parity file. Return null if not found</returns>
+        public Interface.IFileEntry ListParityFile(string remotename)
+        {
+            return (from f in m_backend.List()
+                    let n = Path.GetFileName(f.Name)
+                    where n.StartsWith(remotename, StringComparison.OrdinalIgnoreCase)
+                    && ParityLoader.Keys.Contains(Path.GetExtension(n).TrimStart('.'))
+                    select f).FirstOrDefault();
+        }
+
         private void RenameFileAfterError(FileEntryItem item)
         {
             var p = VolumeBase.ParseFilename(item.RemoteFilename);
@@ -978,19 +975,10 @@ namespace Duplicati.Library.Main
 
         private bool coreDoGetRepair(FileEntryItem item, TempFile downloadedFile)
         {
-            // Select files with parity extensions
-            var r = m_backend.List().Where(x => ParityLoader.Keys.Contains(Path.GetExtension(x.Name).TrimStart('.'))).ToList();
-            if (r.Count == 0)
-            {
-                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "No parity files found in the remote.");
-                return false;
-            }
-
-            // Select parity file by matching file name
-            var parname = r.Where(x => Path.GetFileName(x.Name).StartsWith(item.RemoteFilename)).Select(x => x.Name).FirstOrDefault();
+            var parname = ListParityFile(item.RemoteFilename)?.Name;
             if (string.IsNullOrEmpty(parname))
             {
-                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Found parity files in the remote but none of them matches.");
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "No matched parity file found in the remote.");
                 return false;
             }
 
@@ -1188,10 +1176,7 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             // Also delete related parity file.
-            var parfile = (from f in m_backend.List()
-                           let n = Path.GetFileName(f.Name)
-                           where n.StartsWith(item.RemoteFilename, StringComparison.OrdinalIgnoreCase) && ParityLoader.Keys.Contains(Path.GetExtension(n).TrimStart('.'))
-                           select f).FirstOrDefault();
+            var parfile = ListParityFile(item.RemoteFilename);
 
             string result = null;
             try
@@ -1310,6 +1295,18 @@ namespace Duplicati.Library.Main
             PutUnencrypted(remotename, tempfile);
         }
 
+        /// <summary>
+        /// Create the parity file of the input file and put it on the remote
+        /// </summary>
+        /// <param name="remotename">Remote name of the target file </param>
+        /// <param name="localfile">Local file object containing the content of target file</param>
+        public void PutParity(string remotename, TempFile localfile)
+        {
+            var parfile = new TempFile();
+            m_parity.Create(localfile, parfile, remotename);
+            PutUnencrypted(remotename + "+." + m_options.ParityModule, parfile);
+        }
+
         public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, Action indexVolumeFinishedCallback = null, bool synchronous = false)
         {
             if (m_lastException != null)
@@ -1349,7 +1346,8 @@ namespace Duplicati.Library.Main
             }
 
             // create parity file if needded
-            FileEntryItem req3 = req.CreateParity(m_parity, m_options);
+            if (m_options.EnableParityFile)
+                PutParity(req.RemoteFilename, req.LocalTempfile);
 
             try
             {
@@ -1368,13 +1366,6 @@ namespace Duplicati.Library.Main
                     req2.WaitForComplete();
                     if (req2.Exception != null)
                         throw req2.Exception;
-                }
-
-                if (req3 != null && m_queue.Enqueue(req3) && (m_options.SynchronousUpload || synchronous))
-                {
-                    req3.WaitForComplete();
-                    if (req3.Exception != null)
-                        throw req3.Exception;
                 }
             }
             finally
