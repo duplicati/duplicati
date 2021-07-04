@@ -151,12 +151,6 @@ namespace Duplicati.Library.Main
                 Hash = hash;
             }
 
-            public void SetLocalfilename(string name)
-            {
-                this.LocalTempfile = Library.Utility.TempFile.WrapExistingFile(name);
-                this.LocalTempfile.Protected = true;
-            }
-
             public void SignalComplete()
             {
                 DoneEvent.Set();
@@ -207,11 +201,11 @@ namespace Duplicati.Library.Main
             {
                 if (!options.EnableParityFile)
                     return null;
-                if (Operation != OperationType.Put) // TODO(cmpute): ensure only supporting is enough
+                if (Operation != OperationType.Put) // parity is only created when uploading file
                     return null;
 
                 var tempfile = new Library.Utility.TempFile();
-                parity.Create(LocalTempfile, tempfile.Name, RemoteFilename);
+                parity.Create(LocalTempfile, tempfile, RemoteFilename);
 
                 var newEntry = new FileEntryItem(Operation, RemoteFilename + "+." + options.ParityModule);
                 newEntry.NotTrackedInDb = true;
@@ -1193,10 +1187,19 @@ namespace Duplicati.Library.Main
         {
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
+            // Also delete related parity file.
+            var parfile = (from f in m_backend.List()
+                           let n = Path.GetFileName(f.Name)
+                           where n.StartsWith(item.RemoteFilename, StringComparison.OrdinalIgnoreCase) && ParityLoader.Keys.Contains(Path.GetExtension(n).TrimStart('.'))
+                           select f).FirstOrDefault();
+
             string result = null;
             try
             {
                 m_backend.Delete(item.RemoteFilename);
+
+                if (parfile != null)
+                    m_backend.Delete(parfile.Name);
             }
             catch (Exception ex)
             {
@@ -1265,14 +1268,14 @@ namespace Duplicati.Library.Main
         /// Put a file on the remote backend without compression, encryption and parity protection
         /// </summary>
         /// <param name="remotename">Target remote file name</param>
-        /// <param name="localpath">Path to the local file to be put</param>
-        public void PutUnencrypted(string remotename, string localpath)
+        /// <param name="localfile">The local file to be uploaded</param>
+        public void PutUnencrypted(string remotename, TempFile localfile)
         {
             if (m_lastException != null)
                 throw m_lastException;
 
             var req = new FileEntryItem(OperationType.Put, remotename, null);
-            req.SetLocalfilename(localpath);
+            req.LocalTempfile = localfile;
             req.Encrypted = true; //Prevent encryption
             req.NotTrackedInDb = true; //Prevent Db updates
 
@@ -1293,6 +1296,18 @@ namespace Duplicati.Library.Main
 
             if (m_lastException != null)
                 throw m_lastException;
+        }
+
+        /// <summary>
+        /// Put a file on the remote backend without compression, encryption and parity protection
+        /// </summary>
+        /// <param name="remotename">Target remote file name</param>
+        /// <param name="localpath">Path to the local file to be put</param>
+        public void PutUnencrypted(string remotename, string localpath)
+        {
+            var tempfile = TempFile.WrapExistingFile(localpath);
+            tempfile.Protected = true;
+            PutUnencrypted(remotename, tempfile);
         }
 
         public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, Action indexVolumeFinishedCallback = null, bool synchronous = false)
@@ -1540,20 +1555,11 @@ namespace Duplicati.Library.Main
 
         public void Delete(string remotename, long size, bool synchronous = false)
         {
-            // TODO(cmpute): also remove parity files
             if (m_lastException != null)
                 throw m_lastException;
 
             m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, size, null);
             var req = new FileEntryItem(OperationType.Delete, remotename, size, null);
-
-            // Find corresponding parity file
-            var parfile = m_backend.List()
-                .Where(x => Path.GetFileName(x.Name).StartsWith(remotename))
-                .Where(x => ParityLoader.Keys.Contains(Path.GetExtension(x.Name).TrimStart('.'))).FirstOrDefault();
-            FileEntryItem req2 = null;
-            if (parfile != null)
-                req2 = new FileEntryItem(OperationType.Delete, parfile.Name, parfile.Size, null);
 
             try
             {
@@ -1563,13 +1569,6 @@ namespace Duplicati.Library.Main
                     req.WaitForComplete();
                     if (req.Exception != null)
                         throw req.Exception;
-                }
-
-                if (req2 != null && m_queue.Enqueue(req2) && synchronous)
-                {
-                    req2.WaitForComplete();
-                    if (req2.Exception != null)
-                        throw req2.Exception;
                 }
             }
             finally

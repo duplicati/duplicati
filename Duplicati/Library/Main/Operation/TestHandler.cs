@@ -18,8 +18,10 @@
 using System;
 using Duplicati.Library.Main.Database;
 using System.Linq;
+using System.IO;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -33,12 +35,20 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private readonly string m_backendurl;
         private readonly TestResults m_results;
+        private readonly IParity m_parity = null;
         
         public TestHandler(string backendurl, Options options, TestResults results)
         {
             m_options = options;
             m_backendurl = backendurl;
             m_results = results;
+
+            if (m_options.EnableParityFile)
+            {
+                m_parity = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.RawOptions);
+                if (m_parity == null)
+                    throw new UserInformationException(string.Format("Parity provider not supported: {0}", m_options.ParityModule), "ParityProviderNotSupported");
+            }
         }
         
         public void Run(long samples)
@@ -62,7 +72,7 @@ namespace Duplicati.Library.Main.Operation
         
         public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
         {
-            // TODO(cmpute): generate parity file if not present in remote
+            TempFile tf = null;
             var files = db.SelectTestTargets(samples, m_options).ToList();
 
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
@@ -86,8 +96,8 @@ namespace Duplicati.Library.Main.Operation
                         m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                        using(var tf = vol.TempFile)
-                            res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
+                        tf = vol.TempFile;
+                        res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
                         if (!string.IsNullOrWhiteSpace(vol.Hash) && vol.Size > 0)
@@ -113,7 +123,10 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                         }
-                        
+
+                        if (m_options.EnableParityFile && (res.Value == null || !res.Value.Any()))
+                            UploadParity(vol, tf, backend);
+
                         db.UpdateVerificationCount(vol.Name);
                     }
                     catch (Exception ex)
@@ -125,6 +138,12 @@ namespace Duplicati.Library.Main.Operation
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
                         }
+                    }
+                    finally
+                    {
+                        if (tf != null)
+                            tf.Dispose();
+                        tf = null;
                     }
                 }
             }
@@ -150,8 +169,8 @@ namespace Duplicati.Library.Main.Operation
                             string hash;
                             long size;
 
-                            using (var tf = backend.GetWithInfo(f.Name, out size, out hash))
-                                res = TestVolumeInternals(db, f, tf, m_options, 1);
+                            tf = backend.GetWithInfo(f.Name, out size, out hash);
+                            res = TestVolumeInternals(db, f, tf, m_options, 1);
                             m_results.AddResult(res.Key, res.Value);
 
                             if (!string.IsNullOrWhiteSpace(hash) && size > 0)
@@ -169,10 +188,13 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                 }
                             }
+
+                            if (m_options.EnableParityFile && (res.Value == null || !res.Value.Any()))
+                                UploadParity(f, tf, backend);
                         }
                         else
                             backend.GetForTesting(f.Name, f.Size, f.Hash);
-                        
+
                         db.UpdateVerificationCount(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
                     }
@@ -186,10 +208,36 @@ namespace Duplicati.Library.Main.Operation
                             throw;
                         }
                     }
+                    finally
+                    {
+                        if (tf != null)
+                            tf.Dispose();
+                        tf = null;
+                    }
                 }
             }
 
             m_results.EndTime = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Generate and upload parity file for the volume
+        /// </summary>
+        /// <param name="vol">The remote volume to create parity of</param>
+        /// <param name="tf">The path to the downloaded copy of the file</param>
+        public void UploadParity(IRemoteVolume vol, string tf, BackendManager backend)
+        {
+            var hasParFile = (from f in backend.List()
+                              let n = Path.GetFileName(f.Name)
+                              where n.StartsWith(vol.Name, StringComparison.OrdinalIgnoreCase) &&
+                              DynamicLoader.ParityLoader.Keys.Contains(Path.GetExtension(n).TrimStart('.'))
+                              select f).Any();
+            if (hasParFile)
+                return;
+
+            var tempFile = new TempFile();
+            m_parity.Create(tf, tempFile, vol.Name);
+            backend.PutUnencrypted(vol.Name + "+." + m_options.ParityModule, tempFile);
         }
 
         /// <summary>

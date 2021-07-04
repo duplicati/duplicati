@@ -173,8 +173,8 @@ namespace Duplicati.Library.Main.Operation
         public static void UploadVerificationFile(string backendurl, Options options, IBackendWriter result, LocalDatabase db, System.Data.IDbTransaction transaction)
         {
             using(var backend = new BackendManager(backendurl, options, result, db))
-            using(var tempfile = new Library.Utility.TempFile())
             {
+                var tempfile = new Library.Utility.TempFile();
                 var remotename = options.Prefix + "-verification.json";
                 using(var stream = new System.IO.StreamWriter(tempfile, false, System.Text.Encoding.UTF8))
                     FilelistProcessor.CreateVerificationFile(db, stream);
