@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OtpNet;
 
 namespace Duplicati.Library.Backend.Mega
 {
@@ -31,6 +32,7 @@ namespace Duplicati.Library.Backend.Mega
     {
         private readonly string m_username = null;
         private readonly string m_password = null;
+        private readonly string m_twoFactorKey = null;
         private Dictionary<string, List<INode>> m_filecache;
         private INode m_currentFolder = null;
         private readonly string m_prefix = null;
@@ -48,7 +50,13 @@ namespace Duplicati.Library.Backend.Mega
                 if (m_client == null)
                 {
                     var cl = new MegaApiClient();
-                    cl.Login(m_username, m_password);
+                    if (m_twoFactorKey == null)
+                        cl.Login(m_username, m_password);
+                    else
+                    {
+                        var totp = new Totp(Base32Encoding.ToBytes(m_twoFactorKey)).ComputeTotp();
+                        cl.Login(m_username, m_password, totp);
+                    }
                     m_client = cl;
                 }
 
@@ -64,6 +72,8 @@ namespace Duplicati.Library.Backend.Mega
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 m_password = options["auth-password"];
+            if (options.ContainsKey("auth-two-factor-key"))
+                m_twoFactorKey = options["auth-two-factor-key"];
 
             if (!string.IsNullOrEmpty(uri.Username))
                 m_username = uri.Username;
@@ -253,6 +263,7 @@ namespace Duplicati.Library.Backend.Mega
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthPasswordDescriptionShort, Strings.MegaBackend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.MegaBackend.AuthUsernameDescriptionShort, Strings.MegaBackend.AuthUsernameDescriptionLong),
+                    new CommandLineArgument("auth-two-factor-key", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthTwoFactorKeyDescriptionShort, Strings.MegaBackend.AuthTwoFactorKeyDescriptionLong),
                 });
             }
         }
