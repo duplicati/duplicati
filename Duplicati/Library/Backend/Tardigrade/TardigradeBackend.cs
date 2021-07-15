@@ -22,7 +22,7 @@ namespace Duplicati.Library.Backend.Tardigrade
     /// Tardigrade-Backend hands it's logic over to Storj DCS. Only the UI-specific part, the config-parameters and
     /// the protocol-key stay here named for Tardigrade.
     /// </summary>
-    public class Tardigrade : Duplicati.Library.Backend.Storj.Storj
+    public class Tardigrade : Duplicati.Library.Backend.Storj.Storj, IStreamingBackend
     {
         private const string TARDIGRADE_AUTH_METHOD = "tardigrade-auth-method";
         private const string TARDIGRADE_SATELLITE = "tardigrade-satellite";

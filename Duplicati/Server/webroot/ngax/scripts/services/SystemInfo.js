@@ -71,7 +71,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'mssp': null,
                 'dropbox': null,
                 'sia': null,
-                'tardigrade': null,
+                'storj': null,
+				'tardigrade': null,
                 'jottacloud': null,
 				'rclone': null,
 				'cos': null
