@@ -29,7 +29,7 @@ namespace Duplicati.Library.Backend.Storj
         public StorjFile(uplink.NET.Models.Object tardigradeObject)
         {
             IsFolder = tardigradeObject.IsPrefix;
-            var lastAccess = tardigradeObject.CustomMetaData.Entries.Where(e => e.Key == STORJ_LAST_ACCESS).FirstOrDefault();
+            var lastAccess = tardigradeObject.CustomMetadata.Entries.Where(e => e.Key == STORJ_LAST_ACCESS).FirstOrDefault();
             if (lastAccess != null && !string.IsNullOrEmpty(lastAccess.Value))
             {
                 LastAccess = DateTime.Parse(lastAccess.Value);
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Storj
                 LastAccess = DateTime.MinValue;
             }
 
-            var lastMod = tardigradeObject.CustomMetaData.Entries.Where(e => e.Key == STORJ_LAST_MODIFICATION).FirstOrDefault();
+            var lastMod = tardigradeObject.CustomMetadata.Entries.Where(e => e.Key == STORJ_LAST_MODIFICATION).FirstOrDefault();
             if (lastMod != null && !string.IsNullOrEmpty(lastMod.Value))
             {
                 LastModification = DateTime.Parse(lastMod.Value);
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Backend.Storj
             }
 
             Name = tardigradeObject.Key;
-            Size = tardigradeObject.SystemMetaData.ContentLength;
+            Size = tardigradeObject.SystemMetadata.ContentLength;
         }
     }
 }
