@@ -816,8 +816,12 @@ namespace Duplicati.Library.Main
             if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "7zModuleHasIssues", null, "The 7z compression module has known issues and should only be used for experimental purposes");
 
-			//TODO: Based on the action, see if all options are relevant
-		}
+            //Inform the user about the deprecated Tardigrade-Backend. They should switch to Storj DCS instead.
+            if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
+                Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration.");
+
+            //TODO: Based on the action, see if all options are relevant
+        }
 
 		/// <summary>
 		/// Helper method that expands the users chosen source input paths,

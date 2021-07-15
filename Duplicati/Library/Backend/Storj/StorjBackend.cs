@@ -20,6 +20,7 @@ namespace Duplicati.Library.Backend.Storj
         private const string STORJ_SATELLITE = "storj-satellite";
         private const string STORJ_API_KEY = "storj-api-key";
         private const string STORJ_SECRET = "storj-secret";
+        private const string STORJ_SECRET_VERIFY = "storj-secret-verify";
         private const string STORJ_SHARED_ACCESS = "storj-shared-access";
         private const string STORJ_BUCKET = "storj-bucket";
         private const string STORJ_FOLDER = "storj-folder";
@@ -83,6 +84,14 @@ namespace Duplicati.Library.Backend.Storj
         {
             InitStorjLibrary();
 
+            foreach(var option in options.ToList())
+            {
+                if(option.Key.ToLower().Contains("tardigrade"))
+                {
+                    options.Add(option.Key.ToLower().Replace("tardigrade", "storj"), option.Value);
+                }
+            }
+
             var auth_method = options[STORJ_AUTH_METHOD];
             if (auth_method == "Access grant")
             {
@@ -142,6 +151,7 @@ namespace Duplicati.Library.Backend.Storj
                     new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, "us1.storj.io:7777"),
                     new CommandLineArgument(STORJ_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong),
                     new CommandLineArgument(STORJ_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong),
+                    new CommandLineArgument(STORJ_SECRET_VERIFY, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong),
                     new CommandLineArgument(STORJ_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong),
                     new CommandLineArgument(STORJ_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong),
                     new CommandLineArgument(STORJ_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong),
