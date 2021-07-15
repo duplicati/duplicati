@@ -12,20 +12,10 @@ using uplink.NET.Interfaces;
 using uplink.NET.Models;
 using uplink.NET.Services;
 
-namespace Duplicati.Library.Backend.Tardigrade
+namespace Duplicati.Library.Backend.Storj
 {
-    public class Tardigrade : IStreamingBackend
+    public class Storj : IStreamingBackend
     {
-        #region Deprecated parameters - Should be removed in one of the next duplicati versions
-        private const string TARDIGRADE_AUTH_METHOD = "tardigrade-auth-method";
-        private const string TARDIGRADE_SATELLITE = "tardigrade-satellite";
-        private const string TARDIGRADE_API_KEY = "tardigrade-api-key";
-        private const string TARDIGRADE_SECRET = "tardigrade-secret";
-        private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared-access";
-        private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
-        private const string TARDIGRADE_FOLDER = "tardigrade-folder";
-        #endregion
-
         private const string STORJ_AUTH_METHOD = "storj-auth-method";
         private const string STORJ_SATELLITE = "storj-satellite";
         private const string STORJ_API_KEY = "storj-api-key";
@@ -34,7 +24,7 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string STORJ_BUCKET = "storj-bucket";
         private const string STORJ_FOLDER = "storj-folder";
 
-        private const string PROTOCOL_KEY = "tardigrade"; //Should be "storj" - but for historic reasons this stays "tardigrade" to not affect existing configurations
+        private const string PROTOCOL_KEY = "storj";
         private const string STORJ_PARTNER_ID = "duplicati";
 
         private readonly string _satellite;
@@ -83,45 +73,35 @@ namespace Duplicati.Library.Backend.Tardigrade
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public Tardigrade()
+        public Storj()
         {
         }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public Tardigrade(string url, Dictionary<string, string> options)
+        public Storj(string url, Dictionary<string, string> options)
         {
             InitStorjLibrary();
 
-            options.TryGetValue(STORJ_AUTH_METHOD, out string auth_method);
-            if (string.IsNullOrEmpty(auth_method))
-                auth_method = options[TARDIGRADE_AUTH_METHOD];
+            var auth_method = options[STORJ_AUTH_METHOD];
             if (auth_method == "Access grant")
             {
                 //Create an access from the access grant
-                options.TryGetValue(STORJ_SHARED_ACCESS, out string shared_access);
-                if (string.IsNullOrEmpty(shared_access))
-                    shared_access = options[TARDIGRADE_SHARED_ACCESS];
+                var shared_access = options[STORJ_SHARED_ACCESS];
                 _access = new Access(shared_access, new Config() { UserAgent = STORJ_PARTNER_ID });
             }
             else
             {
                 //Create an access for a satellite, API key and encryption passphrase
-                options.TryGetValue(STORJ_SATELLITE, out _satellite);
-                if (string.IsNullOrEmpty(_satellite))
-                    _satellite = options[TARDIGRADE_SATELLITE];
+                _satellite = options[STORJ_SATELLITE];
 
-                if (options.ContainsKey(TARDIGRADE_API_KEY) || options.ContainsKey(STORJ_API_KEY))
+                if (options.ContainsKey(STORJ_API_KEY))
                 {
-                    options.TryGetValue(STORJ_API_KEY, out _api_key);
-                    if (string.IsNullOrEmpty(_api_key))
-                        _api_key = options[TARDIGRADE_API_KEY];
+                    _api_key = options[STORJ_API_KEY];
                 }
-                if (options.ContainsKey(TARDIGRADE_SECRET) || options.ContainsKey(STORJ_SECRET))
+                if (options.ContainsKey(STORJ_SECRET))
                 {
-                    options.TryGetValue(STORJ_SECRET, out _secret);
-                    if (string.IsNullOrEmpty(_secret))
-                        _secret = options[TARDIGRADE_SECRET];
+                    _secret = options[STORJ_SECRET];
                 }
 
                 _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = STORJ_PARTNER_ID });
@@ -131,22 +111,18 @@ namespace Duplicati.Library.Backend.Tardigrade
             _objectService = new ObjectService(_access);
 
             //If no bucket was provided use the default "duplicati"-bucket
-            if (options.ContainsKey(TARDIGRADE_BUCKET) || options.ContainsKey(STORJ_BUCKET))
+            if (options.ContainsKey(STORJ_BUCKET))
             {
-                options.TryGetValue(STORJ_BUCKET, out _bucket);
-                if (string.IsNullOrEmpty(_bucket))
-                    _bucket = options[TARDIGRADE_BUCKET];
+                _bucket = options[STORJ_BUCKET];
             }
             else
             {
                 _bucket = "duplicati";
             }
 
-            if (options.ContainsKey(TARDIGRADE_FOLDER) || options.ContainsKey(STORJ_FOLDER))
+            if (options.ContainsKey(STORJ_FOLDER))
             {
-                options.TryGetValue(STORJ_FOLDER, out _folder);
-                if (string.IsNullOrEmpty(_folder))
-                    _folder = options[TARDIGRADE_FOLDER];
+                _folder = options[STORJ_FOLDER];
             }
         }
 
@@ -162,16 +138,6 @@ namespace Duplicati.Library.Backend.Tardigrade
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    //Obsolete ones
-                    new CommandLineArgument(TARDIGRADE_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, "API key", null, null, "This is deprecated, use storj-auth-method instead"),
-                    new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, "us1.storj.io:7777", null, null, "This is deprecated, use storj-satellite instead"),
-                    new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong, null, null, null, "This is deprecated, use storj-api-key instead"),
-                    new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong, null, null, null, "This is deprecated, use storj-secret instead"),
-                    new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong, null, null, null, "This is deprecated, use storj-shared-access instead"),
-                    new CommandLineArgument(TARDIGRADE_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong, null, null, null, "This is deprecated, use storj-bucket instead"),
-                    new CommandLineArgument(TARDIGRADE_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong, null, null, null, "This is deprecated, use storj-folder instead"),
-
-                    //Current ones
                     new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, "API key"),
                     new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, "us1.storj.io:7777"),
                     new CommandLineArgument(STORJ_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong),

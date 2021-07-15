@@ -1,0 +1,43 @@
+<div class="input select">
+    <label for="tardigrade_auth_method" translate>Authentication method</label>
+    <select name="tardigrade_auth_method" id="tardigrade_auth_method" ng-model="$parent.tardigrade_auth_method"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in tardigrade_auth_methods | orderBy: k">
+        <option value="" translate >Authentication method ({{auth_method}})
+        </option>
+    </select>
+</div>
+<div class="input select" ng-show="$parent.tardigrade_auth_method == 'API key'">
+    <label for="tardigrade_satellite" translate>Satellite</label>
+    <select name="tardigrade_satellite" id="tardigrade_satellite" ng-model="$parent.tardigrade_satellite"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in tardigrade_satellites | orderBy: k">
+        <option value="" translate translate-params-satellite="tardigrade_satellite_custom || ''">Custom Satellite ({{satellite}})
+        </option>
+    </select>
+
+    <input ng-hide="contains_value(tardigrade_satellites, tardigrade_satellite)" type="text" id="tardigrade_satellite_custom"
+           ng-model="$parent.tardigrade_satellite_custom" placeholder="{{'Custom Satellite' | translate}}"/>
+</div>
+<div class="input text" ng-show="$parent.tardigrade_auth_method == 'API key'">
+    <label for="tardigrade_api_key" translate>API key</label>
+    <input type="text" name="tardigrade_api_key" id="tardigrade_api_key" ng-model="$parent.tardigrade_api_key" placeholder="{{'The API key' | translate}}" />
+</div>
+<div class="input password" ng-show="$parent.tardigrade_auth_method == 'API key'">
+    <label for="tardigrade_secret" translate>Encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="tardigrade_secret" id="tardigrade_secret" ng-model="$parent.tardigrade_secret" placeholder="{{'The encryption passphrase' | translate}}" />
+</div>
+<div class="input password" ng-show="$parent.tardigrade_auth_method == 'API key'">
+    <label for="tardigrade_secret_verify" translate>Verify encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="tardigrade_secret_verify" id="tardigrade_secret_verify" ng-model="$parent.tardigrade_secret_verify" placeholder="{{'The encryption passphrase (for verification)' | translate}}" />
+</div>
+<div class="input text" ng-show="$parent.tardigrade_auth_method == 'Access grant'">
+    <label for="tardigrade_shared_access" translate>Access grant</label>
+    <input type="text" name="tardigrade_shared_access" id="tardigrade_shared_access" ng-model="$parent.tardigrade_shared_access" placeholder="{{'The access grant instead of the info above'}}" />
+</div>
+<div class="input text">
+    <label for="tardigrade_bucket" translate>Bucket</label>
+    <input type="text" name="tardigrade_bucket" id="tardigrade_bucket" ng-model="$parent.tardigrade_bucket" placeholder="{{'The bucket for storing the backup'}}" />
+</div>
+<div class="input text">
+    <label for="tardigrade_folder" translate>Folder path</label>
+    <input type="text" name="tardigrade_folder" id="tardigrade_folder" ng-model="$parent.tardigrade_folder" placeholder="{{'The folder within the bucket for storing the backup'}}" />
+</div>

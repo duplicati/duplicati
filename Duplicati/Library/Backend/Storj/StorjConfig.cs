@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Duplicati.Library.Backend.Tardigrade
+namespace Duplicati.Library.Backend.Storj
 {
     public class StorjConfig : IWebModule
     {
@@ -56,11 +56,11 @@ namespace Duplicati.Library.Backend.Tardigrade
             switch (ct)
             {
                 case ConfigType.Satellites:
-                    return Tardigrade.KNOWN_STORJ_SATELLITES;
+                    return Storj.KNOWN_STORJ_SATELLITES;
                 case ConfigType.AuthenticationMethods:
-                    return Tardigrade.KNOWN_AUTHENTICATION_METHODS;
+                    return Storj.KNOWN_AUTHENTICATION_METHODS;
                 default:
-                    return Tardigrade.KNOWN_STORJ_SATELLITES;
+                    return Storj.KNOWN_STORJ_SATELLITES;
             }
         }
         #endregion

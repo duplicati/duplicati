@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Duplicati.Library.Backend.Tardigrade
+namespace Duplicati.Library.Backend.Storj
 {
     public class StorjFile : IFileEntry
     {
