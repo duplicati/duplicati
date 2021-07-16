@@ -818,7 +818,7 @@ namespace Duplicati.Library.Main
 
             //Inform the user about the deprecated Tardigrade-Backend. They should switch to Storj DCS instead.
             if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
-                Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration.");
+                Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration by changing the destination storage type to Storj DCS.");
 
             //TODO: Based on the action, see if all options are relevant
         }
