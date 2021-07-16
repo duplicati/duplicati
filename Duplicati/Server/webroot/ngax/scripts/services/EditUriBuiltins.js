@@ -513,8 +513,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     }
 	
-	EditUriBackendConfig.parsers['storj'] = function (scope, module, server, port, path, options) {
-		if (options['--storj-auth-method'])
+    EditUriBackendConfig.parsers['storj'] = function (scope, module, server, port, path, options) {
+        if (options['--storj-auth-method'])
             scope.storj_auth_method = options['--storj-auth-method'];
         if (options['--storj-satellite'])
             scope.storj_satellite = options['--storj-satellite'];
@@ -536,8 +536,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     };
 	
-	EditUriBackendConfig.parsers['tardigrade'] = function (scope, module, server, port, path, options) {
-		if (options['--tardigrade-auth-method'])
+    EditUriBackendConfig.parsers['tardigrade'] = function (scope, module, server, port, path, options) {
+        if (options['--tardigrade-auth-method'])
             scope.tardigrade_auth_method = options['--tardigrade-auth-method'];
         if (options['--tardigrade-satellite'])
             scope.tardigrade_satellite = options['--tardigrade-satellite'];
@@ -545,13 +545,13 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.tardigrade_api_key = options['--tardigrade-api-key'];
         if (options['--tardigrade-secret'])
             scope.tardigrade_secret = options['--tardigrade-secret'];
-		if (options['--tardigrade-secret-verify'])
+        if (options['--tardigrade-secret-verify'])
             scope.tardigrade_secret_verify = options['--tardigrade-secret-verify'];
-		if (options['--tardigrade-shared-access'])
+        if (options['--tardigrade-shared-access'])
             scope.tardigrade_shared_access = options['--tardigrade-shared-access'];
-		if (options['--tardigrade-bucket'])
+        if (options['--tardigrade-bucket'])
             scope.tardigrade_bucket = options['--tardigrade-bucket'];
-		if (options['--tardigrade-folder'])
+        if (options['--tardigrade-folder'])
             scope.tardigrade_folder = options['--tardigrade-folder'];
 		
         var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-secret-verify', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder'];
