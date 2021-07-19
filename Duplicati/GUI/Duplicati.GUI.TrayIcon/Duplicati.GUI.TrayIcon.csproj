@@ -222,7 +222,7 @@
       <Name>Duplicati.Library.Backend.Storj</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
-      <Project>{ae035e01-c917-4f13-f35e-78f21c1a2f17}</Project>
+      <Project>{9a04cb37-da72-4008-9703-3ac5191974e9}</Project>
       <Name>Duplicati.Library.Backend.Tardigrade</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">

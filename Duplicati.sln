@@ -101,11 +101,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Confi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-F35E-78F21C1A2F17}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Storj", "Duplicati\Library\Backend\Storj\Duplicati.Library.Backend.Storj.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{9A04CB37-DA72-4008-9703-3AC5191974E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -309,10 +309,6 @@ Global
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AE035E01-C917-4F13-F35E-78F21C1A2F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AE035E01-C917-4F13-F35E-78F21C1A2F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AE035E01-C917-4F13-F35E-78F21C1A2F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AE035E01-C917-4F13-F35E-78F21C1A2F17}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -321,6 +317,10 @@ Global
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
