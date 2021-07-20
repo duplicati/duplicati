@@ -62,7 +62,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public AzureBlobWrapper(string accountName, string accessKey, string containerName)
+        public AzureBlobWrapper(string accountName, string accessKey, string sasToken, string containerName)
         {
             OperationContext.GlobalSendingRequest += (sender, args) =>
             {
@@ -73,8 +73,18 @@ namespace Duplicati.Library.Backend.AzureBlob
                 );
             };
 
-            var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
-                accountName, accessKey);
+            string connectionString;
+            if (sasToken != null)
+            {
+                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1}",
+                    accountName, sasToken);
+            }
+            else
+            {
+                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
+                            accountName, accessKey);
+            }
+
             var storageAccount = CloudStorageAccount.Parse(connectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
 
@@ -125,7 +135,7 @@ namespace Duplicati.Library.Backend.AzureBlob
                         }
                     }
                     catch
-                    { 
+                    {
                         // If the metadata fails to parse, return the basic entry
                     }
 

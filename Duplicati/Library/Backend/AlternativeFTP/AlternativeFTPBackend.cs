@@ -446,14 +446,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             get { return new string[] { new Uri(_url).Host }; }
         }
 
-        private static Stream StringToStream(string str)
-        {
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream) { AutoFlush = true };
-            writer.Write(str);
-            return stream;
-        }
-
         /// <summary>
         /// Test FTP access permissions.
         /// </summary>
@@ -475,7 +467,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
 
             // Test write permissions
-            using (var testStream = StringToStream(TEST_FILE_CONTENT))
+            using (var testStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(TEST_FILE_CONTENT)))
             {
                 try
                 {
@@ -488,11 +480,14 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
 
             // Test read permissions
-            using (var stream = new MemoryStream())
+            using (var testStream = new MemoryStream())
             {
                 try
                 {
-                    Get(TEST_FILE_NAME, stream);
+                    Get(TEST_FILE_NAME, testStream);
+                    var readValue = System.Text.Encoding.UTF8.GetString(testStream.ToArray());
+                    if (readValue != TEST_FILE_CONTENT)
+                        throw new Exception("Test file corrupted.");
                 }
                 catch (Exception e)
                 {
