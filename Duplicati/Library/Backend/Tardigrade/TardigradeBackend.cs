@@ -28,7 +28,6 @@ namespace Duplicati.Library.Backend.Tardigrade
         private const string TARDIGRADE_SATELLITE = "tardigrade-satellite";
         private const string TARDIGRADE_API_KEY = "tardigrade-api-key";
         private const string TARDIGRADE_SECRET = "tardigrade-secret";
-        private const string TARDIGRADE_SECRET_VERIFY = "tardigrade-secret-verify";
         private const string TARDIGRADE_SHARED_ACCESS = "tardigrade-shared-access";
         private const string TARDIGRADE_BUCKET = "tardigrade-bucket";
         private const string TARDIGRADE_FOLDER = "tardigrade-folder";
@@ -63,7 +62,6 @@ namespace Duplicati.Library.Backend.Tardigrade
                     new CommandLineArgument(TARDIGRADE_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, "us1.storj.io:7777", null, null),
                     new CommandLineArgument(TARDIGRADE_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong, null, null, null),
                     new CommandLineArgument(TARDIGRADE_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong, null, null, null),
-                    new CommandLineArgument(TARDIGRADE_SECRET_VERIFY, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong, null, null, null),
                     new CommandLineArgument(TARDIGRADE_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong, null, null, null),
                     new CommandLineArgument(TARDIGRADE_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong, null, null, null),
                     new CommandLineArgument(TARDIGRADE_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong, null, null, null),
