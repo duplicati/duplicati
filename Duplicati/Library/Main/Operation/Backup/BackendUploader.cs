@@ -273,6 +273,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker, CancellationToken cancelToken)
         {
+            // Create parity file before uploading, since data volumes will be deleted after uploading
+            FileEntryItem parityEntry = upload.BlockEntry.CreateParity(m_options);
+
             if (await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false))
             {
                 // We must use the BlockEntry's RemoteFilename and not the BlockVolume's since the
@@ -283,6 +286,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
                 }
+
+                // Upload parity file for block and index volumes
+                if (parityEntry != null)
+                    await UploadFileAsync(parityEntry, worker, cancelToken).ConfigureAwait(false);
+                FileEntryItem indexParityEntry = indexEntry.CreateParity(m_options);
+                if (indexParityEntry != null)
+                    await UploadFileAsync(indexParityEntry, worker, cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -293,7 +303,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             fileEntry.Encrypt(m_options);
             fileEntry.UpdateHashAndSize(m_options);
 
+            // Create parity file before uploading
+            FileEntryItem parityEntry = fileEntry.CreateParity(m_options);
+
             await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
+
+            if (parityEntry != null)
+                await UploadFileAsync(parityEntry, worker, cancelToken).ConfigureAwait(false);
         }
 
         private async Task<bool> UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)

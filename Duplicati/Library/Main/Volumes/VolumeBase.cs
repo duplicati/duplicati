@@ -72,6 +72,7 @@ namespace Duplicati.Library.Main.Volumes
             public DateTime Time { get; private set; }
             public string CompressionModule { get; private set; }
             public string EncryptionModule { get; private set; }
+            public string ParityModule { get; private set; }
             public Library.Interface.IFileEntry File { get; private set; }
 
             internal static readonly IDictionary<RemoteVolumeType, string> REMOTE_TYPENAME_MAP;
@@ -91,7 +92,7 @@ namespace Duplicati.Library.Main.Volumes
                                 
                 REMOTE_TYPENAME_MAP = dict;
                 REVERSE_REMOTE_TYPENAME_MAP = reversedict;
-                FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
+                FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.+]+)(\.(?<encryption>[^\.+]+))?(\+\.(?<parity>.+))?");
             }
 
             private ParsedVolume() { }
@@ -114,6 +115,7 @@ namespace Duplicati.Library.Main.Volumes
                     Time = m.Groups["time"].Success ? Library.Utility.Utility.DeserializeDateTime(m.Groups["time"].Value).ToUniversalTime() : new DateTime(0, DateTimeKind.Utc),
                     CompressionModule = m.Groups["compression"].Value,
                     EncryptionModule = m.Groups["encryption"].Success ? m.Groups["encryption"].Value : null,
+                    ParityModule = m.Groups["parity"].Success ? m.Groups["parity"].Value : null,
                     File = file
                 };
             }

@@ -9,6 +9,10 @@ using Duplicati.Library.Main.Volumes;
 using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
 using System.Threading;
+using System.IO;
+using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Logging;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main
 {
@@ -148,12 +152,6 @@ namespace Duplicati.Library.Main
                 Hash = hash;
             }
 
-            public void SetLocalfilename(string name)
-            {
-                this.LocalTempfile = Library.Utility.TempFile.WrapExistingFile(name);
-                this.LocalTempfile.Protected = true;
-            }
-
             public void SignalComplete()
             {
                 DoneEvent.Set();
@@ -216,7 +214,7 @@ namespace Duplicati.Library.Main
             {
                 if (this.LocalTempfile != null)
                     try { this.LocalTempfile.Dispose(); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
                     finally { this.LocalTempfile = null; }
             }
 
@@ -353,6 +351,7 @@ namespace Duplicati.Library.Main
         private volatile Exception m_lastException;
         private readonly Library.Interface.IEncryption m_encryption;
         private readonly object m_encryptionLock = new object();
+        private readonly Library.Interface.IParity m_parity;
         private Library.Interface.IBackend m_backend;
         private readonly string m_backendurl;
         private readonly IBackendWriter m_statwriter;
@@ -394,6 +393,13 @@ namespace Duplicati.Library.Main
                 m_encryption = DynamicLoader.EncryptionLoader.GetModule(m_options.EncryptionModule, m_options.Passphrase, m_options.RawOptions);
                 if (m_encryption == null)
                     throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule), "EncryptionMethodNotSupported");
+            }
+
+            if (m_options.EnableParityFile)
+            {
+                m_parity = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.RawOptions);
+                if (m_parity == null)
+                    throw new Duplicati.Library.Interface.UserInformationException(string.Format("Parity provider not supported: {0}", m_options.ParityModule), "ParityProviderNotSupported");
             }
 
             if (m_taskControl != null)
@@ -621,10 +627,24 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            //Make sure everything in the queue is signalled
+            //Make sure everything in the queue is signaled
             FileEntryItem i;
             while ((i = m_queue.Dequeue()) != null)
                 i.SignalComplete();
+        }
+
+        /// <summary>
+        /// Get the parity file entry associated with a given remote file
+        /// </summary>
+        /// <param name="remotename">The name of the remote file</param>
+        /// <returns>Associated parity file. Return null if not found</returns>
+        public Interface.IFileEntry ListParityFile(string remotename)
+        {
+            return (from f in m_backend.List()
+                    let n = Path.GetFileName(f.Name)
+                    where n.StartsWith(remotename, StringComparison.OrdinalIgnoreCase)
+                    && ParityLoader.Keys.Contains(Path.GetExtension(n).TrimStart('.'))
+                    select f).FirstOrDefault();
         }
 
         private void RenameFileAfterError(FileEntryItem item)
@@ -953,6 +973,47 @@ namespace Duplicati.Library.Main
             return retTarget;
         }
 
+        private bool coreDoGetRepair(FileEntryItem item, TempFile downloadedFile)
+        {
+            var parname = ListParityFile(item.RemoteFilename)?.Name;
+            if (string.IsNullOrEmpty(parname))
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "No matched parity file found in the remote.");
+                return false;
+            }
+
+            // Download the parity file
+            TempFile parfile;
+            FileEntryItem paritem = new FileEntryItem(OperationType.Get, parname);
+            if (m_options.DisablePipedStreaming)
+                parfile = coreDoGetSequential(paritem, null, out _, out _);
+            else
+                parfile = coreDoGetPiping(paritem, null, out _, out _);
+
+            // Call parity module to repair
+            using (var par = ParityLoader.GetModule(Path.GetExtension(parname).TrimStart('.'), m_options.ParityRedundancyLevel, m_options.RawOptions))
+            {
+                if (!par.Repair(downloadedFile, parfile, out _))  // Repair inplace
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Parity repair failed in the parity module.");
+                    return false;
+                }
+            }
+
+            if (item.Size >= 0 && new FileInfo(downloadedFile).Length != item.Size)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Size check still failed after fixing");
+                return false;
+            }
+            if (!string.IsNullOrEmpty(item.Hash) && CalculateFileHash(downloadedFile) != item.Hash)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ParityRepair", "Hash check still failed after fixing");
+                return false;
+            }
+
+            return true;
+        }
+
         private void DoGet(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
@@ -1021,10 +1082,17 @@ namespace Duplicati.Library.Main
 
                 if (!m_options.SkipFileHashChecks)
                 {
+                    bool reupload = false;
                     if (item.Size >= 0)
                     {
                         if (dataSizeDownloaded != item.Size)
-                            throw new Exception(Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size));
+                        {
+                            var errmsg = Strings.Controller.DownloadedFileSizeError(item.RemoteFilename, dataSizeDownloaded, item.Size);
+                            if (coreDoGetRepair(item, tmpfile))
+                                reupload = true;
+                            else
+                                throw new Exception(errmsg + Strings.Controller.ParityRepairFailed);
+                        }
                     }
                     else
                         item.Size = dataSizeDownloaded;
@@ -1032,10 +1100,30 @@ namespace Duplicati.Library.Main
                     if (!string.IsNullOrEmpty(item.Hash))
                     {
                         if (fileHash != item.Hash)
-                            throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash));
+                        {
+                            var errmsg = Strings.Controller.HashMismatchError(tmpfile, item.Hash, fileHash);
+                            if (coreDoGetRepair(item, tmpfile))
+                                reupload = true;
+                            else
+                                throw new HashMismatchException(errmsg + Strings.Controller.ParityRepairFailed);
+                        }
                     }
                     else
                         item.Hash = fileHash;
+
+                    if (reupload)
+                    {
+                        // TODO(cmpute): ensure this is the correct way to re-upload
+                        TempFile newitem;
+                        if (m_encryption != null)
+                        {
+                            newitem = new TempFile();
+                            lock (m_encryptionLock)
+                                m_encryption.Encrypt(tmpfile, newitem);
+                        }
+                        else newitem = tmpfile;
+                        PutUnencrypted(item.RemoteFilename, newitem);
+                    }
                 }
 
                 if (item.VerifyHashOnly)
@@ -1087,10 +1175,16 @@ namespace Duplicati.Library.Main
         {
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
+            // Also delete related parity file.
+            var parfile = ListParityFile(item.RemoteFilename);
+
             string result = null;
             try
             {
                 m_backend.Delete(item.RemoteFilename);
+
+                if (parfile != null)
+                    m_backend.Delete(parfile.Name);
             }
             catch (Exception ex)
             {
@@ -1155,13 +1249,18 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Completed, null, -1);
         }
 
-        public void PutUnencrypted(string remotename, string localpath)
+        /// <summary>
+        /// Put a file on the remote backend without compression, encryption and parity protection
+        /// </summary>
+        /// <param name="remotename">Target remote file name</param>
+        /// <param name="localfile">The local file to be uploaded</param>
+        public void PutUnencrypted(string remotename, TempFile localfile)
         {
             if (m_lastException != null)
                 throw m_lastException;
 
             var req = new FileEntryItem(OperationType.Put, remotename, null);
-            req.SetLocalfilename(localpath);
+            req.LocalTempfile = localfile;
             req.Encrypted = true; //Prevent encryption
             req.NotTrackedInDb = true; //Prevent Db updates
 
@@ -1184,6 +1283,30 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
+        /// <summary>
+        /// Put a file on the remote backend without compression, encryption and parity protection
+        /// </summary>
+        /// <param name="remotename">Target remote file name</param>
+        /// <param name="localpath">Path to the local file to be put</param>
+        public void PutUnencrypted(string remotename, string localpath)
+        {
+            var tempfile = TempFile.WrapExistingFile(localpath);
+            tempfile.Protected = true;
+            PutUnencrypted(remotename, tempfile);
+        }
+
+        /// <summary>
+        /// Create the parity file of the input file and put it on the remote
+        /// </summary>
+        /// <param name="remotename">Remote name of the target file </param>
+        /// <param name="localfile">Local file object containing the content of target file</param>
+        public void PutParity(string remotename, TempFile localfile)
+        {
+            var parfile = new TempFile();
+            m_parity.Create(localfile, parfile, remotename);
+            PutUnencrypted(remotename + "+." + m_options.ParityModule, parfile);
+        }
+
         public void Put(VolumeWriterBase item, IndexVolumeWriter indexfile = null, Action indexVolumeFinishedCallback = null, bool synchronous = false)
         {
             if (m_lastException != null)
@@ -1195,8 +1318,6 @@ namespace Duplicati.Library.Main
 
             if (m_lastException != null)
                 throw m_lastException;
-
-            FileEntryItem req2 = null;
 
             // As the network link is the bottleneck,
             // we encrypt the dblock volume before the
@@ -1210,6 +1331,7 @@ namespace Duplicati.Library.Main
 
             // We do not encrypt the dindex volume, because it is small,
             // and may need to be re-written if the dblock upload is retried
+            FileEntryItem req2 = null;
             if (indexfile != null)
             {
                 m_db.LogDbUpdate(indexfile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
@@ -1222,6 +1344,10 @@ namespace Duplicati.Library.Main
                 indexfile.Close();
                 req.IndexfileUpdated = true;
             }
+
+            // create parity file if needded
+            if (m_options.EnableParityFile)
+                PutParity(req.RemoteFilename, req.LocalTempfile);
 
             try
             {
@@ -1425,6 +1551,7 @@ namespace Duplicati.Library.Main
 
             m_db.LogDbUpdate(remotename, RemoteVolumeState.Deleting, size, null);
             var req = new FileEntryItem(OperationType.Delete, remotename, size, null);
+
             try
             {
                 m_statwriter.BackendProgressUpdater.SetBlocking(true);
@@ -1472,6 +1599,11 @@ namespace Duplicati.Library.Main
                 m_backend.Dispose();
                 m_backend = null;
             }
+
+            if (m_encryption != null)
+                m_encryption.Dispose();
+            if (m_parity != null)
+                m_parity.Dispose();
 
             try { m_db.FlushDbMessages(true); }
             catch (Exception ex) { Logging.Log.WriteErrorMessage(LOGTAG, "ShutdownError", ex, "Backend Shutdown error: {0}", ex.Message); }

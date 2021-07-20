@@ -117,6 +117,7 @@ namespace Duplicati.Library.Main
             Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
+            Library.UsageReporter.Reporter.Report("USE_PARITY", m_options.ParityModule);
 
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
@@ -751,6 +752,7 @@ namespace Duplicati.Library.Main
                 m_options.SupportedCommands,
                 DynamicLoader.BackendLoader.GetSupportedCommands(m_backend),
                 m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetSupportedCommands(m_options.EncryptionModule),
+                m_options.EnableParityFile ? DynamicLoader.ParityLoader.GetSupportedCommands(m_options.ParityModule) : null,
                 moduleOptions,
                 DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule) })
             {

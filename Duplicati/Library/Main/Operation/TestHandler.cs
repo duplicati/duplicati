@@ -18,8 +18,10 @@
 using System;
 using Duplicati.Library.Main.Database;
 using System.Linq;
+using System.IO;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -62,6 +64,7 @@ namespace Duplicati.Library.Main.Operation
         
         public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
         {
+            TempFile tf = null;
             var files = db.SelectTestTargets(samples, m_options).ToList();
 
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
@@ -85,8 +88,8 @@ namespace Duplicati.Library.Main.Operation
                         m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                        using(var tf = vol.TempFile)
-                            res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
+                        tf = vol.TempFile;
+                        res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
                         if (!string.IsNullOrWhiteSpace(vol.Hash) && vol.Size > 0)
@@ -112,7 +115,14 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                         }
-                        
+
+                        if (m_options.EnableParityFile && (res.Value == null || !res.Value.Any()))
+                        {
+                            if (backend.ListParityFile(vol.Name) != null)
+                                return;
+                            backend.PutParity(vol.Name, tf);
+                        }
+
                         db.UpdateVerificationCount(vol.Name);
                     }
                     catch (Exception ex)
@@ -124,6 +134,12 @@ namespace Duplicati.Library.Main.Operation
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
                         }
+                    }
+                    finally
+                    {
+                        if (tf != null)
+                            tf.Dispose();
+                        tf = null;
                     }
                 }
             }
@@ -149,8 +165,8 @@ namespace Duplicati.Library.Main.Operation
                             string hash;
                             long size;
 
-                            using (var tf = backend.GetWithInfo(f.Name, out size, out hash))
-                                res = TestVolumeInternals(db, f, tf, m_options, 1);
+                            tf = backend.GetWithInfo(f.Name, out size, out hash);
+                            res = TestVolumeInternals(db, f, tf, m_options, 1);
                             m_results.AddResult(res.Key, res.Value);
 
                             if (!string.IsNullOrWhiteSpace(hash) && size > 0)
@@ -168,10 +184,17 @@ namespace Duplicati.Library.Main.Operation
                                     }
                                 }
                             }
+
+                            if (m_options.EnableParityFile && (res.Value == null || !res.Value.Any()))
+                            {
+                                if (backend.ListParityFile(f.Name) != null)
+                                    return;
+                                backend.PutParity(f.Name, tf);
+                            }
                         }
                         else
                             backend.GetForTesting(f.Name, f.Size, f.Hash);
-                        
+
                         db.UpdateVerificationCount(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
                     }
@@ -184,6 +207,12 @@ namespace Duplicati.Library.Main.Operation
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
                         }
+                    }
+                    finally
+                    {
+                        if (tf != null)
+                            tf.Dispose();
+                        tf = null;
                     }
                 }
             }

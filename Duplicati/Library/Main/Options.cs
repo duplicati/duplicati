@@ -301,6 +301,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
                     new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
+                    new CommandLineArgument("parity-module", CommandLineArgument.ArgumentType.String, Strings.Options.ParitymoduleShort, Strings.Options.ParitymoduleLong, "par2"),
 
                     new CommandLineArgument("enable-module", CommandLineArgument.ArgumentType.String, Strings.Options.EnablemoduleShort, Strings.Options.EnablemoduleLong),
                     new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
@@ -352,6 +353,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
+                    new CommandLineArgument("parity-redundancy-level", CommandLineArgument.ArgumentType.Integer, Strings.Options.ParityredundancylevelShort, Strings.Options.ParityredundancylevelLong, "0"),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
                     new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
@@ -767,6 +769,19 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// Gets the module used for parity
+        /// </summary>
+        public string ParityModule
+        {
+            get
+            {
+                if (m_options.ContainsKey("parity-module"))
+                    return m_options["parity-module"];
+                else
+                    return "par2";
+            }
+        }
 
         /// <summary>
         /// Gets the number of time to retry transmission if it fails
@@ -1493,7 +1508,24 @@ namespace Duplicati.Library.Main
                 return res;
             }
         }
-        
+
+        /// <summary>
+        /// A value indicating if a parity file is to be created for a remote file
+        /// </summary>
+        public bool EnableParityFile => ParityRedundancyLevel > 0;
+
+        /// <summary>
+        /// A value indicating the percentage of redundancy for the parity file, if enabled.
+        /// </summary>
+        public int ParityRedundancyLevel
+        {
+            get
+            {
+                m_options.TryGetValue("parity-redundancy-level", out var v);
+                return string.IsNullOrEmpty(v) ? 0 : Math.Max(0, int.Parse(v));
+            }
+        }
+
         /// <summary>
         /// Gets a flag indicating if the check for files on the remote storage should be omitted
         /// </summary>

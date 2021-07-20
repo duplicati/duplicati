@@ -108,6 +108,25 @@ namespace Duplicati.Library.Main.Operation.Common
                 }
             }
 
+            public FileEntryItem CreateParity(Options options)
+            {
+                if (!options.EnableParityFile)
+                    return null;
+                if (Operation != BackendActionType.Put) // only support put yet
+                    return null;
+
+                var tempfile = new Library.Utility.TempFile();
+                using (var par = DynamicLoader.ParityLoader.GetModule(options.ParityModule, options.ParityRedundancyLevel, options.RawOptions))
+                    par.Create(LocalTempfile, tempfile.Name, RemoteFilename);
+
+                var newEntry = new FileEntryItem(Operation, RemoteFilename + "+." + options.ParityModule);
+                newEntry.TrackedInDb = false;
+                newEntry.Encrypted = true;
+                newEntry.LocalTempfile = tempfile;
+                newEntry.UpdateHashAndSize(options);
+                return newEntry;
+            }
+
             public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))

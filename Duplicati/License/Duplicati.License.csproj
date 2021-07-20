@@ -416,6 +416,18 @@
       <Link>licenses\FasterHashing\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\par2cmdline\Homepage.txt">
+      <Link>licenses\par2cmdline\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\par2cmdline\License.txt">
+      <Link>licenses\par2cmdline\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\par2cmdline\licensedata.json">
+      <Link>licenses\par2cmdline\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

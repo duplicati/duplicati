@@ -7,6 +7,7 @@ namespace Duplicati.Library.Main.Strings
     {
         public static string HashMismatchError(string filename, string recordedhash, string actualhash) { return LC.L(@"Hash mismatch on file ""{0}"", recorded hash: {1}, actual hash {2}", filename, recordedhash, actualhash); }
         public static string DownloadedFileSizeError(string filename, long actualsize, long expectedsize) { return LC.L(@"The file {0} was downloaded and had size {1} but the size was expected to be {2}", filename, actualsize, expectedsize); }
+        public static string ParityRepairFailed => LC.L(@" and failed to repair with parity files");
         public static string DeprecatedOptionUsedWarning(string optionname, string message) { return LC.L(@"The option {0} is deprecated: {1}", optionname, message); }
         public static string DuplicateOptionNameWarning(string optionname) { return LC.L(@"The option --{0} exists more than once, please report this to the developers", optionname); }
         public static string NoSourceFoldersError { get { return LC.L(@"No source folders specified for backup"); } }
@@ -85,6 +86,8 @@ namespace Duplicati.Library.Main.Strings
         public static string CompressionmoduleShort { get { return LC.L(@"Select what module to use for compression"); } }
         public static string EncryptionmoduleLong { get { return LC.L(@"Duplicati supports pluggable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module."); } }
         public static string EncryptionmoduleShort { get { return LC.L(@"Select what module to use for encryption"); } }
+        public static string ParitymoduleLong { get { return LC.L(@"Duplicati supports pluggable parity modules. Use this option to select a module to use for parity creation. This is only applied when creating new parity files, when reading an existing file, the filename is used to select the parity module."); } }
+        public static string ParitymoduleShort { get { return LC.L(@"Select what module to use for parity creation"); } }
         public static string DisablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to unload them"); } }
         public static string DisablemoduleShort { get { return LC.L(@"Disables one or more modules"); } }
         public static string EnablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to load them"); } }
@@ -153,6 +156,8 @@ namespace Duplicati.Library.Main.Strings
         public static string NobackendverificationShort { get { return LC.L(@"Do not query backend at startup"); } }
         public static string IndexfilepolicyLong { get { return LC.L(@"The index files are used to limit the need for downloading dblock files when there is no local database present. The more information is recorded in the index files, the faster operations can proceed without the database. The tradeoff is that larger index files take up more remote space and which may never be used."); } }
         public static string IndexfilepolicyShort { get { return LC.L(@"Determines usage of index files"); } }
+        public static string ParityredundancylevelLong { get { return LC.L("This setting controls the creation and redundancy percentage of parity files for remote files. Valid values are integers in 0-100. A value of 0 disables creation of parity files. A value of 1 through 100 controls the percentage of redundancy."); } }
+        public static string ParityredundancylevelShort { get { return LC.L("Redundancy percentage of parity files for remote files."); } }
         public static string ThresholdLong { get { return LC.L(@"As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value is a percentage used on each volume and the total storage."); } }
         public static string ThresholdShort { get { return LC.L(@"The maximum wasted space in percent"); } }
         public static string DryrunLong { get { return LC.L(@"This option can be used to experiment with different settings and observe the outcome without changing actual files."); } }

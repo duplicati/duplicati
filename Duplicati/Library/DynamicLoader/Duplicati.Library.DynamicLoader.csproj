@@ -45,6 +45,7 @@
     <Compile Include="DynamicLoader.cs" />
     <Compile Include="EncryptionLoader.cs" />
     <Compile Include="GenericLoader.cs" />
+    <Compile Include="ParityLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebLoader.cs" />
     <Compile Include="Strings.cs" />

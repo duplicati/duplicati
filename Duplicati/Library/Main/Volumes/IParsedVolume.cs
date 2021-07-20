@@ -13,6 +13,7 @@ namespace Duplicati.Library.Main.Volumes
         DateTime Time { get; }
         string CompressionModule { get; }
         string EncryptionModule { get; }
+        string ParityModule { get; }
         Library.Interface.IFileEntry File { get; }
     }
 }
