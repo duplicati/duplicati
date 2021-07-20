@@ -86,8 +86,12 @@
       <Project>{32a74526-3e5f-413a-8cb4-1efdad4c8b91}</Project>
       <Name>Duplicati.Library.Backend.Sia</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+    <ProjectReference Include="..\..\Library\Backend\Storj\Duplicati.Library.Backend.Storj.csproj">
       <Project>{ae035e01-c917-4f13-a35e-78f21c1a2f17}</Project>
+      <Name>Duplicati.Library.Backend.Storj</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+      <Project>{9a04cb37-da72-4008-9703-3ac5191974e9}</Project>
       <Name>Duplicati.Library.Backend.Tardigrade</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
