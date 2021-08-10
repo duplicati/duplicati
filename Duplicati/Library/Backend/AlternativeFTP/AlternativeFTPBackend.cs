@@ -221,7 +221,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 // Get the remote path
                 var url = new Uri(this._url);
-                remotePath = "/" + (url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath);
+                remotePath = "/" + this.GetUnescapedAbsolutePath(url);
 
                 if (!string.IsNullOrEmpty(filename))
                 {
@@ -513,7 +513,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             var url = new Uri(_url);
 
             // Get the remote path
-            var remotePath = url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+            var remotePath = this.GetUnescapedAbsolutePath(url);
 
             // Try to create the directory 
             client.CreateDirectory(remotePath, true);
@@ -555,10 +555,16 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
             // Change working directory to the remote path
             // Do this every time to prevent issues when FtpClient silently reconnects after failure.
-            var remotePath = uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
+            var remotePath = this.GetUnescapedAbsolutePath(uri);
             this.Client.SetWorkingDirectory(remotePath);
 
             return this.Client;
+        }
+
+        private string GetUnescapedAbsolutePath(Uri uri)
+        {
+            string absolutePath = Uri.UnescapeDataString(uri.AbsolutePath);
+            return absolutePath.EndsWith("/", StringComparison.Ordinal) ? absolutePath.Substring(0, absolutePath.Length - 1) : absolutePath;
         }
 
         private void HandleValidateCertificate(FtpClient control, FtpSslValidationEventArgs e)
