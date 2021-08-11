@@ -101,12 +101,12 @@ namespace Duplicati.Library.Backend.AzureBlob
             return _azureBlob.ListContainerEntries();
         }
 
-        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname,
                 FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                return PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken);
             }
         }
 
