@@ -1,3 +1,27 @@
+2021-08-11 - 2.0.6.100_canary_2021-08-11
+==========
+* Switched to improved CI model, thanks @warwickmm
+* Fixed issue with reporting wasted space, thanks @aureliandevel
+* Fixed throttling requests to OneDrive and respecting the server `retry-after` headers, thnaks @tygill
+* File backend now overwrites files, thanks @warwickmm
+* Added `.dar` files to list of compressed file extensions, thanks @samuel-w
+* Fixed typos in example scripts, thanks @warwickmm
+* The `Makefile` now calls `msbuild`, thanks @warwickmm
+* When testing for known compressed file extensions, the compare is now case-insensitive, thanks @samuel-w
+* Improved code quality, thanks @marodev
+* Fixed an issue with handling the deprecated Azure and S3 options, thanks @warwickmm
+* Avoid using ECDSA algorithm for SFTP if the client does not support it, thanks @warwickmm
+* Added SAS token support to Azure backend, thanks @sergethedev17
+* Improved test method for aFTP backend, thanks @sergethedev17
+* Added support for mega.nz 2fa, thanks @vfrz
+* Changed from Tardigrade backend to Storj DCS backend, thanks @TopperDEL
+* Removed BouncyCastle dependency and now using .Net built-in parsing of SSL certificates, thanks @mnaiman
+* Regex filters now match newlines in paths with wildcards, thanks @warwickmm
+* Reduced number of cases where database cleanup is triggered, thanks @warwickmm
+* Fixed a dispose bug in most backends introduced with `PutAsync`, thanks @warwickmm
+* Updated UI to more prominently display deprecation information, thanks @warwickmm
+* Fixed handling of special characters in paths on the aFTP backend, thanks @warwickmm
+
 2021-06-17 - 2.0.6.3_beta_2021-06-17
 ==========
 This is a minor bugfix release with only two changes, which affects a small number of users:
