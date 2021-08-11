@@ -81,14 +81,15 @@ namespace Duplicati.Library.Utility
             /// The multiple wildcard character (DOS style)
             /// </summary>
             private const char MULTIPLE_WILDCARD = '*';
-            
+
             /// <summary>
             /// The regular expression flags
             /// </summary>
             private static readonly RegexOptions REGEXP_OPTIONS =
                 RegexOptions.Compiled |
                 RegexOptions.ExplicitCapture |
-                (Utility.IsFSCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase);
+                (Utility.IsFSCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase) |
+                RegexOptions.Singleline;
 
             // Since we might need to get the regex for a particular filter group multiple times
             // (e.g., when combining multiple FilterExpressions together, which discards the existing FilterEntries and recreates them from the Filter representations),
