@@ -130,10 +130,6 @@ namespace Duplicati.UnitTest
             string file2Path = Path.Combine(this.DATAFOLDER, "file2");
             File.WriteAllBytes(file2Path, new byte[] { 3, 4, 6 });
 
-            string folderPath = Path.Combine(this.DATAFOLDER, "folder");
-            Directory.CreateDirectory(folderPath);
-            systemIO.FileCopy(file1Path, Path.Combine(folderPath, "file1 copy"), true);
-
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
             {
                 IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
