@@ -119,5 +119,43 @@ namespace Duplicati.UnitTest
                 Assert.IsTrue(restoredFileSecurity.AreAccessRulesProtected);
             }
         }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public void RestoreWithoutLocalData([Values("true", "false")] string noLocalDb, [Values("true", "false")] string noLocalBlocks, [Values("true", "false")] string patchWithLocalBlocks)
+        {
+            string file1Path = Path.Combine(this.DATAFOLDER, "file1");
+            File.WriteAllBytes(file1Path, new byte[] { 1, 2, 3 });
+
+            string file2Path = Path.Combine(this.DATAFOLDER, "file2");
+            File.WriteAllBytes(file2Path, new byte[] { 3, 4, 6 });
+
+            string folderPath = Path.Combine(this.DATAFOLDER, "folder");
+            Directory.CreateDirectory(folderPath);
+            systemIO.FileCopy(file1Path, Path.Combine(folderPath, "file1 copy"), true);
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+            {
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["no-local-db"] = noLocalDb,
+                ["no-local-blocks"] = noLocalBlocks,
+                ["patch-with-local-blocks"] = patchWithLocalBlocks
+            };
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IRestoreResults restoreResults = c.Restore(new[] { "*" });
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+            }
+
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring without local data");
+        }
     }
 }
