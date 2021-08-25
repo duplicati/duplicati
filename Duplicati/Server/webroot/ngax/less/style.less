@@ -2215,7 +2215,7 @@ div.modal-dialog {
             padding: 10px 12px;
             border: 1px #d8d8d8 solid;
             border-radius: 2px;
-            color: #8f8f8f;
+            color: @tColor;
             font-size: 16px;
             font-weight: 300;
         }
@@ -2328,8 +2328,7 @@ div.modal-dialog {
             clear: both;
             margin-left: 30px;
             padding-top: 5px;
-            color: lightgray;
-
+            color: lighten(@tColor, 25%);
         }
     }
 }
@@ -2747,7 +2746,7 @@ div.modal-dialog {
                     position: relative;
                     height: 40px;
                     line-height: 40px;
-                    color: #8f8f8f;
+                    color: @tColor;
                     float: right;
                     top: 10px;
                     padding-left: 20px;

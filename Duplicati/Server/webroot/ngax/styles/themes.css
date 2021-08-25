@@ -1,6 +1,7 @@
 body.theme-dark
 {
   background-color: #1a1a1a !important;
+  color: #a5a5a5;
 }
 
 body.theme-dark .footer
@@ -60,11 +61,11 @@ body.theme-dark form.styled input, body.theme-dark form.styled textarea, body.th
 
 body.theme-dark form.styled input[type="file"] 
 {
-  color: #8f8f8f;
+  color: #a5a5a5;
 }
 
 body.theme-dark form.styled input[type="password"] 
 {
-  color: #8f8f8f;
+  color: #a5a5a5;
   background-color: #1a1a1a;
 }
