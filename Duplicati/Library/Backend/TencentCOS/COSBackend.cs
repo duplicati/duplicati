@@ -17,8 +17,8 @@ namespace Duplicati.Library.Backend.TencentCOS
 {
     /// <summary>
     /// Tencent COS
-    /// https://cloud.tencent.com/document/product/436
-    /// https://cloud.tencent.com/document/product/436/32869
+    /// en: https://intl.cloud.tencent.com/document/product/436
+    /// zh: https://cloud.tencent.com/document/product/436
     /// </summary>
     public class COS : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
@@ -71,7 +71,8 @@ namespace Duplicati.Library.Backend.TencentCOS
             public string SecretKey { get; set; }
             /// <summary>
             /// Bucket region ap-guangzhou ap-hongkong
-            /// https://cloud.tencent.com/document/product/436/6224
+            /// en: https://intl.cloud.tencent.com/document/product/436/6224
+            /// zh: https://cloud.tencent.com/document/product/436/6224
             /// </summary>
             public string Region { get; set; }
             /// <summary>
@@ -84,7 +85,8 @@ namespace Duplicati.Library.Backend.TencentCOS
             public string Path { get; set; }
             /// <summary>
             /// Storage class of the object
-            /// https://cloud.tencent.com/document/product/436/33417
+            /// en: https://intl.cloud.tencent.com/document/product/436/30925
+            /// zh: https://cloud.tencent.com/document/product/436/33417
             /// </summary>
             public string StorageClass { get; set; }
         }
