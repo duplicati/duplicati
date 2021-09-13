@@ -8,6 +8,12 @@
 @hColor: #609301; // Heading-color
 @lColor: #2A89C0; // Link-color
 
+
+h1.theme-dark,
+h2.theme-dark
+{
+    color: @hColor;
+}
 body.theme-dark
 {
   background-color: #1a1a1a !important;
@@ -34,6 +40,10 @@ body.theme-dark .body a
     color: @lColor;
 }
 
+body.theme-dark #mainmenu {
+    background: #1a1a1a;
+}
+
 body.theme-dark .header a.hover, body.theme-dark .header a.active
 {
     color: lighten(@tColor, 25%);
@@ -44,6 +54,11 @@ body.theme-dark .container .header .state {
     border: 1px lighten(@hColor, 10%) solid;
 }
 
+body .container .header .menubutton
+{
+    color: @tColor;
+}
+
 body.theme-dark .state
 {
     background-color: #1a1a1a !important;
@@ -51,22 +66,22 @@ body.theme-dark .state
 
 body.theme-dark form.styled .buttons input, body.theme-dark form.styled .buttons a
 {
-  background: #4a5879;
+    background: #4a5879;
 }
 
 body.theme-dark form.styled .buttons input:hover, body.theme-dark form.styled .buttons a:hover
 {
-  background: #6089b5;
+    background: #6089b5;
 }
 
 body.theme-dark .button
 {
-  background: #4a5879;
+    background: #4a5879;
 }
 
 body.theme-dark .button:hover
 {
-  background: #6089b5;
+    background: #6089b5;
 }
 
 body.theme-dark .container .body .mainmenu>ul>li>a.active
@@ -84,16 +99,12 @@ body.theme-dark .step3 source-folder-picker, body.theme-dark #folder_path_picker
   background-color: #ffffff;
 }
 
-body.theme-dark form.styled input, body.theme-dark form.styled textarea, body.theme-dark form.styled select
+body.theme-dark form.styled input, body.theme-dark form.styled textarea, body.theme-dark form.styled select, body.theme-dark form.styled .input.select select
 {
-  color: #000000;
-}
-
-body.theme-dark form.styled input[type="file"] {
-    color: @tColor;
-}
-
-body.theme-dark form.styled input[type="password"] {
     color: @tColor;
     background-color: #1a1a1a;
+}
+
+body.theme-dark form.styled input {
+
 }
