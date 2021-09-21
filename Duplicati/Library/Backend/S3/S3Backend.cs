@@ -50,6 +50,7 @@ namespace Duplicati.Library.Backend
             { "DreamHost", "objects.dreamhost.com" },
             { "dinCloud - Chicago", "d3-ord.dincloud.com" },
             { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
+            { "Poli Systems (CH)", "s3.polisystems.ch" },
             { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
             { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi Hot Storage", "s3.wasabisys.com" },
