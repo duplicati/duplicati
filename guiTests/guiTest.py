@@ -101,12 +101,15 @@ write_random_file(100 * 1024, SOURCE_FOLDER + os.sep + "subfolder" + os.sep + "1
 sha1_source = sha1_folder(SOURCE_FOLDER)
 
 # Dismiss the password request
+time.sleep(1)
 driver.find_element_by_link_text("No, my machine has only a single account").click()
 
 # Add new backup
+time.sleep(1)
 driver.find_element_by_link_text("Add backup").click()
 
 # Choose the "add new" option
+time.sleep(1)
 driver.find_element_by_id("blank").click()
 driver.find_element_by_xpath("//input[@class='submit next']").click()
 
@@ -118,25 +121,30 @@ driver.find_element_by_id("repeat-passphrase").send_keys(PASSWORD)
 driver.find_element_by_id("nextStep1").click()
 
 # Add new backup - Destination page
+time.sleep(1)
 driver.find_element_by_link_text("Manually type path").click()
 driver.find_element_by_id("file_path").send_keys(DESTINATION_FOLDER)
 driver.find_element_by_id("nextStep2").click()
 
 # Add new backup - Source Data page
+time.sleep(1)
 driver.find_element_by_id("sourcePath").send_keys(os.path.abspath(SOURCE_FOLDER) + os.sep)
 driver.find_element_by_id("sourceFolderPathAdd").click()
 driver.find_element_by_id("nextStep3").click()
 
 # Add new backup - Schedule page
+time.sleep(1)
 useScheduleRun = driver.find_element_by_id("useScheduleRun")
 if useScheduleRun.is_selected():
     useScheduleRun.click()
 driver.find_element_by_id("nextStep4").click()
 
 # Add new backup - Options page
+time.sleep(1)
 driver.find_element_by_id("save").click()
 
 # Run the backup job and wait for finish
+time.sleep(1)
 driver.find_element_by_link_text(BACKUP_NAME).click()
 [n for n in driver.find_elements_by_xpath("//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
 wait_for_text(60, "//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ")
@@ -169,9 +177,11 @@ if os.path.exists(RESTORE_FOLDER):
 os.rename(DESTINATION_FOLDER, DESTINATION_FOLDER_DIRECT_RESTORE)
 
 # direct restore
+time.sleep(1)
 driver.find_element_by_link_text("Restore").click()
 
 # Choose the "restore direct" option
+time.sleep(1)
 driver.find_element_by_id("direct").click()
 driver.find_element_by_xpath("//input[@class='submit next']").click()
 
