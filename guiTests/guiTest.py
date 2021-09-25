@@ -77,7 +77,7 @@ def wait_for_text(time, xpath, text):
     WebDriverWait(driver, time).until(expected_conditions.text_to_be_present_in_element((By.XPATH, xpath), text))
 
 def wait_for_load(time, by, target):
-    return WebDriverWait(driver, time).until(EC.presence_of_element_located(by, target))
+    return WebDriverWait(driver, time).until(expected_conditions.presence_of_element_located(by, target))
     
 BACKUP_NAME = "BackupName"
 PASSWORD = "the_backup_password_is_really_long_and_safe"
