@@ -33,8 +33,8 @@ else:
     profile = webdriver.FirefoxProfile()
     profile.set_preference("intl.accept_languages", "en")
     options = Options()
-    options.set_headless(headless=True)
-    driver = webdriver.Firefox(profile, firefox_options=options)
+    options.headless = True
+    driver = webdriver.Firefox(profile, options=options)
 
 
 def write_random_file(size, filename):
@@ -148,7 +148,8 @@ if len([n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Resto
 
 [n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()][0].click()
 wait_for_load(10, By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
-wait_for_load(10, By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
+time.sleep(1)
+wait_for_load(10, By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/form/div[1]/div[3]/restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
 
 wait_for_load(10, By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
 wait_for_load(10, By.ID, "restoretonewpath").click()
@@ -182,7 +183,8 @@ wait_for_load(10, By.ID, "nextStep1").click()
 wait_for_load(10, By.ID, "password").send_keys(PASSWORD)
 wait_for_load(10, By.ID, "connect").click()
 wait_for_load(10, By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
-wait_for_load(10, By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
+time.sleep(1)
+wait_for_load(10, By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/form/div[1]/div[3]/restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
 wait_for_load(10, By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
 
 wait_for_load(10, By.ID, "restoretonewpath").click()
