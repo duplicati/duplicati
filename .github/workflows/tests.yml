@@ -6,52 +6,6 @@ env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 jobs:
-  unit_tests:
-    name: Unit tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-
-    steps:
-    - name: Add msbuild to PATH (Windows)
-      if: matrix.os == 'windows-latest'
-      uses: microsoft/setup-msbuild@v1.0.2
-
-    - name: Install NuGet
-      uses: nuget/setup-nuget@v1.0.5
-
-    - name: Checkout Source
-      uses: actions/checkout@v2.3.4
-
-    - name: Restore NuGet Packages
-      run: nuget restore Duplicati.sln
-
-    - name: Install Additional Dependencies
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install gtk-sharp2
-
-    - name: Build Duplicati (Linux and macOS)
-      if: matrix.os != 'windows-latest'
-      run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
-
-    - name: Build Duplicati (Windows)
-      if: matrix.os == 'windows-latest'
-      run: msbuild -p:Configuration=Release Duplicati.sln
-
-    - name: Run Unit Tests (Linux and macOS)
-      if: matrix.os != 'windows-latest'
-      run: |
-        nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
-        mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
-
-    - name: Run Unit Tests (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
-        nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
-
   ui_tests:
     name: UI tests
     runs-on: ubuntu-latest
