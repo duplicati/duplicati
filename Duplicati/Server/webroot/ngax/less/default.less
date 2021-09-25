@@ -1,0 +1,81 @@
+@import 'variables.less';
+@import 'base.less';
+
+@tColor: #555555; // Text-color
+@hColor: #568301; // Heading-color
+@lColor: #277DB0; // Link-color
+
+body {
+    background-color: #1a1a1a !important;
+    color: #a5a5a5;
+}
+
+body .footer {
+    background-color: #333333 !important;
+}
+
+body .header {
+    background-color: #333333 !important;
+}
+
+body .header a {
+    color: @lColor;
+}
+
+body .body a {
+    color: @lColor;
+}
+
+body #mainmenu {
+    background: #1a1a1a;
+}
+
+body .header a.hover, body.theme-dark .header a.active {
+    color: lighten(@tColor, 25%);
+}
+
+bod .container .header .state {
+    color: lighten(@hColor, 10%);
+    border: 1px lighten(@hColor, 10%) solid;
+}
+
+body .container .header .menubutton {
+    color: @tColor;
+}
+
+body .state {
+    background-color: #1a1a1a !important;
+}
+
+body form.styled .buttons input, body.theme-dark form.styled .buttons a {
+    background: #4a5879;
+}
+
+body form.styled .buttons input:hover, body.theme-dark form.styled .buttons a:hover {
+    background: #6089b5;
+}
+
+body .button {
+    background: #4a5879;
+}
+
+body .button:hover {
+    background: #6089b5;
+}
+
+body .container .body .mainmenu > ul > li > a.active {
+    color: black;
+}
+
+body .container .body .content div.add .steps .step, body.theme-dark .container .body .content div.restore .steps .step {
+    color: #2780b3;
+}
+
+body .step3 source-folder-picker, body.theme-dark #folder_path_picker, body.theme-dark #restore_file_picker {
+    background-color: #ffffff;
+}
+
+body form.styled input, body.theme-dark form.styled textarea, body.theme-dark form.styled select, body.theme-dark form.styled .input.select select {
+    color: @tColor;
+    background-color: #1a1a1a;
+}
