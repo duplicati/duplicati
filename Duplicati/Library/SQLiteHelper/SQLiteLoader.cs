@@ -271,7 +271,7 @@ namespace Duplicati.Library.SQLiteHelper
             con.ConnectionString = "Data Source=" + path;
             con.Open();
 
-            // Enable write-ahead logging
+            // Enable write-ahead logging and memory mapped IO
             using (System.Data.IDbCommand command = con.CreateCommand())
             {
                 command.CommandText = "PRAGMA journal_mode = WAL;PRAGMA mmap_size=268435456;";
