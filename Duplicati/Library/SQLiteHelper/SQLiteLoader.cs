@@ -268,7 +268,7 @@ namespace Duplicati.Library.SQLiteHelper
             if (!Platform.IsClientWindows)
                 fileExists = File.Exists(path);
 
-            con.ConnectionString = "Data Source=" + path + ";journal mode=Memory";
+            con.ConnectionString = "Data Source=" + path;
             con.Open();
 
             // Enable write-ahead logging
