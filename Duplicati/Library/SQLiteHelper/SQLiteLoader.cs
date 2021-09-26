@@ -268,8 +268,15 @@ namespace Duplicati.Library.SQLiteHelper
             if (!Platform.IsClientWindows)
                 fileExists = File.Exists(path);
 
-            con.ConnectionString = "Data Source=" + path;
+            con.ConnectionString = "Data Source=" + path + ";journal mode=Memory";
             con.Open();
+
+            // Enable write-ahead logging
+            using (System.Data.IDbCommand command = con.CreateCommand())
+            {
+                command.CommandText = "PRAGMA journal_mode = WAL";
+                command.ExecuteNonQuery();
+            }
 
             // If we are non-Windows, make the file only accessible by the current user
             if (!Platform.IsClientWindows && !fileExists)
