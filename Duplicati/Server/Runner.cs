@@ -371,16 +371,30 @@ namespace Duplicati.Server
             cmd.Append(Library.Utility.Utility.WrapAsCommandLine(sources, true));
 
             // TODO: We should check each option to see if it is a path, and allow expansion on that
-            foreach(var opt in options)
-                cmd.AppendFormat(" --{0}={1}", opt.Key, Library.Utility.Utility.WrapCommandLineElement(opt.Value, false));
+            foreach (var opt in options)
+            {
+                cmd.Append(" ");
+                string newOption = Library.Utility.Utility.WrapCommandLineElement(string.Format("--{0}={1}", opt.Key, opt.Value),false);
+                cmd.Append(newOption);
+            }
+
 
             if (cf != null)
-                foreach(var f in cf)
-                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", Library.Utility.Utility.WrapCommandLineElement(f.Expression, true));
+                foreach (var f in cf)
+                {
+                    cmd.Append(" ");
+                    string newFilter = Library.Utility.Utility.WrapCommandLineElement(string.Format("--{0}={1}", f.Include ? "include" : "exclude",f.Expression),true);
+                    cmd.Append(newFilter); 
+
+                }
 
             if (bf != null)
-                foreach(var f in bf)
-                    cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", Library.Utility.Utility.WrapCommandLineElement(f.Expression, true));
+                foreach (var f in bf)
+                {
+                    cmd.Append(" ");
+                    string newFilter = Library.Utility.Utility.WrapCommandLineElement(string.Format("--{0}={1}", f.Include ? "include" : "exclude",f.Expression),true);
+                    cmd.Append(newFilter); 
+                }
 
             return cmd.ToString();
         }
