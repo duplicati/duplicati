@@ -1,0 +1,35 @@
+<div class="input text">
+    <label for="baidunetdisk_authorization_code" translate>
+        授权码 (<a href ng-click="oauth_start_token_creation()" translate>点击授权</a>)
+    </label>
+    <input type="text" name="baidunetdisk_authorization_code" id="baidunetdisk_authorization_code" ng-model="$parent.baidunetdisk_authorization_code"
+           placeholder="{{'Baidu Netdisk Authorization Code' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="baidunetdisk_blocksize" translate>
+        分片大小 (4/16/32)
+    </label>
+    <input type="text" name="baidunetdisk_blocksize" id="baidunetdisk_blocksize" ng-model="$parent.baidunetdisk_blocksize"
+           placeholder="{{'Baidu Netdisk Block Size' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="baidunetdisk_path" translate>Folder path</label>
+    <input type="text" name="baidunetdisk_path" id="baidunetdisk_path" ng-model="$parent.Path"
+           placeholder="{{'Baidu Netdisk Path or subfolder' | translate}}" />
+</div>
+
+<div>
+    <p>百度网盘说明：</p>
+    <p>1、获取授权码，授权码可多次使用，建议复制保存便于下次使用。</p>
+    <p>a. 手动授权（<a referrerpolicy="no-referrer" target="_blank" href="https://openapi.baidu.com/oauth/2.0/authorize?response_type=token&client_id=N190qvLtVV5XcO2Vr0xVRWI24aURFTIe&redirect_uri=oob&scope=basic,netdisk&display=page&qrcode=1&force_login=1&login_type=sms">手动复制授权码</a>，无法自动授权时，使用手动授权方式，授权成功后，返回链接携带 access_token=******，复制 ****** 令牌到授权码）</p>
+    <p>2、不开通百度会员会受到下载限速，上传不会限速</p>
+    <p>3、支持秒传</p>
+    <p>4、关于分片上传大小文件限制</p>
+    <p>a. 普通用户单个分片大小固定为4MB，单文件总大小上限为4G</p>
+    <p>b. 普通会员用户单个分片大小上限为16MB，单文件总大小上限为10G</p>
+    <p>c. 超级会员用户单个分片大小上限为32MB，单文件总大小上限为20G</p>
+</div>
+
+<div><a target="_blank" href="https://pan.baidu.com/union/home">Baidu Netdisk documents and resources</a></div>
