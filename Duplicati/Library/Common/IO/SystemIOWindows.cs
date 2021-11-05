@@ -32,23 +32,76 @@ namespace Duplicati.Library.Common.IO
         private const string UNCPREFIX = @"\\?\";
         private const string UNCPREFIX_SERVER = @"\\?\UNC\";
         private const string PATHPREFIX_SERVER = @"\\";
+        private const string PATHPREFIX_SERVER_ALT = @"//";
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
+        /// <summary>
+        /// Prefix path with one of the UNC prefixes, but only if it's a fully
+        /// qualified path with no relative components (i.e., with no "." or
+        /// ".." as part of the path).
+        /// </summary>
         public static string PrefixWithUNC(string path)
         {
             if (IsPrefixedWithUNC(path))
             {
+                // For example: \\?\C:\Temp\foo.txt or \\?\UNC\example.com\share\foo.txt
                 return path;
             }
-            return path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal)
-                ? UNCPREFIX_SERVER + path.Substring(PATHPREFIX_SERVER.Length)
-                : UNCPREFIX + path;
+            else if (IsPrefixedWithBasicUNC(path))
+            {
+                // For example: \\example.com\share\foo.txt or //example.com/share/foo.txt
+                return UNCPREFIX_SERVER + ConvertSlashes(path.Substring(PATHPREFIX_SERVER.Length));
+            }
+            else if (IsPathFullyQualified(path) && !HasRelativePathComponents(path))
+            {
+                // For example: C:\Temp\foo.txt or C:/Temp/foo.txt
+                return UNCPREFIX + ConvertSlashes(path);
+            }
+            else
+            {
+                // A relative path or a fully qualified path with relative
+                // path components so the UNC prefix cannot be applied.
+                // For example: foo.txt or C:\Temp\..\foo.txt
+                return path;
+            }
+        }
+
+        private static bool IsPrefixedWithBasicUNC(string path)
+        {
+            return path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal) ||
+                path.StartsWith(PATHPREFIX_SERVER_ALT, StringComparison.Ordinal);
         }
 
         private static bool IsPrefixedWithUNC(string path)
         {
             return path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) ||
                 path.StartsWith(UNCPREFIX, StringComparison.Ordinal);
+        }
+
+        private static string[] relativePathComponents = new[] { ".", ".." };
+
+        /// <summary>
+        /// Returns true if <paramref name="path"/> contains relative path components; i.e., "." or "..".
+        /// </summary>
+        private static bool HasRelativePathComponents(string path)
+        {
+            return GetPathComponents(path).Any(pathComponent => relativePathComponents.Contains(pathComponent));
+        }
+
+        /// <summary>
+        /// Returns a sequence representing the files and directories in <paramref name="path"/>.
+        /// </summary>
+        private static IEnumerable<string> GetPathComponents(string path)
+        {
+            while (!String.IsNullOrEmpty(path))
+            {
+                var pathComponent = Path.GetFileName(path);
+                if (!String.IsNullOrEmpty(pathComponent))
+                {
+                    yield return pathComponent;
+                }
+                path = Path.GetDirectoryName(path);
+            }
         }
 
         public static string StripUNCPrefix(string path)
@@ -176,6 +229,85 @@ namespace Duplicati.Library.Common.IO
         {
             System.IO.Directory.SetAccessControl(PrefixWithUNC(path), rules);
         }
+
+        #region Adapted from https://github.com/dotnet/runtime (MIT license)
+        /// <summary>
+        /// Returns true if the path is fixed to a specific drive or UNC path. This method does no
+        /// validation of the path (URIs will be returned as relative as a result).
+        /// Returns false if the path specified is relative to the current drive or working directory.
+        /// </summary>
+        /// <remarks>
+        /// Handles paths that use the alternate directory separator.  It is a frequent mistake to
+        /// assume that rooted paths <see cref="Path.IsPathRooted(string)"/> are not relative.  This isn't the case.
+        /// "C:a" is drive relative- meaning that it will be resolved against the current directory
+        /// for C: (rooted, but relative). "C:\a" is rooted and not relative (the current directory
+        /// will not be used to modify the path).
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="path"/> is null.
+        /// </exception>
+        public static bool IsPathFullyQualified(string path)
+        {
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
+
+            return !IsPartiallyQualified(path);
+        }
+
+        /// <summary>
+        /// Returns true if the path specified is relative to the current drive or working directory.
+        /// Returns false if the path is fixed to a specific drive or UNC path.  This method does no
+        /// validation of the path (URIs will be returned as relative as a result).
+        /// </summary>
+        /// <remarks>
+        /// Handles paths that use the alternate directory separator.  It is a frequent mistake to
+        /// assume that rooted paths (Path.IsPathRooted) are not relative.  This isn't the case.
+        /// "C:a" is drive relative- meaning that it will be resolved against the current directory
+        /// for C: (rooted, but relative). "C:\a" is rooted and not relative (the current directory
+        /// will not be used to modify the path).
+        /// </remarks>
+        internal static bool IsPartiallyQualified(string path)
+        {
+            if (path.Length < 2)
+            {
+                // It isn't fixed, it must be relative.  There is no way to specify a fixed
+                // path with one character (or less).
+                return true;
+            }
+
+            if (IsDirectorySeparator(path[0]))
+            {
+                // There is no valid way to specify a relative path with two initial slashes or
+                // \? as ? isn't valid for drive relative paths and \??\ is equivalent to \\?\
+                return !(path[1] == '?' || IsDirectorySeparator(path[1]));
+            }
+
+            // The only way to specify a fixed path that doesn't begin with two slashes
+            // is the drive, colon, slash format- i.e. C:\
+            return !((path.Length >= 3)
+                && (path[1] == Path.VolumeSeparatorChar)
+                && IsDirectorySeparator(path[2])
+                // To match old behavior we'll check the drive character for validity as the path is technically
+                // not qualified if you don't have a valid drive. "=:\" is the "=" file's default data stream.
+                && IsValidDriveChar(path[0]));
+        }
+
+        /// <summary>
+        /// True if the given character is a directory separator.
+        /// </summary>
+        internal static bool IsDirectorySeparator(char c)
+        {
+            return c == Path.DirectorySeparatorChar || c == Path.AltDirectorySeparatorChar;
+        }
+
+        /// <summary>
+        /// Returns true if the given character is a valid drive letter
+        /// </summary>
+        internal static bool IsValidDriveChar(char value)
+        {
+            return (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
+        }
+        #endregion
 
         #region ISystemIO implementation
         public void DirectoryCreate(string path)
@@ -407,14 +539,7 @@ namespace Duplicati.Library.Common.IO
 
         public string PathGetFullPath(string path)
         {
-            if (IsPrefixedWithUNC(path))
-            {
-                return System.IO.Path.GetFullPath(ConvertSlashes(path));
-            }
-            else
-            {
-                return StripUNCPrefix(System.IO.Path.GetFullPath(PrefixWithUNC(ConvertSlashes(path))));
-            }
+            return PrefixWithUNC(Path.GetFullPath(path));
         }
 
         public IFileEntry DirectoryEntry(string path)
