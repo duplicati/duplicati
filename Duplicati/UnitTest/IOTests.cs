@@ -95,5 +95,457 @@ namespace Duplicati.UnitTest
             //In particular don't throw PathTooLongException
             Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS.GetDirectories(longPath));
         }
+
+        [Test]
+        public void TestPrefixWithUNCInWindowsClient()
+        {
+            if (!Platform.IsClientWindows)
+            {
+                return;
+            }
+
+            // Normalization of basic relative paths, with both kinds of slashes
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"."),
+                Is.EqualTo(@"."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"temp"),
+                Is.EqualTo(@"temp"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"temp\file.txt"),
+                Is.EqualTo(@"temp\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\"),
+                Is.EqualTo(@"\"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"/"),
+                Is.EqualTo(@"/"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\temp"),
+                Is.EqualTo(@"\temp"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"/temp"),
+                Is.EqualTo(@"/temp"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"/temp/file.txt"),
+                Is.EqualTo(@"/temp/file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"/temp/file.txt"),
+                Is.EqualTo(@"/temp/file.txt"));
+
+            // Normalization of full qualified paths, but with relative components, with both kinds of slashes
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp\."),
+                Is.EqualTo(@"C:\temp\."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp/."),
+                Is.EqualTo(@"C:/temp/."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp\.."),
+                Is.EqualTo(@"C:\temp\.."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp/.."),
+                Is.EqualTo(@"C:/temp/.."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp\..\folder"),
+                Is.EqualTo(@"C:\temp\..\folder"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp/../folder"),
+                Is.EqualTo(@"C:/temp/../folder"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp\.\file.txt"),
+                Is.EqualTo(@"C:\temp\.\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp/./file.txt"),
+                Is.EqualTo(@"C:/temp/./file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share\."),
+                Is.EqualTo(@"\\example.com\share\."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share/."),
+                Is.EqualTo(@"//example.com/share/."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share\.."),
+                Is.EqualTo(@"\\example.com\share\.."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share/.."),
+                Is.EqualTo(@"//example.com/share/.."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share\..\folder"),
+                Is.EqualTo(@"\\example.com\share\..\folder"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share/../folder"),
+                Is.EqualTo(@"//example.com/share/../folder"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share\.\file.txt"),
+                Is.EqualTo(@"\\example.com\share\.\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share/./file.txt"),
+                Is.EqualTo(@"//example.com/share/./file.txt"));
+
+            // Fully qualified paths with no relative components, with both kinds of slashes
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\"),
+                Is.EqualTo(@"\\?\C:\"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/"),
+                Is.EqualTo(@"\\?\C:\"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp"),
+                Is.EqualTo(@"\\?\C:\temp"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp"),
+                Is.EqualTo(@"\\?\C:\temp"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp\file.txt"),
+                Is.EqualTo(@"\\?\C:\temp\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp/file.txt"),
+                Is.EqualTo(@"\\?\C:\temp\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share"),
+                Is.EqualTo(@"\\?\UNC\example.com\share"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share"),
+                Is.EqualTo(@"\\?\UNC\example.com\share"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share\file.txt"),
+                Is.EqualTo(@"\\?\UNC\example.com\share\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share/file.txt"),
+                Is.EqualTo(@"\\?\UNC\example.com\share\file.txt"));
+
+            // Fully qualified paths with no relative components, but with problematic names, with both kinds of slashes
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp."),
+                Is.EqualTo(@"\\?\C:\temp."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp."),
+                Is.EqualTo(@"\\?\C:\temp."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp.\file.txt"),
+                Is.EqualTo(@"\\?\C:\temp.\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp./file.txt"),
+                Is.EqualTo(@"\\?\C:\temp.\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp.\file.txt."),
+                Is.EqualTo(@"\\?\C:\temp.\file.txt."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp./file.txt."),
+                Is.EqualTo(@"\\?\C:\temp.\file.txt."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp "),
+                Is.EqualTo(@"\\?\C:\temp "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp "),
+                Is.EqualTo(@"\\?\C:\temp "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:\temp\file.txt "),
+                Is.EqualTo(@"\\?\C:\temp\file.txt "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"C:/temp/file.txt "),
+                Is.EqualTo(@"\\?\C:\temp\file.txt "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share."),
+                Is.EqualTo(@"\\?\UNC\example.com\share."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share."),
+                Is.EqualTo(@"\\?\UNC\example.com\share."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share\file.txt."),
+                Is.EqualTo(@"\\?\UNC\example.com\share\file.txt."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share./file.txt."),
+                Is.EqualTo(@"\\?\UNC\example.com\share.\file.txt."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share "),
+                Is.EqualTo(@"\\?\UNC\example.com\share "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share "),
+                Is.EqualTo(@"\\?\UNC\example.com\share "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\example.com\share\file.txt "),
+                Is.EqualTo(@"\\?\UNC\example.com\share\file.txt "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"//example.com/share/file.txt "),
+                Is.EqualTo(@"\\?\UNC\example.com\share\file.txt "));
+
+            // Normalization disabled for paths with @"\\?\" prefix
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\"),
+                Is.EqualTo(@"\\?\C:\"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\temp"),
+                Is.EqualTo(@"\\?\C:\temp"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\temp\file.txt"),
+                Is.EqualTo(@"\\?\C:\temp\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\temp."),
+                Is.EqualTo(@"\\?\C:\temp."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\temp.\file.txt"),
+                Is.EqualTo(@"\\?\C:\temp.\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\temp.\file.txt."),
+                Is.EqualTo(@"\\?\C:\temp.\file.txt."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\temp "),
+                Is.EqualTo(@"\\?\C:\temp "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\temp\file.txt "),
+                Is.EqualTo(@"\\?\C:\temp\file.txt "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\C:\"),
+                Is.EqualTo(@"\\?\C:\"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\UNC\example.com\share"),
+                Is.EqualTo(@"\\?\UNC\example.com\share"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\UNC\example.com\share\file.txt"),
+                Is.EqualTo(@"\\?\UNC\example.com\share\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\UNC\example.com\share."),
+                Is.EqualTo(@"\\?\UNC\example.com\share."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\UNC\example.com\share.\file.txt"),
+                Is.EqualTo(@"\\?\UNC\example.com\share.\file.txt"));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\UNC\example.com\share.\file.txt."),
+                Is.EqualTo(@"\\?\UNC\example.com\share.\file.txt."));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\UNC\example.com\share "),
+                Is.EqualTo(@"\\?\UNC\example.com\share "));
+            Assert.That(
+                SystemIOWindows.PrefixWithUNC(@"\\?\UNC\example.com\share\file.txt "),
+                Is.EqualTo(@"\\?\UNC\example.com\share\file.txt "));
+        }
+
+        [Test]
+        public void TestPathGetFullPathInWindowsClient()
+        {
+            if (!Platform.IsClientWindows)
+            {
+                return;
+            }
+
+            // Normalization of basic relative paths, with both kinds of slashes
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@".")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"temp"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"temp")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"temp\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"temp\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"/"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"/")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\temp"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\temp")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"/temp"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"/temp")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"/temp/file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"/temp/file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"/temp/file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"/temp/file.txt")));
+
+            // Normalization of full qualified paths, but with relative components, with both kinds of slashes
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp\."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:\temp\.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp/."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:/temp/.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp\.."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:\temp\..")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp/.."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:/temp/..")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp\..\folder"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:\temp\..\folder")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp/../folder"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:/temp/../folder")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp\.\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:\temp\.\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp/./file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:/temp/./file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share\."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share\.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share/."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share/.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share\.."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share\..")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share/.."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share/..")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share\..\folder"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share\..\folder")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share/../folder"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share/../folder")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share\.\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share\.\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share/./file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share/./file.txt")));
+
+            // Fully qualified paths with no relative components, with both kinds of slashes
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:\")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:/")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:\temp")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:/temp")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:\temp\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp/file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"C:/temp/file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share/file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share/file.txt")));
+
+            // Fully qualified paths with no relative components, but with problematic names, with both kinds of slashes
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:\temp.")).And.EqualTo(@"C:\temp."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:/temp.")).And.EqualTo(@"C:\temp."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp.\file.txt"),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:\temp.\file.txt")).And.EqualTo(@"C:\temp.\file.txt"));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp./file.txt"),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:/temp./file.txt")).And.EqualTo(@"C:\temp.\file.txt"));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp.\file.txt."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:\temp.\file.txt.")).And.EqualTo(@"C:\temp.\file.txt."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp./file.txt."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:/temp./file.txt.")).And.EqualTo(@"C:\temp.\file.txt."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:\temp ")).And.EqualTo(@"C:\temp "));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:/temp ")).And.EqualTo(@"C:\temp "));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:\temp\file.txt "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:\temp\file.txt ")).And.EqualTo(@"C:\temp\file.txt "));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"C:/temp/file.txt "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"C:/temp/file.txt ")).And.EqualTo(@"C:\temp\file.txt "));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share.")).And.EqualTo(@"\\example.com\share."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share.")).And.EqualTo(@"\\example.com\share."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share\file.txt."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share\file.txt.")).And.EqualTo(@"\\example.com\share\file.txt."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share./file.txt."),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share./file.txt.")).And.EqualTo(@"\\example.com\share.\file.txt."));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share ")).And.EqualTo(@"\\example.com\share "));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share ")).And.EqualTo(@"\\example.com\share "));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\example.com\share\file.txt "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"\\example.com\share\file.txt ")).And.EqualTo(@"\\example.com\share\file.txt "));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"//example.com/share/file.txt "),
+                Is.Not.EqualTo(System.IO.Path.GetFullPath(@"//example.com/share/file.txt ")).And.EqualTo(@"\\example.com\share\file.txt "));
+
+            // Normalization disabled for paths with @"\\?\" prefix
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\temp"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\temp")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\temp\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\temp\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\temp."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\temp.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\temp.\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\temp.\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\temp.\file.txt."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\temp.\file.txt.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\temp "),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\temp ")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\temp\file.txt "),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\temp\file.txt ")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\C:\"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\C:\")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\UNC\example.com\share"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\UNC\example.com\share")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\UNC\example.com\share\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\UNC\example.com\share\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\UNC\example.com\share."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\UNC\example.com\share.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\UNC\example.com\share.\file.txt"),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\UNC\example.com\share.\file.txt")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\UNC\example.com\share.\file.txt."),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\UNC\example.com\share.\file.txt.")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\UNC\example.com\share "),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\UNC\example.com\share ")));
+            Assert.That(
+                SystemIO.IO_WIN.PathGetFullPath(@"\\?\UNC\example.com\share\file.txt "),
+                Is.EqualTo(System.IO.Path.GetFullPath(@"\\?\UNC\example.com\share\file.txt ")));
+        }
     }
 }

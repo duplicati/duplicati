@@ -11,18 +11,6 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class BackendToolTests : BasicSetupHelper
     {
-        [SetUp]
-        public override void SetUp()
-        {
-            base.SetUp();
-        }
-
-        [TearDown]
-        public override void TearDown()
-        {
-            base.TearDown();
-        }
-
         [Test]
         [Category("BackendTool")]
         public void Get()
