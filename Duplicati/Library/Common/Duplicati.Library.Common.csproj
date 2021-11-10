@@ -62,8 +62,8 @@
     <Reference Include="System.Transactions" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IO\DotNetRuntime.System.IO.Path.Windows.cs" />
-    <Compile Include="IO\DotNetRuntime.System.IO.PathInternal.Windows.cs" />
+    <Compile Include="IO\Path.cs" />
+    <Compile Include="IO\PathInternal.Windows.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Platform\Platform.cs" />
     <Compile Include="IO\SystemIO.cs" />

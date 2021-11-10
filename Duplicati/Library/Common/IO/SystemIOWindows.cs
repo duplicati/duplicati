@@ -47,22 +47,26 @@ namespace Duplicati.Library.Common.IO
                 // For example: \\?\C:\Temp\foo.txt or \\?\UNC\example.com\share\foo.txt
                 return path;
             }
-            else if (IsPrefixedWithBasicUNC(path) && !HasRelativePathComponents(path))
-            {
-                // For example: \\example.com\share\foo.txt or //example.com/share/foo.txt
-                return UNCPREFIX_SERVER + ConvertSlashes(path.Substring(PATHPREFIX_SERVER.Length));
-            }
-            else if (DotNetRuntimePathWindows.IsPathFullyQualified(path) && !HasRelativePathComponents(path))
-            {
-                // For example: C:\Temp\foo.txt or C:/Temp/foo.txt
-                return UNCPREFIX + ConvertSlashes(path);
-            }
             else
             {
-                // A relative path or a fully qualified path with relative
-                // path components so the UNC prefix cannot be applied.
-                // For example: foo.txt or C:\Temp\..\foo.txt
-                return path;
+                var hasRelativePathComponents = HasRelativePathComponents(path);
+                if (IsPrefixedWithBasicUNC(path) && !hasRelativePathComponents)
+                {
+                    // For example: \\example.com\share\foo.txt or //example.com/share/foo.txt
+                    return UNCPREFIX_SERVER + ConvertSlashes(path.Substring(PATHPREFIX_SERVER.Length));
+                }
+                else if (DotNetRuntimePathWindows.IsPathFullyQualified(path) && !hasRelativePathComponents)
+                {
+                    // For example: C:\Temp\foo.txt or C:/Temp/foo.txt
+                    return UNCPREFIX + ConvertSlashes(path);
+                }
+                else
+                {
+                    // A relative path or a fully qualified path with relative
+                    // path components so the UNC prefix cannot be applied.
+                    // For example: foo.txt or C:\Temp\..\foo.txt
+                    return path;
+                }
             }
         }
 
