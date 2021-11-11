@@ -156,7 +156,9 @@ namespace Duplicati.UnitTest
                 };
             foreach (var path in testCasesLeavingPathUnchanged)
             {
-                Assert.AreEqual(path, SystemIOWindows.PrefixWithUNC(path));
+                var actual = SystemIOWindows.PrefixWithUNC(path);
+                var expected = path;
+                Assert.AreEqual(expected, actual, $"Path: {path}");
             }
 
             var testCasesWherePrefixIsApplied =
@@ -196,9 +198,10 @@ namespace Duplicati.UnitTest
                 };
             foreach (var keyValuePair in testCasesWherePrefixIsApplied)
             {
-                var actual = SystemIOWindows.PrefixWithUNC(keyValuePair.Key);
+                var path = keyValuePair.Key;
+                var actual = SystemIOWindows.PrefixWithUNC(path);
                 var expected = keyValuePair.Value;
-                Assert.AreEqual(expected, actual);
+                Assert.AreEqual(expected, actual, $"Path: {path}");
             }
         }
 
@@ -274,9 +277,9 @@ namespace Duplicati.UnitTest
                 };
             foreach (var path in testCasesWherePathGetFullGivesSameResultsAsDotNet)
             {
-                Assert.AreEqual(
-                    System.IO.Path.GetFullPath(path),
-                    SystemIO.IO_WIN.PathGetFullPath(path));
+                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
+                var expected = System.IO.Path.GetFullPath(path);
+                Assert.AreEqual(expected, actual, $"Path: {path}");
             }
 
             var testCasesWherePathGetFullGivesDifferentResultsThanDotNet =
@@ -305,15 +308,9 @@ namespace Duplicati.UnitTest
             foreach (var keyValuePair in testCasesWherePathGetFullGivesDifferentResultsThanDotNet)
             {
                 var path = keyValuePair.Key;
+                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
                 var expected = keyValuePair.Value;
-                // PathGetFullPath should give the expected result
-                Assert.AreEqual(
-                    expected,
-                    SystemIO.IO_WIN.PathGetFullPath(path));
-                // Path.GetFullPath should not give the expected result
-                Assert.AreNotEqual(
-                    expected,
-                    System.IO.Path.GetFullPath(path));
+                Assert.AreEqual(expected, actual, $"Path: {path}");
             }
         }
     }
