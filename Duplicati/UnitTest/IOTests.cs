@@ -55,14 +55,14 @@ namespace Duplicati.UnitTest
             var root = @"C:" + Util.DirectorySeparatorString;
             var filename = "test.txt";
             var filePath = root + filename;
-            var filePathWithUNC = SystemIOWindows.PrefixWithUNC(filePath);
+            var filePathWithExtendedDevicePathPrefix = SystemIOWindows.AddExtendedDevicePathPrefix(filePath);
 
-            var filePathWithUNCRoot = SystemIO.IO_WIN.GetPathRoot(filePathWithUNC);
+            var filePathWithExtendedDevicePathPrefixRoot = SystemIO.IO_WIN.GetPathRoot(filePathWithExtendedDevicePathPrefix);
 
-            //Prefixed with UNC remains prefixed
-            Assert.AreEqual(SystemIOWindows.PrefixWithUNC(root), filePathWithUNCRoot);
+            //Prefixed with extended device path prefix remains prefixed
+            Assert.AreEqual(SystemIOWindows.AddExtendedDevicePathPrefix(root), filePathWithExtendedDevicePathPrefixRoot);
 
-            //Without UNC prefixed, no prefix. 
+            //Without extended device path prefix, no prefix. 
             var filePathRoot = SystemIO.IO_WIN.GetPathRoot(filePath);
             Assert.AreEqual(root, filePathRoot);
         }
@@ -98,7 +98,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TestPrefixWithUNCInWindowsClient()
+        public void TestAddExtendedDevicePathPrefixInWindowsClient()
         {
             if (!Platform.IsClientWindows)
             {
@@ -156,7 +156,7 @@ namespace Duplicati.UnitTest
                 };
             foreach (var path in testCasesLeavingPathUnchanged)
             {
-                var actual = SystemIOWindows.PrefixWithUNC(path);
+                var actual = SystemIOWindows.AddExtendedDevicePathPrefix(path);
                 var expected = path;
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }
@@ -199,7 +199,7 @@ namespace Duplicati.UnitTest
             foreach (var keyValuePair in testCasesWherePrefixIsApplied)
             {
                 var path = keyValuePair.Key;
-                var actual = SystemIOWindows.PrefixWithUNC(path);
+                var actual = SystemIOWindows.AddExtendedDevicePathPrefix(path);
                 var expected = keyValuePair.Value;
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }
