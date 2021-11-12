@@ -29,26 +29,83 @@ namespace Duplicati.Library.Common.IO
 {
     public struct SystemIOWindows : ISystemIO
     {
-        private const string UNCPREFIX = @"\\?\";
-        private const string UNCPREFIX_SERVER = @"\\?\UNC\";
-        private const string PATHPREFIX_SERVER = @"\\";
+        private const string UNCPREFIX = PathInternalWindows.ExtendedDevicePathPrefix;
+        private const string UNCPREFIX_SERVER = PathInternalWindows.UncExtendedPathPrefix;
+        private const string PATHPREFIX_SERVER = PathInternalWindows.UncPathPrefix;
+        private const string PATHPREFIX_SERVER_ALT = @"//";
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
+        /// <summary>
+        /// Prefix path with one of the UNC prefixes, but only if it's a fully
+        /// qualified path with no relative components (i.e., with no "." or
+        /// ".." as part of the path).
+        /// </summary>
         public static string PrefixWithUNC(string path)
         {
             if (IsPrefixedWithUNC(path))
             {
+                // For example: \\?\C:\Temp\foo.txt or \\?\UNC\example.com\share\foo.txt
                 return path;
             }
-            return path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal)
-                ? UNCPREFIX_SERVER + path.Substring(PATHPREFIX_SERVER.Length)
-                : UNCPREFIX + path;
+            else
+            {
+                var hasRelativePathComponents = HasRelativePathComponents(path);
+                if (IsPrefixedWithBasicUNC(path) && !hasRelativePathComponents)
+                {
+                    // For example: \\example.com\share\foo.txt or //example.com/share/foo.txt
+                    return UNCPREFIX_SERVER + ConvertSlashes(path.Substring(PATHPREFIX_SERVER.Length));
+                }
+                else if (DotNetRuntimePathWindows.IsPathFullyQualified(path) && !hasRelativePathComponents)
+                {
+                    // For example: C:\Temp\foo.txt or C:/Temp/foo.txt
+                    return UNCPREFIX + ConvertSlashes(path);
+                }
+                else
+                {
+                    // A relative path or a fully qualified path with relative
+                    // path components so the UNC prefix cannot be applied.
+                    // For example: foo.txt or C:\Temp\..\foo.txt
+                    return path;
+                }
+            }
+        }
+
+        private static bool IsPrefixedWithBasicUNC(string path)
+        {
+            return path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal) ||
+                path.StartsWith(PATHPREFIX_SERVER_ALT, StringComparison.Ordinal);
         }
 
         private static bool IsPrefixedWithUNC(string path)
         {
             return path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) ||
                 path.StartsWith(UNCPREFIX, StringComparison.Ordinal);
+        }
+
+        private static string[] relativePathComponents = new[] { ".", ".." };
+
+        /// <summary>
+        /// Returns true if <paramref name="path"/> contains relative path components; i.e., "." or "..".
+        /// </summary>
+        private static bool HasRelativePathComponents(string path)
+        {
+            return GetPathComponents(path).Any(pathComponent => relativePathComponents.Contains(pathComponent));
+        }
+
+        /// <summary>
+        /// Returns a sequence representing the files and directories in <paramref name="path"/>.
+        /// </summary>
+        private static IEnumerable<string> GetPathComponents(string path)
+        {
+            while (!String.IsNullOrEmpty(path))
+            {
+                var pathComponent = Path.GetFileName(path);
+                if (!String.IsNullOrEmpty(pathComponent))
+                {
+                    yield return pathComponent;
+                }
+                path = Path.GetDirectoryName(path);
+            }
         }
 
         public static string StripUNCPrefix(string path)
@@ -407,13 +464,18 @@ namespace Duplicati.Library.Common.IO
 
         public string PathGetFullPath(string path)
         {
+            // Desired behavior:
+            // 1. If path is already prefixed with \\?\, it should be left untouched
+            // 2. If path is not already prefixed with \\?\, the return value should also not be prefixed
+            // 3. If path is relative or has relative components, that should be resolved by calling Path.GetFullPath()
+            // 4. If path is not relative and has no relative components, prefix with \\?\ to prevent normalization from munging "problematic Windows paths"
             if (IsPrefixedWithUNC(path))
             {
-                return System.IO.Path.GetFullPath(ConvertSlashes(path));
+                return path;
             }
             else
             {
-                return StripUNCPrefix(System.IO.Path.GetFullPath(PrefixWithUNC(ConvertSlashes(path))));
+                return StripUNCPrefix(Path.GetFullPath(PrefixWithUNC(path)));
             }
         }
 

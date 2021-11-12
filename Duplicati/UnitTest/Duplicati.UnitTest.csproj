@@ -46,6 +46,7 @@
     <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackendToolTests.cs" />
     <Compile Include="SymLinkTests.cs" />
     <Compile Include="ControllerTests.cs" />
     <Compile Include="DeleteHandlerTests.cs" />

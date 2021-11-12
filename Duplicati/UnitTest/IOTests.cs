@@ -21,6 +21,7 @@ using NUnit.Framework;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common;
+using System.Collections.Generic;
 
 namespace Duplicati.UnitTest
 {
@@ -94,6 +95,223 @@ namespace Duplicati.UnitTest
 
             //In particular don't throw PathTooLongException
             Assert.Throws<System.IO.DirectoryNotFoundException>(() => SystemIO.IO_OS.GetDirectories(longPath));
+        }
+
+        [Test]
+        public void TestPrefixWithUNCInWindowsClient()
+        {
+            if (!Platform.IsClientWindows)
+            {
+                return;
+            }
+
+            var testCasesLeavingPathUnchanged =
+                new[]
+                {
+                    // Normalization of basic relative paths, with both kinds of slashes
+                    @".",
+                    @"temp",
+                    @"temp\file.txt",
+                    @"\",
+                    @"/",
+                    @"\temp",
+                    @"/temp",
+                    @"/temp/file.txt",
+
+                    // Normalization of full qualified paths, but with relative components, with both kinds of slashes
+                    @"C:\temp\.",
+                    @"C:/temp/.",
+                    @"C:\temp\..",
+                    @"C:/temp/..",
+                    @"C:\temp\..\folder",
+                    @"C:/temp/../folder",
+                    @"C:\temp\.\file.txt",
+                    @"C:/temp/./file.txt",
+                    @"\\example.com\share\.",
+                    @"//example.com/share/.",
+                    @"\\example.com\share\..",
+                    @"//example.com/share/..",
+                    @"\\example.com\share\..\folder",
+                    @"//example.com/share/../folder",
+                    @"\\example.com\share\.\file.txt",
+                    @"//example.com/share/./file.txt",
+
+                    // Normalization disabled for paths with @"\\?\" prefix
+                    @"\\?\C:\",
+                    @"\\?\C:\temp",
+                    @"\\?\C:\temp\file.txt",
+                    @"\\?\C:\temp.",
+                    @"\\?\C:\temp.\file.txt",
+                    @"\\?\C:\temp.\file.txt.",
+                    @"\\?\C:\temp ",
+                    @"\\?\C:\temp\file.txt ",
+                    @"\\?\C:\",
+                    @"\\?\UNC\example.com\share",
+                    @"\\?\UNC\example.com\share\file.txt",
+                    @"\\?\UNC\example.com\share.",
+                    @"\\?\UNC\example.com\share.\file.txt",
+                    @"\\?\UNC\example.com\share.\file.txt.",
+                    @"\\?\UNC\example.com\share ",
+                    @"\\?\UNC\example.com\share\file.txt "
+                };
+            foreach (var path in testCasesLeavingPathUnchanged)
+            {
+                var actual = SystemIOWindows.PrefixWithUNC(path);
+                var expected = path;
+                Assert.AreEqual(expected, actual, $"Path: {path}");
+            }
+
+            var testCasesWherePrefixIsApplied =
+                new Dictionary<string, string>()
+                {
+                    // Fully qualified paths with no relative components, with both kinds of slashes
+                    { @"C:\", @"\\?\C:\" },
+                    { @"C:/", @"\\?\C:\" },
+                    { @"C:\temp", @"\\?\C:\temp" },
+                    { @"C:/temp", @"\\?\C:\temp" },
+                    { @"C:\temp\file.txt", @"\\?\C:\temp\file.txt" },
+                    { @"C:/temp/file.txt", @"\\?\C:\temp\file.txt" },
+                    { @"\\example.com\share", @"\\?\UNC\example.com\share" },
+                    { @"//example.com/share", @"\\?\UNC\example.com\share" },
+                    { @"\\example.com\share\file.txt", @"\\?\UNC\example.com\share\file.txt" },
+                    { @"//example.com/share/file.txt", @"\\?\UNC\example.com\share\file.txt" },
+                    
+                    // Fully qualified paths with no relative components, but with problematic names, with both kinds of slashes
+                    { @"C:\temp.", @"\\?\C:\temp." },
+                    { @"C:/temp.", @"\\?\C:\temp." },
+                    { @"C:\temp.\file.txt", @"\\?\C:\temp.\file.txt" },
+                    { @"C:/temp./file.txt", @"\\?\C:\temp.\file.txt" },
+                    { @"C:\temp.\file.txt.", @"\\?\C:\temp.\file.txt." },
+                    { @"C:/temp./file.txt.", @"\\?\C:\temp.\file.txt." },
+                    { @"C:\temp ", @"\\?\C:\temp " },
+                    { @"C:/temp ", @"\\?\C:\temp " },
+                    { @"C:\temp\file.txt ", @"\\?\C:\temp\file.txt " },
+                    { @"C:/temp/file.txt ", @"\\?\C:\temp\file.txt " },
+                    { @"\\example.com\share.", @"\\?\UNC\example.com\share." },
+                    { @"//example.com/share.", @"\\?\UNC\example.com\share." },
+                    { @"\\example.com\share\file.txt.", @"\\?\UNC\example.com\share\file.txt." },
+                    { @"//example.com/share./file.txt.", @"\\?\UNC\example.com\share.\file.txt." },
+                    { @"\\example.com\share ", @"\\?\UNC\example.com\share " },
+                    { @"//example.com/share ", @"\\?\UNC\example.com\share " },
+                    { @"\\example.com\share\file.txt ", @"\\?\UNC\example.com\share\file.txt " },
+                    { @"//example.com/share/file.txt ", @"\\?\UNC\example.com\share\file.txt " }
+                };
+            foreach (var keyValuePair in testCasesWherePrefixIsApplied)
+            {
+                var path = keyValuePair.Key;
+                var actual = SystemIOWindows.PrefixWithUNC(path);
+                var expected = keyValuePair.Value;
+                Assert.AreEqual(expected, actual, $"Path: {path}");
+            }
+        }
+
+        [Test]
+        public void TestPathGetFullPathInWindowsClient()
+        {
+            if (!Platform.IsClientWindows)
+            {
+                return;
+            }
+
+            var testCasesWherePathGetFullGivesSameResultsAsDotNet =
+                new[]
+                {
+                    // Normalization of basic relative paths, with both kinds of slashes
+                    @".",
+                    @"temp",
+                    @"temp\file.txt",
+                    @"\",
+                    @"/",
+                    @"\temp",
+                    @"/temp",
+                    @"/temp/file.txt",
+                    @"/temp/file.txt",
+                    
+                    // Normalization of full qualified paths, but with relative components, with both kinds of slashes
+                    @"C:\temp\.",
+                    @"C:/temp/.",
+                    @"C:\temp\..",
+                    @"C:/temp/..",
+                    @"C:\temp\..\folder",
+                    @"C:/temp/../folder",
+                    @"C:\temp\.\file.txt",
+                    @"C:/temp/./file.txt",
+                    @"\\example.com\share\.",
+                    @"//example.com/share/.",
+                    @"\\example.com\share\..",
+                    @"//example.com/share/..",
+                    @"\\example.com\share\..\folder",
+                    @"//example.com/share/../folder",
+                    @"\\example.com\share\.\file.txt",
+                    @"//example.com/share/./file.txt",
+                    
+                    // Fully qualified paths with no relative components, with both kinds of slashes
+                    @"C:\",
+                    @"C:/",
+                    @"C:\temp",
+                    @"C:/temp",
+                    @"C:\temp\file.txt",
+                    @"C:/temp/file.txt",
+                    @"\\example.com\share",
+                    @"//example.com/share",
+                    @"\\example.com\share\file.txt",
+                    @"//example.com/share/file.txt",
+                    
+                    // Normalization disabled for paths with @"\\?\" prefix
+                    @"\\?\C:\",
+                    @"\\?\C:\temp",
+                    @"\\?\C:\temp\file.txt",
+                    @"\\?\C:\temp.",
+                    @"\\?\C:\temp.\file.txt",
+                    @"\\?\C:\temp.\file.txt.",
+                    @"\\?\C:\temp ",
+                    @"\\?\C:\temp\file.txt ",
+                    @"\\?\C:\",
+                    @"\\?\UNC\example.com\share",
+                    @"\\?\UNC\example.com\share\file.txt",
+                    @"\\?\UNC\example.com\share.",
+                    @"\\?\UNC\example.com\share.\file.txt",
+                    @"\\?\UNC\example.com\share.\file.txt.",
+                    @"\\?\UNC\example.com\share ",
+                    @"\\?\UNC\example.com\share\file.txt ",
+                };
+            foreach (var path in testCasesWherePathGetFullGivesSameResultsAsDotNet)
+            {
+                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
+                var expected = System.IO.Path.GetFullPath(path);
+                Assert.AreEqual(expected, actual, $"Path: {path}");
+            }
+
+            var testCasesWherePathGetFullGivesDifferentResultsThanDotNet =
+                new Dictionary<string, string>()
+                {
+                    // Fully qualified paths with no relative components, but with problematic names, with both kinds of slashes
+                    { @"C:\temp.", @"C:\temp." },
+                    { @"C:/temp.", @"C:\temp." },
+                    { @"C:\temp.\file.txt", @"C:\temp.\file.txt" },
+                    { @"C:/temp./file.txt", @"C:\temp.\file.txt" },
+                    { @"C:\temp.\file.txt.", @"C:\temp.\file.txt." },
+                    { @"C:/temp./file.txt.", @"C:\temp.\file.txt." },
+                    { @"C:\temp ", @"C:\temp " },
+                    { @"C:/temp ", @"C:\temp " },
+                    { @"C:\temp\file.txt ", @"C:\temp\file.txt " },
+                    { @"C:/temp/file.txt ", @"C:\temp\file.txt " },
+                    { @"\\example.com\share.", @"\\example.com\share." },
+                    { @"//example.com/share.", @"\\example.com\share." },
+                    { @"\\example.com\share\file.txt.", @"\\example.com\share\file.txt." },
+                    { @"//example.com/share./file.txt.", @"\\example.com\share.\file.txt." },
+                    { @"\\example.com\share ", @"\\example.com\share " },
+                    { @"//example.com/share ", @"\\example.com\share " },
+                    { @"\\example.com\share\file.txt ", @"\\example.com\share\file.txt " },
+                    { @"//example.com/share/file.txt ", @"\\example.com\share\file.txt " },
+                };
+            foreach (var keyValuePair in testCasesWherePathGetFullGivesDifferentResultsThanDotNet)
+            {
+                var path = keyValuePair.Key;
+                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
+                var expected = keyValuePair.Value;
+                Assert.AreEqual(expected, actual, $"Path: {path}");
+            }
         }
     }
 }
