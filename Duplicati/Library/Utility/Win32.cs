@@ -170,6 +170,19 @@ namespace Duplicati.Library.Utility
             MaxProcessInfoClass
         }
 
+        /// <summary>
+        /// Placeholder Compatibility Mode values
+        /// </summary>
+        public enum PHCM_VALUES : sbyte
+        {
+            PHCM_APPLICATION_DEFAULT = 0,
+            PHCM_DISGUISE_PLACEHOLDER = 1,
+            PHCM_EXPOSE_PLACEHOLDERS = 2,
+            PHCM_MAX = 2,
+            PHCM_ERROR_INVALID_PARAMETER = -1,
+            PHCM_ERROR_NO_TEB = -2,
+        }
+
         #endregion
 
         #region Function calls
@@ -209,7 +222,7 @@ namespace Duplicati.Library.Utility
         /// <param name="processInformationLength">Process information length.</param>
         /// <param name="returnLength">The size of the result.</param>
         [DllImport("ntdll.dll", SetLastError = true)]
-        public static extern int NtQueryInformationProcess(IntPtr hProcess, PROCESS_INFORMATION_CLASS processInformationClass, ref IO_PRIORITY_HINT processInformation, int processInformationLength, IntPtr returnlen);
+        public static extern int NtQueryInformationProcess(IntPtr hProcess, PROCESS_INFORMATION_CLASS processInformationClass, ref IO_PRIORITY_HINT processInformation, int processInformationLength, IntPtr returnLength);
 
         /// <summary>
         /// Sets the priority class for the specified process. This value together with the priority value of each thread of the process determines each thread's base priority level.
@@ -227,6 +240,15 @@ namespace Duplicati.Library.Utility
         /// <param name="handle">A handle to the process. The handle must have the PROCESS_SET_INFORMATION access right.</param>
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern PROCESS_PRIORITY_CLASS GetPriorityClass(IntPtr handle);
+
+        /// <summary>
+        /// Sets the current placeholder compatibility mode for the process.
+        /// </summary>
+        /// <returns>The previous <see cref="PHCM_VALUES"/> value.</returns>
+        /// <param name="pcm">New value to set.</param>
+        [DllImport("ntdll.dll")]
+        public static extern PHCM_VALUES RtlSetProcessPlaceholderCompatibilityMode(PHCM_VALUES pcm);
+
         #endregion
     }
 }

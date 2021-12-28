@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -44,7 +45,7 @@ namespace Duplicati.Library.Snapshots
                         key = args[i];
 
                     //Skip the leading --
-                    key = key.Substring(2).ToLower();
+                    key = key.Substring(2).ToLower(System.Globalization.CultureInfo.InvariantCulture);
                     if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"", StringComparison.Ordinal) && value.EndsWith("\"", StringComparison.Ordinal))
                         value = value.Substring(1, value.Length - 2);
 
@@ -83,28 +84,28 @@ Where <test-folder> is the folder where files will be locked/created etc");
 
                 string filename = System.IO.Path.Combine(args[0], "testfile.bin");
 
-                Console.WriteLine(string.Format("Creating file {0}", filename));
+                Console.WriteLine("Creating file {0}", filename);
 
                 using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                 {
-                    Console.WriteLine(string.Format("Attempting to read locked file {0}", filename));
+                    Console.WriteLine("Attempting to read locked file {0}", filename);
 
                     try
                     {
                         using (System.IO.FileStream fs2 = new System.IO.FileStream(filename, System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                         { }
 
-                        Console.WriteLine(string.Format("Could open locked file {0}, cannot test", filename));
+                        Console.WriteLine("Could open locked file {0}, cannot test", filename);
                         Console.WriteLine("* Test failed");
                         return;
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(string.Format("The file {0} was correctly locked, message: {1}", filename, ex.Message));
+                        Console.WriteLine("The file {0} was correctly locked, message: {1}", filename, ex.Message);
                     }
 
                     Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
-                    Console.WriteLine("If this fails, try to run as " + (Utility.Utility.IsClientLinux ? "root" : "Administrator"));
+                    Console.WriteLine("If this fails, try to run as " + (Platform.IsClientPosix ? "root" : "Administrator"));
                     using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new[] { args[0] }, options))
                     {
                         Console.WriteLine("Attempting to read locked file via snapshot");
@@ -113,11 +114,11 @@ Where <test-folder> is the folder where files will be locked/created etc");
                             using (System.IO.Stream s = snapshot.OpenRead(filename))
                             { }
 
-                            Console.WriteLine(string.Format("Could open locked file {0}, through snapshot", filename));
+                            Console.WriteLine("Could open locked file {0}, through snapshot", filename);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(string.Format("The file {0} was locked even through snapshot, message: {1}", filename, ex));
+                            Console.WriteLine("The file {0} was locked even through snapshot, message: {1}", filename, ex);
                             Console.WriteLine("* Test failed");
                             return;
                         }
@@ -128,7 +129,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format("The snapshot tester failed: {0}", ex));
+                Console.WriteLine("The snapshot tester failed: {0}", ex);
                 Console.WriteLine("* Test failed");
             }
 

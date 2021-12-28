@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("S3")]
-[assembly: AssemblyDescription("An Amazon S3 backend for Duplicati")]
+[assembly: AssemblyDescription("An S3-compatible backend for Duplicati")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Backend.S3")]

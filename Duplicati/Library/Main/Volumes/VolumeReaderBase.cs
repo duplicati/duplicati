@@ -1,26 +1,28 @@
 ﻿using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Volumes
 {
     public abstract class VolumeReaderBase : VolumeBase, IDisposable
     {
-        protected bool m_disposeCompression = false;
+        public bool IsFullBackup { get; set; }
+
+        protected readonly bool m_disposeCompression = false;
         protected ICompression m_compression;
         protected Stream m_stream;
-
+        
         private static ICompression LoadCompressor(string compressor, Stream stream, Options options)
         {
             var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, stream, Interface.ArchiveMode.Read, options.RawOptions);
             if (tmp == null)
             {
                 var name = "[stream]";
-                if (stream is FileStream)
-                    name = ((FileStream)stream).Name;
+                if (stream is FileStream fileStream)
+                    name = fileStream.Name;
 
                 throw new Exception(string.Format("Unable to create {0} decompressor on file {1}", compressor, name));
             }
@@ -38,8 +40,11 @@ namespace Duplicati.Library.Main.Volumes
             : base(options)
         {
             m_compression = LoadCompressor(compressor, file, options, out m_stream);
-            ReadManifests(options);
 
+            ReadFileset();
+
+            ReadManifests(options);
+            
             m_disposeCompression = true;
         }
 
@@ -50,17 +55,57 @@ namespace Duplicati.Library.Main.Volumes
             ReadManifests(options);
         }
 
+        private void ReadFileset()
+        {
+            using (var s = m_compression.OpenRead(FILESET_FILENAME))
+            {
+                if (s == null)
+                {
+                    IsFullBackup = new FilesetData().IsFullBackup; // use default value
+                }
+                else
+                {
+                    using (var fs = new StreamReader(s, ENCODING))
+                    {
+                        FilesetData fileset = JsonConvert.DeserializeObject<FilesetData>(fs.ReadToEnd());
+                        IsFullBackup = fileset.IsFullBackup;
+                    }
+                }
+            }
+        }
+
         private void ReadManifests(Options options)
         {
-            if (!options.DontReadManifests)
-            {
-                using (var s = m_compression.OpenRead(MANIFEST_FILENAME))
-                {
-                    if (s == null)
-                        throw new InvalidManifestException("No manifest file found in volume");
+            if (options.DontReadManifests) return;
 
-                    using (var fs = new StreamReader(s, ENCODING))
-                        ManifestData.VerifyManifest(fs.ReadToEnd(), m_blocksize, options.BlockHashAlgorithm, options.FileHashAlgorithm);
+            using (var s = m_compression.OpenRead(MANIFEST_FILENAME))
+            {
+                if (s == null)
+                {
+                    throw new InvalidManifestException("No manifest file found in volume");
+                }
+
+                using (var fs = new StreamReader(s, ENCODING))
+                {
+                    ManifestData.VerifyManifest(fs.ReadToEnd(), m_blocksize, options.BlockHashAlgorithm, options.FileHashAlgorithm);
+                }
+            }
+        }
+
+        public static FilesetData GetFilesetData(string compressor, string file, Options options)
+        {
+            using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var c = LoadCompressor(compressor, stream, options))
+            using (var s = c.OpenRead(FILESET_FILENAME))
+            {
+                if (s == null)
+                {
+                    return new FilesetData(); // return default
+                }
+
+                using (var fs = new StreamReader(s, ENCODING))
+                {
+                    return JsonConvert.DeserializeObject<FilesetData>(fs.ReadToEnd());
                 }
             }
         }
@@ -79,16 +124,12 @@ namespace Duplicati.Library.Main.Volumes
                 string n;
 
                 if (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n))
-                    options.RawOptions["blocksize"] = d.Blocksize.ToString() + "b";
+                    options.RawOptions["blocksize"] = d.Blocksize + "b";
                 if (!options.RawOptions.TryGetValue("block-hash-algorithm", out n) || string.IsNullOrEmpty(n))
                     options.RawOptions["block-hash-algorithm"] = d.BlockHash;
                 if (!options.RawOptions.TryGetValue("file-hash-algorithm", out n) || string.IsNullOrEmpty(n))
                     options.RawOptions["file-hash-algorithm"] = d.FileHash;
             }
-        }
-
-        private void VerifyManifest()
-        {
         }
 
         public virtual void Dispose()
@@ -118,7 +159,6 @@ namespace Duplicati.Library.Main.Volumes
 					read++;
                     yield return Convert.ToBase64String(buffer);
                 }
-
             }
         }
 

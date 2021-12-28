@@ -1,3 +1,847 @@
+2021-08-11 - 2.0.6.100_canary_2021-08-11
+==========
+* Switched to improved CI model, thanks @warwickmm
+* Fixed issue with reporting wasted space, thanks @aureliandevel
+* Fixed throttling requests to OneDrive and respecting the server `retry-after` headers, thnaks @tygill
+* File backend now overwrites files, thanks @warwickmm
+* Added `.dar` files to list of compressed file extensions, thanks @samuel-w
+* Fixed typos in example scripts, thanks @warwickmm
+* The `Makefile` now calls `msbuild`, thanks @warwickmm
+* When testing for known compressed file extensions, the compare is now case-insensitive, thanks @samuel-w
+* Improved code quality, thanks @marodev
+* Fixed an issue with handling the deprecated Azure and S3 options, thanks @warwickmm
+* Avoid using ECDSA algorithm for SFTP if the client does not support it, thanks @warwickmm
+* Added SAS token support to Azure backend, thanks @sergethedev17
+* Improved test method for aFTP backend, thanks @sergethedev17
+* Added support for mega.nz 2fa, thanks @vfrz
+* Changed from Tardigrade backend to Storj DCS backend, thanks @TopperDEL
+* Removed BouncyCastle dependency and now using .Net built-in parsing of SSL certificates, thanks @mnaiman
+* Regex filters now match newlines in paths with wildcards, thanks @warwickmm
+* Reduced number of cases where database cleanup is triggered, thanks @warwickmm
+* Fixed a dispose bug in most backends introduced with `PutAsync`, thanks @warwickmm
+* Updated UI to more prominently display deprecation information, thanks @warwickmm
+* Fixed handling of special characters in paths on the aFTP backend, thanks @warwickmm
+
+2021-06-17 - 2.0.6.3_beta_2021-06-17
+==========
+This is a minor bugfix release with only two changes, which affects a small number of users:
+
+* Disabled SSH backend ECDSA keys on Mono as it does not work (see issue #4506)
+* Fixed priority of options from AWS and Azure backend if both underscore and dashed version were used (see issue #4513)
+
+2021-05-29 - 2.0.6.2_experimental_2021-05-29
+==========
+This is a minor bugfix release with only two changes:
+
+* Disabled SSH backend ECDSA keys on Mono as it does not work (see issue #4506)
+* Fixed priority of options from AWS and Azure backend if both underscore and dashed version were used (see issue #4513)
+
+2021-05-03 - 2.0.6.1_beta_2021-05-03
+==========
+## First beta build in over a year!
+
+We have been hard at work adding new features and fixing issues. This beta release is a roll-up of all the fixes since the last beta build and is expected to cause very few issues when upgrading. This release is based on 2.0.6.0_experimental.
+
+A big thanks to all Duplicati contributors, supporters, fans and users for keeping the project evolving and improving.
+
+### New in this version
+
+- Added Tardigrade backend
+- Added Tencent Cloud Object Storage (COS)
+- More Docker image versions
+- Improved long-path support on Windows
+
+We changed some larger things that you should be aware of when upgrading.
+
+### The SSH backend has been updated
+This update increases the security by prefering stronger encryption algorithms.
+However, this _can_ cause failing backups as the host key is reported as "changed".
+If this happens, edit the backup and update the host key.
+
+### Database version update from v10 to v11!
+Downgrade from this version requires manually adjusting the version number in the database. The additions can be re-applied if the database is upgraded again later.
+
+### Other changes that needs attention
+
+- Duplicati now requires Mono 5.10 or greater
+- S3 and Sharepoint option names on commandline now uses `-` for consistency (previously used `_`)
+
+2021-03-10 - 2.0.5.114_canary_2021-03-10
+==========
+## This build intends to remove some erronous warnings from the S3 backend introduced in the previous canary.
+
+## Detailed changes
+
+* Fixed the cURL error message url, thanks @warwickmm
+* Fixed the S3 warning messages, thanks @warwickmm
+
+2021-03-07 - 2.0.5.113_canary_2021-03-07
+==========
+## This build has two potentially breaking changes:
+
+### The Telegram backend is no longer included
+If you rely on this backend, do not upgrade.
+
+### The SSH backend has been updated
+This update increases the security by prefering stronger encryption algorithms.
+However, this _can_ cause failing backups as the host key is reported as "changed".
+If this happens, edit the backup and update the host key.
+
+
+## Detailed list of changes
+
+* Fixed case where the stop button in the UI would be hidden behind the progress bar, thanks @jfparis
+* Fixed tools to be Python3 compatible, thanks @jfparis
+* Removed the Telegram backend, due to poor user feedback, thanks @warwickmm
+* Reduced build sized by clearing unused Tardigrade library, thanks @warwickmm
+* Fixed issue where license files were not correctly included in build, thanks @warwickmm
+* Fixed cases where the `run-script` would get incorrect result values, thanks @warwickmm
+* Updated SSH.Net to 2020.0.1, thanks @warwickmm
+* Fixed an error when repairing a database, thanks @warwickmm
+* Changed options to use `-` instead of `_` for consistency, thanks @julianohubel
+* Fixed help output to hide deprecated options in some cases, thanks @kenkendk
+* Updated login page to redirect better when a proxy is in use, thanks @scambra
+* Fixed layout issues with scrollbars, thanks @warwickmm
+* Updated to using specific Mono versions when building images and testing, thanks @warwickmm
+* Improved unittesting, thanks @warwickmm
+* Exclude `$XDG_CACHE_HOME` as part of the normal filters, thanks @warwickmm
+
+2021-01-20 - 2.0.5.112_canary_2021-01-20
+==========
+Hightlights for this update:
+* Stability improvements
+* Error/help message improvemens
+* New Telegram backend
+
+Detailed list:
+* Improved testing, thanks @warwickmm
+* Disabled legacy path handling, thanks @dferreyra
+* Bugfix for rclone backend (wrong paths), thanks @warwickmm
+* Bugfix for Sia backend, thanks @warwickmm
+* Fixed check for admin privileges on Synology, thanks @warwickmm
+* Defer uploading fileset to guard against missing blocks error, thanks @seantempleton
+* Fixed setting background-io-priority, thanks @achims311
+* Added Telegram backend, thanks @martikyan
+* Improved error logging on restore, thanks @barfoo4711
+* Improved commandline documentation, thanks @apreiml
+* Bugfix for run-script-before ignoring remoteurl, thanks @warwickmm
+* Better error messages, thanks @warwickmm
+* Code quality improvements, thanks @warwickmm
+* Fixed error that occured when using the dry-run option of purge-broken-files, thanks @warwickmm
+* Fixed logging errors when reading symlink targers, thanks @warwickmm
+* Fixed error in OpenStack configuration UI, thanks @warwickmm
+* Better error messages if webrequests return null, thanks @Gurthurb
+* Fixed password manager autofill, thanks @drwtsn32x
+* Updated CI GUI tests to work again and use Python3, thanks @warwickmm
+* Fixed an issue that caused restore errors when running in Docker, thanks @warwickmm
+
+2020-09-26 - 2.0.5.111_canary_2020-09-26
+==========
+* Support for Windows paths starting with "\\?\", thanks @dferreyra
+* Improved performance of USN, thanks @dgehri
+* Improved performance for restoring, thanks @pcmind
+* Added support for filters with literals that would normally be treated as wildcards, thanks @dferreyra
+* Improved build and tests, thanks @warwickmm and @dferreyra
+* Switched to the new built-in .Net support for long paths, thanks @dferreyra
+* Fixed issues with the Docker images by including mono-complete, thanks @warwickmm
+* Fixed an issue with exporting passwords with url-encoding characters, thanks @warwickmm
+* Fixed an issue with displaying icons in the restore tree, thanks @warwickmm
+* Fixed a type that prevented a warning box from showing, thanks @warwickmm
+* Added Storadera as an S3 destination, thanks @warwickmm
+
+2020-08-10 - 2.0.5.110_canary_2020-08-10
+==========
+* Fixed an issue with snapshot paths, thanks @dferreyra
+
+2020-08-07 - 2.0.5.109_canary_2020-08-07
+==========
+* Fixed hiding compression errors, thanks @jpschewe
+* Fixed Tardigrade backend issues, thanks @TopperDEL
+* Fixed a case where the recovery tool would fail to recover files witth dashes in the name, thanks @dferreyra
+* Improved handling of "problematic" filenames on Windows and increased test coverage, thanks @dferreyra
+* Improved test coverage for invalid paths and removed unused code, thanks @warwickmm
+* Improved code to remove remote files to better support remote folders that are not exclusively used by Duplicati, thanks @warwickmm
+* Updated to use and require .Net 4.7.1, thanks @warwickmm
+* Updated USN support to work with the newer Windows features for moving instead of deleting files, thanks @dgehri
+
+2020-07-09 - 2.0.5.108_canary_2020-07-09
+==========
+* Removed unsupported compiler directives, thanks @kenkendk
+* Removed incorrect missing SSL certificate warnings, thanks @kenkendk
+* Upograded to retina icons, thanks @baumerdev
+* Updates to Tardigrade support, thanks @TopperDEL
+* Added Tencent Cloud Object Storage (COS) backend, thanks @trueai-org
+* Improved error reporting for S3 backend, thanks @jpschewe
+* Added the Milan EU region to AWS S3 regions, thanks @warwickmm
+* Fixed incorrect documentation on OpenStack help, thanks @warwickmm
+* Fixed an incorrect endpoint for AWS S3 Bahrain, thanks @warwickmm
+* Code cleanup, thanks @warwickmm
+* Fixed a case where restoring files could fail if the containing folder was not restored, thanks @warwickmm
+* Improved unittests, thanks @warwickmm
+
+2020-05-26 - 2.0.5.107_canary_2020-05-26
+==========
+* Added a backend for Tardigrade.io, thanks @TopperDEL
+* Updated translations, thanks to all translators!
+
+2020-05-11 - 2.0.5.106_canary_2020-05-11
+==========
+NOTE: this version updates the database version from v10 to v11!
+
+Downgrade from this version requires manually adjusting the version number in the database,
+The additions can be re-applied if the database is upgraded again later.
+
+* Added certificate dependency to debian packages, thanks @borfast
+* Sorting files and folders in the WEB UI, thanks @drwtsn32x
+* Code cleanup, unused code removal and more, thanks @warwickmm
+* Updated exclusion folder list, thanks @drwtsn32x
+* Fixed spelling issues for CLI help, thanks @comradekingu
+* Fixed the hostname check to be case-insensitive, thanks @warwickmm
+* No longer removes AlphaFS and AlphaVSS files from non-Windows packages, thanks @warwickmm
+* Fixed a case where backups could run immediately and ignore the scheduled time, thanks @warwickmm
+* Added a database index that signficantly improves database rebuilds, thanks @warwickmm
+* Added MyCloudPlace as an S3 provider, thanks @cedbossneo
+* Improved errors from Json source, thanks @kenkendk
+* Changed mentions of "Amazon S3" to "S3 compatible", thanks @kenkendk
+
+2020-03-25 - 2.0.5.104_canary_2020-03-25
+==========
+* Improved log messags when using retetion rules, thanks @warwickmm
+* Added logging for USN soft-failures, thannks @drwtsn32x
+* Improved regexp magic for parsing Windows, thanks @drwtsn32x
+* Fixed storing `dlist` file after interrupted backup, thanks @seantempleton
+* Improved logic around throttle values, thanks @seantempleton
+* Fixed issues with Windows metadata and inheritance, thanks @drwtsn32x
+* Major code cleanup, removing unused members and other, thanks @warwickmm
+* Corrected retry attempts log message, thanks @warwickmm
+* Fixed device-type reports on Mono, thanks @warwickmm
+* Improved error messages during HTTP timeouts in some cases, thanks @warwickmm
+* Reworked the MS-Graph backend to use an alternate HTTP implementation, thanks @tygill
+* Fixed some cases where an interrupted backup could cause database corruption, thanks @seantempleton
+
+2020-02-18 - 2.0.5.103_canary_2020-02-18
+==========
+
+This is a rebuild of 2.0.5.102 with a fix for MacOS packages
+
+* Improved performance of the recovery-tool, thanks @tfriedel and @warwickmm
+* Debian and RPM packages now require Mono 5.0, thanks @drwtsn32x
+* Fixed issue with USN returning too many results, thanks @drwtsn32x
+* Code quality improvements, thanks @warwickmm
+* Added `.odg` and `.otg` as compressed file types, thanks @warwickmm
+* Improved USN changes by looking at size and attributes, thanks @drwtsn32x
+* Code quality improvements, thanks @drwtsn32x
+* Unittest improvements, thanks @warwickmm
+* The OVH backend now points to Keystone v3, thanks @warwickmm
+* Fixed allowing minutes in retention rules, thanks @Pectojin
+* Fixed loading SQLite on Windows, thanks @warwickmm
+
+2020-02-18 - 2.0.5.102_canary_2020-02-18
+==========
+* Improved performance of the recovery-tool, thanks @tfriedel and @warwickmm
+* Debian and RPM packages now require Mono 5.0, thanks @drwtsn32x
+* Fixed issue with USN returning too many results, thanks @drwtsn32x
+* Code quality improvements, thanks @warwickmm
+* Added `.odg` and `.otg` as compressed file types, thanks @warwickmm
+* Improved USN changes by looking at size and attributes, thanks @drwtsn32x
+* Code quality improvements, thanks @drwtsn32x
+* Unittest improvements, thanks @warwickmm
+* The OVH backend now points to Keystone v3, thanks @warwickmm
+* Fixed allowing minutes in retention rules, thanks @Pectojin
+* Fixed loading SQLite on Windows, thanks @warwickmm
+
+2020-01-23 - 2.0.5.101_canary_2020-01-23
+==========
+* Improved tests, thanks @drwtsn32x
+* Fixed a case where repair fails due to missing `dindex` files, thanks @warwickmm
+* Fixed an issue where compacted files would miss a blocklist, thanks @seantempleton
+* Now producing Docker multi-arch images, thanks @dnrce
+* Improved code quality and testing, thanks @warwickmm
+
+2020-01-18 - 2.0.5.100_canary_2020-01-18
+==========
+* Fixed issue with restoring permissions with inheritance, thanks @drwtsn32x
+* Improved tests, thanks @warwickmm
+* Fixed an issue that could be triggered by force stopping a backup, thanks @warwickmm
+
+2020-01-18 - 2.0.5.1_beta_2020-01-18
+==========
+This beta release is a collection of additions and improvements from many contributors.
+Since it is released more than a year after the last beta, there is a large number of changes.
+
+Important notes:
+* On Linux, macOS, and other systems that require Mono, this version requires Mono v5 or later.
+
+* On macOS please remove the current beta and install this version, instead of using the updater. Doing so, will make Duplicati compatible with Gatekeeper and allow you to grant permissions.
+
+A big thanks to all Duplicati contributors, supporters, fans and users for keeping the project evolving and improving.
+
+Note that the beta `v2.0.4.23` has database version `8` and this release has database version `10`. This means that your local database will be upgraded once you run this version, and you cannot roll back without some manual intervention.
+
+Here is a short list of some of the more notable changes:
+
+* Numerous bug fixes and performance enhancements.
+* Updated translations, new languages added.
+* Improved support for macOS Catalina
+* Add support for minio backend.
+* Improve tray icon to reflect warning state.
+* Fix long path issue when path has 259 or 260 characters.
+* Remove support for Amazon Cloud Drive.
+* Fix input issues with dark theme.
+* Fix bug in handling filter expressions.
+* Fix purge operation with simple filters and case-sensitive filesystems.
+* Fix ignoring of --tempdir option when using the command-line.
+* Improved list of S3 compatible options and providers.
+* Fix ability to stop backup after current file has finished processing.
+* Updates to support libraries
+* Improve logging during database recreation.
+* Add option to skip vacuum operations within specified duration, `--auto-vacuum-interval`.
+* Add option to skip compact operations within specified duration, `--auto-compact-interval`.
+* Fix backup corruption from upload throttling. #3787
+* Fix for “Unexpected difference in fileset”. #3800
+* Fix for “CheckingErrorsForIssue1400” and “FoundIssue1400Error”. #3868
+* Fix for “FTP (Alternative)” upload verification.
+* Server database version is still 6. Backup database rose to 10. This may impede downgrades.
+
+2020-01-03 - 2.0.5.0_experimental_2020-01-03
+==========
+This is once again a cumulative release for more than 6 months of hard work.
+This release has a large number of stability improvements and speed optimizations.
+
+If you are using macOS, please re-install from the .dmg or .pkg, as the launcher has been updated to work with GateKeeper.
+Using the built-in update mechanism will not update the launcer and will not work well with GateKeeper on macOS Catalina.
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
+2019-12-29 - 2.0.4.38_canary_2019-12-29
+==========
+* Fixed AutoUpdater environment setting to be parsed as a boolean, thanks @drwtsn32x
+* Code cleanup for the SSH backend, thanks @verhoek
+* Fixed an issue with restoring metadata on Windows, thanks @drwtsn32x
+* Improved AppVeyor test builds, thanks @warwickmm
+* Updated translations, thanks @kenkendk
+
+2019-12-12 - 2.0.4.37_canary_2019-12-12
+==========
+* Updated and improved TrayIcon's for warning state, thanks @drwtsn32x
+* Fixed a selection issue for file restores, thanks @drwtsn32x
+* Updated build system and added tests, thanks @verhoek
+* Added support for Minio as an S3 backend option, thanks @verhoek
+
+2019-12-08 - 2.0.4.36_canary_2019-12-08
+==========
+* Removed Amazon Cloud Drive support, thanks @warwickmm
+* Fixed an edge case where paths longer than 258 characters and short than 260 characters produced errors, thanks @drwtsn32x
+* Fixed a number of edge cases where partial backups could create defect backups when used with retention rules, thanks @warwickmm
+* Fixed a problem with SharePoint reporting conflicts after v2.0.4.35, thanks @warwickmm
+
+2019-11-29 - 2.0.4.35_canary_2019-11-29
+==========
+* Made password input in dark-theme better, thanks @mithileshz
+* Fixed resource leaks and shutdown code for OneDrive, thanks @tygill
+* Report a warning if the backup was cancelled, thanks @warwickmm
+* Do not warn if deletion fails but actually removes the remote file, thanks @drwtsn32x
+* Prevent storing journal data on incomplete backups, thanks @drwtsn32x
+* Disabled file attribute masking on Windows 10, thanks @drwtsn32x
+
+2019-11-05 - 2.0.4.34_canary_2019-11-05
+==========
+* Stapling macOS notarization to bundles, thanks @kenkendk
+* Removed option to store fileset in memory, thanks @tygill
+* Fixed failure on password-protected servers introduced in 2.0.4.32, thanks @warwickmm
+* Improved progress reporting, thanks @ltfish
+
+2019-11-01 - 2.0.4.33_canary_2019-11-01
+==========
+* Re-added support for buffering requests via the http module, thanks @tygill
+* Fixed an issue with invalid DateTimeOffset, thanks @warwickmm
+* Added new macOS launchers that play nice with Gatekeeper in macOS Catalina, thanks @kenkendk
+* Fixed an issue where `Exclude files whose names contains` would create invalid filters, thanks @kenkendk
+
+2019-10-24 - 2.0.4.32_canary_2019-10-24
+==========
+* Code quality improvements, thanks @warwickmm
+* Fixes to the `Alternative FTP` backend, thanks @kenkendk
+
+2019-10-19 - 2.0.4.31_canary_2019-10-19
+==========
+* Updated translations, thanks all translators!
+* Improved computing EPOCH style timestamps, thanks @kylestanfield
+* Cleanup for removing deleted volumes with incorrect timestamps, thanks @BlueBlock
+* Improved progress when deleting volumes, thanks @drwtsn32x
+* Fixed an issue with ignoring the `--tempdir` option, thanks @drwtsn32x
+* Fixed an issue restoring from a single-file backup, thanks @drwtsn32x
+* Fixed filename color in dark theme, thanks @mithileshz
+* Improved documentation and help texts, thanks @warwickmm
+* Fixed parsing `%u`-style encoded unicode in URLs, thanks @warwickmm
+* Fixed cases where a filelists could be omitted from `dindex` files, thanks @warwickmm
+* Added a new tray-icon for the warning state, thanks @drwtsn32x
+* Fixed a retry error where uploaded `dindex`-files would reference non-existing `dblock` files, thanks @warwickmm
+* Code quality improvements, thanks @warwickmm
+* Fixed a case where purging a single file would purge all *other* files, if the filesystem is case-sensitive, thanks @warwickmm
+
+2019-09-20 - 2.0.4.30_canary_2019-09-20
+==========
+* Updated builds scripts to automatically notarize all packages for MacOS
+* Updated all string using ... to us the ellipsis character, thanks @leela52452
+* Code quality improvements and more tests, thanks @warwickmm
+* Removed escaping of pipe characters on Linux, thanks @kenkendk
+* Updated CoCoL to avoid excessive CPU usage, thanks @kenkendk
+* Updated translations, thanks to all translators!
+* Fixed a crash when connecting to a password protected server instance from the trayicon, thanks @kenkendk
+
+2019-09-17 - 2.0.4.29_canary_2019-09-17
+==========
+* Added workaround for bug in Mono 6.0, thanks @warwickmm
+* Extra logging during database recreates, thanks @drwtsn32x
+* Added options to MSI installer for parameterized installs, thanks @BlueBlock
+* Improved debug building, thanks @BlueBlock
+* Updated packages: FluentFTP, CoCoL, Microsoft.Azure, AWSSDK, MailKit, MimeKit, thanks @BlueBlock
+* Improved progress bar status, thanks @drwtsn32x
+* Fixed a parsing issue when reading the server path in the UI, thanks @FlyingFox333
+* Code quality improvements, thanks @warwickmm
+* Added code to actually remove purged volumes, thanks @BlueBlock
+* Updated bundled GPG and checking for user-installed GPG on Windows, thanks @BlueBlock
+* Improved handling of the "Stop after current file" method, thnaks @BlueBlock
+* Updated list of S3 locations and storage classes, thanks @kenkendk
+
+2019-09-05 - 2.0.4.28_canary_2019-09-05
+==========
+* Updated CoCoL and WiX to fix rollback and upgrade errors, thanks @BlueBlock
+
+2019-09-03 - 2.0.4.27_canary_2019-09-03
+==========
+* Fixed issues with the MSI packages not upgrading correctly, thanks @BlueBlock
+* Fixed some assembly redirects and package references, thanks @BlueBlock
+* Code cleanup for EPOCH times, thanks @warwickmm
+
+2019-09-02 - 2.0.4.26_canary_2019-09-02
+==========
+== This is a rebuild of 2.0.4.24 with MSI packages and **new** assembly redirect fixes ==
+
+Change list from 2.0.4.24:
+* Code cleanup, thanks @warwickmm
+* Removed extra console output, thanks @wjansenw
+* Fixed disposing backends after job completion, thanks @warwickmm
+* Fixed an issue with throttled write, thanks @warwickmm
+* Spelling fix, thanks @BlueBlock
+* Fixed documetation in `run-script` examples, thanks @beppo-dd
+* Improved unittests, thanks @BlueBlock
+* Improved auto-compact and auto-vacuum, thanks @drwtsn32x
+* Fixed problem with exceeeding the number of parameters supported by SQLite, thanks @drwtsn32x
+* Improved status display, thanks @drwtsn32x
+* Improved bugreport database scrubbing, thanks @drwtsn32x
+* Removed GoogleDrive trash items in listing, thanks @BlueBlock
+* Fixed the rename method in the GoogleDrive backend, thanks @BlueBlock
+* Improved GCS storage class text, thanks @warwickmm
+* Improved unittests for easier local testing, thanks @warwickmm
+* Added workaround for AFTP upload delay, thanks @BlueBlock
+* Fixed issue with reading the largest path prefix, thanks @BlueBlock
+* Added conditional download of unittest data zip files, thanks @BlueBlock
+* CI testing improvements, thanks @BlueBlock
+* Fixed sporadic issue with backups of files being written, thanks @BlueBlock
+* Updated to .Net Framework 4.6.2
+* Fixed issue with temporary files not being deleted as expected, thanks @BlueBlock
+* Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
+
+2019-09-02 - 2.0.4.25_canary_2019-09-02
+==========
+== This is a rebuild of 2.0.4.24 with MSI packages and assembly redirect fixes ==
+
+Change list from 2.0.4.24:
+* Code cleanup, thanks @warwickmm
+* Removed extra console output, thanks @wjansenw
+* Fixed disposing backends after job completion, thanks @warwickmm
+* Fixed an issue with throttled write, thanks @warwickmm
+* Spelling fix, thanks @BlueBlock
+* Fixed documetation in `run-script` examples, thanks @beppo-dd
+* Improved unittests, thanks @BlueBlock
+* Improved auto-compact and auto-vacuum, thanks @drwtsn32x
+* Fixed problem with exceeeding the number of parameters supported by SQLite, thanks @drwtsn32x
+* Improved status display, thanks @drwtsn32x
+* Improved bugreport database scrubbing, thanks @drwtsn32x
+* Removed GoogleDrive trash items in listing, thanks @BlueBlock
+* Fixed the rename method in the GoogleDrive backend, thanks @BlueBlock
+* Improved GCS storage class text, thanks @warwickmm
+* Improved unittests for easier local testing, thanks @warwickmm
+* Added workaround for AFTP upload delay, thanks @BlueBlock
+* Fixed issue with reading the largest path prefix, thanks @BlueBlock
+* Added conditional download of unittest data zip files, thanks @BlueBlock
+* CI testing improvements, thanks @BlueBlock
+* Fixed sporadic issue with backups of files being written, thanks @BlueBlock
+* Updated to .Net Framework 4.6.2
+* Fixed issue with temporary files not being deleted as expected, thanks @BlueBlock
+* Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
+
+2019-09-02 - 2.0.4.24_canary_2019-09-02
+==========
+* Code cleanup, thanks @warwickmm
+* Removed extra console output, thanks @wjansenw
+* Fixed disposing backends after job completion, thanks @warwickmm
+* Fixed an issue with throttled write, thanks @warwickmm
+* Spelling fix, thanks @BlueBlock
+* Fixed documetation in `run-script` examples, thanks @beppo-dd
+* Improved unittests, thanks @BlueBlock
+* Improved auto-compact and auto-vacuum, thanks @drwtsn32x
+* Fixed problem with exceeeding the number of parameters supported by SQLite, thanks @drwtsn32x
+* Improved status display, thanks @drwtsn32x
+* Improved bugreport database scrubbing, thanks @drwtsn32x
+* Removed GoogleDrive trash items in listing, thanks @BlueBlock
+* Fixed the rename method in the GoogleDrive backend, thanks @BlueBlock
+* Improved GCS storage class text, thanks @warwickmm
+* Improved unittests for easier local testing, thanks @warwickmm
+* Added workaround for AFTP upload delay, thanks @BlueBlock
+* Fixed issue with reading the largest path prefix, thanks @BlueBlock
+* Added conditional download of unittest data zip files, thanks @BlueBlock
+* CI testing improvements, thanks @BlueBlock
+* Fixed sporadic issue with backups of files being written, thanks @BlueBlock
+* Updated to .Net Framework 4.6.2
+* Fixed issue with temporary files not being deleted as expected, thanks @BlueBlock
+* Support for forcing calendar dates in time pickers, thanks @LacunaSoftware
+
+2019-07-14 - 2.0.4.23_beta_2019-07-14
+==========
+This update only contains warnings to inform users on Amazon Cloud Drive that the service is discontinued.
+The update will warn users running or configuring a backup stored on Amazon Cloud Drive.
+
+This does **NOT** affect other Amazon services such as S3.
+If you do not use Amazon Cloud Drive, you can skip this update.
+
+For more information on the changes, please see:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
+2019-06-30 - 2.0.4.22_canary_2019-06-30
+==========
+* Fixed link to usage reporter, thanks @warwickmm
+* Fixed using the B2 prefix, thanks @drwtsn32x
+* Fixed data corruption caused by upload throttling, thanks @ts678
+* Fixed data corruption caused by compacting, thanks @ts678 and @warwickmm
+
+2019-06-28 - 2.0.4.21_experimental_2019-06-28
+==========
+This is a cumulative release for more than 6 months of hard work.
+Most of these are speedup improvements, error handling and general quality fixes.
+
+This release will give a warning for all users of the Amazon Cloud Drive backen, as it is being discontinued by Amazon:
+https://forum.duplicati.com/t/amazon-cloud-drive-discontinued/7391
+
+A big thanks to the community members who work hard with fixing issues and responding on the forum:
+https://forum.duplicati.com
+
+2019-06-25 - 2.0.4.20_canary_2019-06-25
+==========
+* Added warnings about AmzCD closing
+
+2019-06-17 - 2.0.4.19_canary_2019-06-17
+==========
+* Show vacuum operation in status, thanks @drwtsn32x
+* Remove deprectated options and code from backends, thanks @warwickmm
+* Improved timeout handling for OAuth login, thanks @warwickmm
+* Improved names of backup databases, thanks @drwtsn32x
+* Removed the Google Plus icon, thanks @locked-fg
+
+2019-05-12 - 2.0.4.18_canary_2019-05-12
+==========
+* Improved UI progress to show the VACUUM step, thanks @drwtsn32x
+* Fixed GTK tray icons, thanks @warwickmm
+* Improved error reporting from the webserver, thanks @warwickmm
+* Code cleanup and quality improvements, thanks @warwickmm
+* Ignoring empty remote files on restore, which speeds up recovery, thanks @pectojin
+* Fixed subject line in email status messages, thanks @pectojin
+* Fixed issues with Box and Amazon introduced in the latest canary, thanks @warwickmm
+* Fixed issues with readling parameter file, thanks @warwickmm
+* Improved filter handling for empty filters, thanks @dgehri
+* Added API method to allow calling the VACUUM command from the browser, hanks @drwtsn32x
+
+2019-04-11 - 2.0.4.17_canary_2019-04-11
+==========
+* Improved code quality, thanks @warwickmm
+* Fixed an issue where index files were not generated, thanks @seantempleton
+* Masked password fields in UI, thanks @drwtsn32x
+* Added `fr_CA` translation and updated `fr` translation, thanks @flafleur
+* Improved default exclude filters to catch Chrome file on Mac/Linux, thanks @flafleur
+* Added support for Google Team Drive, thanks @mukut1994
+* Fixed random database names being numeric
+* Corrected description for approving self-signed certificates, thanks @flafleur
+* Click on balloon tip on Windows now opens the browser, thanks @flafleur
+* Fixed an error that prevented bug report databases from being created, thanls @pectojin
+* Fixed documentation for buffer sizes, thanks @jonmikeiv
+* Fixed an issue where an upload error would not be reported, thanks @warwickmm
+* Improved documentation, thanks @space-alien
+* Fixed captcha generating out-of-bounds characters, thanks @oslerw
+
+2019-03-28 - 2.0.4.16_canary_2019-03-28
+==========
+* Fixed an issue with Sia authentication, thanks @Ajedi32
+* Improved documentation, thanks @kesava-wow
+* Improved code quality, thanks @warwickmm
+* Added custom B2 download url option, thanks @aahung
+* Updated list of Wasabi and S3 storage destinations, thanks @FroggieFrog
+* Fixed a case where temporary files were not removed, thanks @warwickmm
+* Code refactor and quality improvement, thanks @verhoek
+* Added option for parallel uploads, thanks @seantempleton
+* Improved exception messages, thanks @warwickmm
+* Implemented Jottacloud multithreading uploads, thanks @nescafe2002
+
+2019-02-06 - 2.0.4.15_canary_2019-02-06
+==========
+* Fixed an issue with backup of a Windows drive (without a path)
+* Clarified the B2 user interface, thanks @Pectojin
+
+2019-01-30 - 2.0.4.14_canary_2019-01-30
+==========
+* Fixed an issue with upgrading the database from a previous version
+* If you used v2.0.4.13, your database is likely broken, see the forum for details: https://forum.duplicati.com/t/release-2-0-4-13-canary-2019-01-29/
+
+2019-01-29 - 2.0.4.13_canary_2019-01-29
+==========
+* Added tests and improved code quality, thanks @warwickmm
+* Changed the internal storage of paths to use a prefix method. This should reduce the size of the database significantly and enable much faster database queries later on
+* Increased timeouts for reading the output from the commandline process to allow long running background jobs
+
+2019-01-16 - 2.0.4.12_canary_2019-01-16
+==========
+* Many source code quality improvements, thanks @warwickmm
+* Added test percentage option, thanks @warwickmm
+* Fixed an issue with the log page not loading, thanks @LacunaSoftware
+* Updated the Mega API, thanks @Pectojin
+* Added tool to import a CLI backup into the server, thanks @warwickmm
+* Improved build tools to separate and simplify the GPG signing step, thanks @v$
+* Fixed a case where listing files backed up from a UNC path are not shown, tha$
+* Removed the unused file lookup table, thanks @Pectojin
+* Fixed an issue with the FTP backend where it would sporadically create files $
+* Fixed quota reporting from GoogleDrive, thanks @warwickmm
+* Improved code quality, thanks @verhoek
+* (rebuild of 2.0.4.11)
+
+2019-01-16 - 2.0.4.11_canary_2019-01-16
+==========
+* Many source code quality improvements, thanks @warwickmm
+* Added test percentage option, thanks @warwickmm
+* Fixed an issue with the log page not loading, thanks @LacunaSoftware
+* Updated the Mega API, thanks @Pectojin
+* Added tool to import a CLI backup into the server, thanks @warwickmm
+* Improved build tools to separate and simplify the GPG signing step, thanks @verhoek
+* Fixed a case where listing files backed up from a UNC path are not shown, thanks @mnaimann
+* Removed the unused file lookup table, thanks @Pectojin
+* Fixed an issue with the FTP backend where it would sporadically create files in the root folder of the server, thanks @balchen
+* Fixed quota reporting from GoogleDrive, thanks @warwickmm
+* Improved code quality, thanks @verhoek
+
+2018-12-29 - 2.0.4.10_canary_2018-12-29
+==========
+* Improved passphrase export, thanks @Pectojin
+* Fixed an issue with restores that have no password, thanks @warwickmm
+* Fixed a process shutdown/restart issue on Synology, thanks @drwtsn32x
+* Improved build and tests, thanks @verhoek
+* Fixed issues with displaying logs from the UI, thanks @Pectojin
+* Improved performance of filters by around 10x, thanks @warwickmm
+
+2018-12-22 - 2.0.4.9_canary_2018-12-22
+==========
+* Improved code quality, thanks @warwickmm
+* Fixed typo, thanks @JonMikeIV
+* Improved speed from default filter groups, thanks @warwickmm
+* Fixed CPU/memory issue on MacOS, thanks @warwickmm
+
+2018-12-13 - 2.0.4.8_canary_2018-12-13
+==========
+* Fixed an issue that broke IE, thanks @mikaelmello
+
+2018-12-13 - 2.0.4.7_canary_2018-12-13
+==========
+* Fixed an issue that broke IE, thanks @mikaelmello
+
+2018-12-11 - 2.0.4.6_canary_2018-12-11
+==========
+* Improved code quality and documentation, thanks @warwickmm
+* Don't ask for password for an unencrypted backup, thanks @verhoek
+* SFTP can now create missing folder tree, thanks @warwickmm
+* Removed duplicati http options, thanks @warwickmm
+* Fixed an issue with exporting passwords, thanks @Pectojin
+* Added notificaiton button for warnings, thanks @LacunaSoftware
+* Added cache-buster for all local static files, thanks @LacunaSoftware
+* Improved code quality, thanks @verhoek
+* Fixed an issue where the GUI would not delete the local database, even on request, thanks @warwickmm
+* Fixed a misleading path error message, thanks @mikaelmello
+* Fixed scheduler checking allowed days in local timezone, thanks @LacunaSoftware
+* Reworked the log UI, thanks @LacunaSoftware
+* Fixed an issue where local times were reported as clashing if times overlapped due to DST
+
+2018-11-28 - 2.0.4.5_beta_2018-11-28
+==========
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-28 - 2.0.4.3_beta_2018-11-28
+==========
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-12 - 2.0.4.2_experimental_2018-11-12
+==========
+* Rebuild of 2.0.4.1 due to errors in the Docker images
+
+2018-11-08 - 2.0.4.1_experimental_2018-11-08
+==========
+This is a collection release that is based on the 2.0.3.14 canary build.
+
+The major changes in this version are:
+
+* New multi-threaded processing engine
+* New logging system with filter options
+* Better external reporting, with JSON support
+* Filter groups to exclude common unwanted files
+* Ignore filenames and empty folders added
+* USN support on Windows
+* Improved repair and validation
+* Fixed reading password from console
+* UID and GID now correctly restored on Linux/BSD/MacOS
+* Added a number of new languages to the user interface
+
+And of course many, many, other updates and fixes contributed by the Duplicati community.
+
+A big thanks to all who contributes fixes, reportes issues, and participate on the forum!
+
+2018-11-14 - 2.0.4.4_canary_2018-11-14
+ ==========
+* Added password confirmation on change, thanks @LacunaSoftware
+* Fixed a crash with VSS, thanks @verhoek
+
+2018-11-14 - 2.0.4.4_canary_2018-11-14
+ ==========
+* Added password confirmation on change, thanks @LacunaSoftware
+* Fixed a crash with VSS, thanks @verhoek
+
+
+2018-11-08 - 2.0.3.14_canary_2018-11-08
+==========
+* Removed unused icons, thanks @Pectojin
+* Updated AWS libraries, thanks @Pectojin
+* Removed the WindowsService restart fix as it did not work as expected
+
+2018-10-31 - 2.0.3.13_canary_2018-10-31
+==========
+* Added more tests, thanks @warwickmm
+* Fixed duration display in restore, thanks @verhoek
+* Refactored Dropbox backend, thanks @verhoek
+* Fixed a typo in the filter for excluding Firefox data, thanks @warwickmm
+* Fixed problem with OneDrive "eating" leading slashes, thanks @warwickmm
+* Improved Windows version detection for HyperV, thanks @mnaiman
+* Added code to allow the Windows Service to correctly autoupdate
+
+2018-10-23 - 2.0.3.12_canary_2018-10-23
+==========
+* Fixed translations not working for sub-cultures, thanks @LacunaSoftware
+* Improved error detection and reporting
+* Fixed progress bar not updating, thanks @LacunaSoftware
+* Improved LVM handling, thanks @jkellerer
+* Fixed issues with long paths and USN, thanks @dgehri
+* Numerous code quality improvements, thanks @warwickmm
+* Removal of unused code, thanks @Pectojin
+* Added backup description field to UI, thanks @sffetlio
+* Updated MegaApiClient to 1.6.3, thanks @Pectojin
+* Normalize paths by forcing Windows drive letters to upper case, thanks @mnaiman
+* Fixed progress stats gammar and consistency, thanks @lucascosti
+* Fixed server errors with empty form changes, thanks @LacunaSoftware
+* Improved error messages, thanks @warwickmm
+* Added US-West to Wasabi, thanks @gzzengwei
+* Added app manifest files for Windows, thanks @LacunaSoftware
+
+2018-09-05 - 2.0.3.11_canary_2018-09-05
+==========
+* Cleanup of async methods and naming, thanks @warwickmm
+* Added more non-compressible file extensions, thanks @ravisorg
+* Login password field is now auto-focused, thanks @ltGuillaume
+* Added more pause time options, thanks @bmendonca
+* Fixed filename comparer to support correct filename encoding, thanks @warwickmm
+* Changed the default filename query to fix reported slowdowns
+* Added additional experimental queries to possible speed things up even more with 
+
+2018-08-30 - 2.0.3.10_canary_2018-08-30
+==========
+* Updated the help text for no certificates found, thanks @jonmikeiv
+* Fixed logging details, thanks @mnaiman
+* Fixed error messages on repair, thanks @mnaiman
+* Refactored the FTP backend, thanks @verhoek
+* Rewrote the lock on database queries to be simpler and less CPU intensive
+* Removed some logging details in core performance areas (can be re-enabled with `--profile-all-database-queries`)
+* Removed automatic attempts to rebuild `dblock` files as it is slow and rarely finds all the missing pieces (can be enabled with `--rebuild-missing-dblock-files`).
+* Fixed the version number on MacOS builds
+* Updated the signing certificate for executables and Windows installers
+* Added a hostname check for the webserver
+* Fixed an issue where the number of remaining files would be negative
+* Updated localization files
+* Now emits a warning if the option is missing a suffix on sizes (b, kb, mb, gb, tb)
+* Added partially translated Romanian, Swedish, Thai, Hungarian, Slovakian, Catalan, Japanese, Bengali, and Korean to langauges
+* Fixed a number of issues with `--check-filetime-only`
+* Removed the `--store-metadata` option
+* Rewrote the query that fetches the previous information for a file or folder. Set the environment variable `TEST_QUERY_VERSION=1` to revert to the old version for speed comparison, or `TEST_QUERY_VERSION=2` for an alternate version.
+* Improved UI status messages, thanks @lucascosti
+* Failing to add a file will now give a warning instead of stopping the backup
+* Removed a hot-item cache for VSS
+* Added option `--disable-filelist-consistency-checks` to allow speeding up large backups
+* Now ignoring `ENODATA` error message when reading metadata on Linux/BSD
+* Added additional support for exit codes in `--run-script-before` to allow stopping the backup or emitting a warning 
+* Fixed an issue with Google Cloud Storage, thanks @warwickmm
+* Improved the B2 username field description, thanks @xfakt-pj
+* Removed some unused code, thanks @warwickmm
+* Improved source code documentation, thanks @mikaelmello
+
+2018-06-30 - 2.0.3.9_canary_2018-06-30
+==========
+* Fixed an issue with dectection HyperV, thanks @mnaiman
+* Default to exclude the System State VSS writers, thanks @mnaiman
+* Fixed an issue where restores from the GUI would not autodetect blocksize and other parameters
+* Fixed an issue with VSS failing to map the paths
+
+2018-06-28 - 2.0.3.8_canary_2018-06-28
+==========
+* Fixed MSI version number
+* Un-hid the Google GCS backend
+* Fixed file sizes reported as zero
+* Fixed a wrong display of sizes less than 1kb, thanks @fyndecano
+* Improvements to the build process, thanks @verhoek
+* Fixed a problem with the Amazon Cloud Drive delay, thanks @snamds
+* Fixed a potential deadlock/performance issue, thanks @warwickmm
+* Improved metadata reporting and UI, thanks @verhoek
+* Improved Hyper-V detection, thanks @mnaiman
+* Improved ways to handle the temporary folder, thanks @verhoek
+* Added logic to remove privileges from the database files, thanks @verhoek
+* Fixed a problem with USN support, thanks @dgehri
+* Fixed temporary files not being removed
+* Fixed no output from commandline on Windows
+* Enabled password input from console again
+
 2018-06-17 - 2.0.3.7_canary_2018-06-17
 ==========
 * Added option to exclude empty folders
@@ -597,368 +1441,3 @@ https://www.microsoft.com/en-us/download/details.aspx?id=48145
 * Added "list-broken-files" and "purge-broken-files" to aid in recovering from remote data loss
 * Added additional trace log messages to debug some consistency issues
 * Fixed support for operations across different operating systems
-
-2016-12-27 - 2.0.1.38_canary_2016-12-27
-==========
-* Fixed a problem with login no longer working
-* Updated the login page to use blue colors
-
-2016-12-27 - 2.0.1.37_canary_2016-12-27
-==========
-* Added a check for administrator privileges to avoid HyperV error messages
-
-2016-12-24 - 2.0.1.36_canary_2016-12-24
-==========
-* Fixed a case where excluded gave a warning
-* Removed the "No LSB Modules" messages on Linux
-* Fixed a problem with lon UNC paths on Windows, thanks @quincunx
-* Removed the Greeno theme as it was not maintained
-* Removed some unused options for setting in-memory buffers
-* Added debug output if we hit issue #1400
-
-2016-12-05 - 2.0.1.34_canary_2016-12-05
-==========
-* Fixed an issue with spurious errors in the UI mentioning Hyper-V
-* Fixed an issue where requesting deletion of remote files did not work
-* Improved the status results reported in the log files
-* Fixed some issues with the usage reporter
-* Fixed an issue with the SSH fingerprint not being accepted in URL encoded format
-
-2016-11-27 - 2.0.1.33_canary_2016-11-27
-==========
-* Updated Linux certificate warnings to mention cert-sync instead of Mozroots
-* Added option to run the Duplicati server as a Linux service, thanks @a1ezzz
-* Updated LVM snapshot size parameters, thanks @kakoskin1
-* Fixed schedule time being skewed towards UTC, thanks @tianqiaoxiangzhe
-* Improved notification area layout, thanks @tudacs
-* Fixed a case where it would be impossible to edit the weekdays in the schedule, thanks @tudacs
-* Added support for choosing time values in seconds range from the UI
-* Fixed issues with the scheduler not re-scheduling entries until after a restart
-* Fixed a case where sizes chosen from the advanced options editor would be invalid
-
-2016-11-12 - 2.0.1.32_canary_2016-11-12
-==========
-* Fixed an issue with deleting a backup
-* Fixed an issue with creating a backup without encryption
-* Fixed storing symlink metadata to not follow symlinks unless specified
-* Updated AlphaFS, AWS (S3), SSH, Azure, Mega and mailkit libraries
-* Fixed an issue with XFS-LVM snapshots, thanks @kakoskin1
-* Updated languages, added Chinese
-* Added a GUI for MSSQL databases, thanks @mnaiman
-* Fixed an issue with metadata being reported as being too large if the blocksize is 1mb or or more
-* Fixed escaping exported commandline for Windows
-* Fixes to the UI, thanks @agrajaghh
-
-2016-11-03 - 2.0.1.31_canary_2016-11-03
-==========
-* Fixed autoupdater choosing old update if the base version was replaced
-* Improved the UI for adding a backup, thanks @agrajaghh
-* Added MSSQL to potential backup targets, thanks @mnaiman
-
-2016-11-03 - 2.0.1.30_experimental_2016-11-03
-==========
-* Experimental release; includes all canary changes
-* Updated translations
-* Rebuilt UnixSupport to fix OSX metadata issues
-
-2016-10-27 - 2.0.1.29_canary_2016-10-27
-==========
-* Better support for LVM snapshots, thanks @a1ezzz
-* Fixed additional Debian dependencies, thanks @a1ezzz
-* Additional translation files, Spanish and French
-* Improved HyperV support from CLI and UI, thanks @mnaiman and @agrajaghh
-* Fixed a bug with log-spam from Windows Service, thanks @mnaiman
-* Fixed issue with backup metadata and user that do not exist locally, thanks @gerco
-* Improved screen reading support
-* Fixed OSX icon on dark statusbar
-* Fixed crashes on Linux related to icon format
-* Updated GTK support and switched to SVG icons
-
-2016-10-19
-==========
-* Some additions to the translation system
-* Fixed setting current working dir, thanks @mnaiman
-* Fixed an issue where deleting a backup would not work
-* Updated the throttle computation algorithm
-* Suppressing the "No LSB modules found" error message on Ubuntu
-* Added support for metadata larger than 100kb
-* NOTE: The large metadata support changes the remote file format for all newly written files
-* Added support for HyperV on CLI and in the UI, thanks @mnaiman and @agrajaghh
-* Fixed an issue with the Debian package requiring AlphaVSS.Common.dll when performing LVM snapshots
-* Fixed an issue with Amazon Cloud Drive, thanks @AndersGron
-* Fixed an incorrect warning when using the commandline and GPG
-
-2016-10-14
-==========
-* Work on the translation system, thanks @agrajaghh
-* Added tray-icon context menu icons, thanks @agrajaghh
-* Added support for "caffeinate" on OSX to prevent sleep during backups
-* Work on Hyper-V support, thanks @mnaiman
-* Fixed an issue with Windows service running from the wrong start folder
-* Changed dependencies in packages to require Mono 3.0
-* Added a new delete dialog to assist in deleting the local database and optionally the remote data
-* UI tweaks
-* Added validation when saving/importing backups
-* Fixed some issues with choosing the home folder on Windows
-
-2016-09-29
-==========
-* Updated help file for commandline
-* Fixed a problem with showing progress / crashing UI
-* Support for localization
-* Added messages in the log when finishing an operation
-* Added log message after starting the webserver
-* Support for the --asynchronous-upload-folder setting
-* Added a dialog in the UI when clicking Run and the server is paused
-* Improved formating of the logged result message
-* Updated bundled GPG for Windows
-
-2016-09-26
-==========
-* Fixed some issues in commandline help (thanks @agrajaghh)
-* Added support for backing up HyperV machines (thanks @GNicho)
-* Fixed showing backend statistics when --no-remote-verification is specified
-* Fixed global options not being applied
-
-2016-09-21
-==========
-* Change default TrayIcon on OSX to work on 32bit Mono
-* Added localization support calls to all strings in the UI
-
-2016-09-16
-==========
-* Fixed a restore issue from a partially reconstructed database
-* Implemented Auhtenticode signing for all executables and libraries
-* Implemented Authenticode signing for Windows MSI files
-* Implmented Codesign for OSX pkg and dmg files
-* Updated Mono check for existing certificates, to avoid showing mozroots message
-* Added support for installing Duplicati.WindowsService.exe as a service from the commandline
-
-2016-09-12
-==========
-* Fixed a problem with restoring from the UI, thanks @4m1g0
-
-2016-09-09
-==========
-* Fixes to the Dropbox backend
-* Fixed restore of files/folders with semicolon and plus characters from the UI
-* Added visual feedback when clicking the restore button
-* Added assembly redirects to solve issues with loading SharpAESCrypt and Mega backend
-* Changed the label for dblocksize in the UI
-
-2016-09-01
-==========
-* Fixed VSS based backups not working after 2.0.1.17
-* Prevent including temporary files in verification file, thanks @mnaiman
-* Added host-key verification for SSH connections, thanks @mnaiman
-
-2016-08-27
-==========
-* Fixed issue with files not being listed on Windows (AlphaFS and AlphaVSS issue)
-* Updated B2 API URL
-* Added compact command to WebUI
-
-2016-08-10
-==========
-* OneDrive for Business now uploads files in chunks to prevent timeout, thanks @ReneHezer
-* Prevent using both --keep-version and --keep-time to avoid confusion
-* Fixed a number of usability issues with the WebUI
-* Fixed encoding of special characters for Amazon Cloud Drive, thanks @Xelio
-* Fixed an issue with the recovery tool not respecting the restore folder target, thanks @mnaiman
-* Fixed issues when including the "home" folder on Windows
-* Fixed expanding environment variables and special folder names for filters
-* Changed displaying the dates in the WebUI with the browser locale
-* Added option to re-compress and re-encrypt from the recovery tool, thanks @mnaiman
-* Updated AWS S3 library to latests version
-* Added option to create an un-priviledged S3 user via IAM, if the current user has permissions
-* Fixed an issue with the scheduler that cause high CPU usage for invalid schedules
-* Fixed an issue with the WebUI forgetting SSL settings in some cases
-* Upgraded support for sending email to use a new library with proper SSL support, thanks @mnaiman
-* Fixed spurious failures in SSH connections, caused by leaking open connections, thanks @mnaiman
-* Fixed a Mono dependency in the Debian package that has been renamed
-* Added a DropBox backend, thanks @wvc
-* Added option to serve the WebUI with an SSL certificate, thanks @mnaiman
-* Improments to the recovery tool, thanks @mnaiman
-* Fixed an issue where deleting a backup and creating a new could cause data to be pre-set from the delete backup on the new, thanks @4m1g0
-* Fixed an issue with LVM not working on newer versions of Ubuntu
-* Fixed an issue where Mono could not be located by the OSX app bundle
-* Fixes to WebUI layout, thansk @Vaporizer8
-
-2016-05-14
-==========
-* Fixes for UI on Safari, thanks @alexfran
-* Speed and space improvement for backups, thanks @footstark
-* Added a Synology package
-
-2016-05-04
-==========
-* Updated Renci.SSH to latest build
-* Added duration to the UI (thanks @trampi)
-* Fixed a bug in recreate database with specially crafted index files
-
-2016-04-27
-==========
-* Improved support for OEM customization
-* Updated tray icons on OSX
-* Added support for choosing SSL protocols
-* Added suppresion of reparsepoint errors
-* Improved restoring folder symlinks
-
-2016-04-21
-==========
-* Added a new TrayIcon runner for OSX, so it now works on 64bit mono
-* Fixed some error messages
-* Updated App icon on Windows
-* Added a Windows service
-* Fixed an issue with IE caching data in the UI
-* Fixed an issue with restoring from multi-drive backups in Windows
-* Fixed an issue with spaces in the path on B2 backend
-* Changed how the autoupdater attempts to find a folder for storing updates
-* Updated NGAX, thanks AlexFRAN
-
-2016-04-10
-==========
-* Added a new FTP backend, thanks @mylemans
-* Fixed an issue with AWS crashing in initializer
-* Updated list of compressed extensions
-
-2016-04-08
-==========
-* Fixed a problem with symlink policy not being honored for folders
-* Fixed disposing database commands and connections, which should fix all "database is locked" errors on Windows
-* Updates to handling scenarios where the user is not logged in, thanks @mylemans
-* Added an OSX TrayIcon for 64-bit, based on rumps
-
-2016-03-31
-==========
-* Fixed some issues with non-standard block sizes
-* Fixed a number of issues with recreating the database from remote data, thanks @footstark
-* Fixed an issue where filelists with no files would cause an error message
-* Added an import link to the NGAX theme
-* Fixed loading and saving additional properties from NGAX theme
-* Improved login redirect logic in NGAX theme, thanks @mylemans
-* Improved layout for the NGAX theme, thanks @AlexFran
-* Improved image quality for the TrayIcon on OSX and Windows, thanks @FootStark and @agrajaghh
-
-2016-03-26
-==========
-* Fixed a problem with recreating database from backup data
-* Added a OneDrive for business backend
-* Fixed tray icons on all platforms
-* Fixed an issue with running on .Net 4.0
-
-2016-03-20
-==========
-* New icons, thanks to @agrajaghh
-* Multithreading is now enabled by default
-
-2016-03-18
-==========
-* Improved rebuild of the local database
-
-2016-03-16
-==========
-* Improvements to database size, thanks to @FootStark
-* Reduced storage for large backup sets, thanks to @FootStark
-* Update version of SharpAESCrypt with utilization of hardware support for encryption/decryption if available
-
-2016-03-14
-==========
-* Added options to run AES encryption with two threads, and decryption with up to four
-* Fixed some minor issues with the UI introduced in the previous build
-
-2016-03-13
-==========
-* Updated icons for Windows and Linux
-* Improvements to selecting update channels
-* Showing drive labels on Windows
-* Fixed selecting expire intervals with the Ngax theme
-* Minor display fixes
-* Fixes to Amazon Cloud Drive backend
-
-2016-03-12
-==========
-* Added feature to select update channel in the UI
-* Added feature to select usage reporter level in the UI
-
-2016-03-11
-==========
-* Added support for additional configuration parameters for S3
-* Added download piping for optional parallel hash checking, thanks to Stefan Lück 
-* Drastic improvements for restore speeds, especially on large dataset, thanks to Stefan Lück
-
-2016-02-15
-==========
-* Added expansion of environment variables in filters
-* Numerous fixes for Windows
-* Added error message for attempting to restore encrypted backup without a passphrase
-* Added two substantial performance fixes for restoring, thanks to @FootStark and @kunom.
-
-2016-01-27
-==========
-- Added option for more thorough verification during remote volume test
-- Added support for backing up the filesystem root ( i.e. / ), thanks @mach-o
-- Added fixes to ensure that a failed rebuild of a database cannot be used
-- Added an update to SharpCompress to fix a special case where some bytes could be lost on extraction
-- Updated the NGAX UI with the latest fixes from Alexander
-
-2016-01-12
-==========
-* Fixed the autoupdate popup
-* Added feature to suppress donation messages
-* Fixed an issue with PARSEDRESULT being empty in emails
-* Fixed an issue with paths that contains spaces not being listed for restore
-* Added support for modifying filters through scripts and the parameters file
-* Added check for duplicate files from the backend and updated Google Drive to not report multiple versions of the same file
-* Fixed an unhelpful error message when authid was not supplied
-* Added workaround for Mono 2.11 where get_DefinedTypes is missing
-
-2015-12-17
-==========
-* Bugfix for Backblaze backend
-* Added faster fail for OAuth backends with wrong credentials
-
-2015-12-14
-==========
-* Fixed a few issues with the new theme
-* Added a system info page in the new theme
-
-2015-12-08
-==========
-* New favicon
-* Numerous fixes to the ngax theme
-* Method for editing path to local database
-
-2015-12-07
-==========
-* Added signed GPG signatures to each build
-* Fixed an issue with notifications
-* Numerous fixes and additions to the ngax UI
-* Added Amazon Cloud Drive backend
-* Added Backblaze Cloud Storage backend
-* Added Mega.co.nz backend
-* Added Box.com backend
-
-2015-11-30
-==========
-* Added a check after repairing to test if more damages are done than fixed
-* Implemented correct escaping of environment variables when used in regular expressions
-* Improved the Greeno WebUI when picking file paths
-* Added the new Angular code and the UI by Alexander
-* Added a theme switcher
-
-2015-11-18
-==========
-* Improved CLI output when there are no results
-* Fixed a filtering issue with case-sensitive systems
-* Improved restore by guessing the encryption and compression modules based on their filenames
-* Improved robustness by checking if a file really exists when the server returns 404
-* Fixed an issue where a deleted file would be repeatedly attempted verified
-* Improvements to various CLI inputs
-* Added a fix for a bug where pausing the server would keep it paused
-* Bugfixes for the REST API
-* Added some indexes to speed up the restore process
-* Fixed a bug where backing up a folder and a subfolder would lead to all files being excluded
-* Fixed an issue with compacting that would cause the database to require a repair if the compacting was interrupted
-* Added mentions of the mozroots utility on Linux in various places
-* Added the storage-class option to S3

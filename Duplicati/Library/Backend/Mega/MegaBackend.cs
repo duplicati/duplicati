@@ -14,18 +14,25 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Duplicati.Library.Interface;
 using CG.Web.MegaApiClient;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using OtpNet;
 
 namespace Duplicati.Library.Backend.Mega
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class MegaBackend: IBackend, IStreamingBackend
     {
         private readonly string m_username = null;
         private readonly string m_password = null;
+        private readonly string m_twoFactorKey = null;
         private Dictionary<string, List<INode>> m_filecache;
         private INode m_currentFolder = null;
         private readonly string m_prefix = null;
@@ -43,7 +50,13 @@ namespace Duplicati.Library.Backend.Mega
                 if (m_client == null)
                 {
                     var cl = new MegaApiClient();
-                    cl.Login(m_username, m_password);
+                    if (m_twoFactorKey == null)
+                        cl.Login(m_username, m_password);
+                    else
+                    {
+                        var totp = new Totp(Base32Encoding.ToBytes(m_twoFactorKey)).ComputeTotp();
+                        cl.Login(m_username, m_password, totp);
+                    }
                     m_client = cl;
                 }
 
@@ -59,6 +72,8 @@ namespace Duplicati.Library.Backend.Mega
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 m_password = options["auth-password"];
+            if (options.ContainsKey("auth-two-factor-key"))
+                m_twoFactorKey = options["auth-two-factor-key"];
 
             if (!string.IsNullOrEmpty(uri.Username))
                 m_username = uri.Username;
@@ -77,11 +92,11 @@ namespace Duplicati.Library.Backend.Mega
         {
             var parts = m_prefix.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             var nodes = Client.GetNodes();
-            INode parent = nodes.Where(x => x.Type == NodeType.Root).First();
+            INode parent = nodes.First(x => x.Type == NodeType.Root);
 
             foreach(var n in parts)
             {
-                var item = nodes.Where(x => x.Name == n && x.Type == NodeType.Directory && x.ParentId == parent.Id).FirstOrDefault();
+                var item = nodes.FirstOrDefault(x => x.Name == n && x.Type == NodeType.Directory && x.ParentId == parent.Id);
                 if (item == null)
                 {
                     if (!autocreate)
@@ -139,14 +154,14 @@ namespace Duplicati.Library.Backend.Mega
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
                 if (m_filecache == null)
                     ResetFileCache();
 
-                var el = Client.Upload(stream, remotename, CurrentFolder);
+                var el = await Client.UploadAsync(stream, remotename, CurrentFolder, new Progress(), null, cancelToken);
                 if (m_filecache.ContainsKey(remotename))
                     Delete(remotename);
 
@@ -181,10 +196,10 @@ namespace Duplicati.Library.Backend.Mega
                 select new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
         }
 
-        public void Put(string remotename, string filename)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -248,6 +263,7 @@ namespace Duplicati.Library.Backend.Mega
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthPasswordDescriptionShort, Strings.MegaBackend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.MegaBackend.AuthUsernameDescriptionShort, Strings.MegaBackend.AuthUsernameDescriptionLong),
+                    new CommandLineArgument("auth-two-factor-key", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthTwoFactorKeyDescriptionShort, Strings.MegaBackend.AuthTwoFactorKeyDescriptionLong),
                 });
             }
         }
@@ -274,6 +290,13 @@ namespace Duplicati.Library.Backend.Mega
         }
 
         #endregion
+
+        private class Progress : IProgress<double>
+        {
+            public void Report(double value)
+            {
+                // No implementation as we have already wrapped the stream in our own progress reporting stream
+            }
+        }
     }
 }
-

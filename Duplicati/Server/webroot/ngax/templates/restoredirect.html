@@ -31,7 +31,7 @@
                         <h2 translate>Backup location</h2>
 
                         <div class="contextmenu_container">
-                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_destination" class="threedotmenubutton"/></a>
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton"/></a>
 
                             <div class="contextmenu" id="threedotmenu_add_destination">
                                 <ul>
@@ -64,14 +64,14 @@
                     <div class="expandable">
                         <a href ng-click="showAdvanced = !showAdvanced">
                             <h2 translate>Advanced Options</h2>
-                            <img ng-show="showAdvanced" src="img/arrow_collapse_green.png">
-                            <img ng-hide="showAdvanced" src="img/arrow_expand_green.png">
+                            <img ng-show="showAdvanced" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
+                            <img ng-hide="showAdvanced" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
                         </a>
                     </div>
 
                     <div ng-show="showAdvanced">
                         <div class="input textarea">
-                            <label for="options">{{'Advanced Options' | translate}}<span class="info">i</span></label>
+                            <label for="options">{{'Advanced Options' | translate}}</label>
                             <textarea id="options" name="options" ng-model="ExtendedOptions" placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--prefix')}}"></textarea>
                         </div>
                     </div>
@@ -88,7 +88,7 @@
             </div>
             <!-- .steps-boxes -->
         </div>
-        
+
         <div ng-show="connecting == true &amp;&amp; taskid == null">
             {{ConnectionProgress}}
             <div ng-show="serverstate.programState == 'Paused'">

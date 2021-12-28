@@ -1,111 +1,142 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+//
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Interface;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
-        public const string RRS_OPTION = "s3-use-rrs";
-        public const string STORAGECLASS_OPTION = "s3-storage-class";
-        public const string EU_BUCKETS_OPTION = "s3-european-buckets";
-        public const string SERVER_NAME = "s3-server-name";
-        public const string LOCATION_OPTION = "s3-location-constraint";
-        public const string SSL_OPTION = "use-ssl";
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_S3_PROVIDERS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("Amazon S3", "s3.amazonaws.com"),
-            new KeyValuePair<string, string>("Hosteurope", "cs.hosteurope.de"),
-            new KeyValuePair<string, string>("Dunkel", "dcs.dunkel.de"),
-            new KeyValuePair<string, string>("DreamHost", "objects.dreamhost.com"),
-            new KeyValuePair<string, string>("dinCloud - Chicago", "d3-ord.dincloud.com"),
-            new KeyValuePair<string, string>("dinCloud - Los Angeles", "d3-lax.dincloud.com"),
-            new KeyValuePair<string, string>("IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net"),
-            new KeyValuePair<string, string>("Wasabi Hot Storage", "s3.wasabisys.com"),
+        private const string RRS_OPTION = "s3-use-rrs";
+        private const string STORAGECLASS_OPTION = "s3-storage-class";
+        private const string EU_BUCKETS_OPTION = "s3-european-buckets";
+        private const string SERVER_NAME = "s3-server-name";
+        private const string LOCATION_OPTION = "s3-location-constraint";
+        private const string SSL_OPTION = "use-ssl";
+        private const string S3_CLIENT_OPTION = "s3-client";
+
+        public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            { "Amazon S3", "s3.amazonaws.com" },
+            { "MyCloudyPlace (EU)", "s3.mycloudyplace.com" },
+            { "Hosteurope", "cs.hosteurope.de" },
+            { "Dunkel", "dcs.dunkel.de" },
+            { "DreamHost", "objects.dreamhost.com" },
+            { "dinCloud - Chicago", "d3-ord.dincloud.com" },
+            { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
+            { "Poli Systems (CH)", "s3.polisystems.ch" },
+            { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
+            { "Storadera", "eu-east-1.s3.storadera.com" },
+            { "Wasabi Hot Storage", "s3.wasabisys.com" },
+            { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
+            { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
-        public static readonly KeyValuePair<string, string>[] KNOWN_S3_LOCATIONS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("(default)", ""),
-            new KeyValuePair<string, string>("Europe (EU)", "EU"),
-            new KeyValuePair<string, string>("Europe (EU, Frankfurt)", "eu-central-1"),
-            new KeyValuePair<string, string>("Europe (EU, Ireland)", "eu-west-1"),
-            new KeyValuePair<string, string>("Europe (EU, London)", "eu-west-2"),
-            new KeyValuePair<string, string>("US East (Northern Virginia)", "us-east-1"),
-            new KeyValuePair<string, string>("US East (Ohio)", "us-east-2"),
-            new KeyValuePair<string, string>("US West (Northern California)", "us-west-1"),
-            new KeyValuePair<string, string>("US West (Oregon)", "us-west-2"),
-            new KeyValuePair<string, string>("Canada (Central)", "ca-central-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Mumbai)", "ap-south-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Singapore)", "ap-southeast-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Sydney)", "ap-southeast-2"),
-            new KeyValuePair<string, string>("Asia Pacific (Tokyo)", "ap-northeast-1"),
-            new KeyValuePair<string, string>("Asia Pacific (Seoul)", "ap-northeast-2"),
-            new KeyValuePair<string, string>("South America (São Paulo)", "sa-east-1"),
+        public static readonly Dictionary<string, string> KNOWN_S3_LOCATIONS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+            { "(default)", "" },
+            { "Europe (EU)", "EU" },
+            { "Europe (EU, Frankfurt)", "eu-central-1" },
+            { "Europe (EU, Ireland)", "eu-west-1" },
+            { "Europe (EU, London)", "eu-west-2" },
+            { "Europe (EU, Paris)", "eu-west-3" },
+            { "Europe (EU, Stockholm)", "eu-north-1" },
+            { "Europe (EU, Milan)", "eu-south-1" },
+            { "US East (Northern Virginia)", "us-east-1" },
+            { "US East (Ohio)", "us-east-2" },
+            { "US West (Northern California)", "us-west-1" },
+            { "US West (Oregon)", "us-west-2" },
+            { "Canada (Central)", "ca-central-1" },
+            { "Asia Pacific (Hong Kong)", "ap-east-1" },
+            { "Asia Pacific (Mumbai)", "ap-south-1" },
+            { "Asia Pacific (Singapore)", "ap-southeast-1" },
+            { "Asia Pacific (Sydney)", "ap-southeast-2" },
+            { "Asia Pacific (Tokyo)", "ap-northeast-1" },
+            { "Asia Pacific (Seoul)", "ap-northeast-2" },
+            { "Asia Pacific (Osaka-Local)", "ap-northeast-3" },
+            { "South America (São Paulo)", "sa-east-1" },
+            { "China (Beijing)", "cn-north-1" },
+            { "China (Ningxia)", "cn-northwest-1" },
+            { "Middle East (Bahrain)", "me-south-1" },
         };
 
-        public static readonly KeyValuePair<string, string>[] DEFAULT_S3_LOCATION_BASED_HOSTS = new KeyValuePair<string, string>[] {
-            new KeyValuePair<string, string>("EU", "s3-eu-west-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ca-central-1", "s3-ca-central-1.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-west-1", "s3-eu-west-1.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-west-2", "s3-eu-west-2.amazonaws.com"),
-            new KeyValuePair<string, string>("eu-central-1", "s3-eu-central-1.amazonaws.com"),
-            new KeyValuePair<string, string>("us-east-1", "s3.amazonaws.com"),
-            new KeyValuePair<string, string>("us-east-2", "s3.us-east-2.amazonaws.com"),
-            new KeyValuePair<string, string>("us-west-1", "s3-us-west-1.amazonaws.com"),
-            new KeyValuePair<string, string>("us-west-2", "s3-us-west-2.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-south-1", "s3-ap-south-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-southeast-1", "s3-ap-southeast-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-southeast-2", "s3-ap-southeast-2.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-northeast-1", "s3-ap-northeast-1.amazonaws.com"),
-            new KeyValuePair<string, string>("ap-northeast-2", "s3-ap-northeast-2.amazonaws.com"),
-            new KeyValuePair<string, string>("sa-east-1", "s3-sa-east-1.amazonaws.com"),
+        public static readonly Dictionary<string, string> DEFAULT_S3_LOCATION_BASED_HOSTS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+            { "EU", "s3.eu-west-1.amazonaws.com" },
+            { "ca-central-1", "s3.ca-central-1.amazonaws.com" },
+            { "eu-west-1", "s3.eu-west-1.amazonaws.com" },
+            { "eu-west-2", "s3.eu-west-2.amazonaws.com" },
+            { "eu-west-3", "s3.eu-west-3.amazonaws.com" },
+            { "eu-north-1", "s3.eu-north-1.amazonaws.com" },
+            { "eu-south-1", "s3.eu-south-1.amazonaws.com" },
+            { "eu-central-1", "s3.eu-central-1.amazonaws.com" },
+            { "us-east-1", "s3.amazonaws.com" },
+            { "us-east-2", "s3.us-east-2.amazonaws.com" },
+            { "us-west-1", "s3.us-west-1.amazonaws.com" },
+            { "us-west-2", "s3.us-west-2.amazonaws.com" },
+            { "ap-east-1", "s3.ap-east-1.amazonaws.com" },
+            { "ap-south-1", "s3.ap-south-1.amazonaws.com" },
+            { "ap-southeast-1", "s3.ap-southeast-1.amazonaws.com" },
+            { "ap-southeast-2", "s3.ap-southeast-2.amazonaws.com" },
+            { "ap-northeast-1", "s3.ap-northeast-1.amazonaws.com" },
+            { "ap-northeast-2", "s3.ap-northeast-2.amazonaws.com" },
+            { "ap-northeast-3", "s3.ap-northeast-3.amazonaws.com" },
+            { "sa-east-1", "s3.sa-east-1.amazonaws.com" },
+            { "cn-north-1", "s3.cn-north-1.amazonaws.com.cn" },
+            { "cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn" },
+            { "me-south-1", "s3.me-south-1.amazonaws.com" },
         };
 
-        public static readonly KeyValuePair<string, string>[] KNOWN_S3_STORAGE_CLASSES;
+        public static readonly Dictionary<string, string> KNOWN_S3_STORAGE_CLASSES;
 
-        static S3() {
-            var ns = new List<KeyValuePair<string, string>> {
-                new KeyValuePair<string, string>("(default)", ""),
-                new KeyValuePair<string, string>("Standard", "STANDARD"),
-                new KeyValuePair<string, string>("Infrequent Access (IA)", "STANDARD_IA"),
-                new KeyValuePair<string, string>("Glacier", "GLACIER"),
-                new KeyValuePair<string, string>("Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY"),
+        static S3()
+        {
+            var ns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+                { "(default)", "" },
+                { "Standard", "STANDARD" },
+                { "Infrequent Access (IA)", "STANDARD_IA" },
+                { "One Zone Infrequent Access (One Zone IA)", "ONEZONE_IA" },
+                { "Glacier", "GLACIER" },
+                { "Deep Archive", "DEEP_ARCHIVE" },
+                { "Reduced Redundancy Storage (RRS)", "REDUCED_REDUNDANCY" },
             };
 
             try
             {
-                foreach(var sc in ReadStorageClasses())
-                    if (!ns.Select(x => x.Value).Contains(sc.Value))
-                        ns.Add(sc);
+                foreach (var sc in ReadStorageClasses())
+                    if (!ns.Select(x => x.Value).Contains(sc.Value, StringComparer.OrdinalIgnoreCase))
+                        ns.Add(sc.Key, sc.Value);
             }
             catch
             {
             }
 
-            KNOWN_S3_STORAGE_CLASSES = ns.ToArray();
+            KNOWN_S3_STORAGE_CLASSES = ns;
         }
 
         /// <summary>
@@ -114,7 +145,7 @@ namespace Duplicati.Library.Backend
         /// <returns>The storage classes.</returns>
         private static IEnumerable<KeyValuePair<string, string>> ReadStorageClasses()
         {
-            foreach(var f in typeof(Amazon.S3.S3StorageClass).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public))
+            foreach (var f in typeof(Amazon.S3.S3StorageClass).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public))
             {
                 if (f.FieldType == typeof(Amazon.S3.S3StorageClass))
                 {
@@ -129,25 +160,21 @@ namespace Duplicati.Library.Backend
         private readonly string m_bucket;
         private readonly string m_prefix;
 
-        public const string DEFAULT_S3_HOST  = "s3.amazonaws.com";
-        public const string S3_EU_REGION_NAME = "eu-west-1";
-        public const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
+        private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
+        private const string S3_EU_REGION_NAME = "eu-west-1";
+        private const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
 
-        private Dictionary<string, string> m_options;
-
-        private S3Wrapper m_wrapper;
-
+        private IS3Client s3Client;
 
         public S3()
         {
         }
 
-
         public S3(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
             uri.RequireHost();
-            
+
             string host = uri.Host;
             m_prefix = uri.Path;
 
@@ -161,8 +188,12 @@ namespace Duplicati.Library.Backend
 
             if (options.ContainsKey("aws_access_key_id"))
                 awsID = options["aws_access_key_id"];
+            if (options.ContainsKey("aws-access-key-id"))
+                awsID = options["aws-access-key-id"];
             if (options.ContainsKey("aws_secret_access_key"))
                 awsKey = options["aws_secret_access_key"];
+            if (options.ContainsKey("aws-secret-access-key"))
+                awsKey = options["aws-secret-access-key"];
             if (!string.IsNullOrEmpty(uri.Username))
                 awsID = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -193,18 +224,16 @@ namespace Duplicati.Library.Backend
 
             string s3host;
             options.TryGetValue(SERVER_NAME, out s3host);
-            if (string.IsNullOrEmpty(s3host)) 
+            if (string.IsNullOrEmpty(s3host))
             {
                 s3host = DEFAULT_S3_HOST;
 
                 //Change in S3, now requires that you use location specific endpoint
                 if (!string.IsNullOrEmpty(locationConstraint))
-                    foreach(KeyValuePair<string, string> kvp in DEFAULT_S3_LOCATION_BASED_HOSTS)
-                        if (kvp.Key.Equals(locationConstraint, StringComparison.OrdinalIgnoreCase))
-                        {
-                            s3host = kvp.Value;
-                            break;
-                        }
+                {
+                    if (DEFAULT_S3_LOCATION_BASED_HOSTS.TryGetValue(locationConstraint, out var s3hostmatch))
+                        s3host = s3hostmatch;
+                }
             }
 
             //Fallback to previous formats
@@ -214,9 +243,9 @@ namespace Duplicati.Library.Backend
                 host = u.Host;
                 m_prefix = "";
 
-                if (host.ToLower() == s3host)
+                if (String.Equals(host, s3host, StringComparison.OrdinalIgnoreCase))
                 {
-                    m_bucket = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
+                    m_bucket = Utility.Uri.UrlDecode(u.PathAndQuery);
 
                     if (m_bucket.StartsWith("/", StringComparison.Ordinal))
                         m_bucket = m_bucket.Substring(1);
@@ -230,11 +259,11 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     //Subdomain type lookup
-                    if (host.ToLower().EndsWith("." + s3host, StringComparison.Ordinal))
+                    if (host.EndsWith("." + s3host, StringComparison.OrdinalIgnoreCase))
                     {
                         m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
                         host = s3host;
-                        m_prefix = Library.Utility.Uri.UrlDecode(u.PathAndQuery);
+                        m_prefix = Utility.Uri.UrlDecode(u.PathAndQuery);
 
                         if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                             m_prefix = m_prefix.Substring(1);
@@ -243,8 +272,7 @@ namespace Duplicati.Library.Backend
                         throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url), "S3CannotDecodeBucketName");
                 }
 
-                try { Console.Error.WriteLine(Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix)); }
-                catch { }
+                Logging.Log.WriteWarningMessage(LOGTAG, "DeprecatedS3Format", null, Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix));
             }
             else
             {
@@ -253,25 +281,33 @@ namespace Duplicati.Library.Backend
                 host = s3host;
             }
 
-            m_options = options;
             m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0 && !m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            if (m_prefix.Length != 0)
+            {
+                m_prefix = Util.AppendDirSeparator(m_prefix, "/");
+            }
 
             // Auto-disable dns lookup for non AWS configurations
             var hasForcePathStyle = options.ContainsKey("s3-ext-forcepathstyle");
             if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
-            m_wrapper = new S3Wrapper(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+
+            options.TryGetValue(S3_CLIENT_OPTION, out var s3ClientOptionValue);
+
+            if (s3ClientOptionValue == "aws" || s3ClientOptionValue == null)
+            {
+                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            }
+            else
+            {
+                s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+            }
         }
 
         public static bool IsValidHostname(string bucketname)
         {
-            if (string.IsNullOrEmpty(bucketname))
-                return false;
-            else
-                return Amazon.S3.Util.AmazonS3Util.ValidateV2Bucket(bucketname);
+            return !string.IsNullOrEmpty(bucketname) && Amazon.S3.Util.AmazonS3Util.ValidateV2Bucket(bucketname);
         }
 
         #region IBackend Members
@@ -291,24 +327,8 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
+
         public IEnumerable<IFileEntry> List()
-        {
-            try
-            {
-                return ListWithouExceptionCatch();
-            }
-            catch (Exception ex)
-            {
-                //Catch "non-existing" buckets
-                Amazon.S3.AmazonS3Exception s3ex = ex as Amazon.S3.AmazonS3Exception;
-                if (s3ex != null && (s3ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchBucket".Equals(s3ex.ErrorCode)))
-                    throw new Interface.FolderMissingException(ex);
-
-                throw;
-            }
-        }
-
-        private IEnumerable<IFileEntry> ListWithouExceptionCatch()
         {
             foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
             {
@@ -322,57 +342,26 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Put(string remotename, string localname)
+        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                Put(remotename, fs);
+            using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
+                await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Put(string remotename, System.IO.Stream input)
+        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            try
-            {
-                Connection.AddFileStream(m_bucket, GetFullKey(remotename), input);
-            }
-            catch (Exception ex)
-            {
-                //Catch "non-existing" buckets
-                Amazon.S3.AmazonS3Exception s3ex = ex as Amazon.S3.AmazonS3Exception;
-                if (s3ex != null && (s3ex.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchBucket".Equals(s3ex.ErrorCode)))
-                    throw new Interface.FolderMissingException(ex);
-
-                throw;
-            }
+            await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
         public void Get(string remotename, string localname)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using (var fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                 Get(remotename, fs);
         }
 
         public void Get(string remotename, System.IO.Stream output)
         {
-            try
-            {
-                Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
-            }
-            catch
-            {
-                //This is a fix for the S3 backend prior to beta 3, where the filenames had a slash prefixed
-                try
-                {
-                    if (!remotename.StartsWith("/", StringComparison.Ordinal))
-                        Connection.GetFileStream(m_bucket, GetFullKey("/" + remotename), output);
-                    return;
-                }
-                catch
-                {
-                }
-
-                //Throw original error
-                throw;
-            }
+            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
         }
 
         public void Delete(string remotename)
@@ -386,18 +375,18 @@ namespace Duplicati.Library.Backend
             {
                 StringBuilder hostnames = new StringBuilder();
                 StringBuilder locations = new StringBuilder();
-                foreach(KeyValuePair<string, string> s in KNOWN_S3_PROVIDERS)
+                foreach (var s in KNOWN_S3_PROVIDERS)
                     hostnames.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
-                foreach (KeyValuePair<string, string> s in KNOWN_S3_LOCATIONS)
+                foreach (var s in KNOWN_S3_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
                 var defaults = new Amazon.S3.AmazonS3Config();
 
-                var exts = 
+                var exts =
                     typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
                         .Select(x => (ICommandLineArgument)new CommandLineArgument(
-                            "s3-ext-" + x.Name.ToLowerInvariant(), 
+                            "s3-ext-" + x.Name.ToLowerInvariant(),
                             x.PropertyType == typeof(bool) ? CommandLineArgument.ArgumentType.Boolean : x.PropertyType.IsEnum ? CommandLineArgument.ArgumentType.Enumeration : CommandLineArgument.ArgumentType.String,
                             x.Name,
                             string.Format("Extended option {0}", x.Name),
@@ -407,14 +396,17 @@ namespace Duplicati.Library.Backend
 
 
                 var normal = new ICommandLineArgument[] {
-                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, new string[] {"auth-password"}, null),
-                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
+                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, null, null,"This is deprecated, use aws-secret-access-key instead"),
+                    new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, new string[] {"auth-password"}, null ),
+                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong,null, null, null, "This is deprecated, use aws-access-key-id instead"),
+                    new CommandLineArgument("aws-access-key-id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
                     new CommandLineArgument(EU_BUCKETS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false", null, null, Strings.S3Backend.S3EurobucketDeprecationDescription(LOCATION_OPTION, S3_EU_REGION_NAME)),
                     new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false", null, null, Strings.S3Backend.S3RRSDeprecationDescription(STORAGECLASS_OPTION, S3_RRS_CLASS_NAME)),
                     new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3StorageclassDescriptionShort, Strings.S3Backend.S3StorageclassDescriptionLong),
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
+                    new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.DescriptionS3ClientLong),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };
@@ -458,25 +450,20 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            if (m_options != null)
-                m_options = null;
-            if (m_wrapper != null)
-            {
-                m_wrapper.Dispose();
-                m_wrapper = null;
-            }
+            s3Client?.Dispose();
+            s3Client = null;
         }
 
         #endregion
 
-        private S3Wrapper Connection
+        private IS3Client Connection
         {
-            get { return m_wrapper; }
+            get { return s3Client; }
         }
 
         public string[] DNSName
         {
-            get { return new string[] { m_wrapper.DNSHost }; }
+            get { return new[] { s3Client.GetDnsHost() }; }
         }
 
         private string GetFullKey(string name)

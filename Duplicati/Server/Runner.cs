@@ -1,23 +1,26 @@
-//  Copyright (C) 2015, The Duplicati Team
-
-//  http://www.duplicati.com, info@duplicati.com
+#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 //
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
 //
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#endregion
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server
@@ -29,7 +32,7 @@ namespace Duplicati.Server
             Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
             IDictionary<string, string> ExtraOptions { get; }
             string[] FilterStrings { get; }
-            void Stop();
+            void Stop(bool allowCurrentFileToFinish);
             void Abort();
             void Pause();
             void Resume();
@@ -55,12 +58,12 @@ namespace Duplicati.Server
             {
                 Controller = controller;
             }
-
-            public void Stop()
+            
+            public void Stop(bool allowCurrentFileToFinish)
             {
                 var c = Controller;
                 if (c != null)
-                    c.Stop();
+                    c.Stop(allowCurrentFileToFinish);
             }
 
             public void Abort()
@@ -183,18 +186,22 @@ namespace Duplicati.Server
                 filters);
         }
 
-        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, bool skip_metadata)
+        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, 
+                                                    DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, 
+                                                    bool skip_metadata, string passphrase)
         {
-            var dict = new Dictionary<string, string>();
-            dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+            var dict = new Dictionary<string, string>
+            {
+                ["time"] = Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime()),
+                ["overwrite"] = overwrite? Boolean.TrueString : Boolean.FalseString,
+                ["restore-permissions"] = restore_permissions ? Boolean.TrueString : Boolean.FalseString,
+                ["skip-metadata"] = skip_metadata ? Boolean.TrueString : Boolean.FalseString,
+                ["allow-passphrase-change"] = Boolean.TrueString
+            };
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
-            if (overwrite)
-                dict["overwrite"] = "true";
-            if (restore_permissions)
-                dict["restore-permissions"] = "true";
-            if (skip_metadata)
-                dict["skip-metadata"] = "true";
+            if (!(passphrase is null))
+                dict["passphrase"] = passphrase;
 
             return CreateTask(
                 DuplicatiOperation.Restore,
@@ -219,6 +226,7 @@ namespace Duplicati.Server
                 internal string m_currentFilename;
                 internal long m_currentFilesize;
                 internal long m_currentFileoffset;
+                internal bool m_currentFilecomplete;
 
                 internal Duplicati.Library.Main.OperationPhase m_phase;
                 internal float m_overallProgress;
@@ -251,6 +259,7 @@ namespace Duplicati.Server
                 public string CurrentFilename { get { return m_currentFilename; } }
                 public long CurrentFilesize { get { return m_currentFilesize; } }
                 public long CurrentFileoffset { get { return m_currentFileoffset; } }
+                public bool CurrentFilecomplete { get { return m_currentFilecomplete; } }
                 public string Phase { get { return  m_phase.ToString(); } }
                 public float OverallProgress { get { return m_overallProgress; } }
                 public long ProcessedFileCount { get { return m_processedFileCount; } }
@@ -279,7 +288,7 @@ namespace Duplicati.Server
                         m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed, out m_state.m_backendIsBlocking);
                     if (m_operationProgress != null)
                     {
-                        m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset);
+                        m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset, out m_state.m_currentFilecomplete);
                         m_operationProgress.UpdateOverall(out m_state.m_phase, out m_state.m_overallProgress, out m_state.m_processedFileCount, out m_state.m_processedFileSize, out m_state.m_totalFileCount, out m_state.m_totalFileSize, out m_state.m_stillCounting);
                     }
 
@@ -306,25 +315,22 @@ namespace Duplicati.Server
                     }
                 }
             }
-            public void WriteMessage(Library.Logging.LogEntry entry)
+
+            public void SetBackendProgress(Library.Main.IBackendProgress progress)
             {
+                lock (m_lock)
+                    m_backendProgress = progress;
             }
 
-            public Duplicati.Library.Main.IBackendProgress BackendProgress
+            public void SetOperationProgress(Library.Main.IOperationProgress progress)
             {
-                set
-                {
-                    lock(m_lock)
-                        m_backendProgress = value;
-                }
+                lock (m_lock)
+                    m_operationProgress = progress;
             }
-            public Duplicati.Library.Main.IOperationProgress OperationProgress
+
+            public void WriteMessage(Library.Logging.LogEntry entry)
             {
-                set
-                {
-                    lock(m_lock)
-                        m_operationProgress = value;
-                }
+                // Do nothing.  Implementation needed for ILogDestination interface.
             }
             #endregion
         }
@@ -333,7 +339,7 @@ namespace Duplicati.Server
         {
             var backup = data.Backup;
 
-            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            var options = ApplyOptions(backup, GetCommonOptions());
             if (data.ExtraOptions != null)
                 foreach(var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -383,7 +389,7 @@ namespace Duplicati.Server
         {
             var backup = data.Backup;
 
-            var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+            var options = ApplyOptions(backup, GetCommonOptions());
             if (data.ExtraOptions != null)
                 foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
@@ -419,15 +425,15 @@ namespace Duplicati.Server
 
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
-            if (data is CustomRunnerTask)
+            if (data is CustomRunnerTask task)
             {
                 try
                 {
-                    var sink = new MessageSink(data.TaskID, null);
-                    Program.GenerateProgressState = () => sink.Copy();
+                    var sink = new MessageSink(task.TaskID, null);
+                    Program.GenerateProgressState = sink.Copy;
                     Program.StatusEventNotifyer.SignalNewEvent();
 
-                    ((CustomRunnerTask)data).Run(sink);
+                    task.Run(sink);
                 }
                 catch(Exception ex)
                 {
@@ -454,7 +460,7 @@ namespace Duplicati.Server
                     Program.StatusEventNotifyer.SignalNewEvent();
                 }
 
-                var options = ApplyOptions(backup, data.Operation, GetCommonOptions(backup, data.Operation));
+                var options = ApplyOptions(backup, GetCommonOptions());
                 if (data.ExtraOptions != null)
                     foreach(var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
@@ -491,11 +497,17 @@ namespace Duplicati.Server
                     ((RunnerData)data).Controller = controller;
                     data.UpdateThrottleSpeed();
 
+                    if (backup.Metadata.ContainsKey("LastCompactFinished"))
+                        controller.LastCompact = Library.Utility.Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"]);
+
+                    if (backup.Metadata.ContainsKey("LastVacuumFinished"))
+                        controller.LastVacuum = Library.Utility.Utility.DeserializeDateTime(backup.Metadata["LastVacuumFinished"]);
+
                     switch (data.Operation)
                     {
                         case DuplicatiOperation.Backup:
                             {
-                                var filter = ApplyFilter(backup, data.Operation, GetCommonFilter(backup, data.Operation));
+                                var filter = ApplyFilter(backup, GetCommonFilter());
                                 var sources =
                                     (from n in backup.Sources
                                         let p = SpecialFolders.ExpandEnvironmentVariables(n)
@@ -508,7 +520,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.List:
                             {
-                                var r = controller.List(data.FilterStrings);
+                                var r = controller.List(data.FilterStrings, null);
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
@@ -544,7 +556,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.Compact:
                             {
-                            var r = controller.Compact();
+                                var r = controller.Compact();
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
@@ -590,7 +602,7 @@ namespace Duplicati.Server
                                 if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
                                 {
                                     string dbpath;
-                                    options.TryGetValue("db-path", out dbpath);
+                                    options.TryGetValue("dbpath", out dbpath);
 
                                     if (!string.IsNullOrWhiteSpace(dbpath) && System.IO.File.Exists(dbpath))
                                         System.IO.File.Delete(dbpath);
@@ -676,8 +688,8 @@ namespace Duplicati.Server
                 Program.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
 
             string messageid = null;
-            if (ex is Library.Interface.UserInformationException)
-                messageid = ((Library.Interface.UserInformationException)ex).HelpID;
+            if (ex is UserInformationException exception)
+                messageid = exception.HelpID;
 
             System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
             Program.DataConnection.RegisterNotification(
@@ -692,9 +704,29 @@ namespace Duplicati.Server
                 messageid,
                 null,
                 (n, a) => {
-                    return a.Where(x => x.BackupID == backup.ID).FirstOrDefault() ?? n;
+                    return a.FirstOrDefault(x => x.BackupID == backup.ID) ?? n;
                 }
             );
+        }
+
+        private static void UpdateMetadataLastCompact(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.ICompactResults r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastCompactDuration"] = r.Duration.ToString();
+                backup.Metadata["LastCompactStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastCompactFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
+        }
+
+        private static void UpdateMetadataLastVacuum(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IVacuumResults r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastVacuumDuration"] = r.Duration.ToString();
+                backup.Metadata["LastVacuumStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastVacuumFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
         }
 
         private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IParsedBackendStatistics r)
@@ -713,51 +745,78 @@ namespace Duplicati.Server
             }
         }
 
-        private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, object o)
+        private static void UpdateMetadata(Duplicati.Server.Serialization.Interface.IBackup backup, Duplicati.Library.Interface.IBasicResults result)
         {
-            if (o is Duplicati.Library.Interface.IBasicResults)
+            if (result is IRestoreResults r1)
             {
-                var r = (Duplicati.Library.Interface.IBasicResults)o;
-                backup.Metadata["LastDuration"] = r.Duration.ToString();
-                backup.Metadata["LastStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
-                backup.Metadata["LastFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                backup.Metadata["LastRestoreDuration"] = r1.Duration.ToString();
+                backup.Metadata["LastRestoreStarted"] = Library.Utility.Utility.SerializeDateTime(result.BeginTime.ToUniversalTime());
+                backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
             }
 
-            if (o is Duplicati.Library.Interface.IParsedBackendStatistics)
+            if (result is IParsedBackendStatistics r2)
             {
-                var r = (Duplicati.Library.Interface.IParsedBackendStatistics)o;
-                UpdateMetadata(backup, r);
+                UpdateMetadata(backup, r2);
             }
 
-            if (o is Duplicati.Library.Interface.IBackendStatsticsReporter)
+            if (result is IBackendStatsticsReporter r3)
             {
-                var r = (Duplicati.Library.Interface.IBackendStatsticsReporter)o;
-                if (r.BackendStatistics is Duplicati.Library.Interface.IParsedBackendStatistics)
-                    UpdateMetadata(backup, (Duplicati.Library.Interface.IParsedBackendStatistics)r.BackendStatistics);
+                if (r3.BackendStatistics is IParsedBackendStatistics statistics)
+                    UpdateMetadata(backup, statistics);
             }
 
-            if (o is Duplicati.Library.Interface.IBackupResults)
+            if (result is ICompactResults r4)
             {
-                var r = (Duplicati.Library.Interface.IBackupResults)o;
+                UpdateMetadataLastCompact(backup, r4);
+
+                if (r4.VacuumResults != null)
+                    UpdateMetadataLastVacuum(backup, r4.VacuumResults);
+            }
+
+            if (result is IVacuumResults r5)
+            {
+                UpdateMetadataLastVacuum(backup, r5);
+            }
+
+            if (result is IBackupResults r)
+            {
                 backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
                 backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
                 backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
-                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).BeginTime.ToUniversalTime());
-                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(((Duplicati.Library.Interface.IBasicResults)o).EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+                backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
+
+                if (r.CompactResults != null)
+                    UpdateMetadataLastCompact(backup, r.CompactResults);
+
+                if (r.VacuumResults != null)
+                    UpdateMetadataLastVacuum(backup, r.VacuumResults);
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
+                    string message;
+                    string titleType;
+                    if (r.FilesWithError > 0)
+                    {
+                        message = $"Errors affected {r.FilesWithError} file(s).";
+                        titleType = "Error";
+                    }
+                    else if (r.Errors.Any())
+                    {
+                        message = r.Errors.Count() == 1 ? r.Errors.Single() : $"Encountered {r.Errors.Count()} errors.";
+                        titleType = "Error";
+                    }
+                    else
+                    {
+                        message = r.Warnings.Count() == 1 ? r.Warnings.Single() : $"Encountered {r.Warnings.Count()} warnings.";
+                        titleType = "Warning";
+                    }
+
                     Program.DataConnection.RegisterNotification(
-                        NotificationType.Error,
-                        backup.IsTemporary ?
-                            "Warning" : string.Format("Warning while running {0}", backup.Name),
-                            r.FilesWithError > 0 ?
-                                string.Format("Errors affected {0} file(s) ", r.FilesWithError) :
-                                (r.Errors.Any() ?
-                                 string.Format("Got {0} error(s)", r.Errors.Count()) :
-                                 string.Format("Got {0} warning(s)", r.Warnings.Count())
-                                )
-                            ,
+                        r.FilesWithError == 0 && !r.Errors.Any() ? NotificationType.Warning : NotificationType.Error,
+                        backup.IsTemporary ? "Warning" : $"{titleType} while running {backup.Name}",
+                        message,
                         null,
                         backup.ID,
                         "backup:show-log",
@@ -766,7 +825,7 @@ namespace Duplicati.Server
                         null,
                         (n, a) =>
                         {
-                            var existing = (a.Where(x => x.BackupID == backup.ID)).FirstOrDefault();
+                            var existing = a.FirstOrDefault(x => x.BackupID == backup.ID);
                             if (existing == null)
                                 return n;
 
@@ -778,38 +837,34 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else if (o is Duplicati.Library.Interface.IBasicResults)
+            else if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
             {
-                var r = (Duplicati.Library.Interface.IBasicResults)o;
-                if (r.ParsedResult != Library.Interface.ParsedResultType.Success)
-                {
-                    var type = r.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                ? NotificationType.Warning
-                                : NotificationType.Error;
+                var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                            ? NotificationType.Warning
+                            : NotificationType.Error;
 
-                    var title = r.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                 ? (backup.IsTemporary ?
-                                    "Warning" : string.Format("Warning while running {0}", backup.Name))
-                                : (backup.IsTemporary ?
-                                   "Error" : string.Format("Error while running {0}", backup.Name));
+                var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                ? (backup.IsTemporary ?
+                                "Warning" : string.Format("Warning while running {0}", backup.Name))
+                            : (backup.IsTemporary ?
+                                "Error" : string.Format("Error while running {0}", backup.Name));
 
-                    var message = r.ParsedResult == Library.Interface.ParsedResultType.Warning
-                                   ? string.Format("Got {0} warning(s) ", r.Warnings.Count())
-                                   : string.Format("Got {0} error(s) ", r.Errors.Count());
+                var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                                    ? string.Format("Got {0} warning(s)", result.Warnings.Count())
+                                    : string.Format("Got {0} error(s)", result.Errors.Count());
 
-                    Program.DataConnection.RegisterNotification(
-                        type,
-                        title,
-                        message,
-                        null,
-                        backup.ID,
-                        null,
-                        null,
-                        null,
-                        "backup:show-log",
-                        (n, a) => n
-                    );
-                }
+                Program.DataConnection.RegisterNotification(
+                    type,
+                    title,
+                    message,
+                    null,
+                    backup.ID,
+                    "backup:show-log",
+                    null,
+                    null,
+                    "backup:show-log",
+                    (n, a) => n
+                );
             }
 
             if (!backup.IsTemporary)
@@ -819,7 +874,7 @@ namespace Duplicati.Server
             Program.StatusEventNotifyer.SignalNewEvent();
         }
 
-        private static bool TestIfOptionApplies(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, string filter)
+        private static bool TestIfOptionApplies()
         {
             //TODO: Implement to avoid warnings
             return true;
@@ -841,19 +896,19 @@ namespace Duplicati.Server
             options["disable-module"] = string.Join(",", mods.Union(new string[] { module }).Distinct(StringComparer.OrdinalIgnoreCase));
         }
 
-        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode, Dictionary<string, string> options)
+        internal static Dictionary<string, string> ApplyOptions(Duplicati.Server.Serialization.Interface.IBackup backup, Dictionary<string, string> options)
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
 
             // Apply normal options
             foreach(var o in backup.Settings)
-                if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
+                if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name] = o.Value;
 
             // Apply override options
             foreach(var o in backup.Settings)
-                if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies(backup, mode, o.Filter))
+                if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name.Substring(2)] = o.Value;
 
 
@@ -863,7 +918,7 @@ namespace Duplicati.Server
             return options;
         }
 
-        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, DuplicatiOperation mode, Library.Utility.IFilter filter)
+        private static Library.Utility.IFilter ApplyFilter(Serialization.Interface.IBackup backup, Library.Utility.IFilter filter)
         {
             var f2 = backup.Filters;
             if (f2 != null && f2.Length > 0)
@@ -884,25 +939,25 @@ namespace Duplicati.Server
             return filter;
         }
 
-        internal static Dictionary<string, string> GetCommonOptions(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        internal static Dictionary<string, string> GetCommonOptions()
         {
             return
                 (from n in Program.DataConnection.Settings
-                 where TestIfOptionApplies(backup, mode, n.Filter)
+                 where TestIfOptionApplies()
                  select n).ToDictionary(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value);
         }
 
-        private static Duplicati.Library.Utility.IFilter GetCommonFilter(Duplicati.Server.Serialization.Interface.IBackup backup, DuplicatiOperation mode)
+        private static Duplicati.Library.Utility.IFilter GetCommonFilter()
         {
             var filters = Program.DataConnection.Filters;
             if (filters == null || filters.Length == 0)
                 return null;
 
-           return
+            return
                 (from n in filters
-                orderby n.Order
-                let exp = Library.Utility.Utility.ExpandEnvironmentVariables(n.Expression)
-                select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
+                    orderby n.Order
+                    let exp = Environment.ExpandEnvironmentVariables(n.Expression)
+                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
     }

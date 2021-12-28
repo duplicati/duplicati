@@ -1,28 +1,27 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
+﻿#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 //
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
 //
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#endregion
 using System;
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using Duplicati.Library.Utility;
-using System.Linq;
-using Duplicati.Library.Interface;
-using System.IO;
+using System.Threading;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -36,7 +35,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
 
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
+        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader, CancellationToken token)
         {
             return AutomationExtensions.RunTask(
             new 
@@ -47,14 +46,17 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                var blocksize = options.Blocksize;
-
                 while (await taskreader.ProgressAsync)
                 {
                     var e = await self.Input.ReadAsync();
 
                     try
                     {
+                        if (token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
                         var hint = options.GetCompressionHintFromFilename(e.Path);
                         var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);
 
@@ -68,10 +70,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 if (!e.MetadataChanged)
                                 {
                                     var res = await database.GetMetadataIDAsync(e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length);
-                                    if (!res.Item1)
+                                    if (res.Item1)
                                         return res.Item2;
 
-                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpextedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2);
+                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpectedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2, e.Path);
                                     e.MetadataChanged = true;
                                 }
 
@@ -99,28 +101,36 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 await stats.AddAddedFile(filesize);
 
                                 if (options.Dryrun)
-                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddNewFile", "Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddNewFile", "Would add new file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
                             else
                             {
                                 await stats.AddModifiedFile(filesize);
 
                                 if (options.Dryrun)
-                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WoudlAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
+                                    Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
-                            await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else if (e.MetadataChanged)
                         {
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Path);
-                            await database.AddFileAsync(e.Path, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else /*if (e.OldId >= 0)*/
                         {
                             // When we write the file to output, update the last modified time
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "NoFileChanges", "File has not changed {0}", e.Path);
-                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+
+                            try
+                            {
+                                await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                            }
                         }
                     }
                     catch(Exception ex)
@@ -131,10 +141,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", e.Path);
                     }
                 }
-            }
-            );
-
-
+            });
         }
     }
 }

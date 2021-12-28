@@ -205,7 +205,7 @@ namespace Duplicati.Library.Interface
         /// <param name="type">The argument type</param>
         /// <param name="shortDescription">The arguments short description</param>
         /// <param name="longDescription">The arguments long description</param>
-        /// <param name="defaultValue">The default value of the argumen</param>
+        /// <param name="defaultValue">The default value of the argument</param>
         public CommandLineArgument(string name, ArgumentType type, string shortDescription, string longDescription, string defaultValue)
             : this(name, type, shortDescription, longDescription)
         {
@@ -219,7 +219,7 @@ namespace Duplicati.Library.Interface
         /// <param name="type">The argument type</param>
         /// <param name="shortDescription">The arguments short description</param>
         /// <param name="longDescription">The arguments long description</param>
-        /// <param name="defaultValue">The default value of the argumen</param>
+        /// <param name="defaultValue">The default value of the argument</param>
         /// <param name="aliases">A list of aliases for the command</param>
         public CommandLineArgument(string name, ArgumentType type, string shortDescription, string longDescription, string defaultValue, string[] aliases)
             : this(name, type, shortDescription, longDescription, defaultValue)
@@ -234,7 +234,7 @@ namespace Duplicati.Library.Interface
         /// <param name="type">The argument type</param>
         /// <param name="shortDescription">The arguments short description</param>
         /// <param name="longDescription">The arguments long description</param>
-        /// <param name="defaultValue">The default value of the argumen</param>
+        /// <param name="defaultValue">The default value of the argument</param>
         /// <param name="aliases">A list of aliases for the command</param>
         /// <param name="values">A list of valid values for the command</param>
         public CommandLineArgument(string name, ArgumentType type, string shortDescription, string longDescription, string defaultValue, string[] aliases, string[] values)
@@ -251,7 +251,7 @@ namespace Duplicati.Library.Interface
         /// <param name="type">The argument type</param>
         /// <param name="shortDescription">The arguments short description</param>
         /// <param name="longDescription">The arguments long description</param>
-        /// <param name="defaultValue">The default value of the argumen</param>
+        /// <param name="defaultValue">The default value of the argument</param>
         /// <param name="aliases">A list of aliases for the command</param>
         /// <param name="values">A list of valid values for the command</param>
         /// <param name="deprecationMessage">A message indicating the reason for deprecation and any change suggestions</param>

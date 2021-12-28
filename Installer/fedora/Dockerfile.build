@@ -7,7 +7,13 @@ ENV DOCKER_BUILD_PROXY $DOCKER_BUILD_PROXY
 # Install common build tools
 RUN dnf -y install deltarpm
 RUN dnf -y upgrade
-RUN dnf -y install @"Minimal Install" @buildsys-build yum-utils rpm-sign gnupg rpmdevtools
+RUN dnf -y --allowerasing install @"Minimal Install" @buildsys-build yum-utils rpm-sign gnupg rpmdevtools
+
+# Install real mono for building
+# Instructions from here: https://www.mono-project.com/download/stable/#download-lin-fedora
+RUN rpm --import "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
+RUN curl https://download.mono-project.com/repo/centos8-stable.repo | tee /etc/yum.repos.d/mono-centos8-stable.repo
+RUN dnf -y update
 
 # Install mono things
 RUN dnf -y install mono-devel gnome-sharp-devel dos2unix git nuget

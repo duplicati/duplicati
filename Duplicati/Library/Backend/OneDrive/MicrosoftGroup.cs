@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-
 using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Interface;
 
@@ -10,13 +9,14 @@ namespace Duplicati.Library.Backend
     {
         private const string GROUP_EMAIL_OPTION = "group-email";
         private const string GROUP_ID_OPTION = "group-id";
+        private const string PROTOCOL_KEY = "msgroup";
 
         private readonly string drivePath;
 
         public MicrosoftGroup() { } // Constructor needed for dynamic loading to find it
 
         public MicrosoftGroup(string url, Dictionary<string, string> options)
-            : base(url, options)
+            : base(url, MicrosoftGroup.PROTOCOL_KEY, options)
         {
             string groupId = null;
             string groupEmail;
@@ -46,7 +46,7 @@ namespace Duplicati.Library.Backend
 
         public override string ProtocolKey
         {
-            get { return "msgroup"; }
+            get { return MicrosoftGroup.PROTOCOL_KEY; }
         }
 
         public override string DisplayName

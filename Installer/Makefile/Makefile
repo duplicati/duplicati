@@ -1,4 +1,4 @@
-BUILD_TOOL=xbuild
+BUILD_TOOL=msbuild
 BUILD_ARGS=/property:Platform=Any\ CPU /property:Configuration=Release
 BUILD_ARGS_DEBUG=/property:Platform=Any\ CPU /property:Configuration=Debug
 
@@ -37,12 +37,9 @@ package: build
 	mkdir "$(PACKAGE_DIR)/usr/share/doc/duplicati"	
 	cp -R "$(SOURCE_DIR)/Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release" "$(PACKAGE_DIR)/usr/lib/duplicati"
 
-	rm -rf "$(PKG_TARGET)/alphavss"
 	rm -rf "$(PKG_TARGET)/SQLite"
 	rm -rf "$(PKG_TARGET)/win-tools"
 	rm -rf "$(PKG_TARGET)/"*.mdb
-	rm -rf "$(PKG_TARGET)/AlphaFS.dll"
-	rm -rf "$(PKG_TARGET)/AlphaVSS.Common.dll"
 
 	cp -R "$(SOURCE_DIR)/Duplicati/Server/webroot" "$(PACKAGE_DIR)/usr/lib/duplicati/"
 	cp "$(SOURCE_DIR)/Installer/debian/duplicati-launcher.sh" "$(PACKAGE_DIR)/usr/bin/duplicati"

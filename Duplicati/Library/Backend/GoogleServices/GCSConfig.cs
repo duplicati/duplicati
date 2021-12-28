@@ -21,6 +21,8 @@ using System.Linq;
 
 namespace Duplicati.Library.Backend.GoogleServices
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the ServerSettings.
     public class GCSConfig : IWebModule
     {
         private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.Locations;

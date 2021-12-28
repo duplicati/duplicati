@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //  
 //  This library is free software; you can redistribute it and/or modify
@@ -14,9 +14,10 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
+#if __WindowsGTK__ || ENABLE_GTK
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Common;
 using Gdk;
 using Gtk;
 
@@ -24,7 +25,7 @@ namespace Duplicati.GUI.TrayIcon
 {
     public class GtkRunner : TrayIconBase
     {
-        private static string m_svgfolder;
+        private static readonly string m_svgfolder;
 
         /// <summary>
         /// Static constructor that ensures the Gtk environment is initialized
@@ -45,9 +46,9 @@ namespace Duplicati.GUI.TrayIcon
         
         private class MenuItemWrapper : IMenuItem
         {
-            private MenuItem m_item;
-            private System.Action m_callback;
-            private static Dictionary<MenuIcons, Gtk.Image> _icons = new Dictionary<MenuIcons, Gtk.Image>();
+            private readonly MenuItem m_item;
+            private readonly System.Action m_callback;
+            private static readonly Dictionary<MenuIcons, Gtk.Image> _icons = new Dictionary<MenuIcons, Gtk.Image>();
             
             public MenuItem MenuItem { get { return m_item; } }
 
@@ -93,7 +94,7 @@ namespace Duplicati.GUI.TrayIcon
                 else
                 {
                     m_item = new ImageMenuItem(text);
-                    if (!Duplicati.Library.Utility.Utility.IsClientOSX)
+                    if (!Platform.IsClientOSX)
                         if (icon != MenuIcons.None) {
                             ((ImageMenuItem)m_item).Image = GetIcon(icon);
 
@@ -144,33 +145,26 @@ namespace Duplicati.GUI.TrayIcon
             }
             */
             
-            public string Text
+            public void SetText(string text)
             {
-                get { return ((Gtk.Label)m_item.Child).Text; }
-                set { ((Gtk.Label)m_item.Child).Text = value; }
+                ((Gtk.Label) m_item.Child).Text = text;
             }
             
-            public MenuIcons Icon
+            public void SetIcon(MenuIcons icon)
             {
-                set { ((ImageMenuItem)m_item).Image = GetIcon(value); }
+                ((ImageMenuItem) m_item).Image = GetIcon(icon);
             }
             
-            public bool Enabled
+            public void SetDefault(bool isDefault)
             {
-                get { return m_item.Sensitive; }
-                set { m_item.Sensitive = value; }
-            }
-
-            public bool Default
-            {
-                set { }
+                // Do nothing.  Implementation needed for TrayIconBase interface.
             }
         }
         
         protected StatusIcon m_trayIcon;
         protected Menu m_popupMenu;
         
-        protected static Dictionary<TrayIcons, Pixbuf> _images = new Dictionary<TrayIcons, Pixbuf>();
+        protected static readonly Dictionary<TrayIcons, Pixbuf> _images = new Dictionary<TrayIcons, Pixbuf>();
 
         protected override void Exit ()
         {
@@ -233,17 +227,6 @@ namespace Duplicati.GUI.TrayIcon
             }
         }    
 
-        public static Gtk.Image ImageToGtk(System.Drawing.Image image)
-        {
-            using (var stream = new System.IO.MemoryStream()) 
-            {
-                image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                stream.Position = 0;
-                Gtk.Image img = new Gtk.Image(stream);
-                return img;
-            }
-        }
-
         protected static string GetTrayIconFilename(TrayIcons icon)
         {
             switch (icon)
@@ -252,6 +235,8 @@ namespace Duplicati.GUI.TrayIcon
                     return "normal-pause";
                 case TrayIcons.Running:
                     return "normal-running";
+                case TrayIcons.IdleWarning:
+                    return "normal-warning";
                 case TrayIcons.IdleError:
                     return "normal-error";
                 case TrayIcons.RunningError:
@@ -268,7 +253,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             if (!_images.ContainsKey(icon))
             {
-                if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientOSX)
                 {
                     switch (icon)
                     {
@@ -277,6 +262,9 @@ namespace Duplicati.GUI.TrayIcon
                             break;
                         case TrayIcons.Running:
                             _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.WorkingIcon).ToBitmap());
+                            break;
+                        case TrayIcons.IdleWarning:
+                            _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.WarningIcon).ToBitmap());
                             break;
                         case TrayIcons.IdleError:
                             _images[icon] = ImageToPixbuf(ImageLoader.LoadIcon(ImageLoader.ErrorIcon).ToBitmap());
@@ -304,15 +292,13 @@ namespace Duplicati.GUI.TrayIcon
             
             return _images[icon];
         }
-        
-        protected override TrayIcons Icon 
+
+        protected override void SetIcon(TrayIcons icon)
         {
-            set 
-            {
-                m_trayIcon.Pixbuf = GetIcon(value);
-            }
+            m_trayIcon.Pixbuf = GetIcon(icon);
         }
-        
+       
+
         protected override void SetMenu (IEnumerable<IMenuItem> items)
         {
             m_popupMenu = new Menu();
@@ -357,7 +343,7 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
-            var notification = new Notifications.Notification(title, message, Stock.Info);
+            var notification = new Notifications.Notification(title, message, icon);
             notification.Show();
         }
 

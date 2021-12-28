@@ -14,21 +14,22 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Library.Backend.GoogleServices;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
-
-using Newtonsoft.Json;
-
-using Duplicati.Library.Backend.GoogleServices;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
-
-
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private const string AUTHID_OPTION = "authid";
@@ -54,9 +55,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var uri = new Utility.Uri(url);
 
             m_bucket = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For GCS we do not use a leading slash
             if (m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -78,25 +77,15 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         private class ListBucketResponse
         {
-            public string kind { get; set; }
             public string nextPageToken { get; set; }
-            public string[] prefixes { get; set; }
             public BucketResourceItem[] items { get; set; }
         }
 
         private class BucketResourceItem
         {
-            public string kind { get; set; }
-            public string id { get; set; }
-            public string selfLink { get; set; }
             public string name { get; set; }
-            public string contentType { get; set; }
             public DateTime? updated { get; set; }
-            public string storageClass { get; set; }
             public long? size { get; set; }
-            public string md5Hash { get; set; }
-
-            public string mediaLink { get; set; }
         }
 
         private class CreateBucketRequest
@@ -114,7 +103,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
             catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FolderMissingException();
                 else
                     throw;
@@ -147,13 +136,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 if (string.IsNullOrWhiteSpace(token))
                     break;
                 url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix), token);
-            };
+            }
         }
 
-        public void Put(string remotename, string filename)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -224,7 +213,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.LocationDescriptionShort, Strings.GoogleCloudStorage.LocationDescriptionLong(locations.ToString())),
-                    new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.StorageclassDescriptionShort, Strings.GoogleCloudStorage.StorageclassDescriptionLong(locations.ToString())),
+                    new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.StorageclassDescriptionShort, Strings.GoogleCloudStorage.StorageclassDescriptionLong(storageClasses.ToString())),
                     new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleCloudStorage.AuthidShort, Strings.GoogleCloudStorage.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("gcs"))),
                     new CommandLineArgument(PROJECT_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ProjectDescriptionShort, Strings.GoogleCloudStorage.ProjectDescriptionLong),
                 });
@@ -245,13 +234,12 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         #endregion
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-
             var item = new BucketResourceItem { name = m_prefix + remotename };
 
             var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = GoogleCommon.ChunckedUploadWithResume<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream);
+            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
@@ -271,7 +259,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
             catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException();
                 else
                     throw;

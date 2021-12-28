@@ -64,7 +64,6 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'gcs': null,
                 'openstack': null,
                 'hubic': null,
-                'amzcd': null,
                 'b2': null,
                 'mega': null,
                 'box': null,
@@ -72,8 +71,11 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'mssp': null,
                 'dropbox': null,
                 'sia': null,
+                'storj': null,
+                'tardigrade': null,
                 'jottacloud': null,
-				'rclone': null
+				'rclone': null,
+				'cos': null
             }
         };
 

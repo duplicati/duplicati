@@ -18,6 +18,10 @@ using System;
 using NUnit.Framework;
 using System.IO;
 using System.Collections.Generic;
+using System.IO.Compression;
+using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -46,7 +50,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected readonly string RESTOREFOLDER = Path.Combine(BASEFOLDER, "restored");
         /// <summary>
-        /// The log file for manual examiniation
+        /// The log file for manual examination
         /// </summary>
         protected readonly string LOGFILE = Path.Combine(BASEFOLDER, "logfile.log");
         /// <summary>
@@ -61,6 +65,8 @@ namespace Duplicati.UnitTest
         /// </summary>
         public static readonly bool DEBUG_OUTPUT = Library.Utility.Utility.ParseBool(Environment.GetEnvironmentVariable("DEBUG_OUTPUT"), false);
 
+        protected static readonly ISystemIO systemIO = SystemIO.IO_OS;
+
         /// <summary>
         /// Writes a message to TestContext.Progress and Console.Out
         /// </summary>
@@ -74,23 +80,60 @@ namespace Duplicati.UnitTest
         }
 
         [OneTimeSetUp]
-        public virtual void PrepareSourceData()
+        public virtual void OneTimeSetUp()
         {
             if (DEBUG_OUTPUT)
+            {
                 Console.SetOut(TestContext.Progress);
+            }
 
-            ProgressWriteLine("Deleting backup data and log...");
-            if (Directory.Exists(DATAFOLDER))
-                Directory.Delete(DATAFOLDER, true);
-            if (File.Exists(LOGFILE))
-                File.Delete(LOGFILE);
-            ProgressWriteLine("Deleting older data");
-            if (File.Exists(DBFILE))
-                File.Delete(DBFILE);
-            if (Directory.Exists(TARGETFOLDER))
-                Directory.Delete(TARGETFOLDER, true);
+            systemIO.DirectoryCreate(BASEFOLDER);
+            this.TearDown();
+            this.OneTimeTearDown();
         }
 
+        [OneTimeTearDown]
+        public virtual void OneTimeTearDown()
+        {
+            // No-op by default.
+        }
+
+        [SetUp]
+        public virtual void SetUp()
+        {
+            systemIO.DirectoryCreate(this.DATAFOLDER);
+            systemIO.DirectoryCreate(this.TARGETFOLDER);
+            systemIO.DirectoryCreate(this.RESTOREFOLDER);
+        }
+
+        [TearDown]
+        public virtual void TearDown()
+        {
+            if (systemIO.DirectoryExists(this.DATAFOLDER))
+            {
+                systemIO.DirectoryDelete(this.DATAFOLDER, true);
+            }
+            if (systemIO.DirectoryExists(this.TARGETFOLDER))
+            {
+                systemIO.DirectoryDelete(this.TARGETFOLDER, true);
+            }
+            if (systemIO.DirectoryExists(this.RESTOREFOLDER))
+            {
+                systemIO.DirectoryDelete(this.RESTOREFOLDER, true);
+            }
+            if (systemIO.FileExists(this.LOGFILE))
+            {
+                systemIO.FileDelete(this.LOGFILE);
+            }
+            if (systemIO.FileExists(this.DBFILE))
+            {
+                systemIO.FileDelete(this.DBFILE);
+            }
+            if (systemIO.FileExists($"{this.DBFILE}-journal"))
+            {
+                systemIO.FileDelete($"{this.DBFILE}-journal");
+            }
+        }
 
         protected virtual Dictionary<string, string> TestOptions
         {
@@ -110,13 +153,65 @@ namespace Duplicati.UnitTest
                 opts["dbpath"] = DBFILE;
                 opts["blocksize"] = "10kb";
                 opts["backup-test-samples"] = "0";
-                opts["keep-versions"] = "100";
                 opts["unittest-mode"] = "true";
 
                 return opts;
             }
         }
 
+        /// <summary>
+        /// Alternative to System.IO.Compression.ZipFile.ExtractToDirectory()
+        /// that handles long paths.
+        /// </summary>
+        protected static void ZipFileExtractToDirectory(string sourceArchiveFileName, string destinationDirectoryName)
+        {
+            if (Platform.IsClientWindows)
+            {
+                // Handle long paths under Windows by extracting to a
+                // temporary file and moving the resulting file to the
+                // actual destination using functions that support
+                // long paths.
+                using (var archive = ZipFile.OpenRead(sourceArchiveFileName))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        // By the ZIP spec, directories end in a forward slash
+                        var isDirectory = entry.FullName.EndsWith("/");
+                        var destination =
+                            systemIO.PathGetFullPath(systemIO.PathCombine(destinationDirectoryName, entry.FullName));
+                        if (isDirectory)
+                        {
+                            systemIO.DirectoryCreate(destination);
+                        }
+                        else
+                        {
+                            // Not every directory is recorded separately,
+                            // so create directories if needed
+                            systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(destination));
+                            // Extract file to temporary file, then move to
+                            // the (possibly) long path destination
+                            var tempFile = Path.GetTempFileName();
+                            try
+                            {
+                                entry.ExtractToFile(tempFile, true);
+                                systemIO.FileMove(tempFile, destination);
+                            }
+                            finally
+                            {
+                                if (systemIO.FileExists(tempFile))
+                                {
+                                    systemIO.FileDelete(tempFile);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                ZipFile.ExtractToDirectory(sourceArchiveFileName, destinationDirectoryName);
+            }
+        }
     }
 }
 

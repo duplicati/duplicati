@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace Duplicati.Library.Utility
 {
@@ -80,19 +81,20 @@ namespace Duplicati.Library.Utility
             /// The multiple wildcard character (DOS style)
             /// </summary>
             private const char MULTIPLE_WILDCARD = '*';
-            
+
             /// <summary>
             /// The regular expression flags
             /// </summary>
             private static readonly RegexOptions REGEXP_OPTIONS =
                 RegexOptions.Compiled |
                 RegexOptions.ExplicitCapture |
-                (Utility.IsFSCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase);
+                (Utility.IsFSCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase) |
+                RegexOptions.Singleline;
 
             // Since we might need to get the regex for a particular filter group multiple times
             // (e.g., when combining multiple FilterExpressions together, which discards the existing FilterEntries and recreates them from the Filter representations),
             // and since they don't change (and compiling them isn't a super cheap operation), we keep a cache of the ones we've built for re-use.
-            private static Dictionary<FilterGroup, Regex> filterGroupRegexCache = new Dictionary<FilterGroup, Regex>();
+            private static readonly Dictionary<FilterGroup, Regex> filterGroupRegexCache = new Dictionary<FilterGroup, Regex>();
 
             /// <summary>
             /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.FilterEntry"/> struct.
@@ -118,10 +120,18 @@ namespace Duplicati.Library.Utility
                     this.Filter = filter.Substring(1, filter.Length - 2);
                     this.Regexp = GetFilterGroupRegex(this.Filter);
                 }
+                else if (filter.StartsWith("@", StringComparison.Ordinal))
+                {
+                    // Take filter literally; i.e., don't treat wildcard
+                    // characters as globbing characters
+                    this.Type = FilterType.Simple;
+                    this.Filter = filter.Substring(1);
+                    this.Regexp = new Regex(Utility.ConvertLiteralToRegExp(this.Filter), REGEXP_OPTIONS);
+                }
                 else
                 {
                     this.Type = (filter.Contains(MULTIPLE_WILDCARD) || filter.Contains(SINGLE_WILDCARD)) ? FilterType.Wildcard : FilterType.Simple;
-                    this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper() : filter;
+                    this.Filter = (!Utility.IsFSCaseSensitive && this.Type == FilterType.Wildcard) ? filter.ToUpper(CultureInfo.InvariantCulture) : filter;
                     this.Regexp = new Regex(Utility.ConvertGlobbingToRegExp(filter), REGEXP_OPTIONS);
                 }
             }
@@ -148,6 +158,10 @@ namespace Duplicati.Library.Utility
                         if (filterString.StartsWith("[", StringComparison.Ordinal) && filterString.EndsWith("]", StringComparison.Ordinal))
                         {
                             return filterString.Substring(1, filterString.Length - 2);
+                        }
+                        else if (filterString.StartsWith("@", StringComparison.Ordinal))
+                        {
+                            return Utility.ConvertLiteralToRegExp(filterString.Substring(1));
                         }
                         else
                         {
@@ -176,7 +190,7 @@ namespace Duplicati.Library.Utility
             }
             
             /// <summary>
-            /// Tests whether specified string can be matched agains provided pattern string. Pattern may contain single- and multiple-replacing
+            /// Tests whether specified string can be matched against provided pattern string. Pattern may contain single- and multiple-replacing
             /// wildcard characters.
             /// </summary>
             /// <param name="input">String which is matched against the pattern.</param>
@@ -185,9 +199,9 @@ namespace Duplicati.Library.Utility
             /// <note>From: http://www.c-sharpcorner.com/uploadfile/b81385/efficient-string-matching-algorithm-with-use-of-wildcard-characters/</note>
             private static bool IsWildcardMatch(string input, string pattern)
             {
-                int[] inputPosStack = new int[(input.Length + 1) * (pattern.Length + 1)];   // Stack containing input positions that should be tested for further matching
-                int[] patternPosStack = new int[inputPosStack.Length];                      // Stack containing pattern positions that should be tested for further matching
-                int stackPos = -1;                                                          // Points to last occupied entry in stack; -1 indicates that stack is empty
+                Stack<int> inputPosStack = new Stack<int>(); // Stack containing input positions that should be tested for further matching
+                Stack<int> patternPosStack = new Stack<int>(); // Stack containing pattern positions that should be tested for further matching
+
                 bool[,] pointTested = new bool[input.Length + 1, pattern.Length + 1];       // Each true value indicates that input position vs. pattern position has been tested
                 int inputPos = 0;   // Position in input matched up to the first multiple wildcard in pattern
                 int patternPos = 0; // Position in pattern matched up to the first multiple wildcard in pattern
@@ -198,24 +212,23 @@ namespace Duplicati.Library.Utility
                     patternPos++;
                 }
                 
-                
                 // Push this position to stack if it points to end of pattern or to a general wildcard
                 if (patternPos == pattern.Length || pattern[patternPos] == MULTIPLE_WILDCARD)
                 {
                     pointTested[inputPos, patternPos] = true;
-                    inputPosStack[++stackPos] = inputPos;
-                    patternPosStack[stackPos] = patternPos;
+                    inputPosStack.Push(inputPos);
+                    patternPosStack.Push(patternPos);
                 }
                 bool matched = false;
                 // Repeat matching until either string is matched against the pattern or no more parts remain on stack to test
-                while (stackPos >= 0 && !matched)
+                while (inputPosStack.Count > 0 && !matched)
                 {
-                    inputPos = inputPosStack[stackPos];         // Pop input and pattern positions from stack
-                    patternPos = patternPosStack[stackPos--];   // Matching will succeed if rest of the input string matches rest of the pattern
-                    
+                    inputPos = inputPosStack.Pop(); // Pop input and pattern positions from stack
+                    patternPos = patternPosStack.Pop(); // Matching will succeed if rest of the input string matches rest of the pattern
+
                     // Modified from original version to match zero or more characters
                     //if (inputPos == input.Length && patternPos == pattern.Length)
-                    
+
                     if (inputPos == input.Length && (patternPos == pattern.Length || (patternPos == pattern.Length - 1 && pattern[patternPos] == MULTIPLE_WILDCARD)))
                         matched = true;     // Reached end of both pattern and input string, hence matching is successful
                     else
@@ -246,8 +259,8 @@ namespace Duplicati.Library.Utility
                                 && !pointTested[curInputPos, curPatternPos])
                             {
                                 pointTested[curInputPos, curPatternPos] = true;
-                                inputPosStack[++stackPos] = curInputPos;
-                                patternPosStack[stackPos] = curPatternPos;
+                                inputPosStack.Push(curInputPos);
+                                patternPosStack.Push(curPatternPos);
                             }
                         }
                     }
@@ -266,7 +279,7 @@ namespace Duplicati.Library.Utility
                     case FilterType.Simple:
                         return string.Equals(this.Filter, path, Library.Utility.Utility.ClientFilenameStringComparison);
                     case FilterType.Wildcard:
-                        return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper() : path, this.Filter);
+                        return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper(CultureInfo.InvariantCulture) : path, this.Filter);
                     case FilterType.Regexp:
                     case FilterType.Group:
                         var m = this.Regexp.Match(path);
@@ -284,6 +297,8 @@ namespace Duplicati.Library.Utility
                         return "[" + this.Filter + "]";
                     case FilterType.Group:
                         return "{" + this.Filter + "}";
+                    case FilterType.Simple:
+                        return "@" + this.Filter;
                     default:
                         return this.Filter;
                 }
@@ -351,7 +366,7 @@ namespace Duplicati.Library.Utility
         /// <inheritdoc />
         public string GetFilterHash()
         {
-            var hash = MD5HashHelper.GetHash(m_filters.Select(x => x.Filter));
+            var hash = MD5HashHelper.GetHash(m_filters?.Select(x => x.Filter));
 			return Utility.ByteArrayAsHexString(hash);
         }
 
@@ -397,7 +412,7 @@ namespace Duplicati.Library.Utility
             if (m_filters.Count == 0)
                 this.Type = FilterType.Empty;
             else
-                this.Type = (FilterType)m_filters.Max((a) => a.Type);
+                this.Type = m_filters.Max((a) => a.Type);
         }
         
         private static IEnumerable<string> Expand(string filter)
@@ -405,16 +420,19 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(filter))
                 return null;
 
-            if (filter.Length < 2 ||
-                (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)) ||
-                (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal)))
+            if (filter.Length < 2 || (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)))
             {
                 return new string[] { filter };
             }
-            else
+
+            if (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal))
             {
-                return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+                string groupName = filter.Substring(1, filter.Length - 2);
+                FilterGroup filterGroup = FilterGroups.ParseFilterList(groupName, FilterGroup.None);
+                return (filterGroup == FilterGroup.None) ? null : FilterGroups.GetFilterStrings(filterGroup);
             }
+
+            return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
         }
         
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
@@ -466,7 +484,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A cache for computing the fallback strategy for a filter
         /// </summary>
-        private static Dictionary<IFilter, Tuple<bool, bool>> _matchFallbackLookup = new Dictionary<IFilter, Tuple<bool, bool>>();
+        private static readonly Dictionary<IFilter, Tuple<bool, bool>> _matchFallbackLookup = new Dictionary<IFilter, Tuple<bool, bool>>();
 
         /// <summary>
         /// The lock object for protecting access to the lookup table
@@ -480,8 +498,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">The path to evaluate</param>
         public static bool Matches(IFilter filter, string path)
         {
-            IFilter match;
-            return Matches(filter, path, out match);
+            return Matches(filter, path, out _);
         }
 
         /// <summary>
@@ -517,17 +534,17 @@ namespace Duplicati.Library.Utility
                     var p = q.Dequeue();
                     if (p == null || p.Empty)
                         continue;
-                    else if (p is FilterExpression)
+                    else if (p is FilterExpression expression)
                     {
-                        if (((FilterExpression)p).Result)
+                        if (expression.Result)
                             includes = true;
                         else
                             excludes = true;
                     }
-                    else if (p is JoinedFilterExpression)
+                    else if (p is JoinedFilterExpression filterExpression)
                     {
-                        q.Enqueue(((JoinedFilterExpression)p).First);
-                        q.Enqueue(((JoinedFilterExpression)p).Second);
+                        q.Enqueue(filterExpression.First);
+                        q.Enqueue(filterExpression.Second);
                     }
                 }
 
@@ -585,9 +602,9 @@ namespace Duplicati.Library.Utility
         /// <param name="second">Second.</param>
         public static FilterExpression Combine(FilterExpression first, FilterExpression second)
         {
-            if (first == null)
+            if (first == null || first.Empty)
                 return second;
-            if (second == null)
+            if (second == null || second.Empty)
                 return first;
 
             if (first.Result != second.Result)
@@ -607,8 +624,8 @@ namespace Duplicati.Library.Utility
             if (first == null || first.Empty)
                 return second;
 
-            if (first is FilterExpression && second is FilterExpression && ((FilterExpression)first).Result == ((FilterExpression)second).Result)
-                return Combine((FilterExpression)first, (FilterExpression)second);
+            if (first is FilterExpression expression && second is FilterExpression filterExpression && expression.Result == filterExpression.Result)
+                return Combine(expression, filterExpression);
 
             return new JoinedFilterExpression(first, second);
         }
@@ -663,12 +680,12 @@ namespace Duplicati.Library.Utility
             {
                 var f = work.Pop();
 
-                if (f is FilterExpression)
-                    res = res.Union(((FilterExpression)f).Serialize());
-                else if (f is JoinedFilterExpression)
+                if (f is FilterExpression expression)
+                    res = res.Union(expression.Serialize());
+                else if (f is JoinedFilterExpression filterExpression)
                 {
-                    work.Push(((JoinedFilterExpression)f).Second);
-                    work.Push(((JoinedFilterExpression)f).First);
+                    work.Push(filterExpression.Second);
+                    work.Push(filterExpression.First);
                 }
                 else
                     throw new Exception(string.Format("Cannot serialize filter instance of type: {0}", f.GetType()));

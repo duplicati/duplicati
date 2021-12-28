@@ -24,16 +24,24 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Snapshots
 {
     public class UsnJournalService
     {
+        /// <summary>
+        /// The log tag to use
+        /// </summary>
+        private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(UsnJournalService));
+
         private readonly ISnapshotService m_snapshot;
         private readonly IEnumerable<string> m_sources;
         private readonly Dictionary<string, VolumeData> m_volumeDataDict;
+        private readonly CancellationToken m_token;
 
         /// <summary>
         /// Constructor.
@@ -41,13 +49,17 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sources">Sources to filter</param>
         /// <param name="snapshot"></param>
         /// <param name="emitFilter">Emit filter</param>
+        /// <param name="fileAttributeFilter"></param>
+        /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData">Journal-data of previous fileset</param>
-        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter,
-            IEnumerable<USNJournalDataEntry> prevJournalData)
+        /// <param name="token"></param>
+        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, FileAttributes fileAttributeFilter,
+            long skipFilesLargerThan, IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
         {
             m_sources = sources;
             m_snapshot = snapshot;
-            m_volumeDataDict = Initialize(emitFilter, prevJournalData);
+            m_volumeDataDict = Initialize(emitFilter, fileAttributeFilter, skipFilesLargerThan, prevJournalData);
+            m_token = token;
         }
 
         public IEnumerable<VolumeData> VolumeDataList => m_volumeDataDict.Select(e => e.Value);
@@ -56,15 +68,25 @@ namespace Duplicati.Library.Snapshots
         /// Initialize list of modified files / folder for each volume
         /// </summary>
         /// <param name="emitFilter"></param>
+        /// <param name="fileAttributeFilter"></param>
+        /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData"></param>
         /// <returns></returns>
-        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, IEnumerable<USNJournalDataEntry> prevJournalData)
+        private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, FileAttributes fileAttributeFilter, long skipFilesLargerThan,
+            IEnumerable<USNJournalDataEntry> prevJournalData)
         {
+            if (prevJournalData == null)
+                throw new UsnJournalSoftFailureException(Strings.USNHelper.PreviousBackupNoInfo);
+
             var result = new Dictionary<string, VolumeData>();
 
-            // get filter identifying current source filter / sources configuration
-            // ReSharper disable once PossibleMultipleEnumeration
-			var configHash =  emitFilter.GetFilterHash() + Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(m_sources));
+            // get hash identifying current source filter / sources configuration
+            var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
+                emitFilter == null ? string.Empty : emitFilter.ToString(),
+                string.Join("; ", m_sources),
+                fileAttributeFilter.ToString(),
+                skipFilesLargerThan.ToString()
+            }));
 
             // create lookup for journal data
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);
@@ -72,6 +94,10 @@ namespace Duplicati.Library.Snapshots
             // iterate over volumes
             foreach (var sourcesPerVolume in SortByVolume(m_sources))
             {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize", "Reading USN journal for volume: {0}", sourcesPerVolume.Key);
+
+                if (m_token.IsCancellationRequested) break;
+
                 var volume = sourcesPerVolume.Key;
                 var volumeSources = sourcesPerVolume.Value;
                 var volumeData = new VolumeData
@@ -99,13 +125,18 @@ namespace Duplicati.Library.Snapshots
                     // only use change journal if:
                     // - journal ID hasn't changed
                     // - nextUsn isn't zero (we use this as magic value to force a rescan)
-                    // - the exclude filter hash hasn't changed
-                    if (!journalDataDict.TryGetValue(volume, out var prevData) ||
-                        prevData.JournalId != nextData.JournalId || prevData.NextUsn == 0 ||
-                        prevData.ConfigHash != nextData.ConfigHash)
-                    {
-                        throw new UsnJournalSoftFailureException();
-                    }
+                    // - the configuration (sources or filters) hasn't changed
+                    if (!journalDataDict.TryGetValue(volume, out var prevData))
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.PreviousBackupNoInfo);
+
+                    if (prevData.JournalId != nextData.JournalId)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.JournalIdChanged);
+
+                    if (prevData.NextUsn == 0)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.NextUsnZero);
+                    
+                    if (prevData.ConfigHash != nextData.ConfigHash)
+                        throw new UsnJournalSoftFailureException(Strings.USNHelper.ConfigHashChanged);
 
                     var changedFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
                     var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
@@ -113,15 +144,19 @@ namespace Duplicati.Library.Snapshots
                     // obtain changed files and folders, per volume
                     foreach (var source in volumeSources)
                     {
+                        if (m_token.IsCancellationRequested) break;
+
                         foreach (var entry in journal.GetChangedFileSystemEntries(source, prevData.NextUsn))
                         {
+                            if (m_token.IsCancellationRequested) break;
+
                             if (entry.Item2.HasFlag(USNJournal.EntryType.File))
                             {
                                 changedFiles.Add(entry.Item1);
                             }
                             else
                             {
-                                changedFolders.Add(Utility.Utility.AppendDirSeparator(entry.Item1));
+                                changedFolders.Add(Util.AppendDirSeparator(entry.Item1));
                             }
                         }
                     }
@@ -157,7 +192,7 @@ namespace Duplicati.Library.Snapshots
                     // use original sources
                     foreach (var path in volumeSources)
                     {
-                        var isFolder = path.EndsWith(Utility.Utility.DirectorySeparatorString, StringComparison.Ordinal);
+                        var isFolder = path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
                         if (isFolder)
                         {
                             volumeData.Folders.Add(path);
@@ -167,7 +202,7 @@ namespace Duplicati.Library.Snapshots
                             volumeData.Files.Add(path);
                         }
                     }
-                }                
+                }
             }
 
             return result;
@@ -189,6 +224,11 @@ namespace Duplicati.Library.Snapshots
                 var cache = new Dictionary<string, bool>();
                 foreach (var source in m_sources)
                 {
+                    if (m_token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     cache[source] = true;
                 }
 
@@ -202,7 +242,14 @@ namespace Duplicati.Library.Snapshots
                 if (volumeData.Value.Folders != null)
                 {
                     foreach (var folder in FilterExcludedFolders(volumeData.Value.Folders, filter, cache).Where(m_snapshot.DirectoryExists))
+                    {
+                        if (m_token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
                         yield return folder;
+                    }
                 }
 
                 // The simplified file list also needs to be checked against the exclusion filter, as it 
@@ -214,7 +261,14 @@ namespace Duplicati.Library.Snapshots
                 if (volumeData.Value.Files != null)
                 {
                     foreach (var files in FilterExcludedFiles(volumeData.Value.Files, filter, cache).Where(m_snapshot.FileExists))
+                    {
+                        if (m_token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
                         yield return files;
+                    }
                 }
             }
         }
@@ -225,7 +279,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="files">Files to filter</param>
         /// <param name="filter">Exclusion filter</param>
-        /// <param name="cache">Cache of included and exculded files / folders</param>
+        /// <param name="cache">Cache of included and excluded files / folders</param>
         /// <param name="errorCallback"></param>
         /// <returns>Filtered files</returns>
         private IEnumerable<string> FilterExcludedFiles(IEnumerable<string> files,
@@ -234,7 +288,12 @@ namespace Duplicati.Library.Snapshots
             var result = new List<string>();
 
             foreach (var file in files)
-            {                
+            {
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 var attr = m_snapshot.FileExists(file) ? m_snapshot.GetAttributes(file) : FileAttributes.Normal;
                 try
                 {
@@ -276,6 +335,11 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var folder in folders)
             {
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 try
                 {
                     if (!IsFolderOrAncestorsExcluded(folder, filter, cache))
@@ -309,6 +373,11 @@ namespace Duplicati.Library.Snapshots
             List<string> parents = null;
             while (folder != null)
             {
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 // first check cache
                 if (cache.TryGetValue(folder, out var include))
                 {
@@ -382,11 +451,19 @@ namespace Duplicati.Library.Snapshots
             if (!m_volumeDataDict.TryGetValue(volumeRoot, out var volumeData))
                 return false;
 
+            if (volumeData.IsFullScan)
+                return true; // do not append from previous set, already scanned
+
             if (volumeData.Files.Contains(path))
                 return true; // do not append from previous set, already scanned
 
             foreach (var folder in volumeData.Folders)
             {
+                if (m_token.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 if (path.Equals(folder, Utility.Utility.ClientFilenameStringComparison))
                     return true; // do not append from previous set, already scanned
 

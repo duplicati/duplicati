@@ -22,7 +22,7 @@ using Duplicati.Library.Logging;
 namespace Duplicati.Library.Main
 {
     /// <summary>
-    /// Interface for recieving messages from the Duplicati operations
+    /// Interface for receiving messages from the Duplicati operations
     /// </summary>
     public interface IMessageSink : Logging.ILogDestination
     {
@@ -39,13 +39,13 @@ namespace Duplicati.Library.Main
         /// Sets the backend progress update object
         /// </summary>
         /// <value>The backend progress update object</value>
-        IBackendProgress BackendProgress { set; }
-        
+        void SetBackendProgress(IBackendProgress progress);
+
         /// <summary>
         /// Sets the operation progress update object
         /// </summary>
         /// <value>The operation progress update object</value>
-        IOperationProgress OperationProgress { set; }
+        void SetOperationProgress(IOperationProgress progress);
     }
 
     /// <summary>
@@ -82,22 +82,16 @@ namespace Duplicati.Library.Main
             m_sinks = na;
         }
 
-        public IBackendProgress BackendProgress
+        public void SetBackendProgress(IBackendProgress progress)
         {
-            set
-            {
-                foreach (var s in m_sinks)
-                    s.BackendProgress = value;
-            }
+            foreach (var s in m_sinks)
+                s.SetBackendProgress(progress);
         }
 
-        public IOperationProgress OperationProgress
+        public void SetOperationProgress(IOperationProgress progress)
         {
-            set
-            {
-                foreach (var s in m_sinks)
-                    s.OperationProgress = value;
-            }
+            foreach (var s in m_sinks)
+                s.SetOperationProgress(progress);
         }
 
         public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
@@ -149,8 +143,15 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Updates the current progress
         /// </summary>
-        /// <param name="progress">he current number of transferred bytes</param>
+        /// <param name="progress">The current number of transferred bytes</param>
         void UpdateProgress(long progress);
+
+        /// <summary>
+        /// Updates the total size
+        /// </summary>
+        /// <param name="size">The new total size</param>
+        void UpdateTotalSize(long size);
+
         /// <summary>
         /// Sets a flag indicating if the backend operation is blocking progress
         /// </summary>
@@ -207,26 +208,36 @@ namespace Duplicati.Library.Main
         /// <param name="size">The size of the file being transferred</param>
         public void StartAction(BackendActionType action, string path, long size)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 m_action = action;
                 m_path = path;
                 m_size = size;
                 m_progress = 0;
-                m_actionStart = DateTime.Now;                
+                m_actionStart = DateTime.Now;
             }
         }
-        
+
         /// <summary>
         /// Updates the progress
         /// </summary>
         /// <param name="progress">The current number of transferred bytes</param>
         public void UpdateProgress(long progress)
         {
-            lock(m_lock)
+            lock (m_lock)
                 m_progress = progress;
         }
-        
+
+        /// <summary>
+        /// Updates the total size
+        /// </summary>
+        /// <param name="size">The new total size</param>
+        public void UpdateTotalSize(long size)
+        {
+            lock (m_lock)
+                m_size = size;
+        }
+
         /// <summary>
         /// Update with the current action, path, size, progress and bytes_pr_second.
         /// </summary>
@@ -296,7 +307,7 @@ namespace Duplicati.Library.Main
         /// <param name="filename">Filename.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="fileoffset">Fileoffset.</param>
-        void UpdateFile(out string filename, out long filesize, out long fileoffset);
+        void UpdateFile(out string filename, out long filesize, out long fileoffset, out bool filecomplete);
         
         /// <summary>
         /// Occurs when the phase has changed
@@ -330,6 +341,7 @@ namespace Duplicati.Library.Main
         private string m_curfilename;
         private long m_curfilesize;
         private long m_curfileoffset;
+        private bool m_curfilecomplete;
         
         private long m_filesprocessed;
         private long m_filesizeprocessed;
@@ -350,6 +362,7 @@ namespace Duplicati.Library.Main
                 m_curfilename = null;
                 m_curfilesize = 0;
                 m_curfileoffset = 0;
+                m_curfilecomplete = false;
             }
             
             if (prev_phase != phase && PhaseChanged != null)
@@ -369,6 +382,7 @@ namespace Duplicati.Library.Main
                 m_curfilename = filename;
                 m_curfilesize = size;
                 m_curfileoffset = 0;
+                m_curfilecomplete = false;
             }
         }
         
@@ -394,6 +408,7 @@ namespace Duplicati.Library.Main
             {
                 m_filesprocessed = count;
                 m_filesizeprocessed = size;
+                m_curfilecomplete = true;
             }
         }
         
@@ -427,13 +442,14 @@ namespace Duplicati.Library.Main
         /// <param name="filename">Filename.</param>
         /// <param name="filesize">Filesize.</param>
         /// <param name="fileoffset">Fileoffset.</param>
-        public void UpdateFile(out string filename, out long filesize, out long fileoffset)
+        public void UpdateFile(out string filename, out long filesize, out long fileoffset, out bool filecomplete)
         {
             lock(m_lock)
             {
                 filename = m_curfilename;
                 filesize = m_curfilesize;
                 fileoffset = m_curfileoffset;
+                filecomplete = m_curfilecomplete;
             }
         }
     }

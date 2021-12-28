@@ -54,13 +54,53 @@ namespace Duplicati.Library.Modules.Builtin
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private int CheckMonoCerts()
         {
-            return
-#if __MonoCS__
-                Mono.Security.X509.X509StoreManager.LocalMachine.TrustedRoot.Certificates.Count +
-                Mono.Security.X509.X509StoreManager.CurrentUser.TrustedRoot.Certificates.Count +
-                Mono.Security.X509.X509StoreManager.TrustedRootCertificates.Count +
-#endif
-                0;
+            // The __MonoCS__ compiler directive is no longer supported.
+            // We would like to query the x509 store, but this will make it
+            // hard to compile the project on Windows.
+            // For this reason, we use reflection to extract the counts
+
+            // Code without reflection looks like:
+
+            //return
+            //    Mono.Security.X509.X509StoreManager.LocalMachine.TrustedRoot.Certificates.Count +
+            //    Mono.Security.X509.X509StoreManager.CurrentUser.TrustedRoot.Certificates.Count +
+            //    Mono.Security.X509.X509StoreManager.TrustedRootCertificates.Count +
+            //    0;
+
+            System.Reflection.Assembly asm = null;
+
+            try { asm = System.Reflection.Assembly.Load("Mono.Security"); }
+            catch { }
+
+            var x509Store = asm?.GetType("Mono.Security.X509.X509StoreManager");
+            if (x509Store == null)
+                return 0;
+
+            var localMachine = x509Store.GetProperty("LocalMachine")?.GetValue(null);
+            var currentUser = x509Store.GetProperty("CurrentUser")?.GetValue(null);
+            var trustedRoot = x509Store.GetProperty("TrustedRootCertificates")?.GetValue(null);
+
+            var count = 0;
+
+            var tr = localMachine?.GetType().GetProperty("TrustedRoot")?.GetValue(localMachine);
+            var crt = tr?.GetType().GetProperty("Certificates").GetValue(tr);
+            var cnt = crt?.GetType().GetProperty("Count")?.GetValue(crt);
+            if (cnt is int)
+                count += (int)cnt;
+
+            tr = currentUser?.GetType().GetProperty("TrustedRoot")?.GetValue(currentUser);
+            crt = tr?.GetType().GetProperty("Certificates").GetValue(tr);
+            cnt = crt?.GetType().GetProperty("Count")?.GetValue(crt);
+            if (cnt is int)
+                count += (int)cnt;
+
+
+            cnt = trustedRoot?.GetType().GetProperty("Count")?.GetValue(trustedRoot);
+            if (cnt is int)
+                count += (int)cnt;
+
+            return count;
+
         }
 
         private int CheckForInstalledCerts()
@@ -93,8 +133,12 @@ namespace Duplicati.Library.Modules.Builtin
             if (!commandlineOptions.ContainsKey("main-action") || !Library.Utility.Utility.IsMono)
                 return;
 
-			if (CheckForInstalledCerts() == 0)
-				Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingCerts", null, Strings.CheckMonoSSL.ErrorMessage);
+            if (CheckForInstalledCerts() == 0)
+            {
+                // Do not output this warning, recent Mono packages seems to work
+                if (Library.Utility.Utility.MonoVersion < new Version(6, 0))
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingCerts", null, Strings.CheckMonoSSL.ErrorMessage);
+            }
         }
 #endregion
 

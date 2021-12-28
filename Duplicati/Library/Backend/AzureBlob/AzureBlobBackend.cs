@@ -18,21 +18,28 @@
 // 
 #endregion
 
-using System;
+using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Interface;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class AzureBlobBackend : IStreamingBackend
     {
         private readonly AzureBlobWrapper _azureBlob;
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AzureBlobBackend()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public AzureBlobBackend(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -40,16 +47,27 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             string storageAccountName = null;
             string accessKey = null;
+            string sasToken = null;
             string containerName = uri.Host.ToLowerInvariant();
 
             if (options.ContainsKey("auth-username"))
                 storageAccountName = options["auth-username"];
             if (options.ContainsKey("auth-password"))
                 accessKey = options["auth-password"];
+
             if (options.ContainsKey("azure_account_name"))
                 storageAccountName = options["azure_account_name"];
+            if (options.ContainsKey("azure-account-name"))
+                storageAccountName = options["azure-account-name"];
+
             if (options.ContainsKey("azure_access_key"))
                 accessKey = options["azure_access_key"];
+            if (options.ContainsKey("azure-access-key"))
+                accessKey = options["azure-access-key"];
+
+            if (options.ContainsKey("azure-access-sas-token"))
+                sasToken = options["azure-access-sas-token"];
+
             if (!string.IsNullOrEmpty(uri.Username))
                 storageAccountName = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -59,12 +77,13 @@ namespace Duplicati.Library.Backend.AzureBlob
             {
                 throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
             }
-            if (string.IsNullOrWhiteSpace(accessKey))
+            if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(sasToken))
             {
-                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKey, "AzureNoAccessKey");
+                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
             }
 
-            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, containerName);
+
+            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, sasToken, containerName);
         }
 
         public string DisplayName
@@ -77,28 +96,23 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return "azure"; }
         }
 
-        public bool SupportsStreaming
-        {
-            get { return true; }
-        }
-
         public IEnumerable<IFileEntry> List()
         {
             return _azureBlob.ListContainerEntries();
         }
 
-        public void Put(string remotename, string localname)
+        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname,
                 FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                Put(remotename, fs);
+                await PutAsync(remotename, fs, cancelToken);
             }
         }
 
-        public void Put(string remotename, Stream input)
+        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            _azureBlob.AddFileStream(remotename, input);
+            await _azureBlob.AddFileStream(remotename, input, cancelToken);
         }
 
         public void Get(string remotename, string localname)
@@ -126,25 +140,44 @@ namespace Duplicati.Library.Backend.AzureBlob
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("azure_account_name", 
-                        CommandLineArgument.ArgumentType.String, 
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionShort, 
+                    new CommandLineArgument("azure_account_name",
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
+                        Strings.AzureBlobBackend.StorageAccountNameDescriptionLong,
+                        null, null, null, "This is deprecated, use azure-account-name instead"),
+                    new CommandLineArgument("azure_access_key",
+                        CommandLineArgument.ArgumentType.Password,
+                        Strings.AzureBlobBackend.AccessKeyDescriptionShort,
+                        Strings.AzureBlobBackend.AccessKeyDescriptionLong,
+                        null, null, null, "This is deprecated, use azure-access-key instead"),
+                    new CommandLineArgument("azure_blob_container_name",
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.AzureBlobBackend.ContainerNameDescriptionShort,
+                        Strings.AzureBlobBackend.ContainerNameDescriptionLong,
+                        null, null, null, "This is deprecated, use azure-blob-container-name instead"),
+                    new CommandLineArgument("azure-account-name",
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionLong),
-                    new CommandLineArgument("azure_access_key", 
-                        CommandLineArgument.ArgumentType.Password, 
-                        Strings.AzureBlobBackend.AccessKeyDescriptionShort, 
+                    new CommandLineArgument("azure-access-key",
+                        CommandLineArgument.ArgumentType.Password,
+                        Strings.AzureBlobBackend.AccessKeyDescriptionShort,
                         Strings.AzureBlobBackend.AccessKeyDescriptionLong),
-                    new CommandLineArgument("azure_blob_container_name", 
-                        CommandLineArgument.ArgumentType.String, 
-                        Strings.AzureBlobBackend.ContainerNameDescriptionShort, 
+                    new CommandLineArgument("azure-access-sas-token",
+                        CommandLineArgument.ArgumentType.Password,
+                        Strings.AzureBlobBackend.SasTokenDescriptionShort,
+                        Strings.AzureBlobBackend.SasTokenDescriptionLong),
+                    new CommandLineArgument("azure-blob-container-name",
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.AzureBlobBackend.ContainerNameDescriptionShort,
                         Strings.AzureBlobBackend.ContainerNameDescriptionLong),
-                    new CommandLineArgument("auth-password", 
-                        CommandLineArgument.ArgumentType.Password, 
-                        Strings.AzureBlobBackend.AuthPasswordDescriptionShort, 
+                    new CommandLineArgument("auth-password",
+                        CommandLineArgument.ArgumentType.Password,
+                        Strings.AzureBlobBackend.AuthPasswordDescriptionShort,
                         Strings.AzureBlobBackend.AuthPasswordDescriptionLong),
-                    new CommandLineArgument("auth-username", 
-                        CommandLineArgument.ArgumentType.String, 
-                        Strings.AzureBlobBackend.AuthUsernameDescriptionShort, 
+                    new CommandLineArgument("auth-username",
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.AzureBlobBackend.AuthUsernameDescriptionShort,
                         Strings.AzureBlobBackend.AuthUsernameDescriptionLong)
                 });
 

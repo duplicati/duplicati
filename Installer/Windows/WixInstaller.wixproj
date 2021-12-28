@@ -1,4 +1,4 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
@@ -67,13 +67,13 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <BinFiles Include="..\Duplicati\**" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*" />
+    <BinFiles Include="..\Duplicati\**" Exclude="..\**\*.pdb;..\**\SVGIcons\**\*.*;..\**\OSX Icons\**\*.*;..\**\lvm-scripts\**\*.*;..\**\libstorj_uplink.so;..\**\libstorj_uplink.dylib;..\**\storj_uplink.dll" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <Target Name="BeforeBuild">
-    <Copy SourceFiles="@(BinFiles)" DestinationFiles="@(BinFiles->'Duplicati\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <HeatDirectory Directory="Duplicati" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)"/>
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
+    <Copy SourceFiles="@(BinFiles)" DestinationFiles="@(BinFiles-&gt;'Duplicati\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <HeatDirectory Directory="Duplicati" OutputFile="binfiles.wxs" ComponentGroupName="DUPLICATIBIN" DirectoryRefId="INSTALLLOCATION" SuppressCom="true" SuppressRegistry="true" SuppressFragments="true" SuppressRootDirectory="true" SuppressUniqueIds="true" AutogenerateGuids="true" PreprocessorVariable="var.HarvestPath" ToolPath="$(WixToolPath)" />
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
 </Project>

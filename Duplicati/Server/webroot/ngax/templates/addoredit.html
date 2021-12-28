@@ -19,7 +19,7 @@
         </div>
     </div>
     <!-- .steps -->
-    
+
     <ol class="steps-legend">
         <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
         <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
@@ -37,7 +37,11 @@
 
                     <div class="input text">
                         <label for="name" translate>Name</label>
-                        <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}"/>
+                        <input type="text" name="name" id="name" ng-model="Backup.Name" placeholder="{{'My Photos' | translate}}" />
+                    </div>
+                    <div class="input textarea">
+                        <label for="description" translate>Description (optional)</label>
+                        <textarea name="description" id="description" ng-model="Backup.Description"></textarea>
                     </div>
                     <div class="input select" ng-hide="SystemInfo.EncryptionModules.length == 0">
                         <label for="encryption" translate>Encryption</label>
@@ -46,17 +50,17 @@
                         </select>
                     </div>
 
-                    <div class="input encryptionhint" ng-show="(Options['encryption-module'] || '').length == 0">
+                    <div class="input encryptionhint" ng-show="!checkGpgAsymmetric() && (Options['encryption-module'] || '').length == 0">
                         <h3 class="warning" translate>We recommend that you encrypt all backups stored outside your system</h3>
                     </div>
 
-                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                    <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="passphrase" translate>Passphrase</label>
-                        <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
+                        <input autocomplete="new-password" type="{{ShowPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" ng-model="Options['passphrase']" />
                     </div>
-                    <div class="input password" ng-hide="(Options['encryption-module'] || '').length == 0">
+                    <div class="input password" ng-hide="checkGpgAsymmetric() || (Options['encryption-module'] || '').length == 0">
                         <label for="repeat-passphrase" translate>Repeat Passphrase</label>
-                        <input type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
+                        <input autocomplete="new-password" type="{{ShowPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" ng-model="RepeatPasshrase"/>
 
                         <div class="tools">
                             <ul>
@@ -88,7 +92,7 @@
                     <h2 translate>Backup destination</h2>
 
                     <div class="contextmenu_container">
-                        <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_destination" class="threedotmenubutton"/></a>
+                        <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton"/></a>
 
                         <div class="contextmenu" id="threedotmenu_add_destination">
                             <ul>
@@ -112,7 +116,7 @@
             </form>
         </div>
         <!-- .step2 -->
-        
+
         <div class="step step3" ng-class="{active: CurrentStep == 2}">
             <form class="styled">
                 <div class="box browser">
@@ -120,7 +124,7 @@
                         <h2 translate>Source data</h2>
 
                         <div class="contextmenu_container">
-                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_folders" class="threedotmenubutton"/></a>
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_source_folders" class="threedotmenubutton"/></a>
 
                             <div class="contextmenu" id="threedotmenu_add_source_folders">
                                 <ul>
@@ -148,7 +152,7 @@
                     <div class="input text overlayButton">
                         <input type="text" name="sourcePath" id="sourcePath" placeholder="{{'Add a path directly' | translate}}" ng-model="manualSourcePath" ng-disabled="validatingSourcePath" />
                         <a href id="sourceFolderPathAdd" class="button"  ng-disabled="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" ng-click="addManualSourcePath()">
-                            <span ng-show="validatingSourcePath" translate>Validating ...</span>
+                            <span ng-show="validatingSourcePath" translate>Validating …</span>
                             <span ng-hide="validatingSourcePath" translate>Add path</span>
                         </a>
                     </div>
@@ -157,12 +161,12 @@
                     <div class="headerthreedotmenu">
                         <a href ng-click="showFilter = !showFilter" class="expandable">
                             <h2 translate>Filters</h2>
-                            <img ng-show="showFilter" src="img/arrow_collapse_green.png">
-                            <img ng-hide="showFilter" src="img/arrow_expand_green.png">
+                            <img ng-show="showFilter" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
+                            <img ng-hide="showFilter" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
                         </a>
 
                         <div class="contextmenu_container" ng-show="showFilter">
-                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_source_filters" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
+                            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_source_filters" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
 
                             <div class="contextmenu" id="threedotmenu_add_source_filters">
                                 <ul>
@@ -195,7 +199,7 @@
                                         <select parse-filter-content ng-model="Backup.Filters[$index]" ng-options="item.value as item.name for item in AppUtils.filterGroups">
                                         </select>
                                     </div>
-                                    
+
                                     <a class="button" href title="{{'Remove' | translate}}" ng-click="Backup.Filters.splice($index, 1)">X</a>
                                 </li>
 
@@ -208,8 +212,8 @@
                     <div class="expandable">
                         <a href ng-click="showExclude = !showExclude">
                             <h2 translate>Exclude</h2>
-                            <img ng-show="showExclude" src="img/arrow_collapse_green.png">
-                            <img ng-hide="showExclude" src="img/arrow_expand_green.png">
+                            <img ng-show="showExclude" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
+                            <img ng-hide="showExclude" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
                         </a>
                     </div>
 
@@ -245,7 +249,7 @@
             </form>
         </div>
         <!-- .step3 -->
-        
+
         <div class="step step4" ng-class="{active: CurrentStep == 3}">
             <form class="styled">
                 <h2 translate>Schedule</h2>
@@ -284,7 +288,7 @@
                             ng-click="toggleAllowedDays(day.value)"
                           />
                           <label for="dayofweek_{{day.value}}">{{day.name}}</label>
-                        </div>                
+                        </div>
                     </div>
                 </div>
 
@@ -295,7 +299,7 @@
             </form>
         </div>
         <!-- .step4 -->
-        
+
         <div class="step step5" ng-class="{active: CurrentStep == 4}">
             <form class="styled">
                 <h2 translate>General options</h2>
@@ -306,7 +310,9 @@
                     </select>
 
                     <div class="hint" translate>
-                        This option does not relate to your maximum backup or file size, nor does it affect deduplication rates. <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page before you change the remote volume size.</external-link>
+			The backups will be split up into multiple files called volumes. Here
+			you can set the maximum size of the individual volume files.
+                        <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page for more information.</external-link>
                     </div>
 
                 </div>
@@ -339,7 +345,7 @@
                     <div class="retention-options" ng-show="KeepType == 'versions'">
                         <input type="number" ng-model="Options['keep-versions']"  min="1" />
                     </div>
-                    <div class="hint" ng-show="KeepType == 'versions'" translate>Once there are more backups than the specified number, the oldest backups are deleted.</div> 
+                    <div class="hint" ng-show="KeepType == 'versions'" translate>Once there are more backups than the specified number, the oldest backups are deleted.</div>
 
                     <div class="retention-options" ng-show="KeepType == 'time'">
                         <input type="text" class="number" parse-size-number ng-model="Options['keep-time']" />
@@ -360,7 +366,7 @@
 
                 <div ng-repeat="module in ServerModules">
                     <h2 title="{{module.Description}}">{{module.DisplayName}}</h2>
-                    
+
                     <div class="input" ng-repeat="opt in module.SupportedLocalCommands">
                         <label for="{{module.Key}}-{{opt.Name}}" title="{{opt.LongDescription}}">{{opt.ShortDescription}}</label>
                         <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />
@@ -370,12 +376,12 @@
                 <div class="headerthreedotmenu">
                     <a href ng-click="showAdvanced = !showAdvanced" class="expandable">
                         <h2 translate>Advanced options</h2>
-                        <img ng-show="showAdvanced" src="img/arrow_collapse_green.png">
-                        <img ng-hide="showAdvanced" src="img/arrow_expand_green.png">
+                        <img ng-show="showAdvanced" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
+                        <img ng-hide="showAdvanced" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
                     </a>
 
                     <div class="contextmenu_container" ng-show="showAdvanced">
-                        <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" id="threedotmenubutton_add_options_adv" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
+                        <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_options_adv" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
 
                         <div class="contextmenu" id="threedotmenu_add_options_adv">
                             <ul>

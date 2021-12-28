@@ -150,7 +150,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         protected string m_parsedresultlevel = string.Empty;
         /// <summary>
-        /// The maxmimum number of log lines to include
+        /// The maximum number of log lines to include
         /// </summary>
         protected int m_maxmimumLogLines;
 
@@ -158,10 +158,6 @@ namespace Duplicati.Library.Modules.Builtin
         /// A value indicating if this instance is configured
         /// </summary>
         private bool m_isConfigured;
-        /// <summary>
-        /// A value indicating if this instance has been disposed
-        /// </summary>
-        private bool m_isDisposed;
         /// <summary>
         /// The mail subject
         /// </summary>
@@ -296,7 +292,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected virtual string ReplaceTemplate(string input, object result, bool subjectline)
         {
             // For JSON, ignore the template and just use the contents
-            if (ExportFormat == ResultExportFormat.Json)
+            if (ExportFormat == ResultExportFormat.Json && !subjectline)
             {
                 var extra = new Dictionary<string, string>();
 
@@ -390,8 +386,8 @@ namespace Duplicati.Library.Modules.Builtin
             ParsedResultType level;
             if (result is Exception)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is Library.Interface.IBasicResults)
-                level = ((IBasicResults)result).ParsedResult;
+            else if (result != null && result is IBasicResults results)
+                level = results.ParsedResult;
             else
                 level = ParsedResultType.Error;
 

@@ -1,10 +1,12 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using Duplicati.Library.Common.IO;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
+using Newtonsoft.Json;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -22,13 +24,9 @@ namespace Duplicati.GUI.TrayIcon
 
         private class BackgroundRequest
         {
-            public string Method;
-            public string Endpoint;
-            public Dictionary<string, string> Query;
-
-            public BackgroundRequest() 
-            {
-            }
+            public readonly string Method;
+            public readonly string Endpoint;
+            public readonly Dictionary<string, string> Query;
 
             public BackgroundRequest(string method, string endpoint, Dictionary<string, string> query)
             {
@@ -76,9 +74,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public HttpServerConnection(Uri server, string password, bool saltedpassword, Program.PasswordSource passwordSource, bool disableTrayIconLogin, Dictionary<string, string> options)
         {
-            m_baseUri = server.ToString();
-            if (!m_baseUri.EndsWith("/", StringComparison.Ordinal))
-                m_baseUri += "/";
+            m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
 
             m_apiUri = m_baseUri + "api/v1";
 
@@ -231,8 +227,13 @@ namespace Duplicati.GUI.TrayIcon
 
         private class SaltAndNonce
         {
-            public string Salt = null;
-            public string Nonce = null;
+            // The JsonProperty attribute allows the Serializer.Deserialize method to
+            // set these readonly fields.
+            [JsonProperty]
+            public readonly string Salt = null;
+
+            [JsonProperty]
+            public readonly string Nonce = null;
         }
 
         private SaltAndNonce GetSaltAndNonce()
@@ -388,15 +389,16 @@ namespace Duplicati.GUI.TrayIcon
                         switch (m_passwordSource)
                         {
                             case Program.PasswordSource.Database:
-                                Program.databaseConnection.ApplicationSettings.ReloadSettings();
+                                if (Program.databaseConnection != null)
+                                    Program.databaseConnection.ApplicationSettings.ReloadSettings();
                                 
-                                if (Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
+                                if (Program.databaseConnection != null && Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon != m_password)
                                     m_password = Program.databaseConnection.ApplicationSettings.WebserverPasswordTrayIcon;
                                 else
                                     hasTriedPassword = true;
                                 break;
                             case Program.PasswordSource.HostedServer:
-                                if (Server.Program.DataConnection.ApplicationSettings.WebserverPassword != m_password)
+                                if (Server.Program.DataConnection != null && Server.Program.DataConnection.ApplicationSettings.WebserverPassword != m_password)
                                     m_password = Server.Program.DataConnection.ApplicationSettings.WebserverPassword;
                                 else
                                     hasTriedPassword = true;

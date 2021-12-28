@@ -19,6 +19,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine
 {
@@ -33,7 +36,7 @@ namespace Duplicati.CommandLine
             private readonly ConsoleOutput m_output;
             private System.Threading.Thread m_thread;
             private readonly TimeSpan m_updateFrequency;
-            
+
             public PeriodicOutput(ConsoleOutput messageSink, TimeSpan updateFrequency)
             {
                 m_output = messageSink;
@@ -45,41 +48,40 @@ namespace Duplicati.CommandLine
                 m_thread.Name = "Periodic console writer";
                 m_thread.Start();
             }
-            
+
             public void SetReady() { m_readyEvent.Set(); }
             public void SetFinished() { m_finishEvent.Set(); }
-            
+
             public bool Join(TimeSpan wait)
             {
                 if (m_thread != null)
                     return m_thread.Join(wait);
-                    
+
                 return true;
             }
-            
+
             private void ThreadMain()
             {
                 m_readyEvent.WaitOne();
                 if (m_finishEvent.WaitOne(TimeSpan.FromMilliseconds(10), true))
                     return;
-                    
+
                 var last_count = -1L;
                 var finished = false;
-                
+
                 while (true)
                 {
-                    Duplicati.Library.Main.OperationPhase phase;
                     float progress;
                     long filesprocessed;
                     long filesizeprocessed;
                     long filecount;
                     long filesize;
                     bool counting;
-                    m_output.OperationProgress.UpdateOverall(out phase, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
-                    
+                    m_output.OperationProgress.UpdateOverall(out _, out progress, out filesprocessed, out filesizeprocessed, out filecount, out filesize, out counting);
+
                     var files = Math.Max(0, filecount - filesprocessed);
                     var size = Math.Max(0, filesize - filesizeprocessed);
-                    
+
                     if (finished)
                     {
                         files = 0;
@@ -87,21 +89,21 @@ namespace Duplicati.CommandLine
                     }
                     else if (size > 0)
                         files = Math.Max(1, files);
-                    
+
                     if (last_count < 0 || files != last_count)
                         if (WriteOutput != null)
                             WriteOutput(progress, files, size, counting);
-                    
+
                     if (!counting)
                         last_count = files;
-                        
+
                     if (finished)
                         return;
-    
-                    finished = m_finishEvent.WaitOne(m_updateFrequency, true); 
+
+                    finished = m_finishEvent.WaitOne(m_updateFrequency, true);
                 }
             }
-            
+
             public void Dispose()
             {
                 if (m_thread != null)
@@ -110,7 +112,7 @@ namespace Duplicati.CommandLine
                     {
                         m_finishEvent.Set();
                         m_readyEvent.Set();
-                    
+
                         if (m_thread != null && m_thread.IsAlive)
                         {
                             m_thread.Abort();
@@ -130,7 +132,7 @@ namespace Duplicati.CommandLine
             Duplicati.CommandLine.Help.PrintUsage(outwriter, "example", options);
             return 0;
         }
-    
+
         public static int Help(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             Duplicati.CommandLine.Help.PrintUsage(outwriter, args.Count > 1? args[1]  : "help", options);
@@ -172,9 +174,9 @@ namespace Duplicati.CommandLine
             using(var i = new Library.Main.Controller(backend, options, console))
             {
                 setup(i);
-                i.ListAffected(args, res => 
-                { 
-                    if (res.Filesets != null && res.Filesets.Count() != 0)
+                i.ListAffected(args, res =>
+                {
+                    if (res.Filesets != null && res.Filesets.Any())
                     {
                         outwriter.WriteLine("The following filesets are affected:");
                         foreach (var e in res.Filesets)
@@ -233,6 +235,83 @@ namespace Duplicati.CommandLine
                 return 0;
             }
         }
+
+        /// <summary>
+        /// For bare file names with no wildcards, replace argument with
+        /// the equivalent of prefixing with "*/" so we search all folders.
+        /// </summary>
+        public static IEnumerable<string> PrefixArgsWithAsterisk(IEnumerable<string> argList) => argList.Select(PrefixArgWithAsterisk);
+
+        /// <summary>
+        /// For bare file names with no wildcards, return argument with
+        /// the equivalent of prefixing with "*/" so we search all folders.
+        /// </summary>
+        private static string PrefixArgWithAsterisk(string arg)
+        {
+            var containsSeparators = ContainsDirectorySeparators(arg);
+            var containsWildcards = ContainsWildcards(arg);
+
+            if (!containsSeparators && arg.StartsWith("@", StringComparison.Ordinal))
+            {
+                // Convert to Regexp filter and prefix with ".*/"
+                return $"[.*{Utility.ConvertLiteralToRegExp(Util.DirectorySeparatorString + arg.Substring(1))}]";
+            }
+            else if (!containsSeparators && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
+            {
+                // Prefix files with "*/"
+                return "*" + Util.DirectorySeparatorString + arg;
+            }
+            else
+            {
+                return arg;
+            }
+        }
+
+        /// <summary>
+        /// For folders, replace argument with the equivalent of suffixing
+        /// with "*" so we restore contents in the folder.
+        /// </summary>
+        public static IEnumerable<string> SuffixArgsWithAsterisk(IEnumerable<string> argList) => argList.Select(SuffixArgWithAsterisk);
+
+        /// <summary>
+        /// For folders, return argument with the equivalent of suffixing
+        /// with "*" so we restore contents in the folder.
+        /// </summary>
+        private static string SuffixArgWithAsterisk(string arg)
+        {
+            var containsWildcards = ContainsWildcards(arg);
+            var endsWithSeparator = arg.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
+
+            if (endsWithSeparator && arg.StartsWith("@", StringComparison.Ordinal))
+            {
+                // Convert to Regexp filter and suffix with ".*"
+                return $"[{Utility.ConvertLiteralToRegExp(arg.Substring(1))}.*]";
+            }
+            else if (endsWithSeparator && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
+            {
+                // Suffix with "*"
+                return arg + "*";
+            }
+            else
+            {
+                return arg;
+            }
+        }
+
+        private static readonly char[] pathSeparatorsCharacters = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+
+        /// <summary>
+        /// Returns true if <paramref name="s"/> contains directory separator characters.
+        /// </summary>
+        public static bool ContainsDirectorySeparators(string s) => s.IndexOfAny(pathSeparatorsCharacters) >= 0;
+
+        private static readonly char[] wildcardCharacters = new[] { '*', '?' };
+
+        /// <summary>
+        /// Returns true if <paramref name="s"/> contains wildcard characters.
+        /// </summary>
+        public static bool ContainsWildcards(string s) => s.IndexOfAny(wildcardCharacters) >= 0;
+
         public static int List(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             filter = filter ?? new Duplicati.Library.Utility.FilterExpression();
@@ -245,7 +324,7 @@ namespace Duplicati.CommandLine
                 setup(i);
                 var backend = args[0];
                 args.RemoveAt(0);
-                                
+
                 if (args.Count == 1)
                 {
                     long v;
@@ -258,7 +337,7 @@ namespace Duplicati.CommandLine
                             options["version"] = v.ToString();
                         }
                     }
-                    else if (args[0].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[0].StartsWith("[", StringComparison.Ordinal))
+                    else if (!ContainsWildcards(args[0]) && !args[0].StartsWith("[", StringComparison.Ordinal) && !args[0].StartsWith("@", StringComparison.Ordinal))
                     {
                         try
                         {
@@ -272,12 +351,9 @@ namespace Duplicati.CommandLine
                         }
                     }
                 }
-                
-                // Prefix all filenames with "*/" so we search all folders
-                for(var ix = 0; ix < args.Count; ix++) 
-                    if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal))
-                        args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
-                
+
+                args = PrefixArgsWithAsterisk(args).ToList();
+
                 // Support for not adding the --auth-username if possible
                 string dbpath;
                 options.TryGetValue("dbpath", out dbpath);
@@ -304,20 +380,20 @@ namespace Duplicati.CommandLine
                     }
                 }
 
-            
+
                 bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
                 options.Remove("control-files");
-                
+
                 var res = controlFiles ? i.ListControlFiles(args, filter) : i.List(args, filter);
 
-                //If there are no files matching, and we are looking for one or more files, 
+                //If there are no files matching, and we are looking for one or more files,
                 // try again with all-versions set
                 var compareFilter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(args), filter);
-                var isRequestForFiles = 
-                    !controlFiles && res.Filesets.Count() != 0 && 
-                    (res.Files == null || res.Files.Count() == 0) && 
+                var isRequestForFiles =
+                    !controlFiles && res.Filesets.Any() &&
+                    (res.Files == null || !res.Files.Any()) &&
                     !compareFilter.Empty;
-                
+
                 if (isRequestForFiles && !Library.Utility.Utility.ParseBoolOption(options, "all-versions"))
                 {
                     outwriter.WriteLine("No files matching, looking in all versions");
@@ -327,10 +403,10 @@ namespace Duplicati.CommandLine
                     res = i.List(args, filter);
                 }
 
-                if (res.Filesets.Count() != 0 && (res.Files == null || res.Files.Count() == 0) && compareFilter.Empty)
+                if (res.Filesets.Any() && (res.Files == null || !res.Files.Any()) && compareFilter.Empty)
                 {
                     outwriter.WriteLine("Listing filesets:");
-                    
+
                     foreach(var e in res.Filesets)
                     {
                         if (e.FileCount >= 0)
@@ -345,11 +421,11 @@ namespace Duplicati.CommandLine
                 }
                 else
                 {
-                    if (res.Filesets.Count() == 0)
+                    if (!res.Filesets.Any())
                     {
                         outwriter.WriteLine("No time or version matched a fileset");
                     }
-                    else if (res.Files == null || res.Files.Count() == 0)
+                    else if (res.Files == null || !res.Files.Any())
                     {
                         outwriter.WriteLine("Found {0} filesets, but no files matched", res.Filesets.Count());
                     }
@@ -357,8 +433,8 @@ namespace Duplicati.CommandLine
                     {
                         var f = res.Filesets.First();
                         outwriter.WriteLine("Listing contents {0} ({1}):", f.Version, f.Time);
-                        foreach(var e in res.Files)
-                            outwriter.WriteLine("{0} {1}", e.Path, e.Path.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) ? "" : "(" + Library.Utility.Utility.FormatSizeString(e.Sizes.First()) + ")");
+                        foreach (var e in res.Files)
+                            outwriter.WriteLine("{0} {1}", e.Path, e.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal) ? "" : "(" + Library.Utility.Utility.FormatSizeString(e.Sizes.First()) + ")");
                     }
                     else
                     {
@@ -368,35 +444,35 @@ namespace Duplicati.CommandLine
                             outwriter.WriteLine(e.Path);
                             foreach(var nx in res.Filesets.Zip(e.Sizes, (a, b) => new { Index = a.Version, Time = a.Time, Size = b } ))
                                 outwriter.WriteLine("{0}\t: {1} {2}", nx.Index, nx.Time, nx.Size < 0 ? " - " : Library.Utility.Utility.FormatSizeString(nx.Size));
-                                
+
                             outwriter.WriteLine();
                         }
-                        
+
                     }
                 }
             }
-            
+
             return 0;
         }
-        
+
         public static int Delete(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
-            
-            if (!options.Keys.Where(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)).Any())
+
+            if (!options.Keys.Any(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)))
             {
-                outwriter.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions)); 
+                outwriter.WriteLine(Strings.Program.DeleteCommandNeedsOptions("delete", requiredOptions));
                 return 200;
             }
-        
+
             using (var console = new ConsoleOutput(outwriter, options))
             using(var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 args.RemoveAt(0);
                 var res = i.Delete();
-                
-                if (res.DeletedSets.Count() == 0)
+
+                if (!res.DeletedSets.Any())
                 {
                     outwriter.WriteLine(Strings.Program.NoFilesetsMatching);
                 }
@@ -406,14 +482,14 @@ namespace Duplicati.CommandLine
                         outwriter.WriteLine(Strings.Program.WouldDeleteBackups);
                     else
                         outwriter.WriteLine(Strings.Program.DeletedBackups);
-                        
+
                     foreach(var f in res.DeletedSets)
-                        outwriter.WriteLine(string.Format("{0}: {1}", f.Item1, f.Item2));
+                        outwriter.WriteLine("{0}: {1}", f.Item1, f.Item2);
                 }
             }
-            
+
             return 0;
-        
+
         }
 
         public static int Repair(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
@@ -435,23 +511,15 @@ namespace Duplicati.CommandLine
         {
             if (args.Count < 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
-                
+
             string backend = args[0];
             args.RemoveAt(0);
-            
+
             bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
             options.Remove("control-files");
 
-            // Prefix all filenames with "*/" so we search all folders
-            for (var ix = 0; ix < args.Count; ix++)
-                if (args[ix].IndexOfAny(new char[] { '*', '?', System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal))
-                    args[ix] = "*" + System.IO.Path.DirectorySeparatorChar.ToString() + args[ix];
+            args = SuffixArgsWithAsterisk(PrefixArgsWithAsterisk(args)).ToList();
 
-            // suffix all folders with "*" so we restore all contents in the folder
-            for (var ix = 0; ix < args.Count; ix++)
-                if (args[ix].IndexOfAny(new char[] { '*', '?' }) < 0 && !args[ix].StartsWith("[", StringComparison.Ordinal) && args[ix].EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-                    args[ix] += "*";
-            
             using(var output = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(backend, options, output))
             {
@@ -504,10 +572,10 @@ namespace Duplicati.CommandLine
                         string restorePath;
                         options.TryGetValue("restore-path", out restorePath);
 
-                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.FilesRestored, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
+                        output.MessageEvent(string.Format("Restored {0} ({1}) files to {2}", res.RestoredFiles, Library.Utility.Utility.FormatSizeString(res.SizeOfRestoredFiles), string.IsNullOrEmpty(restorePath) ? "original path" : restorePath));
                         output.MessageEvent(string.Format("Duration of restore: {0:hh\\:mm\\:ss}", res.Duration));
 
-                        if (res.FilesRestored > 0 && !Library.Main.Utility.SuppressDonationMessages)
+                        if (res.RestoredFiles > 0 && !Library.Main.Utility.SuppressDonationMessages)
                         {
                             output.MessageEvent("***********************************************");
                             output.MessageEvent("Did we help save your files? If so, please support Duplicati with a donation. We suggest 10€ for private use and 100€ for commercial use.");
@@ -519,12 +587,12 @@ namespace Duplicati.CommandLine
                         if (output.FullResults)
                             Library.Utility.Utility.PrintSerializeObject(res, outwriter);
 
-                        if (res.Warnings.Count() > 0)
+                        if (res.Warnings.Any())
                             return 2;
                     }
                 }
             }
-            
+
             return 0;
         }
 
@@ -532,7 +600,7 @@ namespace Duplicati.CommandLine
         {
             if (args.Count < 2)
                 return PrintWrongNumberOfArguments(outwriter, args, 2);
-                
+
             var backend = args[0];
             args.RemoveAt(0);
             var dirs = args.ToArray();
@@ -623,7 +691,7 @@ namespace Duplicati.CommandLine
                 output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
                 output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
 
-                if (result.ExaminedFiles == 0 && (filter != null || !filter.Empty))
+                if (result.ExaminedFiles == 0 && (filter != null && !filter.Empty))
                     output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
 
                 output.MessageEvent("Backup completed successfully!");
@@ -647,7 +715,7 @@ namespace Duplicati.CommandLine
                 return 0;
             }
         }
-                
+
         public static int Compact(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args.Count != 1)
@@ -668,7 +736,7 @@ namespace Duplicati.CommandLine
             var fullResults = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
             if (args.Count != 1 && args.Count != 2)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
-            
+
             var tests = 1L;
             if (args.Count == 2)
             {
@@ -677,7 +745,7 @@ namespace Duplicati.CommandLine
                 else
                     tests = Convert.ToInt64(args[1]);
             }
-            
+
             Library.Interface.ITestResults result;
             using (var console = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(args[0], options, console))
@@ -685,7 +753,7 @@ namespace Duplicati.CommandLine
                 setup(i);
                 result = i.Test(tests);
             }
-            
+
             var totalFiles = result.Verifications.Count();
             if (totalFiles == 0)
             {
@@ -694,8 +762,8 @@ namespace Duplicati.CommandLine
             }
             else
             {
-                var filtered = from n in result.Verifications where n.Value.Count() != 0 select n;
-                if (filtered.Count() == 0)
+                var filtered = from n in result.Verifications where n.Value.Any() select n;
+                if (!filtered.Any())
                 {
                     outwriter.WriteLine("Examined {0} files and found no errors", totalFiles);
                     return 0;
@@ -708,24 +776,24 @@ namespace Duplicati.CommandLine
                         if (changecount == 0)
                         {
                             if (fullResults)
-                                Console.WriteLine("{0}: No errors", n.Key);
+                                outwriter.WriteLine("{0}: No errors", n.Key);
                         }
                         else
                         {
-                            Console.WriteLine("{0}: {1} errors", n.Key, changecount);
+                            outwriter.WriteLine("{0}: {1} errors", n.Key, changecount);
                             var count = 0;
                             foreach (var c in n.Value)
                             {
                                 count++;
-                                Console.WriteLine("\t{0}: {1}", c.Key, c.Value);
+                                outwriter.WriteLine("\t{0}: {1}", c.Key, c.Value);
                                 if (!fullResults && count == 10 && changecount > 10)
                                 {
-                                    Console.WriteLine("\t... and {0} more", changecount - count);
+                                    outwriter.WriteLine("\t... and {0} more", changecount - count);
                                     break;
                                 }
                             }
 
-                            Console.WriteLine();
+                            outwriter.WriteLine();
                         }
                     }
 
@@ -733,14 +801,14 @@ namespace Duplicati.CommandLine
                 }
             }
         }
-                
+
         private static int PrintWrongNumberOfArguments(TextWriter outwriter, List<string> args, int expected)
         {
             outwriter.WriteLine(Strings.Program.WrongNumberOfCommandsError_v2(args.Count, expected, args.Select(n => "\"" + n + "\"").ToArray()));
             return 200;
         }
 
-        public static int PrintInvalidCommand(TextWriter outwriter, string command, List<string> args)
+        public static int PrintInvalidCommand(TextWriter outwriter, string command)
         {
             outwriter.WriteLine(Strings.Program.InvalidCommandError(command));
             return 200;
@@ -755,7 +823,7 @@ namespace Duplicati.CommandLine
             {
                 if (args.Count > 0)
                     dbpath = Library.Main.DatabaseLocator.GetDatabasePath(args[0], new Duplicati.Library.Main.Options(options), false, true);
-                    
+
                 if (dbpath == null)
                 {
                     outwriter.WriteLine("No local database found, please add --{0}", "dbpath");
@@ -763,9 +831,9 @@ namespace Duplicati.CommandLine
                 }
                 else
                     options["dbpath"] = dbpath;
-                    
+
             }
-            
+
             if (args.Count == 0)
                 args = new List<string>(new string[] { "file://unused", "report" });
             else if (args.Count == 1)
@@ -787,14 +855,14 @@ namespace Duplicati.CommandLine
 
             return 0;
         }
-        
+
         public static int ListChanges(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             var fullresult = Duplicati.Library.Utility.Utility.ParseBoolOption(options, "full-result");
 
             if (args.Count < 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
-            
+
             // Support for not adding the --auth-username if possible
             string dbpath;
             options.TryGetValue("dbpath", out dbpath);
@@ -804,7 +872,7 @@ namespace Duplicati.CommandLine
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }
-            
+
             // Don't ask for passphrase if we have a local db
             if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption") && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "no-local-db"))
             {
@@ -814,9 +882,9 @@ namespace Duplicati.CommandLine
                     options["no-encryption"] = "true";
             }
 
-            Action<Duplicati.Library.Interface.IListChangesResults, IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>>> handler = 
-                (result, items) => 
-                { 
+            Action<Duplicati.Library.Interface.IListChangesResults, IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>>> handler =
+                (result, items) =>
+                {
                     outwriter.WriteLine("Listing changes");
                     outwriter.WriteLine("  {0}: {1}", result.BaseVersionIndex, result.BaseVersionTimestamp);
                     outwriter.WriteLine("  {0}: {1}", result.CompareVersionIndex, result.CompareVersionTimestamp);
@@ -912,9 +980,9 @@ namespace Duplicati.CommandLine
                         result.DeletedFolders + result.DeletedSymlinks + result.DeletedFiles == 0)
                         outwriter.WriteLine("  No changes found");
 
-                    outwriter.WriteLine("Size of backup {0}: {1}", result.CompareVersionIndex, Library.Utility.Utility.FormatSizeString(result.CurrentSize));                    
+                    outwriter.WriteLine("Size of backup {0}: {1}", result.CompareVersionIndex, Library.Utility.Utility.FormatSizeString(result.CurrentSize));
                 };
-                            
+
             using (var console = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(args[0], options, console))
             {
@@ -927,7 +995,7 @@ namespace Duplicati.CommandLine
 
             return 0;
         }
-        
+
         public static int TestFilters(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             if (args == null || args.Count < 1)
@@ -935,16 +1003,16 @@ namespace Duplicati.CommandLine
                 outwriter.WriteLine("No source paths given");
                 return 200;
             }
-        
+
             using (var console = new ConsoleOutput(outwriter, options))
             using(var i = new Library.Main.Controller("dummy://", options, console))
             {
                 setup(i);
                 var result = i.TestFilter(args.ToArray(), filter);
-                
+
                 outwriter.WriteLine("Matched {0} files ({1})", result.FileCount, Duplicati.Library.Utility.Utility.FormatSizeString(result.FileSize));
             }
-            
+
             return 0;
         }
 
@@ -996,12 +1064,12 @@ namespace Duplicati.CommandLine
 
 
             using (var console = new ConsoleOutput(outwriter, options))
-            using (var i = new Library.Main.Controller(args[0], options, console))
+            using (var i = new Library.Main.Controller(backend, options, console))
             {
                 setup(i);
                 i.PurgeFiles(filter);
             }
-            
+
             return 0;
         }
 
@@ -1052,7 +1120,7 @@ namespace Duplicati.CommandLine
             using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
-                var res = i.PurgeBrokenFiles(filter);
+                i.PurgeBrokenFiles(filter);
             }
 
             return 0;
@@ -1078,9 +1146,9 @@ namespace Duplicati.CommandLine
         }
 
         public static int Vacuum(
-            TextWriter outwriter, 
+            TextWriter outwriter,
             Action<Duplicati.Library.Main.Controller> setup,
-            List<string> args, Dictionary<string, string> options, 
+            List<string> args, Dictionary<string, string> options,
             Library.Utility.IFilter filter)
         {
             if (args.Count != 1)

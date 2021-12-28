@@ -1,11 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Net;
-
+﻿using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Sia
 {
@@ -19,12 +20,16 @@ namespace Duplicati.Library.Backend.Sia
         private readonly int m_apiport;
         private readonly string m_targetpath;
         private readonly float m_redundancy;
-        private readonly System.Net.NetworkCredential m_user;
+        private readonly string m_authorization;
 
-        public Sia() {
-
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
+        public Sia()
+        {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public Sia(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
@@ -54,11 +59,9 @@ namespace Duplicati.Library.Backend.Sia
             if (m_targetpath.Length == 0)
                 m_targetpath = "backup";
 
-            m_user = new System.Net.NetworkCredential();
-            if (options.ContainsKey(SIA_PASSWORD))
-            {             
-                m_user.Password = options[SIA_PASSWORD];
-            }
+            m_authorization = options.ContainsKey(SIA_PASSWORD) && !string.IsNullOrEmpty(options[SIA_PASSWORD])
+                ? "Basic " + System.Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(":" + options[SIA_PASSWORD]))
+                : null;
         }
 
         private System.Net.HttpWebRequest CreateRequest(string endpoint)
@@ -66,10 +69,10 @@ namespace Duplicati.Library.Backend.Sia
             string baseurl = "http://" + m_apihost + ":" + m_apiport;
             System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(baseurl + endpoint);
 
-            if (!string.IsNullOrEmpty(m_user.Password))
+            if (m_authorization != null)
             {
-                req.Credentials = m_user;
-                req.PreAuthenticate = true;
+                // Manually set Authorization header, since System.Net.NetworkCredential ignores credentials with empty usernames
+                req.Headers.Add("Authorization", m_authorization);
             }
 
             req.KeepAlive = false;
@@ -80,8 +83,13 @@ namespace Duplicati.Library.Backend.Sia
 
         private string getResponseBodyOnError(string context, System.Net.WebException wex)
         {
+            HttpWebResponse response = wex.Response as HttpWebResponse;
+            if (response is null)
+            {
+                return $"{context} failed with error: {wex.Message}";
+            }
+
             string body = "";
-            System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)wex.Response;
             using (System.IO.Stream data = response.GetResponseStream())
             using (var reader = new System.IO.StreamReader(data))
             {
@@ -296,16 +304,18 @@ namespace Duplicati.Library.Backend.Sia
                     // in our target path
                     if (f.Siapath.StartsWith(m_targetpath, StringComparison.Ordinal))
                     {
-                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1));
-                        fe.Size = f.Filesize;
-                        fe.IsFolder = false;
+                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1))
+                        {
+                            Size = f.Filesize,
+                            IsFolder = false
+                        };
                         yield return fe;
                     }
                 }
             }
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             string endpoint ="";
             string siafile = m_targetpath + "/" + remotename;
@@ -313,31 +323,33 @@ namespace Duplicati.Library.Backend.Sia
             try {
                 endpoint = string.Format("/renter/upload/{0}/{1}?source={2}",
                     m_targetpath, 
-                    Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20"),
-                    Library.Utility.Uri.UrlEncode(filename).Replace("+", "%20")
+                    Utility.Uri.UrlEncode(remotename).Replace("+", "%20"),
+                    Utility.Uri.UrlEncode(filename).Replace("+", "%20")
                 );
 
-                System.Net.HttpWebRequest req = CreateRequest(endpoint);
-                req.Method = System.Net.WebRequestMethods.Http.Post;
+                HttpWebRequest req = CreateRequest(endpoint);
+                req.Method = WebRequestMethods.Http.Post;
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                AsyncHttpRequest areq = new AsyncHttpRequest(req);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300)
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                        throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
 
                     while (! IsUploadComplete( siafile ))
                     {
-                        System.Threading.Thread.Sleep(5000);
+                        Thread.Sleep(5000);
                     }
                 }
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
                 throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
+
+            return Task.FromResult(true);
         }
 
         public void Get(string remotename, string localname)
@@ -381,7 +393,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw new Exception(getResponseBodyOnError(endpoint, wex));
@@ -412,7 +424,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw new Exception(getResponseBodyOnError(endpoint, wex));

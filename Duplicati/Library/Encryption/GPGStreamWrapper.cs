@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -18,8 +18,6 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace Duplicati.Library.Encryption
@@ -32,7 +30,7 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// Wraps a crypto stream, ensuring that it is correctly disposed
         /// </summary>
-        /// <param name="basestream">The stream to wrape</param>
+        /// <param name="basestream">The stream to wrap</param>
         public GPGStreamWrapper(System.Diagnostics.Process p, System.Threading.Thread t, Stream basestream)
             : base(basestream)
         {

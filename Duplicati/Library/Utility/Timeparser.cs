@@ -26,7 +26,7 @@ namespace Duplicati.Library.Utility
 
     /// <summary>
     /// Utility class to parse date/time offset strings like duplicity does:
-    /// http://www.nongnu.org/duplicity/duplicity.1.html#sect7
+    /// http://duplicity.nongnu.org/vers8/duplicity.1.html#sect8
     /// </summary>
     public static class Timeparser
     {
@@ -51,7 +51,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrEmpty(datestring)) 
                 return offset;
 
-            if (datestring.Trim().ToLower() == "now")
+            if (String.Equals(datestring.Trim(), "now", StringComparison.OrdinalIgnoreCase))
                 return DateTime.Now;
 
             long l;

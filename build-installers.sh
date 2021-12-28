@@ -26,6 +26,9 @@ MONO=/Library/Frameworks/Mono.framework/Commands/mono
 
 GPG=/usr/local/bin/gpg2
 
+# Newer GPG needs this to allow input from a non-terminal
+export GPG_TTY=$(tty)
+
 ZIPFILE=$(basename "$1")
 VERSION=$(echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 1)
 BUILDTYPE=$(echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 2)
@@ -52,9 +55,18 @@ echo "DEBName: ${DEBNAME}"
 echo "SPKName: ${SPKNAME}"
 
 build_file_signatures() {
-	if [ "z${GPGID}" != "z" ]; then
-		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--output" "$2.sig" "--detach-sig" "$1"
-		echo "$GPGKEY" | "${GPG}" "--passphrase-fd" "0" "--batch" "--yes" "--default-key=${GPGID}" "--armor" "--output" "$2.sig.asc" "--detach-sig" "$1"
+	if [ -f "${GPG_KEYFILE}" ]; then
+		"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+		--inputfile=\"$1\" \
+		--signaturefile=\"$2.sig\" \
+		--armor=false --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+		--keyfile-password="${KEYFILE_PASSWORD}"
+
+		"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+		--inputfile=\"$1\" \
+		--signaturefile=\"$2.sig.asc\" \
+		--armor=true --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+		--keyfile-password="${KEYFILE_PASSWORD}"
 	fi
 
 	md5 "$1" | awk -F ' ' '{print $NF}' > "$2.md5"
@@ -97,6 +109,8 @@ cd "Installer/OSX"
 bash "make-dmg.sh" "../../$1"
 mv "Duplicati.dmg" "../../${UPDATE_TARGET}/${DMGNAME}"
 mv "Duplicati.pkg" "../../${UPDATE_TARGET}/${PKGNAME}"
+
+
 cd "../.."
 
 echo ""
@@ -188,7 +202,7 @@ if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 	authenticode_sign() {
 		NEST=""
 		for hashalg in sha1 sha256; do
-			SIGN_MSG=$(osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile)
+			SIGN_MSG=$(osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.digicert.com?alg=${hashalg}" -in "$1" -out tmpfile)
 			if [ "${SIGN_MSG}" != "Succeeded" ]; then echo "${SIGN_MSG}"; fi
 			mv tmpfile "$1"
 			NEST="-nest"
@@ -214,6 +228,14 @@ if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 else
 	echo "Skipped authenticode signing as files are missing"
 fi
+
+echo ""
+echo ""
+echo "Performing macOS notarization ..."
+
+# Notarize and staple, cannot run in parallel but takes a while
+bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${DMGNAME}"
+bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${PKGNAME}"
 
 echo ""
 echo ""

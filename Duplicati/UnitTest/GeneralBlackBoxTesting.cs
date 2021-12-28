@@ -19,18 +19,17 @@ using System.Linq;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Reflection;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
-    public class GeneralBlackBoxTesting
+    public class GeneralBlackBoxTesting : BasicSetupHelper
     {
-        private static readonly string SOURCE_FOLDERS =
-            Path.Combine(
-                string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-                ? Path.Combine(Library.Utility.Utility.HOME_PATH, "duplicati_testdata")
-                : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
-            , "DSMCBE");
+        private static readonly string SOURCE_FOLDERS = Path.Combine(BASEFOLDER, "DSMCBE");
+        private readonly string zipFilename = "DSMCBE.zip";
+        private string zipFilepath => Path.Combine(BASEFOLDER, this.zipFilename);
 
         protected IEnumerable<string> TestFolders
         {
@@ -46,7 +45,7 @@ namespace Duplicati.UnitTest
             }
         }
 
-        protected Dictionary<string, string> TestOptions
+        protected override Dictionary<string, string> TestOptions
         {
             get
             {
@@ -62,12 +61,38 @@ namespace Duplicati.UnitTest
                 return x == "x" ? null : x;
             }
         }
+
+        public override void OneTimeSetUp()
+        {
+            base.OneTimeSetUp();
+            
+            using (WebClient client = new WebClient())
+            {
+                client.DownloadFile($"https://testfiles.duplicati.com/{this.zipFilename}", this.zipFilepath);
+            }
+            
+            System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
+        }
+
+        public override void OneTimeTearDown()
+        {
+            if (Directory.Exists(SOURCE_FOLDERS))
+            {
+                Directory.Delete(SOURCE_FOLDERS, true);
+            }
+            if (File.Exists(this.zipFilepath))
+            {
+                File.Delete(this.zipFilepath);
+            }
+        }
+
         [Test]
         [Category("SVNData")]
         public void TestWithSVNShort()
         {
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, TestTarget);
         }
+        
         [Test]
         [Category("SVNDataLong")]
         public void TestWithSVNLong()

@@ -14,14 +14,17 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using Duplicati.Library.Interface;
-using Duplicati.Library;
 using Duplicati.Library.Backend.OpenStack;
+using Duplicati.Library.Interface;
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.HubiC
 {
+    // ReSharper disable once UnusedMember.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class HubiCBackend : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
@@ -105,9 +108,9 @@ namespace Duplicati.Library.Backend.HubiC
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            m_openstack.Put(remotename, stream);
+            return m_openstack.PutAsync(remotename, stream, cancelToken);
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -124,9 +127,9 @@ namespace Duplicati.Library.Backend.HubiC
             return m_openstack.List();
         }
 
-        public void Put(string remotename, string filename)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            m_openstack.Put(remotename, filename);
+            return m_openstack.PutAsync(remotename, filename, cancelToken);
         }
 
         public void Get(string remotename, string filename)

@@ -32,7 +32,7 @@ namespace Duplicati.Library.SQLiteHelper
     /// This class will read embedded files from the given folder.
     /// Updates should have the form &quot;1.Sample upgrade.sql&quot;.
     /// When the database schema changes, simply put a new file into the folder
-    /// and set it to be emnbedded in the binary.
+    /// and set it to be embedded in the binary.
     /// 
     /// Additionally, it's possible to execute custom code before and after 
     /// the SQL is executed. To set up a custom upgrade stage, add your
@@ -182,7 +182,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         /// <param name="connection">The database connection to use</param>
         /// <param name="sourcefile">The file the database is placed in</param>
-        public static void UpgradeDatabase(IDbConnection connection, string sourcefile, string schema, IList<string> versions)
+        private static void UpgradeDatabase(IDbConnection connection, string sourcefile, string schema, IList<string> versions)
         {
             if (connection.State != ConnectionState.Open)
             {
@@ -236,7 +236,7 @@ namespace Duplicati.Library.SQLiteHelper
                 }
 
                 //On a new database, we just load the most current schema, and upgrade from there
-                //This avoids potentitally lenghty upgrades
+                //This avoids potentially lengthy upgrades
                 if (dbversion == -1)
                 {
                     cmd.CommandText = PreparseSQL(schema, preparserVars);
@@ -246,9 +246,20 @@ namespace Duplicati.Library.SQLiteHelper
                 }
                 else if (versions.Count > dbversion)
                 {
-                    string backupfile = System.IO.Path.Combine(
-                        System.IO.Path.GetDirectoryName(sourcefile), 
-                        Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + DateTime.Now.ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+                    // In some cases (mostly test setups)
+                    // the database upgrades can happen within a second of each other
+                    // causing the upgrades to fail. This scheme adds up to 15 seconds
+                    // delay, making room for multiple rapid upgrade calls
+                    var backupfile = string.Empty;
+                    for (var i = 0; i < 10; i++)
+                    {
+                        backupfile = System.IO.Path.Combine(
+                            System.IO.Path.GetDirectoryName(sourcefile),
+                            Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddhhmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+
+                        if (!System.IO.File.Exists(backupfile))
+                            break;
+                    }
 
                     try
                     {

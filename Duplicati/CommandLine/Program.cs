@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 //
@@ -19,11 +19,11 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
-using Duplicati.Library.Utility;
 using System.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.CommandLine
 {
@@ -49,20 +49,6 @@ namespace Duplicati.CommandLine
             FROM_COMMANDLINE = true;
             try
             {
-                //If we are on Windows, append the bundled "win-tools" programs to the search path
-                //We add it last, to allow the user to override with other versions
-                if (Library.Utility.Utility.IsClientWindows)
-                {
-                    string wintools = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "win-tools");
-                    Environment.SetEnvironmentVariable("PATH",
-                        Environment.GetEnvironmentVariable("PATH") +
-                        System.IO.Path.PathSeparator.ToString() +
-                        wintools +
-                        System.IO.Path.PathSeparator.ToString() +
-                        System.IO.Path.Combine(wintools, "gpg") //GPG needs to be in a subfolder for wrapping reasons
-                    );
-                }
-
                 return RunCommandLine(Console.Out, Console.Error, c => { }, args);
             }
             finally
@@ -75,51 +61,51 @@ namespace Duplicati.CommandLine
         {
             get
             {
-                var knownCommands = new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.OrdinalIgnoreCase);
-                knownCommands["help"] = Commands.Help;
-                knownCommands["example"] = Commands.Examples;
-                knownCommands["examples"] = Commands.Examples;
-
-                knownCommands["find"] = Commands.List;
-                knownCommands["list"] = Commands.List;
-
-                knownCommands["delete"] = Commands.Delete;
-                knownCommands["backup"] = Commands.Backup;
-                knownCommands["restore"] = Commands.Restore;
-
-                knownCommands["repair"] = Commands.Repair;
-                knownCommands["purge"] = Commands.PurgeFiles;
-                knownCommands["list-broken-files"] = Commands.ListBrokenFiles;
-                knownCommands["purge-broken-files"] = Commands.PurgeBrokenFiles;
-
-                knownCommands["compact"] = Commands.Compact;
-                knownCommands["create-report"] = Commands.CreateBugReport;
-                knownCommands["compare"] = Commands.ListChanges;
-                knownCommands["test"] = Commands.Test;
-                knownCommands["verify"] = Commands.Test;
-                knownCommands["test-filters"] = Commands.TestFilters;
-                knownCommands["test-filter"] = Commands.TestFilters;
-                knownCommands["affected"] = Commands.Affected;
-                knownCommands["vacuum"] = Commands.Vacuum;
-
-                knownCommands["system-info"] = Commands.SystemInfo;
-                knownCommands["systeminfo"] = Commands.SystemInfo;
-
-                knownCommands["send-mail"] = Commands.SendMail;
-
+                var knownCommands =
+                    new Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>,
+                        Dictionary<string, string>, Library.Utility.IFilter, int>>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["help"] = Commands.Help,
+                        ["example"] = Commands.Examples,
+                        ["examples"] = Commands.Examples,
+                        ["find"] = Commands.List,
+                        ["list"] = Commands.List,
+                        ["delete"] = Commands.Delete,
+                        ["backup"] = Commands.Backup,
+                        ["restore"] = Commands.Restore,
+                        ["repair"] = Commands.Repair,
+                        ["purge"] = Commands.PurgeFiles,
+                        ["list-broken-files"] = Commands.ListBrokenFiles,
+                        ["purge-broken-files"] = Commands.PurgeBrokenFiles,
+                        ["compact"] = Commands.Compact,
+                        ["create-report"] = Commands.CreateBugReport,
+                        ["compare"] = Commands.ListChanges,
+                        ["test"] = Commands.Test,
+                        ["verify"] = Commands.Test,
+                        ["test-filters"] = Commands.TestFilters,
+                        ["test-filter"] = Commands.TestFilters,
+                        ["affected"] = Commands.Affected,
+                        ["vacuum"] = Commands.Vacuum,
+                        ["system-info"] = Commands.SystemInfo,
+                        ["systeminfo"] = Commands.SystemInfo,
+                        ["send-mail"] = Commands.SendMail
+                    };
+                
                 return knownCommands;
             }
         }
 
         public static IEnumerable<string> SupportedCommands { get { return CommandMap.Keys; } }
 
-        private static int ShowChangeLog(TextWriter outwriter) {
+        private static int ShowChangeLog(TextWriter outwriter)
+        {
             var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
             outwriter.WriteLine(System.IO.File.ReadAllText(path));
             return 0;
         }
 
-        private static void CheckForUpdates(TextWriter outwriter){
+        private static void CheckForUpdates(TextWriter outwriter)
+        {
             var update = Library.AutoUpdater.UpdaterManager.LastUpdateCheckVersion;
             if (update == null)
                 update = Library.AutoUpdater.UpdaterManager.CheckForUpdate();
@@ -141,7 +127,8 @@ namespace Duplicati.CommandLine
             }
         }
 
-        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args) {
+        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args)
+        {
             List<string> cargs = new List<string>(args);
 
             var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
@@ -169,7 +156,7 @@ namespace Duplicati.CommandLine
             }
 
             // try and parse all parameter file aliases
-            foreach (string parameterOption in new []{ "parameters-file", "parameters-file", "parameterfile"} )
+            foreach (string parameterOption in new[] { "parameters-file", "parameter-file", "parameterfile" })
             {
                 if (options.ContainsKey(parameterOption) && !string.IsNullOrEmpty(options[parameterOption]))
                 {
@@ -193,15 +180,33 @@ namespace Duplicati.CommandLine
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_USERNAME")))
                     options["auth-username"] = System.Environment.GetEnvironmentVariable("AUTH_USERNAME");
 
+            if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
+                Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
+
             var showDeletionErrors = verboseErrors;
             Duplicati.Library.Utility.TempFile.RemoveOldApplicationTempFiles((path, ex) =>
             {
                 if (showDeletionErrors)
-                    outwriter.WriteLine(string.Format("Failed to delete temp file: {0}", path));
+                    outwriter.WriteLine("Failed to delete temp file: {0}", path);
             });
 
             string command = cargs[0];
             cargs.RemoveAt(0);
+
+            if (verboseErrors)
+            {
+                outwriter.WriteLine("Input command: {0}", command);
+                outwriter.WriteLine("Input arguments: ");
+                foreach (var a in cargs)
+                    outwriter.WriteLine("\t{0}", a);
+                outwriter.WriteLine();
+
+                outwriter.WriteLine("Input options: ");
+                foreach (var n in options)
+                    outwriter.WriteLine("{0}: {1}", n.Key, n.Value);
+                outwriter.WriteLine();
+            }
+
 
             if (CommandMap.ContainsKey(command))
             {
@@ -219,7 +224,7 @@ namespace Duplicati.CommandLine
             }
             else
             {
-                Commands.PrintInvalidCommand(outwriter, command, cargs);
+                Commands.PrintInvalidCommand(outwriter, command);
                 return 200;
             }
         }
@@ -238,9 +243,10 @@ namespace Duplicati.CommandLine
                 while (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
 
-                if (ex is Duplicati.Library.Interface.UserInformationException && !verboseErrors)
+                if (ex is UserInformationException exception && !verboseErrors)
                 {
                     errwriter.WriteLine();
+                    errwriter.WriteLine("ErrorID: {0}", exception.HelpID);
                     errwriter.WriteLine(ex.Message);
                 }
                 else if (!(ex is Library.Interface.CancelException))
@@ -283,14 +289,15 @@ namespace Duplicati.CommandLine
         {
             try
             {
-                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Library.Utility.Utility.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
+                List<string> fargs = new List<string>(Library.Utility.Utility.ReadFileWithDefaultEncoding(Environment.ExpandEnvironmentVariables(filename)).Replace("\r\n", "\n").Replace("\r", "\n").Split(new String[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
                 var newsource = new List<string>();
                 string newtarget = null;
                 string prependfilter = null;
                 string appendfilter = null;
                 string replacefilter = null;
 
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) =>
+                {
                     if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
                     {
                         newsource.Add(value);
@@ -332,27 +339,27 @@ namespace Duplicati.CommandLine
                     filter = newfilter;
 
                 if (!string.IsNullOrWhiteSpace(prependfilter))
-                    filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries)), filter);
+                    filter = Library.Utility.FilterExpression.Combine(Library.Utility.FilterExpression.Deserialize(prependfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)), filter);
 
                 if (!string.IsNullOrWhiteSpace(appendfilter))
-                    filter = Library.Utility.FilterExpression.Combine(filter, Library.Utility.FilterExpression.Deserialize(appendfilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries)));
+                    filter = Library.Utility.FilterExpression.Combine(filter, Library.Utility.FilterExpression.Deserialize(appendfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)));
 
                 if (!string.IsNullOrWhiteSpace(replacefilter))
-                    filter = Library.Utility.FilterExpression.Deserialize(replacefilter.Split(new string[] {System.IO.Path.PathSeparator.ToString()}, StringSplitOptions.RemoveEmptyEntries));
+                    filter = Library.Utility.FilterExpression.Deserialize(replacefilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
 
                 if (!string.IsNullOrEmpty(newtarget))
-                   {
-                       if (cargs.Count <= 1)
-                           cargs.Add(newtarget);
-                       else
-                           cargs[1] = newtarget;
-                   }
+                {
+                    if (cargs.Count <= 1)
+                        cargs.Add(newtarget);
+                    else
+                        cargs[1] = newtarget;
+                }
 
                 if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
-                       cargs.AddRange(newsource);
+                    cargs.AddRange(newsource);
                 else if (newsource.Count > 0)
                     Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
 

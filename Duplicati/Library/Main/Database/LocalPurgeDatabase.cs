@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -50,7 +51,7 @@ namespace Duplicati.Library.Main.Database
         internal long CountOrphanFiles(System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT COUNT(*) FROM ""File"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")"))
+            using (var rd = cmd.ExecuteReader(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")"))
                 if (rd.Read())
                     return rd.ConvertValueToInt64(0, 0);
                 else
@@ -65,7 +66,7 @@ namespace Duplicati.Library.Main.Database
 
             void ApplyFilter(Library.Utility.IFilter filter);
             void ApplyFilter(Action<System.Data.IDbCommand, long, string> filtercommand);
-            Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp);
+            Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup);
             IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles();
         }
 
@@ -102,12 +103,12 @@ namespace Duplicati.Library.Main.Database
 
             public void ApplyFilter(Library.Utility.IFilter filter)
             {
-                if (Library.Utility.Utility.IsFSCaseSensitive && filter is Library.Utility.FilterExpression && (filter as Library.Utility.FilterExpression).Type == Duplicati.Library.Utility.FilterType.Simple)
+                if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
                 {
                     // File list based
-                    // unfortunately we cannot do this if the filesystem is case sensitive as
+                    // unfortunately we cannot do this if the filesystem is not case-sensitive as
                     // SQLite only supports ASCII compares
-                    var p = (filter as Library.Utility.FilterExpression).GetSimpleList();
+                    var p = expression.GetSimpleList();
                     var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                     using (var cmd = m_connection.CreateCommand(m_transaction))
                     {
@@ -121,7 +122,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery();
                         }
 
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" NOT IN ""{1}""", m_tablename, filenamestable), ParentID);
+                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{1}""", m_tablename, filenamestable), ParentID);
                         cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", filenamestable));
                     }
                 }
@@ -156,23 +157,25 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
                     RemovedFileCount = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""{0}""", m_tablename), 0);
-                    RemovedFileSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""C"".""Length"") FROM ""{0}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ", m_tablename), 0);
+                    RemovedFileSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""C"".""Length"") FROM ""{0}"" A, ""FileLookup"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ", m_tablename), 0);
                     var filesetcount = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = " + ParentID), 0);
                     if (filesetcount == RemovedFileCount)
                         throw new Duplicati.Library.Interface.UserInformationException(string.Format("Refusing to purge {0} files from fileset with ID {1}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", RemovedFileCount, ParentID), "PurgeWouldRemoveEntireFileset");
                 }
             }
 
-            public Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp)
-            {                
+            public Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup)
+            {
                 var remotevolid = m_parentdb.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
                 var filesetid = m_parentdb.CreateFileset(remotevolid, timestamp, m_transaction);
+                m_parentdb.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
+
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                     cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ?, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN ""{0}"" ", m_tablename), filesetid, ParentID);
 
                 return new Tuple<long, long>(remotevolid, filesetid);
             }
-
+            
             public IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles()
             {
                 using (var cmd = m_connection.CreateCommand(m_transaction))

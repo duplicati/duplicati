@@ -52,14 +52,14 @@ override_dh_auto_install:
 	rm -rf build/lib/duplicati/SQLite/win64
 	rm -rf build/lib/duplicati/SQLite/win32
 	rm -rf build/lib/duplicati/MonoMac.dll
-	rm -rf build/lib/duplicati/alphavss
 	rm -rf build/lib/duplicati/OSX\ Icons
 	rm -rf build/lib/duplicati/OSXTrayHost
-	rm build/lib/duplicati/AlphaFS.dll
-	rm build/lib/duplicati/AlphaVSS.Common.dll
-	rm -rf build/lib/duplicati/licenses/alphavss
 	rm -rf build/lib/duplicati/licenses/MonoMac
 	rm -rf build/lib/duplicati/licenses/gpg
+	rm -rf build/lib/duplicati/win-x64/storj_uplink.dll
+	rm -rf build/lib/duplicati/win-x86/storj_uplink.dll
+	rm -rf build/lib/duplicati/storj_uplink.dll
+	rm -rf build/lib/duplicati/libstorj_uplink.dylib
 	find build/lib/duplicati/* -type f | xargs chmod 644
 	find build/lib/duplicati/* -type d | xargs chmod 755
 	find build/lib/duplicati/* -type f -name \*.exe | xargs chmod 755

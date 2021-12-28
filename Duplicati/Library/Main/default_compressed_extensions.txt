@@ -6,6 +6,7 @@
 .cab #Microsoft Cabinet File / InstallShield Cabinet File
 .cbr #Comic Book RAR Archive
 .cbz #Comic Book Zip Archive
+.dar #Disk ARchive Compressed File
 .deb #Debian Software Package
 .dl_ #Windows Dynamic Link Library, packed
 .dsft #Microsoft Application Virtualization package
@@ -97,8 +98,11 @@
 .pspimage #PaintShopPro Image
 .tif #TIFF image
 .dng #Adobe Digital Negative
-.cr2 #Canon RAW Image Format
+.cr2 #Canon RAW Image Format (already compressed despite being "RAW")
 .webp #WebP Image
+.nef #Nikon RAW format
+.arw #Sony RAW format
+.heic #High Efficiency Image File Format
 
 
 # Compressed Font files
@@ -123,9 +127,11 @@
 .max #Paperport document/image file (legacy)
 .mobi #Mobipocket EBook File
 .mshc #Microsoft Help Container File
+.odg #OpenDocument Draw Document
 .odp #OpenDocument Presentation	
 .ods #OpenDocument Spreadsheet
 .odt #OpenDocument Text Document
+.otg #OpenDocument Draw Document Template
 .otp #OpenDocument Presentation Template
 .ots #OpenDocument Spreadsheet Template
 .ott #OpenDocument Text Document Template

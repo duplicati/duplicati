@@ -90,12 +90,12 @@ namespace Duplicati.Library.UsageReporter
                     // Wait 20 seconds before we start transmitting
                     for(var i = 0; i < 20; i++)
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                         if (await self.Input.IsRetiredAsync)
                             return;
                     }
 
-                    await ProcessAbandonedFiles(self.Output, self.Input, null);
+                    await ProcessAbandonedFiles(self.Output, self.Input, null).ConfigureAwait(false);
 
                     var rs = new ReportSet();
                     var tf = GetTempFilename(instanceid);
@@ -134,7 +134,7 @@ namespace Duplicati.Library.UsageReporter
                             self.Output.WriteNoWait(tf);
                             rs = new ReportSet();
 
-                            await ProcessAbandonedFiles(self.Output, self.Input, null);
+                            await ProcessAbandonedFiles(self.Output, self.Input, null).ConfigureAwait(false);
 
                             tf = nextFilename;
                         }

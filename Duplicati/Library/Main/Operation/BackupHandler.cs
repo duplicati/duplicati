@@ -1,29 +1,25 @@
 ﻿#region Disclaimer / License
-
-// Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2019, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-
+//
 #endregion
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Interface;
@@ -32,6 +28,11 @@ using CoCoL;
 using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
+using Duplicati.Library.Logging;
+using Duplicati.Library.Main.Operation.Backup;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -58,6 +59,8 @@ namespace Duplicati.Library.Main.Operation
 
         private readonly BackupResults m_result;
 
+        public readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
         public BackupHandler(string backendurl, Options options, BackupResults results)
         {
             m_options = options;
@@ -78,15 +81,17 @@ namespace Duplicati.Library.Main.Operation
             catch (Exception ex)
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
-                    throw;
+                    throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message), "SnapshotFailed", ex);
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.ToString()));
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message));
+                else if (options.SnapShotStrategy == Options.OptimizationStrategy.Auto)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
             }
 
-            return Library.Utility.Utility.IsClientLinux ?
+            return Platform.IsClientPosix ?
                 (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
                     :
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotWindows();
+                new Duplicati.Library.Snapshots.NoSnapshotWindows();
         }
 
         /// <summary>
@@ -100,8 +105,10 @@ namespace Duplicati.Library.Main.Operation
         private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
         {
             if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
+
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
-            var service = new UsnJournalService(sources, snapshot, filter, journalData);
+            var service = new UsnJournalService(sources, snapshot, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
+                journalData, cancellationTokenSource.Token);
 
             foreach (var volumeData in service.VolumeDataList)
             {
@@ -110,7 +117,8 @@ namespace Duplicati.Library.Main.Operation
                     if (volumeData.Exception == null || volumeData.Exception is UsnJournalSoftFailureException)
                     {
                         // soft fail
-                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume", $"Performing full scan for volume \"{volumeData.Volume}\"");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume",
+                            "Performing full scan for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception?.Message);
                     }
                     else
                     {
@@ -121,7 +129,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else if (m_options.UsnStrategy == Options.OptimizationStrategy.On)
                         {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedToUseChangeJournal", volumeData.Exception,
                                 "Failed to use change journal for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception.Message);
                         }
                         else
@@ -142,13 +150,13 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (m_options.NoBackendverification)
                     {
-                        FilelistProcessor.VerifyLocalList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyLocalList(backend, m_database);
                         UpdateStorageStatsFromDatabase();
                     }
                     else
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, protectedfile);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { protectedfile });
                 }
-                catch (Exception ex)
+                catch (RemoteListVerificationException ex)
                 {
                     if (m_options.AutoCleanup)
                     {
@@ -157,7 +165,7 @@ namespace Duplicati.Library.Main.Operation
                         new RepairHandler(backend.BackendUrl, m_options, (RepairResults)m_result.RepairResults).Run();
 
                         Logging.Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
-                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                        FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { protectedfile });
                     }
                     else
                         throw;
@@ -168,40 +176,45 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperation(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long lastfilesetid)
+        private static async Task RunMainOperation(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, Common.ITaskReader taskreader, long filesetid, long lastfilesetid, CancellationToken token)
         {
-            using(new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
+            using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
                 // Make sure the CompressionHints table is initialized, otherwise all workers will initialize it
-                var tb = options.CompressionHints.Count;
+                var unused = options.CompressionHints.Count;
 
                 Task all;
-                using(new ChannelScope())
+                using (new ChannelScope())
                 {
                     all = Task.WhenAll(
-                        new [] 
-                        {
-                            Backup.DataBlockProcessor.Run(database, options, taskreader),
-                            Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader),
-                            Backup.StreamBlockSplitter.Run(options, database, taskreader),
-                            Backup.FileEnumerationProcess.Run(sources, snapshot, journalService, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, options.ChangedFilelist, taskreader),
-                            Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
-                            Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid),
-                            Backup.SpillCollectorProcess.Run(options, database, taskreader),
-                            Backup.ProgressHandler.Run(result)
-                        }
-                        // Spawn additional block hashers
-                        .Union(
-                            Enumerable.Range(0, options.ConcurrencyBlockHashers - 1).Select(x => Backup.StreamBlockSplitter.Run(options, database, taskreader))
-                        )
-                        // Spawn additional compressors
-                        .Union(
-                            Enumerable.Range(0, options.ConcurrencyCompressors - 1).Select(x => Backup.DataBlockProcessor.Run(database, options, taskreader))
-                        )
+                        new[]
+                            {
+                                    Backup.DataBlockProcessor.Run(database, options, taskreader),
+                                    Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader, token),
+                                    Backup.StreamBlockSplitter.Run(options, database, taskreader),
+                                    Backup.FileEnumerationProcess.Run(sources, snapshot, journalService,
+                                        options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy,
+                                        options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
+                                        options.ChangedFilelist, taskreader, token),
+                                    Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
+                                    Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid, token),
+                                    Backup.SpillCollectorProcess.Run(options, database, taskreader),
+                                    Backup.ProgressHandler.Run(result)
+                            }
+                            // Spawn additional block hashers
+                            .Union(
+                                Enumerable.Range(0, options.ConcurrencyBlockHashers - 1).Select(x =>
+                                    Backup.StreamBlockSplitter.Run(options, database, taskreader))
+                            )
+                            // Spawn additional compressors
+                            .Union(
+                                Enumerable.Range(0, options.ConcurrencyCompressors - 1).Select(x =>
+                                    Backup.DataBlockProcessor.Run(database, options, taskreader))
+                            )
                     );
                 }
 
-                await all;
+                await all.ConfigureAwait(false);
 
                 if (options.ChangedFilelist != null && options.ChangedFilelist.Length >= 1)
                 {
@@ -222,18 +235,32 @@ namespace Duplicati.Library.Main.Operation
                         return false;
                     });
 
-                    // store journal data in database
-                    var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
-                    if (data.Any())
+                    // store journal data in database, unless job is being canceled
+                    if (!token.IsCancellationRequested)
                     {
-                        // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
-                        await database.CreateChangeJournalDataAsync(data);
+                        var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
+                        if (data.Any())
+                        {
+                            // always record change journal data for current fileset (entry may be dropped later if nothing is uploaded)
+                            await database.CreateChangeJournalDataAsync(data);
 
-                        // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
-                        await database.UpdateChangeJournalDataAsync(data, lastfilesetid);
+                            // update the previous fileset's change journal entry to resume at this point in case nothing was backed up
+                            await database.UpdateChangeJournalDataAsync(data, lastfilesetid);
+                        }
                     }
                 }
-                
+
+                if (token.IsCancellationRequested)
+                {
+                    result.PartialBackup = true;
+                    Log.WriteWarningMessage(LOGTAG, "CancellationRequested", null, "Cancellation was requested by user.");
+                }
+                else
+                {
+                    result.PartialBackup = false;
+                    await database.UpdateFilesetAndMarkAsFullBackupAsync(filesetid);
+                }
+
                 result.OperationProgressUpdater.UpdatefileCount(result.ExaminedFiles, result.SizeOfExaminedFiles, true);
             }
         }
@@ -259,17 +286,19 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private void PostBackupVerification()
+        private void PostBackupVerification(string currentFilelistVolume)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
             {
-                using(new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
-                    FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter);
+                using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
+                    FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { currentFilelistVolume });
                 backend.WaitForComplete(m_database, null);
             }
 
-            if (m_options.BackupTestSampleCount > 0 && m_database.GetRemoteVolumes().Count() > 0)
+            long remoteVolumeCount = m_database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
+            long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100D), MidpointRounding.AwayFromZero));
+            if (samplesToTest > 0 && remoteVolumeCount > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
@@ -277,7 +306,7 @@ namespace Duplicati.Library.Main.Operation
                 using(var testdb = new LocalTestDatabase(m_database))
                 using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
                     new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
-                        .DoRun(m_options.BackupTestSampleCount, testdb, backend);
+                        .DoRun(samplesToTest, testdb, backend);
             }
         }
 
@@ -300,9 +329,9 @@ namespace Duplicati.Library.Main.Operation
                 // TODO: If we have a BackendManager, we should query through that
                 using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
                 {
-                    if (backend is Library.Interface.IQuotaEnabledBackend)
+                    if (backend is IQuotaEnabledBackend enabledBackend)
                     {
-                        Library.Interface.IQuotaInfo quota = ((Library.Interface.IQuotaEnabledBackend)backend).Quota;
+                        Library.Interface.IQuotaInfo quota = enabledBackend.Quota;
                         if (quota != null)
                         {
                             m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
@@ -310,14 +339,14 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                 }
+                
+                m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
             }
-
-            m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
         }
 
-        public void Run(string[] sources, Library.Utility.IFilter filter)
+        public void Run(string[] sources, Library.Utility.IFilter filter, CancellationToken token)
         {
-            RunAsync(sources, filter).WaitForTaskOrThrow();
+            RunAsync(sources, filter, token).WaitForTaskOrThrow();
         }
 
         private static Exception BuildException(Exception source, params Task[] tasks)
@@ -346,21 +375,25 @@ namespace Duplicati.Library.Main.Operation
 
         private static async Task<long> FlushBackend(BackupResults result, IWriteChannel<Backup.IUploadRequest> uploadtarget, Task uploader)
         {
-            var flushReq = new Backup.FlushRequest();
-
             // Wait for upload completion
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-            await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
 
-            // In case the uploader crashes, we grab the exception here
-            if (await Task.WhenAny(uploader, flushReq.LastWriteSizeAync) == uploader)
-                await uploader;
+            if (await uploadtarget.IsRetiredAsync)
+            {
+                await uploader.ConfigureAwait(false);
+                return -1;
+            }
+
+            var flushReq = new Backup.FlushRequest();
+
+            await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
+            await uploader.ConfigureAwait(false);
 
             // Grab the size of the last uploaded volume
-            return await flushReq.LastWriteSizeAync;
+            return await flushReq.LastWriteSizeAsync;
         }
 
-        private async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
+        private async Task RunAsync(string[] sources, Library.Utility.IFilter filter, CancellationToken token)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
             
@@ -376,7 +409,7 @@ namespace Duplicati.Library.Main.Operation
                 Utility.VerifyParameters(m_database, m_options);
 
                 var probe_path = m_database.GetFirstPath();
-                if (probe_path != null && Duplicati.Library.Utility.Utility.GuessDirSeparator(probe_path) != System.IO.Path.DirectorySeparatorChar.ToString())
+                if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
                     throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
 
                 if (m_database.PartiallyRecreated)
@@ -391,60 +424,49 @@ namespace Duplicati.Library.Main.Operation
                 m_sourceFilter = new Library.Utility.FilterExpression(sources, true);
 
                 Task parallelScanner = null;
-                Task uploader = null;
+                Task uploaderTask = null;
                 try
                 {
                     // Setup runners and instances here
                     using(var db = new Backup.BackupDatabase(m_database, m_options))
-                    using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
+                    using(var backendManager = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
                     using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                     using(var stats = new Backup.BackupStatsCollector(m_result))
-                    using(var bk = new Common.BackendHandler(m_options, m_backendurl, db, stats, m_result.TaskReader))
                     // Keep a reference to these channels to avoid shutdown
                     using(var uploadtarget = ChannelManager.GetChannel(Backup.Channels.BackendRequest.ForWrite))
                     {
                         long filesetid;
                         var counterToken = new CancellationTokenSource();
-                        using(var snapshot = GetSnapshot(sources, m_options))
+                        var uploader = new Backup.BackendUploader(() => DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions), m_options, db, m_result.TaskReader, stats);
+                        using (var snapshot = GetSnapshot(sources, m_options))
                         {
                             try
                             {
-                                // Start parallel scan, or use the database
-                                if (m_options.DisableFileScanner)
-                                {
-                                    var d = m_database.GetLastBackupFileCountAndSize();
-                                    m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
-                                }
-                                else
-                                {
-                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
-                                }
-
                                 // Make sure the database is sane
-                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true);
+                                await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
 
                                 // Start the uploader process
-                                uploader = Backup.BackendUploader.Run(bk, m_options, db, m_result, m_result.TaskReader, stats);
+                                uploaderTask = uploader.Run();
 
-                                // If we have an interrupted backup, grab the 
-                                string lasttempfilelist = null;
-                                long lasttempfileid = -1;
+                                // If we have an interrupted backup, grab the fileset
+                                string lastTempFilelist = null;
+                                long lastTempFilesetId = -1;
                                 if (!m_options.DisableSyntheticFilelist)
                                 {
                                     var candidates = (await db.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToArray();
-                                    if (candidates.Length > 0)
+                                    if (candidates.Any())
                                     {
-                                        lasttempfileid = candidates.Last().Key;
-                                        lasttempfilelist = m_database.GetRemoteVolumeFromID(lasttempfileid).Name;
+                                        lastTempFilesetId = candidates.Last().Key;
+                                        lastTempFilelist = m_database.GetRemoteVolumeFromFilesetID(lastTempFilesetId).Name;
                                     }
                                 }
 
                                 // TODO: Rewrite to using the uploader process, or the BackendHandler interface
                                 // Do a remote verification, unless disabled
-                                PreBackupVerify(backend, lasttempfilelist);
+                                PreBackupVerify(backendManager, lastTempFilelist);
 
                                 // If the previous backup was interrupted, send a synthetic list
-                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lasttempfilelist, lasttempfileid);
+                                await Backup.UploadSyntheticFilelist.Run(db, m_options, m_result, m_result.TaskReader, lastTempFilelist, lastTempFilesetId);
 
                                 // Grab the previous backup ID, if any
                                 var prevfileset = m_database.FilesetTimes.FirstOrDefault();
@@ -454,10 +476,7 @@ namespace Duplicati.Library.Main.Operation
                                 var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
 
                                 // Rebuild any index files that are missing
-                                await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result, m_result.TaskReader);
-
-                                // This should be removed as the lookups are no longer used
-                                m_database.BuildLookupTable(m_options);
+                                await Backup.RecreateMissingIndexFiles.Run(db, m_options, m_result.TaskReader);
 
                                 // Prepare the operation by registering the filelist
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
@@ -475,9 +494,22 @@ namespace Duplicati.Library.Main.Operation
                                 // create USN-based scanner if enabled
                                 var journalService = GetJournalService(sources, snapshot, filter, lastfilesetid);
 
+                                // Start parallel scan, or use the database
+                                if (m_options.DisableFileScanner)
+                                {
+                                    var d = m_database.GetLastBackupFileCountAndSize();
+                                    m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
+                                }
+                                else
+                                {
+                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, journalService, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
+                                }
+
                                 // Run the backup operation
                                 if (await m_result.TaskReader.ProgressAsync)
-                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, lastfilesetid);
+                                {
+                                    await RunMainOperation(sources, snapshot, journalService, db, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskReader, filesetid, lastfilesetid, token).ConfigureAwait(false);
+                                }
                             }
                             finally
                             {
@@ -486,8 +518,11 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
+                        // Add the fileset file to the dlist file
+                        filesetvolume.CreateFilesetFile(!token.IsCancellationRequested);
+
                         // Ensure the database is in a sane state after adding data
-                        using(new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
+                        using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
                             await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false);
 
                         // Send the actual filelist
@@ -496,7 +531,7 @@ namespace Duplicati.Library.Main.Operation
 
                         // Wait for upload completion
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploader);
+                        var lastVolumeSize = await FlushBackend(m_result, uploadtarget, uploaderTask).ConfigureAwait(false);
 
                         // Make sure we have the database up-to-date
                         await db.CommitTransactionAsync("CommitAfterUpload", false);
@@ -505,12 +540,12 @@ namespace Duplicati.Library.Main.Operation
                         m_transaction = m_database.BeginTransaction();
     		                                        
                         if (await m_result.TaskReader.ProgressAsync)
-                            CompactIfRequired(backend, lastVolumeSize);
+                            CompactIfRequired(backendManager, lastVolumeSize);
 
                         if (m_options.UploadVerificationFile && await m_result.TaskReader.ProgressAsync)
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
-                            FilelistProcessor.UploadVerificationFile(backend.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
+                            FilelistProcessor.UploadVerificationFile(backendManager.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
                         }
 
                         if (m_options.Dryrun)
@@ -525,20 +560,23 @@ namespace Duplicati.Library.Main.Operation
                                 
                             m_transaction = null;
 
-                            if (m_result.TaskControlRendevouz() != TaskControlState.Stop)
+                            if (m_result.TaskControlRendevouz() != TaskControlState.Abort)
                             {
                                 if (m_options.NoBackendverification)
                                     UpdateStorageStatsFromDatabase();
                                 else
-                                    PostBackupVerification();
+                                    PostBackupVerification(filesetvolume.RemoteFilename);
                             }
                         }
                         
                         m_database.WriteResults();                    
                         m_database.PurgeLogData(m_options.LogRetention);
+                        m_database.PurgeDeletedVolumes(DateTime.UtcNow);
+
                         if (m_options.AutoVacuum)
                         {
-                            m_database.Vacuum();
+                            m_result.VacuumResults = new VacuumResults(m_result);
+                            new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults).Run();
                         }
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                         return;
@@ -546,7 +584,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 catch (Exception ex)
                 {
-                    var aex = BuildException(ex, uploader, parallelScanner);
+                    var aex = BuildException(ex, uploaderTask, parallelScanner);
                     Logging.Log.WriteErrorMessage(LOGTAG, "FatalError", ex, "Fatal error");
                     if (aex == ex)
                         throw;

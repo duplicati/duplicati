@@ -19,14 +19,15 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Interface
 {
     /// <summary>
     /// The interface all backends must implement.
     /// The classes that implements this interface MUST also 
-    /// implement a default constructor and a construtor that
+    /// implement a default constructor and a constructor that
     /// has the signature new(string url, Dictionary&lt;string, string&gt; options).
     /// The default constructor is used to construct an instance
     /// so the DisplayName and other values can be read.
@@ -56,7 +57,8 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
-        void Put(string remotename, string filename);
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        Task PutAsync(string remotename, string filename, CancellationToken cancelToken);
 
         /// <summary>
         /// Downloads a file with the remote data

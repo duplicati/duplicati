@@ -1,4 +1,4 @@
-//  Copyright (C) 2015, The Duplicati Team
+﻿//  Copyright (C) 2015, The Duplicati Team
 //  http://www.duplicati.com, info@duplicati.com
 //  
 //  This library is free software; you can redistribute it and/or modify
@@ -14,12 +14,16 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
+#if __WindowsGTK__ || ENABLE_GTK
 using System;
 using AppIndicator;
 using Gtk;
-using Duplicati.Server.Serialization;
 using System.Collections.Generic;
+
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
+using Duplicati.Server.Serialization;
+
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -30,8 +34,8 @@ namespace Duplicati.GUI.TrayIcon
                 
         protected override void CreateTrayInstance()
         {
-            m_themeFolder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
-            m_themeFolder = System.IO.Path.Combine(m_themeFolder, "dark");
+            m_themeFolder = SystemIO.IO_OS.PathCombine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
+            m_themeFolder = SystemIO.IO_OS.PathCombine(m_themeFolder, "dark");
             
             m_appIndicator = new ApplicationIndicator("duplicati", "normal", Category.ApplicationStatus, m_themeFolder);
         }
@@ -43,44 +47,42 @@ namespace Duplicati.GUI.TrayIcon
             Gtk.Application.Run();
         }
         
-        
         protected override void SetMenu (IEnumerable<IMenuItem> items)
         {
             base.SetMenu(items);
             m_appIndicator.Menu = m_popupMenu;
         }
         
-        protected override TrayIcons Icon 
+        protected override void SetIcon(TrayIcons icon)
         {
-            set 
-            {
-                m_appIndicator.IconName = GetTrayIconFilename(value);
+            m_appIndicator.IconName = GetTrayIconFilename(icon);
 
-                switch(value)
-                {
-                    case TrayIcons.Paused:
-                        m_appIndicator.IconDesc = "Paused";
-                        break;
-                    case TrayIcons.Running:
-                        m_appIndicator.IconDesc = "Running";
-                        break;
-                    case TrayIcons.IdleError:
-                        m_appIndicator.IconDesc = "Error";
-                        break;
-                    case TrayIcons.RunningError:
-                        m_appIndicator.IconDesc = "Running";
-                        break;
-                    case TrayIcons.PausedError:
-                        m_appIndicator.IconDesc = "Paused";
-                        break;
-                    case TrayIcons.Idle:
-                    default:
-                        m_appIndicator.IconDesc = "Ready";
-                        break;
-                }
+            switch (icon)
+            {
+                case TrayIcons.Paused:
+                    m_appIndicator.IconDesc = "Paused";
+                    break;
+                case TrayIcons.Running:
+                    m_appIndicator.IconDesc = "Running";
+                    break;
+                case TrayIcons.IdleWarning:
+                    m_appIndicator.IconDesc = "Warning";
+                    break;
+                case TrayIcons.IdleError:
+                    m_appIndicator.IconDesc = "Error";
+                    break;
+                case TrayIcons.RunningError:
+                    m_appIndicator.IconDesc = "Running";
+                    break;
+                case TrayIcons.PausedError:
+                    m_appIndicator.IconDesc = "Paused";
+                    break;
+                case TrayIcons.Idle:
+                default:
+                    m_appIndicator.IconDesc = "Ready";
+                    break;
             }
         }
-
     }
 }
 #endif

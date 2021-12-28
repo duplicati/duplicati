@@ -5,10 +5,10 @@ if [ ! -f "$1" ]; then
     exit
 fi
 
-ARCHITECTURES="amd64 arm32v7"
-DEFAULT_ARCHITECTURE=amd64
+PLATFORMS="linux/amd64,linux/arm/v7,linux/arm64"
 DEFAULT_CHANNEL=beta
 REPOSITORY=duplicati/duplicati
+PUSH_TO_REGISTRY=${PUSH_TO_REGISTRY:-true}
 
 ARCHIVE_NAME=$(basename -s .zip $1)
 VERSION=$(echo "${ARCHIVE_NAME}" | cut -d "-" -f 2-)
@@ -40,34 +40,28 @@ do
     done
 done
 
-for arch in ${ARCHITECTURES}; do
-    tags="linux-${arch}-${VERSION} linux-${arch}-${CHANNEL}"
-    if [ ${CHANNEL} = ${DEFAULT_CHANNEL} ]; then
-        tags="linux-${arch}-latest ${tags}"
-    fi
-    if [ ${arch} = ${DEFAULT_ARCHITECTURE} ]; then
-        tags="${VERSION} ${CHANNEL} ${tags}"
-    fi
-    if [ ${CHANNEL} = ${DEFAULT_CHANNEL} -a ${arch} = ${DEFAULT_ARCHITECTURE} ]; then
-        tags="latest ${tags}"
-    fi
+tags="${VERSION} ${CHANNEL}"
+if [ ${CHANNEL} = ${DEFAULT_CHANNEL} ]; then
+    tags="latest ${tags}"
+fi
 
-    args=""
-    for tag in ${tags}; do
-        args="-t ${REPOSITORY}:${tag} ${args}"
-    done
-
-    docker build \
-        ${args} \
-        --build-arg ARCH=${arch}/ \
-        --build-arg VERSION=${VERSION} \
-        --build-arg CHANNEL=${CHANNEL} \
-        --file context/Dockerfile \
-        .
-
-    for tag in ${tags}; do
-        docker push ${REPOSITORY}:${tag}
-    done
+args=""
+for tag in ${tags}; do
+    args="-t ${REPOSITORY}:${tag} ${args}"
 done
+
+docker buildx create --use --name duplicati-multiarch
+
+docker buildx build \
+    ${args} \
+    --platform ${PLATFORMS} \
+    --build-arg PARENT_IMAGE="$(cat mono_image.txt)-slim" \
+    --build-arg VERSION=${VERSION} \
+    --build-arg CHANNEL=${CHANNEL} \
+    --file context/Dockerfile \
+    --output type=image,push=${PUSH_TO_REGISTRY} \
+    .
+
+docker buildx rm duplicati-multiarch
 
 rm -rf "${DIRNAME}"

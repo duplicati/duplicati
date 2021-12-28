@@ -8,10 +8,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.firefox.options import Options
 
 if "TRAVIS_BUILD_NUMBER" in os.environ:
     if "SAUCE_USERNAME" not in os.environ:
-        print "No sauce labs login credentials found. Stopping tests..."
+        print("No sauce labs login credentials found. Stopping tests...")
         sys.exit(0)
 
     capabilities = {'browserName': "firefox"}
@@ -28,11 +29,12 @@ if "TRAVIS_BUILD_NUMBER" in os.environ:
     driver = webdriver.Remote(command_executor="http://%s/wd/hub" % hub_url, desired_capabilities=capabilities)
 else:
     # local
-    print "Using LOCAL webdriver"
+    print("Using LOCAL webdriver")
     profile = webdriver.FirefoxProfile()
     profile.set_preference("intl.accept_languages", "en")
-    driver = webdriver.Firefox(profile)
-    driver.maximize_window()
+    options = Options()
+    options.headless = True
+    driver = webdriver.Firefox(profile, options=options)
 
 
 def write_random_file(size, filename):
@@ -74,7 +76,9 @@ def sha1_folder(folder):
 def wait_for_text(time, xpath, text):
     WebDriverWait(driver, time).until(expected_conditions.text_to_be_present_in_element((By.XPATH, xpath), text))
 
-
+def wait_for_load(time, by, target):
+    return WebDriverWait(driver, time).until(expected_conditions.presence_of_element_located((by, target)))
+    
 BACKUP_NAME = "BackupName"
 PASSWORD = "the_backup_password_is_really_long_and_safe"
 SOURCE_FOLDER = os.path.abspath("duplicati_gui_test_source")
@@ -87,6 +91,7 @@ DIRECT_RESTORE_FOLDER = os.path.abspath("duplicati_gui_test_direct_restore")
 time.sleep(5)
 
 driver.implicitly_wait(10)
+driver.maximize_window()
 driver.get("http://localhost:8200/ngax/index.html")
 
 if "Duplicati" not in driver.title:
@@ -98,59 +103,58 @@ write_random_file(100 * 1024, SOURCE_FOLDER + os.sep + "subfolder" + os.sep + "1
 sha1_source = sha1_folder(SOURCE_FOLDER)
 
 # Dismiss the password request
-driver.find_element_by_link_text("No, my machine has only a single account").click()
+wait_for_load(10, By.LINK_TEXT, "No, my machine has only a single account").click()
 
 # Add new backup
-driver.find_element_by_link_text("Add backup").click()
+wait_for_load(10, By.LINK_TEXT, "Add backup").click()
 
 # Choose the "add new" option
-driver.find_element_by_id("blank").click()
-driver.find_element_by_xpath("//input[@class='submit next']").click()
+wait_for_load(10, By.ID, "blank").click()
+wait_for_load(10, By.XPATH, "//input[@class='submit next']").click()
 
 # Add new backup - General page
-time.sleep(1)
-driver.find_element_by_id("name").send_keys(BACKUP_NAME)
-driver.find_element_by_id("passphrase").send_keys(PASSWORD)
-driver.find_element_by_id("repeat-passphrase").send_keys(PASSWORD)
-driver.find_element_by_id("nextStep1").click()
+wait_for_load(10, By.ID, "name").send_keys(BACKUP_NAME)
+wait_for_load(10, By.ID, "passphrase").send_keys(PASSWORD)
+wait_for_load(10, By.ID, "repeat-passphrase").send_keys(PASSWORD)
+wait_for_load(10, By.ID, "nextStep1").click()
 
 # Add new backup - Destination page
-driver.find_element_by_link_text("Manually type path").click()
-driver.find_element_by_id("file_path").send_keys(DESTINATION_FOLDER)
-driver.find_element_by_id("nextStep2").click()
+wait_for_load(10, By.LINK_TEXT, "Manually type path").click()
+wait_for_load(10, By.ID, "file_path").send_keys(DESTINATION_FOLDER)
+wait_for_load(10, By.ID, "nextStep2").click()
 
 # Add new backup - Source Data page
-driver.find_element_by_id("sourcePath").send_keys(os.path.abspath(SOURCE_FOLDER) + os.sep)
-driver.find_element_by_id("sourceFolderPathAdd").click()
-driver.find_element_by_id("nextStep3").click()
+wait_for_load(10, By.ID, "sourcePath").send_keys(os.path.abspath(SOURCE_FOLDER) + os.sep)
+wait_for_load(10, By.ID, "sourceFolderPathAdd").click()
+wait_for_load(10, By.ID, "nextStep3").click()
 
 # Add new backup - Schedule page
-useScheduleRun = driver.find_element_by_id("useScheduleRun")
+useScheduleRun = wait_for_load(10, By.ID, "useScheduleRun")
 if useScheduleRun.is_selected():
     useScheduleRun.click()
-driver.find_element_by_id("nextStep4").click()
+wait_for_load(10, By.ID, "nextStep4").click()
 
 # Add new backup - Options page
-driver.find_element_by_id("save").click()
+wait_for_load(10, By.ID, "save").click()
 
 # Run the backup job and wait for finish
-driver.find_element_by_link_text(BACKUP_NAME).click()
+wait_for_load(10, By.LINK_TEXT, BACKUP_NAME).click()
 [n for n in driver.find_elements_by_xpath("//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
 wait_for_text(60, "//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ")
 
 # Restore
-if len([n for n in driver.find_elements_by_xpath("//span[contains(text(),'Restore files ...')]") if n.is_displayed()]) == 0:
-    driver.find_element_by_link_text(BACKUP_NAME).click()
+if len([n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()]) == 0:
+    wait_for_load(10, By.LINK_TEXT, BACKUP_NAME).click()
 
-[n for n in driver.find_elements_by_xpath("//span[contains(text(),'Restore files ...')]") if n.is_displayed()][0].click()
-driver.find_element_by_xpath("//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
-time.sleep(1)
-driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
+[n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()][0].click()
+wait_for_load(10, By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
+time.sleep(1) # Delay so page has time to load
+wait_for_load(10, By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
 
-driver.find_element_by_xpath("//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
-driver.find_element_by_id("restoretonewpath").click()
-driver.find_element_by_id("restore_path").send_keys(RESTORE_FOLDER)
-driver.find_element_by_xpath("//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
+wait_for_load(10, By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
+wait_for_load(10, By.ID, "restoretonewpath").click()
+wait_for_load(10, By.ID, "restore_path").send_keys(RESTORE_FOLDER)
+wait_for_load(10, By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
 # wait for restore to finish
 wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.")
@@ -159,33 +163,33 @@ wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and fold
 sha1_restore = sha1_folder(RESTORE_FOLDER)
 
 # cleanup: delete source and restore folder and rename destination folder for direct restore
-shutil.rmtree(SOURCE_FOLDER)
-shutil.rmtree(RESTORE_FOLDER)
+if os.path.exists(SOURCE_FOLDER):
+    shutil.rmtree(SOURCE_FOLDER)
+if os.path.exists(RESTORE_FOLDER):
+    shutil.rmtree(RESTORE_FOLDER)
 os.rename(DESTINATION_FOLDER, DESTINATION_FOLDER_DIRECT_RESTORE)
 
 # direct restore
-driver.find_element_by_link_text("Restore").click()
+wait_for_load(10, By.LINK_TEXT, "Restore").click()
 
 # Choose the "restore direct" option
-driver.find_element_by_id("direct").click()
-driver.find_element_by_xpath("//input[@class='submit next']").click()
+wait_for_load(10, By.ID, "direct").click()
+wait_for_load(10, By.XPATH, "//input[@class='submit next']").click()
 
-time.sleep(1)
-driver.find_element_by_link_text("Manually type path").click()
-driver.find_element_by_id("file_path").send_keys(DESTINATION_FOLDER_DIRECT_RESTORE)
-driver.find_element_by_id("nextStep1").click()
+wait_for_load(10, By.LINK_TEXT, "Manually type path").click()
+wait_for_load(10, By.ID, "file_path").send_keys(DESTINATION_FOLDER_DIRECT_RESTORE)
+wait_for_load(10, By.ID, "nextStep1").click()
 
-driver.find_element_by_id("password").send_keys(PASSWORD)
-driver.find_element_by_id("connect").click()
-driver.find_element_by_xpath("//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
-time.sleep(1)
-driver.find_element_by_xpath("//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
-time.sleep(1)
-driver.find_element_by_xpath("//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
+wait_for_load(10, By.ID, "password").send_keys(PASSWORD)
+wait_for_load(10, By.ID, "connect").click()
+wait_for_load(10, By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
+time.sleep(1) # Delay so page has time to load
+wait_for_load(10, By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
+wait_for_load(10, By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
 
-driver.find_element_by_id("restoretonewpath").click()
-driver.find_element_by_id("restore_path").send_keys(DIRECT_RESTORE_FOLDER)
-driver.find_element_by_xpath("//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
+wait_for_load(10, By.ID, "restoretonewpath").click()
+wait_for_load(10, By.ID, "restore_path").send_keys(DIRECT_RESTORE_FOLDER)
+wait_for_load(10, By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
 # wait for restore to finish
 wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.")
@@ -193,9 +197,9 @@ wait_for_text(60, "//form[@id='restore']/div[3]/h3/div[1]", "Your files and fold
 # hash direct restore files
 sha1_direct_restore = sha1_folder(DIRECT_RESTORE_FOLDER)
 
-print "Source hashes: " + str(sha1_source)
-print "Restore hashes: " + str(sha1_restore)
-print "Direct Restore hashes: " + str(sha1_direct_restore)
+print("Source hashes: " + str(sha1_source))
+print("Restore hashes: " + str(sha1_restore))
+print("Direct Restore hashes: " + str(sha1_direct_restore))
 
 # Tell Sauce Labs to stop the test
 driver.quit()

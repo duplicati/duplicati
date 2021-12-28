@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -31,13 +32,21 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private readonly static string[] PASSPHRASELESS_ACTIONS = { "CreateLogDb", "TestFilters", "ListAffected", "SystemInfo", "SendMail" };
 
+        /// <summary>
+        /// The option used to force stdin reading
+        /// </summary>
+        private const string FORCE_PASSPHRASE_FROM_STDIN_OPTION = "force-passphrase-from-stdin";
+
         #region IGenericModule Members
 
         public string Key { get { return "console-password-input"; } }
         public string DisplayName { get { return Strings.ConsolePasswordInput.Displayname; } }
         public string Description { get { return Strings.ConsolePasswordInput.Description; } }
         public bool LoadAsDefault { get { return true; } }
-        public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands { get { return null; } }
+        public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
+            => new Duplicati.Library.Interface.ICommandLineArgument[] {
+                    new Duplicati.Library.Interface.CommandLineArgument(FORCE_PASSPHRASE_FROM_STDIN_OPTION, Interface.CommandLineArgument.ArgumentType.Boolean, Strings.ConsolePasswordInput.ForcepassphrasefromstdinShort, Strings.ConsolePasswordInput.ForcepassphrasefromstdinLong)
+                };
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
@@ -53,17 +62,59 @@ namespace Duplicati.Library.Modules.Builtin
             //See if a password is already present or encryption is disabled
             if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions, "no-encryption"))
             {
-                //Get the passphrase
-                bool confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.OrdinalIgnoreCase);
-                commandlineOptions["passphrase"] = ReadPassphraseFromConsole(confirm);
+                // Print a banner
+                Console.Write("\n" + Strings.ConsolePasswordInput.EnterPassphrasePrompt + ": ");
+
+                // Check if we need confirmation
+                var confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.OrdinalIgnoreCase);
+
+                // Bypass the TTY input if requested
+                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, FORCE_PASSPHRASE_FROM_STDIN_OPTION))
+                {
+                    commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);
+                }
+                else
+                {
+                    //Get the passphrase, try with TTY first
+                    try
+                    {
+                        commandlineOptions["passphrase"] = ReadPassphraseFromConsole(confirm);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Handle redirect issues on Windows only
+                        if (!Platform.IsClientWindows)
+                            throw;
+
+                        commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);
+                    }
+                }
             }
         }
 
         #endregion
 
+
+        private static string ReadPassphraseFromStdin(bool confirm)
+        {
+            var passphrase = Console.ReadLine();
+            if (confirm)
+            {
+                Console.Write("\n" + Strings.ConsolePasswordInput.ConfirmPassphrasePrompt + ": ");
+                var password2 = Console.ReadLine();
+
+                if (passphrase != password2)
+                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
+            }
+
+            if (string.IsNullOrWhiteSpace(passphrase))
+                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
+
+            return passphrase;
+        }
+
         private static string ReadPassphraseFromConsole(bool confirm)
         {
-            Console.Write("\n" + Strings.ConsolePasswordInput.EnterPassphrasePrompt + ": ");
             StringBuilder passphrase = new StringBuilder();
 
             while (true)
@@ -110,7 +161,7 @@ namespace Duplicati.Library.Modules.Builtin
                     throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
             }
 
-            if (passphrase.ToString().Length == 0)
+            if (string.IsNullOrWhiteSpace(passphrase.ToString()))
                 throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
 
             return passphrase.ToString();

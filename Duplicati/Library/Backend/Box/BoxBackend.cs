@@ -14,15 +14,20 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
-using System.Linq;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System.Collections.Generic;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Box
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
+    // This class is instantiated dynamically in the BackendLoader.
     public class BoxBackend : IBackend, IStreamingBackend
     {
 		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
@@ -55,10 +60,9 @@ namespace Duplicati.Library.Backend.Box
                 Exception newex = null;
                 try
                 {
-                    if (ex is WebException && (ex as WebException).Response is HttpWebResponse)
+                    if (ex is WebException exception && exception.Response is HttpWebResponse hs)
                     {
                         string rawdata = null;
-                        var hs = (ex as WebException).Response as HttpWebResponse;
                         using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
                         using(var sr = new System.IO.StreamReader(rs))
                             rawdata = sr.ReadToEnd();
@@ -86,18 +90,20 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public BoxBackend()
         {
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This constructor is needed by the BackendLoader.
         public BoxBackend(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
 
-            m_path = uri.HostAndPath;
-            if (!m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
-            
+            m_path = Util.AppendDirSeparator(uri.HostAndPath, "/");
+
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
@@ -124,7 +130,7 @@ namespace Duplicati.Library.Backend.Box
 
             foreach(var p in m_path.Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries))
             {
-                var el = (MiniFolder)PagedFileListResponse(parentid, true).Where(x => x.Name == p).FirstOrDefault();
+                var el = (MiniFolder)PagedFileListResponse(parentid, true).FirstOrDefault(x => x.Name == p);
                 if (el == null)
                 {
                     if (!create)
@@ -197,7 +203,7 @@ namespace Duplicati.Library.Backend.Box
 
         #region IStreamingBackend implementation
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var createreq = new CreateItemRequest() {
                 Name = remotename,
@@ -213,24 +219,20 @@ namespace Duplicati.Library.Backend.Box
 
             try
             {
-                FileEntity res;
+                string url;
+                var items = new List<MultipartItem>(2);
+
                 if (existing)
-                {
-                    res = m_oauth.PostMultipartAndGetJSONData<FileList>(
-                        string.Format("{0}/{1}/content", BOX_UPLOAD_URL, m_filecache[remotename]),
-                        new MultipartItem(stream, name: "file", filename: remotename)
-                    ).Entries.First();
-                }
+                    url = $"{BOX_UPLOAD_URL}/{m_filecache[remotename]}/content";
                 else
                 {
-
-                    res = m_oauth.PostMultipartAndGetJSONData<FileList>(
-                        string.Format("{0}/content", BOX_UPLOAD_URL),
-                        new MultipartItem(createreq, name: "attributes"),
-                        new MultipartItem(stream, name: "file", filename: remotename)
-                    ).Entries.First();
+                    url = $"{BOX_UPLOAD_URL}/content";
+                    items.Add(new MultipartItem(createreq, "attributes"));
                 }
 
+                items.Add(new MultipartItem(stream, "file", remotename));
+
+                var res = (await m_oauth.PostMultipartAndGetJSONDataAsync<FileList>(url, null, cancelToken, items.ToArray())).Entries.First();
                 m_filecache[remotename] = res.ID;
             }
             catch
@@ -258,10 +260,10 @@ namespace Duplicati.Library.Backend.Box
                 select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
         }
 
-        public void Put(string remotename, string filename)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -405,14 +407,6 @@ namespace Duplicati.Library.Backend.Box
             public long Limit { get; set; }
         }
 
-        private class SharePermissions
-        {
-            [JsonProperty("can_download")]
-            public bool CanDownload { get; set; }
-            [JsonProperty("can_preview")]
-            public bool CanPreview { get; set; }
-        }
-
         private class UploadEmail
         {
             [JsonProperty("access")]
@@ -420,28 +414,6 @@ namespace Duplicati.Library.Backend.Box
             [JsonProperty("email")]
             public string Email { get; set; }
         }
-
-        private class SharedLink
-        {
-            [JsonProperty("url")]
-            public string Url { get; set; }
-            [JsonProperty("download_url")]
-            public string DownloadUrl { get; set; }
-            [JsonProperty("vanity_url")]
-            public string VanityUrl { get; set; }
-            [JsonProperty("is_password_enabled")]
-            public bool IsPasswordEnabled { get; set; }
-            [JsonProperty("unshared_at")]
-            public DateTime? UnsharedAt { get; set; }
-            [JsonProperty("download_count")]
-            public long DownloadCount { get; set; }
-            [JsonProperty("preview_count")]
-            public long PreviewCount { get; set; }
-            [JsonProperty("access")]
-            public string Access { get; set; }
-            [JsonProperty("permissions")]
-            public SharePermissions Permissions { get; set; }
-         }
 
         private class ListFolderResponse : MiniFolder
         {
@@ -518,9 +490,6 @@ namespace Duplicati.Library.Backend.Box
             public int Status { get; set; }
             [JsonProperty("code")]
             public string Code { get; set; }
-            // Not working exactly his way ...
-            //[JsonProperty("context_info")]
-            //public ErrorItem[] ContextInfo { get; set; }
             [JsonProperty("help_url")]
             public string HelpUrl { get; set; }
             [JsonProperty("message")]
@@ -529,17 +498,6 @@ namespace Duplicati.Library.Backend.Box
             public string RequestId { get; set; }
 
         }
-
-        private class ErrorItem
-        {
-            [JsonProperty("reason")]
-            public string Reason { get; set; }
-            [JsonProperty("name")]
-            public string Name { get; set; }
-            [JsonProperty("message")]
-            public string Message { get; set; }
-        }
-
     }
 }
 

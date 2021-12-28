@@ -14,17 +14,28 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-using System;
 using CoCoL;
-using System.Threading.Tasks;
 using Duplicati.Library.Main.Operation.Common;
-using System.Collections.Generic;
-using System.Linq;
 using Duplicati.Library.Main.Volumes;
-using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using static Duplicati.Library.Main.Operation.Common.BackendHandler;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
+    internal class SpillVolumeRequest
+    {
+        public BlockVolumeWriter BlockVolume { get; private set; }
+        public TemporaryIndexVolume IndexVolume { get; private set; }
+
+        public SpillVolumeRequest(BlockVolumeWriter blockvolume, TemporaryIndexVolume indexvolume)
+        {
+            BlockVolume = blockvolume;
+            IndexVolume = indexvolume;
+        }
+    }
+
     /// <summary>
     /// This process just waits until all block processes are terminated
     /// and collects the non-written volumes.
@@ -42,14 +53,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Output = Channels.BackendRequest.ForWrite,
             },
 
-            async self => 
+            async self =>
             {
-                var lst = new List<VolumeUploadRequest>();
+                var lst = new List<SpillVolumeRequest>();
 
-                while(!await self.Input.IsRetiredAsync)
+                while (!await self.Input.IsRetiredAsync.ConfigureAwait(false))
                     try
                     {
-                        lst.Add((VolumeUploadRequest)await self.Input.ReadAsync());
+                        lst.Add(await self.Input.ReadAsync().ConfigureAwait(false));
                     }
                     catch (Exception ex)
                     {
@@ -59,12 +70,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
 
-                while(lst.Count > 1)
+                while (lst.Count > 1)
                 {
                     // We ignore the stop signal, but not the pause and terminate
-                    await taskreader.ProgressAsync;
+                    await taskreader.ProgressAsync.ConfigureAwait(false);
 
-                    VolumeUploadRequest target = null;
+                    SpillVolumeRequest target = null;
                     var source = lst[0];
 
                     // Finalize the current work
@@ -75,9 +86,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     var buffer = new byte[options.Blocksize];
 
-                    using(var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
+                    using (var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
                     {
-                        foreach(var file in rd.Blocks)
+                        foreach (var file in rd.Blocks)
                         {
                             // Grab a target
                             if (target == null)
@@ -85,8 +96,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 if (lst.Count == 0)
                                 {
                                     // No more targets, make one
-									target = new VolumeUploadRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume(options));
-                                    target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+                                    target = new SpillVolumeRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume(options));
+                                    target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary).ConfigureAwait(false);
                                 }
                                 else
                                 {
@@ -103,7 +114,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             var len = rd.ReadBlock(file.Key, buffer);
                             target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
-                            await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
+                            await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID).ConfigureAwait(false);
 
                             if (target.IndexVolume != null)
                                 target.IndexVolume.AddBlock(file.Key, len);
@@ -111,7 +122,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
                                 target.BlockVolume.Close();
-                                await self.Output.WriteAsync(target);
+                                await UploadVolumeAndIndex(target, self.Output, options, database).ConfigureAwait(false);
                                 target = null;
                             }
                         }
@@ -119,24 +130,38 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // Make sure they are out of the database
                     System.IO.File.Delete(source.BlockVolume.LocalFilename);
-                    await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename);
+                    await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename).ConfigureAwait(false);
 
                     // Re-inject the target if it has content
                     if (target != null)
                         lst.Insert(lst.Count == 0 ? 0 : 1, target);
                 }
 
-                foreach(var n in lst)
+                foreach (var n in lst)
                 {
                     // We ignore the stop signal, but not the pause and terminate
-                    await taskreader.ProgressAsync;
+                    await taskreader.ProgressAsync.ConfigureAwait(false);
 
                     n.BlockVolume.Close();
-                    await self.Output.WriteAsync(n);
+                    await UploadVolumeAndIndex(n, self.Output, options, database).ConfigureAwait(false);
                 }
 
             });
         }
+
+        private static async Task UploadVolumeAndIndex(SpillVolumeRequest target, IWriteChannel<IUploadRequest> outputChannel, Options options, BackupDatabase database)
+        {
+            var blockEntry = target.BlockVolume.CreateFileEntryForUpload(options);
+
+            TemporaryIndexVolume indexVolumeCopy = null;
+            if (target.IndexVolume != null)
+            {
+                indexVolumeCopy = new TemporaryIndexVolume(options);
+                target.IndexVolume.CopyTo(indexVolumeCopy, false);
+            }
+
+            var uploadRequest = new VolumeUploadRequest(target.BlockVolume, blockEntry, indexVolumeCopy, options, database);
+            await outputChannel.WriteAsync(uploadRequest).ConfigureAwait(false);
+        }
     }
 }
-

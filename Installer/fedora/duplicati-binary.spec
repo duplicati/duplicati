@@ -11,6 +11,12 @@
 # Then load overrides
 %include %{_topdir}/SOURCES/%{namer}-buildinfo.spec
 
+# The mangler detects executable bits, but `ls` says the files are not executable...
+%global __brp_mangle_shebangs_exclude_from ^(.*/(webroot|licenses)/.*)|(.*\\.(config|bat|txt|ps1|desktop))|(.*/utility-scripts/DuplicatiVerify.py)$
+
+# Make sure it does not break because we have som arch-dependant libraries bundled
+%define _binaries_in_noarch_packages_terminate_build 0
+
 Name:	%{namer}
 Version:	%{_buildversion}
 Release:	%{_buildtag}
@@ -90,14 +96,14 @@ rm -rf win-tools
 rm -rf SQLite/win64
 rm -rf SQLite/win32
 rm -rf MonoMac.dll
-rm -rf alphavss
 rm -rf OSX\ Icons
 rm -rf OSXTrayHost
-rm AlphaFS.dll
-rm AlphaVSS.Common.dll
-rm -rf licenses/alphavss
 rm -rf licenses/MonoMac
 rm -rf licenses/gpg
+rm -rf win-x64\storj_uplink.dll
+rm -rf win-x86\storj_uplink.dll
+rm -rf storj_uplink.dll
+rm -rf libstorj_uplink.dylib
 
 
 %install
@@ -105,14 +111,14 @@ rm -rf licenses/gpg
 # Mono binaries are installed in /usr/lib, not /usr/lib64, even on x86_64:
 # https://fedoraproject.org/wiki/Packaging:Mono
 
-install -d %{buildroot}%{_datadir}/pixmaps/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
+install -d -m 755 %{buildroot}%{_datadir}/pixmaps/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
+install -d -m 755 %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
 
 /bin/bash %{_topdir}/SOURCES/%{namer}-install-recursive.sh "." "%{buildroot}%{_exec_prefix}/lib/%{namer}/"
 
@@ -130,9 +136,10 @@ install -p -D -m 755 %{namer}-server-launcher.sh %{buildroot}%{_bindir}/%{namer}
 install -p  %{namer}.png %{buildroot}%{_datadir}/pixmaps/
 
 # And fix permissions
-find "%{buildroot}%{_exec_prefix}/lib/%{namer}"/* -type f -name \*.exe | xargs chmod 755
-find "%{buildroot}%{_exec_prefix}/lib/%{namer}"/* -type f -name \*.sh | xargs chmod 755
-#find "%{buildroot}%{_exec_prefix}/lib/%{namer}"/* -type f -name \*.py | xargs chmod 755
+find "%{buildroot}%{_exec_prefix}/lib/%{namer}/" -type f | xargs chmod 644
+find "%{buildroot}%{_exec_prefix}/lib/%{namer}/" -type f -name \*.exe | xargs chmod 755
+find "%{buildroot}%{_exec_prefix}/lib/%{namer}/" -type f -name \*.sh | xargs chmod 755
+find "%{buildroot}%{_exec_prefix}/lib/%{namer}/" -type f -name \*.py | xargs chmod 755
 
 desktop-file-install %{namer}.desktop
 
@@ -167,6 +174,10 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.default %{_sysconfdir}/sysconfi
 
 
 %changelog
+* Thu Jan 21 2021 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20210121.git
+- Updated patch files
+- Fixed minor build issues
+
 * Wed Jun 21 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170621.git
 - Added the service file to the install
 

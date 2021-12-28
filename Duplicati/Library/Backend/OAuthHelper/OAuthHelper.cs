@@ -67,7 +67,6 @@ namespace Duplicati.Library
         private DateTime m_tokenExpires = DateTime.UtcNow;
 
         public const string DUPLICATI_OAUTH_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh";
-        private const string OAUTH_LOGIN_URL_TEMPLATE = "https://duplicati-oauth-handler.appspot.com/?type={0}";
 
         public static string OAUTH_LOGIN_URL(string modulename) 
         {
@@ -77,7 +76,7 @@ namespace Duplicati.Library
         }
 
         /// <summary>
-        /// Set to true to automatically add the Authorization header to requets
+        /// Set to true to automatically add the Authorization header to requests
         /// </summary>
         public bool AutoAuthHeader { get; set; }
         /// <summary>
@@ -106,8 +105,13 @@ namespace Duplicati.Library
 
         public override HttpWebRequest CreateRequest(string url, string method = null)
         {
+            return this.CreateRequest(url, method, false);
+        }
+
+        public HttpWebRequest CreateRequest(string url, string method, bool noAuthorization)
+        {
             var r = base.CreateRequest(url, method);
-            if (AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url))
+            if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url))
                 r.Headers["Authorization"] = string.Format("Bearer {0}", AccessToken);
             return r;
         } 
@@ -138,21 +142,21 @@ namespace Duplicati.Library
                         {
                             var msg = ex.Message;
                             var clienterror = false;
-                            if (ex is WebException)
+                            if (ex is WebException exception)
                             {
-                                var resp = ((WebException)ex).Response as HttpWebResponse;
+                                var resp = exception.Response as HttpWebResponse;
                                 if (resp != null)
                                 {
                                     msg = resp.Headers["X-Reason"];
                                     if (string.IsNullOrWhiteSpace(msg))
                                         msg = resp.StatusDescription;
-                                    
+
                                     if (resp.StatusCode == HttpStatusCode.ServiceUnavailable)
                                     {
                                         if (msg == resp.StatusDescription)
                                             throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.OverQuotaError, "OAuthOverQuotaError");
                                         else
-                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", ex);
+                                            throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl), "OAuthLoginError", exception);
                                     }
 
                                     //Fail faster on client errors

@@ -27,9 +27,9 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(PurgeBrokenFilesHandler));
-        protected string m_backendurl;
-        protected Options m_options;
-        protected PurgeBrokenFilesResults m_result;
+        protected readonly string m_backendurl;
+        protected readonly Options m_options;
+        protected readonly PurgeBrokenFilesResults m_result;
 
         public PurgeBrokenFilesHandler(string backend, Options options, PurgeBrokenFilesResults result)
         {
@@ -65,124 +65,114 @@ namespace Duplicati.Library.Main.Operation
                     else if (missing.Count == 0)
                         Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsOrMissingFiles", "Found no broken filesets and no missing remote files");
                     else
-                        throw new UserInformationException(string.Format("Found no broken filesets, but {0} missing remote files", sets.Length), "NoBrokenSetsButMissingRemoteFiles");
+                        Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenSetsButMissingRemoteFiles", string.Format("Found no broken filesets, but {0} missing remote files. Purging from database.", missing.Count));
                 }
+                else
+                { 
+                    Logging.Log.WriteInformationMessage(LOGTAG, "FoundBrokenFilesets", "Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3));
 
-                Logging.Log.WriteInformationMessage(LOGTAG, "FoundBrokenFilesets", "Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3));
+                    var pgoffset = 0.0f;
+                    var pgspan = 0.95f / sets.Length;
 
-                var pgoffset = 0.0f;
-                var pgspan = 0.95f / sets.Length;
+                    var filesets = db.FilesetTimes.ToList();
 
-                var filesets = db.FilesetTimes.ToList();
+                    var compare_list = sets.Select(x => new
+                    {
+                        FilesetID = x.Item2,
+                        Timestamp = x.Item1,
+                        RemoveCount = x.Item3,
+                        Version = filesets.FindIndex(y => y.Key == x.Item2),
+                        SetCount = db.GetFilesetFileCount(x.Item2, tr)
+                    }).ToArray();
 
-                var compare_list = sets.Select(x => new
-                {
-                    FilesetID = x.Item2,
-                    Timestamp = x.Item1,
-                    RemoveCount = x.Item3,
-                    Version = filesets.FindIndex(y => y.Key == x.Item2),
-                    SetCount = db.GetFilesetFileCount(x.Item2, tr)
-                }).ToArray();
-
-                var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
-                var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
-
-                if (fully_emptied.Length != 0)
-                {
-                    if (fully_emptied.Length == 1)
-                        Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing entire fileset {1} as all {0} file(s) are broken", fully_emptied.First().Timestamp, fully_emptied.First().RemoveCount);
+                    if (m_options.Dryrun)
+                        tr.Rollback();
                     else
-                        Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString())));
+                        tr.Commit();
 
-                    m_result.DeleteResults = new DeleteResults(m_result);
-                    using (var rmdb = new Database.LocalDeleteDatabase(db))
+                    var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
+                    var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
+
+                    if (fully_emptied.Length != 0)
                     {
-                        var deltr = rmdb.BeginTransaction();
-                        try
+                        if (fully_emptied.Length == 1)
+                            Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing entire fileset {1} as all {0} file(s) are broken", fully_emptied.First().Timestamp, fully_emptied.First().RemoveCount);
+                        else
+                            Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString())));
+
+                        m_result.DeleteResults = new DeleteResults(m_result);
+                        using (var rmdb = new Database.LocalDeleteDatabase(db))
                         {
-                            var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
-                            opts.RawOptions["version"] = string.Join(",", fully_emptied.Select(x => x.Version.ToString()));
-                            opts.RawOptions.Remove("time");
-                            opts.RawOptions["no-auto-compact"] = "true";
-
-                            new DeleteHandler(m_backendurl, opts, (DeleteResults)m_result.DeleteResults)
-                                .DoRun(rmdb, ref deltr, true, false, null);
-
-                            if (!m_options.Dryrun)
+                            var deltr = rmdb.BeginTransaction();
+                            try
                             {
-                                using (new Logging.Timer(LOGTAG, "CommitDelete", "CommitDelete"))
-                                    deltr.Commit();
+                                var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
+                                opts.RawOptions["version"] = string.Join(",", fully_emptied.Select(x => x.Version.ToString()));
+                                opts.RawOptions.Remove("time");
+                                opts.RawOptions["no-auto-compact"] = "true";
 
-                                rmdb.WriteResults();
+                                new DeleteHandler(m_backendurl, opts, (DeleteResults)m_result.DeleteResults)
+                                    .DoRun(rmdb, ref deltr, true, false, null);
+
+                                if (!m_options.Dryrun)
+                                {
+                                    using (new Logging.Timer(LOGTAG, "CommitDelete", "CommitDelete"))
+                                        deltr.Commit();
+
+                                    rmdb.WriteResults();
+                                }
+                                else
+                                    deltr.Rollback();
                             }
-                            else
-                                deltr.Rollback();
-                        }
-                        finally
-                        {
-                            if (deltr != null)
-                                try { deltr.Rollback(); }
-                                catch { }
-                        }
-
-                    }
-
-                    pgoffset += (pgspan * fully_emptied.Length);
-                    m_result.OperationProgressUpdater.UpdateProgress(pgoffset);
-                }
-
-                if (to_purge.Length > 0)
-                {
-                    m_result.PurgeResults = new PurgeFilesResults(m_result);
-
-                    foreach (var bs in to_purge)
-                    {
-                        Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
-                        var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
-
-                        using (var pgdb = new Database.LocalPurgeDatabase(db))
-                        {
-                            // Recompute the version number after we deleted the versions before
-                            filesets = pgdb.FilesetTimes.ToList();
-                            var thisversion = filesets.FindIndex(y => y.Key == bs.FilesetID);
-                            if (thisversion < 0)
-                                throw new Exception(string.Format("Failed to find match for {0} ({1}) in {2}", bs.FilesetID, bs.Timestamp.ToLocalTime(), string.Join(", ", filesets.Select(x => x.ToString()))));
-
-                            opts.RawOptions["version"] = thisversion.ToString();
-                            opts.RawOptions.Remove("time");
-                            opts.RawOptions["no-auto-compact"] = "true";
-
-                            new PurgeFilesHandler(m_backendurl, opts, (PurgeFilesResults)m_result.PurgeResults).Run(pgdb, pgoffset, pgspan, (cmd, filesetid, tablename) =>
+                            finally
                             {
-                                if (filesetid != bs.FilesetID)
-                                    throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
-                                db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID", cmd.Transaction);
-                            });
+                                if (deltr != null)
+                                    try { deltr.Rollback(); }
+                                    catch { }
+                            }
+
                         }
 
-                        pgoffset += pgspan;
+                        pgoffset += (pgspan * fully_emptied.Length);
                         m_result.OperationProgressUpdater.UpdateProgress(pgoffset);
                     }
-                }
 
-                if (m_options.Dryrun)
-                    tr.Rollback();
-                else
-                    tr.Commit();
-
-                m_result.OperationProgressUpdater.UpdateProgress(0.95f);
-
-                if (missing != null && missing.Count > 0)
-                {
-                    using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+                    if (to_purge.Length > 0)
                     {
-                        foreach (var f in missing)
-                            if (m_options.Dryrun)
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}, size: {1}", f.Name, Library.Utility.Utility.FormatSizeString(f.Size));
-                            else
-                                backend.Delete(f.Name, f.Size);
+                        m_result.PurgeResults = new PurgeFilesResults(m_result);
+
+                        foreach (var bs in to_purge)
+                        {
+                            Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
+                            var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
+
+                            using (var pgdb = new Database.LocalPurgeDatabase(db))
+                            {
+                                // Recompute the version number after we deleted the versions before
+                                filesets = pgdb.FilesetTimes.ToList();
+                                var thisversion = filesets.FindIndex(y => y.Key == bs.FilesetID);
+                                if (thisversion < 0)
+                                    throw new Exception(string.Format("Failed to find match for {0} ({1}) in {2}", bs.FilesetID, bs.Timestamp.ToLocalTime(), string.Join(", ", filesets.Select(x => x.ToString()))));
+
+                                opts.RawOptions["version"] = thisversion.ToString();
+                                opts.RawOptions.Remove("time");
+                                opts.RawOptions["no-auto-compact"] = "true";
+
+                                new PurgeFilesHandler(m_backendurl, opts, (PurgeFilesResults)m_result.PurgeResults).Run(pgdb, pgoffset, pgspan, (cmd, filesetid, tablename) =>
+                                {
+                                    if (filesetid != bs.FilesetID)
+                                        throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
+                                    db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID", cmd.Transaction);
+                                });
+                            }
+
+                            pgoffset += pgspan;
+                            m_result.OperationProgressUpdater.UpdateProgress(pgoffset);
+                        }
                     }
                 }
+
+                m_result.OperationProgressUpdater.UpdateProgress(0.95f);
 
                 if (!m_options.Dryrun && db.RepairInProgress)
                 {                    

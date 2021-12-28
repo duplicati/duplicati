@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -71,11 +72,11 @@ namespace Duplicati.Library.UsageReporter
         {
             get
             {
-                if (!Utility.Utility.IsClientLinux)
+                if (!Platform.IsClientPosix)
                 {
                     return Environment.OSVersion.ToString();
                 }
-                else if (Utility.Utility.IsClientOSX)
+                else if (Platform.IsClientOSX)
                 {
                     var m = RunProgramAndReadOutput("sw_vers", null);
                     if (m != null)
@@ -92,7 +93,7 @@ namespace Duplicati.Library.UsageReporter
                 }
                 else
                 {
-                    // Manual extraction, this grabs the distro identication files directly
+                    // Manual extraction, this grabs the distro identification files directly
                     try
                     {
                         var keys = new List<Tuple<string, string>>();

@@ -1,20 +1,22 @@
-//  Copyright (C) 2015, The Duplicati Team
-
-//  http://www.duplicati.com, info@duplicati.com
+#region Disclaimer / License
+// Copyright (C) 2019, The Duplicati Team
+// http://www.duplicati.com, info@duplicati.com
 //
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
 //
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#endregion
 using System;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
@@ -25,18 +27,8 @@ using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main
 {
-    internal interface IBackendWriter
+    internal interface IBackendWriter : IParsedBackendStatistics
     {
-        long UnknownFileSize { set; }
-        long UnknownFileCount { set; }
-        long KnownFileCount { set; }
-        long KnownFileSize { set; }
-        DateTime LastBackupDate { set; }
-        long BackupListCount { set; }
-        long TotalQuotaSpace { set; }
-        long FreeQuotaSpace { set; }
-        long AssignedQuotaSpace { set; }
-
         bool ReportedQuotaError { get; set; }
         bool ReportedQuotaWarning { get; set; }
 
@@ -47,7 +39,8 @@ namespace Duplicati.Library.Main
         /// <param name="type">The event type</param>
         /// <param name="path">Path to the resource</param>
         /// <param name="size">Size of the file or progress</param>
-        void SendEvent(BackendActionType action, BackendEventType type, string path, long size);
+        /// <param name="updateProgress">Whether this event should update the backend progress count</param>
+        void SendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true);
 
         /// <summary>
         /// Gets the backend progress updater.
@@ -59,12 +52,11 @@ namespace Duplicati.Library.Main
     internal interface ISetCommonOptions
     {
         DateTime EndTime { get; set; }
-        DateTime BeginTime { set; }
+        DateTime BeginTime { get; set; }
+        IMessageSink MessageSink { get; set; }
+        OperationMode MainOperation { get; }
 
         void SetDatabase(LocalDatabase db);
-
-        OperationMode MainOperation { get; }
-        IMessageSink MessageSink { set; }
     }
 
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
@@ -79,21 +71,6 @@ namespace Duplicati.Library.Main
         protected long m_filesDeleted = 0;
         protected long m_foldersCreated = 0;
         protected long m_retryAttemptCount = 0;
-
-        public void AddNumberOfRemoteCalls(long count)
-        {
-            System.Threading.Interlocked.Add(ref m_remoteCalls, count);
-        }
-
-        public void AddBytesUploaded(long count)
-        {
-            System.Threading.Interlocked.Add(ref m_bytesUploaded, count);
-        }
-
-        public void AddBytesDownloaded(long count)
-        {
-            System.Threading.Interlocked.Add(ref m_bytesDownloaded, count);
-        }
 
         public long RemoteCalls { get { return m_remoteCalls; } }
         public long BytesUploaded { get { return m_bytesUploaded; } }
@@ -119,7 +96,7 @@ namespace Duplicati.Library.Main
 
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
 
-        public void SendEvent(BackendActionType action, BackendEventType type, string path, long size)
+        public void SendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
         {
             if (type == BackendEventType.Started)
             {
@@ -152,7 +129,7 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            base.AddBackendEvent(action, type, path, size);
+            base.AddBackendEvent(action, type, path, size, updateProgress);
         }
 
         IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.BackendProgressUpdater; } }
@@ -162,7 +139,7 @@ namespace Duplicati.Library.Main
     {
         void Pause();
         void Resume();
-        void Stop();
+        void Stop(bool allowCurrentFileToFinish);
         void Abort();
     }
 
@@ -180,6 +157,11 @@ namespace Duplicati.Library.Main
         /// The tag used for logging
         /// </summary>
         protected static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(BasicResults));
+
+        /// <summary>
+        /// Max number of elements to be serialized to JSON
+        /// </summary>
+        protected static readonly int SERIALIZATION_LIMIT = 20;
 
         protected class DbMessage
         {
@@ -199,7 +181,7 @@ namespace Duplicati.Library.Main
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
         protected readonly object m_lock = new object();
-        protected Queue<DbMessage> m_dbqueue;
+        protected readonly Queue<DbMessage> m_dbqueue;
 
         private TaskControlState m_controlState = TaskControlState.Run;
         private readonly System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
@@ -217,18 +199,21 @@ namespace Duplicati.Library.Main
             }
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
         public string Version { get { return string.Format("{0} ({1})", AutoUpdater.UpdaterManager.SelfVersion.Version, AutoUpdater.UpdaterManager.SelfVersion.Displayname); } }
+
         public DateTime EndTime { get; set; }
         public DateTime BeginTime { get; set; }
         public TimeSpan Duration { get { return EndTime.Ticks == 0 ? new TimeSpan(0) : EndTime - BeginTime; } }
 
         public abstract OperationMode MainOperation { get; }
 
-        protected Library.Utility.FileBackedStringList m_messages;
-        protected Library.Utility.FileBackedStringList m_warnings;
-        protected Library.Utility.FileBackedStringList m_errors;
+        protected readonly Library.Utility.FileBackedStringList m_messages;
+        protected readonly Library.Utility.FileBackedStringList m_warnings;
+        protected readonly Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
-
+        
         protected IMessageSink m_messageSink;
 
         [JsonIgnore]
@@ -240,13 +225,13 @@ namespace Duplicati.Library.Main
                 m_messageSink = value;
                 if (value != null)
                 {
-                    m_messageSink.OperationProgress = this.OperationProgressUpdater;
-                    m_messageSink.BackendProgress = this.BackendProgressUpdater;
+                    m_messageSink.SetOperationProgress(this.OperationProgressUpdater);
+                    m_messageSink.SetBackendProgress(this.BackendProgressUpdater);
                 }
             }
         }
 
-        protected internal IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
+        protected internal readonly IOperationProgressUpdaterAndReporter m_operationProgressUpdater;
         internal IOperationProgressUpdaterAndReporter OperationProgressUpdater
         {
             get
@@ -258,7 +243,7 @@ namespace Duplicati.Library.Main
             }
         }
 
-        protected internal IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
+        protected internal readonly IBackendProgressUpdaterAndReporter m_backendProgressUpdater;
         internal IBackendProgressUpdaterAndReporter BackendProgressUpdater
         {
             get
@@ -304,26 +289,13 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private void LogDbMessage(string type, string message, Exception ex)
-        {
-            if (System.Threading.Thread.CurrentThread != m_callerThread)
-            {
-                m_dbqueue.Enqueue(new DbMessage(type, message, ex));
-            }
-            else
-            {
-                FlushLog();
-                m_db.LogMessage("Message", message, ex, null);
-            }
-        }
-
         private static bool m_is_reporting = false;
 
-        public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+        public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
         {
             if (m_parent != null)
             {
-                m_parent.AddBackendEvent(action, type, path, size);
+                m_parent.AddBackendEvent(action, type, path, size, updateProgress);
             }
             else
             {
@@ -335,7 +307,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_is_reporting = true;
-                        if (type == BackendEventType.Started)
+                        if (type == BackendEventType.Started && updateProgress)
                             this.BackendProgressUpdater.StartAction(action, path, size);
 
                         Logging.Log.WriteInformationMessage(LOGTAG, "BackendEvent", "Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size));
@@ -352,11 +324,35 @@ namespace Duplicati.Library.Main
 
         }
 
-        public IEnumerable<string> Messages { get { return m_parent == null ? m_messages : m_parent.Messages; } }
-        public IEnumerable<string> Warnings { get { return m_parent == null ? m_warnings : m_parent.Warnings; } }
-        public IEnumerable<string> Errors { get { return m_parent == null ?  m_errors : m_parent.Errors; } }
+        [JsonIgnore]
+        public IEnumerable<string> Messages { get { return m_messages; } }
 
-        protected Operation.Common.TaskControl m_taskController;
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
+        public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count();  } }
+
+        [JsonIgnore]
+        public IEnumerable<string> Warnings { get { return m_warnings; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
+        public int WarningsActualLength { get { return Warnings == null ? 0 : Warnings.Count(); } }
+
+        [JsonIgnore]
+        public IEnumerable<string> Errors { get { return m_errors; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
+        public int ErrorsActualLength { get { return Errors == null ? 0 : Errors.Count(); } }
+
+        [JsonProperty(PropertyName = "Messages")]
+        public IEnumerable<string> LimitedMessages { get { return Messages?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Warnings")]
+        public IEnumerable<string> LimitedWarnings { get { return Warnings?.Take(SERIALIZATION_LIMIT); } }
+        [JsonProperty(PropertyName = "Errors")]
+        public IEnumerable<string> LimitedErrors { get { return Errors?.Take(SERIALIZATION_LIMIT); } }
+
+        protected readonly Operation.Common.TaskControl m_taskController;
         public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
 
         protected BasicResults()
@@ -381,7 +377,7 @@ namespace Duplicati.Library.Main
             this.m_parent = p;
         }
 
-        protected IBackendStatstics m_backendStatistics;
+        protected readonly IBackendStatstics m_backendStatistics;
         public IBackendStatstics BackendStatistics
         {
             get
@@ -443,10 +439,10 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Request that this task stops.
         /// </summary>
-        public void Stop()
+        public void Stop(bool allowCurrentFileToFinish)
         {
             if (m_parent != null)
-                m_parent.Stop();
+                m_parent.Stop(allowCurrentFileToFinish);
             else
             {
                 lock (m_lock)
@@ -454,6 +450,10 @@ namespace Duplicati.Library.Main
                     {
                         m_controlState = TaskControlState.Stop;
                         m_pauseEvent.Set();
+                        if (!allowCurrentFileToFinish)
+                        {
+                            m_taskController.Stop(true);
+                        }
                     }
 
                 if (StateChangedEvent != null)
@@ -584,6 +584,7 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.Backup; } }
 
         public ICompactResults CompactResults { get; internal set; }
+        public IVacuumResults VacuumResults { get; internal set; }
         public IDeleteResults DeleteResults { get; internal set; }
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
@@ -592,26 +593,42 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if ((Errors != null && Errors.Any()) || FilesWithError > 0)
+                if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
+                    (VacuumResults  != null && VacuumResults.ParsedResult  == ParsedResultType.Error) ||
+                    (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Error) ||
+                    (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Error) || 
+                    (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()) || FilesWithError > 0)
+                {
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || PartialBackup)
+                }
+                else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Warning) ||
+                         (VacuumResults  != null && VacuumResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Warning) ||
+                         (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()) || PartialBackup)
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
 
     internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
     {
-        public long FilesRestored { get; internal set; }
+        public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
-        public long FoldersRestored { get; internal set; }
-        public long SymlinksRestored { get; internal set; }
-        public long FilesPatched { get; internal set; }
-        public long FilesDeleted { get; internal set; }
-        public long FoldersDeleted { get; internal set; }
-        public long SymlinksDeleted { get; internal set; }
+        public long RestoredFolders { get; internal set; }
+        public long RestoredSymlinks { get; internal set; }
+        public long PatchedFiles { get; internal set; }
+        public long DeletedFiles { get; internal set; }
+        public long DeletedFolders { get; internal set; }
+        public long DeletedSymlinks { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
 
@@ -621,12 +638,20 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (Errors != null && Errors.Any())
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
                     return ParsedResultType.Error;
-                else if ((Warnings != null && Warnings.Any()) || FilesRestored == 0)
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()))
+                {
                     return ParsedResultType.Warning;
+                }
                 else
+                {
                     return ParsedResultType.Success;
+                }
             }
         }
     }
@@ -645,12 +670,14 @@ namespace Duplicati.Library.Main
     internal class ListResultFileset : Duplicati.Library.Interface.IListResultFileset
     {
         public long Version { get; private set; }
+        public int IsFullBackup { get; private set; }
         public DateTime Time { get; private set; }
         public long FileCount { get; private set; }
         public long FileSizes { get; private set; }
-        public ListResultFileset(long version, DateTime time, long fileCount, long fileSizes)
+        public ListResultFileset(long version, int isFullBackup, DateTime time, long fileCount, long fileSizes)
         {
             this.Version = version;
+            this.IsFullBackup = isFullBackup;
             this.Time = time;
             this.FileCount = fileCount;
             this.FileSizes = fileSizes;
@@ -700,7 +727,16 @@ namespace Duplicati.Library.Main
 
     internal class DeleteResults : BasicResults, Duplicati.Library.Interface.IDeleteResults
     {
+        [JsonIgnore]
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
+        public int DeletedSetsActualLength { get { return DeletedSets == null ? 0 : DeletedSets.Count(); } }
+
+        [JsonProperty(PropertyName = "DeletedSets")]
+        public IEnumerable<Tuple<long, DateTime>> LimitedDeletedSets { get { return DeletedSets?.Take(SERIALIZATION_LIMIT); } }
+
         public bool Dryrun { get; private set; }
 
         public void SetResults(IEnumerable<Tuple<long, DateTime>> deletedSets, bool dryrun)
@@ -721,15 +757,15 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (m_parent != null && m_parent is BackupResults)
-                    return ((BackupResults)m_parent).CompactResults;
+                if (m_parent != null && this.m_parent is BackupResults results)
+                    return results.CompactResults;
 
                 return m_compactResults;
             }
             internal set
             {
-                if (m_parent != null && m_parent is BackupResults)
-                    ((BackupResults)m_parent).CompactResults = value;
+                if (m_parent != null && this.m_parent is BackupResults results)
+                    results.CompactResults = value;
 
                 m_compactResults = value;
             }
@@ -773,6 +809,27 @@ namespace Duplicati.Library.Main
         public RepairResults() : base() { }
         public RepairResults(BasicResults p) : base(p) { }
         public Library.Interface.IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
+
+        public override ParsedResultType ParsedResult
+        {
+            get
+            {
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (Errors != null && Errors.Any()))
+                {
+                    return ParsedResultType.Error;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (Warnings != null && Warnings.Any()))
+                {
+                    return ParsedResultType.Warning;
+                }
+                else
+                {
+                    return ParsedResultType.Success;
+                }
+            }
+        }
     }
 
     internal class CompactResults : BasicResults, Library.Interface.ICompactResults
@@ -784,6 +841,8 @@ namespace Duplicati.Library.Main
         public long DownloadedFileSize { get; internal set; }
         public long UploadedFileSize { get; internal set; }
         public bool Dryrun { get; internal set; }
+
+        public IVacuumResults VacuumResults { get; internal set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Compact; } }
 
@@ -862,8 +921,17 @@ namespace Duplicati.Library.Main
         public TestResults(BasicResults p) : base(p) { }
 
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
-        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+
         private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
+        [JsonIgnore]
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
+        public int VerificationsActualLength { get { return Verifications == null ? 0 : Verifications.Count(); } }
+
+        [JsonProperty(PropertyName = "Verifications")]
+        public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> LimitedVerifications { get { return Verifications?.Take(SERIALIZATION_LIMIT); } }
 
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)
         {
@@ -919,8 +987,11 @@ namespace Duplicati.Library.Main
         public IEnumerable<string> Lines { get; set; }
     }
 
-    internal class VacuumResult : BasicResults, IVacuumResults
+    internal class VacuumResults : BasicResults, IVacuumResults
     {
+        public VacuumResults() : base() { }
+        public VacuumResults(BasicResults p) : base(p) { }
+
         public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
     }
 }

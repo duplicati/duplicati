@@ -78,12 +78,8 @@ override_dh_auto_install:
 	rm -rf build/lib/duplicati/SQLite/win64
 	rm -rf build/lib/duplicati/SQLite/win32
 	rm -rf build/lib/duplicati/MonoMac.dll
-	rm -rf build/lib/duplicati/alphavss
 	rm -rf build/lib/duplicati/OSX\ Icons
 	rm -rf build/lib/duplicati/OSXTrayHost
-	rm build/lib/duplicati/AlphaFS.dll
-	rm build/lib/duplicati/AlphaVSS.Common.dll
-	rm -rf build/lib/duplicati/licenses/alphavss
 	rm -rf build/lib/duplicati/licenses/MonoMac
 	rm -rf build/lib/duplicati/licenses/gpg
 	find build/lib/duplicati/* -type f | xargs chmod 644
@@ -95,7 +91,6 @@ override_dh_auto_install:
 
 #override_dh_auto_install:
 #	rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/*.mdb
-#	rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/alphavss
 #	mkdir ${DESTDIR}/usr/lib/duplicati/
 #	cp -R Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release/* ${DESTDIR}/usr/lib/duplicati/
 #	cp -R Duplicati/Server/webroot ${DESTDIR}/usr/lib/duplicati/

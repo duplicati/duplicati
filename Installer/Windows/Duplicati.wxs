@@ -26,9 +26,9 @@
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" Platform="$(var.Platform)" InstallScope="perMachine" />
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <PropertyRef Id="NETFRAMEWORK45"/>
-    <Condition Message="The .NET Framework 4.5 must be installed ([NETFRAMEWORK45])">
-      <![CDATA[Installed OR NETFRAMEWORK45]]>
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED"/>
+    <Condition Message="The .NET Framework 4.7.1 must be installed">
+      <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED]]>
     </Condition>
 
     <WixVariable Id="WixUILicenseRtf" Value="Resources/LGPL21.rtf" />
@@ -42,10 +42,11 @@
           Control="Finish"
           Event="DoAction"
           Value="LaunchApplication">
-        <![CDATA[WIXUI_EXITDIALOGOPTIONALCHECKBOX and NOT Installed]]>
+        <![CDATA[WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and FORSERVICE = "false" and NOT Installed]]>
       </Publish>
     </UI>
 
+    <Property Id="FORSERVICE" Value="false" />
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder" Name="Programs"/>
@@ -59,19 +60,22 @@
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
     <!-- TODO: Make expanded -->
-    <Feature Id="ProductFeature" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+    <Feature Id="DuplicatiCore" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" TypicalDefault="install" InstallDefault="local" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
       <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
         <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
+        <Condition Level="0">FORSERVICE = "true"</Condition>
       </Feature>
 
       <Feature Id="DuplicatiProgramMenuShortCutFeature" Title="Program Menu Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program menu" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
         <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
+        <Condition Level="0">FORSERVICE = "true"</Condition>
       </Feature>
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
     
     <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no" TypicalDefault="install" InstallDefault="local">
       <ComponentRef Id="StartupMenuItem"/>
+      <Condition Level="0">FORSERVICE = "true"</Condition>
     </Feature>
 
     <!-- Launch duplicati setup -->
@@ -84,13 +88,13 @@
 
     <!-- Remove old versions -->
     <InstallExecuteSequence>
-      <RemoveExistingProducts Before='InstallInitialize' />
+      <RemoveExistingProducts After="InstallInitialize" />
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
     <Upgrade Id="$(var.UpgradeCode)">
       <UpgradeVersion Minimum="2.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
     </Upgrade>
-    
+
   </Product>
 </Wix>

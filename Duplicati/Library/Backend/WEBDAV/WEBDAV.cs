@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -17,10 +17,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Duplicati.Library.Interface;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -93,14 +96,12 @@ namespace Duplicati.Library.Backend
             m_useSSL = Utility.Utility.ParseBoolOption(options, "use-ssl");
 
             m_url = u.SetScheme(m_useSSL ? "https" : "http").SetCredentials(null, null).SetQuery(null).ToString();
-            if (!m_url.EndsWith("/", StringComparison.Ordinal))
-                m_url += "/";
+            m_url = Util.AppendDirSeparator(m_url, "/");
 
             m_path = u.Path;
             if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
-            if (!m_path.EndsWith("/", StringComparison.Ordinal))
-                m_path += "/";
+            m_path = Util.AppendDirSeparator(m_path, "/");
 
             m_path = Library.Utility.Uri.UrlDecode(m_path);
             m_rawurl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
@@ -255,10 +256,10 @@ namespace Duplicati.Library.Backend
             return files;
         }
 
-        public void Put(string remotename, string filename)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -286,7 +287,7 @@ namespace Duplicati.Library.Backend
             } 
             catch (System.Net.WebException wex)
             {
-                if (wex.Response is System.Net.HttpWebResponse && ((System.Net.HttpWebResponse)wex.Response).StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw;
@@ -376,7 +377,7 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -389,7 +390,7 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream())
-                    Utility.Utility.CopyStream(stream, s, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, s, true, cancelToken, m_copybuffer);
 
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {

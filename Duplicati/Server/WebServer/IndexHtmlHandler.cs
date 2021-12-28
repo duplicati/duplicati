@@ -20,6 +20,7 @@ using System.Linq;
 using HttpServer;
 using HttpServer.HttpModules;
 using HttpServer.Exceptions;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Server.WebServer
 {
@@ -28,7 +29,7 @@ namespace Duplicati.Server.WebServer
         private readonly string m_webroot;
 
         private static readonly string[] ForbiddenChars = new string[] {"\\", "..", ":"}.Union(from n in System.IO.Path.GetInvalidPathChars() select n.ToString()).Distinct().ToArray();
-        private static readonly string DirSep = System.IO.Path.DirectorySeparatorChar.ToString();
+        private static readonly string DirSep = Util.DirectorySeparatorString;
 
         public IndexHtmlHandler(string webroot) { m_webroot = webroot; }
 
@@ -66,7 +67,7 @@ namespace Duplicati.Server.WebServer
 
         private string GetPath(Uri uri)
         {
-            if (ForbiddenChars.Where(x => uri.AbsolutePath.Contains(x)).Any())
+            if (ForbiddenChars.Any(x => uri.AbsolutePath.Contains(x)))
                 throw new BadRequestException("Illegal path");
             var uripath = Uri.UnescapeDataString(uri.AbsolutePath);
             while(uripath.Length > 0 && (uripath.StartsWith("/", StringComparison.Ordinal) || uripath.StartsWith(DirSep, StringComparison.Ordinal)))

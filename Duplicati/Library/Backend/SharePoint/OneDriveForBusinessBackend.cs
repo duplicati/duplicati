@@ -30,9 +30,11 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// Shadow class above SharePointBackend to provide an extra protocol key for OneDrive for Business.
     /// Right now, OneDrive for Business *IS* SharePoint. But if MS turns funny sometimes in the future and 
-    /// moves away from SharePoint as OD4B base, this allows to reimplement it without breaking existing
+    /// moves away from SharePoint as OD4B base, this allows to re-implement it without breaking existing
     /// configurations...
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
+    // This constructor is needed by the BackendLoader.
     public class OneDriveForBusinessBackend : SharePointBackend
     {
         public override string ProtocolKey

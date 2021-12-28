@@ -159,6 +159,8 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     });
 
     AppService.get('/serversettings').then(function(data) {
+        $scope.forceActualDate = AppUtils.parseBoolString(data.data['--force-actual-date']);
+
         var ut = data.data['max-upload-speed'];
         var dt = data.data['max-download-speed'];
         $scope.throttle_active = (ut != null && ut.trim().length != 0) || (dt != null && dt.trim().length != 0);

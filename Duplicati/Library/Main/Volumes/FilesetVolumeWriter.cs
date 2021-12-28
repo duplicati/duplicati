@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
@@ -10,6 +8,8 @@ namespace Duplicati.Library.Main.Volumes
 {
     public class FilesetVolumeWriter : VolumeWriterBase
     {
+        private readonly Library.Utility.TempFile m_tempFile;
+        private readonly Stream m_tempStream;
         private StreamWriter m_streamwriter;
         private readonly JsonWriter m_writer;
         private long m_filecount;
@@ -20,7 +20,9 @@ namespace Duplicati.Library.Main.Volumes
         public FilesetVolumeWriter(Options options, DateTime timestamp)
             : base(options, timestamp)
         {
-            m_streamwriter = new StreamWriter(m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow));
+            m_tempFile = new Library.Utility.TempFile();
+            m_tempStream = File.Open(m_tempFile, FileMode.Create, FileAccess.ReadWrite);
+            m_streamwriter = new StreamWriter(m_tempStream, ENCODING);
             m_writer = new JsonTextWriter(m_streamwriter);
             m_writer.WriteStartArray();
         }
@@ -34,16 +36,18 @@ namespace Duplicati.Library.Main.Volumes
 
             if (metablocklisthashes != null)
             {
-                //Slightly akward, but we avoid writing if there are no entries 
-                var en = metablocklisthashes.GetEnumerator();
-                if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                // Slightly awkward, but we avoid writing if there are no entries.
+                using (var en = metablocklisthashes.GetEnumerator())
                 {
-                    m_writer.WritePropertyName("metablocklists");
-                    m_writer.WriteStartArray();
-                    m_writer.WriteValue(en.Current);
-                    while (en.MoveNext())
+                    if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
+                    {
+                        m_writer.WritePropertyName("metablocklists");
+                        m_writer.WriteStartArray();
                         m_writer.WriteValue(en.Current);
-                    m_writer.WriteEndArray();
+                        while (en.MoveNext())
+                            m_writer.WriteValue(en.Current);
+                        m_writer.WriteEndArray();
+                    }
                 }
             }
             else if (!string.IsNullOrWhiteSpace(metablockhash))
@@ -82,7 +86,7 @@ namespace Duplicati.Library.Main.Volumes
 
             if (blocklisthashes != null)
             {
-                //Slightly akward, but we avoid writing if there are no entries 
+                //Slightly awkward, but we avoid writing if there are no entries 
                 using (var en = blocklisthashes.GetEnumerator())
                 {
                     if (en.MoveNext() && !string.IsNullOrEmpty(en.Current))
@@ -130,13 +134,43 @@ namespace Duplicati.Library.Main.Volumes
         {
             if (m_streamwriter != null)
             {
-                m_writer.WriteEndArray();
+                this.AddFilelistFile();
+            }
+
+            if (m_tempStream != null)
+            {
+                m_tempStream.Dispose();
+            }
+
+            if (m_tempFile != null)
+            {
+                m_tempFile.Dispose();
+            }
+
+            base.Close();
+        }
+
+        private void AddFilelistFile()
+        {
+            m_writer.WriteEndArray();
+            m_writer.Flush();
+            m_streamwriter.Flush();
+
+            try
+            {
+                using (Stream sr = m_compression.CreateFile(FILELIST, CompressionHint.Compressible, DateTime.UtcNow))
+                {
+                    m_tempStream.Seek(0, SeekOrigin.Begin);
+                    m_tempStream.CopyTo(sr);
+                    sr.Flush();
+                }
+            }
+            finally
+            {
                 m_writer.Close();
                 m_streamwriter.Dispose();
                 m_streamwriter = null;
             }
-
-            base.Close();
         }
 
         public void AddControlFile(string localfile, CompressionHint hint, string filename = null)
@@ -150,6 +184,7 @@ namespace Duplicati.Library.Main.Volumes
         public override void Dispose()
         {
             this.Close();
+            base.Dispose();
         }
 
         public long FileCount { get { return m_filecount; } }
@@ -158,6 +193,14 @@ namespace Duplicati.Library.Main.Volumes
         public void AddSymlink(string name, string metahash, long metasize, string metablockhash, IEnumerable<string> metablocklisthashes)
         {
             AddMetaEntry(FilelistEntryType.Symlink, name, metahash, metasize, metablockhash, metablocklisthashes);
+        }
+
+        public void CreateFilesetFile(bool isFullBackup)
+        {
+            using (var sr = new StreamWriter(this.m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
+            {
+                sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
+            }
         }
     }
 }

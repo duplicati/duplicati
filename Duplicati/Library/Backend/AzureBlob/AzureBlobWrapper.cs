@@ -21,6 +21,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Microsoft.WindowsAzure.Storage;
@@ -59,13 +62,33 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public AzureBlobWrapper(string accountName, string accessKey, string containerName)
+        public AzureBlobWrapper(string accountName, string accessKey, string sasToken, string containerName)
         {
-            _containerName = containerName;
-            var connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
-                accountName, accessKey);
+            OperationContext.GlobalSendingRequest += (sender, args) =>
+            {
+                args.Request.UserAgent = string.Format(
+                    "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
+                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
+                    Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
+                );
+            };
+
+            string connectionString;
+            if (sasToken != null)
+            {
+                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1}",
+                    accountName, sasToken);
+            }
+            else
+            {
+                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
+                            accountName, accessKey);
+            }
+
             var storageAccount = CloudStorageAccount.Parse(connectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
+
+            _containerName = containerName;
             _container = blobClient.GetContainerReference(containerName);
         }
 
@@ -79,22 +102,9 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container.GetBlockBlobReference(keyName).DownloadToStream(target);
         }
 
-        public void GetFileObject(string keyName, string localfile)
+        public virtual async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
-            _container.GetBlockBlobReference(keyName).DownloadToFile(localfile, FileMode.Create);
-        }
-
-        public void AddFileObject(string keyName, string localfile)
-        {
-            using (var fs = File.Open(localfile, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                AddFileStream(keyName, fs);
-            }
-        }
-
-        public virtual void AddFileStream(string keyName, Stream source)
-        {
-            _container.GetBlockBlobReference(keyName).UploadFromStream(source);
+            await _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, cancelToken);
         }
 
         public void DeleteObject(string keyName)
@@ -116,10 +126,8 @@ namespace Duplicati.Library.Backend.AzureBlob
 
                     try
                     {
-                        if (x is CloudBlockBlob)
+                        if (x is CloudBlockBlob cb)
                         {
-                            var cb = (CloudBlockBlob)x;
-                            var modified = cb.Properties.LastModified;
                             var lastModified = new System.DateTime();
                             if (cb.Properties.LastModified != null)
                                 lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
@@ -127,7 +135,7 @@ namespace Duplicati.Library.Backend.AzureBlob
                         }
                     }
                     catch
-                    { 
+                    {
                         // If the metadata fails to parse, return the basic entry
                     }
 

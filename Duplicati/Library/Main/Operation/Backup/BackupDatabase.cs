@@ -62,7 +62,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task<string> GetFileHashAsync(long fileid)
         {
-            return RunOnMain(() => m_database.GetFileHash(fileid));
+            return RunOnMain(() => m_database.GetFileHash(fileid, m_transaction));
         }
 
         public Task<Tuple<bool, long>> AddMetadatasetAsync(string hash, long size, long blocksetid)
@@ -95,18 +95,21 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.AddSymlinkEntry(filename, metadataid, lastModified, m_transaction));
         }
 
-        public Task<KeyValuePair<long, DateTime>> GetFileLastModifiedAsync(string path, long lastfilesetid)
+        public Task<Tuple<long, string>> GetMetadataHashAndSizeForFileAsync(long fileid)
+        {
+            return RunOnMain(() => m_database.GetMetadataHashAndSizeForFile(fileid, m_transaction));
+        }
+
+        public Task<Tuple<long, DateTime, long>> GetFileLastModifiedAsync(long prefixid, string path, long lastfilesetid, bool includeLength)
         {
             return RunOnMain(() =>
             {
-                DateTime lastModified;
-                var id = m_database.GetFileLastModified(path, lastfilesetid, out lastModified, m_transaction);
-
-                return new KeyValuePair<long, DateTime>(id, lastModified);
+                var id = m_database.GetFileLastModified(prefixid, path, lastfilesetid, includeLength, out var lastModified, out var length, m_transaction);
+                return new Tuple<long, DateTime, long>(id, lastModified, length);
             });
 		}
 
-		public Task<FileEntryData> GetFileEntryAsync(string path, long lastfilesetid)
+		public Task<FileEntryData> GetFileEntryAsync(long prefixid, string path, long lastfilesetid)
         {
             return RunOnMain(() => { 
                 DateTime oldModified;
@@ -114,7 +117,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 string oldMetahash;
                 long oldMetasize;
 
-                var id = m_database.GetFileEntry(path, lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize);
+                var id = m_database.GetFileEntry(prefixid, path, lastfilesetid, out oldModified, out lastFileSize, out oldMetahash, out oldMetasize, m_transaction);
                 return
                     id < 0 ?
                     null :
@@ -132,9 +135,14 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        public Task AddFileAsync(string filename, DateTime lastmodified, long blocksetid, long metadataid)
+        public Task<long> GetOrCreatePathPrefix(string prefix)
         {
-            return RunOnMain(() => m_database.AddFile(filename, lastmodified, blocksetid, metadataid, m_transaction));
+            return RunOnMain(() => m_database.GetOrCreatePathPrefix(prefix, m_transaction));
+        }
+
+        public Task AddFileAsync(long prefixid, string filename, DateTime lastmodified, long blocksetid, long metadataid)
+        {
+            return RunOnMain(() => m_database.AddFile(prefixid, filename, lastmodified, blocksetid, metadataid, m_transaction));
         }
 
         public Task AddUnmodifiedAsync(long fileid, DateTime lastModified)
@@ -240,6 +248,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.WriteFileset(fsw, filesetid, m_transaction));
         }
 
+        public Task UpdateFilesetAndMarkAsFullBackupAsync(long filesetid)
+        {
+            return RunOnMain(() => m_database.UpdateFullBackupStateInFileset(filesetid, true, m_transaction));
+        }
+
         public Task<string[]> GetMissingIndexFilesAsync()
         {
             return RunOnMain(() => m_database.GetMissingIndexFiles(m_transaction).ToArray());
@@ -260,9 +273,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.RemoveRemoteVolume(remoteFilename, m_transaction));
         }
 
-        public Task<RemoteVolumeEntry> GetRemoteVolumeFromIDAsync(long fileid)
+        public Task<RemoteVolumeEntry> GetRemoteVolumeFromFilesetIDAsync(long filesetID)
         {
-            return RunOnMain(() => m_database.GetRemoteVolumeFromID(fileid, m_transaction));
+            return RunOnMain(() => m_database.GetRemoteVolumeFromFilesetID(filesetID, m_transaction));
         }
 
         public Task CreateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData)
@@ -274,6 +287,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             return RunOnMain(() => m_database.UpdateChangeJournalData(journalData, lastfilesetid, m_transaction));
         }
+
     }
 }
 

@@ -21,6 +21,12 @@ using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Logging;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
+using NUnit.Framework;
+using System.Runtime.InteropServices;
+using Duplicati.Library.Common;
 
 namespace Duplicati.UnitTest
 {
@@ -42,6 +48,30 @@ namespace Duplicati.UnitTest
                     opts["auth-password"] = File.ReadAllText(auth_password).Trim();
                 
                 return opts;
+            }
+        }
+
+        public static async Task GrowingFile(string testFile, CancellationToken token)
+        {
+            try
+            {
+                var str = new string('*', 50);
+                while (true)
+                {
+                    if (token.IsCancellationRequested)
+                    {
+                        continue;
+                    }
+                    File.AppendAllText(testFile, str);
+                    await Task.Delay(18, token).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (File.Exists(testFile))
+                {
+                    File.Delete(testFile);
+                }
             }
         }
 
@@ -68,7 +98,7 @@ namespace Duplicati.UnitTest
         /// <param name="targetfolder">Destination directory path</param>
         public static void CopyDirectoryRecursive(string sourcefolder, string targetfolder)
         {
-            sourcefolder = Library.Utility.Utility.AppendDirSeparator(sourcefolder);
+            sourcefolder = Util.AppendDirSeparator(sourcefolder);
 
             var work = new Queue<string>();
             work.Enqueue(sourcefolder);
@@ -142,129 +172,94 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
-        /// Verifies the existence of all files and folders, and ensures that all
-        /// files are binary equal.
+        /// Asserts that the two directory trees are equivalent; i.e.,
+        /// that they they contain the same directories and files, recursively.
         /// </summary>
-        /// <param name="f1">One folder</param>
-        /// <param name="f2">Another folder</param>
-        public static void VerifyDir(string f1, string f2, bool verifymetadata)
+        /// <param name="expectedDir">The expected directory tree.</param>
+        /// <param name="actualDir">The actual directory tree.</param>
+        /// <param name="verifymetadata">True to also compare file metadata.</param>
+        /// <param name="contextMessage">Context information to include in an assert message.</param>
+        public static void AssertDirectoryTreesAreEquivalent(string expectedDir, string actualDir, bool verifymetadata, string contextMessage)
         {
-            var anymissing = false;
-            f1 = Utility.AppendDirSeparator(f1);
-            f2 = Utility.AppendDirSeparator(f2);
-
-            var folders1 = Utility.EnumerateFolders(f1);
-            var folders2 = Utility.EnumerateFolders(f2).ToList();
-
-            foreach (string s in folders1)
+            var localMessage = $"{contextMessage}, in directories {expectedDir} and {actualDir}";
+            // Assert that expectedDir and actualDir contain the same directories
+            var expectedSubdirs = SystemIO.IO_OS.EnumerateDirectories(expectedDir).OrderBy(SystemIO.IO_OS.PathGetFileName);
+            var actualSubdirs = SystemIO.IO_OS.EnumerateDirectories(actualDir).OrderBy(SystemIO.IO_OS.PathGetFileName);
+            Assert.That(expectedSubdirs.Select(SystemIO.IO_OS.PathGetFileName), Is.EquivalentTo(actualSubdirs.Select(SystemIO.IO_OS.PathGetFileName)), localMessage);
+            // Recursively compare the contained directories
+            var expectedSubdirsEnumerator = expectedSubdirs.GetEnumerator();
+            var actualSubdirsEnumerator = actualSubdirs.GetEnumerator();
+            while (expectedSubdirsEnumerator.MoveNext() && actualSubdirsEnumerator.MoveNext())
             {
-                string relpath = s.Substring(f1.Length);
-                string target = System.IO.Path.Combine(f2, relpath);
-                int ix = IndexOf(folders2, target);
-                if (ix < 0)
-                {
-                    Log.WriteErrorMessage(LOGTAG, "MissingFolder", null, "Missing folder: {0}", relpath);
-                    Console.WriteLine("Missing folder: " + relpath);
-                    anymissing = true;
-                }
-                else
-                    folders2.RemoveAt(ix);
+                AssertDirectoryTreesAreEquivalent(expectedSubdirsEnumerator.Current, actualSubdirsEnumerator.Current, verifymetadata, contextMessage);
             }
-
-            foreach (string s in folders2)
+            // Assert that expectedDir and actualDir contain the same files
+            var expectedFiles = SystemIO.IO_OS.EnumerateFiles(expectedDir).OrderBy(SystemIO.IO_OS.PathGetFileName);
+            var actualFiles = SystemIO.IO_OS.EnumerateFiles(actualDir).OrderBy(SystemIO.IO_OS.PathGetFileName);
+            Assert.That(expectedFiles.Select(SystemIO.IO_OS.PathGetFileName), Is.EquivalentTo(actualFiles.Select(SystemIO.IO_OS.PathGetFileName)), localMessage);
+            // Assert that the files are equal
+            var expectedFilesEnumerator = expectedFiles.GetEnumerator();
+            var actualFilesEnumerator = actualFiles.GetEnumerator();
+            while (expectedFilesEnumerator.MoveNext() && actualFilesEnumerator.MoveNext())
             {
-                Log.WriteErrorMessage(LOGTAG, "ExtraFolder", null, "Extra folder: {0}", s.Substring(f2.Length));
-                Console.WriteLine("Extra folder: " + s.Substring(f2.Length));
+                AssertFilesAreEqual(expectedFilesEnumerator.Current, actualFilesEnumerator.Current, verifymetadata, contextMessage);
             }
-
-            var files1 = Utility.EnumerateFiles(f1);
-            var files2 = Utility.EnumerateFiles(f2).ToList();
-            foreach (string s in files1)
-            {
-                string relpath = s.Substring(f1.Length);
-                string target = System.IO.Path.Combine(f2, relpath);
-                int ix = IndexOf(files2, target);
-                if (ix < 0)
-                {
-                    Log.WriteErrorMessage(LOGTAG, "MissingFile", null, "Missing file: {0}", relpath);
-                    Console.WriteLine("Missing file: " + relpath);
-                    anymissing = true;
-                }
-                else
-                {
-                    files2.RemoveAt(ix);
-                    if (!CompareFiles(s, target, relpath, verifymetadata))
-                    {
-                        Log.WriteErrorMessage(LOGTAG, "FileDiffers", null, "File differs: {0}", relpath);
-                        Console.WriteLine("File differs: " + relpath);
-                    }
-                }
-            }
-
-            foreach (string s in files2)
-            {
-                Log.WriteErrorMessage(LOGTAG, "ExtraFile", null, "Extra file: {0}", s.Substring(f2.Length));
-                Console.WriteLine("Extra file: " + s.Substring(f2.Length));
-            }
-
-            if (anymissing)
-                throw new Exception("Verify failed, some items are missing");
         }
 
         /// <summary>
-        /// Compares two files by reading all bytes, and comparing one by one
+        /// Asserts that two files are equal by comparing their length, contents, and, optionally, their metadata.
         /// </summary>
-        /// <param name="f1">One file</param>
-        /// <param name="f2">Another file</param>
-        /// <param name="display">File display name</param>
-        /// <returns>True if they are equal, false otherwise</returns>
-        public static bool CompareFiles(string f1, string f2, string display, bool verifymetadata)
+        /// <param name="expectedFile">The expected file.</param>
+        /// <param name="actualFile">The actual file.</param>
+        /// <param name="verifymetadata">True to also compare file metadata.</param>
+        /// <param name="contextMessage">Context information to include in an assert message.</param>
+        public static void AssertFilesAreEqual(string expectedFile, string actualFile, bool verifymetadata, string contextMessage)
         {
-            using (System.IO.FileStream fs1 = System.IO.File.OpenRead(f1))
-            using (System.IO.FileStream fs2 = System.IO.File.OpenRead(f2))
-                if (fs1.Length != fs2.Length)
+            using (var expectedFileStream = SystemIO.IO_OS.FileOpenRead(expectedFile))
+            using (var actualFileStream = SystemIO.IO_OS.FileOpenRead(actualFile))
+            {
+                // Compare file lengths
+                var expectedFileStreamLength = expectedFileStream.Length;
+                var actualFileStreamLength = actualFileStream.Length;
+                Assert.That(actualFileStreamLength, Is.EqualTo(expectedFileStreamLength), $"{contextMessage}, file size mismatch for {expectedFile} and {actualFile}");
+                // Compare file contents
+                // The byte-by-byte compare is dog-slow, so we use a fast(-er) check, and then report the first byte diff if required
+                if (!Utility.CompareStreams(expectedFileStream, actualFileStream, true))
                 {
-                    Log.WriteErrorMessage(LOGTAG, "LengthsDiffer", null, "Lengths differ: {0}, {1} vs {2}", display, fs1.Length.ToString(), fs2.Length.ToString());
-                    Console.WriteLine("Lengths differ: " + display + ", " + fs1.Length.ToString() + " vs. " + fs2.Length.ToString());
-                    return false;
-                }
-                else
-                {
-                    // The byte-by-byte compare is dog-slow, so we use a fast(-er) check, and then report the first byte diff if required
-                    if (!Library.Utility.Utility.CompareStreams(fs1, fs2, true))
+                    // Reset stream positions
+                    expectedFileStream.Position = 0;
+                    actualFileStream.Position = 0;
+                    for (long i = 0; i < expectedFileStreamLength; i++)
                     {
-                        fs1.Position = 0;
-                        fs2.Position = 0;
-                        long len = fs1.Length;
-                        for(long l = 0; l < len; l++)
-                            if (fs1.ReadByte() != fs2.ReadByte())
-                            {
-                                Log.WriteErrorMessage(LOGTAG, "MismatchInFile", null, "Mismatch in byte {0} in file {1}", l.ToString(), display);
-                                Console.WriteLine("Mismatch in byte " + l.ToString() + " in file " + display);
-                                return false;
-                            }
+                        var expectedByte = expectedFileStream.ReadByte();
+                        var actualByte = actualFileStream.ReadByte();
+                        // For performance reasons, only exercise Assert mechanism and generate message if byte comparison fails
+                        if (expectedByte != actualByte)
+                        {
+                            var message = $"{contextMessage}, file contents mismatch at position {i} for {expectedFile} and {actualFile}";
+                            Assert.That(actualByte, Is.EqualTo(expectedByte), message);
+                        }
                     }
                 }
-
+            }
+            // Compare file metadata
             if (verifymetadata)
             {
-                if (System.IO.File.GetLastWriteTime(f1) != System.IO.File.GetLastWriteTime(f2))
-                {
-                    Log.WriteWarningMessage(LOGTAG, "MismatchInLastModified", null, "Mismatch in lastmodified for {0}, {1} vs {2}", f2, System.IO.File.GetLastWriteTimeUtc(f1), System.IO.File.GetLastWriteTimeUtc(f2));
-                    Console.WriteLine("Mismatch in lastmodified for " + f2 + ", " + System.IO.File.GetLastWriteTimeUtc(f1) + " vs. " + System.IO.File.GetLastWriteTimeUtc(f2));
-                }
-
-                if (System.IO.File.GetCreationTimeUtc(f1) != System.IO.File.GetCreationTimeUtc(f2))
-                {
-                    Log.WriteWarningMessage(LOGTAG, "MismatchInCreateTime", null, "Mismatch in create-time for {0}, {1} vs {2}", f2, System.IO.File.GetCreationTimeUtc(f1), System.IO.File.GetCreationTimeUtc(f2));
-                    Console.WriteLine("Mismatch in create-time for " + f2 + ", " + System.IO.File.GetCreationTimeUtc(f1) + " vs. " + System.IO.File.GetCreationTimeUtc(f2));
-                }
+                // macOS seem to like to actually set the time to some value different than what you set by hundreds of milliseconds.
+                // Reading the time right after it is set gives the expected value but when read later it is slightly different.
+                // Maybe a bug in .net?
+                int granularity = Platform.IsClientOSX ? 999 : 1;
+                Assert.That(
+                    SystemIO.IO_OS.GetLastWriteTimeUtc(actualFile),
+                    Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)).Within(granularity).Milliseconds,
+                    $"{contextMessage}, last write time mismatch for {expectedFile} and {actualFile}");
+                Assert.That(
+                    SystemIO.IO_OS.GetCreationTimeUtc(actualFile),
+                    Is.EqualTo(SystemIO.IO_OS.GetCreationTimeUtc(expectedFile)).Within(granularity).Milliseconds,
+                    $"{contextMessage}, creation time mismatch for {expectedFile} and {actualFile}");
             }
-
-
-            return true;
         }
-            
+
         public static Dictionary<string, string> Expand(this Dictionary<string, string> self, object extra)
         {
             var res = new Dictionary<string, string>(self);
@@ -285,6 +280,16 @@ namespace Duplicati.UnitTest
             return res;
         }
 
+        /// <summary>
+        /// Write file <paramref name="path"/> with <paramref name="contents"/>.
+        /// </summary>
+        public static void WriteFile(string path, byte[] contents)
+        {
+            using (FileStream fileStream = SystemIO.IO_OS.FileOpenWrite(path))
+            {
+                Utility.CopyStream(new MemoryStream(contents), fileStream);
+            }
+        }
     }
 }
 

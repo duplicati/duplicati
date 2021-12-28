@@ -1,0 +1,43 @@
+<div class="input select">
+    <label for="storj_auth_method" translate>Authentication method</label>
+    <select name="storj_auth_method" id="storj_auth_method" ng-model="$parent.storj_auth_method"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in storj_auth_methods | orderBy: k">
+        <option value="" translate >Authentication method ({{auth_method}})
+        </option>
+    </select>
+</div>
+<div class="input select" ng-show="$parent.storj_auth_method == 'API key'">
+    <label for="storj_satellite" translate>Satellite</label>
+    <select name="storj_satellite" id="storj_satellite" ng-model="$parent.storj_satellite"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in storj_satellites | orderBy: k">
+        <option value="" translate translate-params-satellite="storj_satellite_custom || ''">Custom Satellite ({{satellite}})
+        </option>
+    </select>
+
+    <input ng-hide="contains_value(storj_satellites, storj_satellite)" type="text" id="storj_satellite_custom"
+           ng-model="$parent.storj_satellite_custom" placeholder="{{'Custom Satellite' | translate}}"/>
+</div>
+<div class="input text" ng-show="$parent.storj_auth_method == 'API key'">
+    <label for="storj_api_key" translate>API key</label>
+    <input type="text" name="storj_api_key" id="storj_api_key" ng-model="$parent.storj_api_key" placeholder="{{'The API key' | translate}}" />
+</div>
+<div class="input password" ng-show="$parent.storj_auth_method == 'API key'">
+    <label for="storj_secret" translate>Encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="storj_secret" id="storj_secret" ng-model="$parent.storj_secret" placeholder="{{'The encryption passphrase' | translate}}" />
+</div>
+<div class="input password" ng-show="$parent.storj_auth_method == 'API key'">
+    <label for="storj_secret_verify" translate>Verify encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="storj_secret_verify" id="storj_secret_verify" ng-model="$parent.storj_secret_verify" placeholder="{{'The encryption passphrase (for verification)' | translate}}" />
+</div>
+<div class="input text" ng-show="$parent.storj_auth_method == 'Access grant'">
+    <label for="storj_shared_access" translate>Access grant</label>
+    <input type="text" name="storj_shared_access" id="storj_shared_access" ng-model="$parent.storj_shared_access" placeholder="{{'The access grant instead of the info above'}}" />
+</div>
+<div class="input text">
+    <label for="storj_bucket" translate>Bucket</label>
+    <input type="text" name="storj_bucket" id="storj_bucket" ng-model="$parent.storj_bucket" placeholder="{{'The bucket for storing the backup'}}" />
+</div>
+<div class="input text">
+    <label for="storj_folder" translate>Folder path</label>
+    <input type="text" name="storj_folder" id="storj_folder" ng-model="$parent.storj_folder" placeholder="{{'The folder within the bucket for storing the backup'}}" />
+</div>

@@ -65,7 +65,11 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 result[n.Name] = n.Value;
 
             result["Filesets"] = r.Filesets;
-            result["Files"] = r.Files;
+            result["Files"] = r.Files
+                // Group directories first - support either directory separator here as we may be restoring data from an alternate platform
+                .OrderByDescending(f => (f.Path.StartsWith("/", StringComparison.Ordinal) && f.Path.EndsWith("/", StringComparison.Ordinal)) || (!f.Path.StartsWith("/", StringComparison.Ordinal) && f.Path.EndsWith("\\", StringComparison.Ordinal)))
+                // Sort both groups (directories and files) alphabetically
+                .ThenBy(f => f.Path);
 
             info.OutputOK(result);
 
@@ -74,8 +78,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void ListFileSets(IBackup backup, RequestInfo info)
         {
             var input = info.Request.QueryString;
-            var extra = new Dictionary<string, string>();
-            extra["list-sets-only"] = "true";
+            var extra = new Dictionary<string, string>
+            {
+                ["list-sets-only"] = "true"
+            };
             if (input["include-metadata"].Value != null)
                 extra["list-sets-only"] = (!Library.Utility.Utility.ParseBool(input["include-metadata"].Value, false)).ToString();
             if (input["from-remote-only"].Value != null)
@@ -116,10 +122,22 @@ namespace Duplicati.Server.WebServer.RESTMethods
             info.OutputOK(new { inuse = Library.Main.DatabaseLocator.IsDatabasePathInUse(backup.DBPath) });
         }
 
+        public static void RemovePasswords(IBackup backup)
+        {
+            backup.SanitizeSettings();
+            backup.SanitizeTargetUrl();
+        }
+
         private void Export(IBackup backup, RequestInfo info)
         {
             var cmdline = Library.Utility.Utility.ParseBool(info.Request.QueryString["cmdline"].Value, false);
             var argsonly = Library.Utility.Utility.ParseBool(info.Request.QueryString["argsonly"].Value, false);
+            var exportPasswords = Library.Utility.Utility.ParseBool(info.Request.QueryString["export-passwords"].Value, false);
+            if (!exportPasswords)
+            {
+                Backup.RemovePasswords(backup);
+            }
+
             if (cmdline)
             {
                 info.OutputOK(new { Command = Runner.GetCommandLine(Runner.CreateTask(DuplicatiOperation.Backup, backup)) });
@@ -137,31 +155,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
             else
             {
                 var passphrase = info.Request.QueryString["passphrase"].Value;
-                var ipx = Program.DataConnection.PrepareBackupForExport(backup);
+                byte[] data = Backup.ExportToJSON(backup, passphrase);
 
-                byte[] data;
-                using(var ms = new System.IO.MemoryStream())
-                using(var sw = new System.IO.StreamWriter(ms))
-                {
-                    Serializer.SerializeJson(sw, ipx, true);
-
-                    if (!string.IsNullOrWhiteSpace(passphrase))
-                    {
-                        ms.Position = 0;
-                        using(var ms2 = new System.IO.MemoryStream())
-                        using(var m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
-                        {
-                            m.Encrypt(ms, ms2);
-                            data = ms2.ToArray();
-                        }
-                    }
-                    else
-                        data = ms.ToArray();
-                }
-
-                var filename = Library.Utility.Uri.UrlEncode(backup.Name) + "-duplicati-config.json";
+                string filename = Library.Utility.Uri.UrlEncode(backup.Name) + "-duplicati-config.json";
                 if (!string.IsNullOrWhiteSpace(passphrase))
+                {
                     filename += ".aes";
+                }
 
                 info.Response.ContentLength = data.Length;
                 info.Response.AddHeader("Content-Disposition", string.Format("attachment; filename={0}", filename));
@@ -173,12 +173,47 @@ namespace Duplicati.Server.WebServer.RESTMethods
             }
         }
 
+        public static byte[] ExportToJSON(IBackup backup, string passphrase)
+        {
+            Serializable.ImportExportStructure ipx = Program.DataConnection.PrepareBackupForExport(backup);
+
+            byte[] data;
+            using (MemoryStream ms = new System.IO.MemoryStream())
+            {
+                using (StreamWriter sw = new System.IO.StreamWriter(ms))
+                {
+                    Serializer.SerializeJson(sw, ipx, true);
+
+                    if (!string.IsNullOrWhiteSpace(passphrase))
+                    {
+                        ms.Position = 0;
+                        using (MemoryStream ms2 = new System.IO.MemoryStream())
+                        {
+                            using (Library.Encryption.AESEncryption m = new Duplicati.Library.Encryption.AESEncryption(passphrase, new Dictionary<string, string>()))
+                            {
+                                m.Encrypt(ms, ms2);
+                                data = ms2.ToArray();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        data = ms.ToArray();
+                    }
+                }
+            }
+                       
+            return data;
+        }
+
         private void RestoreFiles(IBackup backup, RequestInfo info)
         {
             var input = info.Request.Form;
 
             string[] filters = parsePaths(input["paths"].Value ?? string.Empty);
-            
+
+            var passphrase = string.IsNullOrEmpty(input["passphrase"].Value) ? null : input["passphrase"].Value;
+
             var time = Duplicati.Library.Utility.Timeparser.ParseTimeInterval(input["time"].Value, DateTime.Now);
             var restoreTarget = input["restore-path"].Value;
             var overwrite = Duplicati.Library.Utility.Utility.ParseBool(input["overwrite"].Value, false);
@@ -186,7 +221,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var permissions = Duplicati.Library.Utility.Utility.ParseBool(input["permissions"].Value, false);
             var skip_metadata = Duplicati.Library.Utility.Utility.ParseBool(input["skip-metadata"].Value, false);
 
-            var task = Runner.CreateRestoreTask(backup, filters, time, restoreTarget, overwrite, permissions, skip_metadata);
+            var task = Runner.CreateRestoreTask(backup, filters, time, restoreTarget, overwrite, permissions, skip_metadata, passphrase);
 
             Program.WorkThread.AddTask(task);
 
@@ -219,6 +254,15 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void RepairUpdate(IBackup backup, RequestInfo info)
         {
             DoRepair(backup, info, true);
+        }
+
+        private void Vacuum(IBackup backup, RequestInfo info)
+        {
+            var task = Runner.CreateTask(DuplicatiOperation.Vacuum, backup);
+            Program.WorkThread.AddTask(task);
+            Program.StatusEventNotifyer.SignalNewEvent();
+
+            info.OutputOK(new { Status = "OK", ID = task.TaskID });
         }
 
         private void Verify(IBackup backup, RequestInfo info)
@@ -284,10 +328,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
             {
                 // Already running
             }
-            else if (Program.WorkThread.CurrentTasks.Where(x => { 
-                var bn = x == null ? null : x.Backup;
+            else if (Program.WorkThread.CurrentTasks.Any(x => { 
+                var bn = x?.Backup;
                 return bn == null || bn.ID == backup.ID;
-            }).Any())
+            }))
             {
                 // Already in queue
             }
@@ -303,17 +347,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void IsActive(IBackup backup, RequestInfo info)
         {
             var t = Program.WorkThread.CurrentTask;
-            var bt = t == null ? null : t.Backup;
+            var bt = t?.Backup;
             if (bt != null && backup.ID == bt.ID)
             {
                 info.OutputOK(new { Status = "OK", Active = true });
                 return;
             }
-            else if (Program.WorkThread.CurrentTasks.Where(x =>
+            else if (Program.WorkThread.CurrentTasks.Any(x =>
             { 
-                var bn = x == null ? null : x.Backup;
+                var bn = x?.Backup;
                 return bn == null || bn.ID == backup.ID;
-            }).Any())
+            }))
             {
                 info.OutputOK(new { Status = "OK", Active = true });
                 return;
@@ -402,7 +446,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 info.OutputOK(new GetResponse()
                 {
                     success = true,
-                    data = new GetResponse.GetResponseData() {
+                    data = new GetResponse.GetResponseData {
                         Schedule = schedule,
                         Backup = bk,
                         DisplayNames = sourcenames
@@ -452,6 +496,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                         case "repairupdate":
                             RepairUpdate(bk, info);
+                            return;
+
+                        case "vacuum":
+                            Vacuum(bk, info);
                             return;
 
                         case "verify":
@@ -539,7 +587,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                             return;
                         }
 
-                        if (Program.DataConnection.Backups.Where(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != data.Backup.ID).Any())
+                        if (Program.DataConnection.Backups.Any(x => x.Name.Equals(data.Backup.Name, StringComparison.OrdinalIgnoreCase) && x.ID != data.Backup.ID))
                         {
                             info.ReportClientError("There already exists a backup with the name: " + data.Backup.Name, System.Net.HttpStatusCode.Conflict);
                             return;
@@ -619,23 +667,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         bool hasPaused = Program.LiveControl.State == LiveControls.LiveControlState.Paused;
                         Program.LiveControl.Pause();
 
-                        try
-                        {
-                            for(int i = 0; i < 10; i++)
-                                if (Program.WorkThread.Active)
-                                {
-                                    var t = Program.WorkThread.CurrentTask;
-                                    if (backup.Equals(t == null ? null : t.Backup))
-                                        System.Threading.Thread.Sleep(1000);
-                                    else
-                                        break;
-                                }
+                        for(int i = 0; i < 10; i++)
+                            if (Program.WorkThread.Active)
+                            {
+                                var t = Program.WorkThread.CurrentTask;
+                                if (backup.Equals(t == null ? null : t.Backup))
+                                    System.Threading.Thread.Sleep(1000);
                                 else
                                     break;
-                        }
-                        finally
-                        {
-                        }
+                            }
+                            else
+                                break;
 
                         if (Program.WorkThread.Active)
                         {

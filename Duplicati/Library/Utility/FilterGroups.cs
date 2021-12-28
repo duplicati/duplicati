@@ -17,6 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
+using Duplicati.Library.Common;
+
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Utility
@@ -110,12 +113,12 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Regex escaped string for the AltDirectorySeparatorChar
         /// </summary>
-        private static readonly string RegexEscapedAltDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.AltDirectorySeparatorChar.ToString());
+        private static readonly string RegexEscapedAltDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(Common.IO.Util.AltDirectorySeparatorString);
 
         /// <summary>
         /// Regex escaped string for the DirectorySeparatorChar
         /// </summary>
-        private static readonly string RegexEscapedDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(System.IO.Path.DirectorySeparatorChar.ToString());
+        private static readonly string RegexEscapedDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(Common.IO.Util.DirectorySeparatorString);
 
         /// <summary>
         /// Gets the list of alternate aliases which can refer to this group.
@@ -228,11 +231,11 @@ namespace Duplicati.Library.Utility
         {
             IEnumerable<string> osFilters;
 
-            if (Utility.IsClientOSX)
+            if (Platform.IsClientOSX)
                 osFilters = CreateOSXFilters(group);
-            else if (Utility.IsClientLinux)
+            else if (Platform.IsClientPosix)
                 osFilters = CreateLinuxFilters(group);
-            else if (Utility.IsClientWindows)
+            else if (Platform.IsClientWindows)
                 osFilters = CreateWindowsFilters(group);
             else
                 throw new ArgumentException("Unknown operating system?");
@@ -268,7 +271,7 @@ namespace Duplicati.Library.Utility
 
                 if (n.Length > 2 && char.IsLetter(n[0]) && n[1] == ':' && wildcardRootWindowsPaths.Contains(n.Substring(2)))
                     continue;
-                else if (prev != null && prev.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparison))
+                else if (prev != null && prev.EndsWith(Common.IO.Util.DirectorySeparatorString, StringComparison.Ordinal) && n.StartsWith(prev, Utility.ClientFilenameStringComparison))
                     continue;
                 else
                     yield return prev = n;
@@ -294,7 +297,8 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/Safe Browsing*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/iPhoto Library/iPod Photo Cache/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Mozilla/Firefox/*cache*");
-                yield return FilterGroups.CreateRegexFilter(@".*/(cookies|permissions).sqllite(-.{3})?");
+                yield return FilterGroups.CreateWildcardFilter(@"*/cookies.sqlite-*"); // Journal for database used to store Firefox cookies between sessions
+                yield return FilterGroups.CreateWildcardFilter(@"*/permissions.sqlite-*"); // Journal for database used to store Firefox site-specific permissions
             }
 
             if (group.HasFlag(FilterGroup.TemporaryFiles))
@@ -320,15 +324,15 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Microsoft*/Windows/Cookies*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/MSOCache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/NTUSER*");
-                yield return FilterGroups.CreateWildcardFilter(@"*/RECYCLER/");
-                yield return FilterGroups.CreateWildcardFilter(@"*UsrClass.dat*");
+                yield return FilterGroups.CreateWildcardFilter(@"*/UsrClass.dat");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/hiberfil.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/pagefile.sys");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/swapfile.sys");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/$Recycle.Bin/");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/Recycled/");
+                yield return FilterGroups.CreateWildcardFilter(@"?:/Recycler/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/System Volume Information/");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Installer*");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Temp*");
-                yield return FilterGroups.CreateWildcardFilter(@"*/ntuser.dat*");
+                yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Installer/");
 
                 foreach (var s in GetWindowsRegistryFilters() ?? new string[0])
                 {
@@ -347,7 +351,6 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/autoexec.bat");
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.System);
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.SystemX86);
-                yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
                 yield return FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Recent);
 
                 var windir = FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows);
@@ -356,7 +359,7 @@ namespace Duplicati.Library.Utility
                     yield return windir;
 
                     // Also exclude "C:\Windows.old\"
-                    yield return Utility.AppendDirSeparator(windir.TrimEnd('\\', '/') + ".old");
+                    yield return Common.IO.Util.AppendDirSeparator(windir.TrimEnd('\\', '/') + ".old");
                 }
             }
 
@@ -366,6 +369,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Apple Computer/Mobile Sync/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Comms/UnistoreDB/"); // Looks like storage about music / pictures for universal store apps
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/ElevatedDiagnostics/"); // Seems to be used by sfc tool and Windows troubleshooting
+                yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Edge/User Data/Default/Cache");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/VSCommon/*SQM*"); // SQM appears to be 'service quality management', and it looks like these files report things about Visual Studio installation: https://stackoverflow.com/questions/23050561/what-permissions-policies-are-needed-to-support-loaduserprofile-true-for-new-app
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/Explorer/"); // Stores icon and thumbnail caches
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Microsoft/Windows/INetCache/"); // 
@@ -377,6 +381,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"*/Application Data/Application Data*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/Dropbox.exe.log"); // Dropbox log file, which may be kept open by Dropbox while it is running
                 yield return FilterGroups.CreateWildcardFilter(@"*/Dropbox/QuitReports/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cache");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/User Data/Default/Cookies-journal");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/History/");
@@ -393,13 +398,12 @@ namespace Duplicati.Library.Utility
 
             if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
-                yield return FilterGroups.CreateWildcardFilter(@"*/$RECYCLE.BIN/");
                 yield return FilterGroups.CreateWildcardFilter(@"*.tmp");
                 yield return FilterGroups.CreateWildcardFilter(@"*.tmp/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Local/Temp*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/AppData/Temp*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Local Settings/Temp*");
-                yield return FilterGroups.CreateWildcardFilter(@"?:/Windows/Temp*");
+                yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Temp/");
             }
 
             if (group.HasFlag(FilterGroup.Applications))
@@ -543,7 +547,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"/sbin/");
                 yield return FilterGroups.CreateWildcardFilter(@"/var/");
             }
-                
+
             if (group.HasFlag(FilterGroup.TemporaryFiles))
             {
                 yield return FilterGroups.CreateWildcardFilter(@"*/lost+found/");
@@ -552,6 +556,12 @@ namespace Duplicati.Library.Utility
             }
             if (group.HasFlag(FilterGroup.CacheFiles))
             {
+                string cacheHome = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
+                if (cacheHome != null)
+                {
+                    yield return FilterGroups.CreateWildcardFilter(cacheHome);
+                }
+                yield return FilterGroups.CreateWildcardFilter(@"*/.cache/");
                 yield return FilterGroups.CreateWildcardFilter(@"*/.config/google-chrome/Default/Cookies");
                 yield return FilterGroups.CreateWildcardFilter(@"*/.config/google-chrome/Default/Cookies-journal");
             }
@@ -579,9 +589,9 @@ namespace Duplicati.Library.Utility
 
                 // Duplicati matches filters against folder paths exactly.
                 // Meaning a filter for 'C:\Windows' won't match 'C:\Windows\'.
-                // So this makes sure special folder's filter's have a trailing directory separator.
+                // So this makes sure special folder filters have a trailing directory separator.
                 // (Alternatively, this could append '*' to all folder filters.)
-                return Utility.AppendDirSeparator(filter);
+                return Common.IO.Util.AppendDirSeparator(filter);
             }
             else
             {
@@ -602,25 +612,13 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Creates a Regex filter
-        /// </summary>
-        /// <param name="filter">Filter text</param>
-        /// <returns>Regex filter</returns>
-        private static string CreateRegexFilter(string filter)
-        {
-            // Create a filter with the given name.
-            // However, in order to match paths correctly, the directory separators need to be normalized to match the system default.
-            return "[" + filter.Replace(FilterGroups.RegexEscapedAltDirectorySeparatorChar, FilterGroups.RegexEscapedDirectorySeparatorChar) + "]";
-        }
-
-        /// <summary>
         /// Gets a list of exclude paths from the MacOS system
         /// </summary>
         /// <returns>The list of paths to exclude on OSX backups.</returns>
         private static IEnumerable<string> GetOSXExcludeFiles()
         {
             var res = new List<string>();
-            if (Utility.IsClientOSX)
+            if (Platform.IsClientOSX)
             {
                 try
                 {
@@ -634,8 +632,8 @@ namespace Duplicati.Library.Utility
                     {
                         if (new string[] { "PathsExcluded", "ContentsExcluded", "FileContentsExcluded" }.Contains(n.Value, StringComparer.Ordinal))
                         {
-                            if (n.NextNode is System.Xml.Linq.XContainer)
-                                foreach (var p in ((System.Xml.Linq.XContainer)n.NextNode).Elements("string"))
+                            if (n.NextNode is XContainer container)
+                                foreach (var p in container.Elements("string"))
                                 {
                                     if (System.IO.File.Exists(p.Value))
                                         res.Add(p.Value);
@@ -678,7 +676,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The list of paths to exclude.</returns>
         private static string[] GetWindowsRegistryFilters()
         {
-            if (Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 // One Windows, filters may also be stored in the registry
                 try
@@ -715,10 +713,10 @@ namespace Duplicati.Library.Utility
                  .SelectMany(x =>
                  {
                      var v = sk.GetValue(x);
-                     if (v is string)
-                         return new string[] { (string)v };
-                     else if (v is string[])
-                         return (string[])v;
+                     if (v is string s)
+                         return new string[] { s };
+                     else if (v is string[] strings)
+                         return strings;
                      else
                          return new string[0];
                  })

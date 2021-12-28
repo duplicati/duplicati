@@ -23,11 +23,11 @@ namespace Duplicati.Library.Main.Operation
             m_backendurl = backend;
             m_options = options;
             m_result = result;
-            
+
             if (options.AllowPassphraseChange)
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
-        
+
         public void Run(Library.Utility.IFilter filter = null)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
@@ -130,20 +130,20 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_options.Dryrun)
                 {
-                    if (tp.ParsedVolumes.Count() == 0 && tp.OtherVolumes.Count() > 0)
+                    if (!tp.ParsedVolumes.Any() && tp.OtherVolumes.Any())
                     {
                         if (tp.BackupPrefixes.Length == 1)
                             throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefix {1}, did you forget to set the backup prefix?", m_options.Prefix, tp.BackupPrefixes[0]), "RemoteFolderEmptyWithPrefix");
                         else
                             throw new UserInformationException(string.Format("Found no backup files with prefix {0}, but files with prefixes {1}, did you forget to set the backup prefix?", m_options.Prefix, string.Join(", ", tp.BackupPrefixes)), "RemoteFolderEmptyWithPrefix");
                     }
-                    else if (tp.ParsedVolumes.Count() == 0 && tp.ExtraVolumes.Count() > 0)
+                    else if (!tp.ParsedVolumes.Any() && tp.ExtraVolumes.Any())
                     {
                         throw new UserInformationException(string.Format("No files were missing, but {0} remote files were, found, did you mean to run recreate-database?", tp.ExtraVolumes.Count()), "NoRemoteFilesMissing");
                     }
                 }
 
-                if (tp.ExtraVolumes.Count() > 0 || tp.MissingVolumes.Count() > 0 || tp.VerificationRequiredVolumes.Count() > 0)
+                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any())
                 {
                     if (tp.VerificationRequiredVolumes.Any())
                     {
@@ -261,6 +261,13 @@ namespace Duplicati.Library.Main.Operation
                             if (ex is System.Threading.ThreadAbortException)
                                 throw;
                         }
+
+                    if (!m_options.RebuildMissingDblockFiles)
+                    {
+                        var missingDblocks = tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Blocks).ToArray();
+                        if (missingDblocks.Length > 0)
+                            throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
+                    }
                             
                     foreach(var n in tp.MissingVolumes)
                     {
@@ -280,52 +287,57 @@ namespace Duplicati.Library.Main.Operation
                             if (n.Type == RemoteVolumeType.Files)
                             {
                                 var filesetId = db.GetFilesetIdFromRemotename(n.Name);
-                                var w = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
-                                newEntry = w;
-                                w.SetRemoteFilename(n.Name);
 
-                                db.WriteFileset(w, filesetId, null);
-	
-                                w.Close();
+                                // We cannot wrap the FilesetVolumeWriter in a using statement here because a reference to it is
+                                // retained in newEntry.
+                                FilesetVolumeWriter volumeWriter = new FilesetVolumeWriter(m_options, DateTime.UtcNow);
+                                newEntry = volumeWriter;
+                                volumeWriter.SetRemoteFilename(n.Name);
+
+                                db.WriteFileset(volumeWriter, filesetId, null);
+                                DateTime filesetTime = db.FilesetTimes.First(x => x.Key == filesetId).Value;
+                                volumeWriter.CreateFilesetFile(db.IsFilesetFullBackup(filesetTime));
+
+                                volumeWriter.Close();
                                 if (m_options.Dryrun)
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                 else
                                 {
-                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(w);
+                                    db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                                    backend.Put(volumeWriter);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Index)
                             {
-                                var w = new IndexVolumeWriter(m_options);
+                                IndexVolumeWriter w = new IndexVolumeWriter(m_options);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
 
                                 var h = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-                                
-                                foreach(var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
-                                {                               
+
+                                foreach (var blockvolume in db.GetBlockVolumesFromIndexName(n.Name))
+                                {
                                     w.StartVolume(blockvolume.Name);
                                     var volumeid = db.GetRemoteVolumeID(blockvolume.Name);
-                                    
-                                    foreach(var b in db.GetBlocks(volumeid))
+
+                                    foreach (var b in db.GetBlocks(volumeid))
                                         w.AddBlock(b.Hash, b.Size);
-                                        
+
                                     w.FinishVolume(blockvolume.Hash, blockvolume.Size);
-                                    
+
                                     if (m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
-                                        foreach(var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
+                                        foreach (var b in db.GetBlocklists(volumeid, m_options.Blocksize, hashsize))
                                         {
                                             var bh = Convert.ToBase64String(h.ComputeHash(b.Item2, 0, b.Item3));
                                             if (bh != b.Item1)
                                                 throw new Exception(string.Format("Internal consistency check failed, generated index block has wrong hash, {0} vs {1}", bh, b.Item1));
-                                            
+
                                             w.WriteBlocklist(b.Item1, b.Item2, 0, b.Item3);
                                         }
                                 }
-                                
+
                                 w.Close();
-                                
+
                                 if (m_options.Dryrun)
                                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                 else
@@ -336,27 +348,27 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else if (n.Type == RemoteVolumeType.Blocks)
                             {
-                                var w = new BlockVolumeWriter(m_options);
+                                BlockVolumeWriter w = new BlockVolumeWriter(m_options);
                                 newEntry = w;
                                 w.SetRemoteFilename(n.Name);
-                                
-                                using(var mbl = db.CreateBlockList(n.Name))
+
+                                using (var mbl = db.CreateBlockList(n.Name))
                                 {
                                     //First we grab all known blocks from local files
-                                    foreach(var block in mbl.GetSourceFilesWithBlocks(m_options.Blocksize))
+                                    foreach (var block in mbl.GetSourceFilesWithBlocks(m_options.Blocksize))
                                     {
                                         var hash = block.Hash;
-                                        var size = (int)block.Size;
-                                        
-                                        foreach(var source in block.Sources)
+                                        var size = (int) block.Size;
+
+                                        foreach (var source in block.Sources)
                                         {
                                             var file = source.File;
                                             var offset = source.Offset;
-                                            
+
                                             try
                                             {
                                                 if (System.IO.File.Exists(file))
-                                                    using(var f = System.IO.File.OpenRead(file))
+                                                    using (var f = System.IO.File.OpenRead(file))
                                                     {
                                                         f.Position = offset;
                                                         if (size == Library.Utility.Utility.ForceStreamRead(f, buffer, size))
@@ -377,31 +389,31 @@ namespace Duplicati.Library.Main.Operation
                                             }
                                         }
                                     }
-                                    
+
                                     //Then we grab all remote volumes that have the missing blocks
-                                    foreach(var vol in new AsyncDownloader(mbl.GetMissingBlockSources().ToList(), backend))
+                                    foreach (var vol in new AsyncDownloader(mbl.GetMissingBlockSources().ToList(), backend))
                                     {
                                         try
                                         {
-                                            using(var tmpfile = vol.TempFile)
-                                            using(var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(vol.Name), tmpfile, m_options))
-                                                foreach(var b in f.Blocks)
+                                            using (var tmpfile = vol.TempFile)
+                                            using (var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(vol.Name), tmpfile, m_options))
+                                                foreach (var b in f.Blocks)
                                                     if (mbl.SetBlockRestored(b.Key, b.Value))
                                                         if (f.ReadBlock(b.Key, buffer) == b.Value)
-                                                            w.AddBlock(b.Key, buffer, 0, (int)b.Value, Duplicati.Library.Interface.CompressionHint.Default);
+                                                            w.AddBlock(b.Key, buffer, 0, (int) b.Value, Duplicati.Library.Interface.CompressionHint.Default);
                                         }
                                         catch (Exception ex)
                                         {
                                             Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileAccessError", ex, "Failed to access remote file: {0}", vol.Name);
                                         }
                                     }
-                                    
+
                                     // If we managed to recover all blocks, NICE!
                                     var missingBlocks = mbl.GetMissingBlocks().Count();
                                     if (missingBlocks > 0)
-                                    {                                    
+                                    {
                                         Logging.Log.WriteInformationMessage(LOGTAG, "RepairMissingBlocks", "Repair cannot acquire {0} required blocks for volume {1}, which are required by the following filesets: ", missingBlocks, n.Name);
-                                        foreach(var f in mbl.GetFilesetsUsingMissingBlocks())
+                                        foreach (var f in mbl.GetFilesetsUsingMissingBlocks())
                                             Logging.Log.WriteInformationMessage(LOGTAG, "AffectedFilesetName", f.Name);
 
                                         var recoverymsg = string.Format("If you want to continue working with the database, you can use the \"{0}\" and \"{1}\" commands to purge the missing data from the database and the remote storage.", "list-broken-files", "purge-broken-files");

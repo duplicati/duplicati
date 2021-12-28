@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -38,11 +39,6 @@ namespace Duplicati.Library.Snapshots
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
-
-        /// <summary>
-        /// Helper to have access to the System.IO calls without the interface layer
-        /// </summary>
-        private static SystemIOLinux SYS_IO = new SystemIOLinux();
 
         /// <summary>
         /// This is a lookup, mapping each source folder to the corresponding snapshot
@@ -141,7 +137,7 @@ namespace Duplicati.Library.Snapshots
             public SnapShot(string path)
             {
                 m_name = $"duplicati-{Guid.NewGuid().ToString()}";
-                LocalPath = System.IO.Directory.Exists(path) ? Utility.Utility.AppendDirSeparator(path) : path;
+                LocalPath = System.IO.Directory.Exists(path) ? Util.AppendDirSeparator(path) : path;
                 Initialize(LocalPath);
             }
 
@@ -290,7 +286,7 @@ namespace Duplicati.Library.Snapshots
                 if (string.IsNullOrEmpty(MountPoint) || MountPoint.Trim().Length == 0)
                     throw new Exception(Strings.LinuxSnapshot.ScriptOutputError("mountpoint", output));
 
-                MountPoint = Utility.Utility.AppendDirSeparator(MountPoint);
+                MountPoint = Util.AppendDirSeparator(MountPoint);
             }
 
             /// <summary>
@@ -305,7 +301,7 @@ namespace Duplicati.Library.Snapshots
                     throw new InvalidOperationException();
 
                 //Create the snapshot volume
-                var output = ExecuteCommand("create-lvm-snapshot.sh", $"\"{m_name}\" \"{DeviceName}\" \"{Utility.Utility.AppendDirSeparator(Utility.TempFolder.SystemTempPath)}\"", 0);
+                var output = ExecuteCommand("create-lvm-snapshot.sh", $"\"{m_name}\" \"{DeviceName}\" \"{Util.AppendDirSeparator(Utility.TempFolder.SystemTempPath)}\"", 0);
 
                 var rex = new System.Text.RegularExpressions.Regex("tmpdir=\"(?<tmpdir>[^\"]+)\"");
                 var m = rex.Match(output);
@@ -318,7 +314,7 @@ namespace Duplicati.Library.Snapshots
                 if (!System.IO.Directory.Exists(SnapshotPath))
                     throw new Exception(Strings.LinuxSnapshot.MountFolderMissingError(SnapshotPath, output));
 
-                SnapshotPath = Utility.Utility.AppendDirSeparator(SnapshotPath);
+                SnapshotPath = Util.AppendDirSeparator(SnapshotPath);
             }
         }
 
@@ -442,7 +438,7 @@ namespace Duplicati.Library.Snapshots
         /// Returns the size of a file
         /// </summary>
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
-        /// <returns>The lenth of the file</returns>
+        /// <returns>The length of the file</returns>
         public override long GetFileSize(string localPath)
         {
             return new System.IO.FileInfo(ConvertToSnapshotPath(localPath)).Length;
@@ -465,7 +461,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
         {
-            return SYS_IO.GetSymlinkTarget(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_SYS.GetSymlinkTarget(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -477,7 +473,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return SYS_IO.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_SYS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
         }
 
         /// <summary>
@@ -487,18 +483,28 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override bool IsBlockDevice(string localPath)
         {
-            var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
-            switch (n)
+            try
             {
-                case UnixSupport.File.FileType.Directory:
-                case UnixSupport.File.FileType.Symlink:
-                case UnixSupport.File.FileType.File:
+                var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
+                switch (n)
+                {
+                    case UnixSupport.File.FileType.Directory:
+                    case UnixSupport.File.FileType.Symlink:
+                    case UnixSupport.File.FileType.File:
+                        return false;
+                    default:
+                        return true;
+                }
+            } 
+            catch 
+            {
+                if (!System.IO.File.Exists(SystemIOLinux.NormalizePath(localPath)))
                     return false;
-                default:
-                    return true;
+
+                throw;
             }
         }
-
+        
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>

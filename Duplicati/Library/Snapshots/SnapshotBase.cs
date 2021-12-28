@@ -23,6 +23,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -47,14 +48,9 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sources">Source paths to enumerate</param>
         /// <param name="callback">The callback to invoke with each found path</param>
         /// <param name="errorCallback">The callback used to report errors</param>
-        public IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
+        public virtual IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
         {
-            // Add trailing slashes to folders
-            var sanitizedSources = sources.Select(x => DirectoryExists(x) ? Utility.Utility.AppendDirSeparator(x) : x).ToList();
-
-            return sanitizedSources.SelectMany(
-                s => Utility.Utility.EnumerateFileSystemEntries(s, callback, ListFolders, ListFiles, GetAttributes, errorCallback)
-            );
+            return sources.SelectMany(s => Utility.Utility.EnumerateFileSystemEntries(s, callback, ListFolders, ListFiles, GetAttributes, errorCallback));
         }
         
         /// <summary>
@@ -91,7 +87,7 @@ namespace Duplicati.Library.Snapshots
         /// Returns the size of a file
         /// </summary>
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
-        /// <returns>The lenth of the file</returns>
+        /// <returns>The length of the file</returns>
         public virtual long GetFileSize(string localPath)
         {
             return new FileInfo(localPath).Length;

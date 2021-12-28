@@ -19,8 +19,11 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -51,9 +54,9 @@ namespace Duplicati.Library.AutoUpdater
         private static readonly string INSTALLED_BASE_DIR =
             string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)))
             ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
-            : Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+            : Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
-        private static readonly bool DISABLE_UPDATE_DOMAIN = !string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)));
+        private static readonly bool DISABLE_UPDATE_DOMAIN = Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
 
         public static bool RequiresRespawn { get; set; }
 
@@ -123,14 +126,14 @@ namespace Duplicati.Library.AutoUpdater
                         System.IO.Path.Combine(InstalledBaseDir, "updates"),
                     });
 
-                if (Library.Utility.Utility.IsClientWindows)
+                if (Platform.IsClientWindows)
                 {
                     overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
                     overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
                 }
                 else
                 {
-                    if (Library.Utility.Utility.IsClientOSX)
+                    if (Platform.IsClientOSX)
                         overrides.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME, "updates"));
 
                     overrides.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
@@ -142,17 +145,17 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (!string.IsNullOrWhiteSpace(programfiles))
                     legacypaths.Add(System.IO.Path.Combine(programfiles, APPNAME, "updates"));
-                if (Library.Utility.Utility.IsClientLinux)
+                if (Platform.IsClientPosix)
                     legacypaths.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
 
                 // The real attempts that we probe for
                 var attempts = new List<string>();
 
                 // We do not want to install anything in the basedir, if the application is installed in "ProgramFiles"
-                if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Library.Utility.Utility.AppendDirSeparator(programfiles), StringComparison.Ordinal))
+                if (!string.IsNullOrWhiteSpace(programfiles) && !InstalledBaseDir.StartsWith(Util.AppendDirSeparator(programfiles), StringComparison.Ordinal))
                     attempts.Add(System.IO.Path.Combine(InstalledBaseDir, "updates"));
 
-                if (Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientOSX)
                     attempts.Add(System.IO.Path.Combine("/", "Library", "Application Support", APPNAME, "updates"));
                 else
                     attempts.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), APPNAME, "updates"));
@@ -169,7 +172,7 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (string.IsNullOrWhiteSpace(installdir))
                     foreach (var p in legacypaths)
-                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Count() > 0 && TestDirectoryIsWriteable(p))
+                        if (!string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && System.IO.Directory.EnumerateFiles(p, "*", System.IO.SearchOption.TopDirectoryOnly).Any() && TestDirectoryIsWriteable(p))
                         {
                             installdir = p;
                             break;
@@ -187,7 +190,7 @@ namespace Duplicati.Library.AutoUpdater
             }
             else
             {
-                INSTALLDIR = Library.Utility.Utility.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+                INSTALLDIR = Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
             }
 
 
@@ -405,7 +408,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             var res = new List<KeyValuePair<string, UpdateInfo>>();
             if (INSTALLDIR != null)
-                foreach (var folder in System.IO.Directory.GetDirectories(INSTALLDIR))
+                foreach (var folder in SystemIO.IO_OS.GetDirectories(INSTALLDIR))
                 {
                     var r = ReadInstalledManifest(folder);
                     if (r != null)
@@ -460,7 +463,7 @@ namespace Duplicati.Library.AutoUpdater
                             var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
                             using (var resp = areq.GetResponse())
                             using (var rss = areq.GetResponseStream())
-                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, version.CompressedSize, cb))
+                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, cb))
                             {
                                 Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
                             }
@@ -510,7 +513,7 @@ namespace Duplicati.Library.AutoUpdater
 
                                     System.IO.Directory.CreateDirectory(targetfolder);
 
-                                    var tempfolderpath = Duplicati.Library.Utility.Utility.AppendDirSeparator(tempfolder);
+                                    var tempfolderpath = Util.AppendDirSeparator(tempfolder);
                                     var tempfolderlength = tempfolderpath.Length;
 
                                     // Would be nice, but does not work :(
@@ -523,7 +526,7 @@ namespace Duplicati.Library.AutoUpdater
                                             continue;
 
                                         var fullpath = System.IO.Path.Combine(targetfolder, relpath);
-                                        if (relpath.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                                        if (relpath.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
                                             System.IO.Directory.CreateDirectory(fullpath);
                                         else
                                             System.IO.File.Copy(e, fullpath);
@@ -605,9 +608,9 @@ namespace Duplicati.Library.AutoUpdater
                 var paths = update.Files.Where(x => !x.Ignore).ToDictionary(x => x.Path.Replace('/', System.IO.Path.DirectorySeparatorChar), Library.Utility.Utility.ClientFilenameStringComparer);
                 paths.Add(manifest.Path, manifest);
 
-                var ignores = (from x in update.Files where x.Ignore select Library.Utility.Utility.AppendDirSeparator(x.Path.Replace('/', System.IO.Path.DirectorySeparatorChar))).ToList();
+                var ignores = (from x in update.Files where x.Ignore select Util.AppendDirSeparator(x.Path.Replace('/', System.IO.Path.DirectorySeparatorChar))).ToList();
 
-                folder = Library.Utility.Utility.AppendDirSeparator(folder);
+                folder = Util.AppendDirSeparator(folder);
                 var baselen = folder.Length;
 
                 foreach (var file in Library.Utility.Utility.EnumerateFileSystemEntries(folder))
@@ -718,9 +721,9 @@ namespace Duplicati.Library.AutoUpdater
             var localManifest = remoteManifest.Clone();
             localManifest.RemoteURLS = null;
 
-            inputfolder = Duplicati.Library.Utility.Utility.AppendDirSeparator(inputfolder);
+            inputfolder = Util.AppendDirSeparator(inputfolder);
             var baselen = inputfolder.Length;
-            var dirsep = System.IO.Path.DirectorySeparatorChar.ToString();
+            var dirsep = Util.DirectorySeparatorString;
 
             ignoreMap.Add(UPDATE_MANIFEST_FILENAME, "");
 
@@ -847,7 +850,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             string optstr = Environment.GetEnvironmentVariable(string.Format(UPDATE_STRATEGY_ENVNAME_TEMPLATE, APPNAME));
             AutoUpdateStrategy strategy;
-            if (string.IsNullOrWhiteSpace(optstr) || !Enum.TryParse(optstr, out strategy))
+            if (string.IsNullOrWhiteSpace(optstr) || !Enum.TryParse(optstr, true, out strategy))
                 strategy = defaultstrategy;
 
             System.Threading.Thread backgroundChecker = null;
@@ -1023,9 +1026,13 @@ namespace Duplicati.Library.AutoUpdater
                 }
 
                 if (tex.InnerException != null)
-                    throw tex.InnerException;
-                else
-                    throw;
+                {
+                    // Unwrap exceptions for nicer display.  The ExceptionDispatchInfo class allows us to
+                    // rethrow an exception without changing the stack trace.
+                    ExceptionDispatchInfo.Capture(tex.InnerException).Throw();
+                }
+                
+                throw;
             }
         }
 
@@ -1081,6 +1088,10 @@ namespace Duplicati.Library.AutoUpdater
             // If we are not the primary entry, just execute
             if (IsRunningInUpdateEnvironment)
             {
+                // For some reason this does not work
+                //if (Platform.IsClientWindows)
+                    //Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+
                 int r = 0;
                 WrapWithUpdater(defaultstrategy, () => {
                     r = RunMethod(method, cmdargs);
@@ -1106,20 +1117,48 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    ErrorDialog = false
+                    ErrorDialog = false,
                 };
                 pi.EnvironmentVariables.Clear();
 
                 var cur = Environment.GetEnvironmentVariables();
                 foreach (var e in cur.Keys)
-                    if (e is string)
-                        pi.EnvironmentVariables[(string)e] = cur[(string)e] as string;
+                    if (e is string s)
+                        pi.EnvironmentVariables[s] = cur[s] as string;
 
                 pi.EnvironmentVariables[string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)] = InstalledBaseDir;
                 pi.EnvironmentVariables["LOCALIZATION_FOLDER"] = InstalledBaseDir;
 
+                // On Windows, we manually redirect the streams
+                if (Platform.IsClientWindows)
+                {
+                    pi.RedirectStandardError = true;
+                    pi.RedirectStandardInput = true;
+                    pi.RedirectStandardOutput = true;
+                }
+
                 var proc = System.Diagnostics.Process.Start(pi);
+                Task tasks = null;
+                if (Platform.IsClientWindows)
+                {
+                    // On Windows, we manually redirect the streams
+                    tasks = Task.WhenAll(
+                        // This does some unwanted buffering that breaks things
+                        //Console.OpenStandardInput().CopyToAsync(proc.StandardInput.BaseStream),
+                        Task.Run(async () => {
+                            var stdin = new StreamReader(Console.OpenStandardInput());
+                            var line = string.Empty;
+                            while ((line = await stdin.ReadLineAsync().ConfigureAwait(false)) != null)
+                                await proc.StandardInput.WriteLineAsync(line);
+                        }),
+                        proc.StandardOutput.BaseStream.CopyToAsync(Console.OpenStandardOutput()),
+                        proc.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError())
+                    );
+                }
+
                 proc.WaitForExit();
+                if (tasks != null)
+                    tasks.Wait(1000);
 
                 if (proc.ExitCode != MAGIC_EXIT_CODE)
                     return proc.ExitCode;

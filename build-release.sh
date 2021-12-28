@@ -10,7 +10,7 @@ else
 	RELEASE_TYPE=$1
 fi
 
-RELEASE_VERSION="2.0.3.${RELEASE_INC_VERSION}"
+RELEASE_VERSION="2.0.6.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 
 RELEASE_CHANGELOG_FILE="changelog.txt"
@@ -33,6 +33,8 @@ XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 GPG=/usr/local/bin/gpg2
+AWS=/usr/local/bin/aws
+GITHUB_RELEASE=/usr/local/bin/github-release
 
 # Newer GPG needs this to allow input from a non-terminal
 export GPG_TTY=$(tty)
@@ -56,6 +58,18 @@ if [ ! -f "$NUGET" ]; then
 	echo "NuGet executable not found: $NUGET"
 	exit 1
 fi
+
+if [ ! -f "$AWS" ]; then
+	echo "aws-cli not found: $AWS"
+	exit 1
+fi
+
+if [ ! -f "$GITHUB_RELEASE" ]; then
+	echo "github-release executable not found: $GITHUB_RELEASE"
+	echo "Grab it from: https://github.com/aktau/github-release"
+	exit 1
+fi
+
 
 # The "OTHER_UPLOADS" setting is no longer used
 if [ "${RELEASE_TYPE}" == "nightly" ]; then
@@ -96,9 +110,13 @@ if [ "z${KEYFILE_PASSWORD}" == "z" ]; then
 	exit 0
 fi
 
+echo "Activating sudo rights for building the installers later, please enter sudo password:"
+sudo echo "Sudo activated"
+
 RELEASE_CHANGEINFO_NEWS=$(cat "${RELEASE_CHANGELOG_NEWS_FILE}")
 
 git stash save "${GIT_STASH_NAME}"
+git pull
 
 if [ ! "x${RELEASE_CHANGEINFO_NEWS}" == "x" ]; then
 
@@ -124,17 +142,21 @@ fi
 
 rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
-"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj"
+"${NUGET}" restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
+"${XBUILD}" /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
 "${NUGET}" restore "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
+"${NUGET}" restore "BuildTools/GnupgSigningTool/GnupgSigningTool.sln"
 "${NUGET}" restore "Duplicati.sln"
 
 "${XBUILD}" /p:Configuration=Debug "BuildTools/AutoUpdateBuilder/AutoUpdateBuilder.sln"
 
+"${XBUILD}" /p:Configuration=Debug "BuildTools/GnupgSigningTool/GnupgSigningTool.sln"
+
 "${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
-"${XBUILD}" /p:DefineConstants=__MonoCS__ /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
+"${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
@@ -174,12 +196,12 @@ find "${UPDATE_SOURCE}" -type f -name Duplicati.*.exe -maxdepth 1 -exec cp Insta
 
 # Clean some unwanted build files
 for FILE in "control_dir" "Duplicati-server.sqlite" "Duplicati.debug.log" "updates"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
 done
 
 # Clean the localization spam from Azure
 for FILE in "de" "es" "fr" "it" "ja" "ko" "ru" "zh-Hans" "zh-Hant"; do
-	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi	
+	if [ -e "${UPDATE_SOURCE}/${FILE}" ]; then rm -rf "${UPDATE_SOURCE}/${FILE}"; fi
 done
 
 # Clean debug files, if any
@@ -200,7 +222,7 @@ if [ -f "${AUTHENTICODE_PFXFILE}" ] && [ -f "${AUTHENTICODE_PASSWORD}" ]; then
 	authenticode_sign() {
 		NEST=""
 		for hashalg in sha1 sha256; do
-			SIGN_MSG=$(osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.verisign.com/scripts/timstamp.dll" -in "$1" -out tmpfile)
+			SIGN_MSG=$(osslsigncode sign -pkcs12 "${AUTHENTICODE_PFXFILE}" -pass "${PFX_PASS}" -n "Duplicati" -i "http://www.duplicati.com" -h "${hashalg}" ${NEST} -t "http://timestamp.digicert.com?alg=${hashalg}" -in "$1" -out tmpfile)
 			if [ "${SIGN_MSG}" != "Succeeded" ]; then echo "${SIGN_MSG}"; fi
 			mv tmpfile "$1"
 			NEST="-nest"
@@ -234,14 +256,30 @@ fi
 echo
 echo "Building signed package ..."
 
-"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" --output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" --manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" --displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}" --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}"
+"${MONO}" "BuildTools/AutoUpdateBuilder/bin/Debug/AutoUpdateBuilder.exe" --input="${UPDATE_SOURCE}" \
+--output="${UPDATE_TARGET}" --keyfile="${UPDATER_KEYFILE}" \
+--manifest=Updates/${RELEASE_TYPE}.manifest --changeinfo="${RELEASE_CHANGEINFO}" \
+--displayname="${RELEASE_NAME}" --remoteurls="${UPDATE_ZIP_URLS}" \
+--version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}"
 
 if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"	
-	
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+
 	echo "Something went wrong while building the package, no output found"
 	exit 5
 fi
+
+"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+--inputfile=\"${UPDATE_TARGET}/package.zip\" \
+--signaturefile=\"${UPDATE_TARGET}/package.zip.sig\" \
+--armor=false --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+--keyfile-password="${KEYFILE_PASSWORD}"
+
+"${MONO}" "BuildTools/GnupgSigningTool/bin/Debug/GnupgSigningTool.exe" \
+--inputfile=\"${UPDATE_TARGET}/package.zip\" \
+--signaturefile=\"${UPDATE_TARGET}/package.zip.sig.asc\" \
+--armor=true --gpgkeyfile="${GPG_KEYFILE}" --gpgpath="${GPG}" \
+--keyfile-password="${KEYFILE_PASSWORD}"
 
 echo "${RELEASE_INC_VERSION}" > "Updates/build_version.txt"
 
@@ -257,12 +295,12 @@ cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
 
 echo "Uploading binaries"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
 
-aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
+"${AWS}" --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 
 ZIP_MD5=$(md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}')
 ZIP_SHA1=$(shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
@@ -287,8 +325,8 @@ echo "duplicati_version_info =" > "latest.js"
 cat "latest.json" >> "latest.js"
 echo ";" >> "latest.js"
 
-aws --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
-aws --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
+"${AWS}" --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
+"${AWS}" --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
 
 # echo "Propagating to other build types"
 # for OTHER in ${OTHER_UPLOADS}; do
@@ -314,14 +352,12 @@ fi
 
 RELEASE_MESSAGE=$(printf "Changes in this version:\n${RELEASE_CHANGEINFO_NEWS}")
 
-# Using the tool from https://github.com/aktau/github-release
-
 GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
 
 if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
 else
-	github-release release ${PRE_RELEASE_LABEL} \
+	"${GITHUB_RELEASE}" release ${PRE_RELEASE_LABEL} \
 	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
 	    --name "v${RELEASE_VERSION}-${RELEASE_NAME}" \
 	    --repo "duplicati" \
@@ -329,7 +365,7 @@ else
 	    --security-token "${GITHUB_TOKEN}" \
 	    --description "${RELEASE_MESSAGE}" \
 
-	github-release upload \
+	"${GITHUB_RELEASE}" upload \
 	    --tag "v${RELEASE_VERSION}-${RELEASE_NAME}"  \
 	    --name "${RELEASE_FILE_NAME}.zip" \
 	    --repo "duplicati" \
@@ -354,12 +390,16 @@ ${RELEASE_CHANGEINFO_NEWS}
 	DISCOURSE_APIKEY=$(echo "${DISCOURSE_TOKEN}" | cut -d ":" -f 2)
 
 	curl -X POST "https://forum.duplicati.com/posts" \
-		-F "api_key=${DISCOURSE_APIKEY}" \
-		-F "api_username=${DISCOURSE_USERNAME}" \
-		-F "category=Releases" \
+		-H "Content-Type: multipart/form-data" \
+		-H "Accept: application/json" \
+		-H "Api-Key: ${DISCOURSE_APIKEY}" \
+		-H "Api-Username: ${DISCOURSE_USERNAME}" \
+		-F "category=10" \
 		-F "title=Release: ${RELEASE_VERSION} (${RELEASE_TYPE}) ${RELEASE_TIMESTAMP}" \
 		-F "raw=${body}"
 fi
+
+git push
 
 echo
 echo "Built ${RELEASE_TYPE} version: ${RELEASE_VERSION} - ${RELEASE_NAME}"

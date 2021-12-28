@@ -25,6 +25,9 @@ using Newtonsoft.Json.Converters;
 using Duplicati.Library.Strings;
 using System.Net;
 using System.Text;
+using Duplicati.Library.Common.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.OpenStack
 {
@@ -62,7 +65,7 @@ namespace Duplicati.Library.Backend.OpenStack
         public static readonly KeyValuePair<string, string>[] KNOWN_OPENSTACK_PROVIDERS = {
             new KeyValuePair<string, string>("Rackspace US", "https://identity.api.rackspacecloud.com/v2.0"),
             new KeyValuePair<string, string>("Rackspace UK", "https://lon.identity.api.rackspacecloud.com/v2.0"),
-            new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v2.0"),
+            new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v3"),
             new KeyValuePair<string, string>("Selectel Cloud Storage", "https://auth.selcdn.ru"),
             new KeyValuePair<string, string>("Memset Cloud Storage", "https://auth.storage.memset.com"),
         };
@@ -319,9 +322,7 @@ namespace Duplicati.Library.Backend.OpenStack
             var uri = new Utility.Uri(url);
 
             m_container = uri.Host;
-            m_prefix = "/" + uri.Path;
-            if (!m_prefix.EndsWith("/", StringComparison.Ordinal))
-                m_prefix += "/";
+            m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For OpenStack we do not use a leading slash
             if (m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -461,11 +462,11 @@ namespace Duplicati.Library.Backend.OpenStack
             m_accessToken = resp.access.token;
 
             // Grab the endpoint now that we have received it anyway
-            var fileservice = resp.access.serviceCatalog.Where(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            var fileservice = resp.access.serviceCatalog.FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
             if (fileservice == null)
                 throw new Exception("No object-store service found, is this service supported by the provider?");
 
-            var endpoint = fileservice.endpoints.Where(x => string.Equals(m_region, x.region)).FirstOrDefault() ?? fileservice.endpoints.First();
+            var endpoint = fileservice.endpoints.FirstOrDefault(x => string.Equals(m_region, x.region)) ?? fileservice.endpoints.First();
 
             m_simplestorageendpoint = endpoint.publicURL;
 
@@ -484,15 +485,16 @@ namespace Duplicati.Library.Backend.OpenStack
         }
 
         #region IStreamingBackend implementation
-        public void Put(string remotename, System.IO.Stream stream)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
-            using(m_helper.GetResponse(url, stream, "PUT"))
+            var url = JoinUrls(SimpleStorageEndPoint, m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            using(await m_helper.GetResponseAsync(url, cancelToken, stream, "PUT"))
             { }
         }
-        public void Get(string remotename, System.IO.Stream stream)
+
+        public void Get(string remotename, Stream stream)
         {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            var url = JoinUrls(SimpleStorageEndPoint, m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
 
             try
             {
@@ -502,7 +504,7 @@ namespace Duplicati.Library.Backend.OpenStack
             }
             catch(WebException wex)
             {
-                if (wex.Response is HttpWebResponse && ((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException();
                 else
                     throw;
@@ -520,7 +522,7 @@ namespace Duplicati.Library.Backend.OpenStack
             }
             catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse && (((HttpWebResponse)wex.Response).StatusCode == HttpStatusCode.NotFound))
+                if (wex.Response is HttpWebResponse response && (response.StatusCode == HttpStatusCode.NotFound))
                     throw new FolderMissingException();
                 else
                     throw;
@@ -563,15 +565,15 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public void Put(string remotename, string filename)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                Put(remotename, fs);
+            using (FileStream fs = File.OpenRead(filename))
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
+            using (FileStream fs = File.Create(filename))
                 Get(remotename, fs);
         }
         public void Delete(string remotename)
@@ -612,13 +614,13 @@ namespace Duplicati.Library.Backend.OpenStack
                     authuris.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
                 return new List<ICommandLineArgument>(new [] {
-                    new CommandLineArgument(DOMAINNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.DomainnameOptionShort, Strings.OpenStack.UsernameOptionLong),
+                    new CommandLineArgument(DOMAINNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.DomainnameOptionShort, Strings.OpenStack.DomainnameOptionLong),
                     new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.UsernameOptionShort, Strings.OpenStack.UsernameOptionLong),
                     new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.PasswordOptionShort, Strings.OpenStack.PasswordOptionLong(TENANTNAME_OPTION)),
                     new CommandLineArgument(TENANTNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.TenantnameOptionShort, Strings.OpenStack.TenantnameOptionLong),
                     new CommandLineArgument(APIKEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.ApikeyOptionShort, Strings.OpenStack.ApikeyOptionLong),
                     new CommandLineArgument(AUTHURI_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.AuthuriOptionShort, Strings.OpenStack.AuthuriOptionLong(authuris.ToString())),
-                    new CommandLineArgument(VERSION_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.VersionOptionShort, Strings.OpenStack.AuthuriOptionLong(authuris.ToString())),
+                    new CommandLineArgument(VERSION_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.VersionOptionShort, Strings.OpenStack.VersionOptionLong),
                     new CommandLineArgument(REGION_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.RegionOptionShort, Strings.OpenStack.RegionOptionLong),
                 });
             }

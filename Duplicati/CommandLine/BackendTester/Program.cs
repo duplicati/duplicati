@@ -22,6 +22,8 @@ using System.Collections.Generic;
 using System.Text;
 using Duplicati.Library.Interface;
 using System.Linq;
+using System.Globalization;
+using System.Threading;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -31,7 +33,9 @@ namespace Duplicati.CommandLine.BackendTester
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
+        #pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
         private static IDisposable SystemSettings;
+        #pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
 
         class TempFile
         {
@@ -71,7 +75,7 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     try
                     {
-                        var p = Library.Utility.Utility.ExpandEnvironmentVariables(_args[0]);
+                        var p = Environment.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
                                 where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
@@ -86,7 +90,7 @@ namespace Duplicati.CommandLine.BackendTester
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
-                if (args.Count != 1 || args[0].ToLower() == "help" || args[0] == "?")
+                if (args.Count != 1 || String.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase) || args[0] == "?")
                 {
                     Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
                     Console.WriteLine("Example: ftp://user:pass@server/folder");
@@ -135,14 +139,6 @@ namespace Duplicati.CommandLine.BackendTester
 
         static bool Run(List<string> args, Dictionary<string, string> options, bool first)
         {
-            string allowedChars = ValidFilenameChars;
-            if (options.ContainsKey("extended-chars"))
-                allowedChars += options["extended-chars"];
-            else
-                allowedChars += ExtendedChars;
-
-            bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
-
             Library.Interface.IBackend backend = Library.DynamicLoader.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
             {
@@ -152,16 +148,24 @@ namespace Duplicati.CommandLine.BackendTester
                 return false;
             }
 
+            string allowedChars = ValidFilenameChars;
+            if (options.ContainsKey("extended-chars"))
+            {
+                allowedChars += String.IsNullOrEmpty(options["extended-chars"]) ? ExtendedChars : options["extended-chars"];
+            }
+
+            bool autoCreateFolders = Library.Utility.Utility.ParseBoolOption(options, "auto-create-folder");
+
             string disabledModulesValue;
             string enabledModulesValue;
             options.TryGetValue("enable-module", out enabledModulesValue);
             options.TryGetValue("disable-module", out disabledModulesValue);
-            string[] enabledModules = enabledModulesValue == null ? new string[0] : enabledModulesValue.Trim().ToLower().Split(',');
-            string[] disabledModules = disabledModulesValue == null ? new string[0] : disabledModulesValue.Trim().ToLower().Split(',');
+            string[] enabledModules = enabledModulesValue == null ? new string[0] : enabledModulesValue.Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
+            string[] disabledModules = disabledModulesValue == null ? new string[0] : disabledModulesValue.Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
 
             List<Library.Interface.IGenericModule> loadedModules = new List<IGenericModule>();
             foreach (Library.Interface.IGenericModule m in Library.DynamicLoader.GenericLoader.Modules)
-                if (Array.IndexOf<string>(disabledModules, m.Key.ToLower()) < 0 && (m.LoadAsDefault || Array.IndexOf<string>(enabledModules, m.Key.ToLower()) >= 0))
+                if (!disabledModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase) && (m.LoadAsDefault || enabledModules.Contains(m.Key, StringComparer.OrdinalIgnoreCase)))
                 {
                     m.Configure(options);
                     loadedModules.Add(m);
@@ -175,7 +179,7 @@ namespace Duplicati.CommandLine.BackendTester
                     backend.Test();
                     curlist = backend.List();
                 }
-                catch (FolderMissingException fex)
+                catch (FolderMissingException)
                 {
                     if (autoCreateFolders)
                     {
@@ -191,7 +195,7 @@ namespace Duplicati.CommandLine.BackendTester
                     }
 
                     if (curlist == null)
-                        throw fex;
+                        throw;
                 }
 
                 foreach (Library.Interface.IFileEntry fe in curlist)
@@ -220,6 +224,28 @@ namespace Duplicati.CommandLine.BackendTester
                 bool disableStreaming = Library.Utility.Utility.ParseBoolOption(options, "disable-streaming-transfers");
                 bool skipOverwriteTest = Library.Utility.Utility.ParseBoolOption(options, "skip-overwrite-test");
                 bool trimFilenameSpaces = Library.Utility.Utility.ParseBoolOption(options, "trim-filename-spaces");
+
+                long throttleUpload = 0;
+                if (options.TryGetValue("throttle-upload", out string throttleUploadString))
+                {
+                    if (!(backend is IStreamingBackend) || disableStreaming)
+                    {
+                        Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
+                    }
+
+                    throttleUpload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleUploadString, "kb");
+                }
+
+                long throttleDownload = 0;
+                if (options.TryGetValue("throttle-download", out string throttleDownloadString))
+                {
+                    if (!(backend is IStreamingBackend) || disableStreaming)
+                    {
+                        Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
+                    }
+
+                    throttleDownload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleDownloadString, "kb");
+                }
 
                 if (options.ContainsKey("number-of-files"))
                     number_of_files = int.Parse(options["number-of-files"]);
@@ -262,9 +288,9 @@ namespace Duplicati.CommandLine.BackendTester
 
                             //Upload a dummy file for entry 0 and the last one, they will be replaced by the real files afterwards
                             //We upload entry 0 twice just to try to freak any internal cache list
-                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming);
-                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming);
-                            Uploadfile(dummy, files.Count - 1, files[files.Count - 1].remotefilename, backend, disableStreaming);
+                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload);
+                            Uploadfile(dummy, 0, files[0].remotefilename, backend, disableStreaming, throttleUpload);
+                            Uploadfile(dummy, files.Count - 1, files[files.Count - 1].remotefilename, backend, disableStreaming, throttleUpload);
                         }
 
                     }
@@ -272,7 +298,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine("Uploading files ...");
 
                     for (int i = 0; i < files.Count; i++)
-                        Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming);
+                        Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming, throttleUpload);
 
                     TempFile originalRenamedFile = null;
                     string renamedFileNewName = null;
@@ -338,11 +364,12 @@ namespace Duplicati.CommandLine.BackendTester
 
                             try
                             {
-                                if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
+                                if (backend is IStreamingBackend streamingBackend && !disableStreaming)
                                 {
                                     using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                                    using (NonSeekableStream nss = new NonSeekableStream(fs))
-                                        (backend as Library.Interface.IStreamingBackend).Get(files[i].remotefilename, nss);
+                                    using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttleDownload, throttleDownload))
+                                    using (NonSeekableStream nss = new NonSeekableStream(ts))
+                                        streamingBackend.Get(files[i].remotefilename, nss);
                                 }
                                 else
                                     backend.Get(files[i].remotefilename, cf);
@@ -390,6 +417,30 @@ namespace Duplicati.CommandLine.BackendTester
                             Console.WriteLine("*** Remote folder contains {0} after cleanup", fe.Name);
                         }
 
+                    // Test some error cases
+                    Console.WriteLine("Checking retrieval of non-existent file...");
+                    bool caughtExpectedException = false;
+                    try
+                    {
+                        using (Duplicati.Library.Utility.TempFile tempFile = new Duplicati.Library.Utility.TempFile())
+                        {
+                            backend.Get(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name);
+                        }
+                    }
+                    catch (FileMissingException)
+                    {
+                        Console.WriteLine("Caught expected FileMissingException");
+                        caughtExpectedException = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("*** Retrieval of non-existent file failed: {0}", ex);
+                    }
+
+                    if (!caughtExpectedException)
+                    {
+                        Console.WriteLine("*** Retrieval of non-existent file should have failed with FileMissingException");
+                    }
                 }
 
                 // Test quota retrieval
@@ -449,28 +500,29 @@ namespace Duplicati.CommandLine.BackendTester
             finally
             {
                 foreach (Library.Interface.IGenericModule m in loadedModules)
-                    if (m is IDisposable)
-                        ((IDisposable)m).Dispose();
+                    if (m is IDisposable disposable)
+                        disposable.Dispose();
             }
 
             return true;
         }
 
-        private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming)
+        private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming, long throttle)
         {
             Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(localfilename).Length));
             Exception e = null;
 
             try
             {
-                if (backend is Library.Interface.IStreamingBackend && !disableStreaming)
+                if (backend is IStreamingBackend streamingBackend && !disableStreaming)
                 {
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                    using (NonSeekableStream nss = new NonSeekableStream(fs))
-                        (backend as Library.Interface.IStreamingBackend).Put(remotefilename, nss);
+                    using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttle, throttle))
+                    using (NonSeekableStream nss = new NonSeekableStream(ts))
+                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Wait();
                 }
                 else
-                    backend.Put(remotefilename, localfilename);
+                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Wait();
 
                 e = null;
             }
@@ -485,7 +537,7 @@ namespace Duplicati.CommandLine.BackendTester
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
-                    Console.WriteLine(string.Format("  Inner exception: {0}", e));
+                    Console.WriteLine("  Inner exception: {0}", e);
                 }
             }
             else

@@ -18,12 +18,30 @@
 using System;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 
 namespace Duplicati.Server.Database
 {
     public class Backup : IBackup
     {
-    
+        // Sensitive information that may be stored in TargetUrl
+        private readonly string[] UrlPasswords = {
+            "authid",
+            "auth-password",
+            "sia-password",
+            "tardigrade-secret",
+            "tardigrade-shared-access",
+        };
+
+        // Sensitive information that may be stored in Settings
+        private readonly string[] SettingPasswords = {
+            "passphrase",
+            "--authid",
+            "--send-mail-password",
+            "--send-xmpp-password",
+        };
+
         public Backup()
         {
             this.ID = null;
@@ -57,11 +75,15 @@ namespace Duplicati.Server.Database
         /// </summary>
         public string Name { get; set; }
         /// <summary>
+        /// The backup description
+        /// </summary>
+        public string Description { get; set; }
+        /// <summary>
         /// The backup tags
         /// </summary>
         public string[] Tags { get; set; }
         /// <summary>
-        /// The backup target url, excluding username/password
+        /// The backup target url
         /// </summary>
         public string TargetURL { get; set; }
         /// <summary>
@@ -92,8 +114,37 @@ namespace Duplicati.Server.Database
         /// <summary>
         /// Gets a value indicating if this instance is not persisted to the database
         /// </summary>        
-        public bool IsTemporary { get { return ID == null ? false : ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
+        public bool IsTemporary { get { return ID != null && ID.IndexOf("-", StringComparison.Ordinal) > 0; } }
 
+        /// <summary>
+        /// Sanitizes the backup TargetUrl from any fields in the PasswordFields list.
+        /// </summary>
+        public void SanitizeTargetUrl()
+        {
+            var url = new Duplicati.Library.Utility.Uri(this.TargetURL);
+            NameValueCollection filteredParameters = new NameValueCollection();
+            if (url.Query != null)
+            {
+                // We cannot use url.QueryParameters since it contains decoded parameter values, which
+                // breaks assumptions made by the decode_uri function in AppUtils.js.  Since we are simply
+                // removing password parameters, we will leave the parameters as they are in the target URL.
+                filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
+                foreach (string field in this.UrlPasswords)
+                {
+                    filteredParameters.Remove(field);
+                }
+            }
+            url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(filteredParameters));
+            this.TargetURL = url.ToString();
+        }
+
+        /// <summary>
+        /// Sanitizes the settings from any fields in the PasswordFields list.
+        /// </summary>
+        public void SanitizeSettings()
+        {
+            this.Settings = this.Settings.Where((setting) => !SettingPasswords.Contains(setting.Name)).ToArray();
+        }
     }
 }
 

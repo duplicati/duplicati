@@ -18,6 +18,7 @@ using System;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -44,9 +45,9 @@ namespace Duplicati.Library.UsageReporter
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void DoInitOS()
         {
-            if (Library.Utility.Utility.IsClientOSX)
+            if (Platform.IsClientOSX)
                 Cached_OSType = "OSX";
-            else if (Library.Utility.Utility.IsClientLinux)
+            else if (Platform.IsClientPosix)
                 Cached_OSType = "Linux";
             else if (new PlatformID[] {
                 PlatformID.Win32NT,
@@ -85,7 +86,7 @@ namespace Duplicati.Library.UsageReporter
 
         static ReportSet()
         {
-            // Keep it here to avoid crasing
+            // Keep it here to avoid crashing
             // if the loader fails to grab an ID
             try { DoInitUID(); }
             catch { }

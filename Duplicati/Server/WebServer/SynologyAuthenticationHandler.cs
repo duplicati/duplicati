@@ -54,7 +54,7 @@ namespace Duplicati.Server.WebServer
         private readonly bool FULLY_DISABLED;
 
         /// <summary>
-        /// Re-evealuate the logins periodically to ensure it is still valid
+        /// Re-evaluate the logins periodically to ensure it is still valid
         /// </summary>
         private readonly TimeSpan CACHE_TIMEOUT = TimeSpan.FromMinutes(3);
 
@@ -193,7 +193,11 @@ namespace Duplicati.Server.WebServer
                 var groups = GetEnvArg("SYNO_GROUP_IDS");
 
                 if (string.IsNullOrWhiteSpace(groups))
+                {
                     groups = ShellExec("id", "-G '" + username.Trim().Replace("'", "\\'") + "'", exitcode: 0).Result ?? string.Empty;
+                    groups = groups.Replace(Environment.NewLine, String.Empty);
+                }
+
                 if (!groups.Split(new char[] { ' ' }).Contains("101"))
                 {
                     response.Status = System.Net.HttpStatusCode.Forbidden;

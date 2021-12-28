@@ -1,4 +1,4 @@
-#region Disclaimer / License
+﻿#region Disclaimer / License
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -18,10 +18,9 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Utility
 {
@@ -37,7 +36,7 @@ namespace Duplicati.Library.Utility
             public SslPolicyErrors SslError { get { return m_errors; } }
 
             public InvalidCertificateException(string certificate, SslPolicyErrors error)
-                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Utility.IsClientLinux ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
+                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Platform.IsClientPosix ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
             {
                 m_certificate = certificate;
                 m_errors = error;
@@ -52,7 +51,6 @@ namespace Duplicati.Library.Utility
 
         private readonly bool m_acceptAll = false;
         private readonly string[] m_validHashes = null;
-        private Exception m_uncastException = null;
 
         public bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
@@ -67,19 +65,22 @@ namespace Duplicati.Library.Utility
             try
             {
                 certHash = Utility.ByteArrayAsHexString(cert.GetCertHash());
-                if (certHash != null && m_validHashes != null) 
-                    foreach(var hash in m_validHashes)
+                if (certHash != null && m_validHashes != null)
+                {
+                    foreach (var hash in m_validHashes)
                     {
                         if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase))
-                        return true;
+                        {
+                            return true;
+                        }
                     }
+                }
             }
             catch (Exception ex)
             {
                 throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
             }
 
-            m_uncastException = new InvalidCertificateException(certHash, sslPolicyErrors);
             return false;
         }
     }

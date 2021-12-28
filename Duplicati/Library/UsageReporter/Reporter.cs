@@ -111,8 +111,8 @@ namespace Duplicati.Library.UsageReporter
         /// <param name="args">Arguments.</param>
         private static void HandleUncaughtException(object sender, UnhandledExceptionEventArgs args)
         {
-            if (args.ExceptionObject is Exception)
-                Report(args.ExceptionObject as Exception, ReportType.Crash);
+            if (args.ExceptionObject is Exception exception)
+                Report(exception, ReportType.Crash);
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace Duplicati.Library.UsageReporter
         }
 
         /// <summary>
-        /// The maxmimum allowed report level
+        /// The maximum allowed report level
         /// </summary>
         /// <value>The type of the max report.</value>
         private static ReportType MaxReportLevel
@@ -173,7 +173,7 @@ namespace Duplicati.Library.UsageReporter
                 {
                     var str = Environment.GetEnvironmentVariable(string.Format(DISABLED_ENVNAME_TEMPLATE, AutoUpdater.AutoUpdateSettings.AppName));
                     ReportType tmp;
-                    if (string.IsNullOrWhiteSpace(str) || !Enum.TryParse(str, out tmp))
+                    if (string.IsNullOrWhiteSpace(str) || !Enum.TryParse(str, true, out tmp))
                         Cached_MaxReportLevel = ReportType.Information;
                     else
                         Cached_MaxReportLevel = tmp;

@@ -1,11 +1,14 @@
-ARG ARCH=
-FROM ${ARCH}mono:5-slim
+ARG PARENT_IMAGE
+FROM --platform=$TARGETPLATFORM ${PARENT_IMAGE}
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
+        mono-complete \
         libmono-sqlite4.0-cil \
         libmono-system-drawing4.0-cil \
+        libmono-system-net-http-webrequest4.0-cil \
+        libmono-system-web4.0-cil \
         referenceassemblies-pcl && \
     rm -rf /var/lib/apt/lists && \
     cert-sync /etc/ssl/certs/ca-certificates.crt

@@ -59,36 +59,36 @@ def handleIndex(options, dindex_enc):
         unzip(temp_dindex,temp_path_zip)
 
         vol_path = os.path.join(temp_path_zip,'vol')
-            
-        for dblock in os.listdir(vol_path):
-            data = []
-            with open(os.path.join(vol_path, dblock)) as data_file:
-                data = json.load(data_file, object_pairs_hook=OrderedDict)
+        if os.path.exists(vol_path):    
+            for dblock in os.listdir(vol_path):
+                data = []
+                with open(os.path.join(vol_path, dblock)) as data_file:
+                    data = json.load(data_file, object_pairs_hook=OrderedDict)
 
-            expected_hash = data['volumehash'].encode('utf8')
-            expected_volumesize = data['volumesize']
+                expected_hash = data['volumehash'].encode('utf8')
+                expected_volumesize = data['volumesize']
 
-            if (options['verify_hash']):
-                actual_hash = computeHash(os.path.join(options['orig']['path'],dblock))
-                actual_volumesize=os.stat(os.path.join(options['orig']['path'],dblock)).st_size
-                print('dblock: %s expected_hash: %s calc_hash: %s exact: %s' % (dblock,expected_hash.decode('utf8'),actual_hash.decode('utf8'),expected_hash==actual_hash))
+                if (options['verify_hash']):
+                    actual_hash = computeHash(os.path.join(options['orig']['path'],dblock))
+                    actual_volumesize=os.stat(os.path.join(options['orig']['path'],dblock)).st_size
+                    print('dblock: %s expected_hash: %s calc_hash: %s exact: %s' % (dblock,expected_hash.decode('utf8'),actual_hash.decode('utf8'),expected_hash==actual_hash))
 
-            with NamedTemporaryFile() as temp_dblock:
-                dblock_enc_fullpath = os.path.join(options['orig']['path'],dblock)
-                dblock_reenc_fullpath = os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension']))
-                decrypt(options['orig'],dblock_enc_fullpath,options['orig']['passwd'],temp_dblock.name)
-                encrypt(options['new'],temp_dblock.name,options['new']['passwd'], dblock_reenc_fullpath)
-                new_hash = computeHash(dblock_reenc_fullpath)
-                
-            data['volumehash'] = new_hash.decode('utf8')
-            data['volumesize'] = os.stat(os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension']))).st_size
-            print('dblock: %s old_hash: %s new_hash: %s' % (dblock,expected_hash.decode('utf8'),data['volumehash']))
+                with NamedTemporaryFile() as temp_dblock:
+                    dblock_enc_fullpath = os.path.join(options['orig']['path'],dblock)
+                    dblock_reenc_fullpath = os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension']))
+                    decrypt(options['orig'],dblock_enc_fullpath,options['orig']['passwd'],temp_dblock.name)
+                    encrypt(options['new'],temp_dblock.name,options['new']['passwd'], dblock_reenc_fullpath)
+                    new_hash = computeHash(dblock_reenc_fullpath)
+                    
+                data['volumehash'] = new_hash.decode('utf8')
+                data['volumesize'] = os.stat(os.path.join(options['new']['path'],change_ext(dblock,options['orig']['extension'],options['new']['extension']))).st_size
+                print('dblock: %s old_hash: %s new_hash: %s' % (dblock,expected_hash.decode('utf8'),data['volumehash']))
 
-            with open(os.path.join(vol_path,dblock),'w') as data_file:
-                json.dump(data, data_file)
+                with open(os.path.join(vol_path,dblock),'w') as data_file:
+                    json.dump(data, data_file)
 
-            os.rename(os.path.join(vol_path, dblock), os.path.join(vol_path, change_ext(dblock,options['orig']['extension'],options['new']['extension']))) 
-     
+                os.rename(os.path.join(vol_path, dblock), os.path.join(vol_path, change_ext(dblock,options['orig']['extension'],options['new']['extension']))) 
+        
         make_zipfile(temp_dindex_reenc.name,temp_path_zip)
         encrypt(options['new'],temp_dindex_reenc.name, options['new']['passwd'],dindex_reenc_fullpath)
 

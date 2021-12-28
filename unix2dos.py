@@ -2,14 +2,13 @@
 import sys
 
 for fname in sys.argv[1:]:
-    infile = open( fname, "rb" )
-    instr = infile.read()
-    infile.close()
-    outstr = instr.replace( "\r\n", "\n" ).replace( "\r", "\n" ).replace( "\n", "\r\n" )
+    with open(fname, 'rb') as infile:
+        instr = infile.read()
+
+    outstr = instr.replace( b"\r\n", b"\n" ).replace( b"\r", b"\n" ).replace( b"\n", b"\r\n" )
 
     if len(outstr) == len(instr):
         continue
     
-    outfile = open( fname, "wb" )
-    outfile.write( outstr )
-    outfile.close()
+    with open( fname, "wb" ) as outfile:
+        outfile.write( outstr )

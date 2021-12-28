@@ -28,9 +28,9 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ListBrokenFilesHandler));
-        protected string m_backendurl;
-        protected Options m_options;
-        protected ListBrokenFilesResults m_result;
+        protected readonly string m_backendurl;
+        protected readonly Options m_options;
+        protected readonly ListBrokenFilesResults m_result;
 
         public ListBrokenFilesHandler(string backend, Options options, ListBrokenFilesResults result)
         {
@@ -105,7 +105,14 @@ namespace Duplicati.Library.Main.Operation
             if (brokensets.Length == 0)
             {
                 m_result.BrokenFiles = new Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>[0];
-                Logging.Log.WriteInformationMessage(LOGTAG, "NoMissingFilesFound", "No broken filesets found");
+
+                if (missing == null)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesets", "Found no broken filesets");
+                else if (missing.Count == 0)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsOrMissingFiles", "Found no broken filesets and no missing remote files");
+                else
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenSetsButMissingRemoteFiles", string.Format("Found no broken filesets, but {0} missing remote files. Run purge-broken-files.", missing.Count));
+
                 return;
             }
 

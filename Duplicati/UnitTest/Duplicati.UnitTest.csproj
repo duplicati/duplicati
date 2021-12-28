@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\packages\NUnit.3.12.0\build\NUnit.props" Condition="Exists('..\..\packages\NUnit.3.12.0\build\NUnit.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -7,8 +8,11 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.UnitTest</RootNamespace>
     <AssemblyName>Duplicati.UnitTest</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <UseMSBuildEngine>false</UseMSBuildEngine>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,13 +32,29 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.12.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NUnit.3.12.0\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackendToolTests.cs" />
+    <Compile Include="SymLinkTests.cs" />
+    <Compile Include="ControllerTests.cs" />
+    <Compile Include="DeleteHandlerTests.cs" />
+    <Compile Include="DisruptionTests.cs" />
+    <Compile Include="ProblematicPathTests.cs" />
+    <Compile Include="RecoveryToolTests.cs" />
+    <Compile Include="RepairHandlerTests.cs" />
+    <Compile Include="RestoreHandlerTests.cs" />
     <Compile Include="SVNCheckoutsTest.cs" />
     <Compile Include="GeneralBlackBoxTesting.cs" />
     <Compile Include="CommandLineOperationsTests.cs" />
@@ -52,6 +72,9 @@
     <Compile Include="ResultFormatSerializerProviderTest.cs" />
     <Compile Include="UriUtilityTests.cs" />
     <Compile Include="WebApiTests.cs" />
+    <Compile Include="RunScriptTests.cs" />
+    <Compile Include="IOTests.cs" />
+    <Compile Include="ImportExportTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -66,6 +89,10 @@
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
       <Project>{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}</Project>
       <Name>Duplicati.CommandLine.BackendTool</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+      <Project>{4a010589-76e6-4f05-a5c4-4598d5df11f8}</Project>
+      <Name>Duplicati.CommandLine.RecoveryTool</Name>
     </ProjectReference>
     <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj">
       <Project>{17566860-3D98-4604-AA5B-47661F75609F}</Project>
@@ -119,10 +146,6 @@
       <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
       <Name>Duplicati.Library.DynamicLoader</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Library\Encryption\Duplicati.Library.Encryption.csproj">
-      <Project>{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}</Project>
-      <Name>Duplicati.Library.Encryption</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Library\Interface\Duplicati.Library.Interface.csproj">
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
@@ -175,8 +198,19 @@
       <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
       <Name>Duplicati.Library.Backend.GoogleServices</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj">
+      <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\packages\NUnit.3.12.0\build\NUnit.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\NUnit.3.12.0\build\NUnit.props'))" />
+  </Target>
 </Project>

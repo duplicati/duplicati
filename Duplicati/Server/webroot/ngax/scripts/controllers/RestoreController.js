@@ -8,6 +8,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     $scope.HideFolderBrowser = true;
     $scope.RestoreLocation = 'direct';
     $scope.RestoreMode = 'overwrite';
+    $scope.passphrase = "";
 
     var filesetsBuilt = {};
     var filesetsRepaired = {};
@@ -21,7 +22,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     function createGroupLabel(dt) {
         var dateStamp = function(a) { return a.getFullYear() * 10000 + a.getMonth() * 100 + a.getDate(); }
-        
+
         var now       = new Date();
         var today     = dateStamp(now);
         var yesterday = dateStamp(new Date(new Date().setDate(now.getDate()   - 1)));
@@ -30,7 +31,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var lastmonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 2)));
 
         var dateBuckets = [
-            {text: gettextCatalog.getString('Today'), stamp: today}, 
+            {text: gettextCatalog.getString('Today'), stamp: today},
             {text: gettextCatalog.getString('Yesterday'), stamp: yesterday},
             {text: gettextCatalog.getString('This week'), stamp: week},
             {text: gettextCatalog.getString('This month'), stamp: thismonth},
@@ -53,6 +54,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         for(var n in $scope.Filesets) {
             var item = $scope.Filesets[n];
             item.DisplayLabel = item.Version + ': ' + AppUtils.toDisplayDateAndTime(AppUtils.parseDate(item.Time));
+            if (item.IsFullBackup === 0) {
+                item.DisplayLabel = item.DisplayLabel + ' (partial)';
+            }
             item.GroupLabel = n == 0 ? gettextCatalog.getString('Latest') : createGroupLabel(AppUtils.parseDate(item.Time));
 
             filesetStamps[item.Version + ''] = item.Time;
@@ -63,7 +67,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     $scope.fetchBackupTimes = function() {
         $scope.connecting = true;
-        $scope.ConnectionProgress = gettextCatalog.getString('Getting file versions ...');
+        $scope.ConnectionProgress = gettextCatalog.getString('Getting file versions …');
 
         var qp = '';
         if ($scope.IsBackupTemporary)
@@ -117,7 +121,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if (filesetsBuilt[version] == null) {
             if ($scope.IsBackupTemporary && filesetsRepaired[version] == null) {
                 $scope.connecting = true;
-                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information …');
                 inProgress[version] = true;
 
                 AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
@@ -156,7 +160,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                     return;
 
                 $scope.connecting = true;
-                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information …');
                 inProgress[version] = true;
 
                 AppService.get('/backup/' + $scope.BackupID + '/files/*?prefix-only=true&folder-contents=false&time=' + encodeURIComponent(stamp)).then(
@@ -227,7 +231,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 function compareablePath(path) {
                     return $scope.SystemInfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
                 };
-    
+
                 for(var i in filesetsBuilt[version])
                     searchNodes[i] = { Path: filesetsBuilt[version][i].Path };
 
@@ -256,7 +260,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                 for(var m in col.Children) {
                                     if (compareablePath(col.Children[m].Path) == compareablePath(curpath)) {
                                         found = true;
-                                        col = col.Children[m];                                    
+                                        col = col.Children[m];
                                     }
                                 }
 
@@ -335,16 +339,29 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             'time': stamp,
             'restore-path': $scope.RestoreLocation == 'custom' ? $scope.RestorePath : null,
             'overwrite': $scope.RestoreMode == 'overwrite',
-            'permissions': $scope.RestorePermissions == null ? false : $scope.RestorePermissions
+            'permissions': $scope.RestorePermissions == null ? false : $scope.RestorePermissions,
+            'passphrase' : $scope.passphrase
         };
 
         var paths = [];
         for(var n in $scope.Selected) {
             var item = $scope.Selected[n];
-            if (item.substr(item.length - 1) == dirsep)
-                paths.push(item + '*');
-            else
-                paths.push(item);
+            if (item.substr(item.length - 1) == dirsep) {
+                // To support the possibility of encountering paths
+                // with literal wildcard characters, but also being
+                // able to add the globbing "*" suffix, use a regular
+                // expression filter
+
+                // Escape regular expression metacharacters
+                var itemRegex = item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Add "globbing" suffix
+                paths.push('[' + itemRegex  + '.*]');
+            } else {
+                // To support the possibility of encountering paths
+                // with literal wildcard characters, create a literal
+                // filter
+                paths.push('@' + item);
+            }
         }
 
         if (paths.length > 0)
@@ -353,22 +370,22 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if ($scope.IsBackupTemporary) {
 
             $scope.connecting = true;
-            $scope.ConnectionProgress = gettextCatalog.getString('Creating temporary backup ...');
+            $scope.ConnectionProgress = gettextCatalog.getString('Creating temporary backup …');
 
             AppService.post('/backup/' + $scope.BackupID + '/copytotemp').then(function(resp) {
                 var backupid = resp.data.ID;
 
-                $scope.ConnectionProgress = gettextCatalog.getString('Building partial temporary database ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Building partial temporary database …');
                 AppService.post('/backup/' + backupid + '/repair', p).then(function(resp) {
                     var taskid = $scope.taskid = resp.data.ID;
                     ServerStatus.callWhenTaskCompletes(taskid, function() {
                         AppService.get('/task/' + taskid).then(function(resp) {
 
-                            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process ...');
+                            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process …');
                             if (resp.data.Status == 'Completed')
                             {
                                 AppService.post('/backup/' + backupid + '/restore', p).then(function(resp) {
-                                    $scope.ConnectionProgress = gettextCatalog.getString('Restoring files ...');
+                                    $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
                                     var t2 = $scope.taskid = resp.data.TaskID;
                                     ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
                                 }, handleError);
@@ -388,9 +405,9 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
         } else {
             $scope.connecting = true;
-            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process ...');
+            $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process …');
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
-                $scope.ConnectionProgress = gettextCatalog.getString('Restoring files ...');
+                $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
                 var t2 = $scope.taskid = resp.data.TaskID;
                 ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
             }, handleError);
@@ -430,6 +447,18 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         if ($scope.restore_step < 2)
             $scope.restore_step = pg;
     };
+
+    $scope.showInputPassphrase = function () {
+        if (!this.Backup) {
+            return false;
+        }
+
+        if (!'IsUnencryptedOrPassphraseStored' in this.Backup) {
+            return false;
+        }
+
+        return !this.Backup['IsUnencryptedOrPassphraseStored'];
+    }
 
     $scope.BackupID = $routeParams.backupid;
     $scope.IsBackupTemporary = parseInt($scope.BackupID) != $scope.BackupID;

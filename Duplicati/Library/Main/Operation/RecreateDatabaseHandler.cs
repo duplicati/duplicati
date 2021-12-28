@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
                 restoredb.RepairInProgress = true;
-
+                var autoDetectBlockSize = !(m_options.HasBlocksize && restoredb.GetDbOptions().ContainsKey("blocksize"));                    
                 var volumeIds = new Dictionary<string, long>();
 
                 var rawlist = backend.List();
@@ -139,13 +139,13 @@ namespace Duplicati.Library.Main.Operation
                     orderby n.Time descending
                     select n;
 
-                if (filelists.Count() <= 0)
+                if (!filelists.Any())
                     throw new UserInformationException("No filelists found on the remote destination", "EmptyRemoteLocation");
                 
                 if (filelistfilter != null)
                     filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
 
-                if (filelists.Count() <= 0)
+                if (!filelists.Any())
                     throw new UserInformationException("No filelists", "NoMatchingRemoteFilelists");
 
                 // If we are updating, all files should be accounted for
@@ -188,13 +188,18 @@ namespace Duplicati.Library.Main.Operation
                                 backend.WaitForComplete(restoredb, null);
                                 m_result.EndTime = DateTime.UtcNow;
                                 return;
-                            }    
-                        
+                            }
+
                             progress++;
                             if (filelistWork.Count == 1 && m_options.RepairOnlyPaths)
+                            {
                                 m_result.OperationProgressUpdater.UpdateProgress(0.5f);
+                            }
                             else
+                            {
                                 m_result.OperationProgressUpdater.UpdateProgress(((float)progress / filelistWork.Count()) * (m_options.RepairOnlyPaths ? 1f : 0.2f));
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingFilelistVolumes", "Processing filelist volume {0} of {1}", progress, filelistWork.Count);
+                            }
 
                             using(var tmpfile = entry.TempFile)
                             {
@@ -205,7 +210,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 var parsed = VolumeBase.ParseFilename(entry.Name);
 
-                                if (!hasUpdatedOptions && !updating) 
+                                if (!hasUpdatedOptions && (!updating || autoDetectBlockSize)) 
                                 {
                                     VolumeReaderBase.UpdateOptionsFromManifest(parsed.CompressionModule, tmpfile, m_options);
                                     hasUpdatedOptions = true;
@@ -214,9 +219,15 @@ namespace Duplicati.Library.Main.Operation
                                     hashes_pr_block = blocksize / m_options.BlockhashSize;
                                 }
 
-
                                 // Create timestamped operations based on the file timestamp
                                 var filesetid = restoredb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
+                                
+                                // retrieve fileset data from dlist
+                                var filesetData = VolumeReaderBase.GetFilesetData(parsed.CompressionModule, tmpfile, m_options);
+                                
+                                // update fileset using filesetData
+                                restoredb.UpdateFullBackupStateInFileset(filesetid, filesetData.IsFullBackup);
+
                                 using(var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
                                     foreach(var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path)))
                                     {
@@ -227,11 +238,14 @@ namespace Duplicati.Library.Main.Operation
                                             if (expectedmetablocks <= 1) expectedmetablocklisthashes = 0;
 
                                             var metadataid = long.MinValue;
+                                            var split = Database.LocalDatabase.SplitIntoPrefixAndName(fe.Path);
+                                            var prefixid = restoredb.GetOrCreatePathPrefix(split.Key, tr);
+
                                             switch (fe.Type)
                                             {
                                                 case FilelistEntryType.Folder:
                                                     metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                    restoredb.AddDirectoryEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
+                                                    restoredb.AddDirectoryEntry(filesetid, prefixid, split.Value, fe.Time, metadataid, tr);
                                                     break;
                                                 case FilelistEntryType.File:
                                                     var expectedblocks = (fe.Size + blocksize - 1) / blocksize;
@@ -240,7 +254,7 @@ namespace Duplicati.Library.Main.Operation
 
                                                     var blocksetid = restoredb.AddBlockset(fe.Hash, fe.Size, fe.BlocklistHashes, expectedblocklisthashes, tr);
                                                     metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                    restoredb.AddFileEntry(filesetid, fe.Path, fe.Time, blocksetid, metadataid, tr);
+                                                    restoredb.AddFileEntry(filesetid, prefixid, split.Value, fe.Time, blocksetid, metadataid, tr);
 
                                                     if (fe.Size <= blocksize)
                                                     {
@@ -255,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                                                     break;
                                                 case FilelistEntryType.Symlink:
                                                     metadataid = restoredb.AddMetadataset(fe.Metahash, fe.Metasize, fe.MetaBlocklistHashes, expectedmetablocklisthashes, tr);
-                                                    restoredb.AddSymlinkEntry(filesetid, fe.Path, fe.Time, metadataid, tr);
+                                                    restoredb.AddSymlinkEntry(filesetid, prefixid, split.Value, fe.Time, metadataid, tr);
                                                     break;
                                                 default:
                                                         Logging.Log.WriteWarningMessage(LOGTAG, "SkippingUnknownFileEntry", null, "Skipping file-entry with unknown type {0}: {1} ", fe.Type, fe.Path);
@@ -338,6 +352,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 progress++;
                                 m_result.OperationProgressUpdater.UpdateProgress((((float)progress / indexfiles.Count) * 0.5f) + 0.2f);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingIndexlistVolumes", "Processing indexlist volume {0} of {1}", progress, indexfiles.Count);
 
                                 using(var tmpfile = sf.TempFile)
                                 {
@@ -453,6 +468,7 @@ namespace Duplicati.Library.Main.Operation
 
                                     progress++;
                                     m_result.OperationProgressUpdater.UpdateProgress((((float)progress / lst.Count) * 0.1f) + 0.7f + (i * 0.1f));
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingBlocklistVolumes", "Pass {0} of 3, processing blocklist volume {1} of {2}", (i + 1), progress, lst.Count);
 
                                     var volumeid = restoredb.GetRemoteVolumeID(sf.Name);
 

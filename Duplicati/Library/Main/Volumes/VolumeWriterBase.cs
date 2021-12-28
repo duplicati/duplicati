@@ -1,7 +1,7 @@
-﻿using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
-using System;
+﻿using System;
 using System.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
 
-        public static string GenerateGuid(Options options)
+        public static string GenerateGuid()
         {
             var s = Guid.NewGuid().ToString("N");
 
@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Volumes
 
         public void ResetRemoteFilename(Options options, DateTime timestamp)
         {
-            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(options), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
+            m_volumename = GenerateFilename(this.FileType, options.Prefix, GenerateGuid(), timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
         }
 
         protected VolumeWriterBase(Options options, DateTime timestamp)
@@ -52,9 +52,6 @@ namespace Duplicati.Library.Main.Volumes
             else
                 m_localfile = new Library.Utility.TempFile();
 
-            // TODO(danstahr): This is a hack! Figure out why the file is being disposed of prematurely.
-            m_localfile.Protected = true;
-
             ResetRemoteFilename(options, timestamp);
 
             m_localFileStream = new System.IO.FileStream(m_localfile, FileMode.Create, FileAccess.Write, FileShare.Read);
@@ -63,16 +60,25 @@ namespace Duplicati.Library.Main.Volumes
             if (m_compression == null)
                 throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule), "UnsupportedCompressionModule");
 
-            if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && m_compression is Library.Interface.ICompressionHinting)
-                ((Library.Interface.ICompressionHinting)m_compression).LowOverheadMode = true;
+            if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && this.m_compression is ICompressionHinting hinting)
+                hinting.LowOverheadMode = true;
 
-            AddManifestfile();
+            AddManifestFile();
         }
 
-        protected void AddManifestfile()
+        protected void AddManifestFile()
         {
             using (var sr = new StreamWriter(m_compression.CreateFile(MANIFEST_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
                 sr.Write(ManifestData.GetManifestInstance(m_blocksize, m_blockhash, m_filehash));
+        }
+
+        internal BackendHandler.FileEntryItem CreateFileEntryForUpload(Options options)
+        {
+            var fileEntry = new BackendHandler.FileEntryItem(BackendActionType.Put, this.RemoteFilename);
+            fileEntry.SetLocalfilename(this.LocalFilename);
+            fileEntry.Encrypt(options);
+            fileEntry.UpdateHashAndSize(options);
+            return fileEntry;
         }
 
         public virtual void Dispose()
@@ -81,14 +87,16 @@ namespace Duplicati.Library.Main.Volumes
                 try { m_compression.Dispose(); }
                 finally { m_compression = null; }
 
-            m_localfile.Protected = false;
             if (m_localFileStream != null)
                 try { m_localFileStream.Dispose(); }
                 finally { m_localFileStream = null; }
 
             if (m_localfile != null)
+            {
+                m_localfile.Protected = false;
                 try { m_localfile.Dispose(); }
                 finally { m_localfile = null; }
+            }
 
             m_volumename = null;
         }

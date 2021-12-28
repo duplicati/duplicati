@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
+using Duplicati.Library.Common;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
@@ -98,7 +99,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         private void StartSleepPrevention()
         {
-            if (Duplicati.Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 try
                 {
@@ -110,7 +111,7 @@ namespace Duplicati.Library.Main
                     Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
                 }
             }
-            else if (Duplicati.Library.Utility.Utility.IsClientOSX)
+            else if (Platform.IsClientOSX)
             {
                 try
                 {
@@ -138,13 +139,13 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Activates the process bacground IO priority
+        /// Activates the process background IO priority
         /// </summary>
         private void ActivateBackgroundIOPriority()
         {
             var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-            if (Duplicati.Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 var handle = System.Diagnostics.Process.GetCurrentProcess().Handle;
 
@@ -181,7 +182,7 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                if (Platform.IsClientOSX)
                 {
                     var data = RunProcessAndGetResult("ps", $"-onice -p {pid}");
                     if (data.Item1 != 0)
@@ -207,12 +208,14 @@ namespace Duplicati.Library.Main
                     if (string.Equals(ioclass, "idle", StringComparison.OrdinalIgnoreCase))
                     {
                         m_originalNiceClass = 3;
+                        // Only allowed for "best-effort" and "realtime"
                         m_originalNiceLevel = -1;
                     }
                     else if (string.Equals(ioclass, "none", StringComparison.OrdinalIgnoreCase))
                     {
                         m_originalNiceClass = 0;
-                        m_originalNiceLevel = int.Parse(results.Last());
+                        // Only allowed for "best-effort" and "realtime"
+                        m_originalNiceLevel = -1; 
                     }
                     else if (string.Equals(ioclass, "best-effort", StringComparison.OrdinalIgnoreCase))
                     {
@@ -234,6 +237,31 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Expose all filesystem attributes
+        /// </summary>
+        private static void ExposeAllFilesystemAttributes()
+        {
+            // Starting with Windows 10 1803, the operating system may mask the process's view of some
+            // file attributes such as reparse, offline, and sparse.
+            //
+            // This function will turn off such masking.
+            //
+            // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-rtlqueryprocessplaceholdercompatibilitymode
+
+            if (Platform.IsClientWindows)
+            {
+                try
+                {
+                    Win32.RtlSetProcessPlaceholderCompatibilityMode(Win32.PHCM_VALUES.PHCM_EXPOSE_PLACEHOLDERS);
+                }
+                catch
+                {
+                    // Ignore exceptions - not applicable on this version of Windows
+                }
+            }
+        }
+
+        /// <summary>
         /// Starts the process controller
         /// </summary>
         /// <param name="options">The options to use</param>
@@ -244,6 +272,8 @@ namespace Duplicati.Library.Main
 
             if (options.UseBackgroundIOPriority)
                 ActivateBackgroundIOPriority();
+
+            ExposeAllFilesystemAttributes();
         }
 
         /// <summary>
@@ -251,7 +281,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         private void StopSleepPrevention()
         {
-            if (Duplicati.Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 try
                 {
@@ -266,7 +296,7 @@ namespace Duplicati.Library.Main
                     Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
                 }
             }
-            else if (Duplicati.Library.Utility.Utility.IsClientOSX)
+            else if (Platform.IsClientOSX)
             {
                 try
                 {
@@ -299,7 +329,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         private void DeactivateBackgroundIOPriority()
         {
-            if (Duplicati.Library.Utility.Utility.IsClientWindows)
+            if (Platform.IsClientWindows)
             {
                 try
                 {
@@ -342,7 +372,7 @@ namespace Duplicati.Library.Main
                     var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
                     Tuple<int, string, string> data;
 
-                    if (Duplicati.Library.Utility.Utility.IsClientOSX)
+                    if (Platform.IsClientOSX)
                     {
                         // TODO: We can only give lower priority, thus not reset it ...
                         data = RunProcessAndGetResult($"renice", $"{m_originalNiceLevel} -p {pid}");

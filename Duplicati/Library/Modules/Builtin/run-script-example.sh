@@ -16,6 +16,15 @@
 # Duplicati will run the script before the backup job and waits for its 
 # completion for 60 seconds (default timeout value). After a timeout a 
 # warning is logged and the backup is started.
+# The following exit codes are supported:
+#
+# - 0: OK, run operation
+# - 1: OK, don't run operation
+# - 2: Warning, run operation
+# - 3: Warning, don't run operation
+# - 4: Error, run operation
+# - 5: Error don't run operation
+# - other: Error don't run operation
 #
 # --run-script-before-required = <filename>
 # Duplicati will run the script before the backup job and wait for its 
@@ -32,6 +41,9 @@
 # Duplicati will run the script after the backup job and wait for its 
 # completion for 60 seconds (default timeout value). After a timeout a 
 # warning is logged.
+# The same exit codes as in --run-script-before are supported, but
+# the operation will always continue (i.e. 1 => 0, 3 => 2, 5 => 4)
+# as it has already completed so stopping it during stop is useless.
 
 
 ###############################################################################
@@ -54,7 +66,7 @@
 # echo "Hello! -- test, this line is ignored"
 # echo "--new-option=\"This will be a setting\""
 
-# Filters are supplied in the DUPLICAT__FILTER variable.
+# Filters are supplied in the DUPLICATI__FILTER variable.
 # The variable contains all filters supplied with --include and --exclude,
 # combined into a single string, separated with colon (:).
 # Filters set with --include will be prefixed with a plus (+),
@@ -121,19 +133,19 @@ LOCALPATH=$DUPLICATI__LOCALPATH
 if [ "$EVENTNAME" == "BEFORE" ]
 then
 	# If the operation is a backup starting, 
-	# then we check if the --volsize option is unset
+	# then we check if the --dblock-size option is unset
 	# or 50mb, and change it to 25mb, otherwise we 
 	# leave it alone
 	
 	if [ "$OPERATIONNAME" == "Backup" ]
 	then
-		if [ "$DUPLICATI__volsize" == "" ] || ["$DUPLICATI__volsize" == "50mb"]
+		if [ "$DUPLICATI__dblock_size" == "" ] || ["$DUPLICATI__dblock_size" == "50mb"]
 		then
 			# Write the option to stdout to change it
-			echo "--volsize=25mb"
+			echo "--dblock-size=25mb"
 		else
 			# We write this to stderr, and it will show up as a warning in the logfile
-			echo "Not setting volumesize, it was already set to $DUPLICATI__volsize" >&2
+			echo "Not setting volumesize, it was already set to $DUPLICATI__dblock_size" >&2
 		fi
 	else
 		# This will be ignored
