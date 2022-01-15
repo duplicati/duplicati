@@ -1497,5 +1497,34 @@ namespace Duplicati.Library.Utility
         {
             return task.GetAwaiter().GetResult();
         }
+
+        /// <summary>
+        /// Utility that computes the delay before the next retry of an operation, optionally using exponential backoff.
+        /// Note: when using exponential backoff, the exponent is clamped at 10.
+        /// </summary>
+        /// <param name="retryDelay">Value of one delay unit</param>
+        /// <param name="retryAttempt">The attempt number (e.g. 1 for the first retry, 2 for the second retry, etc.)</param>
+        /// <param name="useExponentialBackoff">Whether to use exponential backoff</param>
+        /// <returns>The computed delay</returns>
+        public static TimeSpan GetRetryDelay(TimeSpan retryDelay, int retryAttempt, bool useExponentialBackoff)
+        {
+            if (retryAttempt < 1)
+            {
+                throw new ArgumentException("The attempt number must not be less than 1.", nameof(retryAttempt));
+            }
+
+            TimeSpan delay;
+            if (useExponentialBackoff)
+            {
+                var delayTicks = retryDelay.Ticks << Math.Min(retryAttempt - 1, 10);
+                delay = TimeSpan.FromTicks(delayTicks);
+            }
+            else
+            {
+                delay = retryDelay;
+            }
+
+            return delay;
+        }
     }
 }

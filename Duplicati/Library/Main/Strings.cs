@@ -65,6 +65,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ListfoldercontentsShort { get { return LC.L(@"Show folder contents"); } }
         public static string RetrydelayLong { get { return LC.L(@"After a failed transmission, Duplicati will wait a short period before attempting again. This is useful if the network drops out occasionally during transmissions."); } }
         public static string RetrydelayShort { get { return LC.L(@"Time to wait between retries"); } }
+        public static string RetrywithexponentialbackoffLong { get { return LC.L(@"After a failed transmission, Duplicati will wait a short period before attempting again. This period is controlled by the retry-delay option. When this option is enabled, that period is doubled after each consecutive failure."); } }
+        public static string RetrywithexponentialbackoffShort { get { return LC.L(@"Whether to enable exponential backoff."); } }
         public static string ControlfilesLong { get { return LC.L(@"Use this option to attach extra files to the newly uploaded filelists."); } }
         public static string ControlfilesShort { get { return LC.L(@"Set control files"); } }
         public static string SkipfilehashchecksLong { get { return LC.L(@"If the hash for the volume does not match, Duplicati will refuse to use the backup. Supply this flag to allow Duplicati to proceed anyway."); } }
