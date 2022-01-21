@@ -495,6 +495,34 @@ namespace Duplicati.UnitTest
                 }
             }
         }
+
+        [Test]
+        [Category("Utility")]
+        public static void RetryDelayNoExponentialBackoff()
+        {
+            // test boundary values
+            TimeSpan baseDelay = TimeSpan.FromSeconds(1);
+
+            int[] testValues = { 1, 2, 11, 12, int.MaxValue };
+            double[] expect =  { 1, 1,  1,  1,            1 };
+
+            for (int i = 0; i < testValues.Length; i++)
+                Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], false));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void RetryDelayExponentialBackoff()
+        {
+            // test boundary values
+            TimeSpan baseDelay = TimeSpan.FromSeconds(1);
+
+            int[] testValues = { 1, 2,   11,   12, int.MaxValue };
+            double[] expect =  { 1, 2, 1024, 1024,         1024 };
+
+            for (int i = 0; i < testValues.Length; i++)
+                Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], true));
+        }
     }
 
     /// <summary>
