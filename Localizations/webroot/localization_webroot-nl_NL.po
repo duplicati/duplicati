@@ -471,6 +471,10 @@ msgstr "Opschonen remote gegevens ..."
 msgid "Complete log"
 msgstr "Compleet log"
 
+#: templates/backup-result/box.html:40
+msgid "Copy log"
+msgstr ""
+
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
 msgstr "Afronden back-up ..."

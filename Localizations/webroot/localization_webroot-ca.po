@@ -465,6 +465,10 @@ msgstr ""
 msgid "Complete log"
 msgstr ""
 
+#: templates/backup-result/box.html:40
+msgid "Copy log"
+msgstr ""
+
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
 msgstr ""

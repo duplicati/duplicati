@@ -463,6 +463,10 @@ msgstr "Se compactează datele de la distanță ..."
 msgid "Complete log"
 msgstr "Jurnal complet"
 
+#: templates/backup-result/box.html:40
+msgid "Copy log"
+msgstr ""
+
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
 msgstr "Se finalizează copia de rezervă ..."
