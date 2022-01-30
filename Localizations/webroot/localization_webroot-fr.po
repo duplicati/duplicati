@@ -482,7 +482,7 @@ msgstr "Compression des données distantes..."
 
 #: templates/backup-result/box.html:34
 msgid "Complete log"
-msgstr "Log complet"
+msgstr "Journal complet"
 
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
