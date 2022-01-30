@@ -463,10 +463,6 @@ msgstr "Zkompaktňování dat na protějšku…"
 msgid "Complete log"
 msgstr "Úplný záznam událostí"
 
-#: templates/backup-result/box.html:40
-msgid "Copy log"
-msgstr ""
-
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
 msgstr "Dokončování zálohy…"

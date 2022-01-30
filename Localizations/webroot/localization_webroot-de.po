@@ -489,10 +489,6 @@ msgstr "Remotedaten verkleinern..."
 msgid "Complete log"
 msgstr "Vollständiges Protokoll"
 
-#: templates/backup-result/box.html:40
-msgid "Copy log"
-msgstr "Kopieren Protokoll"
-
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
 msgstr "Sicherung wird abgeschlossen …"

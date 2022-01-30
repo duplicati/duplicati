@@ -457,10 +457,6 @@ msgstr "正在緊密壓縮遠端資料 ..."
 msgid "Complete log"
 msgstr "完整記錄"
 
-#: templates/backup-result/box.html:40
-msgid "Copy log"
-msgstr ""
-
 #: scripts/services/ServerStatus.js:38
 msgid "Completing backup …"
 msgstr "正在完成備份 ..."
