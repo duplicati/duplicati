@@ -68,6 +68,7 @@ namespace Duplicati.Library.Backend.OpenStack
             new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v3"),
             new KeyValuePair<string, string>("Selectel Cloud Storage", "https://auth.selcdn.ru"),
             new KeyValuePair<string, string>("Memset Cloud Storage", "https://auth.storage.memset.com"),
+            new KeyValuePair<string, string>("Infomaniak SwissBackup", "https://swiss-backup02.infomaniak.com/identity/v3"),
         };
 
         public static readonly KeyValuePair<string, string>[] OPENSTACK_VERSIONS = {
