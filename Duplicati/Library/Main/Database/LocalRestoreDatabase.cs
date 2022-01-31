@@ -19,6 +19,7 @@ namespace Duplicati.Library.Main.Database
         protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
         protected string m_tempfiletable;
         protected string m_tempblocktable;
+        protected string m_latestblocktable;
         protected string m_fileprogtable;
         protected string m_totalprogtable;
         protected string m_filesnewlydonetable;
@@ -207,8 +208,8 @@ namespace Duplicati.Library.Main.Database
     
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempblocktable));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""TargetPath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL, ""LatestBlocksetId"" INTEGER, ""LocalSourceExists"" BOOLEAN) ", m_tempfiletable));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL, ""VolumeID"" INTEGER NOT NULL, ""BlockID"" INTEGER NOT NULL)", m_tempblocktable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""TargetPath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL, ""LatestBlocksetId"" INTEGER, ""LocalSourceExists"" BOOLEAN) ", m_tempfiletable));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL, ""VolumeID"" INTEGER NOT NULL, ""BlockID"" INTEGER NOT NULL)", m_tempblocktable));
 
                     // TODO: Optimize to use the path prefix
 
@@ -945,8 +946,8 @@ namespace Duplicati.Library.Main.Database
                 if (m_tempfiletable != null)
                     try
                     {
-                        //cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempfiletable);
-                        //cmd.ExecuteNonQuery();
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempfiletable);
+                        cmd.ExecuteNonQuery();
                     }
                     catch(Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_tempfiletable = null; }
@@ -954,11 +955,20 @@ namespace Duplicati.Library.Main.Database
                 if (m_tempblocktable != null)
                     try
                     {
-                        //cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempblocktable);
-                        //cmd.ExecuteNonQuery();
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempblocktable);
+                        cmd.ExecuteNonQuery();
                     }
-                    catch(Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_tempblocktable = null; }
+
+                if (m_latestblocktable != null)
+                    try
+                    {
+                        cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_latestblocktable);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                    finally { m_latestblocktable = null; }
 
                 if (m_fileprogtable != null)
                     try
@@ -1257,27 +1267,26 @@ namespace Duplicati.Library.Main.Database
                             while (rd.Read())
                             {
                                 var sourcepath = rd.GetValue(0).ToString();
-                                //if (SystemIO.IO_OS.FileExists(sourcepath))
+                                if (SystemIO.IO_OS.FileExists(sourcepath))
                                 {
                                     cmd.SetParameterValue(0, sourcepath);
                                     cmd.ExecuteNonQuery();
                                 }
-                                //else
-                                //{
-                                //    Logging.Log.WriteVerboseMessage(LOGTAG, "LocalSourceMissing", "Local source file not found: {0}", sourcepath);
-                                //}
+                                else
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "LocalSourceMissing", "Local source file not found: {0}", sourcepath);
+                                }
                             }
                         }
 
                         //This localSourceExists index will make the query engine to start by searching FileSet table. As the result is ordered by FileSet.ID, we will get the cursor "instantly"
-                        //This could be avoid using LEFT JOIN and starting by Fileset table
                         cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_LocalSourceExists"" ON ""{0}"" (""LocalSourceExists"")", m_tempfiletable));
                     }
                 }
                 transaction.Commit();
             }
 
-            var latestBlockTable = "LatestBlocksetIds-" + m_temptabsetguid;
+            m_latestblocktable = "LatestBlocksetIds-" + m_temptabsetguid;
 
             var whereclause = string.Format(
                 @"  ""{0}"".""LocalSourceExists"" = 1 AND" +
@@ -1309,11 +1318,11 @@ namespace Duplicati.Library.Main.Database
 
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", latestBlockTable));
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}"" AS {1}", latestBlockTable, latestBlocksetIds));
-                cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_path"" ON ""{0}"" (""Path"")", latestBlockTable));
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_latestblocktable));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS {1}", m_latestblocktable, latestBlocksetIds));
+                cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_path"" ON ""{0}"" (""Path"")", m_latestblocktable));
 
-                cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET LatestBlocksetId = (SELECT BlocksetId FROM ""{1}"" WHERE Path = ""{0}"".Path)", m_tempfiletable, latestBlockTable));
+                cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET LatestBlocksetId = (SELECT BlocksetId FROM ""{1}"" WHERE Path = ""{0}"".Path)", m_tempfiletable, m_latestblocktable));
             }
 
             var sources = string.Format(
