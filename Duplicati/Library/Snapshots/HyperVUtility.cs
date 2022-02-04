@@ -319,11 +319,16 @@ namespace Duplicati.Library.Snapshots
                         if (outParams != null)
                         {
                             var doc = new System.Xml.XmlDocument();
-                            doc.LoadXml((string)outParams[_wmiv2Namespace ? "SettingData" : "Info"]);
-                            var node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
+                            var propertyValue = (string)outParams[_wmiv2Namespace ? "SettingData" : "Info"];
 
-                            if (node != null && File.Exists(node.Value))
-                                ParentPaths.Add(node.Value);
+                            if (propertyValue != null)
+                            {
+                                doc.LoadXml(propertyValue);
+                                var node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
+
+                                if (node != null && File.Exists(node.Value))
+                                    ParentPaths.Add(node.Value);
+                            }
                         }
                     }
                 }
