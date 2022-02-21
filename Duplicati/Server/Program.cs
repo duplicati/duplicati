@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using Duplicati.Library.Common;
@@ -302,9 +303,53 @@ namespace Duplicati.Server
             }
 
             if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
+            {
+                if (Platform.IsClientWindows && !String.IsNullOrWhiteSpace(WindowsService.ServiceControl.SERVICE_NAME) && WindowsServiceExists(WindowsService.ServiceControl.SERVICE_NAME))
+                {
+                    RestartWindowsService(WindowsService.ServiceControl.SERVICE_NAME);
+                }                
+                
                 return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
+            }
 
             return 0;
+        }
+        
+        public static bool WindowsServiceExists(string serviceName)
+        {
+            string cmdOutput;
+            using (Process p = new Process())
+            {
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.FileName = @"C:\Windows\System32\cmd.exe";
+                p.StartInfo.Arguments = "/C net start | find \"" + serviceName + "\"";
+                p.Start();
+                cmdOutput = p.StandardOutput.ReadToEnd();
+                p.WaitForExit();
+            }
+
+            return !string.IsNullOrEmpty(cmdOutput);
+        }
+
+        public static void RestartWindowsService(string serviceName)
+        {
+            ProcessStartInfo psi = new ProcessStartInfo()
+            {
+                CreateNoWindow = true,
+                FileName = @"C:\Windows\System32\cmd.exe",
+                Arguments = "/C net stop " + serviceName + " && net start " + serviceName,
+                LoadUserProfile = false,
+                UseShellExecute = false,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            Process p = new Process()
+            {
+                StartInfo = psi
+            };
+
+            p.Start();
         }
 
         private static void StartWebServer(Dictionary<string, string> commandlineOptions)
