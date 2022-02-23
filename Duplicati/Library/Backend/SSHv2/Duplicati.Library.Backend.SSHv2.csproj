@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="SSH.NET" Version="2020.0.1" />
+    <PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
   </ItemGroup>
   
   <ItemGroup>

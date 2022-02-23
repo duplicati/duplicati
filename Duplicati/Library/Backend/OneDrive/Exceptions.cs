@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -79,8 +80,6 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
                 }
             }
         }
-
-        public HttpResponseMessage Response { get; private set; }
 
         protected static string ResponseToString(HttpResponseMessage response)
         {
@@ -188,7 +187,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             HttpResponseMessage originalResponse,
             int fragment,
             int fragmentCount,
-            MicrosoftGraphException fragmentException)
+            Exception fragmentException)
             : base(
                   string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse?.RequestMessage?.RequestUri?.ToString() ?? "<unknown>"),
                   originalResponse,
@@ -196,14 +195,13 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         {
             this.Fragment = fragment;
             this.FragmentCount = fragmentCount;
-            this.InnerException = fragmentException;
         }
 
         public UploadSessionException(
             HttpWebResponse originalResponse,
             int fragment,
             int fragmentCount,
-            MicrosoftGraphException fragmentException)
+            Exception fragmentException)
             : base(
                   string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse?.ResponseUri?.ToString() ?? "<unknown>"),
                   originalResponse,
@@ -211,12 +209,9 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         {
             this.Fragment = fragment;
             this.FragmentCount = fragmentCount;
-            this.InnerException = fragmentException;
         }
 
         public int Fragment { get; private set; }
         public int FragmentCount { get; private set; }
-
-        public new MicrosoftGraphException InnerException { get; private set; }
     }
 }

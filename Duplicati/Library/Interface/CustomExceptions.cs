@@ -183,4 +183,20 @@ namespace Duplicati.Library.Interface
             AbortReason = reason;
         }
     }
+
+    /// <summary>
+    /// An exception indicating that verification of uploaded volumes has failed
+    /// due to extra, missing, or duplicate files.
+    /// </summary>
+    [Serializable]
+    public class RemoteListVerificationException : UserInformationException
+    {
+        public RemoteListVerificationException(string message, string helpId)
+            : base(message, helpId)
+        {}
+
+        public RemoteListVerificationException(string message, string helpId, Exception innerException)
+            : base(message, helpId, innerException)
+        {}
+    }
 }

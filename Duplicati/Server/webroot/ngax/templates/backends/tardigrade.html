@@ -25,6 +25,10 @@
     <label for="tardigrade_secret" translate>Encryption passphrase</label>
     <input autocomplete="new-password" type="password" name="tardigrade_secret" id="tardigrade_secret" ng-model="$parent.tardigrade_secret" placeholder="{{'The encryption passphrase' | translate}}" />
 </div>
+<div class="input password" ng-show="$parent.tardigrade_auth_method == 'API key'">
+    <label for="tardigrade_secret_verify" translate>Verify encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="tardigrade_secret_verify" id="tardigrade_secret_verify" ng-model="$parent.tardigrade_secret_verify" placeholder="{{'The encryption passphrase (for verification)' | translate}}" />
+</div>
 <div class="input text" ng-show="$parent.tardigrade_auth_method == 'Access grant'">
     <label for="tardigrade_shared_access" translate>Access grant</label>
     <input type="text" name="tardigrade_shared_access" id="tardigrade_shared_access" ng-model="$parent.tardigrade_shared_access" placeholder="{{'The access grant instead of the info above'}}" />

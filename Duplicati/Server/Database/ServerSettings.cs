@@ -20,9 +20,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Pkcs;
-using Org.BouncyCastle.Security;
 using Duplicati.Library.Common;
 
 namespace Duplicati.Server.Database
@@ -498,25 +495,7 @@ namespace Duplicati.Server.Database
                 if (Platform.IsClientWindows)
                     return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]));
                 else
-                {
-                    var store = new Pkcs12Store();
-
-                    using (var stream = new System.IO.MemoryStream(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE])))
-                        store.Load(stream, null);
-
-                    if (store.Count != 1)
-                        return null;
-
-                    var certAlias = store.Aliases.Cast<string>().FirstOrDefault(n => store.IsKeyEntry(n));
-                    var cert = new X509Certificate2(DotNetUtilities.ToX509Certificate(store.GetCertificate(certAlias).Certificate).GetRawCertData());
-                    var rsaPriv = DotNetUtilities.ToRSA(store.GetKey(certAlias).Key as RsaPrivateCrtKeyParameters);
-                    var rsaPrivate = new RSACryptoServiceProvider(new CspParameters { KeyContainerName = "KeyContainer" });
-
-                    rsaPrivate.ImportParameters(rsaPriv.ExportParameters(true));
-                    cert.PrivateKey = rsaPrivate;
-
-                    return cert;
-                }
+                    return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]), "");
             }
             set
             {
@@ -531,20 +510,8 @@ namespace Duplicati.Server.Database
                         lock (databaseConnection.m_lock)
                             settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
                     else
-                    {
-                        var store = new Pkcs12Store();
-
-                        store.SetKeyEntry(value.FriendlyName,
-                            new AsymmetricKeyEntry(DotNetUtilities.GetKeyPair(value.PrivateKey).Private),
-                            new[] { new X509CertificateEntry(DotNetUtilities.FromX509Certificate(value)) });
-
-                        using (var stream = new System.IO.MemoryStream())
-                        {
-                            store.Save(stream, null, new SecureRandom());
-                            lock (databaseConnection.m_lock)
-                                settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(stream.ToArray());
-                        }
-                    }
+                        lock (databaseConnection.m_lock)
+                            settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, ""));
                 }
                 SaveSettings();
             }

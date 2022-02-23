@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29102.190
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
@@ -30,6 +30,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.DynamicLoader", "Duplicati\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Snapshots", "Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2B605B81-353F-43CD-BF3A-29B3926A204F} = {2B605B81-353F-43CD-BF3A-29B3926A204F}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.License", "Duplicati\License\Duplicati.License.csproj", "{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}"
 EndProject
@@ -101,7 +104,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Encryptio
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Duplicati\CommandLine\AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{4D1B198B-F773-44F2-872B-2B283053323C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Storj", "Duplicati\Library\Backend\Storj\Duplicati.Library.Backend.Storj.csproj", "{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{11A8D03B-8CAE-4AD6-A5C6-E15D34DA2BDE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489} = {E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
 EndProject
@@ -357,10 +365,14 @@ Global
 		{4D1B198B-F773-44F2-872B-2B283053323C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D1B198B-F773-44F2-872B-2B283053323C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D1B198B-F773-44F2-872B-2B283053323C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11A8D03B-8CAE-4AD6-A5C6-E15D34DA2BDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11A8D03B-8CAE-4AD6-A5C6-E15D34DA2BDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11A8D03B-8CAE-4AD6-A5C6-E15D34DA2BDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11A8D03B-8CAE-4AD6-A5C6-E15D34DA2BDE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Release|Any CPU.ActiveCfg = Release|Any CPU

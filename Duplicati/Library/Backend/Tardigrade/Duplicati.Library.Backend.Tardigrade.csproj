@@ -8,7 +8,7 @@
   
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="uplink.NET" Version="2.5.0" />
+    <PackageReference Include="uplink.NET" Version="2.7.1604" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\Storj\Duplicati.Library.Backend.Storj.csproj" />
   </ItemGroup>
   
   <ItemGroup>
@@ -24,5 +25,4 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-
 </Project>

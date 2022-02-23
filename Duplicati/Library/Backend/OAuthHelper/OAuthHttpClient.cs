@@ -59,6 +59,11 @@ namespace Duplicati.Library
             {
                 this.Timeout = HttpContextSettings.OperationTimeout;
             }
+            else
+            {
+                // If no timeout is set, default to infinite
+                this.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+            }
 
             // Set the default user agent
             this.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Duplicati", USER_AGENT_VERSION));

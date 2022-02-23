@@ -82,7 +82,7 @@ namespace Duplicati.UnitTest
             try
             {
                 // check if the file should be downloaded, exception if not
-                var checkIfChangedWebResponse = (HttpWebResponse)webRequest.GetResponse();
+                using ((HttpWebResponse)webRequest.GetResponse())
 
                 using (WebClient client = new WebClient())
                 {
