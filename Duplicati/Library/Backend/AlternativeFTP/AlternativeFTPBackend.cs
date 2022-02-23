@@ -221,7 +221,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                 // Get the remote path
                 var url = new Uri(this._url);
-                remotePath = "/" + (url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath);
+                remotePath = "/" + this.GetUnescapedAbsolutePath(url);
 
                 if (!string.IsNullOrEmpty(filename))
                 {
@@ -370,11 +370,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                return PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken);
             }
         }
 
@@ -446,14 +446,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             get { return new string[] { new Uri(_url).Host }; }
         }
 
-        private static Stream StringToStream(string str)
-        {
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream) { AutoFlush = true };
-            writer.Write(str);
-            return stream;
-        }
-
         /// <summary>
         /// Test FTP access permissions.
         /// </summary>
@@ -475,7 +467,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
 
             // Test write permissions
-            using (var testStream = StringToStream(TEST_FILE_CONTENT))
+            using (var testStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(TEST_FILE_CONTENT)))
             {
                 try
                 {
@@ -488,11 +480,14 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
 
             // Test read permissions
-            using (var stream = new MemoryStream())
+            using (var testStream = new MemoryStream())
             {
                 try
                 {
-                    Get(TEST_FILE_NAME, stream);
+                    Get(TEST_FILE_NAME, testStream);
+                    var readValue = System.Text.Encoding.UTF8.GetString(testStream.ToArray());
+                    if (readValue != TEST_FILE_CONTENT)
+                        throw new Exception("Test file corrupted.");
                 }
                 catch (Exception e)
                 {
@@ -518,7 +513,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             var url = new Uri(_url);
 
             // Get the remote path
-            var remotePath = url.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? url.AbsolutePath.Substring(0, url.AbsolutePath.Length - 1) : url.AbsolutePath;
+            var remotePath = this.GetUnescapedAbsolutePath(url);
 
             // Try to create the directory 
             client.CreateDirectory(remotePath, true);
@@ -560,10 +555,16 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
             // Change working directory to the remote path
             // Do this every time to prevent issues when FtpClient silently reconnects after failure.
-            var remotePath = uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal) ? uri.AbsolutePath.Substring(0, uri.AbsolutePath.Length - 1) : uri.AbsolutePath;
+            var remotePath = this.GetUnescapedAbsolutePath(uri);
             this.Client.SetWorkingDirectory(remotePath);
 
             return this.Client;
+        }
+
+        private string GetUnescapedAbsolutePath(Uri uri)
+        {
+            string absolutePath = Uri.UnescapeDataString(uri.AbsolutePath);
+            return absolutePath.EndsWith("/", StringComparison.Ordinal) ? absolutePath.Substring(0, absolutePath.Length - 1) : absolutePath;
         }
 
         private void HandleValidateCertificate(FtpClient control, FtpSslValidationEventArgs e)

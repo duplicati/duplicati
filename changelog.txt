@@ -1,3 +1,71 @@
+2021-08-11 - 2.0.6.100_canary_2021-08-11
+==========
+* Switched to improved CI model, thanks @warwickmm
+* Fixed issue with reporting wasted space, thanks @aureliandevel
+* Fixed throttling requests to OneDrive and respecting the server `retry-after` headers, thnaks @tygill
+* File backend now overwrites files, thanks @warwickmm
+* Added `.dar` files to list of compressed file extensions, thanks @samuel-w
+* Fixed typos in example scripts, thanks @warwickmm
+* The `Makefile` now calls `msbuild`, thanks @warwickmm
+* When testing for known compressed file extensions, the compare is now case-insensitive, thanks @samuel-w
+* Improved code quality, thanks @marodev
+* Fixed an issue with handling the deprecated Azure and S3 options, thanks @warwickmm
+* Avoid using ECDSA algorithm for SFTP if the client does not support it, thanks @warwickmm
+* Added SAS token support to Azure backend, thanks @sergethedev17
+* Improved test method for aFTP backend, thanks @sergethedev17
+* Added support for mega.nz 2fa, thanks @vfrz
+* Changed from Tardigrade backend to Storj DCS backend, thanks @TopperDEL
+* Removed BouncyCastle dependency and now using .Net built-in parsing of SSL certificates, thanks @mnaiman
+* Regex filters now match newlines in paths with wildcards, thanks @warwickmm
+* Reduced number of cases where database cleanup is triggered, thanks @warwickmm
+* Fixed a dispose bug in most backends introduced with `PutAsync`, thanks @warwickmm
+* Updated UI to more prominently display deprecation information, thanks @warwickmm
+* Fixed handling of special characters in paths on the aFTP backend, thanks @warwickmm
+
+2021-06-17 - 2.0.6.3_beta_2021-06-17
+==========
+This is a minor bugfix release with only two changes, which affects a small number of users:
+
+* Disabled SSH backend ECDSA keys on Mono as it does not work (see issue #4506)
+* Fixed priority of options from AWS and Azure backend if both underscore and dashed version were used (see issue #4513)
+
+2021-05-29 - 2.0.6.2_experimental_2021-05-29
+==========
+This is a minor bugfix release with only two changes:
+
+* Disabled SSH backend ECDSA keys on Mono as it does not work (see issue #4506)
+* Fixed priority of options from AWS and Azure backend if both underscore and dashed version were used (see issue #4513)
+
+2021-05-03 - 2.0.6.1_beta_2021-05-03
+==========
+## First beta build in over a year!
+
+We have been hard at work adding new features and fixing issues. This beta release is a roll-up of all the fixes since the last beta build and is expected to cause very few issues when upgrading. This release is based on 2.0.6.0_experimental.
+
+A big thanks to all Duplicati contributors, supporters, fans and users for keeping the project evolving and improving.
+
+### New in this version
+
+- Added Tardigrade backend
+- Added Tencent Cloud Object Storage (COS)
+- More Docker image versions
+- Improved long-path support on Windows
+
+We changed some larger things that you should be aware of when upgrading.
+
+### The SSH backend has been updated
+This update increases the security by prefering stronger encryption algorithms.
+However, this _can_ cause failing backups as the host key is reported as "changed".
+If this happens, edit the backup and update the host key.
+
+### Database version update from v10 to v11!
+Downgrade from this version requires manually adjusting the version number in the database. The additions can be re-applied if the database is upgraded again later.
+
+### Other changes that needs attention
+
+- Duplicati now requires Mono 5.10 or greater
+- S3 and Sharepoint option names on commandline now uses `-` for consistency (previously used `_`)
+
 2021-03-10 - 2.0.5.114_canary_2021-03-10
 ==========
 ## This build intends to remove some erronous warnings from the S3 backend introduced in the previous canary.

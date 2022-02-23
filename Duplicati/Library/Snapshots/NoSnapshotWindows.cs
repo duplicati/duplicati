@@ -65,8 +65,8 @@ namespace Duplicati.Library.Snapshots
         /// <param name="errorCallback">The callback used to report errors</param>
         public override IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
         {
-            // For Windows, ensure we don't store paths with UNC prefix
-            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.StripUNCPrefix), callback, errorCallback);
+            // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
+            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix), callback, errorCallback);
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace Duplicati.Library.Snapshots
             string[] tmp = SystemIO.IO_WIN.GetFiles(localFolderPath);
             string[] res = new string[tmp.Length];
             for(int i = 0; i < tmp.Length; i++)
-                res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
+                res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
 
             return res;
         }
@@ -122,10 +122,10 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFolders (string localFolderPath)
         {
-            string[] tmp = SystemIO.IO_WIN.GetDirectories(SystemIOWindows.PrefixWithUNC(localFolderPath));
+            string[] tmp = SystemIO.IO_WIN.GetDirectories(SystemIOWindows.AddExtendedDevicePathPrefix(localFolderPath));
             string[] res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
-                res[i] = SystemIOWindows.StripUNCPrefix(tmp[i]);
+                res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
 
             return res;
         }
@@ -151,8 +151,8 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
-            // For Windows, ensure we don't store paths with UNC prefix
-            return SystemIOWindows.StripUNCPrefix(localPath);
+            // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
+            return SystemIOWindows.RemoveExtendedDevicePathPrefix(localPath);
         }
     }
 }

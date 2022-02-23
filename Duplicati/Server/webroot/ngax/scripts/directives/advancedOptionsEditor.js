@@ -60,12 +60,24 @@ backupApp.directive('advancedOptionsEditor', function() {
                 return optionmap[coreName(key)];
             };
 
+            $scope.getDeprecationMessage = function(item) {
+                var item = $scope.getEntry(item);
+                if (item == null)
+                    return null;
+
+                return item.DeprecationMessage;
+            };
+
             $scope.getDisplayName = function(name) {
                 var item = $scope.getEntry(name);
                 if (item == null)
                     return coreName(name);
 
-                return item.Name + ': ' + item.ShortDescription;
+                name = item.Name;
+                if (item.Deprecated)
+                    name += " (DEPRECATED)";
+
+                return name + ': ' + item.ShortDescription;
             };
 
             $scope.getInputType = function(item) {

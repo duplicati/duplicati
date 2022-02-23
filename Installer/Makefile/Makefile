@@ -1,4 +1,4 @@
-BUILD_TOOL=xbuild
+BUILD_TOOL=msbuild
 BUILD_ARGS=/property:Platform=Any\ CPU /property:Configuration=Release
 BUILD_ARGS_DEBUG=/property:Platform=Any\ CPU /property:Configuration=Debug
 

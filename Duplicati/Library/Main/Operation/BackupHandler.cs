@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Operation
                     else
                         FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { protectedfile });
                 }
-                catch (Exception ex)
+                catch (RemoteListVerificationException ex)
                 {
                     if (m_options.AutoCleanup)
                     {

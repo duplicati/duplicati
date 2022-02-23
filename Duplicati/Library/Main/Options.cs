@@ -262,6 +262,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("number-of-retries", CommandLineArgument.ArgumentType.Integer, Strings.Options.NumberofretriesShort, Strings.Options.NumberofretriesLong, "5"),
                     new CommandLineArgument("retry-delay", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, "10s"),
+                    new CommandLineArgument("retry-with-exponential-backoff", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RetrywithexponentialbackoffShort, Strings.Options.RetrywithexponentialbackoffLong, "false"),
 
                     new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "4"),
@@ -796,7 +797,7 @@ namespace Duplicati.Library.Main
         public bool DisablePipedStreaming { get { return GetBool("disable-piped-streaming"); } }
 
         /// <summary>
-        /// Gets the timelimit for removal
+        /// Gets the delay period to retry uploads
         /// </summary>
         public TimeSpan RetryDelay
         {
@@ -807,6 +808,14 @@ namespace Duplicati.Library.Main
                 else
                     return Library.Utility.Timeparser.ParseTimeSpan(m_options["retry-delay"]);
             }
+        }
+
+        /// <summary>
+        /// Gets whether exponential backoff is enabled
+        /// </summary>
+        public Boolean RetryWithExponentialBackoff
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "retry-with-exponential-backoff"); }
         }
 
         /// <summary>
@@ -1821,7 +1830,7 @@ namespace Duplicati.Library.Main
             {
                 if (m_compressionHints == null)
                 {
-                    var hints = new Dictionary<string, CompressionHint>(Library.Utility.Utility.ClientFilenameStringComparer);
+                    var hints = new Dictionary<string, CompressionHint>(StringComparer.OrdinalIgnoreCase); // Ignore file system case sensitivity, since file extensions case rarely indicates type
 
                     string file;
                     if (!m_options.TryGetValue("compression-extension-file", out file))

@@ -362,6 +362,7 @@ namespace Duplicati.Library.Main
         // Cache these
         private readonly int m_numberofretries;
         private readonly TimeSpan m_retrydelay;
+        private readonly Boolean m_retrywithexponentialbackoff;
 
         public string BackendUrl { get { return m_backendurl; } }
 
@@ -373,6 +374,7 @@ namespace Duplicati.Library.Main
             m_taskControl = statwriter as BasicResults;
             m_numberofretries = options.NumberOfRetries;
             m_retrydelay = options.RetryDelay;
+            m_retrywithexponentialbackoff = options.RetryWithExponentialBackoff;
 
             m_db = new DatabaseCollector(database);
 
@@ -566,7 +568,9 @@ namespace Duplicati.Library.Main
 
                                 if (retries < m_numberofretries && m_retrydelay.Ticks != 0)
                                 {
-                                    var target = DateTime.Now.AddTicks(m_retrydelay.Ticks);
+                                    var delay = Library.Utility.Utility.GetRetryDelay(m_retrydelay, retries, m_retrywithexponentialbackoff);
+                                    var target = DateTime.Now.Add(delay);
+
                                     while (target > DateTime.Now)
                                     {
                                         if (m_taskControl != null && m_taskControl.IsAbortRequested())

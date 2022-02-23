@@ -39,6 +39,7 @@
 
         <a href ng-click="deleteItem(item)" title="{{'Remove option' | translate}}">x</a>
 
+        <div ng-if="getDeprecationMessage(item)" class="longdescription">DEPRECATED: {{getDeprecationMessage(item)}}</div>
         <div class="longdescription">{{getLongDescription(item)}}<br>Default value: "{{getDefaultValue(item)}}"</div>
     </li>
 

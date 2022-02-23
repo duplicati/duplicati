@@ -6,6 +6,7 @@
 .cab #Microsoft Cabinet File / InstallShield Cabinet File
 .cbr #Comic Book RAR Archive
 .cbz #Comic Book Zip Archive
+.dar #Disk ARchive Compressed File
 .deb #Debian Software Package
 .dl_ #Windows Dynamic Link Library, packed
 .dsft #Microsoft Application Virtualization package

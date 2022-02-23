@@ -67,7 +67,7 @@ REM will be ignored:
 REM echo "Hello! -- test, this line is ignored"
 REM echo --new-option=This will be a setting
 
-REM Filters are supplied in the DUPLICAT__FILTER variable.
+REM Filters are supplied in the DUPLICATI__FILTER variable.
 REM The variable contains all filters supplied with --include and --exclude,
 REM combined into a single string, separated with semicolon (;).
 REM Filters set with --include will be prefixed with a plus (+),

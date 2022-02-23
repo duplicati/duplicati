@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -252,12 +253,18 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("ProblematicPath")]
-        [TestCase("ends_with_dot.")]
-        [TestCase("ends_with_dots..")]
-        [TestCase("ends_with_space ")]
-        [TestCase("ends_with_spaces  ")]
-        public void ProblematicSuffixes(string pathComponent)
+        [TestCase("ends_with_dot.", false)]
+        [TestCase("ends_with_dots..", false)]
+        [TestCase("ends_with_space ", false)]
+        [TestCase("ends_with_spaces  ", false)]
+        [TestCase("ends_with_newline\n", true)]
+        public void ProblematicSuffixes(string pathComponent, bool skipOnWindows)
         {
+            if (Platform.IsClientWindows && skipOnWindows)
+            {
+                return;
+            }
+
             string folderPath = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, pathComponent);
             SystemIO.IO_OS.DirectoryCreate(folderPath);
 
@@ -274,6 +281,8 @@ namespace Duplicati.UnitTest
             }
 
             Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) {["restore-path"] = this.RESTOREFOLDER};
+
+            // Restore just the file.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 IRestoreResults restoreResults = c.Restore(new[] {filePath});
@@ -282,15 +291,19 @@ namespace Duplicati.UnitTest
             }
 
             string restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, pathComponent);
-            Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
+            TestUtils.AssertFilesAreEqual(filePath, restoreFilePath, true, pathComponent);
+            SystemIO.IO_OS.FileDelete(restoreFilePath);
 
-            MemoryStream restoredStream = new MemoryStream();
-            using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
+            // Restore the entire directory.
+            string pathSpec = $"[{Regex.Escape(Util.AppendDirSeparator(this.DATAFOLDER))}.*]";
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                Utility.CopyStream(fileStream, restoredStream);
+                IRestoreResults restoreResults = c.Restore(new[] {pathSpec});
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
             }
 
-            Assert.AreEqual(fileBytes, restoredStream.ToArray());
+            TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, pathComponent);
         }
     }
 }

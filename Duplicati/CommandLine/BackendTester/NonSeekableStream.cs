@@ -42,14 +42,20 @@ namespace Duplicati.CommandLine.BackendTester
             }
         }
 
+        public override long Position
+        {
+            get => base.Position;
+            set => throw new NotSupportedException();
+        }
+
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

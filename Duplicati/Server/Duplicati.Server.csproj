@@ -14,7 +14,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="4.7.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.8.5.2" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
   </ItemGroup>
@@ -51,6 +50,13 @@
     <ProjectReference Include="..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj">
+
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Storj\Duplicati.Library.Backend.Storj.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj">
     </ProjectReference>

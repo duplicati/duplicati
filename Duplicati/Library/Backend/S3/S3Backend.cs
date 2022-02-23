@@ -50,6 +50,7 @@ namespace Duplicati.Library.Backend
             { "DreamHost", "objects.dreamhost.com" },
             { "dinCloud - Chicago", "d3-ord.dincloud.com" },
             { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
+            { "Poli Systems (CH)", "s3.polisystems.ch" },
             { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
             { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi Hot Storage", "s3.wasabisys.com" },
@@ -185,10 +186,14 @@ namespace Duplicati.Library.Backend
             if (options.ContainsKey("auth-password"))
                 awsKey = options["auth-password"];
 
-            if (options.ContainsKey("aws_access_key_id") || options.ContainsKey("aws-access-key-id"))
-                awsID = options["aws_access_key_id"] ?? options["aws-access-key-id"];
-            if (options.ContainsKey("aws_secret_access_key") || options.ContainsKey("aws-secret-access-key"))
-                awsKey = options["aws_secret_access_key"] ?? options["aws-secret-access-key"];
+            if (options.ContainsKey("aws_access_key_id"))
+                awsID = options["aws_access_key_id"];
+            if (options.ContainsKey("aws-access-key-id"))
+                awsID = options["aws-access-key-id"];
+            if (options.ContainsKey("aws_secret_access_key"))
+                awsKey = options["aws_secret_access_key"];
+            if (options.ContainsKey("aws-secret-access-key"))
+                awsKey = options["aws-secret-access-key"];
             if (!string.IsNullOrEmpty(uri.Username))
                 awsID = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -337,10 +342,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)

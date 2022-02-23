@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
                 Logging.Log.WriteErrorMessage(LOGTAG, "ExtraRemoteFiles", null, s);
-                throw new Duplicati.Library.Interface.UserInformationException(s, "ExtraRemoteFiles");
+                throw new RemoteListVerificationException(s, "ExtraRemoteFiles");
             }
 
             ISet<string> doubles;
@@ -123,7 +123,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles));
                 Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, s);
-                throw new Duplicati.Library.Interface.UserInformationException(s, "DuplicateRemoteFiles");
+                throw new RemoteListVerificationException(s, "DuplicateRemoteFiles");
             }
 
             if (missingCount > 0)
@@ -135,7 +135,7 @@ namespace Duplicati.Library.Main.Operation
                     s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
 
                 Logging.Log.WriteErrorMessage(LOGTAG, "MissingRemoteFiles", null, s);
-                throw new Duplicati.Library.Interface.UserInformationException(s, "MissingRemoteFiles");
+                throw new RemoteListVerificationException(s, "MissingRemoteFiles");
             }
         }
 
@@ -279,7 +279,7 @@ namespace Duplicati.Library.Main.Operation
                 if (e.Value == RemoteVolumeState.Uploading || e.Value == RemoteVolumeState.Temporary)
                     database.UnlinkRemoteVolume(e.Key, e.Value);
                 else
-                    throw new Exception(string.Format("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Key, e.Value.ToString()));
+                    throw new RemoteListVerificationException(string.Format("The remote volume {0} appears in the database with state {1} and a deleted state, cannot continue", e.Key, e.Value.ToString()), "AmbiguousStateRemoteFiles");
             }
 
             var locallist = database.GetRemoteVolumes();
