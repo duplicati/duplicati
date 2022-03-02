@@ -22,7 +22,7 @@ jobs:
       with:
         usesh: true
         sync: sshfs
-        prepare: pkg install -y curl libinotify git cmake ninja bash wget
+        prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget
         run: |
           pwd
           ls -lah
@@ -57,7 +57,7 @@ jobs:
       with:
         usesh: true
         sync: sshfs
-        prepare: pkg install -y curl libinotify git cmake ninja bash wget
+        prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget 
         run: |
           pwd
           ls -lah
