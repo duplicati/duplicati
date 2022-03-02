@@ -15,7 +15,7 @@ jobs:
       # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-      run: curl http://bit.ly/3hceESr -o dn.tgz
+      run: curl -L http://bit.ly/3hceESr -o dn.tgz
     - name: Build native FreeBSD lib
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
@@ -45,7 +45,7 @@ jobs:
       # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-      run: curl http://bit.ly/3hceESr -o dn.tgz
+      run: curl -L http://bit.ly/3hceESr -o dn.tgz
     - name: Build native FreeBSD lib
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
