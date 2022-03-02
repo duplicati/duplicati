@@ -1,0 +1,63 @@
+name: Freebsd Artifacts
+
+on:
+  push:
+    branches: [ feature/net5-freebsd ]
+  pull_request:
+    branches: [ feature/net5-freebsd ]
+
+jobs:
+  zip:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build native FreeBSD lib
+      id: test
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        sync: sshfs
+        prepare: pkg install -y curl libinotify git cmake ninja bash
+        run: |
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+          # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
+          # See also https://github.com/sec/dotnet-core-freebsd-source-build
+          # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
+          wget http://bit.ly/3hceESr
+          tar -xzf 3hceESr
+          dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: duplicati-freebsd-x64
+        path: publish
+  tests:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build native FreeBSD lib
+      id: test
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        sync: sshfs
+        prepare: pkg install -y curl libinotify git cmake ninja bash
+        run: |
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+          # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
+          # See also https://github.com/sec/dotnet-core-freebsd-source-build
+          # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
+          wget http://bit.ly/3hceESr
+          tar -xzf 3hceESr
+          dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          dn/dotnet build --no-restore --runtime=freebsd-x64 Duplicati.sln
+          dn/dotnet test --no-build --verbosity normal --runtime=freebsd-x64 Duplicati.sln
