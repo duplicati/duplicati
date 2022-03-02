@@ -29,9 +29,12 @@ jobs:
           whoami
           env
           freebsd-version
+          pushd /tmp
+          mkdir dn
           tar -xzf dn.tgz
-          dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
-          dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
+          popd
+          /tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          /tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
     - name: Save Artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -59,7 +62,10 @@ jobs:
           whoami
           env
           freebsd-version
+          pushd /tmp
+          mkdir dn
           tar -xzf dn.tgz
-          dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
-          dn/dotnet build --no-restore --runtime=freebsd-x64 Duplicati.sln
-          dn/dotnet test --no-build --verbosity normal --runtime=freebsd-x64 Duplicati.sln
+          popd
+          /tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          /tmp/dn/dotnet build --no-restore --runtime=freebsd-x64 Duplicati.sln
+          /tmp/dn/dotnet test --no-build --verbosity normal --runtime=freebsd-x64 Duplicati.sln
