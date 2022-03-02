@@ -29,11 +29,12 @@ jobs:
           whoami
           env
           freebsd-version
-          pushd /var/tmp
+          BUILD_DIR=`pwd`
+          cd /var/tmp
           mkdir dn
           cd dn
-          tar -xzf dn.tgz
-          popd
+          tar -xzf ${BUILD_DIR}/dn.tgz
+          cd ${BUILD_DIR}
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           /var/tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
     - name: Save Artifacts
@@ -63,11 +64,12 @@ jobs:
           whoami
           env
           freebsd-version
-          pushd /var/tmp
+          BUILD_DIR=`pwd`
+          cd /var/tmp
           mkdir dn
           cd dn
-          tar -xzf dn.tgz
-          popd
+          tar -xzf ${BUILD_DIR}/dn.tgz
+          cd ${BUILD_DIR}
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           /var/tmp/dn/dotnet build --no-restore --runtime=freebsd-x64 Duplicati.sln
           /var/tmp/dn/dotnet test --no-build --verbosity normal --runtime=freebsd-x64 Duplicati.sln
