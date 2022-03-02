@@ -11,6 +11,11 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
+    - name: Download dotnet
+      # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
+      # See also https://github.com/sec/dotnet-core-freebsd-source-build
+      # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
+      run: curl http://bit.ly/3hceESr -o dn.tgz
     - name: Build native FreeBSD lib
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
@@ -24,11 +29,7 @@ jobs:
           whoami
           env
           freebsd-version
-          # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
-          # See also https://github.com/sec/dotnet-core-freebsd-source-build
-          # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-          wget http://bit.ly/3hceESr
-          tar -xzf 3hceESr
+          tar -xzf dn.tgz
           dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
     - name: Save Artifacts
@@ -40,6 +41,11 @@ jobs:
     runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
+    - name: Download dotnet
+      # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
+      # See also https://github.com/sec/dotnet-core-freebsd-source-build
+      # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
+      run: curl http://bit.ly/3hceESr -o dn.tgz
     - name: Build native FreeBSD lib
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
@@ -53,11 +59,7 @@ jobs:
           whoami
           env
           freebsd-version
-          # http://bit.ly/3hceESr = dotnet-sdk-5.0.203-freebsd-x64.tar.gz
-          # See also https://github.com/sec/dotnet-core-freebsd-source-build
-          # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-          wget http://bit.ly/3hceESr
-          tar -xzf 3hceESr
+          tar -xzf dn.tgz
           dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           dn/dotnet build --no-restore --runtime=freebsd-x64 Duplicati.sln
           dn/dotnet test --no-build --verbosity normal --runtime=freebsd-x64 Duplicati.sln
