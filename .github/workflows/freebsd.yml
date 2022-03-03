@@ -44,6 +44,7 @@ jobs:
           export DOTNET_CLI_TELEMETRY_OPTOUT=1
           echo Nuget Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          /var/tmp/dn/dotnet build-server shutdown
           /var/tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
     - name: Save Artifacts
       uses: actions/upload-artifact@v2
@@ -87,7 +88,9 @@ jobs:
           export DOTNET_CLI_TELEMETRY_OPTOUT=1
           echo Nuget Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          /var/tmp/dn/dotnet build-server shutdown
           echo Building
-          /var/tmp/dn/dotnet build --no-restore --runtime=freebsd-x64 Duplicati.sln
+          /var/tmp/dn/dotnet build --no-restore Duplicati.sln
+          /var/tmp/dn/dotnet build-server shutdown
           echo Testing
-          /var/tmp/dn/dotnet test --no-build --verbosity normal --runtime=freebsd-x64 Duplicati.sln
+          /var/tmp/dn/dotnet test --no-build --verbosity normal Duplicati.sln
