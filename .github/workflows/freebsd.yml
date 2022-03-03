@@ -23,6 +23,9 @@ jobs:
         sync: sshfs
         prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget icu
         run: |
+          #!/bin/bash
+          set -x
+          set -e
           pwd
           ls -lah
           whoami
@@ -68,6 +71,9 @@ jobs:
         sync: sshfs
         prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget icu
         run: |
+          #!/bin/bash
+          set -x
+          set -e
           pwd
           ls -lah
           whoami
