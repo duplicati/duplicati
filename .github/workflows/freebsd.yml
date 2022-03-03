@@ -33,8 +33,11 @@ jobs:
           cd /var/tmp
           mkdir dn
           cd dn
+          echo Unpacking .NET
           tar -xzf ${BUILD_DIR}/dn.tgz
           cd ${BUILD_DIR}
+          export DOTNET_CLI_TELEMETRY_OPTOUT=1
+          echo Nuget Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           /var/tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
     - name: Save Artifacts
@@ -68,8 +71,13 @@ jobs:
           cd /var/tmp
           mkdir dn
           cd dn
+          echo Unpacking .NET
           tar -xzf ${BUILD_DIR}/dn.tgz
           cd ${BUILD_DIR}
+          export DOTNET_CLI_TELEMETRY_OPTOUT=1
+          echo Nuget Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          echo Building
           /var/tmp/dn/dotnet build --no-restore --runtime=freebsd-x64 Duplicati.sln
+          echo Testing
           /var/tmp/dn/dotnet test --no-build --verbosity normal --runtime=freebsd-x64 Duplicati.sln
