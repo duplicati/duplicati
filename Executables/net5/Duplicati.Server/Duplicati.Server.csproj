@@ -6,6 +6,7 @@
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>The Server Duplicati implementation</Description>
     <AssemblyName>Duplicati.Server</AssemblyName>
+    <Version>3.0.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>	
