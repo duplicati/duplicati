@@ -2,9 +2,9 @@ name: Artifacts
 
 on:
   push:
-    branches: [ net5 ]
+    branches: "**net5**"
   pull_request:
-    branches: [ net5 ]
+    branches: "**net5**"
 
 jobs:
   zip:
