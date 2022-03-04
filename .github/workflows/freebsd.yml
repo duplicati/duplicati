@@ -53,7 +53,9 @@ jobs:
           echo Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           echo Publish
-          /var/tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o ${BUILD_DIR}/publish Duplicati.sln
+          /var/tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
+
+          cp -R ./publish ${BUILD_DIR}/publish
     - name: Save Artifacts
       uses: actions/upload-artifact@v2
       with:
