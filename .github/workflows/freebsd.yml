@@ -1,5 +1,4 @@
-name: Freebsd Artifacts
-
+name: Freebsd
 on:
   push:
     branches: [ feature/net5-freebsd ]
@@ -15,7 +14,7 @@ jobs:
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
       run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/V5.0.9/dotnet-sdk-5.0.400-freebsd-x64.tar.gz -o dn.tgz
-    - name: Build native FreeBSD lib
+    - name: Build
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
       with:
@@ -60,7 +59,7 @@ jobs:
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
       run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/V5.0.9/dotnet-sdk-5.0.400-freebsd-x64.tar.gz -o dn.tgz
-    - name: Build native FreeBSD lib
+    - name: Run test
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
       with:
@@ -92,4 +91,4 @@ jobs:
           /var/tmp/dn/dotnet nuget add source /var/tmp/nuget/
           export DOTNET_CLI_TELEMETRY_OPTOUT=1
           echo Testing
-          /var/tmp/dn/dotnet test -p:BaseIntermediateOutputPath=/var/tmp/obj/ --verbosity normal Duplicati.sln
+          /var/tmp/dn/dotnet test -p:BaseIntermediateOutputPath=/var/tmp/obj/ --runtime=freebsd-x64 --verbosity normal Duplicati.sln
