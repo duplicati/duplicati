@@ -30,6 +30,8 @@ jobs:
           whoami
           env
           freebsd-version
+          
+          export DOTNET_CLI_TELEMETRY_OPTOUT=1
           BUILD_DIR=`pwd`
           cd /var/tmp
           mkdir dn
@@ -44,11 +46,14 @@ jobs:
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
           /var/tmp/dn/dotnet nuget add source /var/tmp/nuget/
-          export DOTNET_CLI_TELEMETRY_OPTOUT=1
+          
+          cp -R `pwd` /var/tmp/build
+          cd /var/tmp/build
+          
           echo Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           echo Publish
-          /var/tmp/dn/dotnet publish  -p:BaseIntermediateOutputPath=/var/tmp/obj/ -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
+          /var/tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o ${BUILD_DIR}/publish Duplicati.sln
     - name: Save Artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -78,6 +83,8 @@ jobs:
           whoami
           env
           freebsd-version
+          
+          export DOTNET_CLI_TELEMETRY_OPTOUT=1
           BUILD_DIR=`pwd`
           cd /var/tmp
           mkdir dn
@@ -92,8 +99,11 @@ jobs:
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
           /var/tmp/dn/dotnet nuget add source /var/tmp/nuget/
-          export DOTNET_CLI_TELEMETRY_OPTOUT=1
+          
+          cp -R `pwd` /var/tmp/build
+          cd /var/tmp/build
+
           echo Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           echo Testing
-          /var/tmp/dn/dotnet test -p:BaseIntermediateOutputPath=/var/tmp/obj/ --runtime=freebsd-x64 --verbosity normal Duplicati.sln
+          /var/tmp/dn/dotnet test --runtime=freebsd-x64 --verbosity normal Duplicati.sln
