@@ -15,8 +15,8 @@ print("Using LOCAL webdriver")
 profile = webdriver.FirefoxProfile()
 profile.set_preference("intl.accept_languages", "en")
 options = Options()
-options.set_headless(headless=True)
-driver = webdriver.Firefox(profile, firefox_options=options)
+options.headless = True
+driver = webdriver.Firefox(profile, options=options)
 
 def write_random_file(size, filename):
     if not os.path.exists(os.path.dirname(filename)):
