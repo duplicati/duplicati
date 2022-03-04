@@ -1,0 +1,94 @@
+name: Freebsd
+on:
+  push:
+    branches: [ feature/net5-freebsd ]
+  pull_request:
+    branches: [ feature/net5-freebsd ]
+
+jobs:
+  zip:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Download dotnet
+      # See also https://github.com/sec/dotnet-core-freebsd-source-build
+      # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
+      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/V5.0.9/dotnet-sdk-5.0.400-freebsd-x64.tar.gz -o dn.tgz
+    - name: Build
+      id: test
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        sync: sshfs
+        prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget icu
+        run: |
+          #!/bin/bash
+          set -x
+          set -e
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+          BUILD_DIR=`pwd`
+          cd /var/tmp
+          mkdir dn
+          cd dn
+          echo Unpacking .NET
+          tar -xzf ${BUILD_DIR}/dn.tgz
+          cd ${BUILD_DIR}
+          mkdir /var/tmp/nuget
+          export RVERSION=V5.0.9
+          export VERSION=5.0.9
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
+          /var/tmp/dn/dotnet nuget add source /var/tmp/nuget/
+          export DOTNET_CLI_TELEMETRY_OPTOUT=1
+          /var/tmp/dn/dotnet publish  -p:BaseIntermediateOutputPath=/var/tmp/obj/ -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: duplicati-freebsd-x64
+        path: publish
+  tests:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Download dotnet
+      # See also https://github.com/sec/dotnet-core-freebsd-source-build
+      # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
+      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/V5.0.9/dotnet-sdk-5.0.400-freebsd-x64.tar.gz -o dn.tgz
+    - name: Run test
+      id: test
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        sync: sshfs
+        prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget icu
+        run: |
+          #!/bin/bash
+          set -x
+          set -e
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+          BUILD_DIR=`pwd`
+          cd /var/tmp
+          mkdir dn
+          cd dn
+          echo Unpacking .NET
+          tar -xzf ${BUILD_DIR}/dn.tgz
+          cd ${BUILD_DIR}
+          mkdir /var/tmp/nuget
+          export RVERSION=V5.0.9
+          export VERSION=5.0.9
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
+          /var/tmp/dn/dotnet nuget add source /var/tmp/nuget/
+          export DOTNET_CLI_TELEMETRY_OPTOUT=1
+          echo Testing
+          /var/tmp/dn/dotnet test -p:BaseIntermediateOutputPath=/var/tmp/obj/ --runtime=freebsd-x64 --verbosity normal Duplicati.sln

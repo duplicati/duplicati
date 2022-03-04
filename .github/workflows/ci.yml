@@ -1,0 +1,36 @@
+name: Unit
+
+on:
+  push:
+    branches: [ net5 ]
+  pull_request:
+    branches: [ net5 ]
+
+jobs:
+  Tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.101
+    - name: Restore dependencies
+      run: dotnet restore Duplicati.sln
+    - name: Build
+      run: dotnet build --no-restore Duplicati.sln
+    - name: Test
+      run: dotnet test --no-build --verbosity normal Duplicati.sln
+
+  Selenium:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Selenium
+      run: pipeline/selenium/test.sh
+      

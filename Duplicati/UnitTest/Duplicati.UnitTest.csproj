@@ -5,6 +5,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
   </PropertyGroup>
   
   <ItemGroup>

@@ -1,0 +1,85 @@
+name: Artifacts
+
+on:
+  push:
+    branches: [ net5 ]
+  pull_request:
+    branches: [ net5 ]
+
+jobs:
+  zip:
+        runs-on: ${{ matrix.cfg.os }}
+        strategy:
+          fail-fast: false
+          matrix:
+            cfg:
+              - { os: ubuntu-latest, runtime: linux-x64 }
+              - { os: windows-latest, runtime: win-x64 }
+              - { os: macos-latest, runtime: osx-x64 }
+    
+        steps:
+        - uses: actions/checkout@v2
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v1
+          with:
+            dotnet-version: 5.0.101
+        - name: Restore dependencies
+          run: dotnet restore --runtime=${{ matrix.cfg.runtime }} Duplicati.sln
+        - name: Package
+          #TODO: investigate #if __WindowsGTK__ || ENABLE_GTK  via  -p:DefineConstants=ENABLE_GTK    Maybe needed for GUI?
+          run: dotnet publish -c Release --runtime=${{ matrix.cfg.runtime }} -o publish Duplicati.sln
+        - name: Save Artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: duplicati-${{ matrix.cfg.runtime }}
+            path: publish
+  deb:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Package
+      run: Installer/debian/build.sh
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: deb package
+        path: duplicati*.deb
+  rpm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Package
+      run: Installer/fedora/build.sh
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: rpm package
+        path: duplicati*.rpm
+  msi:
+    runs-on: windows-latest
+    needs: zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download zip
+        uses: actions/download-artifact@v2
+        with:
+          name: duplicati-win-x64
+          path: bin
+      - name: Install go-msi
+        run: choco install -y "go-msi"
+      - name: Prepare PATH
+        shell: bash
+        run: |
+          echo "$WIX\\bin" >> $GITHUB_PATH
+          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+      - name: Build MSI
+        id: buildmsi
+        shell: bash
+        run: |
+          Installer/Windows/MSI/build.sh
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: duplicati-win-x64-msi
+          path: duplicati-win-x64.msi

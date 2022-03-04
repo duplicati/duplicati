@@ -1109,7 +1109,7 @@ namespace Duplicati.Library.Main
 
             var t = m_currentTaskThread;
             if (t != null)
-                t.Abort();
+                t.Interrupt();
         }
 
         public long MaxUploadSpeed

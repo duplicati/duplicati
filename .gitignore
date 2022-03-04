@@ -23,5 +23,8 @@ changelog-news.txt
 binfiles.wxs
 .idea/
 .vs/
+/publish/
 
 Installer/debian/*.buildinfo
+/*.deb
+/*.rpm

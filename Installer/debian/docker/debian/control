@@ -1,0 +1,24 @@
+Source: duplicati
+Section: utils
+Priority: extra
+Maintainer: Kenneth Skovhede <kenneth@duplicati.com>
+Build-Depends: debhelper (>= 8.0.0), dotnet-sdk-5.0
+Standards-Version: 3.9.4
+Homepage: http://www.duplicati.com
+Vcs-Git: https://github.com/duplicati/duplicati.git
+
+Package: duplicati
+Architecture: all
+Depends: 
+Description: Backup client for encrypted online backups
+ Duplicati is a free backup client that securely stores encrypted, incremental, 
+ compressed backups on cloud storage services and remote file servers. It 
+ supports targets like Amazon S3, Windows Live SkyDrive, Rackspace Cloud Files
+ or WebDAV, SSH, FTP (and many more). 
+ .
+ Duplicati has built-in AES-256 encryption and backups be can signed using GNU 
+ Privacy Guard. A built-in scheduler makes sure that backups are always 
+ up-to-date. Last but not least, Duplicati provides various options and tweaks 
+ like filters, deletion rules, transfer and bandwidth options to run backups 
+ for specific purposes.
+
