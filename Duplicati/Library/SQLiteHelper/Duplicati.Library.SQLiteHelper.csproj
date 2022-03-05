@@ -4,9 +4,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>    
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>SQLiteHelper for Duplicati</Description>
-	  <RestoreAdditionalProjectSources>
-		  https://staticwell.com/nuget/index.json
-	  </RestoreAdditionalProjectSources>
 	</PropertyGroup>
   
   <ItemGroup>
