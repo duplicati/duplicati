@@ -11,10 +11,14 @@
     <Description>UnixSupport for Duplicati</Description>
     <PackageId>UnixSupport</PackageId>
     <AssemblyName>UnixSupport</AssemblyName>
+	  <RestoreAdditionalProjectSources>
+		  https://staticwell.com/nuget/index.json
+	  </RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+    <PackageReference Include="MonoPosix.freebsd" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

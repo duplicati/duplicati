@@ -4,7 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>    
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>SQLiteHelper for Duplicati</Description>
-  </PropertyGroup>
+	  <RestoreAdditionalProjectSources>
+		  https://staticwell.com/nuget/index.json
+	  </RestoreAdditionalProjectSources>
+	</PropertyGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\..\UnixSupport\UnixSupport.csproj" />
@@ -19,7 +22,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.7" />
+    <PackageReference Include="Stub.System.SQLite.Core.NetStandard.freebsd" Version="1.0.115.5" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
   </ItemGroup>
 
 </Project>
