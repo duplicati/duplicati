@@ -19,8 +19,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Stub.System.SQLite.Core.NetStandard.freebsd" Version="1.0.115.5" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
+    <PackageReference Include="Stub.System.SQLite.Core.NetStandard.freebsd" Version="1.0.115.0" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115" />
   </ItemGroup>
 
 </Project>
