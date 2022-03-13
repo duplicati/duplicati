@@ -1,3 +1,23 @@
+2022-03-13 - 2.0.6.101_canary_2022-03-13
+==========
+**NOTE**: This is a preliminary build that is not signed with AuthentiCode.
+
+It is primarily intended for users that need access to Dropbox which stopped working after an update.
+A signed version will be published asap.
+
+- Fixed duplicity documentation Url, thanks @beppo-dd
+- Added option to set Tencent storage class, thanks @moesoha
+- Added Poli Systems as S3 provider, thanks @IIPoliII
+- Improved automated unittests, thanks @samuel-w
+- Improved contrast ratios in themes, thanks @samuel-w
+- Improved handling of relative paths and extended device paths, thanks @dferreyra
+- UI performance improvements, thanks @ltGuillaume
+- Added exponential backup for retries, thanks @vmsh0
+- Improved filter-text-box and made log-view resizable, thanks @idotj
+- Improved error messages, thanks @warwickmm
+- Added support for old and new Dropbox AuthIDs, thanks @kenkendk
+- Improved database query performance, thanks @jedthe3rd
+
 2021-08-11 - 2.0.6.100_canary_2021-08-11
 ==========
 * Switched to improved CI model, thanks @warwickmm
