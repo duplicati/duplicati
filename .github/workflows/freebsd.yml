@@ -108,10 +108,11 @@ jobs:
           echo Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           echo Testing
+          export UNITTEST_BASEFOLDER=${BUILD_DIR}/duplicati_testdata
           /var/tmp/dn/dotnet test --runtime=freebsd-x64 --verbosity minimal Duplicati.sln
     - name: Archive Test Logs
       if: always()
       uses: actions/upload-artifact@v2
       with:
         name: test-logs
-        path: Duplicati/UnitTest/bin/Debug/net5.0/duplicati_testdata/logfile.log
+        path: duplicati_testdata/logfile.log
