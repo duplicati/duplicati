@@ -104,6 +104,10 @@ namespace Duplicati.UnitTest
             systemIO.DirectoryCreate(this.DATAFOLDER);
             systemIO.DirectoryCreate(this.TARGETFOLDER);
             systemIO.DirectoryCreate(this.RESTOREFOLDER);
+            if (systemIO.FileExists(this.LOGFILE))
+            {
+                systemIO.FileDelete(this.LOGFILE);
+            }
         }
 
         [TearDown]
@@ -120,10 +124,6 @@ namespace Duplicati.UnitTest
             if (systemIO.DirectoryExists(this.RESTOREFOLDER))
             {
                 systemIO.DirectoryDelete(this.RESTOREFOLDER, true);
-            }
-            if (systemIO.FileExists(this.LOGFILE))
-            {
-                systemIO.FileDelete(this.LOGFILE);
             }
             if (systemIO.FileExists(this.DBFILE))
             {
