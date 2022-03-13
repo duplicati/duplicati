@@ -52,7 +52,7 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// The log file for manual examination
         /// </summary>
-        protected readonly string LOGFILE = Path.Combine(BASEFOLDER, "logfile.log");
+        protected readonly string LOGFILE = Path.Combine(BASEFOLDER, "logs/logfile.log");
         /// <summary>
         /// The database is fixed so it does not mess up the system where the test is performed
         /// </summary>

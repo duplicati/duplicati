@@ -52,6 +52,8 @@ jobs:
           
           echo Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
+          echo Build
+          /var/tmp/dn/dotnet build Duplicati.sln
           echo Publish
           /var/tmp/dn/dotnet publish -c Release --runtime=freebsd-x64 -o publish Duplicati.sln
 
@@ -108,10 +110,9 @@ jobs:
           echo Restore
           /var/tmp/dn/dotnet restore --runtime=freebsd-x64 Duplicati.sln
           echo Testing
-          mkdir ${BUILD_DIR}/duplicati_testdata
-          mkdir /var/tmp/duplicati_testdata
-          touch ${BUILD_DIR}/duplicati_testdata/logfile.log
-          ln -s ${BUILD_DIR}/duplicati_testdata/logfile.log /var/tmp/duplicati_testdata/logfile.log
+          mkdir -p ${BUILD_DIR}/duplicati_testdata/logs
+          mkdir -p /var/tmp/duplicati_testdata
+          ln -s ${BUILD_DIR}/duplicati_testdata/logs /var/tmp/duplicati_testdata/logs
           export UNITTEST_BASEFOLDER=/var/tmp/duplicati_testdata
           /var/tmp/dn/dotnet test --runtime=freebsd-x64 --verbosity minimal Duplicati.sln
     - name: Archive Test Logs
@@ -119,4 +120,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test-logs
-        path: duplicati_testdata/logfile.log
+        path: duplicati_testdata/logs/logfile.log
