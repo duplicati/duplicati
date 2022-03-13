@@ -31,8 +31,8 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller(backendURL, options, null))
             {
                 var backupResults = c.Backup(new[] {DATAFOLDER});
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                Assert.AreEqual(0, backupResults.Errors.Count(), $"Errors: {String.Join(", ", backupResults.Errors)}");
+                Assert.AreEqual(0, backupResults.Warnings.Count(), $"Warnings: {String.Join(", ", backupResults.Warnings)}");
             }
 
             // Get the backend files using absolute paths
