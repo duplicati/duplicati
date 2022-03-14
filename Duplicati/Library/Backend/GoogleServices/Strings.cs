@@ -45,6 +45,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}""", folder, parent); }
         public static string TeamDriveIdShort { get { return LC.L("Team drive ID"); } }
         public static string TeamDriveIdLong { get { return LC.L("This option sets the team drive to use. Leaving it empty uses the personal drive"); } }
+        public static string AcknowledgeAbuseShort { get { return LC.L("Acknowledge Abuse Flag"); } }
+        public static string AcknowledgeAbuseLong { get { return LC.L("This option allows a file that Google drive believes contains spam or malware to be retrieved"); } }
     }
 }
 

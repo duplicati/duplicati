@@ -55,14 +55,14 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string DeleteUrl(string bucketId, string objectId)
         {
-            var path = BucketObjectPath(bucketId, objectId);
+            string path = BucketObjectPath(bucketId, objectId);
 
             return Uri.UriBuilder(Url.API, path);
         }
 
         public static string CreateFolderUrl(string projectId)
         {
-            var queryParams = new NameValueCollection
+            NameValueCollection queryParams = new NameValueCollection
             {
                 { QueryParam.Project, projectId }
             };
@@ -82,7 +82,7 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string ListUrl(string bucketId, string prefix, string token)
         {
-            var queryParams = new NameValueCollection {
+            NameValueCollection queryParams = new NameValueCollection {
                     { QueryParam.Prefix, prefix }
                 };
 
@@ -96,22 +96,22 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string PutUrl(string bucketId)
         {
-            var queryParams = new NameValueCollection
+            NameValueCollection queryParams = new NameValueCollection
             {
                 { QueryParam.UploadType, QueryValue.Resumable }
             };
-            var path = UrlPath.Create(Path.Bucket).Append(bucketId).Append(Path.Object).ToString();
+            string path = UrlPath.Create(Path.Bucket).Append(bucketId).Append(Path.Object).ToString();
             return Uri.UriBuilder(Url.UPLOAD, path, queryParams);
         }
 
         public static string GetUrl(string bucketId, string objectId)
         {
-            var queryParams = new NameValueCollection
+            NameValueCollection queryParams = new NameValueCollection
                 {
                     { QueryParam.Alt
                             , QueryValue.Media }
                 };
-            var path = BucketObjectPath(bucketId, objectId);
+            string path = BucketObjectPath(bucketId, objectId);
 
             return Uri.UriBuilder(Url.API, path, queryParams);
         }
@@ -160,11 +160,15 @@ namespace Duplicati.Library.Backend.WebApi
 
         }
 
-        public static string GetUrl(string fileId)
+        public static string GetUrl(string fileId, bool acknowledgeAbuseGranted)
         {
-            return FileQueryUrl(fileId, new NameValueCollection{
-                { QueryParam.Alt, QueryValue.Media }
-            });
+            NameValueCollection queryParams = new NameValueCollection {
+                { QueryParam.Alt, QueryValue.Media } };
+
+            if (acknowledgeAbuseGranted)
+                queryParams.Add(QueryParam.AcknowledgeAbuse, QueryValue.True);
+
+            return FileQueryUrl(fileId, queryParams);
         }
 
         public static string DeleteUrl(string fileId, string teamDriveId)
@@ -174,7 +178,7 @@ namespace Duplicati.Library.Backend.WebApi
 
         public static string PutUrl(string fileId, bool useTeamDrive)
         {
-            var queryParams = new NameValueCollection {
+            NameValueCollection queryParams = new NameValueCollection {
                 { QueryParam.UploadType,
                     QueryValue.Resumable } };
 
@@ -195,7 +199,7 @@ namespace Duplicati.Library.Backend.WebApi
         
         public static string ListUrl(string fileQuery, string teamDriveId, string token)
         {
-            var queryParams = new NameValueCollection
+            NameValueCollection queryParams = new NameValueCollection
             {
                 { QueryParam.File,
                     fileQuery }
@@ -243,6 +247,7 @@ namespace Duplicati.Library.Backend.WebApi
             public const string PageToken = "pageToken";
             public const string UploadType = "uploadType";
             public const string Alt = "alt";
+            public const string AcknowledgeAbuse = "acknowledgeAbuse";
         }
 
         private static class QueryValue

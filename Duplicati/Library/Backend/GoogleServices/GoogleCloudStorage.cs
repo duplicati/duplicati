@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,7 +53,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public GoogleCloudStorage(string url, Dictionary<string, string> options)
         {
-            var uri = new Utility.Uri(url);
+            Utility.Uri uri = new Utility.Uri(url);
 
             m_bucket = uri.Host;
             m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
@@ -106,22 +107,31 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FolderMissingException();
                 else
-                    throw;
+                {
+                    using (Stream exstream = wex.Response.GetResponseStream())
+                    {
+                        using (StreamReader reader = new StreamReader(exstream))
+                        {
+                            string error = reader.ReadToEnd();
+                            throw new WebException(error, wex, wex.Status, wex.Response);
+                        }
+                    }
+                }
             }
         }
 
         #region IBackend implementation
         public IEnumerable<IFileEntry> List()
         {
-            var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix));
+            string url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix));
             while (true)
             {
-                var resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
+                ListBucketResponse resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
 
                 if (resp.items != null)
-                    foreach (var f in resp.items)
+                    foreach (BucketResourceItem f in resp.items)
                     {
-                        var name = f.name;
+                        string name = f.name;
                         if (name.StartsWith(m_prefix, StringComparison.OrdinalIgnoreCase))
                             name = name.Substring(m_prefix.Length);
                         if (f.size == null)
@@ -132,17 +142,17 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                             yield return new FileEntry(name, f.size.Value, f.updated.Value, f.updated.Value);
                     }
 
-                var token = resp.nextPageToken;
+                string token = resp.nextPageToken;
                 if (string.IsNullOrWhiteSpace(token))
                     break;
                 url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix), token);
             }
         }
 
-        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+                return PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)
@@ -153,7 +163,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         public void Delete(string remotename)
         {
 
-            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)));
+            HttpWebRequest req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)));
             req.Method = "DELETE";
 
             m_oauth.ReadJSONResponse<object>(req);
@@ -169,21 +179,21 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             if (string.IsNullOrEmpty(m_project))
                 throw new UserInformationException(Strings.GoogleCloudStorage.ProjectIDMissingError(PROJECT_OPTION), "GoogleCloudStorageMissingProjectID");
 
-            var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new CreateBucketRequest
+            byte[] data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new CreateBucketRequest
             {
                 name = m_bucket,
                 location = m_location,
                 storageClass = m_storage_class
             }));
 
-            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.CreateFolderUrl(m_project));
+            HttpWebRequest req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.CreateFolderUrl(m_project));
             req.Method = "POST";
             req.ContentLength = data.Length;
             req.ContentType = "application/json; charset=UTF-8";
 
-            var areq = new AsyncHttpRequest(req);
+            AsyncHttpRequest areq = new AsyncHttpRequest(req);
 
-            using (var rs = areq.GetRequestStream())
+            using (System.IO.Stream rs = areq.GetRequestStream())
                 rs.Write(data, 0, data.Length);
 
             m_oauth.ReadJSONResponse<BucketResourceItem>(areq);
@@ -236,10 +246,10 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            var item = new BucketResourceItem { name = m_prefix + remotename };
+            BucketResourceItem item = new BucketResourceItem { name = m_prefix + remotename };
 
-            var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken);
+            string url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
+            BucketResourceItem res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
@@ -249,12 +259,12 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         {
             try
             {
-                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)); 
-                var req = m_oauth.CreateRequest(url);
-                var areq = new AsyncHttpRequest(req);
+                string url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+                HttpWebRequest req = m_oauth.CreateRequest(url);
+                AsyncHttpRequest areq = new AsyncHttpRequest(req);
 
-                using (var resp = areq.GetResponse())
-                using (var rs = areq.GetResponseStream())
+                using (WebResponse resp = areq.GetResponse())
+                using (System.IO.Stream rs = areq.GetResponseStream())
                     Library.Utility.Utility.CopyStream(rs, stream);
             }
             catch (WebException wex)
@@ -262,24 +272,33 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException();
                 else
-                    throw;
+                {
+                    using (Stream exstream = wex.Response.GetResponseStream())
+                    {
+                        using (StreamReader reader = new StreamReader(exstream))
+                        {
+                            string error = reader.ReadToEnd();
+                            throw new WebException(error, wex, wex.Status, wex.Response);
+                        }
+                    }
+                }
             }
         }
 
         public void Rename(string oldname, string newname)
         {
-            var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new BucketResourceItem
+            byte[] data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new BucketResourceItem
             {
                 name = m_prefix + newname,
             }));
 
-            var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.RenameUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + oldname)));
+            HttpWebRequest req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.RenameUrl(m_bucket, Utility.Uri.UrlPathEncode(m_prefix + oldname)));
             req.Method = "PATCH";
             req.ContentLength = data.Length;
             req.ContentType = "application/json; charset=UTF-8";
 
-            var areq = new AsyncHttpRequest(req);
-            using (var rs = areq.GetRequestStream())
+            AsyncHttpRequest areq = new AsyncHttpRequest(req);
+            using (System.IO.Stream rs = areq.GetRequestStream())
                 rs.Write(data, 0, data.Length);
 
             m_oauth.ReadJSONResponse<BucketResourceItem>(req);
