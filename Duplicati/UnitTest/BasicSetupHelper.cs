@@ -98,16 +98,14 @@ namespace Duplicati.UnitTest
             // No-op by default.
         }
 
+        private static int count = 1;
+
         [SetUp]
         public virtual void SetUp()
         {
             systemIO.DirectoryCreate(this.DATAFOLDER);
             systemIO.DirectoryCreate(this.TARGETFOLDER);
-            systemIO.DirectoryCreate(this.RESTOREFOLDER);
-            if (systemIO.FileExists(this.LOGFILE))
-            {
-                systemIO.FileDelete(this.LOGFILE);
-            }
+            systemIO.DirectoryCreate(this.RESTOREFOLDER);  
         }
 
         [TearDown]
@@ -132,6 +130,18 @@ namespace Duplicati.UnitTest
             if (systemIO.FileExists($"{this.DBFILE}-journal"))
             {
                 systemIO.FileDelete($"{this.DBFILE}-journal");
+            }
+            if (systemIO.FileExists(this.LOGFILE))
+            {
+                var source = new System.IO.FileStream(this.LOGFILE, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                var dest = new System.IO.FileStream($"{this.LOGFILE}.{count++}.gz", System.IO.FileMode.Create, System.IO.FileAccess.Write);
+                var gzip = new System.IO.Compression.GZipStream(dest, System.IO.Compression.CompressionMode.Compress);
+                source.CopyTo(gzip);
+                gzip.Flush();
+                source.Close();
+                gzip.Close();
+                dest.Close();
+                systemIO.FileDelete(this.LOGFILE);
             }
         }
 

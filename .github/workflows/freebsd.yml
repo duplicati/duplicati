@@ -120,4 +120,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test-logs
-        path: duplicati_testdata/logs/logfile.log
+        path: duplicati_testdata/logs/*
