@@ -16,7 +16,6 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -105,7 +104,7 @@ namespace Duplicati.Library.Backend.IDrive
 
         private async Task ResetFileCacheAsync()
         {
-            FileCache = (await Client.GetNodeListAsync(_baseDirectoryPath))
+            FileCache = (await Client.GetFileEntryListAsync(_baseDirectoryPath))
                 .Where(x => !x.IsFolder)
                 .ToDictionary(x => x.Name, x => x);
         }
@@ -136,11 +135,8 @@ namespace Duplicati.Library.Backend.IDrive
         {
             try
             {
-                if (FileCache.ContainsKey(filename))
-                    Delete(filename);
-
-                var fileNode = await Client.UploadAsync(stream, filename, _baseDirectoryPath, cancelToken);
-                FileCache[filename] = fileNode;
+                var fileEntry = await Client.UploadAsync(stream, filename, _baseDirectoryPath, cancelToken);
+                FileCache[filename] = fileEntry;
             }
             catch
             {
@@ -161,7 +157,7 @@ namespace Duplicati.Library.Backend.IDrive
                         throw new FileMissingException();
                 }
 
-                Client.DeleteAsync(_baseDirectoryPath + filename, false).Wait();
+                Client.DeleteAsync(Path.Combine(_baseDirectoryPath, filename), false).Wait();
 
                 FileCache.Remove(filename);
             }

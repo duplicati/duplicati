@@ -115,9 +115,10 @@ namespace Duplicati.Library.Backend.IDrive
                 throw new AuthenticationException($"Failed 'getServerAddress' request. Empty hostname. Tree XML: {responseNode.OuterXml}");
         }
 
-        public async Task<List<FileEntry>> GetNodeListAsync(string directoryPath, string searchCriteria = "*")
+        public async Task<List<FileEntry>> GetFileEntryListAsync(string directoryPath, string searchCriteria = null)
         {
-            const string methodName = "searchFiles";
+            string methodName = string.IsNullOrEmpty(searchCriteria) ? "browseFolder" : "searchFiles";
+            // NOTE: The IDrive "searchFiles" API method has a bug that returns the name of the directory being listed as one of the items when searching for "*"
             string url = GetSyncServiceUrl(methodName);
             var list = new List<FileEntry>();
 
@@ -232,8 +233,8 @@ namespace Duplicati.Library.Backend.IDrive
                 }
             }
 
-            var nodeList = await GetNodeListAsync(directoryPath, filename);
-            return nodeList.FirstOrDefault();
+            var fileEntryList = await GetFileEntryListAsync(directoryPath, filename);
+            return fileEntryList.FirstOrDefault();
         }
 
         public async Task DownloadAsync(string filePath, Stream stream)
