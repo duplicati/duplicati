@@ -99,7 +99,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private System.Diagnostics.Process m_rumpsProcess;
 
-        private static readonly string RUMPS_PYTHON = string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RUMPS_PYTHON")) ? "/usr/bin/python2.7" : Environment.GetEnvironmentVariable("RUMPS_PYTHON");
+        private static readonly string RUMPS_PYTHON = string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RUMPS_PYTHON")) ? "/usr/bin/python3" : Environment.GetEnvironmentVariable("RUMPS_PYTHON");
 
         private static readonly string SCRIPT_PATH = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "OSXTrayHost", "osx-trayicon-rumps.py");
         private IsolatedChannelScope m_scope;
