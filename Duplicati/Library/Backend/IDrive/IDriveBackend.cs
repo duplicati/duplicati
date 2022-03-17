@@ -35,6 +35,7 @@ namespace Duplicati.Library.Backend.IDrive
         public string Description => Strings.IDriveBackend.Description;
         public string[] DNSName => null;
         public string ProtocolKey => "idrive";
+        CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         public IList<ICommandLineArgument> SupportedCommands
         {
@@ -125,17 +126,17 @@ namespace Duplicati.Library.Backend.IDrive
             Client.DownloadAsync(Path.Combine(_baseDirectoryPath, filename), stream).Wait();
         }
 
-        public async Task PutAsync(string filename, string localFilePath, CancellationToken cancelToken)
+        public async Task PutAsync(string filename, string localFilePath, CancellationToken cancellationToken)
         {
             using (var fileStream = File.OpenRead(localFilePath))
-                await PutAsync(filename, fileStream, cancelToken);
+                await PutAsync(filename, fileStream, cancellationToken);
         }
 
-        public async Task PutAsync(string filename, Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string filename, Stream stream, CancellationToken cancellationToken)
         {
             try
             {
-                var fileEntry = await Client.UploadAsync(stream, filename, _baseDirectoryPath, cancelToken);
+                var fileEntry = await Client.UploadAsync(stream, filename, _baseDirectoryPath, cancellationToken);
                 FileCache[filename] = fileEntry;
             }
             catch
@@ -157,7 +158,7 @@ namespace Duplicati.Library.Backend.IDrive
                         throw new FileMissingException();
                 }
 
-                Client.DeleteAsync(Path.Combine(_baseDirectoryPath, filename), false).Wait();
+                Client.DeleteAsync(Path.Combine(_baseDirectoryPath, filename), _cancellationTokenSource.Token, false).Wait();
 
                 FileCache.Remove(filename);
             }
@@ -175,7 +176,7 @@ namespace Duplicati.Library.Backend.IDrive
 
             foreach (string directoryPart in directoryParts)
             {
-                Client.CreateDirectoryAsync(directoryPart, baseDirectory).Wait();
+                Client.CreateDirectoryAsync(directoryPart, baseDirectory, _cancellationTokenSource.Token).Wait();
                 baseDirectory += directoryPart + "/";
             }
         }

@@ -15,6 +15,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -49,6 +50,9 @@ namespace Duplicati.Library.Backend.IDrive
         private string _syncPassword;
         private string _syncHostname;
 
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private static SemaphoreSlim UploadSemaphore = new SemaphoreSlim(10);
+
         public string UserAgent { get; set; } = "Duplicati-IDrive-API-Client/" + Assembly.GetExecutingAssembly().GetName().Version;
 
         public IDriveApiClient()
@@ -60,11 +64,11 @@ namespace Duplicati.Library.Backend.IDrive
             _idriveUsername = username;
             _idrivePassword = password;
 
-            await IDriveAuthAsync();
-            await UpdateSyncHostnameAsync();
+            await IDriveAuthAsync(_cancellationTokenSource.Token);
+            await UpdateSyncHostnameAsync(_cancellationTokenSource.Token);
         }
 
-        private async Task IDriveAuthAsync()
+        private async Task IDriveAuthAsync(CancellationToken cancellationToken)
         {
             // IDrive auth logic was reverse engineered from code found in the IDriveForLinux PERL scripts provided by IDrive. Download from: https://www.idrive.com/linux-backup-scripts
             // The auth response payload contains the login credentials for the associated IDrive Sync account.
@@ -103,11 +107,11 @@ namespace Duplicati.Library.Backend.IDrive
             }
         }
 
-        private async Task UpdateSyncHostnameAsync()
+        private async Task UpdateSyncHostnameAsync(CancellationToken cancellationToken)
         {
             // The API docs state that the sync web API server may change over time and must be retrieved on each login.
             // The server may be different for different accounts, depending where the data is stored.
-            var responseNode = await GetSimpleTreeResponseAsync(IDRIVE_SYNC_GET_SERVER_ADDRESS_URL, "getServerAddress");
+            var responseNode = await GetSimpleTreeResponseAsync(IDRIVE_SYNC_GET_SERVER_ADDRESS_URL, "getServerAddress", cancellationToken);
 
             _syncHostname = responseNode.Attributes["webApiServer"]?.Value;
 
@@ -178,13 +182,13 @@ namespace Duplicati.Library.Backend.IDrive
             return list;
         }
 
-        public async Task CreateDirectoryAsync(string directoryName, string baseDirectoryPath)
+        public async Task CreateDirectoryAsync(string directoryName, string baseDirectoryPath, CancellationToken cancellationToken)
         {
             const string methodName = "createFolder";
             string url = GetSyncServiceUrl(methodName);
             try
             {
-                await GetSimpleTreeResponseAsync(url, methodName, new NameValueCollection { { "p", baseDirectoryPath }, { "foldername", directoryName } });
+                await GetSimpleTreeResponseAsync(url, methodName, cancellationToken, new NameValueCollection { { "p", baseDirectoryPath }, { "foldername", directoryName } });
             }
             catch (Exception ex)
             {
@@ -195,46 +199,78 @@ namespace Duplicati.Library.Backend.IDrive
             }
         }
 
-        public async Task DeleteAsync(string filePath, bool moveToTrash = true)
+        public async Task DeleteAsync(string filePath, CancellationToken cancellationToken, bool moveToTrash = true)
         {
             const string methodName = "deleteFile";
             string url = GetSyncServiceUrl(methodName);
-            await GetSimpleTreeResponseAsync(url, methodName, new NameValueCollection { { "p", filePath }, { "trash", moveToTrash ? "yes" : "no" } });
+            await GetSimpleTreeResponseAsync(url, methodName, cancellationToken, new NameValueCollection { { "p", filePath }, { "trash", moveToTrash ? "yes" : "no" } });
         }
 
-        public async Task<FileEntry> UploadAsync(Stream stream, string filename, string directoryPath, CancellationToken cancelToken)
+        public async Task<FileEntry> UploadAsync(Stream stream, string filename, string directoryPath, CancellationToken cancellationToken)
         {
             const string methodName = "uploadFile";
             string url = GetSyncServiceUrl(methodName);
 
-            using (var httpClient = GetHttpClient())
-            using (var content = GetSyncPostContent(new NameValueCollection { { "p", directoryPath } }, isMultiPart: true))
+            await UploadSemaphore.WaitAsync(cancellationToken);
+
+            try
             {
-                ((MultipartFormDataContent)content).Add(new StreamContent(stream), filename, filename);
+                if (cancellationToken.IsCancellationRequested)
+                    throw new OperationCanceledException();
 
-                using (var response = await httpClient.PostAsync(url, content))
+                long? streamLength = null;
+                try { streamLength = stream.Length; }
+                catch { } // Fail gracefully is stream does not support Length
+
+                using (var httpClient = GetHttpClient(TimeSpan.FromHours(24)))
+                using (var content = GetSyncPostContent(new NameValueCollection { { "p", directoryPath } }, isMultiPart: true))
+                using (var streamContent = new StreamContent(stream))
                 {
-                    if (response.StatusCode != System.Net.HttpStatusCode.OK)
-                        throw new ApplicationException($"Failed '{methodName}' request. Server response: {response}");
+                    ((MultipartFormDataContent)content).Add(streamContent, filename, filename);
 
-                    string responseString = await response.Content.ReadAsStringAsync();
-                    var responseXml = new XmlDocument();
-                    responseXml.LoadXml(responseString);
-                    var nodes = responseXml.GetElementsByTagName(XML_RESPONSE_TAG);
-                    if (nodes.Count == 0)
-                        throw new ApplicationException($"Failed '{methodName}' request. Unexpected response. Server response: {response}");
+                    using (var response = await httpClient.PostAsync(url, content, cancellationToken))
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                            throw new OperationCanceledException();
 
-                    var responseNode = nodes[0];
-                    if (responseNode == null)
-                        throw new ApplicationException($"Failed '{methodName}' request. Missing {XML_RESPONSE_TAG} node. Server response: {response}");
+                        if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                            throw new ApplicationException($"Failed '{methodName}' request. Server response: {response}");
 
-                    if (responseNode.Attributes[MESSAGE_ATTRIBUTE]?.Value != SUCCESS)
-                        throw new ApplicationException($"Failed '{methodName}' request. Non-{SUCCESS}. Description: {responseNode.Attributes["desc"]?.Value}");
+                        string responseString = await response.Content.ReadAsStringAsync();
+                        var responseXml = new XmlDocument();
+                        responseXml.LoadXml(responseString);
+                        var nodes = responseXml.GetElementsByTagName(XML_RESPONSE_TAG);
+                        if (nodes.Count == 0)
+                            throw new ApplicationException($"Failed '{methodName}' request. Unexpected response. Server response: {response}");
+
+                        var responseNode = nodes[0];
+                        if (responseNode == null)
+                            throw new ApplicationException($"Failed '{methodName}' request. Missing {XML_RESPONSE_TAG} node. Server response: {response}");
+
+                        if (responseNode.Attributes[MESSAGE_ATTRIBUTE]?.Value != SUCCESS)
+                            throw new ApplicationException($"Failed '{methodName}' request. Non-{SUCCESS}. Description: {responseNode.Attributes["desc"]?.Value}");
+                    }
                 }
-            }
 
-            var fileEntryList = await GetFileEntryListAsync(directoryPath, filename);
-            return fileEntryList.FirstOrDefault();
+                // Double check the upload by searching for the file on the server and validating the response
+                var fileEntryList = await GetFileEntryListAsync(directoryPath, filename);
+                if (fileEntryList.Count != 1)
+                    throw new FileMissingException($"Upload failed. File not found on server.");
+
+                var fileEntry = fileEntryList[0];
+
+                if (streamLength != null && fileEntry.Size != streamLength.Value)
+                    throw new FileMissingException($"Upload failed. File size on server does not match source.");
+
+                if (fileEntry.Name != filename)
+                    throw new FileMissingException($"Upload failed. Wrong file not found on server."); // this should never happen
+
+                return fileEntry;
+            }
+            finally
+            {
+                UploadSemaphore.Release();
+            }
         }
 
         public async Task DownloadAsync(string filePath, Stream stream)
@@ -247,7 +283,7 @@ namespace Duplicati.Library.Backend.IDrive
             using (var response = await httpClient.PostAsync(url, content))
             {
                 if (response.StatusCode != System.Net.HttpStatusCode.OK)
-                    throw new AuthenticationException($"Failed '{methodName}' request. Server response: {response}");
+                    throw new FileMissingException($"Failed '{methodName}' request. Server response: {response}");
 
                 response.Headers.TryGetValues("RESTORE_STATUS", out var restoreStatus); // The download API uses RESTORE_STATUS to indicate success instead of body XML
 
@@ -272,16 +308,20 @@ namespace Duplicati.Library.Backend.IDrive
                         }
 
                         if (!success)
-                            throw new ApplicationException($"Failed '{methodName}' request. Non-{SUCCESS}. Description: {xmlReader.GetAttribute("desc")}");
+                            throw new FileMissingException($"Failed '{methodName}' request. Non-{SUCCESS}. Description: {xmlReader.GetAttribute("desc")}");
 
-                        throw new ApplicationException($"Failed '{methodName}' request. Invalid RESTORE_STATUS result with invalid {SUCCESS} message."); // this should never happen
+                        throw new FileMissingException($"Failed '{methodName}' request. Invalid RESTORE_STATUS result with invalid {SUCCESS} message."); // this should never happen
                     }
                 }
             }
         }
-        private HttpClient GetHttpClient()
+
+        private HttpClient GetHttpClient(TimeSpan? timeout = null)
         {
-            var httpClient = new HttpClient();
+            var httpClient = new HttpClient()
+            {
+                Timeout = timeout ?? TimeSpan.FromMinutes(5) // more generous default timeout
+            };
 
             if (!string.IsNullOrEmpty(UserAgent))
                 httpClient.DefaultRequestHeaders.Add("User-Agent", UserAgent);
@@ -294,11 +334,11 @@ namespace Duplicati.Library.Backend.IDrive
             return $"https://{_syncHostname}/evs/{serviceName}";
         }
 
-        private async Task<XmlNode> GetSimpleTreeResponseAsync(string url, string methodName, NameValueCollection parameters = null)
+        private async Task<XmlNode> GetSimpleTreeResponseAsync(string url, string methodName, CancellationToken cancellationToken, NameValueCollection parameters = null)
         {
             using (var httpClient = GetHttpClient())
             using (var content = GetSyncPostContent(parameters))
-            using (var response = await httpClient.PostAsync(url, content))
+            using (var response = await httpClient.PostAsync(url, content, cancellationToken))
             {
                 if (response.StatusCode != System.Net.HttpStatusCode.OK)
                     throw new ApplicationException($"Failed '{methodName}' request. Server response: {response}");
