@@ -25,6 +25,7 @@ using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Utility
 {
@@ -139,8 +140,47 @@ namespace Duplicati.Library.Utility
                 await target.WriteAsync(buf, 0, read, cancelToken).ConfigureAwait(false);
                 total += read;
             }
-            
+
             return total;
+        }
+
+        /// <summary>
+        /// Get the length of a stream.
+        /// Attempt to use the stream's Position property if allowPositionFallback is <c>true</c> (only valid if stream is at the end).
+        /// </summary>
+        /// <param name="stream">Stream to get the length of.</param>
+        /// <param name="allowPositionFallback">Attempt to use the Position property if <c>true</c> and the Length property is not available (only valid if stream is at the end).</param>
+        /// <returns>Returns the stream's length, if available, or null if not supported by the stream.</returns>
+        public static long? GetStreamLength(Stream stream, bool allowPositionFallback = true)
+        {
+            return GetStreamLength(stream, out bool _, allowPositionFallback);
+        }
+
+        /// <summary>
+        /// Get the length of a stream.
+        /// Attempt to use the stream's Position property if allowPositionFallback is <c>true</c> (only valid if stream is at the end).
+        /// </summary>
+        /// <param name="stream">Stream to get the length of.</param>
+        /// <param name="isStreamPosition">Indicates if the Position value was used instead of Length.</param>
+        /// <param name="allowPositionFallback">Attempt to use the Position property if <c>true</c> and the Length property is not available (only valid if stream is at the end).</param>
+        /// <returns>Returns the stream's length, if available, or null if not supported by the stream.</returns>
+        public static long? GetStreamLength(Stream stream, out bool isStreamPosition, bool allowPositionFallback = true)
+        {
+            isStreamPosition = false;
+            long? streamLength = null;
+            try { streamLength = stream.Length; } catch { }
+            if (!streamLength.HasValue && allowPositionFallback)
+            {
+                try
+                {
+                    // Hack: This is a fall-back method to detect the source stream size, assuming the current position is the end of the stream.
+                    streamLength = stream.Position;
+                    isStreamPosition = true;
+                }
+                catch { } // 
+            }
+
+            return streamLength;
         }
 
         /// <summary>
