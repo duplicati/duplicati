@@ -158,11 +158,23 @@ namespace Duplicati.Server.WebServer
                     // so we create a new server for each attempt
                 
                     var server = CreateServer(options);
-                    
+
                     if (!certValid)
                         server.Start(listenInterface, p);
                     else
-                        server.Start(listenInterface, p, cert, System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13, null, false);
+                    {
+                        var secProtocols = System.Security.Authentication.SslProtocols.Tls12;
+
+                        try
+                        { 
+                            //try TLS 1.3 (type not available on .NET < 4.8)
+                            secProtocols = System.Security.Authentication.SslProtocols.Tls12 | (System.Security.Authentication.SslProtocols)12288;
+                        }
+                        catch (NotSupportedException)
+                        {
+                        }
+                        server.Start(listenInterface, p, cert, secProtocols, null, false);
+                    }
 
                     m_server = server;
                     m_server.ServerName = string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
