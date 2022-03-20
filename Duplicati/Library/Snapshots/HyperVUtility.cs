@@ -302,7 +302,16 @@ namespace Duplicati.Library.Snapshots
                                        select ((string[])systemBaseObj["Connection"])[0]).ToList();
 
                         foreach (var vhd in tempvhd)
-                            result.Add(vhd);
+                        {
+                            if (File.Exists(vhd))
+                            {
+                                result.Add(vhd);
+                            }
+                            else
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVInvalidVhd", null, "Invalid VHD file detected, file does not exist: {0}", vhd);
+                            }
+                        }
                     }
             }
 
