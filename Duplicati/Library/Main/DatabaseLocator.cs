@@ -73,9 +73,6 @@ namespace Duplicati.Library.Main
 					folder = newlocation;
 			}
 
-            if (!System.IO.Directory.Exists(folder))
-                System.IO.Directory.CreateDirectory(folder);
-                
             var file = System.IO.Path.Combine(folder, "dbconfig.json");
             List<BackendEntry> configs;
             if (!System.IO.File.Exists(file))
@@ -179,7 +176,10 @@ namespace Duplicati.Library.Main
                     Databasepath = newpath, 
                     ParameterFile = null
                 });
-                
+
+                if (!System.IO.Directory.Exists(folder))
+                    System.IO.Directory.CreateDirectory(folder);
+
                 var settings = new Newtonsoft.Json.JsonSerializerSettings();
                 settings.Formatting = Newtonsoft.Json.Formatting.Indented;
                 System.IO.File.WriteAllText(file, Newtonsoft.Json.JsonConvert.SerializeObject(configs, settings), System.Text.Encoding.UTF8);
