@@ -82,6 +82,7 @@ CREATE TABLE "FilesetEntry" (
 /* Improved reverse lookup for joining Fileset and File table */
 CREATE INDEX "FilesetentryFileIdIndex" on "FilesetEntry" ("FileID");
 CREATE INDEX "nn_FilesetentryFile" on FilesetEntry ("FilesetID","FileID");
+CREATE INDEX "FilesetEntryFilesetID" ON "FilesetEntry" ("FilesetID")
 
 
 
@@ -112,6 +113,7 @@ CREATE TABLE "FileLookup" (
 /* Fast path based lookup, single properties are auto-indexed */
 CREATE UNIQUE INDEX "FileLookupPath" ON "FileLookup" ("PrefixID", "Path", "BlocksetID", "MetadataID");
 CREATE INDEX "nn_FileLookup_BlockMeta" ON FileLookup ("BlocksetID", "MetadataID");
+CREATE INDEX "FileLookupMetadataID" ON "FileLookup" ("MetadataID");
 
 
 
