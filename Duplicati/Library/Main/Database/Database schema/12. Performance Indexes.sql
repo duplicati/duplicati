@@ -9,7 +9,4 @@ CREATE INDEX "nn_FileLookup_BlockMeta" ON FileLookup ("BlocksetID", "MetadataID"
 
 CREATE INDEX "nnc_BlocksetEntry" ON "BlocksetEntry" ("Index", "BlocksetID", "BlockID");
 
-CREATE INDEX "FileLookupMetadataID" ON "FileLookup" ("MetadataID");
-CREATE INDEX "FilesetEntryFilesetID" ON "FilesetEntry" ("FilesetID");
-
 UPDATE "Version" SET "Version" = 12;
