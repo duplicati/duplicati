@@ -46,11 +46,13 @@ def verifyHashes(filename, quiet = True, buffer_size=8192):
         filename = file["Name"]
         hash = file["Hash"]
         size = file["Size"]
+        state = file["State"]
 
         fullpath = os.path.join(folder, filename)
         if not os.path.exists(fullpath):
-            print("File missing:", fullpath)
-            errorCount += 1
+            if state != 5:
+                print("File missing:", fullpath)
+                errorCount += 1
         else:
             checked += 1
             if not quiet:
