@@ -289,4 +289,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (12);
+INSERT INTO "Version" ("Version") VALUES (13);
