@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>The Duplicati Tray implementation</Description>
     <ApplicationIcon>..\..\..\Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.ico</ApplicationIcon>

@@ -22,7 +22,7 @@ jobs:
         - name: Setup .NET
           uses: actions/setup-dotnet@v1
           with:
-            dotnet-version: 5.0.101
+            dotnet-version: 6.0.x
         - name: Restore dependencies
           run: dotnet restore --runtime=${{ matrix.cfg.runtime }} Duplicati.sln
         - name: Package
