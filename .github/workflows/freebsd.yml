@@ -13,7 +13,7 @@ jobs:
     - name: Download dotnet
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/V5.0.9/dotnet-sdk-5.0.400-freebsd-x64.tar.gz -o dn.tgz
+      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.100-rtm.21527.11/dotnet-sdk-6.0.100-freebsd-x64.tar.gz -o dn.tgz
     - name: Build
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
@@ -40,8 +40,8 @@ jobs:
           tar -xzf ${BUILD_DIR}/dn.tgz
           cd ${BUILD_DIR}
           mkdir /var/tmp/nuget
-          export RVERSION=V5.0.9
-          export VERSION=5.0.9
+          export RVERSION=v6.0.100-rtm.21527.11
+          export VERSION=6.0.0
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
@@ -70,7 +70,7 @@ jobs:
     - name: Download dotnet
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/V5.0.9/dotnet-sdk-5.0.400-freebsd-x64.tar.gz -o dn.tgz
+      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.100-rtm.21527.11/dotnet-sdk-6.0.100-freebsd-x64.tar.gz -o dn.tgz
     - name: Run test
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
@@ -97,8 +97,8 @@ jobs:
           tar -xzf ${BUILD_DIR}/dn.tgz
           cd ${BUILD_DIR}
           mkdir /var/tmp/nuget
-          export RVERSION=V5.0.9
-          export VERSION=5.0.9
+          export RVERSION=v6.0.100-rtm.21527.11
+          export VERSION=6.0.0
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
