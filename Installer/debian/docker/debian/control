@@ -2,7 +2,7 @@ Source: duplicati
 Section: utils
 Priority: extra
 Maintainer: Kenneth Skovhede <kenneth@duplicati.com>
-Build-Depends: debhelper (>= 8.0.0), dotnet-sdk-5.0
+Build-Depends: debhelper (>= 8.0.0), dotnet-sdk-6.0
 Standards-Version: 3.9.4
 Homepage: http://www.duplicati.com
 Vcs-Git: https://github.com/duplicati/duplicati.git
