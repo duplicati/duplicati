@@ -30,6 +30,14 @@ jobs:
           whoami
           env
           freebsd-version
+          df -h
+          dmesg | grep memory
+          swapinfo
+          dd if=/dev/zero of=/root/swap1 bs=1m count=2048
+          chmod 0600 /root/swap1
+          swapon /root/swap1
+          df -h
+          swapinfo
           
           export DOTNET_CLI_TELEMETRY_OPTOUT=1
           BUILD_DIR=`pwd`
@@ -87,6 +95,14 @@ jobs:
           whoami
           env
           freebsd-version
+          df -h
+          dmesg | grep memory
+          swapinfo
+          dd if=/dev/zero of=/root/swap1 bs=1m count=2048
+          chmod 0600 /root/swap1
+          swapon /root/swap1
+          df -h
+          swapinfo
           
           export DOTNET_CLI_TELEMETRY_OPTOUT=1
           BUILD_DIR=`pwd`
