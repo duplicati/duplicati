@@ -56,6 +56,7 @@ namespace Duplicati.Library.Backend
             { "Wasabi Hot Storage", "s3.wasabisys.com" },
             { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
             { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
+            { "IDrive e2", "idrivee2.com" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region

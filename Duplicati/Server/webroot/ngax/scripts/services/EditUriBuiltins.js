@@ -80,6 +80,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if (scope.s3_providers == null) {
             AppService.post('/webmodule/s3-getconfig', {'s3-config': 'Providers'}).then(function (data) {
                 scope.s3_providers = data.data.Result;
+                scope.UseSSL = true;
                 if (scope.s3_server == undefined && scope.s3_server_custom == undefined)
                     scope.s3_server = 's3.amazonaws.com';
 
@@ -582,7 +583,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function (scope) {
         var opts = {
-            's3-server-name': AppUtils.contains_value(scope.s3_providers, scope.s3_server) ? scope.s3_server : scope.s3_server_custom
+            's3-server-name': AppUtils.contains_value(scope.s3_providers, scope.s3_server) ? ( scope.s3_server == 'idrivee2.com' ? scope.e2_region_dns : scope.s3_server ) : scope.s3_server_custom
         };
 
         if (scope.s3_region != null) {
@@ -1060,17 +1061,21 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['s3'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
-            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('AWS Access ID')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('AWS Access Key'));
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Access Key ID')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Secret Access Key'));
 
+      
         if (res && (scope['s3_server'] || '').trim().length == 0 && (scope['s3_server_custom'] || '').trim().length == 0)
             res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must select or fill in the server'));
+
+        if (res && scope.s3_server == "idrivee2.com" && (scope['e2_region_dns'] || '').trim().length == 0)
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must fill in the region endpoint'));
 
 
         if (res) {
 
             function checkUsernamePrefix() {
-                if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
+                if (scope.s3_server != "idrivee2.com" && scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
                     DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('The bucket name should start with your username, prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
                         if (ix == 2)
                             scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
