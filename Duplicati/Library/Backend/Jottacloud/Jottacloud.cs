@@ -335,13 +335,39 @@ namespace Duplicati.Library.Backend
 
         public void CreateFolder()
         {
-            // When using custom (backup) device we must create the device first (if not already exists).
+            // When using custom (backup) device we must ensure the device exists first.
             if (!m_deviceBuiltin)
             {
-                System.Net.HttpWebRequest req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Post, m_jfsDeviceUrl, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                { }
+                // Check if device already exists. The post request below for creating the
+                // device would succeed even if it already existed, but it will change the
+                // type into the one specified, so if it already exists with a different
+                // type we want to keep that.
+                var createDevice = false;
+                try
+                {
+                    var req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Get, m_jfsDeviceUrl, "");
+                    var areq = new Utility.AsyncHttpRequest(req);
+                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                    { }
+                }
+                catch (System.Net.WebException wex)
+                {
+                    if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        createDevice = true;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                if (createDevice)
+                {
+                    System.Net.HttpWebRequest req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Post, m_jfsDeviceUrl, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
+                    Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                    using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                    { }
+                }
             }
             // Create the folder path, and if using custom mount point it will be created as well in the same operation.
             {
