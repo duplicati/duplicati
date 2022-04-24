@@ -20,6 +20,7 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -32,8 +33,8 @@ namespace Duplicati.Library.Backend
     public class Jottacloud : IBackend, IStreamingBackend
     {
         private const string AUTHID_OPTION = "authid";
+        private const string API_ROOT = "https://api.jottacloud.com";
         private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
-        private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
         private const string JFS_BUILTIN_DEVICE = "Jotta"; // The built-in device used for the built-in Sync and Archive mount points.
         private static readonly string JFS_DEFAULT_BUILTIN_MOUNT_POINT = "Archive"; // When using the built-in device we pick this mount point as our default.
         private static readonly string JFS_DEFAULT_CUSTOM_MOUNT_POINT = "Duplicati"; // When custom device is specified then we pick this mount point as our default.
@@ -43,14 +44,15 @@ namespace Duplicati.Library.Backend
         private const string JFS_MOUNT_POINT_OPTION = "jottacloud-mountpoint";
         private const string JFS_THREADS = "jottacloud-threads";
         private const string JFS_CHUNKSIZE = "jottacloud-chunksize";
-        private const string JFS_DATE_FORMAT = "yyyy'-'MM'-'dd-'T'HH':'mm':'ssK";
+        private const string JFS_DATE_FORMAT = "yyyy'-'MM'-'dd'-T'HH':'mm':'ssK";
         private readonly string m_device;
-        private readonly bool m_device_builtin;
+        private readonly bool m_deviceBuiltin;
         private readonly string m_mountPoint;
         private readonly string m_path;
-        private readonly string m_url_device;
-        private readonly string m_url;
-        private readonly string m_url_upload;
+        private readonly string m_fullPath;
+        private readonly string m_jfsUserUrl;
+        private readonly string m_jfsDeviceUrl;
+        private readonly string m_jfsUrl;
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private static readonly string JFS_DEFAULT_CHUNKSIZE = "5mb";
@@ -86,19 +88,19 @@ namespace Duplicati.Library.Backend
                 m_device = options[JFS_DEVICE_OPTION];
                 if (string.Equals(m_device, JFS_BUILTIN_DEVICE, StringComparison.OrdinalIgnoreCase))
                 {
-                    m_device_builtin = true; // Device is configured, but value set to the built-in device!
+                    m_deviceBuiltin = true; // Device is configured, but value set to the built-in device!
                     m_device = JFS_BUILTIN_DEVICE; // Ensure correct casing (doesn't seem to matter, but in theory it could).
                 }
                 else
                 {
-                    m_device_builtin = false;
+                    m_deviceBuiltin = false;
                 }
             }
             else
             {
                 // Use default: The built-in device.
                 m_device = JFS_BUILTIN_DEVICE;
-                m_device_builtin = true;
+                m_deviceBuiltin = true;
             }
 
             // Find out what JFS mount point to use on the device.
@@ -108,7 +110,7 @@ namespace Duplicati.Library.Backend
                 m_mountPoint = options[JFS_MOUNT_POINT_OPTION];
 
                 // If we are using the built-in device make sure we have picked a mount point that we can use.
-                if (m_device_builtin)
+                if (m_deviceBuiltin)
                 {
                     // Check that it is not set to one of the special built-in mount points that we definitely cannot make use of.
                     if (Array.FindIndex(JFS_BUILTIN_ILLEGAL_MOUNT_POINTS, x => x.Equals(m_mountPoint, StringComparison.OrdinalIgnoreCase)) != -1)
@@ -127,7 +129,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                if (m_device_builtin)
+                if (m_deviceBuiltin)
                     m_mountPoint = JFS_DEFAULT_BUILTIN_MOUNT_POINT; // Set a suitable built-in mount point for the built-in device.
                 else
                     m_mountPoint = JFS_DEFAULT_CUSTOM_MOUNT_POINT; // Set a suitable default mount point for custom (backup) devices.
@@ -145,9 +147,10 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
             m_path = Util.AppendDirSeparator(m_path, "/");
 
-            m_url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
-            m_url        = m_url_device + "/" + m_mountPoint + "/" + m_path;
-            m_url_upload = JFS_ROOT_UPLOAD + "/" + m_oauth.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
+            m_fullPath = m_device + "/" + m_mountPoint + "/" + m_path;
+            m_jfsUserUrl = JFS_ROOT + "/" + m_oauth.Username;
+            m_jfsDeviceUrl = m_jfsUserUrl + "/" + m_device;
+            m_jfsUrl = m_jfsUserUrl + "/" + m_fullPath;
 
             m_threads = int.Parse(options.ContainsKey(JFS_THREADS) ? options[JFS_THREADS] : JFS_DEFAULT_THREADS);
 
@@ -186,7 +189,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 // Send request and load XML response.
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, "", "", false);
+                var req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Get, "", "");
                 var areq = new Utility.AsyncHttpRequest(req);
                 using (var rs = areq.GetResponseStream())
                     doc.Load(rs);
@@ -262,7 +265,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 // Send request and load XML response.
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "", false);
+                var req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Get, remotename, "");
                 var areq = new Utility.AsyncHttpRequest(req);
                 using (var rs = areq.GetResponseStream())
                     doc.Load(rs);
@@ -300,7 +303,7 @@ namespace Duplicati.Library.Backend
 
         public void Delete(string remotename)
         {
-            System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "rm=true", false); // rm=true means permanent delete, dl=true would be move to trash.
+            System.Net.HttpWebRequest req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Post, remotename, "rm=true"); // rm=true means permanent delete, dl=true would be move to trash.
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
             { }
@@ -333,16 +336,16 @@ namespace Duplicati.Library.Backend
         public void CreateFolder()
         {
             // When using custom (backup) device we must create the device first (if not already exists).
-            if (!m_device_builtin)
+            if (!m_deviceBuiltin)
             {
-                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
+                System.Net.HttpWebRequest req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Post, m_jfsDeviceUrl, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 { }
             }
             // Create the folder path, and if using custom mount point it will be created as well in the same operation.
             {
-                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
+                System.Net.HttpWebRequest req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true");
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 { }
@@ -364,15 +367,15 @@ namespace Duplicati.Library.Backend
             return m_oauth.CreateRequest(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams), method);
         }
 
-        private System.Net.HttpWebRequest CreateRequest(string method, string remotename, string queryparams, bool upload)
+        private System.Net.HttpWebRequest CreateJfsRequest(string method, string remotename, string queryparams)
         {
-            var url = (upload ? m_url_upload : m_url) + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20");
+            var url = m_jfsUrl + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20");
             return CreateRequest(method, url, queryparams);
         }
 
         public string[] DNSName
         {
-            get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
+            get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(API_ROOT).Host }; }
         }
 
         public void Get(string remotename, System.IO.Stream stream)
@@ -385,7 +388,7 @@ namespace Duplicati.Library.Backend
             // Downloading from Jottacloud: Will only succeed if the file has a completed revision,
             // and if there are multiple versions of the file we will only get the latest completed version,
             // ignoring any incomplete or corrupt versions.
-            var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
+            var req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin");
             var areq = new Utility.AsyncHttpRequest(req);
             using (var s = areq.GetResponseStream())
                 Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
@@ -418,7 +421,7 @@ namespace Duplicati.Library.Backend
                     var item = chunks.Dequeue();
                     tasks.Enqueue(Task.Run(() =>
                     {
-                        var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
+                        var req = CreateJfsRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin");
                         req.AddRange(item.Item1, item.Item2 - 1);
                         var areq = new Utility.AsyncHttpRequest(req);
                         using (var s = areq.GetResponseStream())
@@ -436,25 +439,15 @@ namespace Duplicati.Library.Backend
 
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            // Some challenges with uploading to Jottacloud:
-            // - Jottacloud supports use of a custom header where we can tell the server the MD5 hash of the file
-            //   we are uploading, and then it will verify the content of our request against it. But the HTTP
-            //   status code we get back indicates success even if there is a mismatch, so we must dig into the
-            //   XML response to see if we were able to correctly upload the new content or not. Another issue 
-            //   is that if the stream is not seek-able we have a challenge pre-calculating MD5 hash on it before
-            //   writing it out on the HTTP request stream. And even if the stream is seek-able it may be throttled.
-            //   One way to avoid using the throttled stream for calculating the MD5 is to try to get the
-            //   underlying stream from the "m_basestream" field, with fall-back to a temporary file.
-            // - We can instead chose to upload the data without setting the MD5 hash header. The server will
-            //   calculate the MD5 on its side and return it in the response back to use. We can then compare it
-            //   with the MD5 hash of the stream (using a MD5CalculatingStream), and if there is a mismatch we can
-            //   request the server to remove the file again and throw an exception. But there is a requirement that
-            //   we specify the file size in a custom header. And if the stream is not seek-able we are not able
-            //   to use stream.Length, so we are back at square one.
-            Duplicati.Library.Utility.TempFile tmpFile = null;
+            // Jottacloud requires size and MD5 as part of the request. If the stream is not
+            // seek-able we have to spool it into a temporary file while calculating MD5,
+            // and then we also get the size. Even if the stream is seek-able it may be throttled,
+            // and therefore we try to avoid using the throttled stream for calculating the MD5
+            // underlying stream from the "m_basestream" field, with fall-back to a temporary file.
+            Utility.TempFile tmpFile = null;
             var baseStream = stream;
-            while (baseStream is Duplicati.Library.Utility.OverrideableStream)
-                baseStream = typeof(Duplicati.Library.Utility.OverrideableStream).GetField("m_basestream", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(baseStream) as System.IO.Stream;
+            while (baseStream is Utility.OverrideableStream)
+                baseStream = typeof(Utility.OverrideableStream).GetField("m_basestream", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(baseStream) as System.IO.Stream;
             if (baseStream == null)
                 throw new Exception(string.Format("Unable to unwrap stream from: {0}", stream.GetType()));
             string md5Hash;
@@ -462,82 +455,100 @@ namespace Duplicati.Library.Backend
             {
                 var originalPosition = baseStream.Position;
                 using (var md5 = System.Security.Cryptography.MD5.Create())
-                    md5Hash = Library.Utility.Utility.ByteArrayAsHexString(md5.ComputeHash(baseStream));
+                    md5Hash = Utility.Utility.ByteArrayAsHexString(md5.ComputeHash(baseStream));
                 baseStream.Position = originalPosition;
             }
             else
             {
                 // No seeking possible, use a temp file
-                tmpFile = new Duplicati.Library.Utility.TempFile();
+                tmpFile = new Utility.TempFile();
                 using (var os = System.IO.File.OpenWrite(tmpFile))
                 using (var md5 = new Utility.MD5CalculatingStream(baseStream))
                 {
-                    await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken, m_copybuffer).ConfigureAwait(false);
                     md5Hash = md5.GetFinalHashString();
                 }
                 stream = System.IO.File.OpenRead(tmpFile);
             }
             try
             {
-                // Create request, with query parameter, and a few custom headers.
-                // NB: If we wanted to we could send the same POST request as below but without the file contents
-                // and with "cphash=[md5Hash]" as the only query parameter. Then we will get an HTTP 200 (OK) response
-                // if an identical file already exists, and we can skip uploading the new file. We will get
-                // HTTP 404 (Not Found) if file does not exists or it exists with a different hash, in which
-                // case we must send a new request to upload the new content.
+                // Send initial allocate request, performing deduplication and preparing resume upload.
                 var fileSize = stream.Length;
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "umode=nomultipart", true);
-                req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
-                req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
-                // File time stamp headers: Since we are working with a stream here we do not know the local file's timestamps,
-                // and then we can just omit the JCreated and JModified and let the server automatically set the current time.
-                //req.Headers.Add("JCreated", timeCreated);
-                //req.Headers.Add("JModified", timeModified);
-                req.ContentType = "application/octet-stream";
-                req.ContentLength = fileSize;
-
-                // Write post data request
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (var rs = areq.GetRequestStream())
-                    await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken, m_copybuffer);
-                // Send request, and check response
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new JottacloudAllocateRequest()
                 {
-                    if (resp.StatusCode != System.Net.HttpStatusCode.Created)
-                        throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-
-                    // Request seems to be successful, but we must verify the response XML content to be sure that the file
-                    // was correctly uploaded: The server will verify the JSize header and mark the file as incomplete if
-                    // there was mismatch, and it will verify the JMd5 header and mark the file as corrupt if there was a hash
-                    // mismatch. The returned XML contains a file element, and if upload was error free it contains a single
-                    // child element "currentRevision", which has a "state" child element with the string "COMPLETED".
-                    // If there was a problem we should have a "latestRevision" child element, and this will have state with
-                    // value "INCOMPLETE" or "CORRUPT". If the file was new or had no previous complete versions the latestRevision
-                    // will be the only child, but if not there may also be a "currentRevision" representing the previous
-                    // complete version - and then we need to detect the case where our upload failed but there was an existing
-                    // complete version!
-                    using (var rs = areq.GetResponseStream())
+                    Path = "/jfs/" + m_fullPath + remotename,
+                    Bytes = fileSize,
+                    MD5 = md5Hash
+                }));
+                var allocateResponse = await m_oauth.GetJSONDataAsync<JottacloudAllocateResponse>(
+                    API_ROOT + "/files/v1/allocate", cancelToken,
+                    req =>
                     {
-                        var doc = new System.Xml.XmlDocument();
-                        try { doc.Load(rs); }
-                        catch (System.Xml.XmlException)
+                        req.Method = WebRequestMethods.Http.Post;
+                        req.ContentType = "application/json; charset=UTF-8";
+                        req.ContentLength = data.Length;
+
+                    },
+                     async (areq, areqCancelToken) =>
+                     {
+                         using (var rs = areq.GetRequestStream())
+                             await rs.WriteAsync(data, 0, data.Length, areqCancelToken).ConfigureAwait(false);
+                     }
+                ).ConfigureAwait(false);
+                // Check result.
+                // If state is COMPLETED then no content needs to be uploaded, because destination
+                // file matches - possibly after updating timestamp of existing file, updating content
+                // of existing file with deduplication, or creating new file with deduplication.
+                // Else, we must upload data from an indicated position to make destination file
+                // match size or checksum.
+                if (allocateResponse.State != "COMPLETED")
+                {
+                    var uploadResponse = await m_oauth.GetJSONDataAsync<JottacloudAllocateUploadResponse>(
+                        allocateResponse.UploadUrl, cancelToken,
+                        req =>
                         {
-                            throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
-                        }
-                        bool uploadCompletedSuccessfully = false;
-                        var xFile = doc["file"];
-                        if (xFile != null)
+                            req.Method = WebRequestMethods.Http.Post;
+                            req.ContentType = "application/octet-stream";
+                            if (allocateResponse.ResumePos > 0)
+                            {
+                                req.ContentLength = fileSize - allocateResponse.ResumePos;
+                                req.AddRange(allocateResponse.ResumePos);
+                            }
+                            else
+                            {
+                                req.ContentLength = fileSize;
+                            }
+                        },
+                        async (areq, areqCancelToken) =>
                         {
-                            var xRevState = xFile.SelectSingleNode("latestRevision");
-                            if (xRevState == null) {
-                                xRevState = xFile.SelectSingleNode("currentRevision/state");
-                                if (xRevState != null)
-                                    uploadCompletedSuccessfully = xRevState.InnerText == "COMPLETED"; // Success: There is no "latestRevision", only a "currentRevision" (and it specifies the file is complete, but I think it always will).
+                            using (var rs = areq.GetRequestStream())
+                            {
+                                if (allocateResponse.ResumePos > 0)
+                                {
+                                    // Resumed upload, discard initial bytes already matching.
+                                    if (baseStream.CanSeek)
+                                    {
+                                        baseStream.Seek(allocateResponse.ResumePos, System.IO.SeekOrigin.Current);
+                                    }
+                                    else
+                                    {
+                                        int read, chunk;
+                                        long offset = allocateResponse.ResumePos;
+                                        do
+                                        {
+                                            chunk = offset > m_copybuffer.Length ? m_copybuffer.Length : (int)offset;
+                                            read = await baseStream.ReadAsync(m_copybuffer, 0, chunk, areqCancelToken).ConfigureAwait(false);
+                                            offset -= read;
+                                        } while (offset > 0 && read > 0);
+                                        if (offset > 0) // Hit end of the stream before reaching resume position!
+                                            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+                                    }
+                                }
+                                // Copy remaining byte to resume upload.
+                                await Utility.Utility.CopyStreamAsync(stream, rs, true, areqCancelToken, m_copybuffer).ConfigureAwait(false);
                             }
                         }
-                        if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
-                            throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
-                    }
+                    ).ConfigureAwait(false);
                 }
             }
             finally
@@ -550,5 +561,52 @@ namespace Duplicati.Library.Backend
                 catch { }
             }
         }
+        private class JottacloudAllocateRequest
+        {
+            [JsonProperty("path")]
+            public string Path { get; set; }
+            [JsonProperty("bytes")]
+            public long Bytes { get; set; }
+            [JsonProperty("md5")]
+            public string MD5 { get; set; }
+            // It can also contain "created" and "modified" timestamps
+            // (formatted as strings), but since we are working with a
+            // stream here we do not know the local file's timestamps,
+            // and by omitting them the service will automatically set
+            // the current time.
+        }
+
+        private class JottacloudAllocateResponse
+        {
+            [JsonProperty("name")]
+            public string Name { get; set; }
+            [JsonProperty("pame")]
+            public string Path { get; set; }
+            [JsonProperty("state")]
+            public string State { get; set; }
+            [JsonProperty("bytes")]
+            public long Bytes { get; set; }
+            [JsonProperty("resume_pos")]
+            public long ResumePos { get; set; }
+            [JsonProperty("upload_id")]
+            public string UploadId { get; set; }
+            [JsonProperty("upload_url")]
+            public string UploadUrl { get; set; }
+        }
+
+        private class JottacloudAllocateUploadResponse
+        {
+            [JsonProperty("content_id")]
+            public string ContentId { get; set; }
+            [JsonProperty("path")]
+            public string Path { get; set; }
+            [JsonProperty("modified")]
+            public long Modified { get; set; }
+            [JsonProperty("bytes")]
+            public long Bytes { get; set; }
+            [JsonProperty("md5")]
+            public string MD5 { get; set; }
+        }
+
     }
 }
