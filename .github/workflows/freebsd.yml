@@ -13,7 +13,7 @@ jobs:
     - name: Download dotnet
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.100-rtm.21527.11/dotnet-sdk-6.0.100-freebsd-x64.tar.gz -o dn.tgz
+      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.3/dotnet-sdk-6.0.201-freebsd-x64.tar.gz -o dn.tgz
     - name: Build
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
@@ -80,7 +80,7 @@ jobs:
     - name: Download dotnet
       # See also https://github.com/sec/dotnet-core-freebsd-source-build
       # See also https://github.com/Thefrank/dotnet-freebsd-crossbuild
-      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.100-rtm.21527.11/dotnet-sdk-6.0.100-freebsd-x64.tar.gz -o dn.tgz
+      run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.3/dotnet-sdk-6.0.201-freebsd-x64.tar.gz -o dn.tgz
     - name: Run test
       id: test
       uses: vmactions/freebsd-vm@v0.1.5
