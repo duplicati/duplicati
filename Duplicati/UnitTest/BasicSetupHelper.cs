@@ -104,6 +104,7 @@ namespace Duplicati.UnitTest
         [SetUp]
         public virtual void SetUp()
         {
+            TestContext.Progress.WriteLine("Setup {0}", TestContext.CurrentContext.Test.Name);
             systemIO.DirectoryCreate(this.DATAFOLDER);
             systemIO.DirectoryCreate(this.TARGETFOLDER);
             systemIO.DirectoryCreate(this.RESTOREFOLDER);  
@@ -112,6 +113,7 @@ namespace Duplicati.UnitTest
         [TearDown]
         public virtual void TearDown()
         {
+            TestContext.Progress.WriteLine("TearDown {0}", TestContext.CurrentContext.Test.Name);
             if (systemIO.DirectoryExists(this.DATAFOLDER))
             {
                 systemIO.DirectoryDelete(this.DATAFOLDER, true);
