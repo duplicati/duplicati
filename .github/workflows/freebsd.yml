@@ -49,11 +49,12 @@ jobs:
           tar -xzf ${BUILD_DIR}/dn.tgz
           cd ${BUILD_DIR}
           mkdir /var/tmp/nuget
-          export RVERSION=v6.0.100-rtm.21527.11
-          export VERSION=6.0.0
+          export RVERSION=v6.0.3
+          export VERSION=6.0.3
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Crossgen2.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Crossgen2.freebsd-x64.${VERSION}.nupkg
           /var/tmp/dn/dotnet nuget add source /var/tmp/nuget/
           
           cp -R `pwd` /var/tmp/build
@@ -115,11 +116,12 @@ jobs:
           tar -xzf ${BUILD_DIR}/dn.tgz
           cd ${BUILD_DIR}
           mkdir /var/tmp/nuget
-          export RVERSION=v6.0.100-rtm.21527.11
-          export VERSION=6.0.0
+          export RVERSION=v6.0.3
+          export VERSION=6.0.3
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.AspNetCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Host.freebsd-x64.${VERSION}.nupkg
           curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Runtime.freebsd-x64.${VERSION}.nupkg
+          curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/${RVERSION}/Microsoft.NETCore.App.Crossgen2.freebsd-x64.${VERSION}.nupkg -o /var/tmp/nuget/Microsoft.NETCore.App.Crossgen2.freebsd-x64.${VERSION}.nupkg
           /var/tmp/dn/dotnet nuget add source /var/tmp/nuget/
           
           cp -R `pwd` /var/tmp/build
