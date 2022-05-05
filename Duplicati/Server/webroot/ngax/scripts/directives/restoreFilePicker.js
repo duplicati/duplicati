@@ -100,6 +100,9 @@ backupApp.directive('restoreFilePicker', function() {
             }
 
             function propagateCheckDown(startNode) {
+                if (!startNode.children)
+                    return;
+
                 forAllChildren(startNode, function (n) { n.include = startNode.include; });
             }
 
@@ -112,6 +115,11 @@ backupApp.directive('restoreFilePicker', function() {
                     let path = '';
 
                     for (let j = 0; j < parts.length; j++) {
+                        // The full path of a file does not need to be in the partial map
+                        if (!is_dir && j == parts.length - 1) {
+                            continue;
+                        }
+
                         path += parts[j];
                         if (is_dir || j != parts.length - 1)
                             path += dirsep;
@@ -127,25 +135,16 @@ backupApp.directive('restoreFilePicker', function() {
                     let child = node;
 
                     while (parent != null) {
-                        // Remove path and all sub-paths
-                        let selectedToDelete = []
-
-                        for (const selected in $scope.ngSelected) {
-                            if (selected === child.compareId || (child.nodeType === 'dir' && selected.indexOf(child.compareId) == 0)) {
-                                selectedToDelete.push(selected);
-                            }
-                        }
-
-                        for (const selected of selectedToDelete) {
-                            delete $scope.ngSelected[selected];
-                        }
+                        removePathAndSubPaths(child);
 
                         let all = true;
-                        for (let i = parent.children.length - 1; i >= 0; i--)
-                            if (parent.children[i].compareId !== child.compareId && !(parent.children[i].compareId in $scope.ngSelected)) {
-                                all = false;
-                                break;
-                            }
+                        if (parent.children) {
+                            for (let i = parent.children.length - 1; i >= 0; i--)
+                                if (parent.children[i].compareId !== child.compareId && !(parent.children[i].compareId in $scope.ngSelected)) {
+                                    all = false;
+                                    break;
+                                }
+                        }
 
                         if (!all || parent == node || $scope.ngSearchMode) {
                             $scope.ngSelected[child.compareId] = true;
@@ -156,6 +155,7 @@ backupApp.directive('restoreFilePicker', function() {
                         parent = parent.parent;
 
                         if (parent == null && all && !$scope.ngSearchMode) {
+                            removePathAndSubPaths(child);
                             $scope.ngSelected[child.compareId] = true;
                         }
                     }
@@ -183,23 +183,38 @@ backupApp.directive('restoreFilePicker', function() {
                 }
             };
 
+            function removePathAndSubPaths(node) {
+                let selectedToDelete = [];
+
+                for (const selected in $scope.ngSelected) {
+                    if ((node.nodeType === 'dir' && selected.indexOf(node.compareId) == 0) || selected === node.compareId) {
+                        selectedToDelete.push(selected);
+                    }
+                }
+
+                for (const selected of selectedToDelete) {
+                    delete $scope.ngSelected[selected];
+                }
+            }
+
             function updateNodesFromMap(nodes) {
-                nodes = nodes || $scope.treedata.children;
+                const toUpdate = [];
+                toUpdate.push.apply(toUpdate, nodes || $scope.treedata.children);
 
-                let toUpdate = [];
-                toUpdate.push.apply(toUpdate, $scope.treedata.children);
                 while (toUpdate.length > 0) {
-                    let n = toUpdate.pop();
+                    const n = toUpdate.pop();
 
-                    if (n.compareId in $scope.ngSelected) {
+                    if (n.parent?.include === '+') {
+                        n.include = '+';
+                        propagateCheckDown(n);
+                    } else if (n.compareId in $scope.ngSelected) {
                         n.include = '+';
                         propagateCheckDown(n);
                     } else if (partialMap.has(n.compareId)) {
                         n.include = ' ';
                         if (n.children != null)
                             toUpdate.push.apply(toUpdate, n.children);
-                    }
-                    else {
+                    } else {
                         n.include = '';
                         propagateCheckDown(n);
                     }
