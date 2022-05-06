@@ -1,4 +1,4 @@
-FROM fedora:33
+FROM fedora:36
 
 # Install common build tools
 RUN dnf -y install deltarpm
