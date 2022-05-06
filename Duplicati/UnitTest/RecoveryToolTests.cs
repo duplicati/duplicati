@@ -14,14 +14,13 @@ namespace Duplicati.UnitTest
         private string originalCurrentDirectory;
 
         [SetUp]
-        public override void SetUp()
+        public void SetUp()
         {
-            base.SetUp();
             this.originalCurrentDirectory = Directory.GetCurrentDirectory();
         }
 
         [TearDown]
-        public override void TearDown()
+        public void TearDown()
         {
             // Since the RecoveryTool changes the current directory, we will reset it so that
             // the teardown methods do not complain about the paths being used by another process.
@@ -29,8 +28,6 @@ namespace Duplicati.UnitTest
             {
                 Directory.SetCurrentDirectory(this.originalCurrentDirectory);
             }
-
-            base.TearDown();
         }
 
         [Test]

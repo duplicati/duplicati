@@ -14,9 +14,9 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class RepairHandlerTests : BasicSetupHelper
     {
-        public override void SetUp()
+        [SetUp]
+        public void SetUp()
         {
-            base.SetUp();
             File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), new byte[] {0});
         }
 

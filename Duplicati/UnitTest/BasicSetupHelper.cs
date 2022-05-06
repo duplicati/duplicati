@@ -22,6 +22,7 @@ using System.IO.Compression;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
+using System.Timers;
 
 namespace Duplicati.UnitTest
 {
@@ -81,29 +82,39 @@ namespace Duplicati.UnitTest
         }
 
         [OneTimeSetUp]
-        public virtual void OneTimeSetUp()
-        {
+        public void BasicHelperOneTimeSetUp()
+        {   
+            TestContext.Progress.WriteLine("One Time Setup {0}", TestContext.CurrentContext.Test.Name);
             if (DEBUG_OUTPUT)
             {
                 Console.SetOut(TestContext.Progress);
             }
 
             systemIO.DirectoryCreate(BASEFOLDER);
-            this.TearDown();
-            this.OneTimeTearDown();
-        }
-
-        [OneTimeTearDown]
-        public virtual void OneTimeTearDown()
-        {
-            // No-op by default.
+            this.BasicHelperTearDown();
         }
 
         private static int count = 1;
 
+
+        private static Timer SetupTimer() {
+            var timer = new Timer();
+            
+            timer.Interval = 10000;
+            timer.Elapsed += delegate(object obj, ElapsedEventArgs e){
+                var nogc = GC.GetTotalMemory(false)/1000/1000;
+                var yesgc = GC.GetTotalMemory(true)/1000/1000;
+                TestContext.Progress.WriteLine("Memory: {0} -> {1}", nogc, yesgc);
+            };
+            timer.AutoReset = true;
+            return timer;
+        }
+        private Timer memoryTimer = SetupTimer();
+
         [SetUp]
-        public virtual void SetUp()
+        public void BasicHelperSetUp()
         {
+            memoryTimer.Enabled = true;
             TestContext.Progress.WriteLine("Setup {0}", TestContext.CurrentContext.Test.Name);
             systemIO.DirectoryCreate(this.DATAFOLDER);
             systemIO.DirectoryCreate(this.TARGETFOLDER);
@@ -111,9 +122,12 @@ namespace Duplicati.UnitTest
         }
 
         [TearDown]
-        public virtual void TearDown()
+        public void BasicHelperTearDown()
         {
-            TestContext.Progress.WriteLine("TearDown {0}", TestContext.CurrentContext.Test.Name);
+            memoryTimer.Enabled = false;
+            if( TestContext.CurrentContext.Test.MethodName != null){
+               TestContext.Progress.WriteLine("TearDown {0} {1}", TestContext.CurrentContext.Test.MethodName, GC.GetTotalMemory(true)/1000/1000);
+            }
             if (systemIO.DirectoryExists(this.DATAFOLDER))
             {
                 systemIO.DirectoryDelete(this.DATAFOLDER, true);

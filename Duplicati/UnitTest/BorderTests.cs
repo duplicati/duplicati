@@ -27,10 +27,9 @@ namespace Duplicati.UnitTest
     {
         private readonly string recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
 
-        public override void TearDown()
+        [TearDown]
+        public void TearDown()
         {
-            base.TearDown();
-
             if (File.Exists(this.recreatedDatabaseFile))
             {
                 File.Delete(this.recreatedDatabaseFile);

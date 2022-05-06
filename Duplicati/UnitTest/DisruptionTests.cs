@@ -45,9 +45,9 @@ namespace Duplicati.UnitTest
             return await backupTask.ConfigureAwait(false);
         }
 
-        public override void SetUp()
+        [SetUp]
+        public void SetUp()
         {
-            base.SetUp();
             this.ModifySourceFiles();
         }
 
