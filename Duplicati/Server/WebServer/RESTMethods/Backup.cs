@@ -430,6 +430,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
                         case "isactive":
                             IsActive(bk, info);
                             return;
+                        case "fileversions":
+                            var file = info.Request.QueryString["file"].Value;
+                            GetFileVersions(bk, file, info);
+                            return;
                         default:
                             info.ReportClientError(string.Format("Invalid component: {0}", operation), System.Net.HttpStatusCode.BadRequest);
                             return;
@@ -714,6 +718,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
             info.OutputOK(new { Status = "OK", ID = task.TaskID });
         }
+
         public string Description { get { return "Retrieves, updates or deletes an existing backup and schedule"; } }
 
         public IEnumerable<KeyValuePair<string, Type>> Types
@@ -727,6 +732,24 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 };
             }
         }
+
+        private void GetFileVersions(IBackup backup, string file, RequestInfo info)
+        {
+            var task = Runner.CreateTask(
+                DuplicatiOperation.FileVersions,
+                backup,
+                extraOptions: null,
+                filterStrings: new string[] { file });
+
+            var runner = Runner.Run(task, false) as Library.Interface.IListResultFileVersions;
+            var result = new Dictionary<string, object>();
+
+            foreach (HttpServer.HttpInputItem n in info.Request.QueryString)
+                result[n.Name] = n.Value;
+
+            result["FileVersions"] = runner.FileVersions;
+
+            info.OutputOK(result);
+        }
     }
 }
-

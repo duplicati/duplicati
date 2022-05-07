@@ -72,6 +72,8 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             res = gettextCatalog.getString('Symbolic link');
         else if (cls == 'x-tree-icon-leaf')
             res = gettextCatalog.getString('File');
+        else if (cls == 'x-tree-icon-fileversion')
+            res = gettextCatalog.getString('FileVersion');
 
         return res;
     };

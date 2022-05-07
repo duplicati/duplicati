@@ -29,7 +29,7 @@ backupApp.directive('restoreFilePicker', function() {
             $scope.toggleExpanded = function(node) {
                 node.expanded = !node.expanded;
 
-                if (node.root || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked')
+                if (node.root || node.iconCls == 'x-tree-icon-locked')
                     return;
 
                 if (node.children || node.loading)
@@ -37,47 +37,79 @@ backupApp.directive('restoreFilePicker', function() {
 
                 node.loading = true;
 
-                // Prefix filter with "@" to prevent Duplicati from
-                // mistaking literal '*' and '?' characters in paths
-                // for glob wildcard characters
-                AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent('@' + node.id)).then(function (data) {
-                    let children = []
+                if (node.nodeType === 'dir') {
+                    // Prefix filter with "@" to prevent Duplicati from
+                    // mistaking literal '*' and '?' characters in paths
+                    // for glob wildcard characters
+                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent('@' + node.id)).then(function (data) {
+                        let children = []
 
-                    for (const item of data.data.Files) {
-                        let text = item.Path.substr(node.id.length);
-                        let leaf = true;
-                        let isDirectory = false;
+                        for (const item of data.data.Files) {
+                            let text = item.Path.substr(node.id.length);
+                            let isDirectory = false;
 
-                        if (text.slice(-1) == dirsep) {
-                            text = text.substr(0, text.length - 1);
-                            leaf = false;
-                            isDirectory = true;
+                            if (text.slice(-1) == dirsep) {
+                                text = text.substr(0, text.length - 1);
+                                isDirectory = true;
+                            }
+
+                            children.push({
+                                text: text,
+                                id: item.Path,
+                                compareId: compareablePath(item.Path),
+                                size: item.Sizes[0],
+                                iconCls: isDirectory ? '' : 'x-tree-icon-leaf',
+                                entrytype: AppUtils.getEntryTypeFromIconCls(isDirectory ? '' : 'x-tree-icon-leaf'),
+                                parent: node,
+                                nodeType: isDirectory ? 'dir' : 'file',
+                                leaf: false,
+                                include: ''
+                            });
                         }
 
-                        children.push({
-                            text: text,
-                            id: item.Path,
-                            compareId: compareablePath(item.Path),
-                            size: item.Sizes[0],
-                            iconCls: isDirectory ? '' : 'x-tree-icon-leaf',
-                            entrytype: AppUtils.getEntryTypeFromIconCls(isDirectory ? '' : 'x-tree-icon-leaf'),
-                            parent: node,
-                            nodeType: isDirectory ? 'dir' : 'file',
-                            leaf: leaf,
-                            include: ''
-                        });
-                    }
+                        node.children = children;
+                        node.loading = false;
 
-                    node.children = children;
-                    node.loading = false;
+                        updateNodesFromMap(node);
+                    }, function () {
+                        node.loading = false;
+                        node.expanded = false;
+                        AppUtils.connectionError.apply(AppUtils, arguments);
+                    });
+                }
+                else {
+                    AppService.get('/backup/' + $scope.ngBackupId + '/fileversions?file=' + encodeURIComponent(node.id)).then(function(data) {
+                        let children = []
 
-                    updateNodesFromMap(children);
-                }, function () {
-                    node.loading = false;
-                    node.expanded = false;
-                    AppUtils.connectionError.apply(AppUtils, arguments);
-                });
-            };
+                        for(const version of data.data.FileVersions)
+                        {
+                            let id = data.data.file + '\\&fileid=' + version.FileId;
+
+                            children.push({
+                                text: moment(version.LastModified).format('L LT'),
+                                id: id,
+                                compareId: compareablePath(id),
+                                size: AppUtils.formatSizeString(version.FileSize),
+                                iconCls: 'x-tree-icon-leaf',
+                                entrytype: AppUtils.getEntryTypeFromIconCls('x-tree-icon-fileversion'),
+                                leaf: true,
+                                include: '',
+                                parent: node,
+                                nodeType: 'version'
+                            });
+                        }
+
+                        node.children = children;
+                        node.loading = false;
+
+                        updateNodesFromMap(node);
+                    }, function () {
+                        node.loading = false;
+                        node.expanded = false;
+                        AppUtils.connectionError.apply(AppUtils, arguments);
+                    });
+                }
+            }
 
             $scope.toggleSelected = function(node) {
                 if (scope.selectednode != null)
@@ -103,7 +135,26 @@ backupApp.directive('restoreFilePicker', function() {
                 if (!startNode.children)
                     return;
 
-                forAllChildren(startNode, function (n) { n.include = startNode.include; });
+                forAllChildren(startNode, function (n) {
+                    if (startNode.include === '' || n.nodeType !== 'version') {
+                        n.include = startNode.include;
+                    } else if (n.nodeType === 'version') {
+                        if ((n === n.parent.children[$scope.$parent.RestoreVersion] && !anyDirectChildSelected(n.parent)) || n.compareId in $scope.ngSelected) {
+                            n.include = startNode.include;
+                        }
+                    }
+                });
+            }
+
+            function anyDirectChildSelected(node) {
+                let anyChildSelected = false;
+                for (const child of node.children) {
+                    if (child.include !== '' || child.compareId in $scope.ngSelected) {
+                        anyChildSelected = true;
+                        break;
+                    }
+                }
+                return anyChildSelected;
             }
 
             function buildPartialMap() {

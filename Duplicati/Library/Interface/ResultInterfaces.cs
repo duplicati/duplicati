@@ -97,6 +97,18 @@ namespace Duplicati.Library.Interface
         long FileSizes { get; }
     }
 
+    public interface IListResultFileVersion
+    {
+        long FileId { get; }
+        long FileSize { get; }
+        DateTime LastModified { get; }
+    }
+
+    public interface IListResultFileVersions : IBasicResults
+    {
+        IEnumerable<IListResultFileVersion> FileVersions { get; }
+    }
+
     public interface IListResults : IBasicResults
     {
         IEnumerable<IListResultFileset> Filesets { get; }

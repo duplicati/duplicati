@@ -49,6 +49,7 @@ namespace Duplicati.Library.Main
         PurgeFiles,
         SendMail,
         Vacuum,
+        ListFileVersions
     }
 
     /// <summary>

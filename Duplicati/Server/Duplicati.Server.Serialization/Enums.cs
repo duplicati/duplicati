@@ -52,6 +52,7 @@ namespace Duplicati.Server.Serialization
         Delete,
         Vacuum,
         CustomRunner,
+        FileVersions
     }
 
     public enum SuggestedStatusIcon

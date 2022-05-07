@@ -183,6 +183,13 @@ namespace Duplicati.Library.Main
             });
         }
 
+        public IListResultFileVersions FileVersions(IEnumerable<string> filterstrings, IFilter filter)
+        {
+            return RunAction(new ListResultFileVersions(), ref filter, (result) => {
+                new Operation.ListFileVersions(m_options, result).Run(filterstrings.First());
+            });
+        }
+
         public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
             return RunAction(new ListResults(), ref filter, (result) => {
