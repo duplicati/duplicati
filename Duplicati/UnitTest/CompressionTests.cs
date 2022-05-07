@@ -23,7 +23,7 @@ using NUnit.Framework;
 namespace Duplicati.UnitTest
 {
     [Category("Compression")]
-    public class CompressionTests
+    public class CompressionTests : BasicSetupHelper
     {
         [TestCase("zip")]
         [TestCase("7z")]

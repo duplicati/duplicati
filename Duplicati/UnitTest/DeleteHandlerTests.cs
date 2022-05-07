@@ -9,7 +9,7 @@ using NUnit.Framework;
 
 namespace Duplicati.UnitTest
 {
-    public class DeleteHandlerTests
+    public class DeleteHandlerTests : BasicSetupHelper
     {
         private class Fileset : IListResultFileset, IEquatable<Fileset>
         {

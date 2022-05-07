@@ -104,7 +104,7 @@ namespace Duplicati.UnitTest
             timer.Elapsed += delegate(object obj, ElapsedEventArgs e){
                 var nogc = GC.GetTotalMemory(false)/1000/1000;
                 var yesgc = GC.GetTotalMemory(true)/1000/1000;
-                TestContext.Progress.WriteLine("Memory: {0} -> {1}", nogc, yesgc);
+                TestContext.Progress.WriteLine("Memory: {0}MB -> {1}MB", nogc, yesgc);
             };
             timer.AutoReset = true;
             return timer;
@@ -115,7 +115,7 @@ namespace Duplicati.UnitTest
         public void BasicHelperSetUp()
         {
             memoryTimer.Enabled = true;
-            TestContext.Progress.WriteLine("Setup {0}", TestContext.CurrentContext.Test.Name);
+            TestContext.Progress.WriteLine("Setup {0} {1}MB", TestContext.CurrentContext.Test.Name, GC.GetTotalMemory(true)/1000/1000);
             systemIO.DirectoryCreate(this.DATAFOLDER);
             systemIO.DirectoryCreate(this.TARGETFOLDER);
             systemIO.DirectoryCreate(this.RESTOREFOLDER);  
@@ -126,7 +126,7 @@ namespace Duplicati.UnitTest
         {
             memoryTimer.Enabled = false;
             if( TestContext.CurrentContext.Test.MethodName != null){
-               TestContext.Progress.WriteLine("TearDown {0} {1}", TestContext.CurrentContext.Test.MethodName, GC.GetTotalMemory(true)/1000/1000);
+               TestContext.Progress.WriteLine("TearDown {0} {1}MB", TestContext.CurrentContext.Test.MethodName, GC.GetTotalMemory(true)/1000/1000);
             }
             if (systemIO.DirectoryExists(this.DATAFOLDER))
             {

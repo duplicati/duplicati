@@ -29,7 +29,7 @@ using Backup = Duplicati.Server.Database.Backup;
 
 namespace Duplicati.UnitTest
 {
-    public class ImportExportTests
+    public class ImportExportTests : BasicSetupHelper
     {
         private string serverDatafolder;
 

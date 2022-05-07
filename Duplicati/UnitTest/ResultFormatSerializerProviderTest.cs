@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace Duplicati.UnitTest
 {
     [TestFixture]
-    public class ResultFormatSerializerProviderTest
+    public class ResultFormatSerializerProviderTest : BasicSetupHelper
     {
         [Test]
         [Category("Serialization")]

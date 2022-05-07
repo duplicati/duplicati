@@ -20,7 +20,7 @@ using System.Collections.Specialized;
 
 namespace Duplicati.UnitTest
 {
-    public class UriUtilityTests
+    public class UriUtilityTests : BasicSetupHelper
     {
         [Test]
         [Category("UriUtility")]

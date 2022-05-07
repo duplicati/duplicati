@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
-    public class UtilityTests
+    public class UtilityTests : BasicSetupHelper
     {
         [Test]
         [Category("Utility")]
