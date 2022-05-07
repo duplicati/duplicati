@@ -55,6 +55,11 @@ namespace Duplicati.Library.Common.IO
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
             File.SetLastWriteTimeUtc(path, time);
+
+            var gtime = FileGetLastWriteTimeUtc(path);
+            if(gtime != time) {
+                Console.Error.WriteLine($"DISS: {path} {gtime.ToFileTimeUtc() - time.ToFileTimeUtc()}");
+            }
         }
 
         public void FileSetCreationTimeUtc(string path, DateTime time)
