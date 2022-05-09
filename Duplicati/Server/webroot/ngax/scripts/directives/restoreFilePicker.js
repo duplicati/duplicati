@@ -38,77 +38,83 @@ backupApp.directive('restoreFilePicker', function() {
                 node.loading = true;
 
                 if (node.nodeType === 'dir') {
-                    // Prefix filter with "@" to prevent Duplicati from
-                    // mistaking literal '*' and '?' characters in paths
-                    // for glob wildcard characters
-                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent('@' + node.id)).then(function (data) {
-                        let children = []
-
-                        for (const item of data.data.Files) {
-                            let text = item.Path.substr(node.id.length);
-                            let isDirectory = false;
-
-                            if (text.slice(-1) == dirsep) {
-                                text = text.substr(0, text.length - 1);
-                                isDirectory = true;
-                            }
-
-                            children.push({
-                                text: text,
-                                id: item.Path,
-                                compareId: compareablePath(item.Path),
-                                size: item.Sizes[0],
-                                iconCls: isDirectory ? '' : 'x-tree-icon-leaf',
-                                entrytype: AppUtils.getEntryTypeFromIconCls(isDirectory ? '' : 'x-tree-icon-leaf'),
-                                parent: node,
-                                nodeType: isDirectory ? 'dir' : 'file',
-                                leaf: false,
-                                include: ''
-                            });
-                        }
-
-                        node.children = children;
-                        node.loading = false;
-
-                        updateNodesFromMap(node);
-                    }, function () {
-                        node.loading = false;
-                        node.expanded = false;
-                        AppUtils.connectionError.apply(AppUtils, arguments);
-                    });
+                    getFilesUnderDirectory(node);
                 }
                 else {
-                    AppService.get('/backup/' + $scope.ngBackupId + '/fileversions?file=' + encodeURIComponent(node.id)).then(function(data) {
-                        let children = []
+                    getVersionsUnderFile(node);
+                }
+            }
 
-                        for(const version of data.data.FileVersions)
-                        {
-                            let id = data.data.file + '\\&fileid=' + version.FileId;
+            function getFilesUnderDirectory(dirNode) {
+                // Prefix filter with "@" to prevent Duplicati from mistaking literal '*' and '?' characters in paths for glob wildcard characters
+                AppService.get(`/backup/${$scope.ngBackupId}/files/${encodeURIComponent(dirNode.id)}?prefix-only=false&folder-contents=true&time=${encodeURIComponent($scope.ngTimestamp)}&filter=${encodeURIComponent('@' + dirNode.id)}`).then(function (data) {
+                    let children = []
 
-                            children.push({
-                                text: moment(version.LastModified).format('L LT'),
-                                id: id,
-                                compareId: compareablePath(id),
-                                size: AppUtils.formatSizeString(version.FileSize),
-                                iconCls: 'x-tree-icon-leaf',
-                                entrytype: AppUtils.getEntryTypeFromIconCls('x-tree-icon-fileversion'),
-                                leaf: true,
-                                include: '',
-                                parent: node,
-                                nodeType: 'version'
-                            });
+                    for (const item of data.data.Files) {
+                        let text = item.Path.substr(dirNode.id.length);
+                        let isDirectory = false;
+
+                        if (text.slice(-1) == dirsep) {
+                            text = text.substr(0, text.length - 1);
+                            isDirectory = true;
                         }
 
-                        node.children = children;
-                        node.loading = false;
+                        children.push({
+                            text: text,
+                            id: item.Path,
+                            compareId: compareablePath(item.Path),
+                            size: item.Sizes[0],
+                            iconCls: isDirectory ? '' : 'x-tree-icon-leaf',
+                            entrytype: AppUtils.getEntryTypeFromIconCls(isDirectory ? '' : 'x-tree-icon-leaf'),
+                            parent: dirNode,
+                            nodeType: isDirectory ? 'dir' : 'file',
+                            leaf: false,
+                            include: ''
+                        });
+                    }
 
-                        updateNodesFromMap(node);
-                    }, function () {
-                        node.loading = false;
-                        node.expanded = false;
-                        AppUtils.connectionError.apply(AppUtils, arguments);
-                    });
-                }
+                    dirNode.children = children;
+                    dirNode.loading = false;
+
+                    updateNodesFromMap(children);
+                }, function () {
+                    dirNode.loading = false;
+                    dirNode.expanded = false;
+                    AppUtils.connectionError.apply(AppUtils, arguments);
+                });
+            }
+
+            function getVersionsUnderFile(fileNode) {
+                AppService.get(`/backup/${$scope.ngBackupId}/fileversions?file=${encodeURIComponent(fileNode.id)}`).then(function(data) {
+                    let children = []
+
+                    for(const version of data.data.FileVersions)
+                    {
+                        let id = data.data.file + '\\&fileid=' + version.FileId;
+
+                        children.push({
+                            text: moment(version.LastModified).format('L LT'),
+                            id: id,
+                            compareId: compareablePath(id),
+                            size: AppUtils.formatSizeString(version.FileSize),
+                            iconCls: 'x-tree-icon-leaf',
+                            entrytype: AppUtils.getEntryTypeFromIconCls('x-tree-icon-fileversion'),
+                            leaf: true,
+                            include: '',
+                            parent: fileNode,
+                            nodeType: 'version'
+                        });
+                    }
+
+                    fileNode.children = children;
+                    fileNode.loading = false;
+
+                    updateNodesFromMap(children);
+                }, function() {
+                    fileNode.loading = false;
+                    fileNode.expanded = false;
+                    AppUtils.connectionError.apply(AppUtils, arguments);
+                });
             }
 
             $scope.toggleSelected = function(node) {
@@ -119,11 +125,11 @@ backupApp.directive('restoreFilePicker', function() {
                 scope.selectednode.selected = true;
             };
 
-            function forAllChildren(node, callback) {
+            function forAllChildren(node, includeVersions, callback) {
                 let q = [node];
                 while (q.length > 0) {
                     let x = q.pop();
-                    if (x.children != null)
+                    if (x.children && (x.nodeType === 'dir' || (includeVersions && x.nodeType === 'file')))
                         for (const c in x.children) {
                             q.push(x.children[c]);
                             callback(x.children[c]);
@@ -131,53 +137,75 @@ backupApp.directive('restoreFilePicker', function() {
                 }
             }
 
-            function propagateCheckDown(startNode) {
+            function propagateDeselectDown(startNode) {
                 if (!startNode.children)
                     return;
 
-                forAllChildren(startNode, function (n) {
-                    if (startNode.include === '' || n.nodeType !== 'version') {
-                        n.include = startNode.include;
-                    } else if (n.nodeType === 'version') {
-                        if ((n === n.parent.children[$scope.$parent.RestoreVersion] && !anyDirectChildSelected(n.parent)) || n.compareId in $scope.ngSelected) {
-                            n.include = startNode.include;
+                forAllChildren(startNode, true, function (node) {
+                    node.include = startNode.include;
+                });
+            }
+
+            function propagateSelectDown(startNode) {
+                if (!startNode.children)
+                    return;
+
+                forAllChildren(startNode, false, function (node) {
+                    node.include = startNode.include;
+                    if (node.children !== undefined && node.nodeType === 'file') {
+                        for (const child of node.children) {
+                            if ($scope.ngSelected[child.compareId] || (child === node.children[0] && !anyDirectChildSelected(node))) {
+                                child.include = node.include;
+                            } else {
+                                child.include = '';
+                            }
                         }
                     }
                 });
             }
 
             function anyDirectChildSelected(node) {
-                let anyChildSelected = false;
+                if (node.children === undefined)
+                    return false;
+
                 for (const child of node.children) {
-                    if (child.include !== '' || child.compareId in $scope.ngSelected) {
-                        anyChildSelected = true;
-                        break;
-                    }
+                    if (child.compareId in $scope.ngSelected)
+                        return true
                 }
-                return anyChildSelected;
+
+                return false;
             }
 
             function buildPartialMap() {
                 partialMap.clear();
 
                 for (const selectedPath in $scope.ngSelected) {
-                    const is_dir = selectedPath.slice(-1) == dirsep;
                     const parts = selectedPath.split(dirsep);
+                    if (parts.length < 1)
+                        continue;
+
+                    const isDir = selectedPath.slice(-1) == dirsep;
+                    const isVersion = parts[parts.length - 1].startsWith('&fileid=');
+                    const isFile = !isDir && !isVersion;
                     let path = '';
 
                     for (let j = 0; j < parts.length; j++) {
-                        // The full path of a file does not need to be in the partial map
-                        if (!is_dir && j == parts.length - 1) {
-                            continue;
+                        // The full path of a file or version does not need to be in the partial map
+                        if (!isDir && j == parts.length - 1) {
+                            break;
                         }
 
                         path += parts[j];
-                        if (is_dir || j != parts.length - 1)
+                        if (isDir || isFile || (isVersion && j != parts.length - 2))
                             path += dirsep;
 
                         partialMap.set(path, true);
                     }
                 }
+            }
+
+            function getDefaultVersionNode(fileNode) {
+                return fileNode.children[0];
             }
 
             $scope.toggleCheck = function (node) {
@@ -186,32 +214,96 @@ backupApp.directive('restoreFilePicker', function() {
                     let child = node;
 
                     while (parent != null) {
-                        removePathAndSubPaths(child);
+                        if (child.nodeType === 'version') {
+                            const fileNode = child.parent;
+                            const anyVersionSelected = anyDirectChildSelected(fileNode);
 
-                        let all = true;
-                        if (parent.children) {
-                            for (let i = parent.children.length - 1; i >= 0; i--)
-                                if (parent.children[i].compareId !== child.compareId && !(parent.children[i].compareId in $scope.ngSelected)) {
-                                    all = false;
-                                    break;
+                            if (anyVersionSelected) {
+                                $scope.ngSelected[child.compareId] = true;
+                                return;
+                            }
+
+                            const clickedOnDefault = child === getDefaultVersionNode(fileNode);
+                            if (!clickedOnDefault) {
+                                $scope.ngSelected[child.compareId] = true;
+
+                                if (anyParentSelected(child)) {
+                                    swapDefaultVersionToDirectlySelected(fileNode);
+                                    return;
                                 }
+                            }
+
+                            // Pretend like the file was clicked to let propagation logic work
+                            child = parent;
+                            parent = parent.parent;
                         }
 
-                        if (!all || parent == node || $scope.ngSearchMode) {
-                            $scope.ngSelected[child.compareId] = true;
+                        removePathAndSubPathsForAddition(child);
+
+                        let allSelectedForParent = true;
+                        if (parent.children) {
+                            for (const item of parent.children) {
+                                if (item.compareId !== child.compareId && !(item.compareId in $scope.ngSelected || (item.nodeType === 'file' && anyDirectChildSelected(item)))) {
+                                    allSelectedForParent = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!allSelectedForParent || parent == node || $scope.ngSearchMode) {
+                            if (child.nodeType === 'file')
+                                selectFile(child);
+                            else
+                                $scope.ngSelected[child.compareId] = true;
                             break;
                         }
 
                         child = parent;
                         parent = parent.parent;
 
-                        if (parent == null && all && !$scope.ngSearchMode) {
-                            removePathAndSubPaths(child);
+                        if (parent == null && allSelectedForParent && !$scope.ngSearchMode) {
+                            removePathAndSubPathsForAddition(child);
                             $scope.ngSelected[child.compareId] = true;
                         }
                     }
                 } else {
-                    // This item is no longer included, include parents children
+                    if (node.nodeType === 'version') {
+                        delete $scope.ngSelected[node.compareId];
+
+                        let anyVersionSelected = false;
+                        let numberSelected = 0;
+                        for (const version of node.parent.children) {
+                            if (version.compareId in $scope.ngSelected) {
+                                anyVersionSelected = true;
+                                numberSelected++;
+                            }
+                        }
+
+                        if (anyVersionSelected) {
+                            if (numberSelected == 1) {
+                                swapDefaultVersionToDefaultSelected(node.parent);
+                            }
+
+                            return;
+                        }
+
+                        // Pretend like the file was clicked to let propagation logic work
+                        node = node.parent;
+                        if (!anyParentSelected(node)) {
+                            $scope.ngSelected[node.compareId] = true;
+                        }
+                    } else if (node.children && node.nodeType === 'file') {
+                        for (const version of node.children) {
+                            delete $scope.ngSelected[version.compareId];
+                        }
+
+                        // Pretend like the file was clicked to let propagation logic work
+                        if (!anyParentSelected(node)) {
+                            $scope.ngSelected[node.compareId] = true;
+                        }
+                    }
+
+                    // This item is no longer included, include remainder of parents children
                     let backtrace = [];
                     let parent = node;
 
@@ -222,22 +314,79 @@ backupApp.directive('restoreFilePicker', function() {
 
                     delete $scope.ngSelected[parent.compareId];
 
+                    if (parent.nodeType === 'dir') {
+                        // Remove any sub paths. i.e. version nodes since they are always selected independently
+                        let selectedToDelete = []
+                        for (const selected in $scope.ngSelected) {
+                            if (selected.indexOf(node.compareId) == 0) {
+                                selectedToDelete.push(selected);
+                            }
+                        }
+
+                        for (const selected of selectedToDelete) {
+                            delete $scope.ngSelected[selected];
+                        }
+                    }
+
                     while (backtrace.length > 0) {
                         let backtraceNode = backtrace.pop();
-                        for (const child of parent.children)
+                        for (const child of parent.children) {
                             if (backtraceNode != child) {
-                                $scope.ngSelected[child.compareId] = true;
+                                if (child.nodeType === 'file') {
+                                    selectFile(child);
+                                } else {
+                                    $scope.ngSelected[child.compareId] = true;
+                                }
                             }
+                        }
 
                         parent = backtraceNode;
                     }
                 }
             };
 
-            function removePathAndSubPaths(node) {
+            function selectFile(fileNode) {
+                if(fileNode.children === undefined) {
+                    $scope.ngSelected[fileNode.compareId] = true;
+                    return;
+                }
+
+                for (const version of fileNode.children) {
+                    if (version.compareId in $scope.ngSelected)
+                        return;
+                }
+
+                $scope.ngSelected[fileNode.compareId] = true;
+            }
+
+            function swapDefaultVersionToDirectlySelected(fileNode) {
+                delete $scope.ngSelected[fileNode.compareId];
+                $scope.ngSelected[fileNode.children[0].compareId] = true;
+            }
+
+            function swapDefaultVersionToDefaultSelected(fileNode) {
+                if (fileNode.children[0].compareId in $scope.ngSelected) {
+                    delete $scope.ngSelected[fileNode.children[0].compareId];
+
+                    if (fileNode.parent.compareId in $scope.ngSelected) {
+                        return;
+                    }
+
+                    if (partialMap.has(fileNode.parent.compareId)) {
+                        $scope.ngSelected[fileNode.compareId] = true;
+                    }
+                }
+            }
+
+            function removePathAndSubPathsForAddition(node) {
                 let selectedToDelete = [];
 
                 for (const selected in $scope.ngSelected) {
+                    // If adding a new file or dir, versions should not be removed
+                    if (selected.includes('&fileid=')) {
+                        continue
+                    }
+
                     if ((node.nodeType === 'dir' && selected.indexOf(node.compareId) == 0) || selected === node.compareId) {
                         selectedToDelete.push(selected);
                     }
@@ -253,22 +402,74 @@ backupApp.directive('restoreFilePicker', function() {
                 toUpdate.push.apply(toUpdate, nodes || $scope.treedata.children);
 
                 while (toUpdate.length > 0) {
-                    const n = toUpdate.pop();
+                    const node = toUpdate.pop();
 
-                    if (n.parent?.include === '+') {
-                        n.include = '+';
-                        propagateCheckDown(n);
-                    } else if (n.compareId in $scope.ngSelected) {
-                        n.include = '+';
-                        propagateCheckDown(n);
-                    } else if (partialMap.has(n.compareId)) {
-                        n.include = ' ';
-                        if (n.children != null)
-                            toUpdate.push.apply(toUpdate, n.children);
+                    if (node.compareId in $scope.ngSelected) {
+                        node.include = '+';
+                        if (node.nodeType === 'file') {
+                            includeVersionNodesFromMap(node);
+                        } else {
+                            propagateSelectDown(node);
+                        }
+                    } else if (partialMap.has(node.compareId)) {
+                        if (node.nodeType === 'file') {
+                            node.include = '+';
+                            includeVersionNodesFromMap(node);
+                        } else {
+                            node.include = ' ';
+                            if (node.children)
+                                toUpdate.push.apply(toUpdate, node.children);
+                        }
+                    } else if(anyParentSelected(node)) {
+                        node.include = '+';
+
+                        if (node.nodeType === 'version') {
+                            if (getDefaultVersionNode(node.parent) !== node)
+                                node.include = '';
+                            continue;
+                        }
+                        else {
+                            if (node.nodeType === 'file') {
+                                includeVersionNodesFromMap(node);
+                            } else {
+                                propagateSelectDown(node);
+                            }
+                        }
                     } else {
-                        n.include = '';
-                        propagateCheckDown(n);
+                        node.include = '';
+                        propagateDeselectDown(node);
                     }
+                }
+            }
+
+            function anyParentSelected(node) {
+                let parent = node.parent;
+                while(parent) {
+                    if (parent.compareId in $scope.ngSelected)
+                        return true;
+                    parent = parent.parent;
+                }
+
+                return false;
+            }
+
+            function includeVersionNodesFromMap(fileNode) {
+                if (!fileNode.children || fileNode.children.length == 0)
+                    return;
+
+                let any = false;
+                for (const version of fileNode.children) {
+                    if (version.compareId in $scope.ngSelected) {
+                        version.include = '+';
+                        any = true;
+                    } else {
+                        version.include = '';
+                    }
+                }
+
+                if (!any)
+                {
+                    fileNode.children[0].include = '+';
                 }
             }
 
