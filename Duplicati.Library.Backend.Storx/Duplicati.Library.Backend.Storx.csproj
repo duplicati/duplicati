@@ -32,9 +32,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Duplicati.Library.Utility">
-      <HintPath>..\Duplicati\Library\Utility\bin\Debug\Duplicati.Library.Utility.dll</HintPath>
-    </Reference>
+    
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -69,6 +67,10 @@
     <ProjectReference Include="..\Duplicati\Library\Main\Duplicati.Library.Main.csproj">
       <Project>{10D2D1B7-C664-41D8-9B3A-00040C3D421B}</Project>
       <Name>Duplicati.Library.Main</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
