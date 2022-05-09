@@ -1,13 +1,17 @@
 ﻿using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Main;
+using Duplicati.Library.Localization.Short;
 using Newtonsoft.Json;
 using System.Text;
 using System.IO;
+using System.Net.Http;
 using static Duplicati.Library.Backend.Storx.Access;
 
 namespace Duplicati.Library.Backend.Storx
@@ -110,7 +114,7 @@ namespace Duplicati.Library.Backend.Storx
                 {
                     m_root_folder = parent_folder;
                 }
-            }          
+            }
 
         }
 
@@ -308,8 +312,7 @@ namespace Duplicati.Library.Backend.Storx
                     m_root_folder = Convert.ToString(folder[0].id);
                 }
             }
-            return m_root_folder;          
-
+            return m_root_folder;
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
@@ -346,7 +349,6 @@ namespace Duplicati.Library.Backend.Storx
                     else
                         throw new Exception(getResponseBodyOnError(endpoint, wex));
                 }
-
             }
 
         }
@@ -374,7 +376,7 @@ namespace Duplicati.Library.Backend.Storx
 
         public void CreateFolder()
         {
-            //GetFolder(1);
+           // GetFolder(1);
         }
 
         #endregion
