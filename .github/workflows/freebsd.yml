@@ -33,7 +33,7 @@ jobs:
           df -h
           dmesg | grep memory
           swapinfo
-          dd if=/dev/zero of=/root/swap1 bs=1m count=2048
+          dd if=/dev/zero of=/root/swap1 bs=1m count=20480
           chmod 0600 /root/swap1
           mdconfig -a -t vnode -f /root/swap1 -u 0
           swapon /dev/md0
@@ -100,7 +100,7 @@ jobs:
           df -h
           dmesg | grep memory
           swapinfo
-          dd if=/dev/zero of=/root/swap1 bs=1m count=2048
+          dd if=/dev/zero of=/root/swap1 bs=1m count=20480
           chmod 0600 /root/swap1
           mdconfig -a -t vnode -f /root/swap1 -u 0
           swapon /dev/md0
