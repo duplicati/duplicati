@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29102.190
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
@@ -106,6 +106,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{9A04CB37-DA72-4008-9703-3AC5191974E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Idrivee2", "Duplicati\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj", "{6B594D23-B629-465C-B799-70EE9E56C218}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -321,6 +323,10 @@ Global
 		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

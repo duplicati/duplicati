@@ -33,6 +33,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
 	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
+    EditUriBackendConfig.templates['e2'] = 'templates/backends/e2.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -478,6 +479,17 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     };
 
+    EditUriBackendConfig.parsers['e2'] = function (scope, module, server, port, path, options) {
+        if (options['--access-key-id'])
+            scope.Username = options['--access-key-id'];
+        if (options['--access-key-secret'])
+            scope.Password = options['--access-key-secret'];
+
+        var nukeopts = ['--access-key-id', '--access-key-secret'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+    };
+
     EditUriBackendConfig.parsers['mega'] = function (scope, module, server, port, path, options) {
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
@@ -742,6 +754,24 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     EditUriBackendConfig.builders['b2'] = function (scope) {
+        var opts = {};
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        // Slightly better error message
+        scope.Folder = scope.Server;
+
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+            scope.Server || '',
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
+
+    EditUriBackendConfig.builders['e2'] = function (scope) {
         var opts = {};
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts);
@@ -1270,6 +1300,50 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'cos_bucket', gettextCatalog.getString('cos_bucket'));
 			
 		if (res)
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['e2'] = function (scope, continuation) {
+        var res =
+                EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Idrivee2 Access Key Id')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Idrivee2 Access Key Secret')) &&
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name'));
+
+        if (res) {
+            var re = new RegExp('[^A-Za-z0-9-]');
+            var bucketname = scope['Server'] || '';
+            var ix = bucketname.search(/[^A-Za-z0-9-]/g);
+
+            if (ix >= 0) {
+                EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The \'{{fieldname}}\' field contains an invalid character: {{character}} (value: {{value}}, index: {{pos}})', {
+                    value: bucketname[ix].charCodeAt(),
+                    pos: ix,
+                    character: bucketname[ix],
+                    fieldname: gettextCatalog.getString('Bucket Name')
+                }));
+                res = false;
+            }
+        }
+
+        if (res) {
+            var pathname = scope['Path'] || '';
+            for (var i = pathname.length - 1; i >= 0; i--) {
+                var char = pathname.charCodeAt(i);
+
+                if (char == '\\'.charCodeAt(0) || char == 127 || char < 32) {
+                    EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The \'{{fieldname}}\' field contains an invalid character: {{character}} (value: {{value}}, index: {{pos}})', {
+                        value: char,
+                        pos: i,
+                        character: pathname[i],
+                        fieldname: gettextCatalog.getString('Path')
+                    }));
+                    res = false;
+                    break;
+                }
+            }
+        }
+
+        if (res)
             continuation();
     };
 });
