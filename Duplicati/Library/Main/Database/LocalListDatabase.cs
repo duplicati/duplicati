@@ -51,6 +51,7 @@ namespace Duplicati.Library.Main.Database
             long FileId { get; }
             long FileSize { get; }
             DateTime LastModified { get; }
+            DateTime Timestamp { get; }
         }
 
         public interface IFileSets : IDisposable
@@ -449,11 +450,14 @@ namespace Duplicati.Library.Main.Database
 
             public DateTime LastModified { get; private set; }
 
-            public FileVersionInfo(long fileId, long fileSize, DateTime lastModified)
+            public DateTime Timestamp { get; private set; }
+
+            public FileVersionInfo(long fileId, long fileSize, DateTime lastModified, DateTime timestamp)
             {
                 FileId = fileId;
                 FileSize = fileSize;
                 LastModified = lastModified;
+                Timestamp = timestamp;
             }
         }
 
@@ -463,11 +467,13 @@ namespace Duplicati.Library.Main.Database
             SELECT
                 f.ID AS FileID,
                 fse.Lastmodified,
-                bs.Length
+                bs.Length,
+                fs.Timestamp
             FROM
                 File f
                 JOIN FilesetEntry fse ON fse.FileID = f.ID
                 JOIN Blockset bs ON bs.ID = f.BlocksetID
+                JOIN Fileset fs ON fs.ID = fse.FilesetID
             WHERE f.Path = @file
             GROUP BY f.ID, bs.Length
             ORDER BY fse.Lastmodified DESC".Trim();
@@ -483,8 +489,9 @@ namespace Duplicati.Library.Main.Database
                         var fileId = reader.GetInt64(0);
                         var lastmodified = new DateTime(reader.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
                         var size = reader.GetInt64(2);
+                        var timestamp = ParseFromEpochSeconds(reader.GetInt64(3)).ToLocalTime();
 
-                        yield return new FileVersionInfo(fileId, size, lastmodified);
+                        yield return new FileVersionInfo(fileId, size, lastmodified, timestamp);
                     }
                 }
             }

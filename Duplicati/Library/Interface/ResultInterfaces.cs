@@ -102,6 +102,7 @@ namespace Duplicati.Library.Interface
         long FileId { get; }
         long FileSize { get; }
         DateTime LastModified { get; }
+        DateTime Timestamp { get; }
     }
 
     public interface IListResultFileVersions : IBasicResults

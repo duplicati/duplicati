@@ -687,16 +687,16 @@ namespace Duplicati.Library.Main
     internal class ListResultFileVersion : IListResultFileVersion
     {
         public long FileId { get; private set; }
-
         public long FileSize { get; private set; }
-
         public DateTime LastModified { get; private set; }
+        public DateTime Timestamp { get; set; }
 
-        public ListResultFileVersion(long fileId, long fileSize, DateTime lastModified)
+        public ListResultFileVersion(long fileId, long fileSize, DateTime lastModified, DateTime timestamp)
         {
             FileId = fileId;
             FileSize = fileSize;
             LastModified = lastModified;
+            Timestamp = timestamp;
         }
     }
 

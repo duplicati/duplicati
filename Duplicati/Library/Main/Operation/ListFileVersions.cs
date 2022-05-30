@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.Operation
                 using (var db = new LocalListDatabase(m_options.Dbpath))
                 {
                     var filesets = db.GetFilesetsForFile(file);
-                    m_result.SetResult(filesets.Select(v => new ListResultFileVersion(v.FileId, v.FileSize, v.LastModified)).ToArray());
+                    m_result.SetResult(filesets.Select(v => new ListResultFileVersion(v.FileId, v.FileSize, v.LastModified, v.Timestamp)).ToArray());
                 }
             }
             else

@@ -90,7 +90,7 @@ backupApp.directive('restoreFilePicker', function() {
 
                     for(const version of data.data.FileVersions)
                     {
-                        let id = data.data.file + '\\&fileid=' + version.FileId;
+                        const id = data.data.file + '\\&fileid=' + version.FileId;
 
                         children.push({
                             text: moment(version.LastModified).format('L LT'),
@@ -102,12 +102,15 @@ backupApp.directive('restoreFilePicker', function() {
                             leaf: true,
                             include: '',
                             parent: fileNode,
-                            nodeType: 'version'
+                            nodeType: 'version',
+                            timestamp: version.Timestamp
                         });
                     }
 
                     fileNode.children = children;
                     fileNode.loading = false;
+
+                    setDefaultVersionNode(fileNode);
 
                     updateNodesFromMap(children);
                 }, function() {
@@ -152,12 +155,15 @@ backupApp.directive('restoreFilePicker', function() {
 
                 forAllChildren(startNode, false, function (node) {
                     node.include = startNode.include;
+
                     if (node.children !== undefined && node.nodeType === 'file') {
-                        for (const child of node.children) {
-                            if ($scope.ngSelected[child.compareId] || (child === node.children[0] && !anyDirectChildSelected(node))) {
-                                child.include = node.include;
+                        const defaultVersion = node.children.find(version => version.isDefault);
+
+                        for (const version of node.children) {
+                            if ($scope.ngSelected[version.compareId] || (version === defaultVersion && !anyDirectChildSelected(node))) {
+                                version.include = node.include;
                             } else {
-                                child.include = '';
+                                version.include = '';
                             }
                         }
                     }
@@ -204,8 +210,26 @@ backupApp.directive('restoreFilePicker', function() {
                 }
             }
 
-            function getDefaultVersionNode(fileNode) {
-                return fileNode.children[0];
+            function setDefaultVersionNode(fileNode) {
+                let previousVersion = null;
+
+                for (const version of fileNode.children) {
+                    if (previousVersion === null) {
+                        if ($scope.ngTimestamp >= version.timestamp) {
+                            version.isDefault = true;
+                            return;
+                        }
+                    }
+                    else if ($scope.ngTimestamp < previousVersion.timestamp && $scope.ngTimestamp >= version.timestamp) {
+                        version.isDefault = true;
+                        return;
+                    }
+
+                    previousVersion = version;
+                }
+
+                if (fileNode.children.length > 0)
+                    fileNode.children[0].isDefault = true;
             }
 
             $scope.toggleCheck = function (node) {
@@ -223,8 +247,8 @@ backupApp.directive('restoreFilePicker', function() {
                                 return;
                             }
 
-                            const clickedOnDefault = child === getDefaultVersionNode(fileNode);
-                            if (!clickedOnDefault) {
+                            const defaultVersion = fileNode.children.find(version => version.isDefault);
+                            if (defaultVersion !== child) {
                                 $scope.ngSelected[child.compareId] = true;
 
                                 if (anyParentSelected(child)) {
@@ -361,12 +385,16 @@ backupApp.directive('restoreFilePicker', function() {
 
             function swapDefaultVersionToDirectlySelected(fileNode) {
                 delete $scope.ngSelected[fileNode.compareId];
-                $scope.ngSelected[fileNode.children[0].compareId] = true;
+
+                const version = fileNode.children.find(version => version.isDefault);
+                $scope.ngSelected[version.compareId] = true;
             }
 
             function swapDefaultVersionToDefaultSelected(fileNode) {
-                if (fileNode.children[0].compareId in $scope.ngSelected) {
-                    delete $scope.ngSelected[fileNode.children[0].compareId];
+                const defaultVersion = fileNode.children.find(version => version.isDefault);
+
+                if (defaultVersion.compareId in $scope.ngSelected) {
+                    delete $scope.ngSelected[defaultVersion.compareId];
 
                     if (fileNode.parent.compareId in $scope.ngSelected) {
                         return;
@@ -424,7 +452,8 @@ backupApp.directive('restoreFilePicker', function() {
                         node.include = '+';
 
                         if (node.nodeType === 'version') {
-                            if (getDefaultVersionNode(node.parent) !== node)
+                            const defaultVersion = node.parent.children.find(version => version.isDefault);
+                            if (defaultVersion !== node)
                                 node.include = '';
                             continue;
                         }
@@ -454,7 +483,7 @@ backupApp.directive('restoreFilePicker', function() {
             }
 
             function includeVersionNodesFromMap(fileNode) {
-                if (!fileNode.children || fileNode.children.length == 0)
+                if (!fileNode.children || fileNode.children.length === 0)
                     return;
 
                 let any = false;
@@ -469,7 +498,8 @@ backupApp.directive('restoreFilePicker', function() {
 
                 if (!any)
                 {
-                    fileNode.children[0].include = '+';
+                    const defaultVersion = fileNode.children.find(version => version.isDefault);
+                    defaultVersion.include = '+';
                 }
             }
 
