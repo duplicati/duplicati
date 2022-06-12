@@ -66,6 +66,7 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'hubic': null,
                 'b2': null,
                 'mega': null,
+                'idrive': null,
                 'box': null,
                 'od4b': null,
                 'mssp': null,
