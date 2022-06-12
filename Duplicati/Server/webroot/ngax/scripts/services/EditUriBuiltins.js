@@ -25,15 +25,15 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';
     EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
     EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
+    EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['idrive']      = 'templates/backends/idrive.html';
-    EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/jottacloud.html';
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
-    EditUriBackendConfig.templates['storj']  = 'templates/backends/storj.html';
+    EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
+    EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
-	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
-	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
+	EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
+	EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -268,6 +268,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.loaders['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['msgroup']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
@@ -422,6 +423,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.parsers['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
@@ -480,10 +482,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     EditUriBackendConfig.parsers['mega'] = function (scope, module, server, port, path, options) {
-        EditUriBackendConfig.mergeServerAndPath(scope);
-    };
-
-    EditUriBackendConfig.parsers['jottacloud'] = function (scope, module, server, port, path, options) {
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
@@ -644,6 +642,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['msgroup']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
@@ -866,23 +865,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     }
 
-    EditUriBackendConfig.builders['jottacloud'] = function (scope) {
-        var opts = {};
-
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
-
-        // Slightly better error message
-        scope.Folder = scope.Path;
-
-        var url = AppUtils.format('{0}://{1}{2}',
-            scope.Backend.Key,
-            scope.Path,
-            AppUtils.encodeDictAsUrl(opts)
-        );
-
-        return url;
-    };
-
 
     EditUriBackendConfig.builders['cos'] = function (scope) {
         var opts = {
@@ -949,6 +931,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['gcs']         = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['jottacloud']  = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['box']         = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['dropbox']     = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['onedrive']    = EditUriBackendConfig.validaters['authid-base'];
@@ -1149,16 +1132,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     EditUriBackendConfig.validaters['mega'] = function (scope, continuation) {
-        scope.Path = scope.Path || '';
-        var res =
-            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
-
-        if (res)
-            continuation();
-    };
-
-    EditUriBackendConfig.validaters['jottacloud'] = function (scope, continuation) {
         scope.Path = scope.Path || '';
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
