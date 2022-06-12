@@ -26,6 +26,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
     EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
     EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['idrive']      = 'templates/backends/idrive.html';
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
