@@ -98,9 +98,9 @@
       <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
       <Name>Duplicati.Library.Backend.HubiC</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\IDrive\Duplicati.Library.Backend.IDrive.csproj">
-      <Project>{c16639f6-dacc-4dd9-86cd-8b937516b340}</Project>
-      <Name>Duplicati.Library.Backend.IDrive</Name>
+    <ProjectReference Include="..\..\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj">
+      <Project>{6b594d23-b629-465c-b799-70ee9e56c218}</Project>
+      <Name>Duplicati.Library.Backend.Idrivee2</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
       <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
