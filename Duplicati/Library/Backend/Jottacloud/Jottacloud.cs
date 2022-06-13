@@ -31,9 +31,9 @@ namespace Duplicati.Library.Backend
     // This class is instantiated dynamically in the BackendLoader.
     public class Jottacloud : IBackend, IStreamingBackend
     {
+        private const string AUTHID_OPTION = "authid";
         private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
         private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
-        private const string API_VERSION = "2.4"; // Hard coded per 09. March 2017.
         private const string JFS_BUILTIN_DEVICE = "Jotta"; // The built-in device used for the built-in Sync and Archive mount points.
         private static readonly string JFS_DEFAULT_BUILTIN_MOUNT_POINT = "Archive"; // When using the built-in device we pick this mount point as our default.
         private static readonly string JFS_DEFAULT_CUSTOM_MOUNT_POINT = "Duplicati"; // When custom device is specified then we pick this mount point as our default.
@@ -51,13 +51,14 @@ namespace Duplicati.Library.Backend
         private readonly string m_url_device;
         private readonly string m_url;
         private readonly string m_url_upload;
-        private readonly System.Net.NetworkCredential m_userInfo;
         private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private static readonly string JFS_DEFAULT_CHUNKSIZE = "5mb";
         private static readonly string JFS_DEFAULT_THREADS = "4";
         private readonly int m_threads;
         private readonly long m_chunksize;
+
+        private readonly JottacloudAuthHelper m_oauth;
 
         /// <summary>
         /// The default maximum number of concurrent connections allowed by a ServicePoint object is 2.
@@ -132,40 +133,21 @@ namespace Duplicati.Library.Backend
                     m_mountPoint = JFS_DEFAULT_CUSTOM_MOUNT_POINT; // Set a suitable default mount point for custom (backup) devices.
             }
 
+            string authid = null;
+            if (options.ContainsKey(AUTHID_OPTION))
+                authid = options[AUTHID_OPTION];
+            m_oauth = new JottacloudAuthHelper(authid);
+
             // Build URL
             var u = new Utility.Uri(url);
             m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
             if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
                 throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
             m_path = Util.AppendDirSeparator(m_path, "/");
-            if (!string.IsNullOrEmpty(u.Username))
-            {
-                m_userInfo = new System.Net.NetworkCredential();
-                m_userInfo.UserName = u.Username;
-                if (!string.IsNullOrEmpty(u.Password))
-                    m_userInfo.Password = u.Password;
-                else if (options.ContainsKey("auth-password"))
-                    m_userInfo.Password = options["auth-password"];
-            }
-            else
-            {
-                if (options.ContainsKey("auth-username"))
-                {
-                    m_userInfo = new System.Net.NetworkCredential();
-                    m_userInfo.UserName = options["auth-username"];
-                    if (options.ContainsKey("auth-password"))
-                        m_userInfo.Password = options["auth-password"];
-                }
-            }
-            if (m_userInfo == null || string.IsNullOrEmpty(m_userInfo.UserName))
-                throw new UserInformationException(Strings.Jottacloud.NoUsernameError, "JottaNoUsername");
-            if (m_userInfo == null || string.IsNullOrEmpty(m_userInfo.Password))
-                throw new UserInformationException(Strings.Jottacloud.NoPasswordError, "JottaNoPassword");
-            if (m_userInfo != null) // Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
-                m_userInfo.Domain = "";
-            m_url_device = JFS_ROOT + "/" + m_userInfo.UserName + "/" + m_device;
+
+            m_url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
             m_url        = m_url_device + "/" + m_mountPoint + "/" + m_path;
-            m_url_upload = JFS_ROOT_UPLOAD + "/" + m_userInfo.UserName + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
+            m_url_upload = JFS_ROOT_UPLOAD + "/" + m_oauth.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
 
             m_threads = int.Parse(options.ContainsKey(JFS_THREADS) ? options[JFS_THREADS] : JFS_DEFAULT_THREADS);
 
@@ -186,7 +168,7 @@ namespace Duplicati.Library.Backend
             m_chunksize = chunksize;
         }
 
-        #region IBackend Members
+#region IBackend Members
 
         public string DisplayName
         {
@@ -329,8 +311,7 @@ namespace Duplicati.Library.Backend
             get 
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.Jottacloud.DescriptionAuthPasswordShort, Strings.Jottacloud.DescriptionAuthPasswordLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionAuthUsernameShort, Strings.Jottacloud.DescriptionAuthUsernameLong),
+                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Jottacloud.AuthidShort, Strings.Jottacloud.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("jottacloud"))),
                     new CommandLineArgument(JFS_DEVICE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionDeviceShort, Strings.Jottacloud.DescriptionDeviceLong(JFS_MOUNT_POINT_OPTION)),
                     new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong(JFS_DEVICE_OPTION)),
                     new CommandLineArgument(JFS_THREADS, CommandLineArgument.ArgumentType.Integer, Strings.Jottacloud.ThreadsShort, Strings.Jottacloud.ThreadsLong, JFS_DEFAULT_THREADS),
@@ -368,26 +349,19 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        #endregion
+#endregion
 
-        #region IDisposable Members
+#region IDisposable Members
 
         public void Dispose()
         {
         }
 
-        #endregion
+#endregion
 
         private System.Net.HttpWebRequest CreateRequest(string method, string url, string queryparams)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
-            req.Method = method;
-            req.Credentials = m_userInfo;
-            req.PreAuthenticate = true; // We need this under Mono for some reason, and it appears some servers require this as well
-            req.KeepAlive = false;
-            req.UserAgent = "Duplicati Jottacloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            req.Headers.Add("x-jftp-version", API_VERSION);
-            return req;
+            return m_oauth.CreateRequest(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams), method);
         }
 
         private System.Net.HttpWebRequest CreateRequest(string method, string remotename, string queryparams, bool upload)
