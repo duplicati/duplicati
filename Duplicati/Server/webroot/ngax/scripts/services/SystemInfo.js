@@ -53,6 +53,7 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
             },
             local: {'file': null},
             prop: {
+                'e2':null,
                 's3': null,
                 'azure': null,
                 'googledrive': null,
