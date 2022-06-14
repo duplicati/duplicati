@@ -57,9 +57,9 @@ namespace Duplicati.Library.Backend
             { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
             { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
             { "Infomaniak Swiss Backup cluster 1", "s3.swiss-backup.infomaniak.com" },
-	    { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" },
-	    { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
-	    { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
+            { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" }
+            { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
+            { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
