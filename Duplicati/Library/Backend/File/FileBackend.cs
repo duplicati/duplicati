@@ -37,6 +37,7 @@ namespace Duplicati.Library.Backend
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
         private const string OPTION_MOVE_FILE = "use-move-for-put";
         private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
+        private const string OPTION_DISABLE_LENGTH_VERIFICATION = "disable-length-verification";
 
         private readonly string m_path;
         private string m_username;
@@ -44,6 +45,7 @@ namespace Duplicati.Library.Backend
         private readonly bool m_moveFile;
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
+        private readonly bool m_verifyDestinationLength;
 
         private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
@@ -127,6 +129,7 @@ namespace Duplicati.Library.Backend
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
             m_forceReauth = Utility.Utility.ParseBoolOption(options, OPTION_FORCE_REAUTH);
+            m_verifyDestinationLength = Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_LENGTH_VERIFICATION);
             m_hasAutenticated = false;
         }
 
@@ -222,14 +225,19 @@ namespace Duplicati.Library.Backend
                 if (systemIO.FileExists(targetFilePath))
                     systemIO.FileDelete(targetFilePath);
 
+                var sourceFileInfo = new FileInfo(sourceFilePath);
+                var sourceFileLength = sourceFileInfo.Exists ? (long?)sourceFileInfo.Length : null;
+
                 systemIO.FileMove(sourceFilePath, targetFilePath);
+                if (m_verifyDestinationLength)
+                    VerifyMatchingSize(targetFilePath, null, sourceFileLength);
             }
             else
             {
                 systemIO.FileCopy(sourceFilePath, targetFilePath, true);
+                if (m_verifyDestinationLength)
+                    VerifyMatchingSize(targetFilePath, sourceFilePath);
             }
-
-            VerifyMatchingSize(targetFilePath, sourceFilePath);
 
             return Task.FromResult(true);
         }
@@ -255,6 +263,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
                     new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
+                    new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationShort),
+
                 });
 
             }
@@ -426,7 +436,8 @@ namespace Duplicati.Library.Backend
                 if (!targetFileInfo.Exists)
                     throw new FileMissingException($"Target file does not exist. Target: {targetFilePath}");
 
-                long? sourceStreamLength = Utility.Utility.GetStreamLength(sourceStream, out bool isStreamPostion);
+                bool isStreamPostion = false;
+                long? sourceStreamLength = sourceStream == null ? null : Utility.Utility.GetStreamLength(sourceStream, out isStreamPostion);
 
                 if (sourceStreamLength.HasValue && targetFileInfo.Length != sourceStreamLength.Value)
                     throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position)" : "")}. Target: {targetFilePath}");
