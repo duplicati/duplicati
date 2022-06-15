@@ -1,3 +1,11 @@
+2022-06-15 - 2.0.6.104_canary_2022-06-15
+==========
+* Updated compressed files exclusion list, thanks @martengooz
+* Updated list of Infomaniak servers, thanks @linitio
+* Fixed irregular parsing of `--patch-with-local-blocks`, thanks @warwickmm
+* Added `IDrivee2` backend, thanks @MuhammadAbrar1984
+* Fixed `--use-move-for-put` which broken in previous build, thanks @kenkendk
+
 2022-06-12 - 2.0.6.103_canary_2022-06-12
 ==========
 * Avoid creating empty data folders, thanks @albertony
