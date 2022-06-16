@@ -139,7 +139,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
             
             if (!hypervUtility.IsVSSWriterSupported)
-                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
+                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "Cannot use Hyper-V VSS Writer to make application-consistent backups because it is only available on Windows Server editions.  Backup will continue without it, but will be crash-consistent only. To disable this message, add {66841cd4-6ded-4f4b-8f17-fd23f8ddc3de} to [exclude-vss-writers].");
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingHyperVQuery", "Starting to gather Hyper-V information");
             hypervUtility.QueryHyperVGuestsInfo(true);          
