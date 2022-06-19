@@ -355,6 +355,8 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 var itemRegex = item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 // Add "globbing" suffix
                 paths.push('[' + itemRegex  + '.*]');
+            } else if (item.includes('\\&fileid=')){
+                paths.push('&' + item);
             } else {
                 // To support the possibility of encountering paths
                 // with literal wildcard characters, create a literal
