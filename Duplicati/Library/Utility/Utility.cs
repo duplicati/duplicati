@@ -1100,7 +1100,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Converts a Base64 encoded string to &quot;base64 for url&quot;
+        /// Converts a Base64 encoded string to &quot;base64 for url&quot;.
         /// See https://en.wikipedia.org/wiki/Base64#URL_applications
         /// </summary>
         /// <param name="data">The base64 encoded string</param>
@@ -1108,6 +1108,20 @@ namespace Duplicati.Library.Utility
         public static string Base64PlainToBase64Url(string data)
         {
             return data.Replace('+', '-').Replace('/', '_');
+        }
+
+        /// <summary>
+        /// Converts a Base64 encoded string to &quot;base64 for url&quot;,
+        /// and removes the optional padding, making it compatible with JWT.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// See https://www.rfc-editor.org/rfc/rfc4648.html#section-3.2
+        /// See https://www.rfc-editor.org/rfc/rfc7515.html#section-2
+        /// </summary>
+        /// <param name="data">The base64 encoded string</param>
+        /// <returns>The base64 for url encoded string</returns>
+        public static string Base64PlainToBase64RawUrl(string data)
+        {
+            return Base64PlainToBase64Url(data.TrimEnd('='));
         }
 
         /// <summary>
@@ -1122,7 +1136,34 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Encodes a byte array into a &quot;base64 for url&quot; encoded string.
+        /// Converts a &quot;base64 for url&quot; encoded string to a Base64 encoded string,
+        /// while ensuring the result includes the optional padding. E.g. JWT tokens do not
+        /// use padding, but to be able to use Convert.FromBase64String it needs to be
+        /// padded according to the standard. It does not matter if the input string is already
+        /// padded, the result will then be the same as from Base64UrlToBase64Plain.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// See https://www.rfc-editor.org/rfc/rfc4648.html#section-3.2
+        /// See https://www.rfc-editor.org/rfc/rfc7515.html#section-2
+        /// </summary>
+        /// <param name="data">The base64 for url encoded string</param>
+        /// <returns>The base64 encoded string</returns>
+        public static string Base64RawUrlToBase64Plain(string data)
+        {
+            var result = Base64UrlToBase64Plain(data);
+            // Implementation from: https://www.rfc-editor.org/rfc/rfc7515.html#appendix-C
+            switch (result.Length % 4) // Pad with trailing '='s
+            {
+                case 0: break; // No pad chars in this case
+                case 2: result += "=="; break; // Two pad chars
+                case 3: result += "="; break; // One pad char
+                //default: throw new System.Exception("Illegal base64url string!");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Encodes a byte array into a standard padded &quot;base64 for url&quot;
+        /// encoded string.
         /// See https://en.wikipedia.org/wiki/Base64#URL_applications
         /// </summary>
         /// <param name="data">The data to encode</param>
@@ -1130,6 +1171,49 @@ namespace Duplicati.Library.Utility
         public static string Base64UrlEncode(byte[] data)
         {
             return Base64PlainToBase64Url(Convert.ToBase64String(data));
+        }
+
+        /// <summary>
+        /// Encodes a byte array into an unpadded &quot;base64 for url&quot;
+        /// encoded string, making it compatible with JWT.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// See https://www.rfc-editor.org/rfc/rfc4648.html#section-3.2
+        /// See https://www.rfc-editor.org/rfc/rfc7515.html#section-2
+        /// </summary>
+        /// <param name="data">The data to encode</param>
+        /// <returns>The base64 for url encoded string</returns>
+        public static string Base64RawUrlEncode(byte[] data)
+        {
+            return Base64PlainToBase64RawUrl(Convert.ToBase64String(data));
+        }
+
+        /// <summary>
+        /// Decodes a standard padded &quot;base64 for url&quot; encoded string
+        /// into a byte array.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The standard padded base64 for url encoded string to decode</param>
+        /// <returns>The decoded data</returns>
+        public static byte[] Base64UrlDecode(string data)
+        {
+            return Convert.FromBase64String(Base64UrlToBase64Plain(data));
+        }
+
+        /// <summary>
+        /// Decodes a padded or unpadded &quot;base64 for url&quot; encoded string
+        /// into a byte array. E.g. JWT tokens do not use padding, which requires
+        /// the additional decoding used by this method, but if the input string
+        /// is already padded the result is the same as from Base64UrlDecode.
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// See https://www.rfc-editor.org/rfc/rfc4648.html#section-3.2
+        /// See https://www.rfc-editor.org/rfc/rfc7515.html#section-2
+        /// See https://en.wikipedia.org/wiki/Base64#URL_applications
+        /// </summary>
+        /// <param name="data">The base64 for url encoded string to decode</param>
+        /// <returns>The decoded data</returns>
+        public static byte[] Base64RawUrlDecode(string data)
+        {
+            return Convert.FromBase64String(Base64RawUrlToBase64Plain(data));
         }
 
         /// <summary>
