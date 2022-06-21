@@ -72,7 +72,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="uplink.NET, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\uplink.NET.2.7.1604\lib\netstandard2.0\uplink.NET.dll</HintPath>
+      <HintPath>..\..\..\..\packages\uplink.NET.2.9.2695\lib\netstandard2.0\uplink.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
