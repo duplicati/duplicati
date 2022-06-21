@@ -59,6 +59,7 @@ namespace Duplicati.Library.Backend
         private readonly long m_chunksize;
 
         private readonly JottacloudAuthHelper m_oauth;
+        private readonly object m_oauth_token_lock = new object();
 
         /// <summary>
         /// The default maximum number of concurrent connections allowed by a ServicePoint object is 2.
@@ -136,7 +137,11 @@ namespace Duplicati.Library.Backend
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
-            m_oauth = new JottacloudAuthHelper(authid);
+
+            lock(m_oauth_token_lock) // JottacloudAuthHelper constructor fetches the token to request username
+            {
+                m_oauth = new JottacloudAuthHelper(authid);
+            }
 
             // Build URL
             var u = new Utility.Uri(url);
@@ -361,7 +366,10 @@ namespace Duplicati.Library.Backend
 
         private System.Net.HttpWebRequest CreateRequest(string method, string url, string queryparams)
         {
-            return m_oauth.CreateRequest(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams), method);
+            lock(m_oauth_token_lock) // When OAuthHelper creates a request it fetches the token since we have set AutoAuthHeader to true
+            {
+                return m_oauth.CreateRequest(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams), method);
+            }
         }
 
         private System.Net.HttpWebRequest CreateRequest(string method, string remotename, string queryparams, bool upload)
