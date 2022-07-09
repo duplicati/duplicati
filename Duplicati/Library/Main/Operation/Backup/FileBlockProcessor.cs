@@ -20,6 +20,7 @@
 using System;
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
+using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
 
@@ -34,6 +35,8 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// The tag to use for log messages
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
+        /// Windows error 0x80070020 file open by another process
+        public const int ERRORCODEFILEBUSY = -2147024864;
 
         public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader, CancellationToken token)
         {
@@ -138,7 +141,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (ex.IsRetiredException())
                             return;
                         else
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", e.Path);
+                        { /* skips warning for busy files if snapshots to 'auto' - so warnings are still displayed for the default snapshot option value (off) */
+                           if (
+                                options.SnapShotStrategy == Options.OptimizationStrategy.Auto &&
+                                ex is System.IO.IOException &&
+                                ex.HResult == ERRORCODEFILEBUSY)
+                                {
+                                    Logging.Log.WriteInformationMessage(FILELOGTAG, "File open", "File is busy (try to use VSS) {0})", e.Path);
+                                }
+                                else
+                                {
+                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "PathProcessingFailed", ex, "Failed to process path: {0}", e.Path);
+                                }
+                       }
                     }
                 }
             });
