@@ -139,14 +139,14 @@ wait_for_load(10, By.ID, "save").click()
 
 # Run the backup job and wait for finish
 wait_for_load(10, By.LINK_TEXT, BACKUP_NAME).click()
-[n for n in driver.find_elements_by_xpath("//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
+[n for n in driver.find_elements("xpath", "//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
 wait_for_text(60, "//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ")
 
 # Restore
-if len([n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()]) == 0:
+if len([n for n in driver.find_elements("xpath", u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()]) == 0:
     wait_for_load(10, By.LINK_TEXT, BACKUP_NAME).click()
 
-[n for n in driver.find_elements_by_xpath(u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()][0].click()
+[n for n in driver.find_elements("xpath", u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()][0].click()
 wait_for_load(10, By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 time.sleep(1) # Delay so page has time to load
 wait_for_load(10, By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
