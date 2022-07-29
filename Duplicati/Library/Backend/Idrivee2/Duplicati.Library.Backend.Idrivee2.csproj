@@ -40,10 +40,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AWSSDK.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.3.103.37\lib\net45\AWSSDK.Core.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.3.103.71\lib\net45\AWSSDK.Core.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.S3, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.104.25\lib\net45\AWSSDK.S3.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.104.43\lib\net45\AWSSDK.S3.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="RestSharp, Version=106.3.1.0, Culture=neutral, PublicKeyToken=598062e77f915f75">
@@ -58,6 +58,9 @@
     <Reference Include="System.Reactive.Linq, Version=3.0.3000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263">
       <HintPath>..\..\..\..\packages\System.Reactive.Linq.4.0.0\lib\net46\System.Reactive.Linq.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="Minio">
+      <HintPath>..\..\..\..\packages\Minio.3.1.7\lib\net46\Minio.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Windows" />
