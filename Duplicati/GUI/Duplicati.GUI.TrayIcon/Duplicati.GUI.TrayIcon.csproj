@@ -59,6 +59,9 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
+    <DefineConstants>XAMARIN_MAC</DefineConstants>
+  </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Duplicati.GUI.TrayIcon.Program</StartupObject>
   </PropertyGroup>
@@ -146,7 +149,7 @@
     <EmbeddedResource Include="Resources\TrayWorking.ico" />
     <Compile Include="ImageLoader.cs" />
     <Compile Include="GtkRunner.cs" />
-    <Compile Include="CocoaRunner.cs">
+    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
       <DependentUpon>CocoaRunner.cs</DependentUpon>
     </Compile>
     <EmbeddedResource Include="OSX Icons\normal.png">

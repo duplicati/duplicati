@@ -334,7 +334,14 @@ namespace Duplicati.GUI.TrayIcon
         private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
+        private static TrayIconBase GetCocoaRunnerInstance()
+        {
+#if XAMARIN_MAC
+            return new CocoaRunner();
+#else
+            throw new UserInformationException("Xamarin.Mac framework not found", "TrayIconMissingXamarinMac");
+#endif
+        }
 
         private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
 
@@ -371,7 +378,7 @@ namespace Duplicati.GUI.TrayIcon
         }
         
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static bool TryGetMonoMac()
+        private static bool TryGetXamarinMac()
         {
             return typeof(AppKit.NSApplication) != null;
         }
@@ -405,7 +412,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             get 
             {
-                try { return TryGetMonoMac(); }
+                try { return TryGetXamarinMac(); }
                 catch {}
                 
                 return false;
