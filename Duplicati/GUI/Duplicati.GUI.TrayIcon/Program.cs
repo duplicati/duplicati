@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using Duplicati.Library.Common;
@@ -43,9 +43,8 @@ namespace Duplicati.GUI.TrayIcon
 
         private static string GetDefaultToolKit()
         {
-            // No longer using Cocoa directly as it fails on 32bit as well            
             if (Platform.IsClientOSX)
-                return TOOLKIT_RUMPS;
+                return TOOLKIT_COCOA;
 
 #if __WindowsGTK__ || ENABLE_GTK
             if (Platform.IsClientPosix)
@@ -374,7 +373,7 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetMonoMac()
         {
-            return !Environment.Is64BitProcess && typeof(MonoMac.AppKit.NSApplication) != null;
+            return typeof(AppKit.NSApplication) != null;
         }
   
         //The functions below here, simply wrap the call to the above functions,

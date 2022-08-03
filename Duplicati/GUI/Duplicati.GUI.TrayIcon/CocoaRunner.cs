@@ -15,11 +15,10 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using MonoMac.Foundation;
-using MonoMac.AppKit;
-using MonoMac.ObjCRuntime;
+using AppKit;
+using CoreGraphics;
+using Foundation;
 using System.Collections.Generic;
-using MonoMac.CoreGraphics;
 using System.IO;
 
 namespace Duplicati.GUI.TrayIcon
@@ -97,7 +96,7 @@ namespace Duplicati.GUI.TrayIcon
             m_app = NSApplication.SharedApplication;
             m_app.ActivateIgnoringOtherApps(true);
 
-            m_statusItem = NSStatusBar.SystemStatusBar.CreateStatusItem(32);
+            m_statusItem = NSStatusBar.SystemStatusBar.CreateStatusItem(NSStatusItemLength.Variable);
             m_statusItem.HighlightMode = true;
 
             base.Init(args);
@@ -116,7 +115,7 @@ namespace Duplicati.GUI.TrayIcon
                 var dp = new CGDataProvider(b, 0, b.Length);
                 var img2 = CGImage.FromPNG(dp, null, false, CGColorRenderingIntent.Default);
 
-                return new NSImage(img2, new System.Drawing.SizeF(18, 18));
+                return new NSImage(img2, new CGSize(18, 18));
             }
         }
 
@@ -197,7 +196,7 @@ namespace Duplicati.GUI.TrayIcon
                 m_app.Stop(m_app);
                 // Post an event to trigger the exit
                 m_app.PostEvent(NSEvent.OtherEvent(NSEventType.ApplicationDefined, 
-                    new System.Drawing.PointF(0,0),
+                    new CGPoint(0,0),
                     0, 0, 0, null, 0, 0, 0), true);
             }
         }
@@ -220,7 +219,7 @@ namespace Duplicati.GUI.TrayIcon
             var notification = new NSUserNotification();
             notification.Title = title;
             notification.InformativeText = message;
-            notification.DeliveryDate = DateTime.Now;
+            notification.DeliveryDate = NSDate.Now;
             notification.SoundName = NSUserNotification.NSUserNotificationDefaultSoundName;
  
             // We get the Default notification Center

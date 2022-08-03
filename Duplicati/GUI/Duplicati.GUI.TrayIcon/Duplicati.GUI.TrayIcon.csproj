@@ -32,6 +32,13 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
+  <PropertyGroup Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
+    <OutputType>Exe</OutputType>
+    <MonoMacResourcePrefix>Resources</MonoMacResourcePrefix>
+    <UseXamMacFullFramework>true</UseXamMacFullFramework>
+    <LinkMode>None</LinkMode>
+    <AOTMode>None</AOTMode>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug</OutputPath>
     <DebugType>full</DebugType>
@@ -105,8 +112,8 @@
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <Package>gtk-sharp-2.0</Package>
     </Reference>
-    <Reference Include="MonoMac">
-      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
+    <Reference Include="Xamarin.Mac">
+      <HintPath>\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\lib\64bits\full\Xamarin.Mac.dll</HintPath>
     </Reference>
     <Reference Include="notify-sharp">
       <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
@@ -167,6 +174,11 @@
     <EmbeddedResource Include="Resources\context_menu_pause.ico" />
     <EmbeddedResource Include="Resources\context_menu_play.ico" />
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
+    <None Include="\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\SDKs\Xamarin.macOS.sdk\lib\libxammac.dylib">
+      <Link>libxammac.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
