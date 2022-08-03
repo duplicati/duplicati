@@ -380,9 +380,13 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetXamarinMac()
         {
+#if XAMARIN_MAC
             return typeof(AppKit.NSApplication) != null;
+#else
+            return false;
+#endif
         }
-  
+
         //The functions below here, simply wrap the call to the above functions,
         // converting the exception to a simple boolean value, so the calling
         // code can be kept free of error handling
