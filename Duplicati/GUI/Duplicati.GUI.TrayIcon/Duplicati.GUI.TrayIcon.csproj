@@ -32,13 +32,6 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
-  <PropertyGroup Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
-    <OutputType>Exe</OutputType>
-    <MonoMacResourcePrefix>Resources</MonoMacResourcePrefix>
-    <UseXamMacFullFramework>true</UseXamMacFullFramework>
-    <LinkMode>None</LinkMode>
-    <AOTMode>None</AOTMode>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug</OutputPath>
     <DebugType>full</DebugType>
@@ -174,11 +167,10 @@
     <EmbeddedResource Include="Resources\context_menu_pause.ico" />
     <EmbeddedResource Include="Resources\context_menu_play.ico" />
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
-    <None Include="\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\SDKs\Xamarin.macOS.sdk\lib\libxammac.dylib">
+    <None Include="\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\SDKs\Xamarin.macOS.sdk\lib\libxammac.dylib" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
       <Link>libxammac.dylib</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
