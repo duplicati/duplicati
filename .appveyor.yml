@@ -15,7 +15,7 @@ build:
 test_script:
     - ps: |
         nuget install OpenCover -Version 4.7.922 -OutputDirectory packages
-        nuget install coveralls.net -Version 0.7.0 -OutputDirectory packages
+        nuget install coveralls.net -Version 4.0.0 -OutputDirectory packages
         nuget install NUnit.Runners -Version 3.10.0 -OutputDirectory packages
 
         $testDir = ".\Duplicati\UnitTest\bin\Debug"
@@ -49,7 +49,7 @@ test_script:
             $commitEmail = git show --quiet --format="%aE" $revision
             $commitMessage = git show --quiet --format="%s" $revision
 
-            .\packages\coveralls.net.0.7.0\tools\csmacnz.Coveralls.exe `
+            .\packages\coveralls.net.4.0.0\tools\csmacnz.Coveralls.exe `
             --opencover -i opencover.xml `
             --repoToken "$Env:COVERALLS_REPO_TOKEN" `
             --commitId "$revision" `
