@@ -70,9 +70,9 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             res = gettextCatalog.getString('Access denied');
         else if (cls == 'x-tree-icon-symlink')
             res = gettextCatalog.getString('Symbolic link');
-        else if (cls == 'x-tree-icon-leaf')
+        else if (cls == 'x-tree-icon-file')
             res = gettextCatalog.getString('File');
-        else if (cls == 'x-tree-icon-fileversion')
+        else if (cls == 'x-tree-icon-leaf')
             res = gettextCatalog.getString('FileVersion');
 
         return res;

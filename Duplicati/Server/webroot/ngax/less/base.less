@@ -2336,6 +2336,11 @@ div.modal-dialog {
                 background-image: url(../img/treeicons.png);
                 background-repeat: no-repeat;
                 background-position: 0px -16px;
+
+                &.x-tree-icon-file {
+                    background-position: -32px -16px;
+                }
+
                 background-size: 112px 64px;
 
                 @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
@@ -2366,8 +2371,7 @@ div.modal-dialog {
                     background-position: -16px -16px;
                 }
 
-                &.x-tree-icon-leaf,
-                &.x-tree-icon-file {
+                &.x-tree-icon-leaf {
                     background-position: -32px -16px;
                 }
 
@@ -2431,8 +2435,8 @@ div.modal-dialog {
                     background-position: -16px -32px;
                 }
 
-                &.x-tree-icon-leaf.invisible,
-                &.x-tree-icon-file.invisible {
+                &.x-tree-icon-file.invisible,
+                &.x-tree-icon-leaf.invisible {
                     background-position: -32px -32px;
                 }
 

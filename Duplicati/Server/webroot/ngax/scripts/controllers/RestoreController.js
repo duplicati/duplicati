@@ -266,9 +266,10 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                 if (!found) {
                                     var n = { Path: curpath, expanded: true };
                                     if (!isdir && k == parts.length - 1) {
-                                        n.iconCls = 'x-tree-icon-leaf';
+                                        n.iconCls = 'x-tree-icon-file';
                                         n.nodeType = 'file';
                                         n.leaf = false;
+                                        n.expanded = false;
                                     }
 
                                     col.Children.push(n);
