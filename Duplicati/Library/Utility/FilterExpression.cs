@@ -15,11 +15,12 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Library.Common.IO;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Utility
 {
@@ -316,12 +317,12 @@ namespace Duplicati.Library.Utility
                 }
             }
         }
-    
+
         /// <summary>
         /// The internal list of expressions
         /// </summary>
-        private readonly List<FilterEntry> m_filters;
-    
+        private readonly List<FilterEntry> m_filters = new List<FilterEntry>();
+
         /// <summary>
         /// Gets the type of the filter
         /// </summary>
@@ -778,14 +779,14 @@ namespace Duplicati.Library.Utility
 
         public bool OnlyContainsFilterType(FilterType type)
         {
-            return m_filters.All(f => f.Type == type);
+            return m_filters.Any() && m_filters.All(f => f.Type == type);
         }
 
         public IEnumerable<long> GetVersionFileIds()
         {
             return m_filters.Where(f => f.Type == FilterType.Version).Select(f =>
             {
-                var idIndex = f.Filter.LastIndexOf("\\&fileid=");
+                var idIndex = f.Filter.LastIndexOf(Util.DirectorySeparatorString + "&fileid=");
                 return long.Parse(f.Filter.Substring(idIndex + 9));
             } );
         }

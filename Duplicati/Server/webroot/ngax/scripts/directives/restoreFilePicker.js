@@ -90,7 +90,7 @@ backupApp.directive('restoreFilePicker', function() {
 
                     for(const version of data.data.FileVersions)
                     {
-                        const id = data.data.file + '\\&fileid=' + version.FileId;
+                        const id = data.data.file + dirsep + '&fileid=' + version.FileId;
 
                         children.push({
                             text: moment(version.LastModified).format('L LT'),

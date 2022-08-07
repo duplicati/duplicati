@@ -218,6 +218,7 @@ namespace Duplicati.Library.Main.Database
                     filesetIds.RemoveAt(0);
 
                     m_restoreTime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
+                    cmd.Parameters.Clear();
 
                     var ix = this.FilesetTimes.Select((value, index) => new { value.Key, index })
                             .Where(n => n.Key == filesetId)
