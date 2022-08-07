@@ -28,6 +28,7 @@ namespace Duplicati.Library.Backend
             : base(accessToken, "jottacloud")
         {
             base.AutoAuthHeader = true;
+            base.AutoV2 = false; // Jottacloud is not v2 compatible because it generates a new refresh token with every access token refresh and invalidates the old.
 
             var userinfo = GetJSONData<UserInfo>(USERINFO_URL);
             if (userinfo == null || string.IsNullOrEmpty(userinfo.Username))
