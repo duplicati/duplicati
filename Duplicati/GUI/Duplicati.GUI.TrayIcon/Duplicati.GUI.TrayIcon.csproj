@@ -1,12 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>The Duplicati Tray implementation</Description>
     <AssemblyName>Duplicati.GUI.TrayIcon.Implementation</AssemblyName>
     <RootNamespace>Duplicati.GUI.TrayIcon</RootNamespace>
     <ApplicationIcon>Duplicati.ico</ApplicationIcon>
+	<!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
+	<TrimMode>copyused</TrimMode>
+	<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,6 +43,24 @@
       <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+	<ItemGroup>
+	    <!--This helps with theme dll-s trimming.
+    If you will publish your application in self-contained mode with p:PublishTrimmed=true and it will use Fluent theme Default theme will be trimmed from the output and vice versa.
+    https://github.com/AvaloniaUI/Avalonia/issues/5593 -->
+	    <TrimmableAssembly Include="Avalonia.Themes.Fluent" />
+	    <TrimmableAssembly Include="Avalonia.Themes.Default" />
+    </ItemGroup>
+    <ItemGroup>
+	    <PackageReference Include="Avalonia" Version="0.10.17" />
+	    <PackageReference Include="Avalonia.Desktop" Version="0.10.17" />
+	    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+	    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.17" />
+	    <PackageReference Include="XamlNameReferenceGenerator" Version="1.3.4" />
+    </ItemGroup>
+    <ItemGroup>
+	    <AvaloniaResource Include="Assets\**" />
+    </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">

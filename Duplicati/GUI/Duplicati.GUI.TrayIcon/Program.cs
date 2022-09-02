@@ -21,6 +21,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string TOOLKIT_GTK = "gtk";
         private const string TOOLKIT_COCOA = "cocoa";
         private const string TOOLKIT_RUMPS = "rumps";
+        private const string TOOLKIT_AVALONIA = "avalonia";
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
@@ -42,6 +43,9 @@ namespace Duplicati.GUI.TrayIcon
 
         private static string GetDefaultToolKit()
         {
+#if !__LEGACY_TOOLKITS__
+            return TOOLKIT_AVALONIA;
+#endif
             // No longer using Cocoa directly as it fails on 32bit as well            
             if (Platform.IsClientOSX)
                 return TOOLKIT_RUMPS;
@@ -301,7 +305,9 @@ namespace Duplicati.GUI.TrayIcon
                 return GetCocoaRunnerInstance();
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
-            else 
+            else if (toolkit == TOOLKIT_AVALONIA)
+                return GetAvaloniaRunnerInstance();
+            else
                 throw new UserInformationException(string.Format("The selected toolkit '{0}' is invalid", toolkit), "TrayIconInvalidToolKit");
         }
         
@@ -321,7 +327,9 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
 
-        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
+        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); }
+        private static TrayIconBase GetAvaloniaRunnerInstance() { return new AvaloniaRunner(); }
+
 
         //The functions below simply load the requested type,
         // and if the type is not present, calling the function will result in an exception.
