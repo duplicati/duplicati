@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Duplicati.Library.Localization.Short;
 using System.IO;
@@ -134,6 +135,13 @@ namespace Duplicati.CommandLine
             var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
             var options = tmpparsed.Item1;
             var filter = tmpparsed.Item2;
+            var keyWithoutValue = "";
+            var supportedCommands = new Library.Main.Options(new Dictionary<string, string>()).SupportedCommands.ToArray();
+            var optionsType = new NameValueCollection();
+
+            foreach (Duplicati.Library.Interface.ICommandLineArgument cmd in supportedCommands) {
+	        optionsType.Add(cmd.Name, cmd.Type.ToString());
+            }
 
             verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
 
@@ -193,7 +201,14 @@ namespace Duplicati.CommandLine
             string command = cargs[0];
             cargs.RemoveAt(0);
 
-            if (verboseErrors)
+            foreach (var opt in options) {
+                if (optionsType[opt.Key] != "Boolean") {
+                    if (string.IsNullOrEmpty(opt.Value))
+                        keyWithoutValue = opt.Key;
+                }
+            }
+
+            if (verboseErrors || (keyWithoutValue != ""))
             {
                 outwriter.WriteLine("Input command: {0}", command);
                 outwriter.WriteLine("Input arguments: ");
@@ -207,6 +222,10 @@ namespace Duplicati.CommandLine
                 outwriter.WriteLine();
             }
 
+            if (keyWithoutValue != "") {
+                Commands.PrintInvalidCommand(outwriter, keyWithoutValue);
+                return 200;
+            }
 
             if (CommandMap.ContainsKey(command))
             {
