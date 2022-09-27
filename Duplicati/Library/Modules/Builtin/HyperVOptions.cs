@@ -120,14 +120,17 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (paths == null || !ContainFilesForBackup(paths) || !hypervUtility.IsHyperVInstalled)
                 return changedOptions;
-            
+
+            if (!hypervUtility.IsVSSWriterSupported)
+                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
+
             if (commandlineOptions.Keys.Contains("vss-exclude-writers"))
             {
                 var excludedWriters = commandlineOptions["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
 
-                if (excludedWriters.Contains(HyperVUtility.HyperVWriterGuid))
+                if (excludedWriters.Contains(HyperVUtility.HyperVWriterGuid) && hypervUtility.IsVSSWriterSupported)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "CannotExcludeHyperVVSSWriter", null, "Excluded writers for VSS cannot contain Hyper-V writer when backuping Hyper-V virtual machines. Removing \"{0}\" to continue", HyperVUtility.HyperVWriterGuid.ToString());
+                    Logging.Log.WriteWarningMessage(LOGTAG, "CannotExcludeHyperVVSSWriter", null, "Excluding Hyper-V writer for VSS on Server OS. Backup will continue, but will be crash consistent only in opposite to application consistent");
                     changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != HyperVUtility.HyperVWriterGuid));
                 }
             }
@@ -138,9 +141,6 @@ namespace Duplicati.Library.Modules.Builtin
                 changedOptions["snapshot-policy"] = "required";
             }
             
-            if (!hypervUtility.IsVSSWriterSupported)
-                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
-
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingHyperVQuery", "Starting to gather Hyper-V information");
             hypervUtility.QueryHyperVGuestsInfo(true);          
             Logging.Log.WriteInformationMessage(LOGTAG, "HyperVMachineCount", "Found {0} virtual machines on Hyper-V", hypervUtility.Guests.Count);
