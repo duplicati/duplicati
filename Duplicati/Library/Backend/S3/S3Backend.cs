@@ -50,11 +50,16 @@ namespace Duplicati.Library.Backend
             { "DreamHost", "objects.dreamhost.com" },
             { "dinCloud - Chicago", "d3-ord.dincloud.com" },
             { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
+            { "Poli Systems (CH)", "s3.polisystems.ch" },
             { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
             { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi Hot Storage", "s3.wasabisys.com" },
             { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
             { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
+            { "Infomaniak Swiss Backup cluster 1", "s3.swiss-backup.infomaniak.com" },
+            { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" },
+            { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
+            { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -341,10 +346,10 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)

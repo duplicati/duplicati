@@ -36,11 +36,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Jottacloud.cs" />
+    <Compile Include="JottacloudAuthHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Strings.cs" />
   </ItemGroup>
@@ -65,9 +69,14 @@
       <Project>{D63E53E4-A458-4C2F-914D-92F715F58ACF}</Project>
       <Name>Duplicati.Library.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+      <Project>{d4c37c33-5e73-4b56-b2c3-dc4a6baa36bb}</Project>
+      <Name>Duplicati.Library.OAuthHelper</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Duplicati.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

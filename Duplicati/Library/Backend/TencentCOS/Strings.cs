@@ -20,7 +20,10 @@ namespace Duplicati.Library.Backend.Strings
         public static string COSBucketDescriptionLong { get { return LC.L(@"Bucket, format: BucketName-APPID"); } }
 
         public static string COSLocationDescriptionShort { get { return LC.L(@"Specifies COS location constraints"); } }
-        public static string COSLocationDescriptionLong { get { return LC.L(@"Region (Region) is the distribution area of ​​the Tencent cloud hosting machine room, the object storage COS data is stored in the storage buckets of these regions. https://cloud.tencent.com/document/product/436/6224"); } }
+        public static string COSLocationDescriptionLong { get { return LC.L(@"Region (Region) is the distribution area of ​​the Tencent cloud hosting machine room, the object storage COS data is stored in the storage buckets of these regions. https://intl.cloud.tencent.com/document/product/436/6224"); } }
+
+        public static string COSStorageClassDescriptionShort { get { return LC.L(@"Storage class of the object"); } }
+        public static string COSStorageClassDescriptionLong { get { return LC.L(@"Storage class of the object; check enumerated values at https://intl.cloud.tencent.com/document/product/436/30925"); } }
     }
 
 }

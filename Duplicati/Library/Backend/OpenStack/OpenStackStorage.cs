@@ -68,6 +68,10 @@ namespace Duplicati.Library.Backend.OpenStack
             new KeyValuePair<string, string>("OVH Cloud Storage", "https://auth.cloud.ovh.net/v3"),
             new KeyValuePair<string, string>("Selectel Cloud Storage", "https://auth.selcdn.ru"),
             new KeyValuePair<string, string>("Memset Cloud Storage", "https://auth.storage.memset.com"),
+            new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 1", "https://swiss-backup.infomaniak.com/identity/v3"),
+            new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 2", "https://swiss-backup02.infomaniak.com/identity/v3"),
+            new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 3", "https://swiss-backup03.infomaniak.com/identity/v3"),
+            new KeyValuePair<string, string>("Infomaniak Public Cloud 1", "https://api.pub1.infomaniak.cloud/identity/v3"),
         };
 
         public static readonly KeyValuePair<string, string>[] OPENSTACK_VERSIONS = {
@@ -565,10 +569,10 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.OpenRead(filename))
-                return PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken);
         }
 
         public void Get(string remotename, string filename)

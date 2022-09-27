@@ -29,39 +29,113 @@ namespace Duplicati.Library.Common.IO
 {
     public struct SystemIOWindows : ISystemIO
     {
-        private const string UNCPREFIX = @"\\?\";
-        private const string UNCPREFIX_SERVER = @"\\?\UNC\";
-        private const string PATHPREFIX_SERVER = @"\\";
+        // Based on the constant names used in
+        // https://github.com/dotnet/runtime/blob/v5.0.12/src/libraries/Common/src/System/IO/PathInternal.Windows.cs
+        private const string ExtendedDevicePathPrefix = @"\\?\";
+        private const string UncPathPrefix = @"\\";
+        private const string AltUncPathPrefix = @"//";
+        private const string UncExtendedPathPrefix = @"\\?\UNC\";
+
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
-        public static string PrefixWithUNC(string path)
+        /// <summary>
+        /// Prefix path with one of the extended device path prefixes
+        /// (@"\\?\" or @"\\?\UNC\") but only if it's a fully qualified
+        /// path with no relative components (i.e., with no "." or ".."
+        /// as part of the path).
+        /// </summary>
+        public static string AddExtendedDevicePathPrefix(string path)
         {
-            if (IsPrefixedWithUNC(path))
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
             {
+                // For example: \\?\C:\Temp\foo.txt or \\?\UNC\example.com\share\foo.txt
                 return path;
             }
-            return path.StartsWith(PATHPREFIX_SERVER, StringComparison.Ordinal)
-                ? UNCPREFIX_SERVER + path.Substring(PATHPREFIX_SERVER.Length)
-                : UNCPREFIX + path;
+            else
+            {
+                var hasRelativePathComponents = HasRelativePathComponents(path);
+                if (IsPrefixedWithUncPathPrefix(path) && !hasRelativePathComponents)
+                {
+                    // For example: \\example.com\share\foo.txt or //example.com/share/foo.txt
+                    return UncExtendedPathPrefix + ConvertSlashes(path.Substring(UncPathPrefix.Length));
+                }
+                else if (DotNetRuntimePathWindows.IsPathFullyQualified(path) && !hasRelativePathComponents)
+                {
+                    // For example: C:\Temp\foo.txt or C:/Temp/foo.txt
+                    return ExtendedDevicePathPrefix + ConvertSlashes(path);
+                }
+                else
+                {
+                    // A relative path or a fully qualified path with relative
+                    // path components so the extended device path prefixes
+                    // cannot be applied.
+                    //
+                    // For example: foo.txt or C:\Temp\..\foo.txt
+                    return path;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Returns true if prefixed with @"\\" or @"//".
+        /// </summary>
+        private static bool IsPrefixedWithUncPathPrefix(string path)
+        {
+            return path.StartsWith(UncPathPrefix, StringComparison.Ordinal) ||
+                path.StartsWith(AltUncPathPrefix, StringComparison.Ordinal);
         }
 
-        private static bool IsPrefixedWithUNC(string path)
+        /// <summary>
+        /// Returns true if prefixed with @"\\?\UNC\" or @"\\?\".
+        /// </summary>
+        private static bool IsPrefixedWithExtendedDevicePathPrefix(string path)
         {
-            return path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal) ||
-                path.StartsWith(UNCPREFIX, StringComparison.Ordinal);
+            return path.StartsWith(UncExtendedPathPrefix, StringComparison.Ordinal) ||
+                path.StartsWith(ExtendedDevicePathPrefix, StringComparison.Ordinal);
         }
 
-        public static string StripUNCPrefix(string path)
+        private static string[] relativePathComponents = new[] { ".", ".." };
+
+        /// <summary>
+        /// Returns true if <paramref name="path"/> contains relative path components; i.e., "." or "..".
+        /// </summary>
+        private static bool HasRelativePathComponents(string path)
         {
-            if (path.StartsWith(UNCPREFIX_SERVER, StringComparison.Ordinal))
+            return GetPathComponents(path).Any(pathComponent => relativePathComponents.Contains(pathComponent));
+        }
+
+        /// <summary>
+        /// Returns a sequence representing the files and directories in <paramref name="path"/>.
+        /// </summary>
+        private static IEnumerable<string> GetPathComponents(string path)
+        {
+            while (!String.IsNullOrEmpty(path))
+            {
+                var pathComponent = Path.GetFileName(path);
+                if (!String.IsNullOrEmpty(pathComponent))
+                {
+                    yield return pathComponent;
+                }
+                path = Path.GetDirectoryName(path);
+            }
+        }
+
+        /// <summary>
+        /// Removes either of the extended device path prefixes
+        /// (@"\\?\" or @"\\?\UNC\") if <paramref name="path"/> is prefixed
+        /// with one of them.
+        /// </summary>
+        public static string RemoveExtendedDevicePathPrefix(string path)
+        {
+            if (path.StartsWith(UncExtendedPathPrefix, StringComparison.Ordinal))
             {
                 // @"\\?\UNC\example.com\share\file.txt" to @"\\example.com\share\file.txt"
-                return PATHPREFIX_SERVER + path.Substring(UNCPREFIX_SERVER.Length);
+                return UncPathPrefix + path.Substring(UncExtendedPathPrefix.Length);
             }
-            else if (path.StartsWith(UNCPREFIX, StringComparison.Ordinal))
+            else if (path.StartsWith(ExtendedDevicePathPrefix, StringComparison.Ordinal))
             {
                 // @"\\?\C:\file.txt" to @"C:\file.txt"
-                return path.Substring(UNCPREFIX.Length);
+                return path.Substring(ExtendedDevicePathPrefix.Length);
             }
             else
             {
@@ -159,100 +233,100 @@ namespace Duplicati.Library.Common.IO
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
-            return System.IO.Directory.GetAccessControl(PrefixWithUNC(path));
+            return System.IO.Directory.GetAccessControl(AddExtendedDevicePathPrefix(path));
         }
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
-            return System.IO.File.GetAccessControl(PrefixWithUNC(path));
+            return System.IO.File.GetAccessControl(AddExtendedDevicePathPrefix(path));
         }
 
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
-            System.IO.File.SetAccessControl(PrefixWithUNC(path), rules);
+            System.IO.File.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
         }
 
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
-            System.IO.Directory.SetAccessControl(PrefixWithUNC(path), rules);
+            System.IO.Directory.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
         }
 
         #region ISystemIO implementation
         public void DirectoryCreate(string path)
         {
-            System.IO.Directory.CreateDirectory(PrefixWithUNC(path));
+            System.IO.Directory.CreateDirectory(AddExtendedDevicePathPrefix(path));
         }
 
         public void DirectoryDelete(string path, bool recursive)
         {
-            System.IO.Directory.Delete(PrefixWithUNC(path), recursive);
+            System.IO.Directory.Delete(AddExtendedDevicePathPrefix(path), recursive);
         }
 
         public bool DirectoryExists(string path)
         {
-            return System.IO.Directory.Exists(PrefixWithUNC(path));
+            return System.IO.Directory.Exists(AddExtendedDevicePathPrefix(path));
         }
 
         public void DirectoryMove(string sourceDirName, string destDirName)
         {
-            System.IO.Directory.Move(PrefixWithUNC(sourceDirName), PrefixWithUNC(destDirName));
+            System.IO.Directory.Move(AddExtendedDevicePathPrefix(sourceDirName), AddExtendedDevicePathPrefix(destDirName));
         }
 
         public void FileDelete(string path)
         {
-            System.IO.File.Delete(PrefixWithUNC(path));
+            System.IO.File.Delete(AddExtendedDevicePathPrefix(path));
         }
 
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
-            System.IO.File.SetLastWriteTimeUtc(PrefixWithUNC(path), time);
+            System.IO.File.SetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path), time);
         }
 
         public void FileSetCreationTimeUtc(string path, DateTime time)
         {
-            System.IO.File.SetCreationTimeUtc(PrefixWithUNC(path), time);
+            System.IO.File.SetCreationTimeUtc(AddExtendedDevicePathPrefix(path), time);
         }
 
         public DateTime FileGetLastWriteTimeUtc(string path)
         {
-            return System.IO.File.GetLastWriteTimeUtc(PrefixWithUNC(path));
+            return System.IO.File.GetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path));
         }
 
         public DateTime FileGetCreationTimeUtc(string path)
         {
-            return System.IO.File.GetCreationTimeUtc(PrefixWithUNC(path));
+            return System.IO.File.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
         }
 
         public bool FileExists(string path)
         {
-            return System.IO.File.Exists(PrefixWithUNC(path));
+            return System.IO.File.Exists(AddExtendedDevicePathPrefix(path));
         }
 
         public System.IO.FileStream FileOpenRead(string path)
         {
-            return System.IO.File.Open(PrefixWithUNC(path), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
+            return System.IO.File.Open(AddExtendedDevicePathPrefix(path), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
         }
 
         public System.IO.FileStream FileOpenWrite(string path)
         {
             return !FileExists(path)
                 ? FileCreate(path)
-                : System.IO.File.OpenWrite(PrefixWithUNC(path));
+                : System.IO.File.OpenWrite(AddExtendedDevicePathPrefix(path));
         }
 
         public System.IO.FileStream FileCreate(string path)
         {
-            return System.IO.File.Create(PrefixWithUNC(path));
+            return System.IO.File.Create(AddExtendedDevicePathPrefix(path));
         }
 
         public System.IO.FileAttributes GetFileAttributes(string path)
         {
-            return System.IO.File.GetAttributes(PrefixWithUNC(path));
+            return System.IO.File.GetAttributes(AddExtendedDevicePathPrefix(path));
         }
 
         public void SetFileAttributes(string path, System.IO.FileAttributes attributes)
         {
-            System.IO.File.SetAttributes(PrefixWithUNC(path), attributes);
+            System.IO.File.SetAttributes(AddExtendedDevicePathPrefix(path), attributes);
         }
 
         /// <summary>
@@ -264,7 +338,7 @@ namespace Duplicati.Library.Common.IO
         {
             try
             {
-                return AlphaFS.File.GetLinkTargetInfo(PrefixWithUNC(file)).PrintName;
+                return AlphaFS.File.GetLinkTargetInfo(AddExtendedDevicePathPrefix(file)).PrintName;
             }
             catch (AlphaFS.NotAReparsePointException) { }
             catch (AlphaFS.UnrecognizedReparsePointException) { }
@@ -277,149 +351,154 @@ namespace Duplicati.Library.Common.IO
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
         {
-            return System.IO.Directory.EnumerateFileSystemEntries(PrefixWithUNC(path)).Select(StripUNCPrefix);
+            return System.IO.Directory.EnumerateFileSystemEntries(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
         }
 
         public IEnumerable<string> EnumerateFiles(string path)
         {
-            return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path)).Select(StripUNCPrefix);
+            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
         }
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
         {
-            return System.IO.Directory.EnumerateFiles(PrefixWithUNC(path), searchPattern,  searchOption).Select(StripUNCPrefix);
+            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern,  searchOption).Select(RemoveExtendedDevicePathPrefix);
         }
 
         public string PathGetFileName(string path)
         {
-            return StripUNCPrefix(System.IO.Path.GetFileName(PrefixWithUNC(path)));
+            return RemoveExtendedDevicePathPrefix(System.IO.Path.GetFileName(AddExtendedDevicePathPrefix(path)));
         }
 
         public string PathGetDirectoryName(string path)
         {
-            return StripUNCPrefix(System.IO.Path.GetDirectoryName(PrefixWithUNC(path)));
+            return RemoveExtendedDevicePathPrefix(System.IO.Path.GetDirectoryName(AddExtendedDevicePathPrefix(path)));
         }
 
         public string PathGetExtension(string path)
         {
-            return StripUNCPrefix(System.IO.Path.GetExtension(PrefixWithUNC(path)));
+            return RemoveExtendedDevicePathPrefix(System.IO.Path.GetExtension(AddExtendedDevicePathPrefix(path)));
         }
 
         public string PathChangeExtension(string path, string extension)
         {
-            return StripUNCPrefix(System.IO.Path.ChangeExtension(PrefixWithUNC(path), extension));
+            return RemoveExtendedDevicePathPrefix(System.IO.Path.ChangeExtension(AddExtendedDevicePathPrefix(path), extension));
         }
 
         public void DirectorySetLastWriteTimeUtc(string path, DateTime time)
         {
-            System.IO.Directory.SetLastWriteTimeUtc(PrefixWithUNC(path), time);
+            System.IO.Directory.SetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path), time);
         }
 
         public void DirectorySetCreationTimeUtc(string path, DateTime time)
         {
-            System.IO.Directory.SetCreationTimeUtc(PrefixWithUNC(path), time);
+            System.IO.Directory.SetCreationTimeUtc(AddExtendedDevicePathPrefix(path), time);
         }
 
         public void FileMove(string source, string target)
         {
-            System.IO.File.Move(PrefixWithUNC(source), PrefixWithUNC(target));
+            System.IO.File.Move(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target));
         }
 
         public long FileLength(string path)
         {
-            return new System.IO.FileInfo(PrefixWithUNC(path)).Length;
+            return new System.IO.FileInfo(AddExtendedDevicePathPrefix(path)).Length;
         }
 
         public string GetPathRoot(string path)
         {
-            if (IsPrefixedWithUNC(path))
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
             {
                 return Path.GetPathRoot(path);
             }
             else
             {
-                return StripUNCPrefix(Path.GetPathRoot(PrefixWithUNC(path)));
+                return RemoveExtendedDevicePathPrefix(Path.GetPathRoot(AddExtendedDevicePathPrefix(path)));
             }
         }
 
         public string[] GetDirectories(string path)
         {
-            if (IsPrefixedWithUNC(path))
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
             {
                 return Directory.GetDirectories(path);
             }
             else
             {
-                return Directory.GetDirectories(PrefixWithUNC(path)).Select(StripUNCPrefix).ToArray();
+                return Directory.GetDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
             }
         }
 
         public string[] GetFiles(string path)
         {
-            if (IsPrefixedWithUNC(path))
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
             {
                 return Directory.GetFiles(path);
             }
             else
             {
-                return Directory.GetFiles(PrefixWithUNC(path)).Select(StripUNCPrefix).ToArray();
+                return Directory.GetFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
             }
         }
 
         public string[] GetFiles(string path, string searchPattern)
         {
-            if (IsPrefixedWithUNC(path))
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
             {
                 return Directory.GetFiles(path, searchPattern);
             }
             else
             {
-                return Directory.GetFiles(PrefixWithUNC(path), searchPattern).Select(StripUNCPrefix).ToArray();
+                return Directory.GetFiles(AddExtendedDevicePathPrefix(path), searchPattern).Select(RemoveExtendedDevicePathPrefix).ToArray();
             }
         }
 
         public DateTime GetCreationTimeUtc(string path)
         {
-            return Directory.GetCreationTimeUtc(PrefixWithUNC(path));
+            return Directory.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
         }
 
         public DateTime GetLastWriteTimeUtc(string path)
         {
-            return Directory.GetLastWriteTimeUtc(PrefixWithUNC(path));
+            return Directory.GetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path));
         }
 
         public IEnumerable<string> EnumerateDirectories(string path)
         {
-            if (IsPrefixedWithUNC(path))
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
             {
                 return Directory.EnumerateDirectories(path);
             }
             else
             {
-                return Directory.EnumerateDirectories(PrefixWithUNC(path)).Select(StripUNCPrefix);
+                return Directory.EnumerateDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
             }
         }
 
         public void FileCopy(string source, string target, bool overwrite)
         {
-            File.Copy(PrefixWithUNC(source), PrefixWithUNC(target), overwrite);
+            File.Copy(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target), overwrite);
         }
 
         public string PathGetFullPath(string path)
         {
-            if (IsPrefixedWithUNC(path))
+            // Desired behavior:
+            // 1. If path is already prefixed with \\?\, it should be left untouched
+            // 2. If path is not already prefixed with \\?\, the return value should also not be prefixed
+            // 3. If path is relative or has relative components, that should be resolved by calling Path.GetFullPath()
+            // 4. If path is not relative and has no relative components, prefix with \\?\ to prevent normalization from munging "problematic Windows paths"
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
             {
-                return System.IO.Path.GetFullPath(ConvertSlashes(path));
+                return path;
             }
             else
             {
-                return StripUNCPrefix(System.IO.Path.GetFullPath(PrefixWithUNC(ConvertSlashes(path))));
+                return RemoveExtendedDevicePathPrefix(Path.GetFullPath(AddExtendedDevicePathPrefix(path)));
             }
         }
 
         public IFileEntry DirectoryEntry(string path)
         {
-            var dInfo = new DirectoryInfo(PrefixWithUNC(path));
+            var dInfo = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
             return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
             {
                 IsFolder = true
@@ -428,8 +507,20 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry FileEntry(string path)
         {
-            var fileInfo = new FileInfo(PrefixWithUNC(path));
-            return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+            var fileInfo = new FileInfo(AddExtendedDevicePathPrefix(path));
+            var lastAccess = new DateTime();
+            try
+            {
+                // Internally this will convert the FILETIME value from Windows API to a
+                // DateTime. If the value represents a date after 12/31/9999 it will throw
+                // ArgumentOutOfRangeException, because this is not supported by DateTime.
+                // Some file systems seem to set strange access timestamps on files, which
+                // may lead to this exception being thrown. Since the last accessed
+                // timestamp is not important such exeptions are just silently ignored.
+                lastAccess = fileInfo.LastAccessTime;
+            }
+            catch { }
+            return new FileEntry(fileInfo.Name, fileInfo.Length, lastAccess, fileInfo.LastWriteTime);
         }
 
         public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
@@ -520,11 +611,11 @@ namespace Duplicati.Library.Common.IO
 
             if (asDir)
             {
-                Alphaleonis.Win32.Filesystem.Directory.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                Alphaleonis.Win32.Filesystem.Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
             }
             else
             {
-                Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(PrefixWithUNC(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
             }
 
             //Sadly we do not get a notification if the creation fails :(

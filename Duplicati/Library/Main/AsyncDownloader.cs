@@ -13,6 +13,8 @@ namespace Duplicati.Library.Main
 
     internal class AsyncDownloader : IEnumerable<IAsyncDownloadedFile>
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<AsyncDownloader>();
+
         private class AsyncDownloaderEnumerator : IEnumerator<IAsyncDownloadedFile>
         {
             private class AsyncDownloadedFile : IAsyncDownloadedFile
@@ -110,6 +112,7 @@ namespace Duplicati.Library.Main
                 }
                 catch (Exception ex)
                 {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedToRetrieveFile", ex, "Failed to retrieve file {0}", m_volumes[m_index].Name);
                     exception = ex;
                 }
                 

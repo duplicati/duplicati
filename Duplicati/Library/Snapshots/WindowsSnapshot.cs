@@ -53,8 +53,8 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         public WindowsSnapshot(IEnumerable<string> sources, IDictionary<string, string> options)
         {
-            // For Windows, ensure we don't store paths with UNC prefix
-            sources = sources.Select(SystemIOWindows.StripUNCPrefix);
+            // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
+            sources = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix);
             try
             {
                 _vssBackupComponents = new VssBackupComponents();
@@ -115,11 +115,11 @@ namespace Duplicati.Library.Snapshots
             tmp = SystemIO.IO_WIN.GetDirectories(spath); 
             var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
-            volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
+            volumePath = SystemIOWindows.AddExtendedDevicePathPrefix(volumePath);
 
             for (var i = 0; i < tmp.Length; i++)
             {
-                tmp[i] = root + SystemIOWindows.PrefixWithUNC(tmp[i]).Substring(volumePath.Length);
+                tmp[i] = root + SystemIOWindows.AddExtendedDevicePathPrefix(tmp[i]).Substring(volumePath.Length);
             }
 
             return tmp;
@@ -142,11 +142,11 @@ namespace Duplicati.Library.Snapshots
             // convert back to non-shadow, i.e., non-vss version
             var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
-            volumePath = SystemIOWindows.PrefixWithUNC(volumePath);
+            volumePath = SystemIOWindows.AddExtendedDevicePathPrefix(volumePath);
 
             for (var i = 0; i < files.Length; i++)
             {
-                files[i] = root + SystemIOWindows.PrefixWithUNC(files[i]).Substring(volumePath.Length);
+                files[i] = root + SystemIOWindows.AddExtendedDevicePathPrefix(files[i]).Substring(volumePath.Length);
             }
 
             return files;
@@ -163,8 +163,8 @@ namespace Duplicati.Library.Snapshots
         /// <param name="errorCallback">The callback used to report errors</param>
         public override IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
         {
-            // For Windows, ensure we don't store paths with UNC prefix
-            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.StripUNCPrefix), callback, errorCallback);
+            // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
+            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix), callback, errorCallback);
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Snapshots
         {
             var spath = ConvertToSnapshotPath(localPath);
 
-            return SystemIO.IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return SystemIO.IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.AddExtendedDevicePathPrefix(spath));
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace Duplicati.Library.Snapshots
         {
             var spath = ConvertToSnapshotPath(localPath);
 
-            return SystemIO.IO_WIN.GetCreationTimeUtc(SystemIOWindows.PrefixWithUNC(spath));
+            return SystemIO.IO_WIN.GetCreationTimeUtc(SystemIOWindows.AddExtendedDevicePathPrefix(spath));
         }
 
         /// <summary>
@@ -274,8 +274,8 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override string ConvertToSnapshotPath(string localPath)
         {
-            // For Windows, ensure we don't store paths with UNC prefix
-            localPath = SystemIOWindows.StripUNCPrefix(localPath);
+            // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
+            localPath = SystemIOWindows.RemoveExtendedDevicePathPrefix(localPath);
 
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();

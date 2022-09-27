@@ -26,8 +26,9 @@
     <meta name="theme-color" content="#ffffff">
 
     <link rel="stylesheet" type="text/css" href="styles/smoothness/jquery-ui.min.css">
-    <link rel="stylesheet" type="text/css" href="styles/style.css?v=2.0.0.7">
-    <link rel="stylesheet" type="text/css" href="styles/themes.css?v=2.0.0.7">
+    <link rel="stylesheet" type="text/css" href="styles/default.css" disabled="disabled">
+    <link rel="stylesheet" type="text/css" href="styles/dark.css" disabled="disabled">	 
+    <link rel="stylesheet" type="text/css" href="styles/{{active_theme}}.css">
     <link rel="stylesheet" type="text/css" href="../oem/ngax/styles/oem.css?v=2.0.0.7" />
     <link rel="stylesheet" type="text/css" href="../customized/customized.css?v=2.0.0.7" />
 
@@ -131,7 +132,7 @@
     <script type="text/javascript" src="../customized/customized.js?v=2.0.0.7"></script>
 
 </head>
-<body class="theme-{{active_theme}}">
+<body>
 
     <div class="container">
         <div class="header">
@@ -282,9 +283,9 @@
     <notification-area></notification-area>
 
     <div ng-controller="DialogController">
-        <div ng-show="state.CurrentItem != null" class="blocker" ng-click=""></div>
+        <div ng-show="state.CurrentItem != null && state.CurrentItem.title != null" class="blocker" ng-click=""></div>
 
-        <div ng-show="state.CurrentItem != null" class="modal-dialog ng-cloak">
+        <div ng-show="state.CurrentItem != null && state.CurrentItem.title != null" class="modal-dialog ng-cloak">
             <div class="info">
                 <div class="title">{{state.CurrentItem.title}}</div>
                 <div class="content" ng-show="state.CurrentItem.message || state.CurrentItem.enableTextarea">
