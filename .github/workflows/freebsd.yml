@@ -19,7 +19,7 @@ jobs:
       uses: vmactions/freebsd-vm@v0
       with:
         usesh: true
-        sync: sshfs
+        # sync: sshfs
         prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget icu
         run: |
           #!/bin/bash
@@ -86,7 +86,7 @@ jobs:
       uses: vmactions/freebsd-vm@v0
       with:
         usesh: true
-        sync: sshfs
+        # sync: sshfs
         prepare: pkg install -y curl libinotify libunwind git cmake ninja bash wget icu
         run: |
           #!/bin/bash
