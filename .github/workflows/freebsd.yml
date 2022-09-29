@@ -16,7 +16,7 @@ jobs:
       run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.3/dotnet-sdk-6.0.201-freebsd-x64.tar.gz -o dn.tgz
     - name: Build
       id: test
-      uses: vmactions/freebsd-vm@v0.1.5
+      uses: vmactions/freebsd-vm@v0
       with:
         usesh: true
         sync: sshfs
@@ -83,7 +83,7 @@ jobs:
       run: curl -L https://github.com/Thefrank/dotnet-freebsd-crossbuild/releases/download/v6.0.3/dotnet-sdk-6.0.201-freebsd-x64.tar.gz -o dn.tgz
     - name: Run test
       id: test
-      uses: vmactions/freebsd-vm@v0.1.5
+      uses: vmactions/freebsd-vm@v0
       with:
         usesh: true
         sync: sshfs
