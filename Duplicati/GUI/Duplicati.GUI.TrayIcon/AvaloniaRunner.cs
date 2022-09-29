@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
@@ -30,6 +31,9 @@ namespace Duplicati.GUI.TrayIcon
 {
     public class AvaloniaRunner : TrayIconBase
     {
+        private AvaloniaApp application;
+        private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
+
         public override void Init(string[] args)
         {
             //Init
@@ -56,32 +60,41 @@ namespace Duplicati.GUI.TrayIcon
         #region implemented abstract members of Duplicati.GUI.TrayIcon.TrayIconBase
         protected override void Run(string[] args)
         {
+            var lifetime = new ClassicDesktopStyleApplicationLifetime()
+            {
+                Args = args,
+                ShutdownMode = ShutdownMode.OnExplicitShutdown
+            };
 
-
-            Avalonia.Controls.AppBuilderBase<Avalonia.AppBuilder>.Configure<AvaloniaApp>()
+            var builder = Avalonia.Controls.AppBuilderBase<Avalonia.AppBuilder>.Configure<AvaloniaApp>()
                 .UsePlatformDetect()
-                .LogToTrace().StartWithClassicDesktopLifetime(args);
+                .LogToTrace().SetupWithLifetime(lifetime);
+
+            application = builder.Instance as AvaloniaApp;
+            application.SetMenu(menuItems);
+
+            lifetime.Start(args);
         }
 
         protected override IMenuItem CreateMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
         {
-            return new Win32MenuItem(text, icon, callback, subitems);
+            return new AvaloniaMenuItem(text, icon, callback, subitems);
         }
 
         protected override void NotifyUser(string title, string message, NotificationType type)
         {
-            var icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
+            //var icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
 
             switch (type)
             {
                 case NotificationType.Information:
-                    icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
+                    //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
                     break;
                 case NotificationType.Warning:
-                    icon = Win32NativeNotifyIcon.InfoFlags.NIIF_WARNING;
+                    //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_WARNING;
                     break;
                 case NotificationType.Error:
-                    icon = Win32NativeNotifyIcon.InfoFlags.NIIF_ERROR;
+                    //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_ERROR;
                     break;
             }
 
@@ -90,44 +103,18 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void Exit()
         {
-            //m_ntfIcon.Delete();
-            //m_window.DestroyWindow();
+            this.application?.Shutdown();
         }
 
         protected override void SetIcon(TrayIcons icon)
         {
-            //There are calls before NotifyIcons is created
-            //if (m_ntfIcon == null)
-            //    return;
-
-            //switch (icon)
-            //{
-            //    case TrayIcons.IdleError:
-            //        m_ntfIcon?.SetIcon(Win32IconLoader.TrayErrorIcon);
-            //        break;
-            //    case TrayIcons.Paused:
-            //    case TrayIcons.PausedError:
-            //        m_ntfIcon?.SetIcon(Win32IconLoader.TrayPauseIcon);
-            //        break;
-            //    case TrayIcons.Running:
-            //    case TrayIcons.RunningError:
-            //        m_ntfIcon?.SetIcon(Win32IconLoader.TrayWorkingIcon);
-            //        break;
-            //    case TrayIcons.Idle:
-            //        m_ntfIcon?.SetIcon(Win32IconLoader.TrayNormalIcon);
-            //        break;
-            //    default:
-            //        m_ntfIcon?.SetIcon(Win32IconLoader.TrayNormalIcon);
-            //        break;
-            //}
+            this.application?.SetIcon(icon);
         }
 
-        protected override void SetMenu(System.Collections.Generic.IEnumerable<IMenuItem> items)
+        protected override void SetMenu(IEnumerable<IMenuItem> items)
         {
-           //m_TrayContextMenu = new List<Win32MenuItem>();
-
-            //foreach(var item in items)
-            //    m_TrayContextMenu.Add((Win32MenuItem)item);
+            this.menuItems = items.Select(i => (AvaloniaMenuItem)i);
+            this.application?.SetMenu(menuItems);
         }
 
         public override void Dispose()
@@ -136,27 +123,153 @@ namespace Duplicati.GUI.TrayIcon
         #endregion
     }
 
+    public class AvaloniaMenuItem : IMenuItem
+    {
+
+        public string Text { get; private set; }
+        public Action Callback { get; private set; }
+        public IList<IMenuItem> SubItems { get; private set; }
+        public bool Enabled { get; private set; }
+
+        public AvaloniaMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
+        {
+            if (subitems != null && subitems.Count > 0)
+                throw new NotImplementedException("So far not needed.");
+
+            this.Text = text;
+            this.Callback = callback;
+            this.SubItems = subitems;
+            this.Enabled = true;
+            SetIcon(icon);
+        }
+
+        #region IMenuItem implementation
+        public void SetText(string text)
+        {
+            this.Text = text;
+        }
+
+        public void SetIcon(MenuIcons icon)
+        {
+            switch (icon)
+            {
+                case MenuIcons.Pause:
+                    //this.Icon = Win32IconLoader.MenuPauseIcon;
+                    break;
+                case MenuIcons.Quit:
+                    //this.Icon = Win32IconLoader.MenuQuitIcon;
+                    break;
+                case MenuIcons.Resume:
+                    //this.Icon = Win32IconLoader.MenuPlayIcon;
+                    break;
+                case MenuIcons.Status:
+                    //this.Icon = Win32IconLoader.MenuOpenIcon;
+                    break;
+                case MenuIcons.None:
+                default:
+                    //this.Icon = new SafeIconHandle(IntPtr.Zero);
+                    break;
+            }
+        }
+
+        public void SetEnabled(bool isEnabled)
+        {
+            this.Enabled = isEnabled;
+        }
+
+        public void SetDefault(bool value)
+        {
+            //TODO-DNC Cosmetic, not needed
+        }
+        #endregion
+
+        public NativeMenuItem GetNativeItem()
+        {
+            var item = new NativeMenuItem(Text);
+            item.IsEnabled = Enabled;
+            item.Click += (_sender, _args) =>
+            {
+                Callback();
+            };
+            return item;
+        }
+    }
+
     public class AvaloniaApp : Application
     {
+        private Avalonia.Controls.TrayIcon trayIcon;
+
         public override void Initialize()
         {
             //AvaloniaXamlLoader.Load(this);
         }
 
+        public void SetIcon(TrayIcons icon)
+        {
+            //There are calls before the icon is created
+            if (this.trayIcon == null)
+                return;
+
+            switch (icon)
+            {
+                case TrayIcons.IdleError:
+                    this.trayIcon.Icon = LoadIcon("normal-error.png");
+                    break;
+                case TrayIcons.Paused:
+                case TrayIcons.PausedError:
+                     this.trayIcon.Icon = LoadIcon("normal-pause.png");
+                    break;
+                case TrayIcons.Running:
+                case TrayIcons.RunningError:
+                    this.trayIcon.Icon = LoadIcon("normal-running.png");
+                    break;
+                case TrayIcons.Idle:
+                default:
+                    this.trayIcon.Icon = LoadIcon("normal.png");
+                    break;
+            }
+        }
+
+        public void SetMenu(IEnumerable<AvaloniaMenuItem> menuItems)
+        {
+            var menu = new NativeMenu();
+            foreach (var item in menuItems)
+            {
+                menu.Add(item.GetNativeItem());
+            }
+            trayIcon.Menu = menu;
+        }
+
+        public void Shutdown()
+        {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.Shutdown();
+            }
+            else
+            {
+                throw new Exception("Unsupported Lifetime");
+            }
+        }
+
+        private WindowIcon LoadIcon(string iconName)
+        {
+         var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+        var bitmap = new Bitmap(assets.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/" + iconName)));
+        return  new WindowIcon(bitmap);
+    }
+
         public override void OnFrameworkInitializationCompleted()
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-
                 var light = new FluentTheme(new Uri($"avares://{Assembly.GetExecutingAssembly().GetName()}")) { Mode = FluentThemeMode.Light };
                 Styles.Add(light);
 
-                var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                var bitmap = new Bitmap(assets.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/icon.png")));
-                var icon = new WindowIcon(bitmap);
+                var icon = LoadIcon("normal.png");
                 var trayIcon = new Avalonia.Controls.TrayIcon();
-                trayIcon.Icon = icon; //desktop.MainWindow.Icon;
+                this.trayIcon = trayIcon;
+                trayIcon.Icon = icon;
                 trayIcon.ToolTipText = "Test";
                 var menu = new NativeMenu();
                 var item = new NativeMenuItem("Quit");
