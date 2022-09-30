@@ -1,9 +1,9 @@
 name: Freebsd
 on:
   push:
-    branches: "**net5**"
+    branches: "**freebsd**"
   pull_request:
-    branches: "**net5**"
+    branches: "**freebsd**"
 
 jobs:
   zip:
