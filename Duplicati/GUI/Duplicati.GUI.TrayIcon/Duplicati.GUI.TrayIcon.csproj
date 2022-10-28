@@ -192,6 +192,10 @@
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj">
+      <Project>{6b594d23-b629-465c-b799-70ee9e56c218}</Project>
+      <Name>Duplicati.Library.Backend.Idrivee2</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
       <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
       <Name>Duplicati.Library.Backend.Jottacloud</Name>

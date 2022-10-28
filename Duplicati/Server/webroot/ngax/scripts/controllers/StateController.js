@@ -29,7 +29,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
             text = ServerStatus.progress_state_text[$scope.state.lastPgEvent.Phase || ''] || $scope.state.lastPgEvent.Phase;
 
 
-            if ($scope.state.lastPgEvent.Phase == 'Backup_ProcessingFiles') {
+            if ($scope.state.lastPgEvent.Phase == 'Backup_ProcessingFiles' || $scope.state.lastPgEvent.Phase == 'Restore_DownloadingRemoteFiles') {
                 if ($scope.state.lastPgEvent.StillCounting) {
                     text = gettextCatalog.getString('Counting ({{files}} files found, {{size}})', { files: $scope.state.lastPgEvent.TotalFileCount, size: AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize) });
                     pg = 0;
@@ -47,8 +47,10 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
                     // If we have a speed append it
                     var speed_txt = ($scope.state.lastPgEvent.BackendSpeed < 0) ? "" : " at "+AppUtils.formatSizeString($scope.state.lastPgEvent.BackendSpeed)+"/s";
                     
+                    var restoring_text = $scope.state.lastPgEvent.Phase == 'Restore_DownloadingRemoteFiles' ? 'Restoring: ' : '';
+
                     // Finally construct the whole text
-                    text = gettextCatalog.getString('{{files}} files ({{size}}) to go {{speed_txt}}', { files: filesleft, size: AppUtils.formatSizeString(sizeleft), speed_txt: speed_txt});
+                    text = gettextCatalog.getString(restoring_text + '{{files}} files ({{size}}) to go {{speed_txt}}', { files: filesleft, size: AppUtils.formatSizeString(sizeleft), speed_txt: speed_txt});
                 }
             }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Finalize' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
