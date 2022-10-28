@@ -66,6 +66,17 @@ namespace Duplicati.Library.Utility
         public readonly string Password;
 
         /// <summary>
+        /// The SecretKey, if any
+        /// </summary>
+        public readonly string SecretKey;
+
+        /// <summary>
+        /// The SecretKey, if any
+        /// </summary>
+        public readonly string SecretMnemonic;
+
+
+        /// <summary>
         /// The original URI.
         /// </summary>
         public readonly string OriginalUri;
@@ -154,6 +165,8 @@ namespace Duplicati.Library.Utility
                         this.Query = null;
                         this.Username = null;
                         this.Password = null;
+                        this.SecretKey = null;
+                        this.SecretMnemonic = null;
                         return;
                     }
                     catch
@@ -182,6 +195,8 @@ namespace Duplicati.Library.Utility
             this.Query = m.Groups["query"].Success ? m.Groups["query"].Value : null;
             this.Username = m.Groups["username"].Success ? UrlDecode(m.Groups["username"].Value) : null;
             this.Password = m.Groups["password"].Success ? UrlDecode(m.Groups["password"].Value) : null;
+            this.SecretKey = m.Groups["secretkey"].Success ? UrlDecode(m.Groups["secretkey"].Value) : null;
+            this.SecretMnemonic = m.Groups["secretmnemonic"].Success ? UrlDecode(m.Groups["secretmnemonic"].Value) : null;
             if (m.Groups["port"].Success)
                 this.Port = int.Parse(m.Groups["port"].Value);
             else
@@ -198,7 +213,7 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        public Uri(string scheme, string host, string path = null, string query = null, string username = null, string password = null, int port = -1)
+        public Uri(string scheme, string host, string path = null, string query = null, string username = null, string password = null, int port = -1, string secretkey=null, string secretmnemonic = null)
         {
             m_queryParams = null;
             Scheme = scheme;
@@ -208,6 +223,8 @@ namespace Duplicati.Library.Utility
             Username = username;
             Password = password;
             Port = port;
+            SecretKey = secretkey;
+            SecretMnemonic = secretmnemonic;
             OriginalUri = AsString(scheme, host, path, query, username, password, port);
         }
 

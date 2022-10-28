@@ -1192,8 +1192,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['storx'] = function (scope, continuation) {
         scope.Path = scope.Path || '';
         var res =
-            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
+            EditUriBackendConfig.require_field(scope, 'SecretKey', gettextCatalog.getString('SecretKey')) &&
+            EditUriBackendConfig.require_field(scope, 'SecretMnemonic', gettextCatalog.getString('SecretMnemonic'));
 
         if (res)
             continuation();

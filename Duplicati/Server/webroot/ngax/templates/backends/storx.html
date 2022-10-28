@@ -1,10 +1,12 @@
-﻿<div class="input text">
-    <label for="storx_username" translate>Username</label>
-    <input type="text" name="storx_username" id="storx_username" ng-model="$parent.Username" placeholder="{{'Username' | translate}}" />
+﻿<div class="input password">
+    <label for="storx_secretkeye" translate>
+        SecretKey
+    </label>
+    <input type="password" name="storx_secretkeye" id="storx_secretkeye" ng-model="$parent.SecretKey" placeholder="{{'SecretKey' | translate}}" />
 </div>
 <div class="input password">
-    <label for="storx_password" translate>Password</label>
-    <input autocomplete="new-password" type="password" name="storx_password" id="storx_password" ng-model="$parent.Password" placeholder="{{'Password' | translate}}" />
+    <label for="storx_secretmnemonic" translate>SecretMnemonic</label>
+    <input autocomplete="new-password" type="password" name="storx_secretmnemonic" id="storx_secretmnemonic" ng-model="$parent.SecretMnemonic" placeholder="{{'SecretMnemonic' | translate}}" />
 </div>
 <div class="input text">
     <label for="storx_path" translate>Folder </label>

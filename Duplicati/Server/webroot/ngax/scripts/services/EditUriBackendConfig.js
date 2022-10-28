@@ -43,6 +43,10 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
             dict['auth-username'] = scope.Username;
         if (scope.Password != null && scope.Password != '')
             dict['auth-password'] = scope.Password;
+        if (scope.SecretKey != null && scope.SecretKey != '')
+            dict['auth-secretkey'] = scope.SecretKey;
+        if (scope.SecretMnemonic != null && scope.SecretMnemonic != '')
+            dict['auth-secretmnemonic'] = scope.SecretMnemonic;
 
         if (!AppUtils.parse_extra_options(scope.AdvancedOptions, dict))
             return false;
