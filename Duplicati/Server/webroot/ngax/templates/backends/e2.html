@@ -1,0 +1,18 @@
+<div class="input text">
+    <label for="e2_access_key" translate>Access Key Id</label>
+    <input type="text" name="e2_access_key" id="e2_access_key" ng-model="$parent.Username" placeholder="{{'Idrivee2 Access Id' | translate}}" />
+</div>
+<div class="input password">
+    <label for="e2_access_secret" translate>Access Key Secret</label>
+    <input autocomplete="new-password" type="password" name="e2_access_secret" id="e2_access_secret" ng-model="$parent.Password" placeholder="{{'Idrivee2 Access Secret' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="e2_bucket" translate>Bucket name</label>
+    <input type="text" id="b2_bucket" ng-model="$parent.Server" placeholder="{{'Bucket name' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="e2_path" translate>Folder path</label>
+    <input type="text" name="e2_path" id="e2_path" ng-model="$parent.Path" placeholder="{{'Path or subfolder in the bucket' | translate}}" />
+</div>

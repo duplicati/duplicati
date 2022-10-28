@@ -1664,7 +1664,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool PatchWithLocalBlocks
         {
-            get { return m_options.ContainsKey("patch-with-local-blocks"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "patch-with-local-blocks"); }
         }
 
         /// <summary>

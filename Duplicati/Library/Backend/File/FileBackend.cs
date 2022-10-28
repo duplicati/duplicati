@@ -22,6 +22,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +37,7 @@ namespace Duplicati.Library.Backend
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
         private const string OPTION_MOVE_FILE = "use-move-for-put";
         private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
+        private const string OPTION_DISABLE_LENGTH_VERIFICATION = "disable-length-verification";
 
         private readonly string m_path;
         private string m_username;
@@ -43,6 +45,7 @@ namespace Duplicati.Library.Backend
         private readonly bool m_moveFile;
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
+        private readonly bool m_verifyDestinationLength;
 
         private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
@@ -56,7 +59,7 @@ namespace Duplicati.Library.Backend
         {
             var uri = new Utility.Uri(url);
             m_path = uri.HostAndPath;
-            
+
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
@@ -65,7 +68,7 @@ namespace Duplicati.Library.Backend
                 m_username = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
                 m_password = uri.Password;
-            
+
             if (!System.IO.Path.IsPathRooted(m_path))
                 m_path = systemIO.PathGetFullPath(m_path);
 
@@ -81,7 +84,7 @@ namespace Duplicati.Library.Backend
                 if (!Platform.IsClientPosix)
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
-                    
+
                     for (int i = 0; i < paths.Count; i++)
                     {
                         if (paths[i].StartsWith("*:", StringComparison.Ordinal))
@@ -126,6 +129,7 @@ namespace Duplicati.Library.Backend
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
             m_forceReauth = Utility.Utility.ParseBoolOption(options, OPTION_FORCE_REAUTH);
+            m_verifyDestinationLength = Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_LENGTH_VERIFICATION);
             m_hasAutenticated = false;
         }
 
@@ -195,10 +199,14 @@ namespace Duplicati.Library.Backend
             }
         }
 #else
-        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string targetFilename, Stream sourceStream, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream writestream = systemIO.FileCreate(GetRemoteName(remotename)))
-                await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
+            string targetFilePath = GetRemoteName(targetFilename);
+            long copiedBytes = 0;
+            using (var targetStream = systemIO.FileCreate(targetFilePath))
+                copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, targetStream, true, cancelToken, m_copybuffer);
+
+            VerifyMatchingSize(targetFilePath, sourceStream, copiedBytes);
         }
 #endif
 
@@ -209,18 +217,27 @@ namespace Duplicati.Library.Backend
                 Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
         {
-            string path = GetRemoteName(remotename);
+            string targetFilePath = GetRemoteName(targetFilename);
             if (m_moveFile)
             {
-                if (systemIO.FileExists(path))
-                    systemIO.FileDelete(path);
-                
-                systemIO.FileMove(filename, path);
+                if (systemIO.FileExists(targetFilePath))
+                    systemIO.FileDelete(targetFilePath);
+
+                var sourceFileInfo = new FileInfo(sourceFilePath);
+                var sourceFileLength = sourceFileInfo.Exists ? (long?)sourceFileInfo.Length : null;
+
+                systemIO.FileMove(sourceFilePath, targetFilePath);
+                if (m_verifyDestinationLength)
+                    VerifyMatchingSize(targetFilePath, null, sourceFileLength);
             }
             else
-                systemIO.FileCopy(filename, path, true);
+            {
+                systemIO.FileCopy(sourceFilePath, targetFilePath, true);
+                if (m_verifyDestinationLength)
+                    VerifyMatchingSize(targetFilePath, sourceFilePath);
+            }
 
             return Task.FromResult(true);
         }
@@ -246,6 +263,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
                     new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
+                    new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationShort),
+
                 });
 
             }
@@ -385,6 +404,52 @@ namespace Duplicati.Library.Backend
                 out ulong lpFreeBytesAvailable,
                 out ulong lpTotalNumberOfBytes,
                 out ulong lpTotalNumberOfFreeBytes);
+        }
+
+        private static void VerifyMatchingSize(string targetFilePath, string sourceFilePath)
+        {
+            try
+            {
+                var targetFileInfo = new FileInfo(targetFilePath);
+                if (!targetFileInfo.Exists)
+                    throw new FileMissingException($"Target file does not exist. Target: {targetFilePath}");
+
+                var sourceFileInfo = new FileInfo(sourceFilePath);
+                if (!sourceFileInfo.Exists)
+                    throw new FileMissingException($"Source file does not exist. Source: {sourceFilePath}");
+
+                if (targetFileInfo.Length != sourceFileInfo.Length)
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from source file size ({sourceFileInfo.Length:n0}). Target: {targetFilePath}");
+            }
+            catch
+            {
+                try { System.IO.File.Delete(targetFilePath); } catch { }
+                throw;
+            }
+        }
+
+        private static void VerifyMatchingSize(string targetFilePath, Stream sourceStream, long? expectedLength)
+        {
+            try
+            {
+                var targetFileInfo = new FileInfo(targetFilePath);
+                if (!targetFileInfo.Exists)
+                    throw new FileMissingException($"Target file does not exist. Target: {targetFilePath}");
+
+                bool isStreamPostion = false;
+                long? sourceStreamLength = sourceStream == null ? null : Utility.Utility.GetStreamLength(sourceStream, out isStreamPostion);
+
+                if (sourceStreamLength.HasValue && targetFileInfo.Length != sourceStreamLength.Value)
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position)" : "")}. Target: {targetFilePath}");
+
+                if (expectedLength.HasValue && targetFileInfo.Length != expectedLength.Value)
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the expected length ({expectedLength.Value:n0}). Target: {targetFilePath}");
+            }
+            catch
+            {
+                try { System.IO.File.Delete(targetFilePath); } catch { }
+                throw;
+            }
         }
     }
 }
