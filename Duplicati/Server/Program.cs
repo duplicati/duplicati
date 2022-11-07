@@ -637,7 +637,7 @@ namespace Duplicati.Server
 
                 if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
-#if DEBUG
+#if DEBUG || !SQLLITE_WITH_CLOSED_SOURCE_ENCRYPTION
                 //Default is to not use encryption for debugging
                 var useDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") && !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
 #else
