@@ -53,7 +53,9 @@
       <HintPath>..\..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http">
+      <HintPath>$(MSBuildExtensionsPath)\Microsoft\Microsoft.NET.Build.Extensions\net471\lib\System.Net.Http.dll</HintPath>
+    </Reference>
     <Reference Include="System.Net.Http.WebRequest" />
   </ItemGroup>
   <ItemGroup>
