@@ -232,7 +232,9 @@ namespace Duplicati.GUI.TrayIcon
 
         public void SetMenu(IEnumerable<AvaloniaMenuItem> menuItems)
         {
-            var menu = new NativeMenu();
+            // Reuse the menu on Mac
+            var menu = trayIcon.Menu ?? new NativeMenu();
+            menu.Items.Clear();
             foreach (var item in menuItems)
             {
                 menu.Add(item.GetNativeItem());
@@ -271,7 +273,8 @@ namespace Duplicati.GUI.TrayIcon
                 this.trayIcon = trayIcon;
                 trayIcon.Icon = icon;
                 trayIcon.ToolTipText = "Test";
-                var menu = new NativeMenu();
+                //The menu already exists on Mac but is nullable...
+                var menu = trayIcon.Menu ?? new NativeMenu();
                 var item = new NativeMenuItem("Quit");
                 item.Click += (_sender, _args) =>
                 {
