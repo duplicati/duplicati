@@ -31,6 +31,10 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller(backendURL, options, null))
             {
                 var backupResults = c.Backup(new[] {DATAFOLDER});
+                foreach (var backupResultsWarning in backupResults.Warnings)
+                {
+                    TestContext.WriteLine("Backend result warning:" + backupResultsWarning);
+                }
                 Assert.AreEqual(0, backupResults.Errors.Count(), $"Errors: {String.Join(", ", backupResults.Errors)}");
                 Assert.AreEqual(0, backupResults.Warnings.Count(), $"Warnings: {String.Join(", ", backupResults.Warnings)}");
             }

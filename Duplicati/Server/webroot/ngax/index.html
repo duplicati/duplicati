@@ -283,9 +283,9 @@
     <notification-area></notification-area>
 
     <div ng-controller="DialogController">
-        <div ng-show="state.CurrentItem != null" class="blocker" ng-click=""></div>
+        <div ng-show="state.CurrentItem != null && state.CurrentItem.title != null" class="blocker" ng-click=""></div>
 
-        <div ng-show="state.CurrentItem != null" class="modal-dialog ng-cloak">
+        <div ng-show="state.CurrentItem != null && state.CurrentItem.title != null" class="modal-dialog ng-cloak">
             <div class="info">
                 <div class="title">{{state.CurrentItem.title}}</div>
                 <div class="content" ng-show="state.CurrentItem.message || state.CurrentItem.enableTextarea">

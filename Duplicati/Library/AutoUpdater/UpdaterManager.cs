@@ -58,7 +58,7 @@ namespace Duplicati.Library.AutoUpdater
             : Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
         //FIXME: Auto Update doesn't work with the .net5 version
-        private static readonly bool DISABLE_UPDATE_DOMAIN = true;//Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
+        private static readonly bool DISABLE_UPDATE_DOMAIN = true;//Debugger.IsAttached || Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
 
         public static bool RequiresRespawn { get; set; }
 

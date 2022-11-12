@@ -18,7 +18,9 @@ namespace Duplicati.Library.Backend
             : base(accessToken, "dropbox")
         {
             base.AutoAuthHeader = true;
-            base.AccessTokenOnly = true;
+            // Pre 2022 tokens are direct Dropbox tokens (no ':')
+            // Post 2022-02-21 tokens are regular authid tokens (with a ':')
+            base.AccessTokenOnly = !accessToken.Contains(":");
         }
 
         public ListFolderResult ListFiles(string path)

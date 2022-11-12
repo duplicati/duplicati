@@ -81,6 +81,8 @@ CREATE TABLE "FilesetEntry" (
 
 /* Improved reverse lookup for joining Fileset and File table */
 CREATE INDEX "FilesetentryFileIdIndex" on "FilesetEntry" ("FileID");
+CREATE INDEX "nn_FilesetentryFile" on FilesetEntry ("FilesetID","FileID");
+
 
 
 /*
@@ -109,6 +111,9 @@ CREATE TABLE "FileLookup" (
 
 /* Fast path based lookup, single properties are auto-indexed */
 CREATE UNIQUE INDEX "FileLookupPath" ON "FileLookup" ("PrefixID", "Path", "BlocksetID", "MetadataID");
+CREATE INDEX "nn_FileLookup_BlockMeta" ON FileLookup ("BlocksetID", "MetadataID");
+
+
 
 /*
 The File view contains an ID
@@ -167,7 +172,7 @@ CREATE TABLE "BlocksetEntry" (
 
 /* As this table is a cross table we need fast lookup */
 CREATE INDEX "BlocksetEntry_IndexIdsBackwards" ON "BlocksetEntry" ("BlockID");
-
+CREATE INDEX "nnc_BlocksetEntry" ON "BlocksetEntry" ("Index", "BlocksetID", "BlockID");
 
 /*
 The individual block hashes,
@@ -222,6 +227,8 @@ CREATE TABLE "Metadataset" (
 );
 
 CREATE INDEX "MetadatasetBlocksetID" ON "Metadataset" ("BlocksetID");
+CREATE INDEX "nnc_Metadataset" ON Metadataset ("ID","BlocksetID");
+
 
 /*
 Operations performed on the backend,
@@ -280,4 +287,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (11);
+INSERT INTO "Version" ("Version") VALUES (12);

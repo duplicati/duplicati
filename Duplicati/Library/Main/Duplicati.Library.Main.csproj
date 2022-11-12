@@ -46,6 +46,7 @@
     <EmbeddedResource Include="Database\Database schema\9. Refactor Paths.sql" />
     <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
     <EmbeddedResource Include="Database\Database schema\11. Add Block indices.sql" />
+    <EmbeddedResource Include="Database\Database schema\12. Performance Indexes.sql" />
   </ItemGroup>
   
   <ItemGroup>

@@ -1,3 +1,64 @@
+2022-06-15 - 2.0.6.104_canary_2022-06-15
+==========
+* Updated compressed files exclusion list, thanks @martengooz
+* Updated list of Infomaniak servers, thanks @linitio
+* Fixed irregular parsing of `--patch-with-local-blocks`, thanks @warwickmm
+* Added `IDrivee2` backend, thanks @MuhammadAbrar1984
+* Fixed `--use-move-for-put` which broken in previous build, thanks @kenkendk
+
+2022-06-12 - 2.0.6.103_canary_2022-06-12
+==========
+* Avoid creating empty data folders, thanks @albertony
+* Disable updates for debug builds, thanks @AxeOfMen
+* Fixed issue with empty popups, thanks @AxeOfMen
+* Improved Python verification script, thanks @mr-flibble
+* Fixed issue where invalid timestamps would prevent files from being backed up, thanks @albertony
+* Improved restore progress information, thanks @flawiddsouza
+* Python verification script now has statistics, thanks @mr-flibble
+* Added Swiss Backup to list of OpenStack and S3 providers, thanks @PAPAMICA
+* Fixed errors on updated Hyper-V versions, thanks @awerghcpc
+* Added check to detect partially written files on network drives, thanks @dkrahmer
+* Added IDrive as a backup destination, thanks @dkrahmer
+* Removed insecure TLS versions, thanks @mnaiman
+* Changed Jottacloud backend to use OAuth, thanks @albertony
+
+2022-04-06 - 2.0.6.102_canary_2022-04-06
+==========
+**NOTE**: This is a rebuild of 2.0.6.101, now signed.
+
+- Fixed duplicity documentation Url, thanks @beppo-dd
+- Added option to set Tencent storage class, thanks @moesoha
+- Added Poli Systems as S3 provider, thanks @IIPoliII
+- Improved automated unittests, thanks @samuel-w
+- Improved contrast ratios in themes, thanks @samuel-w
+- Improved handling of relative paths and extended device paths, thanks @dferreyra
+- UI performance improvements, thanks @ltGuillaume
+- Added exponential backup for retries, thanks @vmsh0
+- Improved filter-text-box and made log-view resizable, thanks @idotj
+- Improved error messages, thanks @warwickmm
+- Added support for old and new Dropbox AuthIDs, thanks @kenkendk
+- Improved database query performance, thanks @jedthe3rd
+
+2022-03-13 - 2.0.6.101_canary_2022-03-13
+==========
+**NOTE**: This is a preliminary build that is not signed with AuthentiCode.
+
+It is primarily intended for users that need access to Dropbox which stopped working after an update.
+A signed version will be published asap.
+
+- Fixed duplicity documentation Url, thanks @beppo-dd
+- Added option to set Tencent storage class, thanks @moesoha
+- Added Poli Systems as S3 provider, thanks @IIPoliII
+- Improved automated unittests, thanks @samuel-w
+- Improved contrast ratios in themes, thanks @samuel-w
+- Improved handling of relative paths and extended device paths, thanks @dferreyra
+- UI performance improvements, thanks @ltGuillaume
+- Added exponential backup for retries, thanks @vmsh0
+- Improved filter-text-box and made log-view resizable, thanks @idotj
+- Improved error messages, thanks @warwickmm
+- Added support for old and new Dropbox AuthIDs, thanks @kenkendk
+- Improved database query performance, thanks @jedthe3rd
+
 2021-08-11 - 2.0.6.100_canary_2021-08-11
 ==========
 * Switched to improved CI model, thanks @warwickmm

@@ -508,7 +508,19 @@ namespace Duplicati.Library.Common.IO
         public IFileEntry FileEntry(string path)
         {
             var fileInfo = new FileInfo(AddExtendedDevicePathPrefix(path));
-            return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+            var lastAccess = new DateTime();
+            try
+            {
+                // Internally this will convert the FILETIME value from Windows API to a
+                // DateTime. If the value represents a date after 12/31/9999 it will throw
+                // ArgumentOutOfRangeException, because this is not supported by DateTime.
+                // Some file systems seem to set strange access timestamps on files, which
+                // may lead to this exception being thrown. Since the last accessed
+                // timestamp is not important such exeptions are just silently ignored.
+                lastAccess = fileInfo.LastAccessTime;
+            }
+            catch { }
+            return new FileEntry(fileInfo.Name, fileInfo.Length, lastAccess, fileInfo.LastWriteTime);
         }
 
         public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)

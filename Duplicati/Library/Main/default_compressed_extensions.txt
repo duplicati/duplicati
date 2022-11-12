@@ -171,8 +171,12 @@
 # Other Compressed or High-Entropy Files
 .apk #Android Application Package
 .eftx #Microsoft Office Theme Effects
+.mrimg #Macrium Reflect disk image format
+.rvz #Dolphin compression storage format
 .sdg #OpenOffice.org Configuration File	
 .thmx #Microsoft Office Theme
+.tib #Acronis True Image disk image format
+.tibx #Acronis True Image disk image format
 .vsix #Microsoft Visual Studio Extension
 .vsv #Microsoft Virtual Machine Saved State	
 .wmz #Windows Media Player Skin Package	

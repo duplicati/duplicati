@@ -141,6 +141,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Ex
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnixSupport", "Duplicati\UnixSupport\UnixSupport.csproj", "{2B605B81-353F-43CD-BF3A-29B3926A204F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Idrivee2", "Duplicati\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj", "{6B594D23-B629-465C-B799-70EE9E56C218}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C03F6DFD-805A-4BE0-9338-64870ADDB4A2} = {C03F6DFD-805A-4BE0-9338-64870ADDB4A2}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -403,6 +408,10 @@ Global
 		{2B605B81-353F-43CD-BF3A-29B3926A204F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B605B81-353F-43CD-BF3A-29B3926A204F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B605B81-353F-43CD-BF3A-29B3926A204F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
