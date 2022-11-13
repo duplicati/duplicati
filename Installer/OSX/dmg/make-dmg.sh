@@ -9,7 +9,7 @@ TEMPLATE_DMG=template.dmg
 OUTPUT_DMG=Duplicati.dmg
 UNWANTED_FILES="win-tools control_dir Duplicati.sqlite Duplicati-server.sqlite run-script-example.bat lvm-scripts Duplicati.debug.log"
 
-TEMPLATE_DMG_BZ2=$(echo "$SCRIPTDIR/$TEMPLATE_DMG.bz2")
+TEMPLATE_DMG_BZ2=$(echo "$TEMPLATE_DMG.bz2")
 DELETE_DMG=0
 
 if [ -f "$SCRIPTDIR/$TEMPLATE_DMG_BZ2" ]; then
