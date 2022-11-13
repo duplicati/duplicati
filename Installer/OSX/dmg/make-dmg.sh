@@ -61,11 +61,6 @@ cp -r $SRC "Duplicati.app/Contents/MacOS"
 echo Patching "$SCRIPTDIR/Info.plist"
 PLIST=$(cat "$SCRIPTDIR/Info.plist")
 PLIST=${PLIST//!LONG_VERSION!/${VERSION_NUMBER}}
-
-echo PATCHED BEGIN
-echo "${PLIST}"
-echo PATCHED END
-
 echo "${PLIST}" > "Duplicati.app/Contents/Info.plist"
 cp "$SCRIPTDIR/Duplicati.icns" "Duplicati.app/Contents/Resources"
 
@@ -96,6 +91,7 @@ fi
 
 # Make a mount point and mount the new dmg
 mkdir -p "$WC_DIR"
+hdiutil resize -size 300M "$WC_DMG"
 hdiutil attach "$WC_DMG" -noautoopen -quiet -mountpoint "$WC_DIR"
 
 # Change the dmg name
