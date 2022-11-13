@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>duplicati</string>
+	<string>Duplicati.GUI.TrayIcon</string>
 	<key>CFBundleIconFile</key>
 	<string>Duplicati.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -24,6 +24,8 @@
 	<string>Duplicati</string>
 	<key>CFBundleShortVersionString</key>
 	<string>!LONG_VERSION!</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
 	<key>LSUIElement</key>
 	<true />
 </dict>

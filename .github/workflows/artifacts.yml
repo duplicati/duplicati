@@ -83,3 +83,23 @@ jobs:
         with:
           name: duplicati-win-x64-msi
           path: duplicati-win-x64.msi
+  dmg:
+    runs-on: macos-latest
+    needs: zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download zip
+        uses: actions/download-artifact@v2
+        with:
+          name: duplicati-osx-x64
+          path: bin
+      - name: Build DMG
+        shell: bash
+        run: |
+          Installer/OSX/dmg/build.sh
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Duplicati.dmg
+          path: Duplicati.dmg
