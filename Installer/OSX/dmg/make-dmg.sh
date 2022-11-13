@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 SCRIPTDIR=$( cd "$(dirname "$0")" ; pwd -P )
 SRC=$1
@@ -54,13 +54,19 @@ mkdir "Duplicati.app/Contents"
 mkdir "Duplicati.app/Contents/MacOS"
 mkdir "Duplicati.app/Contents/Resources"
 
-# Extract the zip into the Resouces folder
-cp -r $SRC "Duplicati.app/Contents/Resources"
+# Extract the zip into the MacOS folder
+cp -r $SRC "Duplicati.app/Contents/MacOS"
 
 # Install the Info.plist and icon, patch the plist file as well
+echo Patching "$SCRIPTDIR/Info.plist"
 PLIST=$(cat "$SCRIPTDIR/Info.plist")
 PLIST=${PLIST//!LONG_VERSION!/${VERSION_NUMBER}}
-echo ${PLIST} > "Duplicati.app/Contents/Info.plist"
+
+echo PATCHED BEGIN
+echo "${PLIST}"
+echo PATCHED END
+
+echo "${PLIST}" > "Duplicati.app/Contents/Info.plist"
 cp "$SCRIPTDIR/Duplicati.icns" "Duplicati.app/Contents/Resources"
 
 chmod +x "Duplicati.app/Contents/MacOS/Duplicati.GUI.TrayIcon"
