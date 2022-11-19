@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>    
+    <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
+    <Description>Central reference to all backends</Description>
+  </PropertyGroup>
+
+
+	<ItemGroup>
+	<ProjectReference Include="..\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj" />
+	<ProjectReference Include="..\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
+	<ProjectReference Include="..\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj" />
+	<ProjectReference Include="..\Backend\Box\Duplicati.Library.Backend.Box.csproj" />
+	<ProjectReference Include="..\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj" />
+	<ProjectReference Include="..\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj" />
+	<ProjectReference Include="..\Backend\File\Duplicati.Library.Backend.File.csproj" />
+	<ProjectReference Include="..\Backend\FTP\Duplicati.Library.Backend.FTP.csproj" />
+	<ProjectReference Include="..\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj" />
+	<ProjectReference Include="..\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj" />
+	<ProjectReference Include="..\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj" />
+	<ProjectReference Include="..\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj" />
+	<ProjectReference Include="..\Backend\Mega\Duplicati.Library.Backend.Mega.csproj" />
+	<ProjectReference Include="..\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj" />
+	<ProjectReference Include="..\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj" />
+	<ProjectReference Include="..\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj" />
+	<ProjectReference Include="..\Backend\S3\Duplicati.Library.Backend.S3.csproj" />
+	<ProjectReference Include="..\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj" />
+	<ProjectReference Include="..\Backend\Sia\Duplicati.Library.Backend.Sia.csproj" />
+	<ProjectReference Include="..\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj" />
+	<ProjectReference Include="..\Backend\Storj\Duplicati.Library.Backend.Storj.csproj" />
+	<ProjectReference Include="..\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj" />
+	<ProjectReference Include="..\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj" />
+	<ProjectReference Include="..\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj" />
+	<ProjectReference Include="..\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj" />
+	</ItemGroup>
+</Project>
