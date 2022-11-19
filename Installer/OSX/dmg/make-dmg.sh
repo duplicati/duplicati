@@ -69,9 +69,9 @@ chmod +x "Duplicati.app/Contents/MacOS/Duplicati.GUI.TrayIcon"
 # Remove some of the files that we do not like
 for FILE in $UNWANTED_FILES
 do
-    if [ -e "Duplicati.app/Contents/Resources/${FILE}" ]
+    if [ -e "Duplicati.app/Contents/MacOS/${FILE}" ]
     then
-        rm -rf "Duplicati.app/Contents/Resources/${FILE}"
+        rm -rf "Duplicati.app/Contents/MacOS/${FILE}"
     fi
 done
 
