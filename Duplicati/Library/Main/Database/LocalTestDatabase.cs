@@ -127,7 +127,11 @@ namespace Duplicati.Library.Main.Database
                 //First we select some filesets
                 var files = new List<RemoteVolume>();
                 var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
-                using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""State"" IN (?, ?)) A, ""Fileset"" " +  whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ", RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString(), tp.Item2))
+                var args = new List<object>();
+                args.Add(RemoteVolumeState.Uploaded.ToString());
+                args.Add(RemoteVolumeState.Verified.ToString());
+                args.AddRange(tp.Item2);
+                using(var rd = cmd.ExecuteReader(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""State"" IN (?, ?)) A, ""Fileset"" " +  whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ", args.ToArray()))
                     while (rd.Read())
                         files.Add(new RemoteVolume(rd));
                         
