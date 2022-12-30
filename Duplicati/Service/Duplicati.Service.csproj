@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <AssemblyName>Duplicati.Service.Implementation</AssemblyName>
   </PropertyGroup>

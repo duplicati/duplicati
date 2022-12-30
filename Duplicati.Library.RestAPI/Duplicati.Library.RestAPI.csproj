@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\**" />
+    <Compile Remove="Database\Database schema\DatabaseConnectionSchemaMarker.cs" />
+    <EmbeddedResource Include="Database\DatabaseConnectionSchemaMarker.cs" />
+    <EmbeddedResource Include="newbackup.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="4.7.0" />
+    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="HttpServer">
+			<HintPath>..\thirdparty\HttpServer\HttpServer.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj" />
+    <ProjectReference Include="..\Duplicati\Library\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj" />
+    <ProjectReference Include="..\Duplicati\Library\Main\Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
+    <ProjectReference Include="..\Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
+    <ProjectReference Include="..\Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>

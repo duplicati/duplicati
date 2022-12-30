@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Copyright>LGPL, Copyright © Duplicati Team 2021</Copyright>
     <Description>The Server Duplicati implementation</Description>
     <AssemblyName>Duplicati.Server.Implementation</AssemblyName>
@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj" />
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
     </ProjectReference>
     <ProjectReference Include="..\CommandLine\CLI\Duplicati.CommandLine.csproj">
@@ -45,6 +46,7 @@
     <ProjectReference Include="..\License\Duplicati.License.csproj">
     </ProjectReference>
     <ProjectReference Include="..\UnixSupport\UnixSupport.csproj" />
+    <ProjectReference Include="..\WebserverCore\Duplicati.WebserverCore.csproj" />
     <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
     </ProjectReference>
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
@@ -67,11 +69,6 @@
     <Reference Include="HttpServer">
       <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <EmbeddedResource Include="newbackup.json" />
-    <EmbeddedResource Include="Database\Database schema\**" />
   </ItemGroup>
   
   <ItemGroup>
