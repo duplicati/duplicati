@@ -11,5 +11,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj" />
   </ItemGroup>
-
+	
+	<ItemGroup>
+		<Reference Include="HttpServer">
+			<HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 </Project>

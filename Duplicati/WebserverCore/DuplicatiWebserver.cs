@@ -1,4 +1,5 @@
-﻿using Duplicati.WebserverCorer;
+﻿using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace Duplicati.WebserverCore
 {
@@ -7,10 +8,16 @@ namespace Duplicati.WebserverCore
         public Action Foo() {
             var builder = WebApplication.CreateBuilder();
             builder.Host.UseRESTHandlers();
+            builder.Services.AddControllers()
+                // This app gets launched by a different assembly, so we need to tell it to look in this one
+                .AddApplicationPart(this.GetType().Assembly);
+            builder.Services.AddHostedService<ApplicationPartsLogger>();
             var app = builder.Build();
 
-            app.UseTestMiddleware();
-            app.UseRESTHandlerEndpoints();
+            //app.UseTestMiddleware();
+            //app.UseRESTHandlerEndpoints();
+
+            app.MapControllers();
 
             app.RunAsync("http://localhost:3001");
             return () => { app.StopAsync(); };
@@ -23,7 +30,42 @@ namespace Duplicati.WebserverCore
             var app = builder.Build();
 
             app.RunAsync();
-            return () => { app.StopAsync() };
+            return () => { app.StopAsync(); };
         }
+    }
+
+    //Useful for debugging ASP.net magically loading controllers
+    public class ApplicationPartsLogger : IHostedService
+    {
+        private readonly ILogger<ApplicationPartsLogger> _logger;
+        private readonly ApplicationPartManager _partManager;
+
+        public ApplicationPartsLogger(ILogger<ApplicationPartsLogger> logger, ApplicationPartManager partManager)
+        {
+            _logger = logger;
+            _partManager = partManager;
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            // Get the names of all the application parts. This is the short assembly name for AssemblyParts
+            var applicationParts = _partManager.ApplicationParts.Select(x => x.Name);
+
+            // Create a controller feature, and populate it from the application parts
+            var controllerFeature = new ControllerFeature();
+            _partManager.PopulateFeature(controllerFeature);
+
+            // Get the names of all of the controllers
+            var controllers = controllerFeature.Controllers.Select(x => x.Name);
+
+            // Log the application parts and controllers
+            _logger.LogInformation("Found the following application parts: '{ApplicationParts}' with the following controllers: '{Controllers}'",
+                string.Join(", ", applicationParts), string.Join(", ", controllers));
+
+            return Task.CompletedTask;
+        }
+
+        // Required by the interface
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

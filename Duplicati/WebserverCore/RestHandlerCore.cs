@@ -25,7 +25,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Reflection;
 
-namespace Duplicati.WebserverCorer
+namespace Duplicati.WebserverCore
 {
     public class RESTHandlerCoreController : Controller
     {
@@ -36,8 +36,14 @@ namespace Duplicati.WebserverCorer
 
         public static IDictionary<string, IRESTMethod> Modules { get { return _modules; } }
 
-        public RESTHandlerCoreController(List<IRESTMethod> restMethods)
+        public RESTHandlerCoreController(IEnumerable<IRESTMethod> restMethods)
         {
+            Console.WriteLine("Loaded controller!");
+            foreach (var method in restMethods)
+            {
+                var t = method.GetType();
+                _modules.Add(t.Name.ToLowerInvariant(), method);
+            }
         }
 
         [Route(API_URI_PATH + "/{module?}/{key?}")]
@@ -50,6 +56,8 @@ namespace Duplicati.WebserverCorer
             var method = Request.Method;
 
             var ci = ParseRequestCulture(Request.Headers.Accept);
+
+            var info = new RequestInfo(new LegacyHttpRequestShim(), new LegacyHttpResponseShim(), new LegacyHttpSessionShim());
 
             using (Library.Localization.LocalizationService.TemporaryContext(ci))
             {
@@ -211,15 +219,15 @@ namespace Duplicati.WebserverCorer
             return builder;
         }
 
-        public static IEndpointRouteBuilder UseRESTHandlerEndpoints(this IEndpointRouteBuilder builder)
-        {
-            builder.MapFallback(async (HttpContext context) => {
-                await System.Threading.Tasks.Task.Delay(1);
-                context.
-                //TODO: Register controllers without this middleware ?
-            });
-            return builder;
-        }
+        //public static IEndpointRouteBuilder UseRESTHandlerEndpoints(this IEndpointRouteBuilder builder)
+        //{
+        //    builder.MapFallback(async (HttpContext context) => {
+        //        await System.Threading.Tasks.Task.Delay(1);
+        //        // context.
+        //        //TODO: Register controllers without this middleware ?
+        //    });
+        //    return builder;
+        //}
     }
 
 }
