@@ -92,8 +92,13 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
                 restoredb.RepairInProgress = true;
+                var expRecreateDb = false; // experimental recreate db code flag
                 var autoDetectBlockSize = !(m_options.HasBlocksize && restoredb.GetDbOptions().ContainsKey("blocksize"));                    
                 var volumeIds = new Dictionary<string, long>();
+
+                if (string.Equals(Environment.GetEnvironmentVariable("EXPERIMENTAL_RECREATEDB_DUPLICATI") ?? string.Empty, "1")) {
+                    expRecreateDb = true;
+                }
 
                 var rawlist = backend.List();
         
@@ -423,7 +428,12 @@ namespace Duplicati.Library.Main.Operation
 
                     // We have now grabbed as much information as possible,
                     // if we are still missing data, we must now fetch block files
-                    restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, null);
+                    if (expRecreateDb)
+                        // add missing blocks and blocksetentry data (at this point
+                        // we have not yet anything in the blocksetentry table)
+                        restoredb.AddToBlockAndBlockSetEntryFromTemp(hashsize, m_options.Blocksize, null);
+                    else
+                        restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, null);
                 
                     //We do this in three passes
                     for(var i = 0; i < 3; i++)
@@ -483,7 +493,10 @@ namespace Duplicati.Library.Main.Operation
                                         restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
 
                                     // Update tables so we know if we are done
-                                    restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
+                                    if (expRecreateDb)
+                                        restoredb.AddToBlockAndBlockSetEntryFromTemp(hashsize, m_options.Blocksize, tr);
+                                    else
+                                        restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
 
                                     using (new Logging.Timer(LOGTAG, "CommitRestoredBlocklist", "CommitRestoredBlocklist"))
                                         tr.Commit();
