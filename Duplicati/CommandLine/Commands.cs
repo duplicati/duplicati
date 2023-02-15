@@ -394,7 +394,7 @@ namespace Duplicati.CommandLine
                     (res.Files == null || !res.Files.Any()) &&
                     !compareFilter.Empty;
 
-                if (isRequestForFiles && !Library.Utility.Utility.ParseBoolOption(options, "all-versions"))
+                if (isRequestForFiles && !(options.ContainsKey("all-versions")))
                 {
                     outwriter.WriteLine("No files matching, looking in all versions");
                     options["all-versions"] = "true";
