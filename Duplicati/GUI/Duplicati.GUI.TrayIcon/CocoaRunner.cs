@@ -115,7 +115,9 @@ namespace Duplicati.GUI.TrayIcon
                 var dp = new CGDataProvider(b, 0, b.Length);
                 var img2 = CGImage.FromPNG(dp, null, false, CGColorRenderingIntent.Default);
 
-                return new NSImage(img2, new CGSize(18, 18));
+                var nsImage = new NSImage(img2, new CGSize(18, 18));
+                nsImage.Template = true;
+                return nsImage;
             }
         }
 
