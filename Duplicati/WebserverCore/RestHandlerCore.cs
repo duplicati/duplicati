@@ -39,6 +39,7 @@ namespace Duplicati.WebserverCore
         public RESTHandlerCoreController(IEnumerable<IRESTMethod> restMethods)
         {
             Console.WriteLine("Loaded controller!");
+            //FIXME: Why no methods?
             foreach (var method in restMethods)
             {
                 var t = method.GetType();
@@ -57,7 +58,7 @@ namespace Duplicati.WebserverCore
 
             var ci = ParseRequestCulture(Request.Headers.Accept);
 
-            var info = new RequestInfo(new LegacyHttpRequestShim(), new LegacyHttpResponseShim(), new LegacyHttpSessionShim());
+            var info = new RequestInfo(new LegacyHttpRequestShim(Request), new LegacyHttpResponseShim(Response), new LegacyHttpSessionShim());
 
             using (Library.Localization.LocalizationService.TemporaryContext(ci))
             {

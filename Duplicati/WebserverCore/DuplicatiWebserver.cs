@@ -19,6 +19,7 @@ namespace Duplicati.WebserverCore
 
             app.MapControllers();
 
+            // Test http://127.0.0.1:3001/api/v1/Licenses
             app.RunAsync("http://localhost:3001");
             return () => { app.StopAsync(); };
         }

@@ -4,21 +4,24 @@ using HttpServer.FormDecoders;
 using System.Collections.Specialized;
 using System.Net;
 using System.Text;
+using HttpResponse = Microsoft.AspNetCore.Http.HttpResponse;
 
 class LegacyHttpResponseShim : HttpServer.IHttpResponse
 {
-    public Stream Body { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    HttpResponse response;
+    public LegacyHttpResponseShim(HttpResponse response) { this.response = response; }
+    public Stream Body { get => response.Body; set => throw new NotImplementedException(); }
     public string ProtocolVersion { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public bool Chunked { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public ConnectionType Connection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public Encoding Encoding { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public Encoding Encoding { get => Encoding.UTF8; set => throw new NotImplementedException(); }
     public int KeepAlive { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public HttpStatusCode Status { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string Reason { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public long ContentLength { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string ContentType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-    public bool HeadersSent => throw new NotImplementedException();
+    public bool HeadersSent => response.HasStarted;
 
     public bool Sent => throw new NotImplementedException();
 
@@ -26,7 +29,7 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
 
     public void AddHeader(string name, string value)
     {
-        throw new NotImplementedException();
+        response.Headers.Add(name, value);
     }
 
     public void Redirect(Uri uri)

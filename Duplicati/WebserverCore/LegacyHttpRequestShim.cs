@@ -3,12 +3,16 @@ using HttpServer;
 using HttpServer.FormDecoders;
 using System.Collections.Specialized;
 using System.Net;
+using HttpRequest = Microsoft.AspNetCore.Http.HttpRequest;
 
 class LegacyHttpRequestShim : HttpServer.IHttpRequest
 {
+    HttpRequest request;
+    public LegacyHttpRequestShim(HttpRequest request) { this.request = request; }
+
     public string[] AcceptTypes => throw new NotImplementedException();
 
-    public Stream Body { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public Stream Body { get => request.Body; set => throw new NotImplementedException(); }
 
     public bool BodyIsComplete => throw new NotImplementedException();
 
@@ -29,7 +33,12 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
 
     public HttpParam Param => throw new NotImplementedException();
 
-    public HttpInput QueryString => throw new NotImplementedException();
+    public HttpInput QueryString { get {
+            var input = new HttpInput("QueryString");
+            foreach (var kvp in request.Query ) { input.Add(kvp.Key, kvp.Value); }
+            return input;
+        } 
+    }
 
     public bool Secure => throw new NotImplementedException();
 
