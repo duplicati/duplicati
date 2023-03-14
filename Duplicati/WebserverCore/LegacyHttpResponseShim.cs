@@ -16,10 +16,10 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
     public ConnectionType Connection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public Encoding Encoding { get => Encoding.UTF8; set => throw new NotImplementedException(); }
     public int KeepAlive { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public HttpStatusCode Status { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string Reason { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public HttpStatusCode Status { get => throw new NotImplementedException(); set => response.StatusCode = (int)value; }
+    public string Reason { get => throw new NotImplementedException(); set { /*NOP*/ } }
     public long ContentLength { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string ContentType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string ContentType { get => throw new NotImplementedException(); set => response.ContentType = value; }
 
     public bool HeadersSent => response.HasStarted;
 
@@ -44,7 +44,7 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
 
     public void Send()
     {
-        throw new NotImplementedException();
+        response.StartAsync();
     }
 
     public void SendBody(byte[] buffer, int offset, int count)

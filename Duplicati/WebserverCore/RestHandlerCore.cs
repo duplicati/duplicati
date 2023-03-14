@@ -24,6 +24,7 @@ using Org.BouncyCastle.Bcpg.Sig;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace Duplicati.WebserverCore
 {
@@ -32,9 +33,7 @@ namespace Duplicati.WebserverCore
         public const string API_URI_PATH = "/api/v1";
         public static readonly int API_URI_SEGMENTS = API_URI_PATH.Split(new char[] { '/' }).Length;
 
-        private static readonly Dictionary<string, IRESTMethod> _modules = new Dictionary<string, IRESTMethod>(StringComparer.OrdinalIgnoreCase);
-
-        public static IDictionary<string, IRESTMethod> Modules { get { return _modules; } }
+        private readonly Dictionary<string, IRESTMethod> _modules = new Dictionary<string, IRESTMethod>(StringComparer.OrdinalIgnoreCase);
 
         public RESTHandlerCoreController(IEnumerable<IRESTMethod> restMethods)
         {
@@ -49,7 +48,7 @@ namespace Duplicati.WebserverCore
 
         [Route(API_URI_PATH + "/{module?}/{key?}")]
         [AcceptVerbs("GET", "POST", "PUT", "DELETE", "PATCH")]
-        public async Task<ActionResult> Index(string? module, string? key)
+        public async Task<ActionResult?> Index(string? module, string? key)
         {
 
             module = (module != null && module != "") ? module : "help";
@@ -142,7 +141,7 @@ namespace Duplicati.WebserverCore
                 }
             }
 
-            return Ok();
+            return null;
         }
 
 
@@ -213,7 +212,7 @@ namespace Duplicati.WebserverCore
             {
                 foreach (var t in lst)
                 {
-                    services.AddSingleton(t);
+                    services.AddSingleton<IRESTMethod>((IRESTMethod?)Activator.CreateInstance(t) ?? throw new NullReferenceException("RestMethod " + nameof(t) + " is null"));
                 }
             });
 

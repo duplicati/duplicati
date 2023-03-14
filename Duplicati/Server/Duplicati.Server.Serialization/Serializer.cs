@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -37,6 +39,23 @@ namespace Duplicati.Server.Serialization
                 jsonWriter.Flush();
                 sw.Flush();
             }
+        }
+
+        public static async Task SerializeJsonAsync(System.IO.TextWriter tw, object o, bool preventDispose = false)
+        {
+            Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(m_jsonSettings);
+            StringBuilder sb = new StringBuilder();
+            StringWriter sw = new StringWriter(sb);
+            var jsonWriter = new JsonTextWriter(sw);
+            using (preventDispose ? null : jsonWriter)
+            {
+                jsonWriter.Formatting = m_jsonFormatting;
+                jsonSerializer.Serialize(jsonWriter, o); 
+                await jsonWriter.FlushAsync();
+            }
+            await sw.FlushAsync();
+            await tw.WriteAsync(sb.ToString());
+            await tw.FlushAsync();
         }
 
         public static T Deserialize<T>(System.IO.TextReader sr)

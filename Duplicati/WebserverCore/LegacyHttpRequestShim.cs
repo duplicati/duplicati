@@ -23,21 +23,38 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
 
     public HttpForm Form => throw new NotImplementedException();
 
-    public NameValueCollection Headers => throw new NotImplementedException();
+    public NameValueCollection Headers
+    {
+        get
+        {
+            var headers = new NameValueCollection();
+            foreach (var pair in request.Headers)
+            {
+                foreach (var value in pair.Value)
+                {
+                    headers.Add(pair.Key, value);
+                }
+            }
+            return headers;
+        }
+    }
 
     public string HttpVersion { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public bool IsAjax => throw new NotImplementedException();
 
-    public string Method { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string Method { get => request.Method; set => throw new NotImplementedException(); }
 
     public HttpParam Param => throw new NotImplementedException();
 
-    public HttpInput QueryString { get {
+    public HttpInput QueryString
+    {
+        get
+        {
             var input = new HttpInput("QueryString");
-            foreach (var kvp in request.Query ) { input.Add(kvp.Key, kvp.Value); }
+            foreach (var kvp in request.Query) { input.Add(kvp.Key, kvp.Value); }
             return input;
-        } 
+        }
     }
 
     public bool Secure => throw new NotImplementedException();
