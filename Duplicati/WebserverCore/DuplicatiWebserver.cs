@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.Extensions.FileProviders;
 
 namespace Duplicati.WebserverCore
 {
     public class DuplicatiWebserver
     {
-        public Action Foo() {
+        public Action Foo()
+        {
             var builder = WebApplication.CreateBuilder();
             builder.Host.UseRESTHandlers();
             builder.Services.AddControllers()
@@ -16,6 +18,26 @@ namespace Duplicati.WebserverCore
 
             //app.UseTestMiddleware();
             //app.UseRESTHandlerEndpoints();
+
+
+
+            string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "webroot");
+            webroot = System.IO.Path.Combine(webroot, "webroot");
+            var webroot_fileprovider = new PhysicalFileProvider(webroot);
+
+            // index.html
+            DefaultFilesOptions defaultFilesOptions = new DefaultFilesOptions();
+            defaultFilesOptions.DefaultFileNames.Clear();
+            defaultFilesOptions.DefaultFileNames.Add("index.html");
+            defaultFilesOptions.FileProvider = webroot_fileprovider;
+            app.UseDefaultFiles(defaultFilesOptions);
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = webroot_fileprovider,
+                RequestPath = ""
+            });
 
             app.MapControllers();
 
