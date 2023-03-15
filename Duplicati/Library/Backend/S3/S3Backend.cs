@@ -45,6 +45,7 @@ namespace Duplicati.Library.Backend
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
             { "MyCloudyPlace (EU)", "s3.mycloudyplace.com" },
+            { "Impossible Cloud (US)", "us-west-1.storage.impossibleapi.net" },
             { "Hosteurope", "cs.hosteurope.de" },
             { "Dunkel", "dcs.dunkel.de" },
             { "DreamHost", "objects.dreamhost.com" },
