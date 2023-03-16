@@ -114,8 +114,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
             if (string.IsNullOrWhiteSpace(key))
             {
                 string[] args;
-                using (var sr = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
-                    args = Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(sr.ReadToEnd());
+                var str = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    using (var sr = new System.IO.StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
+
+                        return await sr.ReadToEndAsync();
+                }).GetAwaiter().GetResult();
+                args = Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(str);
 
                 var k = new ActiveRun();
                 k.Writer = new LogWriter(k);

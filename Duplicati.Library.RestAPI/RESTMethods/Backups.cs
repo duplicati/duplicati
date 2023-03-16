@@ -218,8 +218,14 @@ namespace Duplicati.Server.WebServer.RESTMethods
             try
             {
                 var str = info.Request.Form["data"].Value;
-                if (string.IsNullOrWhiteSpace(str))
-                    str = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8).ReadToEnd();
+                if (string.IsNullOrWhiteSpace(str)) {
+                    str = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        using (var sr = new System.IO.StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
+
+                            return await sr.ReadToEndAsync();
+                    }).GetAwaiter().GetResult();
+                }
 
                 data = Serializer.Deserialize<AddOrUpdateBackupData>(new StringReader(str));
                 if (data.Backup == null)

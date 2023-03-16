@@ -1,8 +1,12 @@
 
+using Duplicati.Library.Utility;
 using HttpServer;
 using HttpServer.FormDecoders;
+using System;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Net;
+using System.Xml.Linq;
 using HttpRequest = Microsoft.AspNetCore.Http.HttpRequest;
 
 class LegacyHttpRequestShim : HttpServer.IHttpRequest
@@ -21,7 +25,45 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
 
     public RequestCookies Cookies => throw new NotImplementedException();
 
-    public HttpForm Form => throw new NotImplementedException();
+    public HttpForm Form
+    {
+        get
+        {
+            var form = new HttpForm();
+
+            if (request.ContentType.StartsWith("multipart/form-data", true, CultureInfo.InvariantCulture) || request.ContentType.StartsWith("application/x-www-form-urlencoded", true, CultureInfo.InvariantCulture) )
+            {
+
+                foreach (var kvp in request.Form)
+                {
+                    form.Add(kvp.Key, kvp.Value);
+                }
+
+                //Files
+                foreach (var file in request.Form.Files)
+                {
+                    // Generate a temp file *CRY* I can't believe duplicati did this
+                    string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "HttpServer");
+                    string tempFile = Path.Combine(path, Math.Abs(file.FileName.GetHashCode()) + ".tmp");
+
+                    // If the file exists generate a new filename
+                    while (File.Exists(tempFile))
+                        tempFile = Path.Combine(path, Math.Abs(file.FileName.GetHashCode() + 1) + ".tmp");
+
+                    if (!Directory.Exists(path))
+                        Directory.CreateDirectory(path);
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        file.CopyTo(memoryStream);
+                        File.WriteAllBytes(tempFile, memoryStream.ToArray());
+                    }
+
+                    form.AddFile(new HttpFile(file.Name, tempFile, file.ContentType, file.FileName));
+                }
+            }
+            return form;
+        }
+    }
 
     public NameValueCollection Headers
     {
@@ -61,7 +103,7 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
 
     public IPEndPoint RemoteEndPoint => throw new NotImplementedException();
 
-    public Uri Uri { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public System.Uri Uri { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public string[] UriParts => throw new NotImplementedException();
 

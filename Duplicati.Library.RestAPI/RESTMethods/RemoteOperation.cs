@@ -26,7 +26,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
         private void LocateDbUri(string uri, RequestInfo info)
         {
             var path = Library.Main.DatabaseLocator.GetDatabasePath(uri, null, false, false);
-            info.OutputOK(new {
+            info.OutputOK(new
+            {
                 Exists = !string.IsNullOrWhiteSpace(path),
                 Path = path
             });
@@ -34,7 +35,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void CreateFolder(string uri, RequestInfo info)
         {
-            using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+            using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
                 b.CreateFolder();
 
             info.OutputOK();
@@ -45,10 +46,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var data = info.Request.QueryString["data"].Value;
             var remotename = info.Request.QueryString["filename"].Value;
 
-            using(var ms = new System.IO.MemoryStream())   
-            using(var b = Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+            using (var ms = new System.IO.MemoryStream())
+            using (var b = Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
             {
-                using(var tf = new Library.Utility.TempFile())
+                using (var tf = new Library.Utility.TempFile())
                 {
                     System.IO.File.WriteAllText(tf, data);
                     b.PutAsync(remotename, tf, CancellationToken.None).Wait();
@@ -60,16 +61,16 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void ListFolder(string uri, RequestInfo info)
         {
-            using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+            using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
                 info.OutputOK(b.List());
         }
 
         private void TestConnection(string url, RequestInfo info)
         {
-            
+
             var modules = (from n in Library.DynamicLoader.GenericLoader.Modules
-                where n is Library.Interface.IConnectionModule
-                select n).ToArray();
+                           where n is Library.Interface.IConnectionModule
+                           select n).ToArray();
 
             try
             {
@@ -155,10 +156,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         public void POST(string key, RequestInfo info)
         {
-            string url;
+            string url = System.Threading.Tasks.Task.Run(async () =>
+            {
+                using (var sr = new System.IO.StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
 
-            using(var sr = new System.IO.StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
-                url = sr.ReadToEnd();
+                   return await sr.ReadToEndAsync();
+            }).GetAwaiter().GetResult();
 
             switch (key)
             {

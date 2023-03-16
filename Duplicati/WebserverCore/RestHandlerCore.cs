@@ -24,6 +24,7 @@ using Org.BouncyCastle.Bcpg.Sig;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Xml.Linq;
 
 namespace Duplicati.WebserverCore
@@ -48,7 +49,7 @@ namespace Duplicati.WebserverCore
 
         [Route(API_URI_PATH + "/{module?}/{key?}")]
         [AcceptVerbs("GET", "POST", "PUT", "DELETE", "PATCH")]
-        public async Task<ActionResult?> Index(string? module, string? key)
+        public async System.Threading.Tasks.Task Index(string? module, string? key)
         {
 
             module = (module != null && module != "") ? module : "help";
@@ -71,7 +72,9 @@ namespace Duplicati.WebserverCore
 
                     if (mod == null)
                     {
-                        return NotFound("No such module");
+                        Response.StatusCode = (int)HttpStatusCode.NotFound;
+                        await Response.Body.WriteAsync(Encoding.UTF8.GetBytes("No such module"));
+                        return;
                     }
                     else if (method == "GET" && mod is IRESTMethodGET get)
                     {
@@ -114,7 +117,9 @@ namespace Duplicati.WebserverCore
                         patch.PATCH(key, info);
                     else
                     {
-                        return StatusCode( (int)HttpStatusCode.MethodNotAllowed, "Method is not allowed");
+                        Response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+                        await Response.Body.WriteAsync(Encoding.UTF8.GetBytes("Method is not allowed"));
+                        return;
                     }
                 }
                 catch (Exception ex)
@@ -125,14 +130,17 @@ namespace Duplicati.WebserverCore
                     try
                     {
                         var wex = ex;
-                        while (wex is System.Reflection.TargetInvocationException && wex.InnerException != wex)
+                        while (wex is System.Reflection.TargetInvocationException && wex.InnerException != wex && wex.InnerException != null)
                             wex = wex.InnerException;
 
-                        return StatusCode(500, wex.Message
+                        Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                        await Response.Body.WriteAsync(Encoding.UTF8.GetBytes(
+                            wex.Message
 #if DEBUG
                             + "\n" + wex.StackTrace
 #endif
-                            );
+                            ));
+                        return;
                     }
                     catch (Exception flex)
                     {
@@ -140,8 +148,6 @@ namespace Duplicati.WebserverCore
                     }
                 }
             }
-
-            return null;
         }
 
 

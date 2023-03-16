@@ -53,7 +53,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
             string str = info.Request.Form["data"].Value;
 
             if (string.IsNullOrWhiteSpace(str))
-                str = new StreamReader(info.Request.Body, System.Text.Encoding.UTF8).ReadToEnd();
+                str = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    using (var sr = new System.IO.StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
+
+                        return await sr.ReadToEndAsync();
+                }).GetAwaiter().GetResult();
 
             if (string.IsNullOrWhiteSpace(str))
             {
