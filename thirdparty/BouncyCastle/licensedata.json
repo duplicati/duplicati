@@ -1,0 +1,7 @@
+{
+    "name": "Bouncy Castle",
+    "description": "A lightweight cryptography API for Java and C#",
+    "link": "http://www.bouncycastle.org/csharp",
+    "license": "MIT",
+    "notes": ""
+}
