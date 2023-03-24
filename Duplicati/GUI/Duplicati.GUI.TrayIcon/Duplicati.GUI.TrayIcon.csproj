@@ -108,7 +108,7 @@
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <Package>gtk-sharp-2.0</Package>
     </Reference>
-    <Reference Include="Xamarin.Mac">
+    <Reference Include="Xamarin.Mac" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
       <HintPath>\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\lib\64bits\full\Xamarin.Mac.dll</HintPath>
     </Reference>
     <Reference Include="notify-sharp">
