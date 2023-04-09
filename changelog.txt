@@ -1,3 +1,17 @@
+2023-04-09 - 2.0.6.105_canary_2023-04-09
+==========
+- Disable automatic use of v2 authid for Jottacloud, thanks @albertony
+- Fix gui tests, thanks @gpatel-fr
+- Make Xamarin-based CocoaRunner the default on Mac, thanks @dgileadi
+- Fix #4716 by falling back to System hasher, thanks @vilaureu
+- Allow install on Debian bookworm by using libayatana-appindicator1, thanks @gpatel-fr
+- Build Debs with gzip compression for old debian releases, thanks @gpatel-fr
+- Add Impossible Cloud provider for S3 backend, thanks @daniel0m0baker
+- Add possibility to set custom SQlite pragmas, thanks @gpatel-fr
+- Updates Newtonsoft, Mega and SSH.NET libraries, thanks @gpatel-fr
+- Raise the file time shift to 2s for Mac unittests, thanks @gpatel-fr
+- Remove obsolete Letsencrypt cert in Docker builds, thanks @Bubblesaway (forum)
+
 2022-06-15 - 2.0.6.104_canary_2022-06-15
 ==========
 * Updated compressed files exclusion list, thanks @martengooz
