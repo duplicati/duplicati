@@ -5,6 +5,6 @@
 
 if [ ! -d "bin" ]; then mkdir bin; fi
 
-clang run-with-mono.m duplicati.m -fobjc-arc -fmodules -mmacosx-version-min=10.6 -o bin/duplicati
-clang run-with-mono.m duplicati-cli.m -fobjc-arc -fmodules -mmacosx-version-min=10.6 -o bin/duplicati-cli
-clang run-with-mono.m duplicati-server.m -fobjc-arc -fmodules -mmacosx-version-min=10.6 -o bin/duplicati-server
+clang run-with-mono.m duplicati.m -fobjc-arc -fmodules -mmacosx-version-min=11.0 -o bin/duplicati
+clang run-with-mono.m duplicati-cli.m -fobjc-arc -fmodules -mmacosx-version-min=11.0 -o bin/duplicati-cli
+clang run-with-mono.m duplicati-server.m -fobjc-arc -fmodules -mmacosx-version-min=11.0 -o bin/duplicati-server
