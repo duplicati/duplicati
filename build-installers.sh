@@ -23,6 +23,7 @@ GPG_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"
 AUTHENTICODE_PFXFILE="${HOME}/.config/signkeys/Duplicati/authenticode.pfx"
 AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
+VBOX_USER=IEUser@192.168.56.102
 
 GPG=/usr/local/bin/gpg2
 
@@ -167,7 +168,7 @@ echo "Building Windows instance in virtual machine"
 
 while true
 do
-    ssh -o ConnectTimeout=5 IEUser@192.168.56.101 "dir"
+    ssh -o ConnectTimeout=5 ${VBOX_USER} "dir"
     if [ $? -eq 255 ]; then
     	echo "Windows Build machine is not responding, try restarting it"
         read -p "Press [Enter] key to try again"
@@ -182,8 +183,8 @@ cd \\Duplicati\\Installer\\Windows
 build-msi.bat "../../$1"
 EOF
 
-ssh IEUser@192.168.56.101 "\\Duplicati\\tmp-windows-commands.bat"
-ssh IEUser@192.168.56.101 "shutdown /s /t 0"
+ssh ${VBOX_USER} "\\Duplicati\\tmp-windows-commands.bat"
+ssh ${VBOX_USER} "shutdown /s /t 0"
 
 rm "tmp-windows-commands.bat"
 
