@@ -235,8 +235,12 @@ echo ""
 echo "Performing macOS notarization ..."
 
 # Notarize and staple, cannot run in parallel but takes a while
-bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${DMGNAME}"
-bash Installer/OSX/notarize-and-staple.sh "${UPDATE_TARGET}/${PKGNAME}"
+xcrun notarytool submit "${UPDATE_TARGET}/${DMGNAME}" --keychain-profile "duplicati-notarize" --wait
+xcrun notarytool submit "${UPDATE_TARGET}/${PKGNAME}" --keychain-profile "duplicati-notarize" --wait
+
+xcrun stapler staple "${UPDATE_TARGET}/${DMGNAME}"
+xcrun stapler staple "${UPDATE_TARGET}/${PKGNAME}"
+
 
 echo ""
 echo ""
@@ -327,6 +331,7 @@ GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
 if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
 else
+	echo "Uploading files to Github release"
 	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${SIGNAME}"; do
 		github-release upload \
 		    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
