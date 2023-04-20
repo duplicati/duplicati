@@ -1158,7 +1158,7 @@ ORDER BY
                 {
                     using (var cmd = m_connection.CreateCommand())
                     {
-                        cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE {Tablename} AS 
+                        cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{Tablename}"" AS 
                           SELECT DISTINCT ""B"".""Prefix"" || ""A"".""Path"" AS ""Path"",
                             FROM ""FileLookup"" ""A""
                             JOIN ""PathPrefix"" ""B"" ON (""A"".""PrefixID"" = ""B"".""ID"")");
