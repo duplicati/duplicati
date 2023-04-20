@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Database
         internal long CountOrphanFiles(System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")"))
+            using (var rd = cmd.ExecuteReader(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT ""FileID"" FROM ""FilesetEntry"")"))
                 if (rd.Read())
                     return rd.ConvertValueToInt64(0, 0);
                 else

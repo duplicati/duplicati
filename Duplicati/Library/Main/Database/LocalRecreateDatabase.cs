@@ -196,7 +196,7 @@ namespace Duplicati.Library.Main.Database
                     blocksize / hashsize
                 );
                                 
-                var selectAllBlocks = @"SELECT DISTINCT ""FullHash"", ""Length"" FROM (" + selectBlockHashes + " UNION " + selectSmallBlocks + " )";
+                var selectAllBlocks = @"SELECT DISTINCT ""FullHash"", ""Length"" FROM (" + selectBlockHashes + " UNION ALL " + selectSmallBlocks + " )";
                 
                 var selectNewBlocks = string.Format(
                     @"SELECT ""FullHash"" AS ""Hash"", ""Length"" AS ""Size"", -1 AS ""VolumeID"" " +
@@ -469,7 +469,7 @@ namespace Duplicati.Library.Main.Database
         {
             using(var cmd = m_connection.CreateCommand())
             {
-                var selectCommand = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"", ""RemoteVolume"".""ID"" FROM ""RemoteVolume""";
+                var selectCommand = @"SELECT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"", ""RemoteVolume"".""ID"" FROM ""RemoteVolume""";
             
                 var missingBlocklistEntries = 
                     string.Format(
@@ -487,7 +487,7 @@ namespace Duplicati.Library.Main.Database
                 );
                 
                 var countMissingInformation = string.Format(
-                    @"SELECT COUNT(*) FROM (SELECT DISTINCT ""VolumeID"" FROM ({0} UNION {1}))",
+                    @"SELECT COUNT(*) FROM (SELECT DISTINCT ""VolumeID"" FROM ({0} UNION ALL {1}))",
                     missingBlockInfo,
                     missingBlocklistVolumes);
 
@@ -512,7 +512,7 @@ namespace Duplicati.Library.Main.Database
                         // On the second pass, we select all volumes that are not mentioned in the db
                         
                         var mentionedVolumes =
-                            @"SELECT DISTINCT ""VolumeID"" FROM ""Block"" ";
+                            @"SELECT ""VolumeID"" FROM ""Block"" ";
                         
                         cmd.CommandText = string.Format(selectCommand + @" WHERE ""ID"" NOT IN ({0}) AND ""Type"" = ? ", mentionedVolumes);
                         cmd.AddParameter(RemoteVolumeType.Blocks.ToString());
@@ -568,9 +568,9 @@ UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""TargetVolumeID"" FROM ""{tablename
 UPDATE ""DuplicateBlock"" SET ""VolumeID"" = (SELECT ""SourceVolumeID"" FROM ""{tablename}"" WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID"") WHERE ""DuplicateBlock"".""BlockID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
 DROP TABLE ""{tablename}"";
 
-DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""{RemoteVolumeType.Blocks}"" AND ""State"" = ""{RemoteVolumeState.Temporary}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
-DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""Blocks"" AND ""State"" = ""{RemoteVolumeState.Temporary}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
-DELETE FROM ""RemoteVolume"" WHERE ""Type"" = ""{RemoteVolumeType.Blocks}"" AND ""State"" = ""{RemoteVolumeState.Temporary}"" AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block"");
+DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""{RemoteVolumeType.Blocks}"" AND ""State"" = ""{RemoteVolumeState.Temporary}"" AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block""));
+DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""Blocks"" AND ""State"" = ""{RemoteVolumeState.Temporary}"" AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block""));
+DELETE FROM ""RemoteVolume"" WHERE ""Type"" = ""{RemoteVolumeType.Blocks}"" AND ""State"" = ""{RemoteVolumeState.Temporary}"" AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block"");
 ";
 
 // We could delete these, but we don't have to, so we keep them around until the next compact is done
