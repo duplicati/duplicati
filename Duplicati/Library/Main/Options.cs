@@ -36,9 +36,9 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
         
         /// <summary>
-        /// The default block size
+        /// The default block size, chose to minimize hash numbers but allow smaller upload sizes.
         /// </summary>
-        private const string DEFAULT_BLOCKSIZE = "100kb";
+        private const string DEFAULT_BLOCKSIZE = "1mb";
 
         /// <summary>
         /// The default threshold value
