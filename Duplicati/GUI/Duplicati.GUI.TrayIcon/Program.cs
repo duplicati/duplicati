@@ -44,7 +44,7 @@ namespace Duplicati.GUI.TrayIcon
         private static string GetDefaultToolKit()
         {
             if (Platform.IsClientOSX)
-                return TOOLKIT_COCOA;
+                return TOOLKIT_RUMPS;
 
 #if __WindowsGTK__ || ENABLE_GTK
             if (Platform.IsClientPosix)
