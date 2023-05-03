@@ -1,3 +1,10 @@
+2023-05-03 - 2.0.6.106_canary_2023-05-03
+==========
+- Added endpoints for S3 compatible storage from Scaleway, thanks 
+@adithajay
+- updates rumps to python3, add icon normal-warning, set rumps as default, 
+thanks @gpatel-fr
+
 2023-04-09 - 2.0.6.105_canary_2023-04-09
 ==========
 - Disable automatic use of v2 authid for Jottacloud, thanks @albertony
