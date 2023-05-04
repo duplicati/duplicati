@@ -84,9 +84,11 @@ jobs:
       run: |
         pip3 install selenium
         pip3 install --upgrade urllib3
+        pip3 install chromedriver-autoinstaller
 
     - name: Run UI tests
       run: |
         cp -r Duplicati/Server/webroot "${{ env.build_directory }}"/webroot
         mono "${{ env.build_directory }}"/Duplicati.Server.exe &
-        python3 guiTests/guiTest.py
+        sleep 30
+        python3 guiTests/guiTest.py --use-chrome
