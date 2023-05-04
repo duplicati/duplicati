@@ -47,7 +47,7 @@ namespace Duplicati.WebserverCore
             }
         }
 
-        [Route(API_URI_PATH + "/{module?}/{key?}")]
+        [Route(API_URI_PATH + "/{module?}/{**key}")]
         [AcceptVerbs("GET", "POST", "PUT", "DELETE", "PATCH")]
         public async System.Threading.Tasks.Task Index(string? module, string? key)
         {

@@ -29,6 +29,10 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
 
     public void AddHeader(string name, string value)
     {
+        if (response.Headers.ContainsKey(name))
+        {
+            response.Headers.Remove(name);
+        }
         response.Headers.Add(name, value);
     }
 
