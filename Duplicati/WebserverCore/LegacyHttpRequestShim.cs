@@ -2,6 +2,7 @@
 using Duplicati.Library.Utility;
 using HttpServer;
 using HttpServer.FormDecoders;
+using Microsoft.AspNetCore.Http.Extensions;
 using System;
 using System.Collections.Specialized;
 using System.Globalization;
@@ -23,7 +24,7 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
     public ConnectionType Connection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public int ContentLength { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-    public RequestCookies Cookies => throw new NotImplementedException();
+    public RequestCookies Cookies => new RequestCookies(request.Headers.Cookie);
 
     public HttpForm Form
     {
@@ -31,7 +32,7 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
         {
             var form = new HttpForm();
 
-            if (request.ContentType.StartsWith("multipart/form-data", true, CultureInfo.InvariantCulture) || request.ContentType.StartsWith("application/x-www-form-urlencoded", true, CultureInfo.InvariantCulture) )
+            if (request.ContentType != null && (request.ContentType.StartsWith("multipart/form-data", true, CultureInfo.InvariantCulture) || request.ContentType.StartsWith("application/x-www-form-urlencoded", true, CultureInfo.InvariantCulture) ))
             {
 
                 foreach (var kvp in request.Form)
@@ -103,7 +104,7 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
 
     public IPEndPoint RemoteEndPoint => throw new NotImplementedException();
 
-    public System.Uri Uri { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public System.Uri Uri { get => new System.Uri(request.GetEncodedUrl()); set => throw new NotImplementedException(); }
 
     public string[] UriParts => throw new NotImplementedException();
 

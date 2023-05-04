@@ -9,6 +9,7 @@ using HttpResponse = Microsoft.AspNetCore.Http.HttpResponse;
 class LegacyHttpResponseShim : HttpServer.IHttpResponse
 {
     HttpResponse response;
+    ResponseCookies cookies = new();
     public LegacyHttpResponseShim(HttpResponse response) { this.response = response; }
     public Stream Body { get => response.Body; set => throw new NotImplementedException(); }
     public string ProtocolVersion { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
@@ -25,7 +26,7 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
 
     public bool Sent => throw new NotImplementedException();
 
-    public ResponseCookies Cookies => throw new NotImplementedException();
+    public ResponseCookies Cookies => cookies;
 
     public void AddHeader(string name, string value)
     {
@@ -48,6 +49,10 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
 
     public void Send()
     {
+        foreach(ResponseCookie cookie in cookies)
+        {
+            response.Cookies.Append(cookie.Name, cookie.Value, new CookieOptions() { Expires = cookie.Expires, Path = cookie.Path, IsEssential=true }) ;
+        }
         response.StartAsync();
     }
 

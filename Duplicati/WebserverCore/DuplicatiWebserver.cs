@@ -15,10 +15,7 @@ namespace Duplicati.WebserverCore
                 .AddApplicationPart(this.GetType().Assembly);
             builder.Services.AddHostedService<ApplicationPartsLogger>();
             var app = builder.Build();
-
-            //app.UseTestMiddleware();
-            //app.UseRESTHandlerEndpoints();
-
+            app.UseAuthMiddleware();
 
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);

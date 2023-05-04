@@ -25,7 +25,7 @@ using Duplicati.Library.RestAPI;
 
 namespace Duplicati.Server.WebServer
 {
-    internal class AuthenticationHandler : HttpModule
+    public class AuthenticationHandler : HttpModule
     {
         private const string AUTH_COOKIE_NAME = "session-auth";
         private const string NONCE_COOKIE_NAME = "session-nonce";
