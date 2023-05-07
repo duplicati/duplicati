@@ -338,14 +338,12 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
+            int lgt = m_prefix.Length;
+            if (m_prefix.StartsWith("/", StringComparison.Ordinal))
+                lgt = lgt - 1;
             foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
             {
-                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
-
-                //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
-                    ((FileEntry)file).Name = file.Name.Substring(1);
-
+                ((FileEntry)file).Name = file.Name.Substring(lgt);
                 yield return file;
             }
         }
