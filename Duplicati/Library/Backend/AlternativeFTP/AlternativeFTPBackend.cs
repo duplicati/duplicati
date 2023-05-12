@@ -22,6 +22,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using FluentFTP;
 using FluentFTP.Client.BaseClient;
+using FluentFTP.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
