@@ -17,13 +17,13 @@ jobs:
     steps:
     - name: Add msbuild to PATH (Windows)
       if: matrix.os == 'windows-latest'
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v1
 
     - name: Install NuGet
-      uses: nuget/setup-nuget@v1.0.5
+      uses: nuget/setup-nuget@v1
 
     - name: Checkout Source
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v3
 
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
@@ -61,10 +61,10 @@ jobs:
     # what we need (https://github.com/actions/runner/issues/646).
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v3
 
     - name: Install NuGet
-      uses: nuget/setup-nuget@v1.0.5
+      uses: nuget/setup-nuget@v1
 
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
@@ -76,7 +76,7 @@ jobs:
       run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.x
 
