@@ -76,7 +76,7 @@ jobs:
       run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.x
 
