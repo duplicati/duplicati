@@ -1,0 +1,64 @@
+# Using recommended .gitattributes from
+# https://github.com/alexkaratarakis/gitattributes/blob/master/VisualStudio.gitattributes
+
+###################################
+# Set default diff settings
+###################################
+*.cs       text diff=csharp
+*.cshtml   text diff=html
+*.csx      text diff=csharp
+
+###############################################################################
+# Set default behavior to automatically normalize line endings.
+###############################################################################
+* text=auto
+
+###############################################################################
+# Set the merge driver for project and solution files
+#
+# Merging from the command prompt will add diff markers to the files if there
+# are conflicts (Merging from VS is not affected by the settings below, in VS
+# the diff markers are never inserted). Diff markers may cause the following 
+# file extensions to fail to load in VS. An alternative would be to treat
+# these files as binary and thus will always conflict and require user
+# intervention with every merge. To do so, just comment the entries below and
+# uncomment the group further below
+###############################################################################
+
+*.sln        text eol=lf
+*.csproj     text eol=lf
+*.vbproj     text eol=lf
+*.vcxproj    text eol=lf
+*.vcproj     text eol=lf
+*.dbproj     text eol=lf
+*.fsproj     text eol=lf
+*.lsproj     text eol=lf
+*.wixproj    text eol=lf
+*.modelproj  text eol=lf
+*.sqlproj    text eol=lf
+*.wmaproj    text eol=lf
+
+*.xproj      text eol=lf
+*.props      text eol=lf
+*.filters    text eol=lf
+*.vcxitems   text eol=lf
+
+
+#*.sln       merge=binary
+#*.csproj    merge=binary
+#*.vbproj    merge=binary
+#*.vcxproj   merge=binary
+#*.vcproj    merge=binary
+#*.dbproj    merge=binary
+#*.fsproj    merge=binary
+#*.lsproj    merge=binary
+#*.wixproj   merge=binary
+#*.modelproj merge=binary
+#*.sqlproj   merge=binary
+#*.wwaproj   merge=binary
+
+#*.xproj     merge=binary
+#*.props     merge=binary
+#*.filters   merge=binary
+#*.vcxitems  merge=binary
+

@@ -1,0 +1,15 @@
+root = true
+
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.aspx.designer.cs]
+trim_trailing_whitespace = false
+end_of_line = crlf
+
+[*.js]
+indent_size = 2
