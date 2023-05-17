@@ -43,6 +43,7 @@ jobs:
     - name: Run Unit Tests (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
+        export DEBUG_OUTPUT=1
         nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
         mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
 
