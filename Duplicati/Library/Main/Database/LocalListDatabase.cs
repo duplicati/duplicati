@@ -53,6 +53,7 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter);
             IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter);
             IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter);
+            IEnumerable<IFileversion> SelectFolderContentsExperimental(Library.Utility.IFilter filter);
             void TakeFirst ();
         }
 
@@ -201,7 +202,94 @@ namespace Duplicati.Library.Main.Database
                         };
                 }
             }
-            
+
+            public IEnumerable<IFileversion> SelectFolderContentsExperimental(Library.Utility.IFilter filter)
+            {
+		string pathprefix;
+
+		if (filter == null || filter.Empty)
+		    pathprefix = "";
+		else if (filter as Library.Utility.FilterExpression == null || ((Library.Utility.FilterExpression)filter).Type != Duplicati.Library.Utility.FilterType.Simple || ((Library.Utility.FilterExpression)filter).GetSimpleList().Length != 1)
+		    throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", nameof(filter));
+		else
+		    pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
+
+		var dirsep = Util.GuessDirSeparator(pathprefix);
+
+		if (pathprefix.Length > 0 || dirsep == "/")
+		    pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
+
+		var ppl = pathprefix.Length;
+		using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true), null))
+		{
+		    // first part of the UNION query selects all subdirectories immediately under the requested directory
+		    // second part of the UNION query selects all files immediately under the requested directory
+		    //
+		    // directories have no length so only files need to get the length (blockset table)
+		    // but they need a fileset version hence the cartesian join to concerned filesets (fs) in the first query part
+		    // the EXISTS clause ensures that files belonging to a relevant fileset exist for the requested directory
+		    //
+		    // the SUBSTR(... in the first part of the query extracts the relevant path part (like /AA/BB/ from /AA/BB/CC/DD/EE/)
+		    var query = String.Format(
+		    @"SELECT dirs.path, NULL AS length, fs.filesetid FROM " +
+		    @"(" +
+		    @"SELECT DISTINCT SUBSTR(A.path, 1, LENGTH(""{3}"")+INSTR(SUBSTR(A.path, LENGTH(""{3}"")+1),""{4}"")) AS Path " +
+		    @"FROM ""{0}"" A WHERE A.path LIKE ""{3}%{4}"" " +
+		    @") dirs, ""{1}"" fs WHERE EXISTS " +
+		    @"(SELECT ""x"" FROM filelookup fl " +
+                    @"   JOIN pathprefix pp ON (pp.id = fl.prefixid) " +
+		    @"   JOIN filesetentry fe ON (fe.fileid = fl.id) " +
+		    @"WHERE pp.prefix || fl.path LIKE dirs.path || '%' AND " +
+		    @"fe.filesetid IN (SELECT filesetid FROM ""{1}"")) " +
+		    @"UNION " +
+		    @"SELECT B.path, blockset.length, filesetentry.filesetid FROM ""{0}"" B " +
+		    @"  JOIN filelookup ON (filelookup.path = SUBSTR(B.path, {2}+1)) " +
+		    @"  JOIN pathprefix ON (pathprefix.id = filelookup.prefixid AND " +
+		    @"                      pathprefix.prefix = SUBSTR(B.path, 1, {2})) " +
+		    @"  JOIN filesetentry ON (filesetentry.fileid = filelookup.id) " +
+		    @"  JOIN ""{1}"" FS ON (FS.Filesetid = filesetentry.filesetid) " +
+		    @"  LEFT JOIN blockset ON (blockset.id = filelookup.blocksetid) " +
+		    @"WHERE B.path NOT LIKE ""{3}%{4}"" ",
+		    tmpnames.Tablename, /* {0} temp table for all entries (full path) under the prefix (recursively) */
+		    m_tablename, /* {1} temp table for requested filesets */
+		    ppl, /* {2} asked path (next parameter) length */
+		    pathprefix, /* {3} asked path */
+		    dirsep /* {4} directory separator */
+		    );
+#if DEBUG
+		    if (string.Equals(Environment.GetEnvironmentVariable("SAVE_TABLES_DUPLICATI") ?? string.Empty, "1")) {
+			using (var fixcmd = m_connection.CreateCommand())
+			{
+			    Console.WriteLine(string.Format(@"query: {0}", query));
+			    fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}_sav"" AS SELECT * FROM ""{0}"" ", tmpnames.Tablename));
+			    fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}_sav"" AS SELECT * FROM ""{0}"" ", m_tablename));
+			}
+		    }
+#endif
+		    using(var cmd = m_connection.CreateCommand())
+		    {
+                        using(var rd = cmd.ExecuteReader(query))
+			    if (rd.Read())
+			    {
+                                bool more;
+                                do
+                                {
+                                    var f = new Fileversion(rd);
+                                    if (!(string.IsNullOrWhiteSpace(f.Path) || f.Path == pathprefix))
+                                    {
+                                        yield return f;
+                                        more = f.More;
+                                    }
+                                    else
+                                    {
+                                        more = rd.Read();
+                                    }
+                                } while(more);
+                            }
+                     }
+                 }
+            }
+
             private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
@@ -224,7 +312,7 @@ namespace Duplicati.Library.Main.Database
                         yield return prefix + s;
                     }
             }
-            
+
             public IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter)
             {
                 var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());

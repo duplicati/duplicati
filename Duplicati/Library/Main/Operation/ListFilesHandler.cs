@@ -51,7 +51,10 @@ namespace Duplicati.Library.Main.Operation
                         IEnumerable<Database.LocalListDatabase.IFileversion> files;
                         if (m_options.ListFolderContents)
                         {
-                            files = filesets.SelectFolderContents(filter);
+                            if (string.Equals(Environment.GetEnvironmentVariable("EXPERIMENTAL_DBLIST_DUPLICATI") ?? string.Empty, "1"))
+                                files = filesets.SelectFolderContentsExperimental(filter);
+                            else
+                                files = filesets.SelectFolderContents(filter);
                         }
                         else if (m_options.ListPrefixOnly)
                         {
