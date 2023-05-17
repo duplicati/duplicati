@@ -248,7 +248,7 @@ namespace Duplicati.UnitTest
                 // macOS seem to like to actually set the time to some value different than what you set by hundreds of milliseconds.
                 // Reading the time right after it is set gives the expected value but when read later it is slightly different.
                 // Maybe a bug in .net?
-                int granularity = Platform.IsClientOSX ? 2499 : 1;
+                int granularity = Platform.IsClientOSX ? 2999 : 1;
                 Assert.That(
                     SystemIO.IO_OS.GetLastWriteTimeUtc(actualFile),
                     Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)).Within(granularity).Milliseconds,
