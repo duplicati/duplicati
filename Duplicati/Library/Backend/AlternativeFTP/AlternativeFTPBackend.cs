@@ -226,8 +226,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             var list = new List<IFileEntry>();
             string remotePath = filename;
 
-            try
-            {
                 var ftpClient = CreateClient();
 
                 // Get the remote path
@@ -310,16 +308,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
                     }
                 }
-            }//         Message    "Directory not found."    string
-            catch (FtpCommandException ex)
-            {
-                if (ex.Message == "Directory not found.")
-                {
-                    throw new FolderMissingException(Strings.MissingFolderError(remotePath, ex.Message), ex);
-                }
-
-                throw;
-            }
 
             return list;
         }
@@ -329,8 +317,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             string remotePath = remotename;
             long streamLen;
 
-            try
-            {
                 var ftpClient = CreateClient();
 
                 try
@@ -369,16 +355,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                         throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
                     }
                 }
-            }
-            catch (FtpCommandException ex)
-            {
-                if (ex.Message == "Directory not found.")
-                {
-                    throw new FolderMissingException(Strings.MissingFolderError(remotePath, ex.Message), ex);
-                }
-
-                throw;
-            }
         }
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
@@ -566,7 +542,19 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             // Change working directory to the remote path
             // Do this every time to prevent issues when FtpClient silently reconnects after failure.
             var remotePath = this.GetUnescapedAbsolutePath(uri);
-            this.Client.SetWorkingDirectory(remotePath).Await();
+            try
+            {
+                this.Client.SetWorkingDirectory(remotePath).Await();
+            }
+            catch (FtpCommandException ex)
+            {
+                if (ex.CompletionCode == "550")
+                {
+                    throw new FolderMissingException(Strings.MissingFolderError(remotePath, ex.Message), ex);
+                }
+
+                throw;
+            }
 
             return this.Client;
         }
