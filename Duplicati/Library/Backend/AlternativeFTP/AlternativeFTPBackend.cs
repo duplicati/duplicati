@@ -499,7 +499,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         public void CreateFolder()
         {
-            var client = CreateClient();
+            var client = CreateClient(false);
 
             var url = new Uri(_url);
 
@@ -520,7 +520,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             _userInfo = null;
         }
 
-        private AsyncFtpClient CreateClient()
+        private AsyncFtpClient CreateClient(bool setWorkingDirectory = true)
         {
             var uri = new Uri(_url);
 
@@ -539,21 +539,24 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 this.Client = ftpClient;
             } // else reuse existing connection
 
-            // Change working directory to the remote path
-            // Do this every time to prevent issues when FtpClient silently reconnects after failure.
-            var remotePath = this.GetUnescapedAbsolutePath(uri);
-            try
+            if (setWorkingDirectory)
             {
-                this.Client.SetWorkingDirectory(remotePath).Await();
-            }
-            catch (FtpCommandException ex)
-            {
-                if (ex.CompletionCode == "550")
+                // Change working directory to the remote path
+                // Do this every time to prevent issues when FtpClient silently reconnects after failure.
+                var remotePath = this.GetUnescapedAbsolutePath(uri);
+                try
                 {
-                    throw new FolderMissingException(Strings.MissingFolderError(remotePath, ex.Message), ex);
+                    this.Client.SetWorkingDirectory(remotePath).Await();
                 }
+                catch (FtpCommandException ex)
+                {
+                    if (ex.CompletionCode == "550")
+                    {
+                        throw new FolderMissingException(Strings.MissingFolderError(remotePath, ex.Message), ex);
+                    }
 
-                throw;
+                    throw;
+                }
             }
 
             return this.Client;
