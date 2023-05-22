@@ -20,6 +20,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using FluentFTP;
 using FluentFTP.Client.BaseClient;
 using FluentFTP.Exceptions;
@@ -247,7 +248,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                     // else: stripping the filename in this case ignoring it
                 }
 
-                foreach (FtpListItem item in ftpClient.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size).Result)
+                foreach (FtpListItem item in ftpClient.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size).Await())
                 {
                     switch (item.Type)
                     {
@@ -401,7 +402,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 remotePath += remotename;
             }
 
-            using (var inputStream = ftpClient.OpenRead(remotePath).Result)
+            using (var inputStream = ftpClient.OpenRead(remotePath).Await())
             {
                 try
                 {
@@ -436,7 +437,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 remotePath += remotename;
             }
 
-            ftpClient.DeleteFile(remotePath).Wait();
+            ftpClient.DeleteFile(remotePath).Await();
 
         }
 
@@ -472,6 +473,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 }
                 catch (Exception e)
                 {
+                    if (e.InnerException != null) { e =  e.InnerException; }
                     throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
                 }
             }
@@ -481,10 +483,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    PutAsync(TEST_FILE_NAME, testStream, CancellationToken.None).Wait();
+                    PutAsync(TEST_FILE_NAME, testStream, CancellationToken.None).Await();
                 }
                 catch (Exception e)
                 {
+                    if (e.InnerException != null) { e = e.InnerException; }
                     throw new Exception(string.Format(Strings.ErrorWriteFile, e.Message), e);
                 }
             }
@@ -501,6 +504,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 }
                 catch (Exception e)
                 {
+                    if (e.InnerException != null) { e = e.InnerException; }
                     throw new Exception(string.Format(Strings.ErrorReadFile, e.Message), e);
                 }
             }
@@ -512,6 +516,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
             catch (Exception e)
             {
+                if (e.InnerException != null) { e = e.InnerException; }
                 throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
             }
         }
@@ -526,7 +531,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             var remotePath = this.GetUnescapedAbsolutePath(url);
 
             // Try to create the directory 
-            client.CreateDirectory(remotePath, true).Wait();
+            client.CreateDirectory(remotePath, true).Await();
 
         }
 
@@ -561,7 +566,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             // Change working directory to the remote path
             // Do this every time to prevent issues when FtpClient silently reconnects after failure.
             var remotePath = this.GetUnescapedAbsolutePath(uri);
-            this.Client.SetWorkingDirectory(remotePath).Wait();
+            this.Client.SetWorkingDirectory(remotePath).Await();
 
             return this.Client;
         }
