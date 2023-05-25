@@ -332,7 +332,7 @@ if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
 else
 	echo "Uploading files to Github release"
-	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${SIGNAME}"; do
+	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${SIGNAME}" "${ZIPFILE}"; do
 		github-release upload \
 		    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
 		    --name "${FILE}" \
