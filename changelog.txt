@@ -1,3 +1,8 @@
+2023-05-25 - 2.0.7.2_canary_2023-05-25
+==========
+- update Github tests versions, thanks @taz-il
+- Add Catalyst Cloud as an OpenStack target, thanks @Andrew Ruthven
+
 2023-05-25 - 2.0.7.1_beta_2023-05-25
 ==========
 After almost 2 years, a new Beta has taken its time, but it’s finally 
