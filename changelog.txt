@@ -1,3 +1,21 @@
+2023-05-25 - 2.0.7.0_experimental_2023-05-25
+==========
+After almost 2 years, a new Beta has taken its time, but it’s finally 
+there. It’s a roll-up of all the fixes since the last beta build and is 
+expected to cause very few issues when upgrading. This release is almost 
+identical to Canary 106.
+
+It involves a better UI for dark mode, better support for Dropbox, 
+Jottacloud, S3, Tencent backends, add IDrive backend, TLS modernization, 
+bug fixes, upgrades to libraries.
+
+Points of attention:
+
+- database upgrade from 11 to 12: Downgrade from this version requires 
+manually adjusting the version 
+number in the database. The additions can be re-applied if the database is 
+upgraded again later.
+
 2023-05-03 - 2.0.6.106_canary_2023-05-03
 ==========
 - Added endpoints for S3 compatible storage from Scaleway, thanks 
