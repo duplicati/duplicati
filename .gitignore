@@ -25,3 +25,7 @@ binfiles.wxs
 .vs/
 
 Installer/debian/*.buildinfo
+Test-Reblock/Destination
+Test-Reblock/Recover
+Test-Reblock/Restore
+Test-Reblock/Source

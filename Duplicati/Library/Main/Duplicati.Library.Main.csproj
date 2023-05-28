@@ -48,6 +48,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackupRewriter.cs" />
     <Compile Include="Operation\Backup\FileProgressThrottler.cs" />
     <Compile Include="Operation\VacuumHandler.cs" />
     <Compile Include="Options.cs" />

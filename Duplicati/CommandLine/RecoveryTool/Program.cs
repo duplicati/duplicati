@@ -30,6 +30,7 @@ namespace Duplicati.CommandLine.RecoveryTool
         {
             Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
+            //return RealMain(args);
         }
 
         private delegate int CommandRunner(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter);
@@ -81,6 +82,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 actions["recompress"] = Recompress.Run;
                 actions["list"] = List.Run;
                 actions["restore"] = Restore.Run;
+                actions["reblocksize"] = Reblocksize.Run;
                 actions["help"] = Help.Run;
 
                 if (Library.Utility.Utility.ParseBoolOption(options, "build-index-with-files"))
