@@ -155,9 +155,17 @@
       <Project>{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}</Project>
       <Name>Duplicati.Library.DynamicLoader</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+      <Project>{2cf2d90e-c25b-47ad-91e0-98451bab8058}</Project>
+      <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
       <Project>{C5899F45-B0FF-483C-9D38-24A9FCAAB237}</Project>
       <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
+      <Project>{52826615-7964-47FE-B4B3-1B2DBDF605B9}</Project>
+      <Name>Duplicati.Library.Modules.Builtin</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>

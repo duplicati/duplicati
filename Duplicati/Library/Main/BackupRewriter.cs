@@ -45,6 +45,7 @@ namespace Duplicati.Library.Main
         {
             m_filesetvolume = new FilesetVolumeWriter(m_options, timestamp);
             var i = 0L;
+            List<string> errors = null;
             foreach (var f in listFiles)
             {
                 try
@@ -96,6 +97,11 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     Console.WriteLine(" error: {0}", ex);
+                    if(errors == null)
+                    {
+                        errors = new List<string>();
+                    }
+                    errors.Add(f.Path + ": " + ex.ToString());
                 }
                 i++;
             }
@@ -113,14 +119,23 @@ namespace Duplicati.Library.Main
             File.Copy(setEntry.LocalFilename, path);
             setEntry.DeleteLocalFile();
             Console.WriteLine("Copied {0}", path);
+            if(errors != null)
+            {
+                throw new FileMissingException(string.Join(Environment.NewLine, errors));
+            }
         }
 
         private void AddOrCombineBlocks(IEnumerable<string> listHashes, int size, ref IEnumerable<string> blocklistHashes, CompressionHint hint, ref string blockhash)
         {
-            if (listHashes == null)
+            if(size == 0)
+            {
+                // Empty file, do not need to add blocks
+                return;
+            }
+            else if (listHashes == null)
             {
                 // Single block, no need to change
-                AddExistingBlock(blockhash, 0, (int)size, hint);
+                AddExistingBlock(blockhash, 0, size, hint);
             }
             else
             {

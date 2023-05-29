@@ -123,6 +123,10 @@
       <Project>{19ECCE09-B5EB-406C-8C57-BAC66997D469}</Project>
       <Name>Duplicati.Library.Compression</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+      <Project>{2cf2d90e-c25b-47ad-91e0-98451bab8058}</Project>
+      <Name>Duplicati.Library.Encryption</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
       <Project>{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}</Project>
       <Name>Duplicati.Library.Utility</Name>

@@ -27,6 +27,8 @@ Optionally you can also run:
 5: Recompress
   Ability to change compression type of files on remote backend eg. from 7z to zip
 
+6: Reblock
+  Change blocksize of an exising local backup while preserving history
 
 
 
@@ -78,7 +80,7 @@ Use the filters, --exclude, to show a subset of files.
 
 
 Recompress
-----
+----------
 Duplicati.RecoveryTool.exe recompress <targetcompression> <remoteurl> <localfolder> --reupload --reencrypt [options]
 
 1) Downloads whole remote storage to <localfolder>.
@@ -90,7 +92,17 @@ If --reupload is supplied it is advisable to specify --reencrypt for perfect sec
 
 Warning: Before recompress delete local database and after recompress recreate local database before executing any operation on backup. This allows Duplicati to read new file names from remote storage.
 
+Reblock
+-------
+Duplicati.RecoveryTool.exe reblock <localfolder> <targetfolder> [factor] [--encrypt] [options]
 
+Increase the blocksize of an existing backup while preserving history.
+Requires a local, unencrypted and indexed copy of the backup and copies the result to another folder.
+[factor] is the number of blocks that are combined into one. It needs to be a positive integer and defaults to 2.
+
+If --encrypt is specified, the backup is encrypted using the specified passphrase (--passphrase=...).
+
+After the blocksizes are changed, the local database can be recreated using repair.
 
 Supported Options
 -----------------

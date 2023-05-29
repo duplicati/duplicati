@@ -2,15 +2,12 @@
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Volumes;
-using Duplicati.Library.Modules.Builtin;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -115,12 +112,23 @@ namespace Duplicati.CommandLine.RecoveryTool
                     Console.WriteLine("Invalid argument {0}, expected integer number or blocks to combine", args[3]);
                     return 100;
                 }
+                if (nBlocks < 1)
+                {
+                    Console.WriteLine("Blocksize multiplier must be >= 1");
+                    return 100;
+                }
+                else if ((nBlocks * blocksize) > int.MaxValue)
+                {
+                    Console.WriteLine("Blocksize would be too large!");
+                    return 100;
+                }
             }
             var newOptions = new Dictionary<string, string>(options)
             {
                 ["blocksize"] = (nBlocks * blocksize).ToString() + "B",
                 ["no-encryption"] = "true"
             };
+            Console.WriteLine("Changing Blocksize: {0} -> {1}", blocksize, nBlocks * blocksize);
             using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
             {
 
