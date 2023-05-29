@@ -52,99 +52,108 @@ namespace Duplicati.CommandLine.RecoveryTool
             if (string.IsNullOrWhiteSpace(ixfile))
                 ixfile = "index.txt";
 
-            ixfile = Path.GetFullPath(ixfile);
-            if (!File.Exists(ixfile))
-            {
-                Console.WriteLine("Index file not found, perhaps you need to run the index command?");
-                return 100;
-            }
-
-
             var listFiles = List.ParseListFiles(folder);
-            var filelist = listFiles.First().Value;
-            Library.Main.Volumes.VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(filelist).Trim('.'), filelist, new Duplicati.Library.Main.Options(options));
 
             bool encrypt = Library.Utility.Utility.ParseBoolOption(options, "encrypt");
 
-            if (encrypt)
+            if (!options.ContainsKey("passphrase"))
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PASSPHRASE")))
+                    options["passphrase"] = Environment.GetEnvironmentVariable("PASSPHRASE");
+
+            Options opt = new Options(options);
+
+            using (var tdir = DecryptListFiles(listFiles, opt))
             {
-                if (!options.ContainsKey("passphrase"))
-                    if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
-                        options["passphrase"] = System.Environment.GetEnvironmentVariable("PASSPHRASE");
-
-                if (!options.ContainsKey("passphrase"))
+                if (encrypt)
                 {
-                    Console.WriteLine("Password not specified for reencrypt");
-                    return 100;
-                }
-            }
-
-            string blocksize_str;
-            options.TryGetValue("blocksize", out blocksize_str);
-            string blockhash_str;
-            options.TryGetValue("block-hash-algorithm", out blockhash_str);
-            string filehash_str;
-            options.TryGetValue("block-hash-algorithm", out filehash_str);
-            long blocksize = string.IsNullOrWhiteSpace(blocksize_str) ? 0 : Library.Utility.Sizeparser.ParseSize(blocksize_str);
-
-            if (blocksize <= 0)
-            {
-                Console.WriteLine("Invalid blocksize: {0}, try setting --blocksize manually", blocksize);
-                return 100;
-            }
-
-            var blockhasher = string.IsNullOrWhiteSpace(blockhash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(blockhash_str);
-            var filehasher = string.IsNullOrWhiteSpace(filehash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(filehash_str);
-
-            if (blockhasher == null)
-                throw new Duplicati.Library.Interface.UserInformationException(string.Format("Block hash algorithm not valid: {0}", blockhash_str), "BlockHashAlgorithmNotSupported");
-            if (filehasher == null)
-                throw new Duplicati.Library.Interface.UserInformationException(string.Format("File hash algorithm not valid: {0}", filehash_str), "FileHashAlgorithmNotSupported");
-
-            var hashesprblock = blocksize / (blockhasher.HashSize / 8);
-
-            // Number of blocks to combine into one
-            int nBlocks = 2;
-            if (args.Count == 4)
-            {
-                if (!int.TryParse(args[3], out nBlocks))
-                {
-                    Console.WriteLine("Invalid argument {0}, expected integer number or blocks to combine", args[3]);
-                    return 100;
-                }
-                if (nBlocks < 1)
-                {
-                    Console.WriteLine("Blocksize multiplier must be >= 1");
-                    return 100;
-                }
-                else if ((nBlocks * blocksize) > int.MaxValue)
-                {
-                    Console.WriteLine("Blocksize would be too large!");
-                    return 100;
-                }
-            }
-            var newOptions = new Dictionary<string, string>(options)
-            {
-                ["blocksize"] = (nBlocks * blocksize).ToString() + "B",
-                ["no-encryption"] = "true"
-            };
-            Console.WriteLine("Changing Blocksize: {0} -> {1}", blocksize, nBlocks * blocksize);
-            using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
-            {
-
-
-                Console.WriteLine("Building lookup table for file hashes");
-                using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8))
-                using (var processor = new BackupRewriter(newOptions, blocksize, hashesprblock, lookup, outputFolder))
-                {
-                    // Oldest first
-                    Array.Reverse(listFiles);
-                    foreach (var listFile in listFiles)
+                    if (!options.ContainsKey("passphrase"))
                     {
-                        Console.WriteLine("Processing set with timestamp {0}", listFile.Key.ToLocalTime());
+                        Console.WriteLine("Password not specified for reencrypt");
+                        return 100;
+                    }
+                }
 
-                        processor.ProcessListFile(EnumerateDList(listFile.Value, options),
-                            EnumerateDListControlFiles(listFile.Value, options), listFile.Key);
+                ixfile = Path.GetFullPath(ixfile);
+
+                string blocksize_str;
+                options.TryGetValue("blocksize", out blocksize_str);
+                string blockhash_str;
+                options.TryGetValue("block-hash-algorithm", out blockhash_str);
+                string filehash_str;
+                options.TryGetValue("block-hash-algorithm", out filehash_str);
+                long blocksize = string.IsNullOrWhiteSpace(blocksize_str) ? 0 : Library.Utility.Sizeparser.ParseSize(blocksize_str);
+
+                if (blocksize <= 0)
+                {
+                    Console.WriteLine("Invalid blocksize: {0}, try setting --blocksize manually", blocksize);
+                    return 100;
+                }
+
+                var blockhasher = string.IsNullOrWhiteSpace(blockhash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(blockhash_str);
+                var filehasher = string.IsNullOrWhiteSpace(filehash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(filehash_str);
+                var hashsize = blockhasher.HashSize / 8;
+
+                if (blockhasher == null)
+                    throw new UserInformationException(string.Format("Block hash algorithm not valid: {0}", blockhash_str), "BlockHashAlgorithmNotSupported");
+                if (filehasher == null)
+                    throw new UserInformationException(string.Format("File hash algorithm not valid: {0}", filehash_str), "FileHashAlgorithmNotSupported");
+
+
+                if (!File.Exists(ixfile))
+                {
+                    Console.WriteLine("Index file not found, creating from index volumes");
+                    if (!CreateIndexFile(folder, ixfile, opt, hashsize))
+                    {
+                        Console.WriteLine("No dindex files to create index, need to use index command manually!");
+                        return 100;
+                    }
+                }
+
+                var hashesprblock = blocksize / (blockhasher.HashSize / 8);
+
+                // Number of blocks to combine into one
+                int nBlocks = 2;
+                if (args.Count == 4)
+                {
+                    if (!int.TryParse(args[3], out nBlocks))
+                    {
+                        Console.WriteLine("Invalid argument {0}, expected integer number or blocks to combine", args[3]);
+                        return 100;
+                    }
+                    if (nBlocks < 1)
+                    {
+                        Console.WriteLine("Blocksize multiplier must be >= 1");
+                        return 100;
+                    }
+                    else if ((nBlocks * blocksize) > int.MaxValue)
+                    {
+                        Console.WriteLine("Blocksize would be too large!");
+                        return 100;
+                    }
+                }
+                var newOptions = new Dictionary<string, string>(options)
+                {
+                    ["blocksize"] = (nBlocks * blocksize).ToString() + "B",
+                    ["no-encryption"] = "true"
+                };
+                Console.WriteLine("Changing Blocksize: {0} -> {1}", blocksize, nBlocks * blocksize);
+                using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
+                {
+
+
+                    Console.WriteLine("Building lookup table for file hashes");
+                    using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8))
+                    using (var processor = new BackupRewriter(newOptions, blocksize, hashesprblock, lookup, outputFolder))
+                    {
+                        // Oldest first
+                        Array.Reverse(listFiles);
+                        foreach (var listFile in listFiles)
+                        {
+                            Console.WriteLine("Processing set with timestamp {0}", listFile.Key.ToLocalTime());
+
+                            processor.ProcessListFile(EnumerateDList(listFile.Value, options),
+                                EnumerateDListControlFiles(listFile.Value, options), listFile.Key);
+                        }
                     }
                 }
             }
@@ -154,6 +163,109 @@ namespace Duplicati.CommandLine.RecoveryTool
                 EncryptVolumes(options, outputFolder);
             }
             return 0;
+        }
+
+        private static TempFolder DecryptListFiles(KeyValuePair<DateTime, string>[] listFiles, Options opt)
+        {
+            // Temporary folder for decrypted list files, if necessary
+            TempFolder tmpDir = null;
+            try
+            {
+                bool updatedOptions = false;
+                for (int i = 0; i < listFiles.Length; ++i)
+                {
+                    var path = listFiles[i].Value;
+                    var p = VolumeBase.ParseFilename(Path.GetFileName(path));
+                    if (p.EncryptionModule != null)
+                    {
+                        using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(p.EncryptionModule, opt.Passphrase, opt.RawOptions))
+                        {
+                            if (m == null)
+                            {
+                                throw new UserInformationException(string.Format("Encryption method not supported: {0}", p.EncryptionModule), "EncryptionMethodNotSupported");
+                            }
+                            if (tmpDir == null)
+                            {
+                                tmpDir = new TempFolder();
+                            }
+                            // Remove encryption from filename
+                            string decryptFilename = Path.GetFileName(path);
+                            decryptFilename = decryptFilename.Substring(0, decryptFilename.Length - m.FilenameExtension.Length - 1);
+                            string decryptPath = Path.Combine(tmpDir, decryptFilename);
+                            m.Decrypt(path, decryptPath);
+                            listFiles[i] = new KeyValuePair<DateTime, string>(listFiles[i].Key, decryptPath);
+                            path = decryptPath;
+                        }
+                    }
+                    if (!updatedOptions)
+                    {
+                        VolumeReaderBase.UpdateOptionsFromManifest(p.CompressionModule, path, opt);
+                        updatedOptions = true;
+                    }
+                }
+            }
+            catch
+            {
+                tmpDir?.Dispose();
+                throw;
+            }
+            return tmpDir;
+        }
+
+        private static bool CreateIndexFile(string folder, string ixfile, Options options, long hashsize)
+        {
+            var indexVolumes = (
+                    from v in Directory.EnumerateFiles(folder)
+                    let p = VolumeBase.ParseFilename(Path.GetFileName(v))
+                    where p != null && p.FileType == RemoteVolumeType.Index
+                    orderby p.Time descending
+                    select new KeyValuePair<IParsedVolume, string>(p, v)).ToArray();
+
+            if (indexVolumes.Length == 0)
+            {
+                return false;
+            }
+            SortedSet<string> sortedIndices = new SortedSet<string>(StringComparer.Ordinal);
+
+            int blocks = 0;
+            bool decrypt = indexVolumes.Any((p) => p.Key.EncryptionModule != null);
+            using (var tf = decrypt ? new TempFile() : null)
+                foreach (var v in indexVolumes)
+                {
+                    var path = v.Value;
+                    var p = v.Key;
+                    if (p.EncryptionModule != null)
+                    {
+                        // Decrypt to temp file
+                        using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(p.EncryptionModule, options.Passphrase, options.RawOptions))
+                        {
+                            if (m == null)
+                            {
+                                throw new UserInformationException(string.Format("Encryption method not supported: {0}", p.EncryptionModule), "EncryptionMethodNotSupported");
+                            }
+                            m.Decrypt(path, tf);
+                            path = tf;
+                        }
+                    }
+                    using (var reader = new IndexVolumeReader(p.CompressionModule, path, options, hashsize))
+                        foreach (var a in reader.Volumes)
+                        {
+                            foreach (var block in a.Blocks)
+                            {
+                                sortedIndices.Add($"{block.Key}, {a.Filename}");
+                                blocks++;
+                            }
+                        }
+                }
+            using (var sw = new StreamWriter(ixfile))
+            {
+                foreach (string line in sortedIndices)
+                {
+                    sw.WriteLine(line);
+                }
+            }
+            Console.WriteLine("{0} hashes indexed", blocks);
+            return true;
         }
 
         private static void EncryptVolumes(Dictionary<string, string> options, string outputFolder)

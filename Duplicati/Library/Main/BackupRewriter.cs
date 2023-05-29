@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main
                 catch (Exception ex)
                 {
                     Console.WriteLine(" error: {0}", ex);
-                    if(errors == null)
+                    if (errors == null)
                     {
                         errors = new List<string>();
                     }
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Main
             File.Copy(setEntry.LocalFilename, path);
             setEntry.DeleteLocalFile();
             Console.WriteLine("Copied {0}", path);
-            if(errors != null)
+            if (errors != null)
             {
                 throw new FileMissingException(string.Join(Environment.NewLine, errors));
             }
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Main
 
         private void AddOrCombineBlocks(IEnumerable<string> listHashes, int size, ref IEnumerable<string> blocklistHashes, CompressionHint hint, ref string blockhash)
         {
-            if(size == 0)
+            if (size == 0)
             {
                 // Empty file, do not need to add blocks
                 return;
@@ -532,6 +532,7 @@ namespace Duplicati.Library.Main
             private Dictionary<string, Stream> m_streams = new Dictionary<string, Stream>();
             private List<string> m_mru = new List<string>();
             private readonly Dictionary<string, string> m_options;
+            private Dictionary<string, TempFile> m_tempDecrypted = new Dictionary<string, TempFile>();
 
             private const int MAX_OPEN_ARCHIVES = 20;
 
@@ -542,12 +543,30 @@ namespace Duplicati.Library.Main
 
             public Stream ReadBlock(string filename, string hash)
             {
-                Library.Interface.ICompression cf;
+                ICompression cf;
                 Stream stream;
                 if (!m_lookup.TryGetValue(filename, out cf) || !m_streams.TryGetValue(filename, out stream))
                 {
-                    stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-                    cf = Library.DynamicLoader.CompressionLoader.GetModule(Path.GetExtension(filename).Trim('.'), stream, Library.Interface.ArchiveMode.Read, m_options);
+                    var p = VolumeBase.ParseFilename(filename);
+                    var streamFile = filename;
+                    if (p.EncryptionModule != null)
+                    {
+                        // Decrypt to temporary file
+                        var tf = new TempFile();
+                        using (var m = DynamicLoader.EncryptionLoader.GetModule(p.EncryptionModule, m_options["passphrase"], m_options))
+                        {
+                            if (m == null)
+                            {
+                                throw new UserInformationException(string.Format("Encryption method not supported: {0}", p.EncryptionModule), "EncryptionMethodNotSupported");
+                            }
+                            m.Decrypt(filename, tf);
+                            streamFile = tf;
+                            m_tempDecrypted[filename] = tf;
+                        }
+
+                    }
+                    stream = new FileStream(streamFile, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+                    cf = DynamicLoader.CompressionLoader.GetModule(p.CompressionModule, stream, ArchiveMode.Read, m_options);
                     if (cf == null)
                     {
                         stream.Dispose();
@@ -570,6 +589,8 @@ namespace Duplicati.Library.Main
                     m_lookup.Remove(f);
                     m_streams[f].Dispose();
                     m_streams.Remove(f);
+                    m_tempDecrypted[f].Dispose();
+                    m_tempDecrypted.Remove(f);
                     m_mru.Remove(f);
                 }
 
@@ -585,6 +606,10 @@ namespace Duplicati.Library.Main
                     catch { }
 
                 foreach (var v in m_streams.Values)
+                    try { v.Dispose(); }
+                    catch { }
+
+                foreach (var v in m_tempDecrypted.Values)
                     try { v.Dispose(); }
                     catch { }
 
