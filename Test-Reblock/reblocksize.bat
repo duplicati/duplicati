@@ -6,16 +6,21 @@ rd /s /q Recover
 del db.sqlite
 
 set /P "passphrase=Enter Passphrase:"
-:: %REC_EXE% download "file://.\Destination" Recover --no-encryption=true
-%REC_EXE% download "file://.\Destination" Recover --passphrase=%passphrase%
+if DEFINED passphrase (
+	set passphrase_opt=--passphrase=%passphrase%
+	set encrypt_opt=--encrypt
+) else (
+	set passphrase_opt=--no-encryption
+)
 
-%REC_EXE% index Recover
+::%REC_EXE% download "file://.\Destination" Recover %passphrase_opt%
 
-%REC_EXE% list Recover
+::%REC_EXE% index Recover
 
-%REC_EXE% reblocksize Recover Recover\Reblock 8 --encrypt --passphrase=asdf --dblock-size=100mb
-:: %REC_EXE% reblocksize Recover Recover\Reblock 8
+::%REC_EXE% list Recover
 
-%CLI_EXE% repair "file://.\Recover\Reblock" --passphrase=asdf --dbpath=".\db.sqlite"
+%REC_EXE% reblocksize Destination Recover\Reblock 8 %encrypt_opt% %passphrase_opt% --dblock-size=100mb
+
+%CLI_EXE% repair "file://.\Recover\Reblock" %passphrase_opt% --dbpath=".\db.sqlite"
 
 pause

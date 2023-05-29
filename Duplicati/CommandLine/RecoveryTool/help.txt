@@ -97,10 +97,10 @@ Reblock
 Duplicati.RecoveryTool.exe reblock <localfolder> <targetfolder> [factor] [--encrypt] [options]
 
 Increase the blocksize of an existing backup while preserving history.
-Requires a local, unencrypted and indexed copy of the backup and copies the result to another folder.
+Requires a local copy of the backup and copies the result to another folder. Can either run on a backup destination folder or on an indexed recovery download.
 [factor] is the number of blocks that are combined into one. It needs to be a positive integer and defaults to 2.
 
-If --encrypt is specified, the backup is encrypted using the specified passphrase (--passphrase=...).
+If --encrypt is specified, the backup is encrypted using the specified passphrase (--passphrase=...). Otherwise, the backup is unencrypted.
 
 After the blocksizes are changed, the local database can be recreated using repair.
 

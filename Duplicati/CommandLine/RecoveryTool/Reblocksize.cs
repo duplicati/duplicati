@@ -99,58 +99,63 @@ namespace Duplicati.CommandLine.RecoveryTool
                     throw new UserInformationException(string.Format("File hash algorithm not valid: {0}", filehash_str), "FileHashAlgorithmNotSupported");
 
 
+                TempFile ixtmpfile = null;
                 if (!File.Exists(ixfile))
                 {
                     Console.WriteLine("Index file not found, creating from index volumes");
-                    if (!CreateIndexFile(folder, ixfile, opt, hashsize))
+                    ixtmpfile = CreateIndexFile(folder, opt, hashsize);
+                    ixfile = ixtmpfile;
+                    if (ixtmpfile == null)
                     {
                         Console.WriteLine("No dindex files to create index, need to use index command manually!");
                         return 100;
                     }
                 }
+                using (ixtmpfile)
+                {
+                    var hashesprblock = blocksize / (blockhasher.HashSize / 8);
 
-                var hashesprblock = blocksize / (blockhasher.HashSize / 8);
-
-                // Number of blocks to combine into one
-                int nBlocks = 2;
-                if (args.Count == 4)
-                {
-                    if (!int.TryParse(args[3], out nBlocks))
+                    // Number of blocks to combine into one
+                    int nBlocks = 2;
+                    if (args.Count == 4)
                     {
-                        Console.WriteLine("Invalid argument {0}, expected integer number or blocks to combine", args[3]);
-                        return 100;
-                    }
-                    if (nBlocks < 1)
-                    {
-                        Console.WriteLine("Blocksize multiplier must be >= 1");
-                        return 100;
-                    }
-                    else if ((nBlocks * blocksize) > int.MaxValue)
-                    {
-                        Console.WriteLine("Blocksize would be too large!");
-                        return 100;
-                    }
-                }
-                var newOptions = new Dictionary<string, string>(options)
-                {
-                    ["blocksize"] = (nBlocks * blocksize).ToString() + "B",
-                    ["no-encryption"] = (!encrypt).ToString()
-                };
-                Console.WriteLine("Changing Blocksize: {0} -> {1}", blocksize, nBlocks * blocksize);
-                using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
-                {
-                    Console.WriteLine("Building lookup table for file hashes");
-                    using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8))
-                    using (var processor = new BackupRewriter(newOptions, blocksize, hashesprblock, lookup, outputFolder))
-                    {
-                        // Oldest first
-                        Array.Reverse(listFiles);
-                        foreach (var listFile in listFiles)
+                        if (!int.TryParse(args[3], out nBlocks))
                         {
-                            Console.WriteLine("Processing set with timestamp {0}", listFile.Key.ToLocalTime());
+                            Console.WriteLine("Invalid argument {0}, expected integer number or blocks to combine", args[3]);
+                            return 100;
+                        }
+                        if (nBlocks < 1)
+                        {
+                            Console.WriteLine("Blocksize multiplier must be >= 1");
+                            return 100;
+                        }
+                        else if ((nBlocks * blocksize) > int.MaxValue)
+                        {
+                            Console.WriteLine("Blocksize would be too large!");
+                            return 100;
+                        }
+                    }
+                    var newOptions = new Dictionary<string, string>(options)
+                    {
+                        ["blocksize"] = (nBlocks * blocksize).ToString() + "B",
+                        ["no-encryption"] = (!encrypt).ToString()
+                    };
+                    Console.WriteLine("Changing Blocksize: {0} -> {1}", blocksize, nBlocks * blocksize);
+                    using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
+                    {
+                        Console.WriteLine("Building lookup table for file hashes");
+                        using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8))
+                        using (var processor = new BackupRewriter(newOptions, blocksize, hashesprblock, lookup, outputFolder))
+                        {
+                            // Oldest first
+                            Array.Reverse(listFiles);
+                            foreach (var listFile in listFiles)
+                            {
+                                Console.WriteLine("Processing set with timestamp {0}", listFile.Key.ToLocalTime());
 
-                            processor.ProcessListFile(EnumerateDList(listFile.Value, options),
-                                EnumerateDListControlFiles(listFile.Value, options), listFile.Key);
+                                processor.ProcessListFile(EnumerateDList(listFile.Value, options),
+                                    EnumerateDListControlFiles(listFile.Value, options), listFile.Key);
+                            }
                         }
                     }
                 }
@@ -206,7 +211,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             return tmpDir;
         }
 
-        private static bool CreateIndexFile(string folder, string ixfile, Options options, long hashsize)
+        private static TempFile CreateIndexFile(string folder, Options options, long hashsize)
         {
             var indexVolumes = (
                     from v in Directory.EnumerateFiles(folder)
@@ -217,7 +222,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             if (indexVolumes.Length == 0)
             {
-                return false;
+                return null;
             }
             SortedSet<string> sortedIndices = new SortedSet<string>(StringComparer.Ordinal);
 
@@ -251,15 +256,20 @@ namespace Duplicati.CommandLine.RecoveryTool
                             }
                         }
                 }
-            using (var sw = new StreamWriter(ixfile))
+            var ixfile = new TempFile();
+            try
             {
-                foreach (string line in sortedIndices)
+                using (var sw = new StreamWriter(ixfile))
                 {
-                    sw.WriteLine(line);
+                    foreach (string line in sortedIndices)
+                    {
+                        sw.WriteLine(line);
+                    }
                 }
             }
+            catch { ixfile.Dispose(); throw; }
             Console.WriteLine("{0} hashes indexed", blocks);
-            return true;
+            return ixfile;
         }
 
         private static void EncryptVolumes(Dictionary<string, string> options, string outputFolder)
