@@ -1,5 +1,5 @@
-: Use recovery tool to index recover files
-: Run after backup.bat
+rem Use recovery tool to index recover files
+rem Run after backup.bat
 SET REC_EXE=..\Duplicati\CommandLine\RecoveryTool\bin\Debug\Duplicati.CommandLine.RecoveryTool.exe
 rd /s /q Recover
 

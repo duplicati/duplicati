@@ -23,10 +23,14 @@ namespace Duplicati.Library.Main
         FilesetVolumeWriter m_filesetvolume = null;
         IndexVolumeWriter m_indexVolume = null;
         long m_nextBlockvolumeId = 0;
+        // Already saved blocks and sizes
         Dictionary<string, long> m_blocks = new Dictionary<string, long>();
+        // Cache combined file hashes of large files and the combined blocklist hashes, because files are processed for each version.
+        // Bool is true when list contains blocklists, false for a single block
+        Dictionary<string, KeyValuePair<bool, List<string>>> m_fileBlocklists = new Dictionary<string, KeyValuePair<bool, List<string>>>();
         string m_outputPath;
         HashAlgorithm m_blockhasher;
-        List<Tuple<string,byte[],int>> m_blocklistHashes;
+        List<Tuple<string, byte[], int>> m_blocklistHashes;
 
         public BackupRewriter(Dictionary<string, string> options, long oldBlocksize, long hashesprblock, HashLookupHelper lookup, string outputPath)
         {
@@ -101,10 +105,6 @@ namespace Duplicati.Library.Main
             }
             m_filesetvolume.Close();
             var setEntry = m_filesetvolume.CreateFileEntryForUpload(m_options);
-            //var t = Task.Run(() => m_indexVolume.CreateVolume(
-            //    blockEntry.RemoteFilename, blockEntry.Hash, blockEntry.Size, m_options, null));
-            //t.Wait();
-            //IndexVolumeWriter indexVolumeWriter = t.Result;
             string path = Path.Combine(m_outputPath, Path.GetFileName(setEntry.RemoteFilename));
             if (!Directory.Exists(m_outputPath))
             {
@@ -125,16 +125,38 @@ namespace Duplicati.Library.Main
             else
             {
                 // Multiple blocks, need to combine
+                // blockhash is hash of full file or metadata, check if already combined the same file
+                if (m_fileBlocklists.TryGetValue(blockhash, out KeyValuePair<bool, List<string>> pair))
+                {
+                    if (!pair.Key)
+                    {
+                        // Combined into one
+                        blockhash = pair.Value.First();
+                        blocklistHashes = null;
+                    }
+                    else
+                    {
+                        // Full list
+                        blocklistHashes = pair.Value;
+                        blockhash = null;
+                    }
+                    return;
+                }
                 var hashes = CombineBlocks(listHashes, hint, out IEnumerable<string> combinedHashes);
                 if (hashes.Count() == 1)
                 {
                     // Combined into one
+                    m_fileBlocklists[blockhash] = new KeyValuePair<bool, List<string>>(false, new List<string>()
+                    {
+                        hashes.First()
+                    });
                     blockhash = hashes.First();
                     blocklistHashes = null;
                 }
                 else
                 {
                     // Full list
+                    m_fileBlocklists[blockhash] = new KeyValuePair<bool, List<string>>(false, new List<string>(combinedHashes));
                     blocklistHashes = combinedHashes;
                     blockhash = null;
                 }
@@ -155,7 +177,6 @@ namespace Duplicati.Library.Main
             MemoryStream s = new MemoryStream(buf);
             foreach (var blh in blocklistHashes)
             {
-                Console.Write(" {0}", blhi);
                 var blockhashoffset = blhi * m_hashesprblock * m_oldBlocksize;
                 try
                 {
@@ -246,7 +267,7 @@ namespace Duplicati.Library.Main
         {
             AddBlock(hash, null, offset, size, hint);
         }
-        private void AddBlock(string hash, byte[] data, int offset, int size, CompressionHint hint, bool isBlocklist=false)
+        private void AddBlock(string hash, byte[] data, int offset, int size, CompressionHint hint, bool isBlocklist = false)
         {
             // Start new block volume
             if (m_blockvolume == null)
@@ -271,9 +292,9 @@ namespace Duplicati.Library.Main
             {
                 m_blockvolume.AddBlock(hash, data ?? m_lookup.ReadHash(hash), offset, size, hint);
                 m_indexVolume.AddBlock(hash, size);
-                if(isBlocklist && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                if (isBlocklist && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                 {
-                    m_blocklistHashes.Add(new Tuple<string, byte[], int>(hash,(byte[])data.Clone(),size));
+                    m_blocklistHashes.Add(new Tuple<string, byte[], int>(hash, (byte[])data.Clone(), size));
                 }
                 m_blocks.Add(hash, size);
 
@@ -287,7 +308,6 @@ namespace Duplicati.Library.Main
 
         private void FinishVolumes()
         {
-            Console.WriteLine("{0} > {1} - {2}", m_blockvolume.Filesize, m_options.VolumeSize, m_options.Blocksize);
             m_blockvolume.Close();
             if (!Directory.Exists(m_outputPath))
             {

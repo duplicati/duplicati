@@ -1,5 +1,5 @@
-: Uses normal restore from normal backup
-: Run after backup.bat
+rem Uses normal restore from normal backup
+rem Run after backup.bat
 SET CLI_EXE=..\Duplicati\CommandLine\bin\Debug\Duplicati.CommandLine.exe
 rd /s /q Restore
 

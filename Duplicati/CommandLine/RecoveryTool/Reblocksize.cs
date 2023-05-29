@@ -3,6 +3,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Modules.Builtin;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -151,7 +152,7 @@ namespace Duplicati.CommandLine.RecoveryTool
         {
             options.Remove("no-encryption");
             Options opt = new Options(options);
-            if(string.IsNullOrEmpty(opt.EncryptionModule))
+            if (string.IsNullOrEmpty(opt.EncryptionModule))
             {
                 Console.WriteLine("Encryption module set to none");
                 return;
@@ -162,6 +163,14 @@ namespace Duplicati.CommandLine.RecoveryTool
                 let n = VolumeBase.ParseFilename(SystemIO.IO_OS.FileEntry(x))
                 where n != null && n.Prefix == opt.Prefix
                 select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
+
+            // Needs order (Files or Blocks) and Indexes as last because indexes content will be adjusted based on recompressed blocks
+            var files = localfiles.Where(a => a.FileType == RemoteVolumeType.Files).ToArray();
+            var blocks = localfiles.Where(a => a.FileType == RemoteVolumeType.Blocks).ToArray();
+            var indexes = localfiles.Where(a => a.FileType == RemoteVolumeType.Index).ToArray();
+
+            localfiles = files.Concat(blocks).ToArray().Concat(indexes).ToArray();
+
 
             int i = 0;
             foreach (var f in localfiles)
@@ -188,16 +197,45 @@ namespace Duplicati.CommandLine.RecoveryTool
                             {
                                 cmfileNew = cmfileNew + "." + opt.EncryptionModule;
                             }
+
+                            //Because encryption changes blocks file sizes - needs to be updated
+                            string textJSON;
+                            using (var sourceStream = cmOld.OpenRead(cmfile))
+                            using (var sourceStreamReader = new StreamReader(sourceStream))
+                            {
+                                textJSON = sourceStreamReader.ReadToEnd();
+                                JToken token = JObject.Parse(textJSON);
+                                var fileInfoBlocks = new FileInfo(Path.Combine(outputFolder, cmfileNew.Replace("vol/", "")));
+                                var filehasher = HashAlgorithmHelper.Create(opt.FileHashAlgorithm);
+
+                                using (var fileStream = fileInfoBlocks.Open(FileMode.Open))
+                                {
+                                    fileStream.Position = 0;
+                                    token["volumehash"] = Convert.ToBase64String(filehasher.ComputeHash(fileStream));
+                                    fileStream.Close();
+                                }
+
+                                token["volumesize"] = fileInfoBlocks.Length;
+                                textJSON = token.ToString();
+                            }
+
+                            using (var sourceStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(textJSON)))
+                            using (var cs = cmNew.CreateFile(cmfileNew, Library.Interface.CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
+                                Library.Utility.Utility.CopyStream(sourceStream, cs);
+
                         }
-                        using (var sourceStream = cmOld.OpenRead(cmfile))
-                        using (var cs = cmNew.CreateFile(cmfileNew, CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
-                            Library.Utility.Utility.CopyStream(sourceStream, cs);
+                        else
+                        {
+                            using (var sourceStream = cmOld.OpenRead(cmfile))
+                            using (var cs = cmNew.CreateFile(cmfileNew, CompressionHint.Compressible, cmOld.GetLastWriteTime(cmfile)))
+                                Library.Utility.Utility.CopyStream(sourceStream, cs);
+                        }
                     }
 
                 File.Delete(localFileSource);
                 using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(opt.EncryptionModule, opt.Passphrase, options))
                 {
-                    if(m == null)
+                    if (m == null)
                     {
                         throw new UserInformationException(string.Format("Encryption method not supported: {0}", opt.EncryptionModule), "EncryptionMethodNotSupported");
                     }

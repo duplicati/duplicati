@@ -1,5 +1,5 @@
-: Uses recover to restore the backup with changed block size
-: Run after reblocksize.bat
+rem Uses recover to restore the backup with changed block size
+rem Run after reblocksize.bat
 SET REC_EXE=..\Duplicati\CommandLine\RecoveryTool\bin\Debug\Duplicati.CommandLine.RecoveryTool.exe
 rd /s /q Recover\Reblock\Restore
 

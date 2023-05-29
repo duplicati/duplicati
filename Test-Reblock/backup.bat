@@ -1,5 +1,5 @@
-: Creates a backup from .\Source to .\Destination
-: Run before the other batch files
+rem Creates a backup from .\Source to .\Destination
+rem Run before the other batch files
 SET CLI_EXE=..\Duplicati\CommandLine\bin\Debug\Duplicati.CommandLine.exe
 %CLI_EXE% help backup
 
