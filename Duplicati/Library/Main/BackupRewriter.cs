@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main
 
         public BackupRewriter(Dictionary<string, string> options, long oldBlocksize, long hashesprblock, HashLookupHelper lookup, string outputPath)
         {
-            m_options = new Library.Main.Options(options);
+            m_options = new Options(options);
             m_oldBlocksize = oldBlocksize;
             m_hashesprblock = hashesprblock;
             m_lookup = lookup;

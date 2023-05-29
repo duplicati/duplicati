@@ -134,13 +134,11 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var newOptions = new Dictionary<string, string>(options)
                 {
                     ["blocksize"] = (nBlocks * blocksize).ToString() + "B",
-                    ["no-encryption"] = "true"
+                    ["no-encryption"] = (!encrypt).ToString()
                 };
                 Console.WriteLine("Changing Blocksize: {0} -> {1}", blocksize, nBlocks * blocksize);
                 using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
                 {
-
-
                     Console.WriteLine("Building lookup table for file hashes");
                     using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8))
                     using (var processor = new BackupRewriter(newOptions, blocksize, hashesprblock, lookup, outputFolder))
@@ -158,10 +156,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                 }
             }
 
-            if (encrypt)
-            {
-                EncryptVolumes(options, outputFolder);
-            }
             return 0;
         }
 
