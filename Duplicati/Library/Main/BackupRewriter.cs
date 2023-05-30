@@ -43,8 +43,11 @@ namespace Duplicati.Library.Main
         }
         public void ProcessListFile(IEnumerable<Volumes.IFileEntry> listFiles, IEnumerable<KeyValuePair<string, Stream>> controlFiles, DateTime timestamp)
         {
+            // TODO: Sort by hash order
+
             m_filesetvolume = new FilesetVolumeWriter(m_options, timestamp);
             var i = 0L;
+            var count = listFiles.Count();
             List<string> errors = null;
             foreach (var f in listFiles)
             {
@@ -54,7 +57,7 @@ namespace Duplicati.Library.Main
                     IEnumerable<string> metablockHash = null;
                     if (f.Type == FilelistEntryType.File)
                     {
-                        Console.WriteLine("{0}: {1} ({2})", i, f.Path, Library.Utility.Utility.FormatSizeString(f.Size));
+                        Console.WriteLine("{0}/{1}: {2} ({3})", i, count, f.Path, Library.Utility.Utility.FormatSizeString(f.Size));
                         var hint = m_options.GetCompressionHintFromFilename(f.Path);
 
                         var blockhash = f.Blockhash ?? f.Hash;
@@ -74,6 +77,7 @@ namespace Duplicati.Library.Main
                     }
                     else if (f.Type == FilelistEntryType.Folder || f.Type == FilelistEntryType.Symlink)
                     {
+                        Console.WriteLine("{0}: {1}", i, f.Path, Library.Utility.Utility.FormatSizeString(f.Size));
                         var metahash = f.Metablockhash ?? f.Metahash;
                         AddOrCombineBlocks(f.MetaBlocklistHashes, (int)f.Metasize, ref metablockHash, CompressionHint.Default, ref metahash);
                         if (metahash == f.Metahash)
@@ -182,7 +186,6 @@ namespace Duplicati.Library.Main
         {
             int blocksize = m_options.Blocksize;
             int nBlocks = blocksize / (int)m_oldBlocksize;
-            var blhi = 0L;
             var currentBlocks = 0;
             var blocklistbuffer = new byte[blocksize];
             int blocklistoffset = 0;
@@ -192,7 +195,6 @@ namespace Duplicati.Library.Main
             MemoryStream s = new MemoryStream(buf);
             foreach (var blh in blocklistHashes)
             {
-                var blockhashoffset = blhi * m_hashesprblock * m_oldBlocksize;
                 try
                 {
                     var bi = 0;
@@ -200,7 +202,7 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
-                            s.Position = blockhashoffset + (currentBlocks * m_oldBlocksize);
+                            s.Position = currentBlocks * m_oldBlocksize;
                             m_lookup.WriteHash(s, h);
                         }
                         catch (Exception ex)
@@ -226,7 +228,6 @@ namespace Duplicati.Library.Main
                     Console.WriteLine("Failed to read Blocklist hash: {0}{1}{2}", blh, Environment.NewLine, ex);
                 }
 
-                blhi++;
             }
             if (currentBlocks > 0)
             {
@@ -375,6 +376,7 @@ namespace Duplicati.Library.Main
             private readonly List<long> m_offsets = new List<long>();
             private readonly byte[] m_linebuf = new byte[128];
             private readonly byte[] m_newline = Environment.NewLine.Select(x => (byte)x).ToArray();
+            private Dictionary<string, string> m_map;
 
             public HashLookupHelper(string indexfile, CompressedFileMRUCache cache, int blocksize, int hashsize)
             {
@@ -422,6 +424,20 @@ namespace Duplicati.Library.Main
                         prevoff = m_indexfile.Position;
                     }
                 }
+            }
+
+            public Dictionary<string, string> BuildMap()
+            {
+                if (m_map == null)
+                {
+                    m_map = new Dictionary<string, string>(StringComparer.Ordinal);
+                    m_indexfile.Position = 0;
+                    foreach (var v in AllFileLines())
+                    {
+                        m_map.Add(v.Key, v.Value);
+                    }
+                }
+                return m_map;
             }
 
             private string ReadNextLine()
@@ -479,6 +495,67 @@ namespace Duplicati.Library.Main
                     yield return Convert.ToBase64String(bytes, i, m_hashsize);
             }
 
+            public string HashLocation(string hash)
+            {
+                if (m_map != null)
+                {
+                    if (m_map.TryGetValue(hash, out string value))
+                    {
+                        return value;
+                    }
+                }
+                var ix = m_lookup.BinarySearch(hash, StringComparer.Ordinal);
+                if (ix < 0)
+                {
+                    ix = ~ix;
+                    if (ix != 0)
+                        ix--;
+                }
+
+                if (m_indexfile.Position >= m_offsets[ix]
+                    && (ix + 1 >= m_offsets.Count || m_indexfile.Position < m_offsets[ix + 1]))
+                {
+                    // Optimize sequential hash reads
+                    var str = ReadNextLine();
+                    if (!string.IsNullOrEmpty(str))
+                    {
+                        var i = str.IndexOf(", ", StringComparison.Ordinal);
+                        if (i < 0)
+                            Console.WriteLine("Failed to parse line starting at offset {0} in index file, string: {1}", m_indexfile.Position - str.Length - m_newline.Length, str);
+                        var strHash = str.Substring(0, i);
+                        int cmp = StringComparer.Ordinal.Compare(hash, strHash);
+                        if (cmp < 0)
+                        {
+                            // Not a sequential read
+                            m_indexfile.Position = m_offsets[ix];
+                        }
+                        else if (cmp == 0)
+                        {
+                            // Matching hash
+                            return str.Substring(i + 2);
+                        }
+                        // Else: Hash is in next lines, keep going
+                    }
+                }
+                else
+                {
+                    m_indexfile.Position = m_offsets[ix];
+                }
+
+                foreach (var v in AllFileLines())
+                {
+                    if (v.Key == hash)
+                        return v.Value;
+
+
+                    if (StringComparer.Ordinal.Compare(hash, v.Key) < 0)
+                        break;
+                }
+
+                return null;
+
+            }
+
             public byte[] ReadHash(string hash)
             {
                 var ix = m_lookup.BinarySearch(hash, StringComparer.Ordinal);
@@ -491,21 +568,17 @@ namespace Duplicati.Library.Main
 
                 m_indexfile.Position = m_offsets[ix];
 
-                foreach (var v in AllFileLines())
+                string file = HashLocation(hash);
+                if (file != null)
                 {
-                    if (v.Key == hash)
-                        using (var fs = m_cache.ReadBlock(v.Value, hash))
-                        {
-                            var buf = new byte[m_blocksize];
-                            var l = Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
-                            Array.Resize(ref buf, l);
+                    using (var fs = m_cache.ReadBlock(file, hash))
+                    {
+                        var buf = new byte[m_blocksize];
+                        var l = Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
+                        Array.Resize(ref buf, l);
 
-                            return buf;
-                        }
-
-
-                    if (StringComparer.Ordinal.Compare(hash, v.Key) < 0)
-                        break;
+                        return buf;
+                    }
                 }
 
                 throw new Exception(string.Format("Unable to locate block with hash: {0}", hash));
@@ -574,6 +647,7 @@ namespace Duplicati.Library.Main
                     }
                     m_lookup[filename] = cf;
                     m_streams[filename] = stream;
+                    m_mru.Insert(0, filename);
                 }
 
                 if (m_mru.Count > 0 && m_mru[0] != filename)
@@ -589,8 +663,11 @@ namespace Duplicati.Library.Main
                     m_lookup.Remove(f);
                     m_streams[f].Dispose();
                     m_streams.Remove(f);
-                    m_tempDecrypted[f].Dispose();
-                    m_tempDecrypted.Remove(f);
+                    if (m_tempDecrypted.TryGetValue(f, out TempFile tmp))
+                    {
+                        tmp.Dispose();
+                        m_tempDecrypted.Remove(f);
+                    }
                     m_mru.Remove(f);
                 }
 
@@ -616,6 +693,7 @@ namespace Duplicati.Library.Main
                 m_lookup = null;
                 m_streams = null;
                 m_mru = null;
+                m_tempDecrypted = null;
             }
 
             #endregion

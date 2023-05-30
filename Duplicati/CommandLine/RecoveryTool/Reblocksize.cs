@@ -60,19 +60,20 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PASSPHRASE")))
                     options["passphrase"] = Environment.GetEnvironmentVariable("PASSPHRASE");
 
+            if (encrypt)
+            {
+                if (!options.ContainsKey("passphrase"))
+                {
+                    Console.WriteLine("Password not specified for reencrypt");
+                    return 100;
+                }
+            }
+
             Options opt = new Options(options);
 
+            Console.WriteLine("Opening list files...");
             using (var tdir = DecryptListFiles(listFiles, opt))
             {
-                if (encrypt)
-                {
-                    if (!options.ContainsKey("passphrase"))
-                    {
-                        Console.WriteLine("Password not specified for reencrypt");
-                        return 100;
-                    }
-                }
-
                 ixfile = Path.GetFullPath(ixfile);
 
                 string blocksize_str;
@@ -81,7 +82,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 options.TryGetValue("block-hash-algorithm", out blockhash_str);
                 string filehash_str;
                 options.TryGetValue("block-hash-algorithm", out filehash_str);
-                long blocksize = string.IsNullOrWhiteSpace(blocksize_str) ? 0 : Library.Utility.Sizeparser.ParseSize(blocksize_str);
+                long blocksize = string.IsNullOrWhiteSpace(blocksize_str) ? 0 : Sizeparser.ParseSize(blocksize_str);
 
                 if (blocksize <= 0)
                 {
@@ -144,16 +145,27 @@ namespace Duplicati.CommandLine.RecoveryTool
                     using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
                     {
                         Console.WriteLine("Building lookup table for file hashes");
-                        using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8))
+                        using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, hashsize))
                         using (var processor = new BackupRewriter(newOptions, blocksize, hashesprblock, lookup, outputFolder))
                         {
+                            lookup.BuildMap();
                             // Oldest first
                             Array.Reverse(listFiles);
                             foreach (var listFile in listFiles)
                             {
                                 Console.WriteLine("Processing set with timestamp {0}", listFile.Key.ToLocalTime());
 
-                                processor.ProcessListFile(EnumerateDList(listFile.Value, options),
+                                // order by hashes first to improve lookup
+                                var files = (from f in EnumerateDList(listFile.Value, options)
+                                             let sf = new SortedFileEntry(f)
+                                             orderby sf.AllHashes
+                                             select sf).ToList();
+                                Console.WriteLine("Optimizing file lookup order");
+                                files = (from sf in files
+                                         orderby sf.LookupKey(lookup)
+                                         select sf).ToList();
+
+                                processor.ProcessListFile(files,
                                     EnumerateDListControlFiles(listFile.Value, options), listFile.Key);
                             }
                         }
@@ -162,6 +174,80 @@ namespace Duplicati.CommandLine.RecoveryTool
             }
 
             return 0;
+        }
+
+        class SortedFileEntry : Library.Main.Volumes.IFileEntry
+        {
+            public FilelistEntryType Type => m_parent.Type;
+
+            public string TypeString => m_parent.TypeString;
+
+            public string Path => m_parent.Path;
+
+            public string Hash => m_parent.Hash;
+
+            public long Size => m_parent.Size;
+
+            public DateTime Time => m_parent.Time;
+
+            public string Metahash => m_parent.Metahash;
+
+            public string Metablockhash => m_parent.Metablockhash;
+
+            public long Metasize => m_parent.Metasize;
+
+            public string Blockhash => m_parent.Blockhash;
+
+            public long Blocksize => m_parent.Blocksize;
+
+            public IEnumerable<string> BlocklistHashes => m_blocklistHashes;
+
+            public IEnumerable<string> MetaBlocklistHashes => m_metaBlocklistHashes;
+
+            public string AllHashes { get; private set; }
+
+            private Library.Main.Volumes.IFileEntry m_parent;
+            // Have to save a copy because the base file entry is one-time read only
+            private readonly IEnumerable<string> m_blocklistHashes = null;
+            private readonly IEnumerable<string> m_metaBlocklistHashes = null;
+            private readonly IEnumerable<string> m_hashes;
+            private string m_lookupKey;
+
+            public SortedFileEntry(Library.Main.Volumes.IFileEntry f)
+            {
+                m_parent = f;
+                m_hashes = Enumerable.Empty<string>();
+                if (f.BlocklistHashes != null)
+                {
+                    m_blocklistHashes = f.BlocklistHashes.ToList();
+                    m_hashes = m_hashes.Concat(m_blocklistHashes);
+                }
+                else if (f.Size > 0 && (f.Blockhash != null || f.Hash != null))
+                {
+                    m_hashes = m_hashes.Append(f.Blockhash ?? f.Hash);
+                }
+                if (f.MetaBlocklistHashes != null)
+                {
+                    m_metaBlocklistHashes = f.MetaBlocklistHashes.ToList();
+                    m_hashes = m_hashes.Concat(m_metaBlocklistHashes);
+                }
+                else if (f.Metasize > 0 && (f.Metablockhash != null || f.Metahash != null))
+                {
+                    m_hashes = m_hashes.Append(f.Metablockhash ?? f.Metahash);
+                }
+                AllHashes = string.Join(" ", m_hashes);
+            }
+
+            public string LookupKey(BackupRewriter.HashLookupHelper lookup)
+            {
+                if (m_lookupKey == null)
+                {
+                    // Sort lookup files to group accesses
+                    IEnumerable<string> keys = (from h in m_hashes select lookup.HashLocation(h) into f orderby f select f).Distinct();
+                    m_lookupKey = string.Join(" ", keys);
+                }
+                return m_lookupKey;
+            }
         }
 
         private static TempFolder DecryptListFiles(KeyValuePair<DateTime, string>[] listFiles, Options opt)
