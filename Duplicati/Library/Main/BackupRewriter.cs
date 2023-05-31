@@ -43,8 +43,6 @@ namespace Duplicati.Library.Main
         }
         public void ProcessListFile(IEnumerable<Volumes.IFileEntry> listFiles, IEnumerable<KeyValuePair<string, Stream>> controlFiles, DateTime timestamp)
         {
-            // TODO: Sort by hash order
-
             m_filesetvolume = new FilesetVolumeWriter(m_options, timestamp);
             var i = 0L;
             var count = listFiles.Count();
@@ -126,6 +124,13 @@ namespace Duplicati.Library.Main
             if (errors != null)
             {
                 throw new FileMissingException(string.Join(Environment.NewLine, errors));
+            }
+        }
+        public void AddBlockEntries(IEnumerable<KeyValuePair<string, long>> existingHashes)
+        {
+            foreach (var p in existingHashes)
+            {
+                m_blocks.Add(p.Key, p.Value);
             }
         }
 
@@ -285,18 +290,6 @@ namespace Duplicati.Library.Main
         }
         private void AddBlock(string hash, byte[] data, int offset, int size, CompressionHint hint, bool isBlocklist = false)
         {
-            // Start new block volume
-            if (m_blockvolume == null)
-            {
-                m_blockvolume = new BlockVolumeWriter(m_options);
-                m_blockvolume.VolumeID = m_nextBlockvolumeId;
-                m_nextBlockvolumeId += 1;
-
-                m_blocklistHashes = new List<Tuple<string, byte[], int>>();
-                m_indexVolume = new IndexVolumeWriter(m_options);
-                m_indexVolume.StartVolume(Path.GetFileName(m_blockvolume.RemoteFilename));
-            }
-
             // Check if exists
             long exsize;
             bool blockExists = m_blocks.TryGetValue(hash, out exsize);
@@ -306,6 +299,18 @@ namespace Duplicati.Library.Main
             }
             else if (!blockExists)
             {
+                // Start new block volume
+                if (m_blockvolume == null)
+                {
+                    m_blockvolume = new BlockVolumeWriter(m_options);
+                    m_blockvolume.VolumeID = m_nextBlockvolumeId;
+                    m_nextBlockvolumeId += 1;
+
+                    m_blocklistHashes = new List<Tuple<string, byte[], int>>();
+                    m_indexVolume = new IndexVolumeWriter(m_options);
+                    m_indexVolume.StartVolume(Path.GetFileName(m_blockvolume.RemoteFilename));
+                }
+
                 m_blockvolume.AddBlock(hash, data ?? m_lookup.ReadHash(hash), offset, size, hint);
                 m_indexVolume.AddBlock(hash, size);
                 if (isBlocklist && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)

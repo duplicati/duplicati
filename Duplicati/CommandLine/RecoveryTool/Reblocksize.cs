@@ -24,6 +24,12 @@ namespace Duplicati.CommandLine.RecoveryTool
      *   - If there is only one block left, skip blocklist and directly use hash, otherwise create new blocklist
      * - Write new dlist, dblock, dindex with updated blocks and manifest to destination folder
      * - Recreate database should update local DB with new block size
+     *
+     * For easier usage:
+     * - If there is no index file, create index from dindex files
+     * - If source files are encrypted, decrypt to temporary files
+     * - Possibility to encrypt destination files before copying
+     * - If destination is not empty, read and index existing files to be able to continue an interrupted process
      */
     public static class Reblocksize
     {
@@ -136,11 +142,32 @@ namespace Duplicati.CommandLine.RecoveryTool
                             return 100;
                         }
                     }
+
                     var newOptions = new Dictionary<string, string>(options)
                     {
                         ["blocksize"] = (nBlocks * blocksize).ToString() + "B",
                         ["no-encryption"] = (!encrypt).ToString()
                     };
+
+                    if (!CheckDestinationFolder(outputFolder, listFiles, out DateTime[] existingFiles, nBlocks * (int)blocksize, new Options(newOptions)))
+                    {
+                        Console.WriteLine("The destination folder is not empty and not compatible with the current backup.");
+                        Console.WriteLine("Choose a different destination or clear the existing files in the folder.");
+                        return 100;
+                    }
+                    else if (existingFiles.Length > 0)
+                    {
+                        Console.WriteLine("Keeping {0} existing filesets", existingFiles.Length);
+                    }
+
+                    IEnumerable<KeyValuePair<string, long>> existing = null;
+                    if (Directory.Exists(outputFolder) && Directory.EnumerateFiles(outputFolder).Count() > 0)
+                    {
+                        existing = LoadExistingBlocks(outputFolder, new Options(newOptions), hashsize, out int blocks);
+
+                        Console.WriteLine("Mapped {0} existing blocks in output folder", blocks);
+                    }
+
                     Console.WriteLine("Changing Blocksize: {0} -> {1}", blocksize, nBlocks * blocksize);
                     using (var mru = new BackupRewriter.CompressedFileMRUCache(options))
                     {
@@ -148,12 +175,22 @@ namespace Duplicati.CommandLine.RecoveryTool
                         using (BackupRewriter.HashLookupHelper lookup = new BackupRewriter.HashLookupHelper(ixfile, mru, (int)blocksize, hashsize))
                         using (var processor = new BackupRewriter(newOptions, blocksize, hashesprblock, lookup, outputFolder))
                         {
-                            lookup.BuildMap();
-                            // Oldest first
-                            Array.Reverse(listFiles);
-                            foreach (var listFile in listFiles)
+                            if (existing != null)
                             {
-                                Console.WriteLine("Processing set with timestamp {0}", listFile.Key.ToLocalTime());
+                                processor.AddBlockEntries(existing);
+                            }
+                            lookup.BuildMap();
+                            // Remove files already in output
+                            // Oldest first
+                            listFiles = listFiles.Where(p => !existingFiles.Contains(p.Key)).Reverse().ToArray();
+                            if (listFiles.Length == 0)
+                            {
+                                Console.WriteLine("No sets to convert");
+                            }
+                            for (int i = 0; i < listFiles.Length; ++i)
+                            {
+                                var listFile = listFiles[i];
+                                Console.WriteLine("Processing set {0}/{1} with timestamp {2}", i, listFiles.Length, listFile.Key.ToLocalTime());
 
                                 // order by hashes first to improve lookup
                                 var files = (from f in EnumerateDList(listFile.Value, options)
@@ -174,6 +211,63 @@ namespace Duplicati.CommandLine.RecoveryTool
             }
 
             return 0;
+        }
+
+        private static bool CheckDestinationFolder(string outputFolder, KeyValuePair<DateTime, string>[] listFiles, out DateTime[] existingFiles, int targetBlocksize, Options outputOptions)
+        {
+            if (!Directory.Exists(outputFolder))
+            {
+                existingFiles = Array.Empty<DateTime>();
+                return true;
+            }
+            KeyValuePair<DateTime, string>[] outputListFiles = List.ParseListFiles(outputFolder);
+            // Check that all output dates are also in the input
+            using (var tmpdir = DecryptListFiles(outputListFiles, outputOptions))
+                foreach (var p in outputListFiles)
+                {
+                    int i = Array.FindIndex(listFiles, p1 => p.Key == p1.Key);
+                    if (i == -1)
+                    {
+                        // Output contains date not in input, not compatible
+                        existingFiles = null;
+                        return false;
+                    }
+                    else
+                    {
+                        // Check that input and output contain are equal except for hashes
+                        string outputFilePath = p.Value;
+                        if (tmpdir == null)
+                        {
+                            // Not decrypted, add output folder path
+                            Path.Combine(outputFolder, listFiles[i].Value);
+                        }
+                        if (!CheckListFilesCompatible(listFiles[i].Value, outputFilePath, targetBlocksize))
+                        {
+                            existingFiles = null;
+                            return false;
+                        }
+                    }
+                }
+            // All existing files are in input
+            existingFiles = outputListFiles.Select(p => p.Key).ToArray();
+            return true;
+        }
+
+        private static bool CheckListFilesCompatible(string inputFile, string outputFile, int targetBlocksize)
+        {
+            Options inputOptions = new Options(new Dictionary<string, string>());
+            VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(inputFile).Trim('.'), inputFile, inputOptions);
+            Options outputOptions = new Options(new Dictionary<string, string>());
+            VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(outputFile).Trim('.'), outputFile, outputOptions);
+            if (outputOptions.Blocksize != targetBlocksize)
+            {
+                return false;
+            }
+            // Check that both files contain the same paths (could also check hashes, but this should be good enough)
+            var inputFiles = from f in EnumerateDList(inputFile, inputOptions.RawOptions) orderby f.Path select f.Path;
+            var outputFiles = from f in EnumerateDList(outputFile, outputOptions.RawOptions) orderby f.Path select f.Path;
+
+            return inputFiles.SequenceEqual(outputFiles);
         }
 
         class SortedFileEntry : Library.Main.Volumes.IFileEntry
@@ -299,6 +393,42 @@ namespace Duplicati.CommandLine.RecoveryTool
 
         private static TempFile CreateIndexFile(string folder, Options options, long hashsize)
         {
+            SortedSet<string> sortedIndices = CreateIndexSet(folder, options, hashsize, out int blocks);
+            if (sortedIndices == null || sortedIndices.Count == 0)
+            {
+                return null;
+            }
+            var ixfile = new TempFile();
+            try
+            {
+                using (var sw = new StreamWriter(ixfile))
+                {
+                    foreach (string line in sortedIndices)
+                    {
+                        sw.WriteLine(line);
+                    }
+                }
+            }
+            catch { ixfile.Dispose(); throw; }
+            Console.WriteLine("{0} hashes indexed", blocks);
+            return ixfile;
+        }
+
+        private static SortedSet<string> CreateIndexSet(string folder, Options options, long hashsize, out int blocks)
+        {
+            return ProcessIndexSet(folder, options, hashsize, out blocks,
+                (block, filename) => $"{block.Key}, {filename}", StringComparer.Ordinal);
+        }
+        private static SortedSet<KeyValuePair<string, long>> LoadExistingBlocks(string folder, Options options, long hashsize, out int blocks)
+        {
+            return ProcessIndexSet(folder, options, hashsize, out blocks,
+                (block, filename) => block,
+                Comparer<KeyValuePair<string, long>>.Create((p1, p2) => string.CompareOrdinal(p1.Key, p2.Key)));
+        }
+
+        private static SortedSet<T> ProcessIndexSet<T>(string folder, Options options, long hashsize, out int blocks,
+            Func<KeyValuePair<string, long>, string, T> map, IComparer<T> comparer)
+        {
             var indexVolumes = (
                     from v in Directory.EnumerateFiles(folder)
                     let p = VolumeBase.ParseFilename(Path.GetFileName(v))
@@ -308,11 +438,12 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             if (indexVolumes.Length == 0)
             {
+                blocks = 0;
                 return null;
             }
-            SortedSet<string> sortedIndices = new SortedSet<string>(StringComparer.Ordinal);
 
-            int blocks = 0;
+            var sortedIndices = new SortedSet<T>(comparer);
+            blocks = 0;
             bool decrypt = indexVolumes.Any((p) => p.Key.EncryptionModule != null);
             using (var tf = decrypt ? new TempFile() : null)
                 foreach (var v in indexVolumes)
@@ -337,25 +468,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                         {
                             foreach (var block in a.Blocks)
                             {
-                                sortedIndices.Add($"{block.Key}, {a.Filename}");
+                                sortedIndices.Add(map(block, a.Filename));
                                 blocks++;
                             }
                         }
                 }
-            var ixfile = new TempFile();
-            try
-            {
-                using (var sw = new StreamWriter(ixfile))
-                {
-                    foreach (string line in sortedIndices)
-                    {
-                        sw.WriteLine(line);
-                    }
-                }
-            }
-            catch { ixfile.Dispose(); throw; }
-            Console.WriteLine("{0} hashes indexed", blocks);
-            return ixfile;
+            return sortedIndices;
         }
 
         private static void EncryptVolumes(Dictionary<string, string> options, string outputFolder)
