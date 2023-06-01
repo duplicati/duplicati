@@ -1,6 +1,5 @@
 ﻿using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Backup;
-using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using System;
@@ -8,8 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main
 {
@@ -17,8 +14,7 @@ namespace Duplicati.Library.Main
     {
         Options m_options;
         long m_oldBlocksize;
-        long m_hashesprblock;
-        HashLookupHelper m_lookup;
+        IHashLookupHelper m_lookup;
         BlockVolumeWriter m_blockvolume = null;
         FilesetVolumeWriter m_filesetvolume = null;
         IndexVolumeWriter m_indexVolume = null;
@@ -32,11 +28,10 @@ namespace Duplicati.Library.Main
         HashAlgorithm m_blockhasher;
         List<Tuple<string, byte[], int>> m_blocklistHashes;
 
-        public BackupRewriter(Dictionary<string, string> options, long oldBlocksize, long hashesprblock, HashLookupHelper lookup, string outputPath)
+        public BackupRewriter(Dictionary<string, string> options, long oldBlocksize, IHashLookupHelper lookup, string outputPath)
         {
             m_options = new Options(options);
             m_oldBlocksize = oldBlocksize;
-            m_hashesprblock = hashesprblock;
             m_lookup = lookup;
             m_outputPath = outputPath;
             m_blockhasher = HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
@@ -75,7 +70,7 @@ namespace Duplicati.Library.Main
                     }
                     else if (f.Type == FilelistEntryType.Folder || f.Type == FilelistEntryType.Symlink)
                     {
-                        Console.WriteLine("{0}: {1}", i, f.Path, Library.Utility.Utility.FormatSizeString(f.Size));
+                        Console.WriteLine("{0}/{1}: {2}", i, count, f.Path);
                         var metahash = f.Metablockhash ?? f.Metahash;
                         AddOrCombineBlocks(f.MetaBlocklistHashes, (int)f.Metasize, ref metablockHash, CompressionHint.Default, ref metahash);
                         if (metahash == f.Metahash)
@@ -369,240 +364,19 @@ namespace Duplicati.Library.Main
         }
 
 
-        public class HashLookupHelper : IDisposable
+        public interface IHashLookupHelper
         {
-            private const int LOOKUP_TABLE_SIZE = 2048;
+            // Get file where block with hash is contained
+            string HashLocation(string hash);
+            IEnumerable<string> ReadBlocklistHashes(string hash);
+            // Read block with specified hash
+            byte[] ReadHash(string hash);
+            // Write block with specified hash to stream
+            void WriteHash(Stream s, string hash);
 
-            private readonly CompressedFileMRUCache m_cache;
-            private readonly int m_hashsize;
-            private readonly int m_blocksize;
-            private Stream m_indexfile;
-            private readonly List<string> m_lookup = new List<string>();
-            private readonly List<long> m_offsets = new List<long>();
-            private readonly byte[] m_linebuf = new byte[128];
-            private readonly byte[] m_newline = Environment.NewLine.Select(x => (byte)x).ToArray();
-            private Dictionary<string, string> m_map;
-
-            public HashLookupHelper(string indexfile, CompressedFileMRUCache cache, int blocksize, int hashsize)
-            {
-                m_cache = cache;
-                m_blocksize = blocksize;
-                m_hashsize = hashsize;
-                m_indexfile = File.OpenRead(indexfile);
-
-                // Build index ....
-                var hashes = 0L;
-                string prev = null;
-                m_indexfile.Position = 0;
-                foreach (var n in AllFileLines())
-                {
-                    if (n.Key != prev)
-                    {
-                        hashes++;
-                        prev = n.Key;
-                    }
-                }
-
-                Console.WriteLine("Index file has {0} hashes in total", hashes);
-
-                var lookuptablesize = Math.Max(1, Math.Min(LOOKUP_TABLE_SIZE, hashes) - 1);
-                var lookupincrements = hashes / lookuptablesize;
-
-                Console.WriteLine("Building lookup table with {0} entries, giving increments of {1}", lookuptablesize, lookupincrements);
-
-                prev = null;
-                var prevoff = 0L;
-                var hc = 0L;
-                m_indexfile.Position = 0;
-                foreach (var n in AllFileLines())
-                {
-                    if (n.Key != prev)
-                    {
-                        if ((hc % lookupincrements) == 0)
-                        {
-                            m_lookup.Add(n.Key);
-                            m_offsets.Add(prevoff);
-                        }
-
-                        hc++;
-                        prev = n.Key;
-                        prevoff = m_indexfile.Position;
-                    }
-                }
-            }
-
-            public Dictionary<string, string> BuildMap()
-            {
-                if (m_map == null)
-                {
-                    m_map = new Dictionary<string, string>(StringComparer.Ordinal);
-                    m_indexfile.Position = 0;
-                    foreach (var v in AllFileLines())
-                    {
-                        m_map.Add(v.Key, v.Value);
-                    }
-                }
-                return m_map;
-            }
-
-            private string ReadNextLine()
-            {
-                var p = m_indexfile.Position;
-                var max = m_indexfile.Read(m_linebuf, 0, m_linebuf.Length);
-                if (max == 0)
-                    return null;
-
-                var lfi = 0;
-                for (int i = 0; i < max; i++)
-                    if (m_linebuf[i] == m_newline[lfi])
-                    {
-                        if (lfi == m_newline.Length - 1)
-                        {
-                            m_indexfile.Position = p + i + 1;
-                            return System.Text.Encoding.Default.GetString(m_linebuf, 0, i - m_newline.Length + 1);
-
-                        }
-                        else
-                        {
-                            lfi++;
-                        }
-                    }
-                    else
-                    {
-                        lfi = 0;
-                    }
-
-                throw new Exception(string.Format("Unexpected long line starting at offset {0}, read {1} bytes without a newline", p, m_linebuf.Length));
-            }
-
-            private IEnumerable<KeyValuePair<string, string>> AllFileLines()
-            {
-                while (true)
-                {
-                    var str = ReadNextLine();
-                    if (str == null)
-                        break;
-
-                    if (str.Length == 0)
-                        continue;
-
-                    var ix = str.IndexOf(", ", StringComparison.Ordinal);
-                    if (ix < 0)
-                        Console.WriteLine("Failed to parse line starting at offset {0} in index file, string: {1}", m_indexfile.Position - str.Length - m_newline.Length, str);
-                    yield return new KeyValuePair<string, string>(str.Substring(0, ix), str.Substring(ix + 2));
-                }
-            }
-
-            public IEnumerable<string> ReadBlocklistHashes(string hash)
-            {
-                var bytes = ReadHash(hash);
-                for (var i = 0; i < bytes.Length; i += m_hashsize)
-                    yield return Convert.ToBase64String(bytes, i, m_hashsize);
-            }
-
-            public string HashLocation(string hash)
-            {
-                if (m_map != null)
-                {
-                    if (m_map.TryGetValue(hash, out string value))
-                    {
-                        return value;
-                    }
-                }
-                var ix = m_lookup.BinarySearch(hash, StringComparer.Ordinal);
-                if (ix < 0)
-                {
-                    ix = ~ix;
-                    if (ix != 0)
-                        ix--;
-                }
-
-                if (m_indexfile.Position >= m_offsets[ix]
-                    && (ix + 1 >= m_offsets.Count || m_indexfile.Position < m_offsets[ix + 1]))
-                {
-                    // Optimize sequential hash reads
-                    var str = ReadNextLine();
-                    if (!string.IsNullOrEmpty(str))
-                    {
-                        var i = str.IndexOf(", ", StringComparison.Ordinal);
-                        if (i < 0)
-                            Console.WriteLine("Failed to parse line starting at offset {0} in index file, string: {1}", m_indexfile.Position - str.Length - m_newline.Length, str);
-                        var strHash = str.Substring(0, i);
-                        int cmp = StringComparer.Ordinal.Compare(hash, strHash);
-                        if (cmp < 0)
-                        {
-                            // Not a sequential read
-                            m_indexfile.Position = m_offsets[ix];
-                        }
-                        else if (cmp == 0)
-                        {
-                            // Matching hash
-                            return str.Substring(i + 2);
-                        }
-                        // Else: Hash is in next lines, keep going
-                    }
-                }
-                else
-                {
-                    m_indexfile.Position = m_offsets[ix];
-                }
-
-                foreach (var v in AllFileLines())
-                {
-                    if (v.Key == hash)
-                        return v.Value;
-
-
-                    if (StringComparer.Ordinal.Compare(hash, v.Key) < 0)
-                        break;
-                }
-
-                return null;
-
-            }
-
-            public byte[] ReadHash(string hash)
-            {
-                var ix = m_lookup.BinarySearch(hash, StringComparer.Ordinal);
-                if (ix < 0)
-                {
-                    ix = ~ix;
-                    if (ix != 0)
-                        ix--;
-                }
-
-                m_indexfile.Position = m_offsets[ix];
-
-                string file = HashLocation(hash);
-                if (file != null)
-                {
-                    using (var fs = m_cache.ReadBlock(file, hash))
-                    {
-                        var buf = new byte[m_blocksize];
-                        var l = Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buf, buf.Length);
-                        Array.Resize(ref buf, l);
-
-                        return buf;
-                    }
-                }
-
-                throw new Exception(string.Format("Unable to locate block with hash: {0}", hash));
-            }
-
-            public void WriteHash(Stream sw, string hash)
-            {
-                var h = ReadHash(hash);
-                sw.Write(h, 0, h.Length);
-            }
-
-
-            public void Dispose()
-            {
-                if (m_indexfile != null)
-                    m_indexfile.Dispose();
-                m_indexfile = null;
-            }
+            bool HasCachedBlocklists { get; }
         }
+
 
         public class CompressedFileMRUCache : IDisposable
         {
