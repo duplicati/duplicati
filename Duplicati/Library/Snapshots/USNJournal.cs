@@ -140,8 +140,8 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sourceFileOrFolder">The file or folder to find entries for</param>
         /// <param name="startUsn">USN of first entry to consider</param>
-        /// <returns>A list of tuples with changed files and folders and their type</returns>
-        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long startUsn)
+        /// <returns>A list of tuples with changed files and folders and their type and reason (removed or not)</returns>
+        public IEnumerable<Tuple<string, EntryType, bool>> GetChangedFileSystemEntries(string sourceFileOrFolder, long startUsn)
         {
             return GetChangedFileSystemEntries(sourceFileOrFolder, startUsn, ChangeReason.Any);
         }
@@ -152,8 +152,8 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sourceFileOrFolder">The file or folder to find entries for</param>
         /// <param name="startUsn">USN of first entry to consider</param>
         /// <param name="reason">Filter expression for change reason</param>
-        /// <returns>A list of tuples with changed files and folders and their type</returns>
-        public IEnumerable<Tuple<string, EntryType>> GetChangedFileSystemEntries(string sourceFileOrFolder, long startUsn, ChangeReason reason)
+        /// <returns>A list of tuples with changed files and folders and their type and reason (removed or not)</returns>
+        public IEnumerable<Tuple<string, EntryType, bool>> GetChangedFileSystemEntries(string sourceFileOrFolder, long startUsn, ChangeReason reason)
         {
             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize", "Determine file system changes from USN for: {0}", sourceFileOrFolder);
 
@@ -169,7 +169,8 @@ namespace Duplicati.Library.Snapshots
                     yield return Tuple.Create(r.FullPath,
                         r.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory)
                             ? EntryType.Directory
-                            : EntryType.File);
+                            : EntryType.File,
+                            r.UsnRecord.Reason.HasFlag(Win32USN.USNReason.USN_REASON_FILE_DELETE) | r.UsnRecord.Reason.HasFlag(Win32USN.USNReason.USN_REASON_RENAME_OLD_NAME));
                 }
             }
         }

@@ -139,6 +139,7 @@ namespace Duplicati.Library.Snapshots
                         throw new UsnJournalSoftFailureException(Strings.USNHelper.ConfigHashChanged);
 
                     var changedFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
+                    var oldFiles = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
                     var changedFolders = new HashSet<string>(Utility.Utility.ClientFilenameStringComparer);
 
                     // obtain changed files and folders, per volume
@@ -151,8 +152,12 @@ namespace Duplicati.Library.Snapshots
                             if (m_token.IsCancellationRequested) break;
 
                             if (entry.Item2.HasFlag(USNJournal.EntryType.File))
-                            {
-                                changedFiles.Add(entry.Item1);
+                            { // if name is not removed
+                                if (!entry.Item3) {
+                                    changedFiles.Add(entry.Item1);
+                                } else {
+                                    oldFiles.Add(entry.Item1);
+                                }
                             }
                             else
                             {
@@ -177,6 +182,8 @@ namespace Duplicati.Library.Snapshots
                     //          between 1. and 2. are *excluded* folders, and files below them are to be *excluded*, too.
                     volumeData.Files =
                         new HashSet<string>(Utility.Utility.GetFilesNotInFolders(changedFiles, volumeData.Folders));
+                    volumeData.OldFiles =
+                        new HashSet<string>(Utility.Utility.GetFilesNotInFolders(oldFiles, volumeData.Folders));
 
                     // Record success for volume
                     volumeData.IsFullScan = false;
@@ -188,6 +195,7 @@ namespace Duplicati.Library.Snapshots
                     volumeData.IsFullScan = true;
                     volumeData.Folders = new List<string>();
                     volumeData.Files = new HashSet<string>();
+                    volumeData.OldFiles = new HashSet<string>();
 
                     // use original sources
                     foreach (var path in volumeSources)
@@ -241,7 +249,7 @@ namespace Duplicati.Library.Snapshots
                 // The sources are needed to stop evaluating parent folders above the specified source folders
                 if (volumeData.Value.Folders != null)
                 {
-                    foreach (var folder in FilterExcludedFolders(volumeData.Value.Folders, filter, cache).Where(m_snapshot.DirectoryExists))
+                    foreach (var folder in FilterExcludedFolders(volumeData.Value.Folders, filter, cache))
                     {
                         if (m_token.IsCancellationRequested)
                         {
@@ -260,7 +268,7 @@ namespace Duplicati.Library.Snapshots
                 // deletion.
                 if (volumeData.Value.Files != null)
                 {
-                    foreach (var files in FilterExcludedFiles(volumeData.Value.Files, filter, cache).Where(m_snapshot.FileExists))
+                    foreach (var files in FilterExcludedFiles(volumeData.Value.Files, filter, cache))
                     {
                         if (m_token.IsCancellationRequested)
                         {
@@ -457,6 +465,9 @@ namespace Duplicati.Library.Snapshots
             if (volumeData.Files.Contains(path))
                 return true; // do not append from previous set, already scanned
 
+            if (volumeData.OldFiles.Contains(path))
+                return true; // do not append from previous set, already scanned
+
             foreach (var folder in volumeData.Folders)
             {
                 if (m_token.IsCancellationRequested)
@@ -489,6 +500,11 @@ namespace Duplicati.Library.Snapshots
         /// Set of potentially modified files
         /// </summary>
         public HashSet<string> Files { get; internal set; }
+
+        /// <summary>
+        /// Set of potentially removed files
+        /// </summary>
+        public HashSet<string> OldFiles { get; internal set; }
 
         /// <summary>
         /// Set of folders that are potentially modified, or whose children
