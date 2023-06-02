@@ -8,14 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
     /*
-     * Operates on a local, unencrypted backup to change the blocksize while keeping history and metadata intact.
+     * Operates on a local backup to change the blocksize while keeping history and metadata intact.
      * 
+     * Process:
      * - Iterate over files in dlist filelist, starting from oldest backup version
      * - Keep all single block files and meta hashes the same
      * - For files with blocklists:
@@ -28,10 +27,23 @@ namespace Duplicati.CommandLine.RecoveryTool
      * - Recreate database should update local DB with new block size
      *
      * For easier usage:
-     * - If there is no index file, create index from dindex files
-     * - If source files are encrypted, decrypt to temporary files
-     * - Possibility to encrypt destination files before copying
+     * - If there is no index file, create index from dindex files (also indexes blocklists in that case)
+     * - If source files are encrypted, decrypt to temporary files (definitely do this on a SSD,
+     *   to save disk space only 20 are kept at once and they might need to be decrypted many times)
+     * - Possibility to encrypt destination files before copying to target
      * - If destination is not empty, read and index existing files to be able to continue an interrupted process
+     *
+     * Caveats:
+     * - Only runs on local source directory, to a local target directory and without a local database
+     * - All lookup tables are stored in RAM (>6GB used for 200GB backup with 90 versions), recommended 32GB+ on system depending on backup size
+     * - Process is slow, because essentially all large files have to be read and written entirely (took
+     * - Not thoroughly tested on all edge cases, so keep old backups in case something happens
+     * - Might only work if block hash algorithm == file hash algorithm
+     * - There are no checks for hash collisions that might result in corrupted data
+     * - If on encrypted source:
+     *   - Requires enough temporary space for 20+ dblock volumes and all dlist volumes and will do a lot of IO on that drive
+     * - If on decrypted source via recovery tool download + index:
+     *   - Does not cache blocklists, so might be slower but also uses less RAM and no temporary files
      */
     public static class Reblocksize
     {

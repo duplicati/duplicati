@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main
                     IEnumerable<string> metablockHash = null;
                     if (f.Type == FilelistEntryType.File)
                     {
-                        Console.WriteLine("{0}/{1}: {2} ({3})", i, count, f.Path, Library.Utility.Utility.FormatSizeString(f.Size));
+                        Console.WriteLine("{0}/{1}: {2} ({3})", i + 1, count, f.Path, Library.Utility.Utility.FormatSizeString(f.Size));
                         var hint = m_options.GetCompressionHintFromFilename(f.Path);
 
                         var blockhash = f.Blockhash ?? f.Hash;
@@ -70,7 +70,7 @@ namespace Duplicati.Library.Main
                     }
                     else if (f.Type == FilelistEntryType.Folder || f.Type == FilelistEntryType.Symlink)
                     {
-                        Console.WriteLine("{0}/{1}: {2}", i, count, f.Path);
+                        Console.WriteLine("{0}/{1}: {2}", i + 1, count, f.Path);
                         var metahash = f.Metablockhash ?? f.Metahash;
                         AddOrCombineBlocks(f.MetaBlocklistHashes, (int)f.Metasize, ref metablockHash, CompressionHint.Default, ref metahash);
                         if (metahash == f.Metahash)
