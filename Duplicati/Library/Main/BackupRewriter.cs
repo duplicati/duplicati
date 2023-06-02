@@ -128,6 +128,13 @@ namespace Duplicati.Library.Main
                 m_blocks.Add(p.Key, p.Value);
             }
         }
+        public void AddExistingFileBlocklists(IEnumerable<KeyValuePair<string, KeyValuePair<bool, List<string>>>> existingFileBlocklists)
+        {
+            foreach (var p in existingFileBlocklists)
+            {
+                m_fileBlocklists.Add(p.Key, p.Value);
+            }
+        }
 
         private void AddOrCombineBlocks(IEnumerable<string> listHashes, int size, ref IEnumerable<string> blocklistHashes, CompressionHint hint, ref string blockhash)
         {
@@ -175,7 +182,7 @@ namespace Duplicati.Library.Main
                 else
                 {
                     // Full list
-                    m_fileBlocklists[blockhash] = new KeyValuePair<bool, List<string>>(false, new List<string>(combinedHashes));
+                    m_fileBlocklists[blockhash] = new KeyValuePair<bool, List<string>>(true, new List<string>(combinedHashes));
                     blocklistHashes = combinedHashes;
                     blockhash = null;
                 }

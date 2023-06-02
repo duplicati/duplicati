@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -155,7 +157,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                     ["no-encryption"] = (!encrypt).ToString()
                 };
 
-                if (!CheckDestinationFolder(outputFolder, listFiles, out DateTime[] existingSets, nBlocks * (int)blocksize, new Options(newOptions)))
+                if (!CheckDestinationFolder(outputFolder, listFiles, out DateTime[] existingSets, nBlocks * (int)blocksize,
+                    new Options(newOptions), out Dictionary<string, KeyValuePair<bool, List<string>>> existingFileBlocklists))
                 {
                     Console.WriteLine("The destination folder is not empty and not compatible with the current backup.");
                     Console.WriteLine("Choose a different destination or clear the existing files in the folder.");
@@ -181,6 +184,11 @@ namespace Duplicati.CommandLine.RecoveryTool
                     blockIndex.Cache = mru;
                     using (var processor = new BackupRewriter(newOptions, blocksize, blockIndex, outputFolder))
                     {
+                        if (existingFileBlocklists != null)
+                        {
+                            processor.AddExistingFileBlocklists(existingFileBlocklists);
+                            existingFileBlocklists = null;
+                        }
                         if (existing != null)
                         {
                             processor.AddBlockEntries(existing);
@@ -219,16 +227,22 @@ namespace Duplicati.CommandLine.RecoveryTool
             return 0;
         }
 
-        private static bool CheckDestinationFolder(string outputFolder, KeyValuePair<DateTime, string>[] listFiles, out DateTime[] existingFiles, int targetBlocksize, Options outputOptions)
+        private static bool CheckDestinationFolder(string outputFolder, KeyValuePair<DateTime, string>[] listFiles, out DateTime[] existingFiles, int targetBlocksize, Options outputOptions, out Dictionary<string, KeyValuePair<bool, List<string>>> existingFileBlocklists)
         {
             if (!Directory.Exists(outputFolder))
             {
                 existingFiles = Array.Empty<DateTime>();
+                existingFileBlocklists = null;
                 return true;
             }
+            Console.WriteLine("Checking existing destination files");
             KeyValuePair<DateTime, string>[] outputListFiles = List.ParseListFiles(outputFolder);
+            Dictionary<string, KeyValuePair<bool, List<string>>> fileBlocklists = new Dictionary<string, KeyValuePair<bool, List<string>>>();
             // Check that all output dates are also in the input
             using (var tmpdir = DecryptListFiles(outputListFiles, outputOptions))
+            {
+                int len = outputListFiles.Length;
+                int k = 0;
                 foreach (var p in outputListFiles)
                 {
                     int i = Array.FindIndex(listFiles, p1 => p.Key == p1.Key);
@@ -236,6 +250,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     {
                         // Output contains date not in input, not compatible
                         existingFiles = null;
+                        existingFileBlocklists = null;
                         return false;
                     }
                     else
@@ -247,19 +262,27 @@ namespace Duplicati.CommandLine.RecoveryTool
                             // Not decrypted, add output folder path
                             Path.Combine(outputFolder, listFiles[i].Value);
                         }
-                        if (!CheckListFilesCompatible(listFiles[i].Value, outputFilePath, targetBlocksize))
+                        if (!CheckListFilesCompatible(listFiles[i].Value, outputFilePath, targetBlocksize, ref fileBlocklists))
                         {
                             existingFiles = null;
+                            existingFileBlocklists = null;
                             return false;
                         }
+                        else
+                        {
+                            Console.WriteLine("Checked {0}/{1}", k + 1, len);
+                        }
                     }
+                    k++;
                 }
+            }
             // All existing files are in input
             existingFiles = outputListFiles.Select(p => p.Key).ToArray();
+            existingFileBlocklists = fileBlocklists;
             return true;
         }
 
-        private static bool CheckListFilesCompatible(string inputFile, string outputFile, int targetBlocksize)
+        private static bool CheckListFilesCompatible(string inputFile, string outputFile, int targetBlocksize, ref Dictionary<string, KeyValuePair<bool, List<string>>> fileBlocklists)
         {
             Options inputOptions = new Options(new Dictionary<string, string>());
             VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(inputFile).Trim('.'), inputFile, inputOptions);
@@ -267,13 +290,125 @@ namespace Duplicati.CommandLine.RecoveryTool
             VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(outputFile).Trim('.'), outputFile, outputOptions);
             if (outputOptions.Blocksize != targetBlocksize)
             {
+                fileBlocklists = null;
                 return false;
             }
-            // Check that both files contain the same paths (could also check hashes, but this should be good enough)
-            var inputFiles = from f in EnumerateDList(inputFile, inputOptions.RawOptions) orderby f.Path select f.Path;
-            var outputFiles = from f in EnumerateDList(outputFile, outputOptions.RawOptions) orderby f.Path select f.Path;
+            // Compare files with blocklists
+            // Must create copies of blocklists in iteration order, otherwise the internal reader is in the wrong state
+            var inputFiles = (from f in EnumerateDList(inputFile, inputOptions.RawOptions)
+                              select new
+                              {
+                                  File = f,
+                                  Blocklist = f.BlocklistHashes?.ToList(),
+                                  Metalist = f.MetaBlocklistHashes?.ToList()
+                              }).ToList();
+            var outputFiles = (from f in EnumerateDList(outputFile, outputOptions.RawOptions)
+                               select new
+                               {
+                                   File = f,
+                                   Blocklist = f.BlocklistHashes?.ToList(),
+                                   Metalist = f.MetaBlocklistHashes?.ToList()
+                               }).ToList();
 
-            return inputFiles.SequenceEqual(outputFiles);
+            int count = inputFiles.Count();
+            if (count != outputFiles.Count())
+            {
+                fileBlocklists = null;
+                return false;
+            }
+            var j = from i in inputFiles
+                    join o in outputFiles on i.File.Path equals o.File.Path
+                    where i.File.Hash == o.File.Hash
+                    && i.File.Metahash == o.File.Metahash
+                    && i.File.Size == o.File.Size
+                    select new
+                    {
+                        i.File.Hash,
+                        i.File.Metahash,
+                        InBlocklist = i.Blocklist,
+                        OutBlocklist = o.Blocklist,
+                        // In case blocklist was combined into one
+                        OutBlock = o.File.Blockhash ?? o.File.Hash,
+                        InMetalist = i.Metalist,
+                        OutMetalist = o.Metalist,
+                        OutMetaBlock = o.File.Metablockhash ?? o.File.Metahash
+                    };
+            if (j.Count() != count)
+            {
+                fileBlocklists = null;
+                return false;
+            }
+            var blocklistMap = from e in j
+                               where e.InBlocklist != null || e.InMetalist != null
+                               select e;
+            foreach (var e in blocklistMap)
+            {
+                if (e.InBlocklist != null)
+                {
+                    if (e.OutBlocklist != null)
+                    {
+                        if (fileBlocklists.TryGetValue(e.Hash, out KeyValuePair<bool, List<string>> v))
+                        {
+                            if (v.Key != true || !v.Value.SequenceEqual(e.OutBlocklist, StringComparer.Ordinal))
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            fileBlocklists.Add(e.Hash, new KeyValuePair<bool, List<string>>(true, e.OutBlocklist));
+                        }
+                    }
+                    else
+                    {
+                        if (fileBlocklists.TryGetValue(e.Hash, out KeyValuePair<bool, List<string>> v))
+                        {
+                            if (v.Key != false || v.Value.First() != e.OutBlock)
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            fileBlocklists.Add(e.Hash,
+                                new KeyValuePair<bool, List<string>>(false, new List<string>() { e.OutBlock }));
+                        }
+                    }
+                }
+                if (e.InMetalist != null)
+                {
+                    if (e.OutMetalist != null)
+                    {
+                        if (fileBlocklists.TryGetValue(e.Metahash, out KeyValuePair<bool, List<string>> v))
+                        {
+                            if (v.Key != true || !v.Value.SequenceEqual(e.OutMetalist, StringComparer.Ordinal))
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            fileBlocklists.Add(e.Metahash, new KeyValuePair<bool, List<string>>(true, e.OutMetalist));
+                        }
+                    }
+                    else
+                    {
+                        if (fileBlocklists.TryGetValue(e.Metahash, out KeyValuePair<bool, List<string>> v))
+                        {
+                            if (v.Key != false || v.Value.First() != e.OutMetaBlock)
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            fileBlocklists.Add(e.Metahash,
+                                new KeyValuePair<bool, List<string>>(false, new List<string>() { e.OutMetaBlock }));
+                        }
+                    }
+                }
+            }
+            return true;
         }
 
         class BlockIndex : BackupRewriter.IHashLookupHelper
