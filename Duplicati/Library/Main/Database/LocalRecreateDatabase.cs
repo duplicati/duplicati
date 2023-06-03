@@ -43,10 +43,10 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_findHashBlockCommand;
         private readonly System.Data.IDbCommand m_insertBlockCommand;
         private readonly System.Data.IDbCommand m_insertDuplicateBlockCommand;
-        
+
         private string m_tempblocklist;
         private string m_tempsmalllist;
-        
+
         /// <summary>
         /// A lookup table that prevents multiple downloads of the same volume
         /// </summary>
@@ -101,9 +101,9 @@ namespace Duplicati.Library.Main.Database
         public LocalRecreateDatabase(LocalDatabase parentdb, Options options)
             : base(parentdb)
         {
-            m_tempblocklist = "TempBlocklist-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            m_tempsmalllist = "TempSmalllist-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                        
+            m_tempblocklist = "TempBlocklist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            m_tempsmalllist = "TempSmalllist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
             using(var cmd = m_connection.CreateCommand())
             {
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""BlockListHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)", m_tempblocklist));
@@ -265,7 +265,103 @@ namespace Duplicati.Library.Main.Database
                 }
             }
         }
-        
+
+	/// <summary>
+        /// From the temporary tables 1) insert new blocks into Block (VolumeID to be set at a later stage)
+        /// and 2) add missing BlocksetEntry lines
+        /// </summary>
+        /// Notes:
+        ///
+        /// temp block list structure: blocklist hash, block hash, index relative to the
+        /// beginning of the blocklist hash (NOT the file)
+        ///
+        /// temp small list structure: filehash, blockhash, blocksize: as the small files are defined
+        /// by the fact that they are contained in a single block, blockhash is the same as the filehash,
+        /// and blocksize can vary from 0 to the configured block size for the backup
+        public void AddToBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, System.Data.IDbTransaction transaction)
+        {
+
+            using(var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+
+                var insertBlocksCommand = string.Format(
+                    @"INSERT INTO BLOCK (Hash, Size, VolumeID) " +
+                    @"SELECT DISTINCT BlockHash AS Hash, BlockSize AS Size, -1 AS VolumeID FROM " +
+                    @"(" +
+                    @"SELECT NB.BlockHash, " +
+                    @"MIN({0}, BS.Length - ((NB.""Index"" + (BH.""Index"" * {1})) * {0})) AS BlockSize " +
+                    @"FROM (" +
+                    @"     SELECT TBL.BlockListHash, TBL.BlockHash, TBL.""Index"" FROM {2} TBL " +
+                    @"        LEFT OUTER JOIN Block B ON (B.Hash = TBL.BlockHash) " +
+                    @"        WHERE B.Hash IS NULL " +
+                    @"     ) NB " +
+                    @"JOIN BlocklistHash BH ON (BH.Hash = NB.BlocklistHash) " +
+                    @"JOIN Blockset BS ON (BS.ID = BH.Blocksetid) " +
+                    @"" +
+                    @"UNION " +
+                    @"" +
+                    @"SELECT TS.BlockHash, TS.BlockSize FROM " +
+                    @"{3} TS " +
+                    @"WHERE NOT EXISTS (SELECT ""X"" FROM Block AS B WHERE " +
+                    @"  B.Hash =  TS.BlockHash AND " +
+                    @"  B.Size = TS.BlockSize) " +
+                    @")",
+                    blocksize,
+                    blocksize / hashsize,
+                    m_tempblocklist,
+                    m_tempsmalllist
+                );
+
+                var insertBlocksetEntriesCommand = string.Format(
+                    @"INSERT INTO BlocksetEntry (BlocksetID, ""Index"", BlockID) " +
+                    @"SELECT DISTINCT BH.blocksetid, (BH.""Index"" * {1})+TBL.""Index"" as FullIndex, BK.ID AS BlockID " +
+                    @"FROM {2} TBL " +
+                    @"   JOIN blocklisthash BH ON (BH.hash = TBL.blocklisthash) " +
+                    @"   JOIN block BK ON (BK.Hash = TBL.BlockHash) " +
+                    @"   LEFT OUTER JOIN BlocksetEntry BE ON (BE.BlockSetID = BH.BlocksetID AND BE.""Index"" = (BH.""Index"" * {1})+TBL.""Index"") " +
+                    @"WHERE " +
+                    @"BE.BlockSetID IS NULL " +
+                    @"UNION " +
+                    @"SELECT BS.ID AS BlocksetID, 0 AS ""Index"", BL.ID AS BlockID " +
+                    @"FROM {3} TS " +
+                    @"   JOIN Blockset BS ON (BS.FullHash = TS.FileHash AND " +
+                    @"                        BS.Length = TS.BlockSize AND " +
+                    @"                        BS.Length <= {0}) " +
+                    @"   JOIN Block BL ON (BL.Hash = TS.BlockHash AND " +
+                    @"                     BL.Size = TS.BlockSize) " +
+                    @"   LEFT OUTER JOIN BlocksetEntry BE ON (BE.BlocksetID = BS.ID AND BE.""Index"" = 0) " +
+                    @"WHERE " +
+                    @"BE.BlocksetID IS NULL ",
+                    blocksize,
+                    blocksize / hashsize,
+                    m_tempblocklist,
+                    m_tempsmalllist
+                );
+
+
+                try
+                {
+                    // Insert discovered new blocks into block table with volumeid = -1
+                    cmd.ExecuteNonQuery(insertBlocksCommand);
+                    // Insert corresponding entries into blockset
+                    cmd.ExecuteNonQuery(insertBlocksetEntriesCommand);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "BlockOrBlocksetInsertFailed", ex, "Block or Blockset insert failed, committing temporary tables for trace purposes");
+
+                    using (var fixcmd = m_connection.CreateCommand())
+                    {
+                        fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}_Failure"" AS SELECT * FROM ""{0}"" ", m_tempblocklist));
+                        fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}_Failure"" AS SELECT * FROM ""{0}"" ", m_tempsmalllist));
+                    }
+
+                    throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
+                }
+            }
+        }
+
         public void AddDirectoryEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, System.Data.IDbTransaction transaction)
         {
             AddEntry(filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid, transaction);
