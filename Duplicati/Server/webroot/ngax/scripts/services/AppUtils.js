@@ -422,6 +422,13 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
       return str.replace( new RegExp( "(" + this.preg_quote(pattern) + ")" , 'g' ), replacement );
     };
 
+    this.globToRegexp = function (str) {
+        // Escape special chars, except ? and *
+        str = (str + '').replace(/([\\\.\+\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
+        // Replace ? and * with .? and .*
+        return str.replace(/(\?|\*)/g, ".$1");
+    };
+
     this.format = function() {
         if (arguments == null || arguments.length < 1)
             return null;
@@ -609,7 +616,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             if (rx)
                 filter = filter.substr(1, filter.length - 2);
             else
-                filter = this.replace_all(this.replace_all(this.preg_quote(filter), '*', '.*'), '?', '.');
+                filter = this.globToRegexp(filter);
 
             try {
                 res.push([flag == '+', new RegExp(filter, caseSensitive ? 'g' : 'gi')]);
@@ -621,9 +628,11 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     };
 
     this.evalFilter = function(path, filters, include) {
-        for(var i = 0; i < filters.length; i++) {
+        for (var i = 0; i < filters.length; i++) {
             var m = path.match(filters[i][1]);
-            if (m && m.length == 1 && m[0].length == path.length)
+            // Regex such as .* might match empty string at the end which is unwanted
+            // Check that the first match covers the full string
+            if (m && m.length >= 1 && m[0].length == path.length)
                 return filters[i][0];
         }
 
