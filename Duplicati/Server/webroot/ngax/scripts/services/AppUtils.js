@@ -593,13 +593,25 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             return [type, body];
         }
 
-        for(var i in this.filterClasses) {
+        var m = [];
+        for (var i in this.filterClasses) {
             var n = matches(src, this.filterClasses[i]);
             if (n != null)
-                return n;
+                m.push(n);
         }
-
-        return null;
+        if (m.length == 0) {
+            return null;
+        }
+        // Select match with shortest body, meaning longest prefix and suffix
+        var shortestIdx = 0;
+        var shortestLen = src.length;
+        for (i = 0; i < m.length; ++i) {
+            if (m[i][1].length < shortestLen) {
+                shortestIdx = i;
+                shortestLen = m[i][1].length;
+            }
+        }
+        return m[shortestIdx];
     };
 
     this.buildFilter = function(type, body, dirsep) {
