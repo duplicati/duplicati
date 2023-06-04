@@ -259,12 +259,14 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             return new Date(dt);
     };
 
-    this.parseOptionStrings = function(val, dict, validateCallback) {
+    this.parseOptionStrings = function (val, dict, validateCallback) {
+        // Parse options and return a dict with dict['--key']=value options
+        // Include and exclude filters are returned as arrays in dict['include'], dict['exclude'] if present
         dict = dict || {};
 
         var lines = null;
 
-        if (val != null && typeof(val) == typeof([]))
+        if (val != null && Array.isArray(val))
             lines = val;
         else
             lines = this.replace_all(val || '', '\r', '\n').split('\n');
@@ -289,8 +291,18 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 if (validateCallback)
                     if (!validateCallback(dict, key, value))
                         return null;
-
-                dict['--' + key] = value;
+                // Special handing for --include and --exclude, which are the only options that can appear multiple times (compare FilterCollector.DoExtractOptions)
+                // In all other cases, the last value overrides the earlier values
+                var lower = key.toLowerCase();
+                if (lower == 'include' || lower == 'exclude') {
+                    if (!Array.isArray(dict[lower])) {
+                        dict[lower] = [value];
+                    } else {
+                        dict[lower].push(value);
+                    }
+                } else {
+                    dict['--' + key] = value;
+                }
             }
         }
 
@@ -301,6 +313,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Duplicate option {{opt}}', { opt: k }));
+                return false;
+            } else if (k == 'include' || k == 'exclude') {
+                // Cannot specify filters in extra options
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Cannot specify filter include or excludes in extra options'));
                 return false;
             }
 
