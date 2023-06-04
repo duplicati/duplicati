@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.UnitTest</RootNamespace>
     <AssemblyName>Duplicati.UnitTest</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <UseMSBuildEngine>false</UseMSBuildEngine>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -16,7 +16,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
