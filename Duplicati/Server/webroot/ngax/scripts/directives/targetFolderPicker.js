@@ -29,7 +29,7 @@ backupApp.directive('destinationFolderPicker', function() {
         function setEntryType(n)
         {
             n.entrytype = AppUtils.getEntryTypeFromIconCls(n.iconCls);
-        }        
+        }
 
         function setIconCls(n) {
             var cp = compareablePath(n.id);
@@ -46,7 +46,7 @@ backupApp.directive('destinationFolderPicker', function() {
             else if (cp == compareablePath('%HOME%'))
                 n.iconCls = 'x-tree-icon-home';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
-                n.iconCls = 'x-tree-icon-leaf';
+                n.iconCls = 'x-tree-icon-file';
 
             setEntryType(n);
         }
@@ -70,7 +70,7 @@ backupApp.directive('destinationFolderPicker', function() {
                     if (node.children != null)
                         for(var i in node.children)
                             setEntryType(node.children[i]);
-                    
+
                 }, function() {
                     node.loading = false;
                     node.expanded = false;
@@ -101,7 +101,7 @@ backupApp.directive('destinationFolderPicker', function() {
         }
 
         $scope.$watch('ngHideUserNode', updateHideUserNode);
-        
+
         AppService.post('/filesystem?onlyfolders=true&showhidden=true', {path: '/'}).then(function(data) {
 
             var usernode = {
@@ -119,7 +119,7 @@ backupApp.directive('destinationFolderPicker', function() {
             };
 
             scope.treedata.children = [
-                usernode, 
+                usernode,
                 systemnode
             ];
 
@@ -131,7 +131,7 @@ backupApp.directive('destinationFolderPicker', function() {
                 else
                 {
                     setEntryType(data.data[i]);
-                    systemnode.children.push(data.data[i]);                    
+                    systemnode.children.push(data.data[i]);
                 }
             }
 

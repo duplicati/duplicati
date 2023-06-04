@@ -66,7 +66,7 @@ backupApp.directive('sourceFolderPicker', function() {
             else if (defunctmap[cp])
                 n.iconCls = 'x-tree-icon-broken';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
-                n.iconCls = 'x-tree-icon-leaf';
+                n.iconCls = 'x-tree-icon-file';
 
             setEntryType(n);
         }
@@ -103,7 +103,7 @@ backupApp.directive('sourceFolderPicker', function() {
             while(work.length > 0) {
                 var x = work.pop();
                 var r = m(x[1], x[0]);
-                
+
                 // false == stop
                 if (r === false)
                     return;
@@ -117,7 +117,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         function buildidlookup(sources, map) {
-            var dirsep = scope.systeminfo.DirectorySeparator || '/';            
+            var dirsep = scope.systeminfo.DirectorySeparator || '/';
 
             map = map || {};
 
@@ -135,7 +135,7 @@ backupApp.directive('sourceFolderPicker', function() {
                 }
             }
 
-            return map;    
+            return map;
         }
 
         function updateIncludeFlags(root, parentFlag) {
@@ -149,7 +149,7 @@ backupApp.directive('sourceFolderPicker', function() {
                 if (sourcemap[compareablePath(n.id)])
                     n.include = '+';
                 else if (p != null && p.include == '+') {
-                    if (filterList == null) 
+                    if (filterList == null)
                         n.include = excludemap[compareablePath(n.id)] ? '-' : '+';
                     else
                         n.include = AppUtils.evalFilter(n.id, filterList) ? '+' : '-';
@@ -160,14 +160,14 @@ backupApp.directive('sourceFolderPicker', function() {
                     n.include = ' ';
                 else
                     n.include = null;
-            }, root);            
+            }, root);
         }
 
         function syncTreeWithLists() {
             if (scope.ngSources == null || sourceNodeChildren == null)
                 return;
 
-            dirsep = scope.systeminfo.DirectorySeparator || '/';            
+            dirsep = scope.systeminfo.DirectorySeparator || '/';
 
             sourcemap = {};
             excludemap = {};
@@ -246,10 +246,10 @@ backupApp.directive('sourceFolderPicker', function() {
                             setEntryType(sourceNodeChildren[ix]);
                         }
                     });
-                }                
+                }
             }
 
-            partialincludemap = buildidlookup(sourcemap);            
+            partialincludemap = buildidlookup(sourcemap);
 
             updateIncludeFlags();
         }
@@ -279,7 +279,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         $scope.toggleCheck = function(node) {
-            dirsep = scope.systeminfo.DirectorySeparator || '/';            
+            dirsep = scope.systeminfo.DirectorySeparator || '/';
 
             var c = compareablePath(node.id);
             var c_is_dir = c.substr(c.length - 1, 1) == dirsep;
@@ -347,7 +347,7 @@ backupApp.directive('sourceFolderPicker', function() {
                     if (node.children != null)
                         for(var i in node.children)
                             setEntryType(node.children[i]);
-                    
+
                     updateIncludeFlags(node, node.include);
 
                 }, function() {

@@ -1008,9 +1008,30 @@ namespace Duplicati.Library.Main.Operation
                         var ext = SystemIO.IO_OS.PathGetExtension(targetpath) ?? "";
                         if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
                             ext = "." + ext;
-                        
-                        // First we try with a simple date append, assuming that there are not many conflicts there
-                        var newname = SystemIO.IO_OS.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+                        string newname;
+
+                        if (restorelist.SpecificVersionRequested)
+                        {
+                            if (targetpath.Contains(restorelist.LastModified.ToString("_yyMMdd-HHmmss")))
+                            {
+                                newname = SystemIO.IO_OS.PathChangeExtension(targetpath, null);
+                            }
+                            else
+                            {
+                                string dir = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                                string fileName = SystemIO.IO_OS.PathGetFileNameWithoutExtension(targetpath);
+                                fileName += restorelist.LastModified.ToString("_yyMMdd-HHmmss");
+
+                                newname = SystemIO.IO_OS.PathCombine(dir, fileName);
+                            }
+                        }
+                        else
+                        {
+                            // First we try with a simple date append, assuming that there are not many conflicts there
+                            newname = SystemIO.IO_OS.PathChangeExtension(targetpath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                        }
+
                         var tr = newname + ext;
                         var c = 0;
                         while (SystemIO.IO_OS.FileExists(tr) && c < 1000)

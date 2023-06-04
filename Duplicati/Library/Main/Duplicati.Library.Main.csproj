@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Operation\Backup\FileProgressThrottler.cs" />
+    <Compile Include="Operation\ListFileVersions.cs" />
     <Compile Include="Operation\VacuumHandler.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

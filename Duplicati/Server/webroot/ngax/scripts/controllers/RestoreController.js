@@ -18,7 +18,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
     $scope.filesetStamps = filesetStamps;
     $scope.treedata = {};
-    $scope.Selected = [];
+    $scope.Selected = {};
 
     function createGroupLabel(dt) {
         var dateStamp = function(a) { return a.getFullYear() * 10000 + a.getMonth() * 100 + a.getDate(); }
@@ -191,8 +191,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     });
 
     $scope.onClickNext = function() {
-        var results =  $scope.Selected;
-        if (results.length == 0) {
+        if (Object.keys($scope.Selected).length == 0) {
             DialogService.dialog(gettextCatalog.getString('No items selected'), gettextCatalog.getString('No items to restore, please select one or more items'));
         } else {
             $scope.restore_step = 1;
@@ -267,8 +266,10 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                 if (!found) {
                                     var n = { Path: curpath, expanded: true };
                                     if (!isdir && k == parts.length - 1) {
-                                        n.iconCls = 'x-tree-icon-leaf';
-                                        n.leaf = true;
+                                        n.iconCls = 'x-tree-icon-file';
+                                        n.nodeType = 'file';
+                                        n.leaf = false;
+                                        n.expanded = false;
                                     }
 
                                     col.Children.push(n);
@@ -344,8 +345,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         };
 
         var paths = [];
-        for(var n in $scope.Selected) {
-            var item = $scope.Selected[n];
+        for(const item in $scope.Selected) {
             if (item.substr(item.length - 1) == dirsep) {
                 // To support the possibility of encountering paths
                 // with literal wildcard characters, but also being
@@ -356,6 +356,8 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 var itemRegex = item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 // Add "globbing" suffix
                 paths.push('[' + itemRegex  + '.*]');
+            } else if (item.includes('\\&fileid=')){
+                paths.push('&' + item);
             } else {
                 // To support the possibility of encountering paths
                 // with literal wildcard characters, create a literal

@@ -15,11 +15,12 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Library.Common.IO;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Utility
 {
@@ -48,6 +49,10 @@ namespace Duplicati.Library.Utility
         /// A built in set of filters
         /// </summary>
         Group,
+        /// <summary>
+        /// Filter containing a file and the file id to identify the specific version of the file.
+        /// </summary>
+        Version,
     }
 
     /// <summary>
@@ -127,6 +132,12 @@ namespace Duplicati.Library.Utility
                     this.Type = FilterType.Simple;
                     this.Filter = filter.Substring(1);
                     this.Regexp = new Regex(Utility.ConvertLiteralToRegExp(this.Filter), REGEXP_OPTIONS);
+                }
+                else if (filter.StartsWith("&", StringComparison.Ordinal))
+                {
+                    this.Type = FilterType.Version;
+                    this.Filter = filter.Substring(1);
+                    this.Regexp = null;
                 }
                 else
                 {
@@ -284,8 +295,9 @@ namespace Duplicati.Library.Utility
                     case FilterType.Group:
                         var m = this.Regexp.Match(path);
                         return m.Success && m.Length == path.Length;
+                    case FilterType.Version:
                     default:
-                        return false;                            
+                        return false;
                 }
             }
 
@@ -299,17 +311,18 @@ namespace Duplicati.Library.Utility
                         return "{" + this.Filter + "}";
                     case FilterType.Simple:
                         return "@" + this.Filter;
+                    case FilterType.Version:
                     default:
                         return this.Filter;
                 }
             }
         }
-    
+
         /// <summary>
         /// The internal list of expressions
         /// </summary>
-        private readonly List<FilterEntry> m_filters;
-    
+        private readonly List<FilterEntry> m_filters = new List<FilterEntry>();
+
         /// <summary>
         /// Gets the type of the filter
         /// </summary>
@@ -442,6 +455,12 @@ namespace Duplicati.Library.Utility
             bool first = false;
             foreach (var f in items)
             {
+                if (f.Type == FilterType.Version)
+                {
+                    r.Add(f);
+                    continue;
+                }
+
                 if (combined.Length == 0)
                 {
                     // Note that even though group filters may include regexes, we don't want to merge them together and compact them,
@@ -752,6 +771,24 @@ namespace Duplicati.Library.Utility
                 return new FilterExpression(msg.Substring(1), false);
             return new FilterExpression(msg, true);
         }
+
+        public bool ContainsFilterType(FilterType type)
+        {
+            return m_filters.Any(f => f.Type == type);
+        }
+
+        public bool OnlyContainsFilterType(FilterType type)
+        {
+            return m_filters.Any() && m_filters.All(f => f.Type == type);
+        }
+
+        public IEnumerable<long> GetVersionFileIds()
+        {
+            return m_filters.Where(f => f.Type == FilterType.Version).Select(f =>
+            {
+                var idIndex = f.Filter.LastIndexOf(Util.DirectorySeparatorString + "&fileid=");
+                return long.Parse(f.Filter.Substring(idIndex + 9));
+            } );
+        }
     }
 }
-

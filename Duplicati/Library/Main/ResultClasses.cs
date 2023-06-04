@@ -684,6 +684,34 @@ namespace Duplicati.Library.Main
         }
     }
 
+    internal class ListResultFileVersion : IListResultFileVersion
+    {
+        public long FileId { get; private set; }
+        public long FileSize { get; private set; }
+        public DateTime LastModified { get; private set; }
+        public DateTime Timestamp { get; set; }
+
+        public ListResultFileVersion(long fileId, long fileSize, DateTime lastModified, DateTime timestamp)
+        {
+            FileId = fileId;
+            FileSize = fileSize;
+            LastModified = lastModified;
+            Timestamp = timestamp;
+        }
+    }
+
+    internal class ListResultFileVersions : BasicResults, IListResultFileVersions
+    {
+        public IEnumerable<IListResultFileVersion> FileVersions { get; private set; }
+
+        public override OperationMode MainOperation => OperationMode.ListFileVersions;
+
+        public void SetResult(IEnumerable<IListResultFileVersion> versions)
+        {
+            FileVersions = versions;
+        }
+    }
+
     internal class ListResults : BasicResults, Duplicati.Library.Interface.IListResults
     {
         private IEnumerable<Duplicati.Library.Interface.IListResultFileset> m_filesets;

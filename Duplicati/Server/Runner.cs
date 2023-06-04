@@ -524,6 +524,11 @@ namespace Duplicati.Server
                                 UpdateMetadata(backup, r);
                                 return r;
                             }
+                        case DuplicatiOperation.FileVersions:
+                            {
+                                var r = controller.FileVersions(data.FilterStrings, null);
+                                return r;
+                            }
                         case DuplicatiOperation.Repair:
                             {
                                 var r = controller.Repair(data.FilterStrings == null ? null : new Library.Utility.FilterExpression(data.FilterStrings));

@@ -35,8 +35,8 @@ namespace Duplicati.UnitTest
                 {
                     TestContext.WriteLine("Backend result warning:" + backupResultsWarning);
                 }
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                Assert.AreEqual(0, backupResults.Errors.Count(), $"Errors: {string.Join(Environment.NewLine, backupResults.Errors)}");
+                Assert.AreEqual(0, backupResults.Warnings.Count(), $"Warnings: {string.Join(Environment.NewLine, backupResults.Warnings)}");
             }
 
             // Get the backend files using absolute paths

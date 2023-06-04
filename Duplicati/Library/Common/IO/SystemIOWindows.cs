@@ -369,6 +369,11 @@ namespace Duplicati.Library.Common.IO
             return RemoveExtendedDevicePathPrefix(System.IO.Path.GetFileName(AddExtendedDevicePathPrefix(path)));
         }
 
+        public string PathGetFileNameWithoutExtension(string path)
+        {
+            return RemoveExtendedDevicePathPrefix(Path.GetFileNameWithoutExtension(AddExtendedDevicePathPrefix(path)));
+        }
+
         public string PathGetDirectoryName(string path)
         {
             return RemoveExtendedDevicePathPrefix(System.IO.Path.GetDirectoryName(AddExtendedDevicePathPrefix(path)));

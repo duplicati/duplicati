@@ -137,6 +137,11 @@ namespace Duplicati.Library.Common.IO
             return Path.GetFileName(path);
         }
 
+        public string PathGetFileNameWithoutExtension(string path)
+        {
+            return Path.GetFileNameWithoutExtension(path);
+        }
+
         public string PathGetExtension(string path)
         {
             return Path.GetExtension(path);

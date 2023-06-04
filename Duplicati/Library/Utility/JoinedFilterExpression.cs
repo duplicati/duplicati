@@ -16,6 +16,8 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+using System.Collections.Generic;
+
 namespace Duplicati.Library.Utility
 {
     public class JoinedFilterExpression : IFilter
@@ -76,6 +78,20 @@ namespace Duplicati.Library.Utility
             else
                 return "(" + this.First + ") || (" + this.Second + ")";
         }
+
+        public bool ContainsFilterType(FilterType type)
+        {
+            return false;
+        }
+
+        public bool OnlyContainsFilterType(FilterType type)
+        {
+            return false;
+        }
+
+        public IEnumerable<long> GetVersionFileIds()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
-

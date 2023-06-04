@@ -54,6 +54,7 @@ namespace Duplicati.Library.Common.IO
         string GetSymlinkTarget(string path);
         string PathGetDirectoryName(string path);
         string PathGetFileName(string path);
+        string PathGetFileNameWithoutExtension(string path);
         string PathGetExtension(string path);
         string PathChangeExtension(string path, string extension);
         string PathCombine(params string[] paths);

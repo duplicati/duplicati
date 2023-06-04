@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Database
         {
             ShouldCloseConnection = true;
         }
-                
+
         public interface IFileversion
         {
             string Path { get; }
@@ -45,7 +45,15 @@ namespace Duplicati.Library.Main.Database
             long FileCount { get; }
             long FileSizes { get; }
         }
-                
+
+        public interface IFileVersionInfo
+        {
+            long FileId { get; }
+            long FileSize { get; }
+            DateTime LastModified { get; }
+            DateTime Timestamp { get; }
+        }
+
         public interface IFileSets : IDisposable
         {
             IEnumerable<IFileset> Sets { get; }
@@ -433,7 +441,60 @@ namespace Duplicati.Library.Main.Database
         {
             return new FileSets(this, time, versions);
         }
-        
+
+        private class FileVersionInfo : IFileVersionInfo
+        {
+            public long FileId { get; private set; }
+
+            public long FileSize { get; private set; }
+
+            public DateTime LastModified { get; private set; }
+
+            public DateTime Timestamp { get; private set; }
+
+            public FileVersionInfo(long fileId, long fileSize, DateTime lastModified, DateTime timestamp)
+            {
+                FileId = fileId;
+                FileSize = fileSize;
+                LastModified = lastModified;
+                Timestamp = timestamp;
+            }
+        }
+
+        public IEnumerable<IFileVersionInfo> GetFilesetsForFile(string file)
+        {
+            var query = @"
+            SELECT
+                f.ID AS FileID,
+                fse.Lastmodified,
+                bs.Length,
+                fs.Timestamp
+            FROM
+                File f
+                JOIN FilesetEntry fse ON fse.FileID = f.ID
+                JOIN Blockset bs ON bs.ID = f.BlocksetID
+                JOIN Fileset fs ON fs.ID = fse.FilesetID
+            WHERE f.Path = @file
+            GROUP BY f.ID, bs.Length
+            ORDER BY fse.Lastmodified DESC".Trim();
+
+            using (var cmd = m_connection.CreateCommand())
+            {
+                cmd.AddParameter(file, "@file");
+
+                using (var reader = cmd.ExecuteReader(query))
+                {
+                    while (reader.Read())
+                    {
+                        var fileId = reader.GetInt64(0);
+                        var lastmodified = new DateTime(reader.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
+                        var size = reader.GetInt64(2);
+                        var timestamp = ParseFromEpochSeconds(reader.GetInt64(3)).ToLocalTime();
+
+                        yield return new FileVersionInfo(fileId, size, lastmodified, timestamp);
+                    }
+                }
+            }
+        }
     }
 }
-
