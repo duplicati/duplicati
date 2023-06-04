@@ -138,11 +138,13 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             key: '-folder',
             prefix: '-',
             suffix: '!',
+            stripSep: true,
             rx: '\\-(.*)\\!'
         }, {
             name: gettextCatalog.getString('Exclude file'),
             key: '-path',
             prefix: '-',
+            stripSep: true,
             exclude: ['*', '?', '{'],
             rx: '\\-([^\\[\\{\\*\\?]+)'
         }, {
@@ -597,7 +599,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         if (pre.length >= 2 && pre[1] == '[') {
             //Regexp encode body ....
         }
-
+        if (f.stripSep == true && body[body.length - 1] == dirsep) {
+            // Remove trailing dirsep
+            body = body.slice(0, -1);
+        }
         return pre + body + suf;
     };
 
