@@ -32,7 +32,7 @@ jobs:
           RELEASE_TYPE="canary"
           RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
           RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
-          RELEASE_VERSION="2.0.6.${RELEASE_INC_VERSION}"
+          RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
           RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
           echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
           echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
