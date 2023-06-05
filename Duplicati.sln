@@ -107,6 +107,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{9A04CB37-DA72-4008-9703-3AC5191974E9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.IDrive", "Duplicati\Library\Backend\IDrive\Duplicati.Library.Backend.IDrive.csproj", "{C16639F6-DACC-4DD9-86CD-8B937516B340}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Idrivee2", "Duplicati\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj", "{6B594D23-B629-465C-B799-70EE9E56C218}"
 EndProject
 Global
@@ -323,6 +325,10 @@ Global
 		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.ActiveCfg = Release|Any CPU
