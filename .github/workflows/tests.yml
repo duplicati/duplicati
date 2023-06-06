@@ -17,16 +17,16 @@ jobs:
     steps:
     - name: Add msbuild to PATH (Windows)
       if: matrix.os == 'windows-latest'
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v1
 
     - name: Install NuGet
-      uses: nuget/setup-nuget@v1.0.5
+      uses: nuget/setup-nuget@v1
 
     - name: Checkout Source
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
-          
+
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
 
@@ -45,6 +45,7 @@ jobs:
     - name: Run Unit Tests (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
+        export DEBUG_OUTPUT=1
         nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
         mono nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
 
@@ -73,10 +74,10 @@ jobs:
     # what we need (https://github.com/actions/runner/issues/646).
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v3
 
     - name: Install NuGet
-      uses: nuget/setup-nuget@v1.0.5
+      uses: nuget/setup-nuget@v1
 
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
@@ -88,7 +89,7 @@ jobs:
       run: msbuild -p:Configuration=Release -p:DefineConstants=ENABLE_GTK Duplicati.sln
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.x
 
@@ -96,9 +97,11 @@ jobs:
       run: |
         pip3 install selenium
         pip3 install --upgrade urllib3
+        pip3 install chromedriver-autoinstaller
 
     - name: Run UI tests
       run: |
         cp -r Duplicati/Server/webroot "${{ env.build_directory }}"/webroot
         mono "${{ env.build_directory }}"/Duplicati.Server.exe &
-        python3 guiTests/guiTest.py
+        sleep 30
+        python3 guiTests/guiTest.py --use-chrome

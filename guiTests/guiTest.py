@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import shutil
@@ -8,9 +9,23 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.firefox.options import Options
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--headless", action='store_true'
+)
+parser.add_argument(
+    "--no-headless", dest='headless', action='store_false'
+)
+parser.add_argument(
+    "--use-chrome", action='store_true'
+)
+
+parser.set_defaults(headless=True)
+cmdopt = parser.parse_args()
 
 if "TRAVIS_BUILD_NUMBER" in os.environ:
+    from selenium.webdriver.firefox.options import Options
     if "SAUCE_USERNAME" not in os.environ:
         print("No sauce labs login credentials found. Stopping tests...")
         sys.exit(0)
@@ -27,14 +42,24 @@ if "TRAVIS_BUILD_NUMBER" in os.environ:
     access_key = os.environ["SAUCE_ACCESS_KEY"]
     hub_url = "%s:%s@localhost:4445" % (username, access_key)
     driver = webdriver.Remote(command_executor="http://%s/wd/hub" % hub_url, desired_capabilities=capabilities)
+elif cmdopt.use_chrome:
+    print("using LOCAL Chrome webdriver")
+    from selenium.webdriver.chrome.options import Options
+    import chromedriver_autoinstaller
+    chromedriver_autoinstaller.install()
+    chr_opt = Options()
+    opt = ["--ignore-certificate-errors", "--window-size=1280,800" ]
+    if cmdopt.headless: opt += ["--headless"]
+    for o in opt: chr_opt.add_argument(o)
+    driver = webdriver.Chrome(options=chr_opt)
 else:
+    from selenium.webdriver.firefox.options import Options
     # local
-    print("Using LOCAL webdriver")
-    profile = webdriver.FirefoxProfile()
-    profile.set_preference("intl.accept_languages", "en")
+    print("Using LOCAL Firefox webdriver")
     options = Options()
-    options.headless = True
-    driver = webdriver.Firefox(profile, options=options)
+    options.set_preference("intl.accept_languages", "en")
+    options.headless = cmdopt.headless
+    driver = webdriver.Firefox(options=options)
 
 
 def write_random_file(size, filename):

@@ -142,6 +142,29 @@ namespace Duplicati.Library.SQLiteHelper
 
                 throw;
             }
+
+	    // set custom Sqlite options
+            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI");
+            if (opts != null) {
+                var topts = opts.Split(new char[]{';'}, StringSplitOptions.RemoveEmptyEntries);
+                if (topts.Length > 0) {
+                    using (var cmd = con.CreateCommand()) {
+                        foreach (var opt in topts) {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
+                            try
+                            {
+                                cmd.CommandText = string.Format("pragma {0}", opt);
+                                cmd.ExecuteNonQuery();
+                            }
+			    catch (Exception ex)
+                            {
+                               Logging.Log.WriteErrorMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
+                            }
+	                }
+                    }
+                }
+            }
+
             return con;
         }
 
