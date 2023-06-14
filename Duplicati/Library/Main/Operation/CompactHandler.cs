@@ -282,8 +282,9 @@ namespace Duplicati.Library.Main.Operation
 
         private IEnumerable<KeyValuePair<string, long>> DoDelete(LocalDeleteDatabase db, BackendManager backend, IEnumerable<IRemoteVolume> deleteableVolumes, ref System.Data.IDbTransaction transaction)
         {
-            // Mark all volumes as disposable
-            foreach(var f in deleteableVolumes)
+            // Mark all volumes and relevant index files as disposable
+            List<IRemoteVolume> remoteFilesToRemove = db.GetDeletableVolumes(deleteableVolumes, transaction).ToList();
+            foreach(var f in remoteFilesToRemove)
                 db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
 
             // Before we commit the current state, make sure the backend has caught up
@@ -295,7 +296,7 @@ namespace Duplicati.Library.Main.Operation
                 transaction = db.BeginTransaction();
             }
 
-            return PerformDelete(backend, db.GetDeletableVolumes(deleteableVolumes, transaction));
+            return PerformDelete(backend, remoteFilesToRemove);
         }
 
         private void FinishVolumeAndUpload(LocalDeleteDatabase db, BackendManager backend, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes)
