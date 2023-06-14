@@ -21,6 +21,7 @@ backupApp.directive('restoreFilePicker', function() {
 
             $scope.systeminfo = SystemInfo.watch($scope);
             $scope.treedata = [];
+            $scope.AppUtils = AppUtils;
 
             function compareablePath(path) {
                 return scope.systeminfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
