@@ -14,6 +14,9 @@
                 <div ng-click="expanded = !expanded" class="entryline clickable">
                     <i class="{{ResultIcon(item.Result ? item.Result.ParsedResult : 'None')}}"></i>
                     {{item.Timestamp | parsetimestamp}} - {{"Operation" | translate}}: {{item.Result ? item.Result.MainOperation : item.Type | translate}}
+                    <span ng-show="item.Result" translate>(took {{ formatDuration(item.Result.Duration) }},
+                    uploaded {{ formatSize(item.Result.BackendStatistics.BytesUploaded) }},
+                    backup size {{ formatSize(item.Result.BackendStatistics.KnownFileSize) }})</span>
                     <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
                     <div style="clear: both;"></div>
                 </div>
