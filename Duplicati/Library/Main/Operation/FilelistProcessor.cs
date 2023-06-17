@@ -91,7 +91,8 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
         /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles = null)
+        /// <param name="logError">Whether to log error messages on failure. When set to false, use the thrown exceptions to determine the cause</param>
+        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles = null, bool logError = true)
         {
             var tp = RemoteListAnalysis(backend, options, database, log, protectedFiles);
             long extraCount = 0;
@@ -112,7 +113,10 @@ namespace Duplicati.Library.Main.Operation
             if (extraCount > 0)
             {
                 var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
-                Logging.Log.WriteErrorMessage(LOGTAG, "ExtraRemoteFiles", null, s);
+                if (logError)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "ExtraRemoteFiles", null, s);
+                }
                 throw new RemoteListVerificationException(s, "ExtraRemoteFiles");
             }
 
@@ -122,7 +126,10 @@ namespace Duplicati.Library.Main.Operation
             if (doubles.Count > 0)
             {
                 var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles));
-                Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, s);
+                if (logError)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, s);
+                }
                 throw new RemoteListVerificationException(s, "DuplicateRemoteFiles");
             }
 
@@ -134,7 +141,10 @@ namespace Duplicati.Library.Main.Operation
                 else
                     s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
 
-                Logging.Log.WriteErrorMessage(LOGTAG, "MissingRemoteFiles", null, s);
+                if (logError)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "MissingRemoteFiles", null, s);
+                }
                 throw new RemoteListVerificationException(s, "MissingRemoteFiles");
             }
         }
