@@ -44,7 +44,10 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.SetDatabase(db);
                 DoRun(db, false, filter, filelistfilter, blockprocessor);
-                db.WriteResults();
+                if (!m_result.HasParent())
+                {
+                    db.WriteResults();
+                }
             }
         }
 
@@ -71,7 +74,10 @@ namespace Duplicati.Library.Main.Operation
 
                 Utility.UpdateOptionsFromDb(db, m_options, null);
                 DoRun(db, true, filter, filelistfilter, blockprocessor);
-                db.WriteResults();
+                if (!m_result.HasParent())
+                {
+                    db.WriteResults();
+                }
             }
         }
 

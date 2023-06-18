@@ -463,7 +463,10 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);                
                 backend.WaitForComplete(db, null);
-                db.WriteResults();
+                if (!m_result.HasParent())
+                {
+                    db.WriteResults();
+                }
             }
         }
 

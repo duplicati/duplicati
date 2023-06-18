@@ -289,6 +289,11 @@ namespace Duplicati.Library.Main
             }
         }
 
+        public bool HasParent()
+        {
+            return m_parent != null; 
+        }
+
         private static bool m_is_reporting = false;
 
         public void AddBackendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
