@@ -457,21 +457,32 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
     var URL_REGEXP_FIELDS = ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'];
     var URL_REGEXP = /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/;
+    // Same as URL_REGEXP, but also accepts :\\ as a separator between drive letter (server for legacy reasons) and path
+    var FILE_REGEXP = /(file)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:(?:\/|\:\\)([^\?]*))?(?:\?(.+))?/;
     var QUERY_REGEXP = /(?:^|&)([^&=]*)=?([^&]*)/g;
 
     this.decode_uri = function(uri, backendlist) {
 
-        var i = URL_REGEXP_FIELDS.length + 1;
+        var i = 0;
         var res = {};
 
-        var m = URL_REGEXP.exec(uri);
+        // File URLs contain backslashes on Win which breaks the other regexp
+        // This is not standard, but for compatibility it is allowed for now
+        var fileMatch = FILE_REGEXP.exec(uri);
+        if (fileMatch) {
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = fileMatch[i] || "";
+            }
+        } else {
+            var m = URL_REGEXP.exec(uri);
 
-        // Invalid URI
-        if (!m)
-            return res;
+            // Invalid URI
+            if (!m)
+                return res;
 
-        while (i--) {
-            res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            }
         }
 
         res.querystring.replace(QUERY_REGEXP, function(str, key, val) {
@@ -480,7 +491,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         });
 
         var backends = {};
-        for(var i in backendlist)
+        for(i in backendlist)
             backends[backendlist[i].Key] = true;
 
         var scheme = res['backend-type'];
