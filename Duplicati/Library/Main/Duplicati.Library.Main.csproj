@@ -142,6 +142,7 @@
     <Compile Include="Operation\Backup\RecreateMissingIndexFiles.cs" />
     <Compile Include="ControllerMultiLogTarget.cs" />
     <Compile Include="ProcessController.cs" />
+    <Compile Include="LocaleChange.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">

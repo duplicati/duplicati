@@ -64,19 +64,9 @@ namespace Duplicati.Library.Main
         private System.Threading.ThreadPriority? m_resetPriority;
 
         /// <summary>
-        /// The localization culture to reset to
+        /// If not null, active locale change that needs to be reset
         /// </summary>
-        private System.Globalization.CultureInfo m_resetLocale;
-
-        /// <summary>
-        /// The localization UI culture to reset to
-        /// </summary>
-        private System.Globalization.CultureInfo m_resetLocaleUI;
-
-        /// <summary>
-        /// True if the locale should be reset
-        /// </summary>
-        private bool m_doResetLocale;
+        private LocaleChange m_localeChange = null;
 
         /// <summary>
         /// The multi-controller log target
@@ -477,26 +467,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-        /// <summary>
-        /// Attempts to get the locale, but delays linking to the calls as they are missing in some environments
-        /// </summary>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static void DoGetLocale(out System.Globalization.CultureInfo locale, out System.Globalization.CultureInfo uiLocale)
-        {
-            locale = System.Globalization.CultureInfo.DefaultThreadCurrentCulture;
-            uiLocale = System.Globalization.CultureInfo.DefaultThreadCurrentUICulture;
-        }
-
-        /// <summary>
-        /// Attempts to set the locale, but delays linking to the calls as they are missing in some environments
-        /// </summary>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static void DoSetLocale(System.Globalization.CultureInfo locale, System.Globalization.CultureInfo uiLocale)
-        {
-            System.Globalization.CultureInfo.DefaultThreadCurrentCulture = locale;
-            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = uiLocale;
-        }
-
         private void OnOperationComplete(object result)
         {
             if (m_options != null && m_options.LoadedModules != null)
@@ -520,14 +490,10 @@ namespace Duplicati.Library.Main
                 m_resetPriority = null;
             }
 
-            if (m_doResetLocale)
+            if(m_localeChange != null)
             {
-                // Wrap the call to avoid loading issues for the setLocale method
-                DoSetLocale(m_resetLocale, m_resetLocaleUI);
-
-                m_doResetLocale = false;
-                m_resetLocale = null;
-                m_resetLocaleUI = null;
+                m_localeChange.Dispose();
+                m_localeChange = null;
             }
 
             if (m_logTarget != null)
@@ -635,17 +601,11 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    var locale = m_options.ForcedLocale;
-                    DoGetLocale(out m_resetLocale, out m_resetLocaleUI);
-                    m_doResetLocale = true;
-                    // Wrap the call to avoid loading issues for the setLocale method
-                    DoSetLocale(locale, locale);
+                    m_localeChange = new LocaleChange(m_options.ForcedLocale);
                 }
-                catch (Exception ex) // or only: MissingMethodException
+                catch (Exception ex)
                 {
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LocaleChangeError", ex, Strings.Controller.FailedForceLocaleError(ex.Message));
-                    m_doResetLocale = false;
-                    m_resetLocale = m_resetLocaleUI = null;
                 }
             }
 
