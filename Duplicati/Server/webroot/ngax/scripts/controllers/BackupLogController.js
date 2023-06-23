@@ -64,6 +64,8 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
             return 'fa fa-exclamation-circle warning-color';
         } else if (parsedResult == 'Error') {
             return 'fa fa-times-circle error-color';
+        } else if (parsedResult == 'Fatal') {
+            return 'fa fa-times-circle error-color';
         } else {
             return 'fa fa-question-circle';
         }
