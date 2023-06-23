@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main
 {
+    /// <summary>
+    /// Changes the current locale for all threads and for log messages in the current context.
+    /// When disposed the changes are reset.
+    /// </summary>
     public class LocaleChange : IDisposable
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocaleChange>();
@@ -16,6 +20,9 @@ namespace Duplicati.Library.Main
 
         private IDisposable m_localizationContext = null;
 
+        /// <summary>
+        /// Change locale if newLocale is not null
+        /// </summary>
         public LocaleChange(System.Globalization.CultureInfo newLocale)
         {
             if (newLocale == null)
@@ -39,10 +46,24 @@ namespace Duplicati.Library.Main
             }
         }
 
+        /// <summary>
+        /// Change locale if ForcedLocale is specified in options
+        /// </summary>
+        /// <param name="options">Command line options</param>
+        /// <exception cref="System.Globalization.CultureNotFoundException">
+        /// Thrown if specified locale was not found.
+        /// </exception>
         public LocaleChange(Options options)
             : this(options.HasForcedLocale ? options.ForcedLocale : null)
         {
         }
+        /// <summary>
+        /// Change locale if 'force-locale' is specified in options dictionary
+        /// </summary>
+        /// <param name="options">Command line options</param>
+        /// <exception cref="System.Globalization.CultureNotFoundException">
+        /// Thrown if specified locale was not found.
+        /// </exception>
         public LocaleChange(Dictionary<string, string> options)
             : this(new Options(options))
         {
