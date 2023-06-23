@@ -280,8 +280,6 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 if (eqpos > 0) {
                     key = line.substr(0, eqpos).trim();
                     value = line.substr(eqpos + 1).trim();
-                    if (value == '')
-                        value = true;
                 }
 
                 if (validateCallback)
