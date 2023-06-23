@@ -190,6 +190,8 @@ namespace Duplicati.Library.Main
         {
             get
             {
+                if (Fatal)
+                    return ParsedResultType.Fatal;
                 if (Errors != null && Errors.Any())
                     return ParsedResultType.Error;
                 else if (Warnings != null && Warnings.Any())
@@ -198,6 +200,9 @@ namespace Duplicati.Library.Main
                     return ParsedResultType.Success;
             }
         }
+        public bool Interrupted { get; set; }
+        [JsonIgnore]
+        public bool Fatal { get; set; }
 
         // ReSharper disable once UnusedMember.Global
         // This is referenced in the logs.
@@ -593,7 +598,16 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
+                if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Fatal) ||
+                    (VacuumResults != null && VacuumResults.ParsedResult == ParsedResultType.Fatal) ||
+                    (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Fatal) ||
+                    (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Fatal) ||
+                    (TestResults != null && TestResults.ParsedResult == ParsedResultType.Fatal) ||
+                    Fatal)
+                {
+                    return ParsedResultType.Fatal;
+                }
+                else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
                     (VacuumResults  != null && VacuumResults.ParsedResult  == ParsedResultType.Error) ||
                     (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Error) ||
                     (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Error) || 
@@ -638,7 +652,12 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Fatal) ||
+                    Fatal)
+                {
+                    return ParsedResultType.Fatal;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
                     (Errors != null && Errors.Any()))
                 {
                     return ParsedResultType.Error;
@@ -814,7 +833,12 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Fatal) ||
+                    Fatal)
+                {
+                    return ParsedResultType.Fatal;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
                     (Errors != null && Errors.Any()))
                 {
                     return ParsedResultType.Error;
