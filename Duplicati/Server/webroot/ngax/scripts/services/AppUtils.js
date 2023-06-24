@@ -228,14 +228,27 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     };
 
 
-    this.splitSizeString = function(val) {
+    this.splitSizeString = function (val) {
         var m = (/(\d*)(\w*)/mg).exec(val);
         var mul = null;
         if (!m)
             return [parseInt(val), null];
         else
             return [parseInt(m[1]), m[2]];
-    }
+    };
+
+    this.parseSizeString = function (val) {
+        if (val == null) {
+            return null;
+        }
+        var split = this.splitSizeString(val);
+        var formatSizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var idx = formatSizes.indexOf((split[1]||'').toUpperCase());
+        if (idx == -1) {
+            idx = 0;
+        }
+        return split[0] * Math.pow(1024, idx);
+    };
 
 
     this.toDisplayDateAndTime = function(dt) {
