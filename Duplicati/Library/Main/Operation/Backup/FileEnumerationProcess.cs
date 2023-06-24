@@ -105,7 +105,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         worklist = snapshot.EnumerateFilesAndFolders(sources, attributeFilter, (rootpath, errorpath, ex) =>
                         {
                             Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", errorpath);
-                        });
+                        }).Distinct(Library.Utility.Utility.IsFSCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
                     }
 
                     if (token.IsCancellationRequested)
