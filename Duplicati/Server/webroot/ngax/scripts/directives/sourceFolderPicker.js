@@ -517,6 +517,9 @@ backupApp.directive('sourceFolderPicker', function() {
 
         scope.treedata.children = [];
 
+        // Load filter groups
+        AppUtils.loadFilterGroups();
+
         AppService.post('/filesystem?onlyfolders=false&showhidden=true', {path: '/'}).then(function(data) {
 
             var usernode = {
