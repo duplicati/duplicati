@@ -249,6 +249,23 @@ namespace Duplicati.Library.Utility
                     .Distinct(Utility.ClientFilenameStringComparer);
         }
 
+        public static Dictionary<string, List<string>> GetFilterStringMap()
+        {
+            // Flag messes with ToString(), so have to do this manually
+            Dictionary<string, List<string>> filterMap = new Dictionary<string, List<string>>()
+            {
+                { nameof(FilterGroup.None), GetFilterStrings(FilterGroup.None).ToList() },
+                { nameof(FilterGroup.SystemFiles), GetFilterStrings(FilterGroup.SystemFiles).ToList() },
+                { nameof(FilterGroup.OperatingSystem), GetFilterStrings(FilterGroup.OperatingSystem).ToList() },
+                { nameof(FilterGroup.CacheFiles), GetFilterStrings(FilterGroup.CacheFiles).ToList() },
+                { nameof(FilterGroup.TemporaryFiles), GetFilterStrings(FilterGroup.TemporaryFiles).ToList() },
+                { nameof(FilterGroup.Applications), GetFilterStrings(FilterGroup.Applications).ToList() },
+                { nameof(FilterGroup.DefaultExcludes), GetFilterStrings(FilterGroup.DefaultExcludes).ToList() },
+                { nameof(FilterGroup.DefaultIncludes), GetFilterStrings(FilterGroup.DefaultIncludes).ToList() }
+            };
+            return filterMap;
+        }
+
         /// <summary>
         /// Filters all items that have a prefix
         /// </summary>
