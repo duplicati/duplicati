@@ -1,7 +1,7 @@
 backupApp.directive('sourceFolderPicker', function() {
   return {
     restrict: 'E',
-    require: ['ngSources', 'ngFilters'],
+    require: ['ngSources', 'ngFilters', '$anchorScroll'],
     scope: {
         ngSources: '=',
         ngFilters: '=',
@@ -9,13 +9,14 @@ backupApp.directive('sourceFolderPicker', function() {
     },
     templateUrl: 'templates/sourcefolderpicker.html',
 
-    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils, gettextCatalog) {
+    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils, gettextCatalog, $anchorScroll) {
 
         var scope = $scope;
         scope.systeminfo = SystemInfo.watch($scope);
         var sourceNodeChildren = null;
 
-        $scope.treedata = { };
+        $scope.treedata = {};
+        $scope.expandedPath = null;
 
         var sourcemap = {};
         var excludemap = {};
@@ -331,8 +332,13 @@ backupApp.directive('sourceFolderPicker', function() {
             }
         };
 
+        function shouldExpand(path, expandedPath) {
+            return expandedPath.indexOf(path) == 0 && path.length < expandedPath.length;
+        }
+
         $scope.toggleExpanded = function(node) {
             node.expanded = !node.expanded;
+            self = this;
 
             if (node.root || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked'
                 || node.iconCls == 'x-tree-icon-hyperv' || node.iconCls == 'x-tree-icon-hypervmachine'
@@ -347,8 +353,19 @@ backupApp.directive('sourceFolderPicker', function() {
                     node.loading = false;
 
                     if (node.children != null)
-                        for(var i in node.children)
-                            setEntryType(node.children[i]);
+                        for (var i in node.children) {
+                            var child = node.children[i];
+                            setEntryType(child);
+                            if (self.expandedPath != null) {
+                                var childPath = compareablePath(child.id);
+                                if (shouldExpand(childPath, self.expandedPath)) {
+                                    self.toggleExpanded(child);
+                                } else if (childPath == self.expandedPath) {
+                                    self.expandedPath = null;
+                                    self.scrollId = child.id;
+                                }
+                            }
+                        }
                     
                     updateIncludeFlags(node, node.include);
 
@@ -360,12 +377,62 @@ backupApp.directive('sourceFolderPicker', function() {
             }
         };
 
+        $scope.expandPath = function(path) {
+            cPath = compareablePath(path);
+            this.expandedPath = cPath;
+            traversenodes(function (n, p) {
+                if (n.root) {
+                    return null;
+                }
+                var nodePath = compareablePath(n.id);
+                if (nodePath == cPath && !n.other) {
+                    // Scroll to node
+                    scope.scrollId = n.id;
+                    // Cancel traverse
+                    return false;
+                }
+
+                if (shouldExpand(nodePath, cPath)) {
+                    if (!p.expanded) {
+                        // Handle root nodes
+                        scope.toggleExpanded(p);
+                    }
+                    if (!n.expanded) {
+                        scope.toggleExpanded(n);
+                    }
+                    // Continue traverse
+                    return null;
+                } else {
+                    // Do not continue this subtree
+                    return true;
+                }
+            }, this.treedata);
+        }
+
+        $scope.$watch('scrollId', function (scrollId, oldVal, scope) {
+            // Scroll to node
+            if (scrollId != null) {
+                scope.scrollId = null;
+                // Need to wait until all nodes are processed
+                $timeout(function () {
+                    $anchorScroll('node-' + scrollId);
+                }, 100);
+            }
+        });
+
         $scope.toggleSelected = function(node) {
             if (scope.selectednode != null)
                 scope.selectednode.selected = false;
 
             scope.selectednode = node;
             scope.selectednode.selected = true;
+        };
+
+        $scope.doubleClick = function (node) {
+            if (sourceNodeChildren.indexOf(node) != -1) {
+                // Open folder in file picker
+                scope.expandPath(node.id);
+            }
         };
 
         scope.treedata.children = [];
