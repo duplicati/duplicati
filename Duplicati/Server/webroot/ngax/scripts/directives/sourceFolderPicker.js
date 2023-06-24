@@ -219,16 +219,9 @@ backupApp.directive('sourceFolderPicker', function() {
             }, root);            
         }
 
-        function syncTreeWithLists() {
-            if (scope.ngSources == null || sourceNodeChildren == null)
-                return;
-
-            dirsep = scope.systeminfo.DirectorySeparator || '/';            
-
-            sourcemap = {};
+        function updateFilterList() {
             excludemap = {};
             filterList = null;
-
             var anySpecials = false;
 
             for (var i = 0; i < (scope.ngFilters || []).length; i++) {
@@ -394,10 +387,28 @@ backupApp.directive('sourceFolderPicker', function() {
                         }
                     }
                 } else {
-                    scope.ngFilters.push("-" + node.id);
+                    removePathFromArray(scope.ngFilters, '+' + node.id);
+                    updateFilterList();
+                    if (shouldIncludeNode(node, false)) {
+                        // No explicit include filter, add exclude filter to start of list
+                        scope.ngFilters.unshift("-" + node.id);
+                    }
                 }
             } else if (node.include == '-') {
                 removePathFromArray(scope.ngFilters, '-' + node.id);
+                updateFilterList();
+                if (nodeExcludedByAttributes(node)
+                        && indexOfPathInArray(scope.ngSources, node.id) == -1) {
+                    // Node is excluded by attributes, have to add as source to override
+                    scope.ngSources.push(node.id);
+                } else if (!shouldIncludeNode(node, false)) {
+                    // No explicit exclude filter, add include filter to start of list
+                    scope.ngFilters.unshift('+' + node.id);
+                }
+                if (nodeExcludedBySize(node)) {
+                    DialogService.dialog(gettextCatalog.getString('Cannot include "{{text}}"', node),
+                        gettextCatalog.getString('The file size is {{size}}, larger than the maximum specified size. If the file size decreases, it will be included in future backups.', { size: AppUtils.formatSizeString(node.fileSize) }));
+                }
             }
         };
 
