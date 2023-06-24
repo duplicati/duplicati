@@ -130,7 +130,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
                 if (specialtoken != null)
                 {
-                    res = res.Select(x => {
+                    res = res.Select(x =>
+                    {
                         x.resolvedpath = x.id;
                         x.id = specialtoken + x.id.Substring(specialpath.Length);
                         return x;
@@ -208,6 +209,13 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return false;
             };
 
+            Func<string, long> getFileSize = (p) =>
+            {
+                try { return new FileInfo(p).Length; }
+                catch { }
+                return -1;
+            };
+
             foreach (var s in SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath)
                 // Group directories first
                 .OrderByDescending(f => SystemIO.IO_OS.GetFileAttributes(f) & FileAttributes.Directory)
@@ -222,6 +230,9 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     var isFolder = (attr & FileAttributes.Directory) != 0;
                     var isFile = !isFolder;
                     var isHidden = (attr & FileAttributes.Hidden) != 0;
+                    bool isSystem = (attr & FileAttributes.System) != 0;
+                    bool isTemporary = (attr & FileAttributes.Temporary) != 0;
+                    long fileSize = -1;
 
                     var accessible = isFile || canAccess(s);
                     var isLeaf = isFile || !accessible || isEmptyFolder(s);
@@ -233,12 +244,20 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     if (!showHidden && isHidden)
                         continue;
 
+                    if (isFile)
+                    {
+                        fileSize = getFileSize(s);
+                    }
+
                     tn = new Serializable.TreeNode()
                     {
                         id = rawid,
                         text = SystemIO.IO_OS.PathGetFileName(s),
                         hidden = isHidden,
                         symlink = isSymlink,
+                        temporary = isTemporary,
+                        systemFile = isSystem,
+                        fileSize = fileSize,
                         iconCls = isFolder ? (accessible ? (isSymlink ? "x-tree-icon-symlink" : "x-tree-icon-parent") : "x-tree-icon-locked") : "x-tree-icon-leaf",
                         leaf = isLeaf
                     };
