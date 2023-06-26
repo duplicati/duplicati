@@ -592,7 +592,37 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = ""{RemoteVolumeType.Blocks}"" AND 
 			}
 		}
 
-		public override void Dispose()
+        /// <summary>
+        /// Move blocks that are not referenced by any files to DeletedBlock table.
+        /// </summary>
+        /// Needs to be called after the last FindMissingBlocklistHashes, otherwise the tables are not up to date.
+        public void CleanupDeletedBlocks(System.Data.IDbTransaction transaction)
+        {
+            // Find out which blocks are deleted and move them into DeletedBlock, so that compact notices these blocks are empty
+            // Deleted blocks do not appear in the BlocksetEntry and not in the BlocklistHash table
+
+            var tmptablename = "DeletedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
+            {
+                // 1. Select blocks not used by any file and not as a blocklist into temporary table
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}""
+                    AS SELECT ""ID"", ""Hash"", ""Size"", ""VolumeID"" FROM ""Block""
+                        WHERE ""ID"" NOT IN (SELECT ""BlockID"" FROM ""BlocksetEntry"")
+                        AND ""Hash"" NOT IN (SELECT ""Hash"" FROM ""BlocklistHash"")", tmptablename));
+                // 2. Insert blocks into DeletedBlock table
+                cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""{0}""", tmptablename));
+                // 3. Remove blocks from Block table
+                cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""{0}"")", tmptablename));
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", tmptablename));
+                tr.Commit();
+            }
+
+
+        }
+
+        public override void Dispose()
         {                        
             using (var cmd = m_connection.CreateCommand())
             {                    
