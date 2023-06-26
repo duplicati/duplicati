@@ -14,11 +14,13 @@ namespace Duplicati.Library.Main.Database
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
 
         private readonly System.Data.IDbCommand m_findblockCommand;
+        private readonly System.Data.IDbCommand m_finddeletedblockCommand;
         private readonly System.Data.IDbCommand m_findblocksetCommand;
         private readonly System.Data.IDbCommand m_findfilesetCommand;
         private readonly System.Data.IDbCommand m_findmetadatasetCommand;
 
         private readonly System.Data.IDbCommand m_insertblockCommand;
+        private readonly System.Data.IDbCommand m_moveblockfromdeletedCommand;
 
         private readonly System.Data.IDbCommand m_insertfileCommand;
 
@@ -56,7 +58,9 @@ namespace Duplicati.Library.Main.Database
             m_logQueries = options.ProfileAllDatabaseQueries;
 
             m_findblockCommand = m_connection.CreateCommand();
+            m_finddeletedblockCommand = m_connection.CreateCommand();
             m_insertblockCommand = m_connection.CreateCommand();
+            m_moveblockfromdeletedCommand = m_connection.CreateCommand();
             m_insertfileCommand = m_connection.CreateCommand();
             m_insertblocksetCommand = m_connection.CreateCommand();
             m_insertmetadatasetCommand = m_connection.CreateCommand();
@@ -77,6 +81,9 @@ namespace Duplicati.Library.Main.Database
             m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
 
+            m_finddeletedblockCommand.CommandText = @"SELECT ""ID"" FROM ""DeletedBlock"" WHERE ""Hash"" = ? AND ""Size"" = ?";
+            m_finddeletedblockCommand.AddParameters(2);
+
             m_findblocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?";
             m_findblocksetCommand.AddParameters(2);
 
@@ -88,6 +95,9 @@ namespace Duplicati.Library.Main.Database
 
             m_insertblockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?); SELECT last_insert_rowid();";
             m_insertblockCommand.AddParameters(3);
+
+            m_moveblockfromdeletedCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = ? LIMIT 1; DELETE FROM ""DeletedBlock"" WHERE ""ID"" = ?; SELECT last_insert_rowid();";
+            m_moveblockfromdeletedCommand.AddParameters(2);
 
             m_insertfileOperationCommand.CommandText = @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?, ?, ?)";
             m_insertfileOperationCommand.AddParameters(3);
@@ -251,11 +261,33 @@ namespace Duplicati.Library.Main.Database
 
             if (r == -1L)
             {
-                m_insertblockCommand.Transaction = transaction;
-                m_insertblockCommand.SetParameterValue(0, key);
-                m_insertblockCommand.SetParameterValue(1, volumeid);
-                m_insertblockCommand.SetParameterValue(2, size);
-                m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
+                // Try to find block in already uploaded blocks which were previously deleted
+                m_finddeletedblockCommand.Transaction = transaction;
+                m_finddeletedblockCommand.SetParameterValue(0, key);
+                m_finddeletedblockCommand.SetParameterValue(1, size);
+                var deletedId = m_finddeletedblockCommand.ExecuteScalarInt64(m_logQueries, -1);
+                if (deletedId != -1L)
+                {
+                    // Move block back from deleted volumes
+                    m_moveblockfromdeletedCommand.Transaction = transaction;
+                    m_moveblockfromdeletedCommand.SetParameterValue(0, deletedId);
+                    m_moveblockfromdeletedCommand.SetParameterValue(1, deletedId);
+                    m_moveblockfromdeletedCommand.ExecuteScalarInt64(m_logQueries);
+                    // TODO: Check that VolumeId still exists and is validated
+
+                    // Technically a new block, but it should not be added to the new blockset
+                    if (m_blockCache != null)
+                        m_blockCache.Add(key, size);
+                    return false;
+                }
+                else
+                {
+                    m_insertblockCommand.Transaction = transaction;
+                    m_insertblockCommand.SetParameterValue(0, key);
+                    m_insertblockCommand.SetParameterValue(1, volumeid);
+                    m_insertblockCommand.SetParameterValue(2, size);
+                    m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
+                }
                 if (m_blockCache != null)
                     m_blockCache.Add(key, size);
                 return true;
