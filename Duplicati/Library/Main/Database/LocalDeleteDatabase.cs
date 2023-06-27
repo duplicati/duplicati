@@ -305,7 +305,10 @@ namespace Duplicati.Library.Main.Database
                 
         public interface IBlockQuery : IDisposable
         {
-            bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction);
+            /// <summary>
+            /// Check whether the specified block is currently used. If volumeId is not -1, check specific volume
+            /// </summary>
+            bool UseBlock(string hash, long size, long volumeId, System.Data.IDbTransaction transaction);
         }
         
         private class BlockQuery : IBlockQuery
@@ -321,14 +324,26 @@ namespace Duplicati.Library.Main.Database
                 m_command.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ";
                 m_command.AddParameters(2);
             }
-            
-            public bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction)
+
+            public bool UseBlock(string hash, long size, long volumeId, System.Data.IDbTransaction transaction)
             {                
                 m_command.Transaction = transaction;
                 m_command.SetParameterValue(0, hash);    
                 m_command.SetParameterValue(1, size);
                 var r = m_command.ExecuteScalar();
-                return r != null && r != DBNull.Value;
+                if (r == null || r == DBNull.Value)
+                {
+                    return false;
+                }
+                else if(volumeId == -1)
+                {
+                    return true;
+                }
+                else
+                {
+                    // Check that the volume id matches
+                    return (long)r == volumeId;
+                }
             }
             
             public void Dispose()
