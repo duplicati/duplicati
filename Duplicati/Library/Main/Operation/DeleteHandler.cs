@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!m_options.AllowFullRemoval && filesets.Length == versionsToDelete.Count)
                 {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "PreventingLastFilesetRemoval", "Preventing removal of last fileset, use --{0} to allow removal ...", "allow-full-removal");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "PreventingLastFilesetRemoval", null, "Preventing removal of last fileset, use --{0} to allow removal ...", "allow-full-removal");
                     versionsToDelete = versionsToDelete.OrderBy(x => x.Version).Skip(1).ToList();
                 }
 

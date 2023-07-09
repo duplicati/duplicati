@@ -56,7 +56,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         private const string BROKEN_FILE_SETS = @"SELECT DISTINCT ""B"".""Timestamp"", ""A"".""FilesetID"", COUNT(""A"".""FileID"") AS ""FileCount"" FROM ""FilesetEntry"" A, ""Fileset"" B WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""A"".""FileID"" IN (" + BROKEN_FILE_IDS + @")";
 
         private const string BROKEN_FILE_NAMES = @"
-SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""ID"" IN ("
+SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A LEFT JOIN ""Blockset"" B ON (""A"".""BlocksetID"" = ""B"".""ID"") WHERE ""A"".""ID"" IN ("
 + BROKEN_FILE_IDS +
 @") AND ""A"".""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)";
 
