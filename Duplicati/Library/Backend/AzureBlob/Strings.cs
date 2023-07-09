@@ -17,5 +17,9 @@ namespace Duplicati.Library.Backend.AzureBlob.Strings {
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
         public static string Description_v2 { get { return LC.L(@"This backend can read and write data to Azure blob storage.  Allowed formats are: ""azure://bucketname"""); } }
+        public static string ErrorDeleteFile { get { return LC.L(@"Error on deleting file: {0}"); } }
+        public static string ErrorReadFile { get { return LC.L(@"Error reading file: {0}"); } }
+        public static string ErrorWriteFile { get { return LC.L(@"Error writing file: {0}"); } }
+        public static string MissingContainerError(string containerName, string message) { return LC.L(@"The container {0} was not found. Message: {1}", containerName, message); }
     }
 }
