@@ -171,7 +171,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                                 {
                                     if (f.BlocklistHashes == null)
                                     {
-                                        lookup.WriteHash(sw, f.Hash);
+                                        if(f.Size > 0)
+                                            lookup.WriteHash(sw, f.Hash);
                                     }
                                     else
                                     {
