@@ -127,6 +127,8 @@ namespace Duplicati.Library.Main.Strings
         public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
         public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less than this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
         public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
+        public static string QuotaDisableLong(string optionname) { return LC.L(@"Disable the quota reported by the backend. --{0} can still be used to set a manual quota", optionname); }
+        public static string QuotaDisableShort { get { return LC.L(@"Disable backend quota"); } }
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string SymlinkpolicyLong(string store, string ignore, string follow) { return LC.L(@"Use this option to handle symlinks differently. The ""{0}"" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option ""{1}"" to ignore all symlinks and not store any information about them. The option ""{2}"" will cause the symlinked target to be backed up and restored as a normal file with the symlink name. Early versions of Duplicati did not support this option and bevhaved as if ""{2}"" was specified.", store, ignore, follow); }
         public static string HardlinkpolicyShort { get { return LC.L(@"Hardlink handling"); } }

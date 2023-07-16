@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main
     {
         private const string DEFAULT_BLOCK_HASH_ALGORITHM = "SHA256";
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
-        
+
         /// <summary>
         /// The default block size
         /// </summary>
@@ -44,17 +44,17 @@ namespace Duplicati.Library.Main
         /// The default threshold value
         /// </summary>
         private const long DEFAULT_THRESHOLD = 25;
-        
+
         /// <summary>
         /// The default value for maximum number of small files
         /// </summary>
         private const long DEFAULT_SMALL_FILE_MAX_COUNT = 20;
-        
+
         /// <summary>
         /// Default size of volumes
         /// </summary>
         private const string DEFAULT_VOLUME_SIZE = "50mb";
-        
+
         /// <summary>
         /// Default value for keep-versions
         /// </summary>
@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main
         /// The default number of hasher instances
         /// </summary>
         private readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
-        
+
         /// <summary>
         /// The default threshold for warning about coming close to quota
         /// </summary>
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main
             /// Process only the first hardlink
             /// </summary>
             First,
-            
+
             /// <summary>
             /// Process all hardlinks
             /// </summary>
@@ -144,7 +144,7 @@ namespace Duplicati.Library.Main
             /// </summary>
             None
         }
-        
+
         /// <summary>
         /// The possible settings for index file usage
         /// </summary>
@@ -154,17 +154,17 @@ namespace Duplicati.Library.Main
             /// Disables usage of index files
             /// </summary>
             None,
-            
+
             /// <summary>
             /// Stores only block lookup information in the index files
             /// </summary>
             Lookup,
-            
+
             /// <summary>
             /// Stores both block lookup and block lists in the index files
             /// </summary>
             Full
-            
+
         }
 
         private static string[] GetSupportedHashes()
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main
                 {
                 }
             }
-            
+
             return r.ToArray();
         }
 
@@ -286,13 +286,13 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousuploadlimitShort, Strings.Options.AsynchronousuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-concurrent-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, "4"),
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
-                    
+
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
 
                     new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
                     new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
                     new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
-                    
+
                     new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
@@ -327,6 +327,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("quota-size", CommandLineArgument.ArgumentType.Size, Strings.Options.QuotasizeShort, Strings.Options.QuotasizeLong),
                     new CommandLineArgument("quota-warning-threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.QuotaWarningThresholdShort, Strings.Options.QuotaWarningThresholdLong, DEFAULT_QUOTA_WARNING_THRESHOLD.ToString()),
+                    new CommandLineArgument("quota-disable", CommandLineArgument.ArgumentType.Boolean, Strings.Options.QuotaDisableShort, Strings.Options.QuotaDisableLong("quota-size"), "false"),
 
                     new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, Strings.Options.SymlinkpolicyLong("store", "ignore", "follow"), Enum.GetName(typeof(SymlinkStrategy), SymlinkStrategy.Store), null, Enum.GetNames(typeof(SymlinkStrategy))),
                     new CommandLineArgument("hardlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.HardlinkpolicyShort, Strings.Options.HardlinkpolicyLong("first", "all", "none"), Enum.GetName(typeof(HardlinkStrategy), HardlinkStrategy.All), null, Enum.GetNames(typeof(HardlinkStrategy))),
@@ -390,7 +391,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("concurrency-max-threads", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencymaxthreadsShort, Strings.Options.ConcurrencymaxthreadsLong, "0"),
                     new CommandLineArgument("concurrency-block-hashers", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencyblockhashersShort, Strings.Options.ConcurrencyblockhashersLong, DEFAULT_BLOCK_HASHERS.ToString()),
                     new CommandLineArgument("concurrency-compressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencycompressorsShort, Strings.Options.ConcurrencycompressorsLong, DEFAULT_COMPRESSORS.ToString()),
-                    
+
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
                     new CommandLineArgument("disable-filelist-consistency-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilelistconsistencychecksShort, Strings.Options.DisablefilelistconsistencychecksLong, "false"),
@@ -412,7 +413,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets or sets the current main action of the instance
         /// </summary>
-        public OperationMode MainAction 
+        public OperationMode MainAction
         {
             get { return (OperationMode)Enum.Parse(typeof(OperationMode), m_options["main-action"]); }
             set { m_options["main-action"] = value.ToString(); }
@@ -499,7 +500,7 @@ namespace Duplicati.Library.Main
                     return Library.Utility.Timeparser.ParseTimeInterval(m_options["time"], DateTime.Now);
             }
         }
-        
+
         /// <summary>
         /// Gets the versions the restore or list operation is limited to
         /// </summary>
@@ -648,7 +649,7 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("prefix", out v);
                 if (!string.IsNullOrEmpty(v))
                     return v;
-                    
+
                 return "duplicati";
             }
         }
@@ -664,7 +665,7 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("keep-versions", out v);
                 if (string.IsNullOrEmpty(v))
                     return DEFAULT_KEEP_VERSIONS;
-                
+
                 return Math.Max(0, int.Parse(v));
             }
         }
@@ -678,7 +679,7 @@ namespace Duplicati.Library.Main
             {
                 string v;
                 m_options.TryGetValue("keep-time", out v);
-                
+
                 if (string.IsNullOrEmpty(v))
                     return new DateTime(0);
 
@@ -696,12 +697,14 @@ namespace Duplicati.Library.Main
         /// </summary>        
         public List<RetentionPolicyValue> RetentionPolicy
         {
-            get {
+            get
+            {
                 var retentionPolicyConfig = new List<RetentionPolicyValue>();
 
                 string v;
                 m_options.TryGetValue("retention-policy", out v);
-                if (string.IsNullOrEmpty(v)) { 
+                if (string.IsNullOrEmpty(v))
+                {
                     return retentionPolicyConfig;
                 }
 
@@ -1061,7 +1064,7 @@ namespace Duplicati.Library.Main
                     return value;
             }
         }
-        
+
         /// <summary>
         /// Gets the logfile filename
         /// </summary>
@@ -1234,6 +1237,15 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets a flag indicating that backup quota reported by the backend should be ignored
+        /// </summary>
+        /// This is necessary because in some cases the backend might report a wrong quota (especially with some Linux mounts).
+        public bool QuotaDisable
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "quota-disable"); }
+        }
+
+        /// <summary>
         /// Gets the display name of the backup
         /// </summary>
         public string BackupName
@@ -1289,15 +1301,15 @@ namespace Duplicati.Library.Main
                 long blocksize = Library.Utility.Sizeparser.ParseSize(tmp, "kb");
                 if (blocksize > int.MaxValue || blocksize < 1024)
                     throw new ArgumentOutOfRangeException(nameof(blocksize), string.Format("The blocksize cannot be less than {0}, nor larger than {1}", 1024, int.MaxValue));
-                
+
                 return (int)blocksize;
             }
         }
-        
-		/// <summary>
+
+        /// <summary>
         /// Cache for the block hash size value, to avoid creating new hash instances just to get the size
         /// </summary>
-		private KeyValuePair<string, int> m_cachedBlockHashSize;
+        private KeyValuePair<string, int> m_cachedBlockHashSize;
 
         /// <summary>
         /// Gets the size of the blockhash in bytes.
@@ -1307,10 +1319,10 @@ namespace Duplicati.Library.Main
         {
             get
             {
-				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
-					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
-				
-				return m_cachedBlockHashSize.Value;
+                if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
+                    m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
+
+                return m_cachedBlockHashSize.Value;
             }
         }
 
@@ -1374,8 +1386,8 @@ namespace Duplicati.Library.Main
                 return Library.Utility.Utility.ParseBoolOption(m_options, "use-block-cache");
             }
         }
-        
-        
+
+
         /// <summary>
         /// Gets the compact threshold
         /// </summary>
@@ -1407,7 +1419,7 @@ namespace Duplicati.Library.Main
                 return Library.Utility.Sizeparser.ParseSize(v, "mb");
             }
         }
-        
+
         /// <summary>
         /// Gets the maximum number of small volumes
         /// </summary>
@@ -1423,7 +1435,7 @@ namespace Duplicati.Library.Main
                 return Convert.ToInt64(v);
             }
         }
-        
+
         /// <summary>
         /// List of files to check for changes
         /// </summary>
@@ -1483,26 +1495,26 @@ namespace Duplicati.Library.Main
                 return v;
             }
         }
-        
+
         /// <summary>
         /// Gets the index file usage method
         /// </summary>
         public IndexFileStrategy IndexfilePolicy
         {
-            get 
-            { 
+            get
+            {
                 string strategy;
                 if (!m_options.TryGetValue("index-file-policy", out strategy))
                     strategy = "";
-                
+
                 IndexFileStrategy res;
                 if (!Enum.TryParse(strategy, true, out res))
                     res = IndexFileStrategy.Full;
-                    
+
                 return res;
             }
         }
-        
+
         /// <summary>
         /// Gets a flag indicating if the check for files on the remote storage should be omitted
         /// </summary>
@@ -1510,7 +1522,7 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-backend-verification"); }
         }
-                
+
         /// <summary>
         /// Gets the percentage of samples to test during a backup operation
         /// </summary>
@@ -1548,17 +1560,17 @@ namespace Duplicati.Library.Main
         /// </summary>
         public long BackupTestSampleCount
         {
-            get 
-            { 
+            get
+            {
                 string s;
                 m_options.TryGetValue("backup-test-samples", out s);
                 if (string.IsNullOrEmpty(s))
                     return 1;
-                
+
                 return long.Parse(s);
             }
         }
-        
+
         /// <summary>
         /// Gets a flag indicating if compacting should not be done automatically
         /// </summary>
@@ -1588,21 +1600,21 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-missing-source"); }
         }
-        
+
         /// <summary>
         /// Gets a value indicating if a verification file should be uploaded after changing the remote store
         /// </summary>
         public bool UploadVerificationFile
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "upload-verification-file"); } 
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "upload-verification-file"); }
         }
-        
+
         /// <summary>
         /// Gets a value indicating if a passphrase change is allowed
         /// </summary>
         public bool AllowPassphraseChange
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-passphrase-change"); } 
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "allow-passphrase-change"); }
         }
 
         /// <summary>
@@ -1610,12 +1622,12 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool Dryrun
         {
-            get 
+            get
             {
                 if (m_options.ContainsKey("dry-run"))
-                    return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run"); 
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dry-run");
                 else
-                    return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun"); 
+                    return Library.Utility.Utility.ParseBoolOption(m_options, "dryrun");
             }
         }
 
@@ -1626,7 +1638,7 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-remote-verification"); }
         }
-        
+
         /// <summary>
         /// The block hash algorithm to use
         /// </summary>
@@ -1673,7 +1685,7 @@ namespace Duplicati.Library.Main
         /// <value><c>true</c> if no local blocks; otherwise, <c>false</c>.</value>
         public bool NoLocalBlocks
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-blocks"); } 
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-blocks"); }
         }
 
         /// <summary>
