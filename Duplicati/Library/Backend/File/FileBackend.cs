@@ -347,7 +347,12 @@ namespace Duplicati.Library.Backend
                 System.IO.DriveInfo driveInfo = this.GetDrive();
                 if (driveInfo != null)
                 {
-                    return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                    // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
+                    // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
+                    if (driveInfo.TotalSize > 0)
+                    {
+                        return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                    }
                 }
 
                 if (Platform.IsClientWindows)
