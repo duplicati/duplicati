@@ -1200,7 +1200,7 @@ namespace Duplicati.Library.Main
         public bool Overwrite { get { return GetBool("overwrite"); } }
 
         /// <summary>
-        /// Gets the total size in bytes that the backend supports, returns -1 if there is no upper limit
+        /// Gets the total size in bytes that the backup should use, returns -1 if there is no upper limit
         /// </summary>
         public long QuotaSize
         {

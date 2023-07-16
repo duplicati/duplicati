@@ -232,42 +232,9 @@ namespace Duplicati.Library.Main.Operation
             log.BackupListCount = database.FilesetTimes.Count();
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
 
-            // TODO: We should query through the backendmanager
-            using (var bk = DynamicLoader.BackendLoader.GetBackend(backend.BackendUrl, options.RawOptions))
-                if (bk is IQuotaEnabledBackend enabledBackend && !options.QuotaDisable)
-                {
-                    Library.Interface.IQuotaInfo quota = enabledBackend.Quota;
-                    if (quota != null)
-                    {
-                        log.TotalQuotaSpace = quota.TotalQuotaSpace;
-                        log.FreeQuotaSpace = quota.FreeQuotaSpace;
+            CheckQuota(backend, options, log, knownFileSize);
 
-                        // Check to see if there should be a warning or error about the quota
-                        // Since this processor may be called multiple times during a backup
-                        // (both at the start and end, for example), the log keeps track of
-                        // whether a quota error or warning has been sent already.
-                        // Note that an error can still be sent later even if a warning was sent earlier.
-                        if (!log.ReportedQuotaError && quota.FreeQuotaSpace == 0)
-                        {
-                            log.ReportedQuotaError = true;
-                            Logging.Log.WriteErrorMessage(LOGTAG, "BackendQuotaExceeded", null, "Backend quota has been exceeded: Using {0} of {1} ({2} available)", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace), Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
-                        }
-                        else if (!log.ReportedQuotaWarning && !log.ReportedQuotaError && quota.FreeQuotaSpace >= 0) // Negative value means the backend didn't return the quota info
-                        {
-                            // Warnings are sent if the available free space is less than the given percentage of the total backup size.
-                            double warningThreshold = options.QuotaWarningThreshold / (double)100;
-                            if (quota.FreeQuotaSpace < warningThreshold * knownFileSize)
-                            {
-                                log.ReportedQuotaWarning = true;
-                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendQuotaNear", null, "Backend quota is close to being exceeded: Using {0} of {1} ({2} available)", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace), Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
-                            }
-                        }
-                    }
-                }
-
-            log.AssignedQuotaSpace = options.QuotaSize;
-
-            foreach(var s in remotelist)
+            foreach (var s in remotelist)
                 lookup[s.File.Name] = s;
 
             var missing = new List<RemoteVolumeEntry>();
@@ -400,6 +367,64 @@ namespace Duplicati.Library.Main.Operation
                 MissingVolumes = missing,
                 VerificationRequiredVolumes = missingHash.Select(x => x.Item2)
             };
+        }
+
+        private static void CheckQuota(BackendManager backend, Options options, IBackendWriter log, long knownFileSize)
+        {
+            // TODO: We should query through the backendmanager
+            using (var bk = DynamicLoader.BackendLoader.GetBackend(backend.BackendUrl, options.RawOptions))
+                if (bk is IQuotaEnabledBackend enabledBackend && !options.QuotaDisable)
+                {
+                    Library.Interface.IQuotaInfo quota = enabledBackend.Quota;
+                    if (quota != null)
+                    {
+                        log.TotalQuotaSpace = quota.TotalQuotaSpace;
+                        log.FreeQuotaSpace = quota.FreeQuotaSpace;
+
+                        // Check to see if there should be a warning or error about the quota
+                        // Since this processor may be called multiple times during a backup
+                        // (both at the start and end, for example), the log keeps track of
+                        // whether a quota error or warning has been sent already.
+                        // Note that an error can still be sent later even if a warning was sent earlier.
+                        if (!log.ReportedQuotaError && quota.FreeQuotaSpace == 0)
+                        {
+                            log.ReportedQuotaError = true;
+                            Logging.Log.WriteErrorMessage(LOGTAG, "BackendQuotaExceeded", null, "Backend quota has been exceeded: Using {0} of {1} ({2} available)", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace), Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
+                        }
+                        else if (!log.ReportedQuotaWarning && !log.ReportedQuotaError && quota.FreeQuotaSpace >= 0) // Negative value means the backend didn't return the quota info
+                        {
+                            // Warnings are sent if the available free space is less than the given percentage of the total backup size.
+                            double warningThreshold = options.QuotaWarningThreshold / (double)100;
+                            if (quota.FreeQuotaSpace < warningThreshold * knownFileSize)
+                            {
+                                log.ReportedQuotaWarning = true;
+                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendQuotaNear", null, "Backend quota is close to being exceeded: Using {0} of {1} ({2} available)", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace), Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
+                            }
+                        }
+                    }
+                }
+
+            log.AssignedQuotaSpace = options.QuotaSize;
+            if (log.AssignedQuotaSpace != -1)
+            {
+                // Check assigned quota
+                if (!log.ReportedQuotaError && knownFileSize > log.AssignedQuotaSpace)
+                {
+                    log.ReportedQuotaError = true;
+                    Logging.Log.WriteErrorMessage(LOGTAG, "AssignedQuotaExceeded", null, "Assigned quota has been exceeded: Using {0} of {1}", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(log.AssignedQuotaSpace));
+                }
+                else if (!log.ReportedQuotaWarning && !log.ReportedQuotaError)
+                {
+                    // Warnings are sent if the available free space is less than the given percentage of the total backup size.
+                    double warningThreshold = options.QuotaWarningThreshold / (double)100;
+                    long freeSpace = log.AssignedQuotaSpace - knownFileSize;
+                    if (freeSpace < warningThreshold * knownFileSize)
+                    {
+                        log.ReportedQuotaWarning = true;
+                        Logging.Log.WriteWarningMessage(LOGTAG, "AssignedQuotaNear", null, "Assigned quota is close to being exceeded: Using {0} of {1}", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(log.AssignedQuotaSpace));
+                    }
+                }
+            }
         }
     }
 }

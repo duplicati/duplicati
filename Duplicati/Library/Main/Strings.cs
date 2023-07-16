@@ -123,8 +123,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DebugretryerrorsShort { get { return LC.L(@"Show error messages when a retry is performed"); } }
         public static string UploadUnchangedBackupsLong { get { return LC.L(@"If no files have changed, Duplicati will not upload a backup set. If the backup data is used to verify that a backup was executed, this option will make Duplicati upload a backupset even if it is empty"); } }
         public static string UploadUnchangedBackupsShort { get { return LC.L(@"Upload empty backup files"); } }
-        public static string QuotasizeLong { get { return LC.L(@"This value can be used to set a known upper limit on the amount of space a backend has. If the backend reports the size itself, this value is ignored"); } }
-        public static string QuotasizeShort { get { return LC.L(@"A reported maximum storage"); } }
+        public static string QuotasizeLong { get { return LC.L(@"Set a limit to the amount of storage used on the backend (by this backup). This is in addition to the full backend quota, if available. Note: Backups will continue past the quota. This only creates warnings and error messages."); } }
+        public static string QuotasizeShort { get { return LC.L(@"Limit storage use"); } }
         public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less than this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored"); } }
         public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
         public static string QuotaDisableLong(string optionname) { return LC.L(@"Disable the quota reported by the backend. --{0} can still be used to set a manual quota", optionname); }
