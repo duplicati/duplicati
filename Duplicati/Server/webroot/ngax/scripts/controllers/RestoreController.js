@@ -261,6 +261,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                     if (compareablePath(col.Children[m].Path) == compareablePath(curpath)) {
                                         found = true;
                                         col = col.Children[m];
+                                        break;
                                     }
                                 }
 
