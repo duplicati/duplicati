@@ -246,6 +246,10 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                         if (cp.indexOf(compareablePath(sn.Path)) == 0) {
                             var curpath = sn.Path;
                             var parts = p.substr(sn.Path.length).split(dirsep);
+                            // Remove empty part if path had dirsep at end
+                            if (parts[parts.length - 1].length == 0) {
+                                parts.pop();
+                            }
                             var col = sn;
 
                             for(var k in parts) {
