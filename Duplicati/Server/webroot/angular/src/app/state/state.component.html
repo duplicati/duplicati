@@ -1,0 +1,44 @@
+<div class="state">
+  <div class="content">
+    <!--<div ng-hide="state.activeTask == null">
+      <span ng-hide="activeBackup == null">
+        <span ng-hide="StopReqId == activeTaskID">
+          <div class="task-state-info">
+            <div class="task-name" title="{{activeBackup.Backup.Name}}">
+              <strong>{{activeBackup.Backup.Name}}</strong>
+            </div>
+            <strong>: </strong>
+            <div>
+              {{StateText}}
+            </div>
+          </div>
+        </span>
+        <span ng-show="StopReqId == activeTaskID">
+          <strong translate>Stopping after the current file:</strong> {{activeBackup.Backup.Name}}
+        </span>
+      </span>
+      <span ng-show="activeBackup == null">
+        <strong ng-hide="StopReqId == activeTaskID" translate>Running task:</strong>
+        <strong ng-show="StopReqId == activeTaskID" translate>Stopping task:</strong>
+        {{StateText}}
+      </span>
+
+    </div>
+
+    <div ng-show="state.activeTask == null &amp;&amp; nextTask != null">
+      <strong translate>Next task:</strong> {{nextTask.Backup.Name}}
+    </div>
+
+    <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask != null"><strong translate>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | parsetimestamp}}">{{nextScheduledTime | parseDate:forceActualDate }}</span></div>
+
+    <div ng-show="state.activeTask == null &amp;&amp; nextTask == null &amp;&amp; nextScheduledTask == null" translate>No scheduled tasks</div>
+  </div>
+
+  <div class="buttons">
+    <div ng-hide="state.activeTask == null" class="stop" ng-click="stopDialog()" translate></div>
+    <div ng-hide="state.activeTask != null || state.programState == 'Running'" class="resume" ng-click="sendResume()" translate></div>
+  </div>
+
+  <div class="progress-bar progress-bar-striped" ng-class="{active: Progress < 0}" role="progressbar" aria-valuenow="{{Progress * 100}}" aria-valuemin="0" aria-valuemax="100" style="width:{{Progress * 100}}%"></div>
+      -->
+</div>
