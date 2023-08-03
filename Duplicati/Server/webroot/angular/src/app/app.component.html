@@ -1,7 +1,8 @@
-<app-header></app-header>
-
 <div class="container">
-  <router-outlet></router-outlet>
+  <app-header></app-header>
+  <div class="body">
+    <app-main-menu></app-main-menu>
+    <router-outlet class="content"></router-outlet>
+  </div>
+  <app-footer></app-footer>
 </div>
-
-<app-footer></app-footer>

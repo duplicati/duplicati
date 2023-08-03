@@ -27,10 +27,13 @@
             "inlineStyleLanguage": "less",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/favicon",
+              "src/fonts",
+              "src/img"
             ],
             "styles": [
-              "src/styles.less"
+              "src/less/default.less"
             ],
             "scripts": []
           },
@@ -90,10 +93,13 @@
             "inlineStyleLanguage": "less",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/favicon",
+              "src/fonts",
+              "src/img"
             ],
             "styles": [
-              "src/styles.less"
+              "src/less/default.less"
             ],
             "scripts": []
           }

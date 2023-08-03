@@ -1,1 +1,34 @@
-<p>footer works!</p>
+<div class="footer">
+  <div class="about-footer">
+    <ul>
+      <li>
+        <a href="#/about" translate>About</a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="donate">
+    <ul>
+      <li ng-hide="systemInfo.SuppressDonationMessages">
+        <app-external-link link="'https://www.duplicati.com/donate'">Donate</app-external-link>
+      </li>
+    </ul>
+  </div>
+  <div class="social">
+    Visit us on<div class="external-link-image"></div>
+    <ul>
+      <li>
+        <a href="https://forum.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" srcset="img/social/duplicati.png 1x, img/social/duplicati_2x.png 2x, img/social/duplicati_3x.png 3x" alt="Duplicati forum" title="Duplicati forum" width="27" /></a>
+      </li>
+      <li>
+        <a href="https://github.com/duplicati" target="_blank" rel="external"><img src="img/social/github.png" srcset="img/social/github.png 1x, img/social/github_2x.png 2x, img/social/github_3x.png 3x" alt="Github" title="Github" /></a>
+      </li>
+      <li>
+        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank" rel="external"><img src="img/social/facebook.png" srcset="img/social/facebook.png 1x, img/social/facebook_2x.png 2x, img/social/facebook_3x.png 3x" alt="Facebook" title="Facebook" /></a>
+      </li>
+      <!-- <li>
+          <a href="http://www.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" srcset="img/social/duplicati.png 1x, img/social/duplicati_2x.png 2x, img/social/duplicati_3x.png 3x" alt="Duplicati Website" title="Duplicati Website" /></a>
+      </li> -->
+    </ul>
+  </div>
+</div>

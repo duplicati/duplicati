@@ -8,6 +8,7 @@ import { HeaderComponent } from './header/header.component';
 import { FooterComponent } from './footer/footer.component';
 import { StateComponent } from './state/state.component';
 import { ExternalLinkComponent } from './external-link/external-link.component';
+import { MainMenuComponent } from './main-menu/main-menu.component';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { ExternalLinkComponent } from './external-link/external-link.component';
     HeaderComponent,
     FooterComponent,
     StateComponent,
-    ExternalLinkComponent
+    ExternalLinkComponent,
+    MainMenuComponent
   ],
   imports: [
     BrowserModule,

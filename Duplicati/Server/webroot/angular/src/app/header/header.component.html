@@ -5,7 +5,7 @@
     </a>
 
     <div class="logotext">
-      <a href="#/" class="home">{{brandingService.getAppName() | async}}</a>
+      <a routerLink="/" class="home">{{brandingService.getAppName() | async}}</a>
       <div class="build-suffix" [hidden]="systemInfo?.ServerVersionType == 'stable' || systemInfo?.ServerVersionType == ''">{{systemInfo?.ServerVersionType}}</div>
       <div class="powered-by">{{brandingService.getAppSubtitle() | async}}</div>
     </div>
@@ -19,7 +19,7 @@
   <a href class="menubutton hidden" data-target="mainmenu" translate>Menu</a>
 
   <div class="action-icons-small">
-    <div class="pause" [class]="{'active': state.programState != 'Running'}" (click)="pauseOptions()" [title]="state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'"></div>
+    <div class="pause" [class]="{'active': state?.programState != 'Running'}" (click)="pauseOptions()" [title]="state?.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'"></div>
     <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" (click)="throttleOptions()" title="Click to set throttle options" aria-label="Click to set throttle options"></div>
   </div>
 
@@ -27,7 +27,7 @@
     <app-state></app-state>
 
     <div class="action-icons">
-      <div class="pause" ng-class="{'active': state.programState != 'Running'}" ng-click="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
+      <div class="pause" ng-class="{'active': state?.programState != 'Running'}" ng-click="pauseOptions()" title="{{state?.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
       <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" ng-click="throttleOptions()" title="Click to set throttle options" alt="Click to set throttle options"></div>
     </div>
   </div>
