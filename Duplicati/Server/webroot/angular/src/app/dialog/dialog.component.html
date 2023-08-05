@@ -1,0 +1,26 @@
+<div *ngIf="dialogService.currentItem != null && dialogService.currentItem.title != null" class="blocker"></div>
+
+<div *ngIf="dialogService.currentItem != null && dialogService.currentItem.title != null" class="modal-dialog ng-cloak">
+  <div class="info">
+    <div class="title">{{dialogService.currentItem.title}}</div>
+    <div class="content" *ngIf="dialogService.currentItem.message || dialogService.currentItem.enableTextarea">
+      {{dialogService.currentItem.message}}
+      <form *ngIf="dialogService.currentItem.enableTextarea">
+        <textarea placeholder="{{dialogService.currentItem.placeholder}}" [(ngModel)]="dialogService.currentItem.textarea" id="copytarget" name="text"></textarea>
+      </form>
+    </div>
+    <div class="content" *ngIf="htmlTemplate">
+      <ng-container *ngTemplateOutlet="htmlTemplate"></ng-container>
+    </div>
+    <div class="content buttons">
+      <ul>
+        <li *ngIf="buttonTemplate" style="display: inline-block">
+          <ng-container *ngTemplateOutlet="buttonTemplate"></ng-container>
+        </li>
+        <li *ngFor="let btn of dialogService.currentItem.buttons; index as i; trackBy: trackByIndex" style="display: inline-block">
+          <a routerLink="." class="button" (click)="onButtonClick(i)">{{btn}}</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

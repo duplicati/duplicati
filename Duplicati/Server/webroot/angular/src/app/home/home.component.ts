@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { BackupListService } from '../backup-list.service';
+import { BackupListService } from '../services/backup-list.service';
 
 @Component({
   selector: 'app-home',

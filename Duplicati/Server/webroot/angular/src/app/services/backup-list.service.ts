@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { AddOrUpdateBackupData } from './backup';
+import { AddOrUpdateBackupData } from '../backup';
 
 @Injectable({
   providedIn: 'root'

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { BrandingService } from '../branding.service';
+import { BrandingService } from '../services/branding.service';
 import { SystemInfoService } from '../system-info/system-info.service';
 import { SystemState } from '../system-info/system-state';
 

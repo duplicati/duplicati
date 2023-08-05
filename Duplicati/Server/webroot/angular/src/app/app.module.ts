@@ -11,6 +11,8 @@ import { ExternalLinkComponent } from './external-link/external-link.component';
 import { MainMenuComponent } from './main-menu/main-menu.component';
 import { HomeComponent } from './home/home.component';
 import { BackupTaskComponent } from './backup-task/backup-task.component';
+import { DialogComponent } from './dialog/dialog.component';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -21,12 +23,14 @@ import { BackupTaskComponent } from './backup-task/backup-task.component';
     ExternalLinkComponent,
     MainMenuComponent,
     HomeComponent,
-    BackupTaskComponent
+    BackupTaskComponent,
+    DialogComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
+    HttpClientModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
