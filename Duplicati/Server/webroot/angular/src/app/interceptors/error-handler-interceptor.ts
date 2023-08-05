@@ -17,6 +17,8 @@ export class ErrorHandlerInterceptor implements HttpInterceptor {
       // A client-side or network error occurred. Handle it accordingly.
       console.error('An error occured:', error.error);
       this.dialogService.alert('An error occurred: ' + error.message);
+    } else if (error.status == 400) {
+      this.dialogService.alert(error.statusText);
     } else {
       // The backend returned an unsuccessful response code.
       // The response body may contain clues as to what went wrong.
