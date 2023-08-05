@@ -8,11 +8,11 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class MainMenuComponent {
 
-  public current_page: string = '';
+  public current_page: string = 'home';
   public state: any;
   public isLoggedIn: boolean = true;
 
-  constructor(public route: ActivatedRoute) { }
+  constructor() { }
 
   public resume(): void { }
   public log_out(): void { }

@@ -1,0 +1,82 @@
+<div class="task">
+  <a routerLink="." (click)="expanded = !expanded">
+    <img *ngIf="backupIcon === 'backup'" src="img/backup.png" srcset="img/backup.png 1x, img/backup_2x.png 2x, img/backup_3x.png 3x">
+    <img *ngIf="backupIcon === 'backupschedule'" src="img/backupschedule.png" srcset="img/backupschedule.png 1x, img/backupschedule_2x.png 2x, img/backupschedule_3x.png 3x">
+    <img *ngIf="backupIcon === 'backuprunning'" src="img/backuprunning.png" srcset="img/backuprunning.png 1x, img/backuprunning_2x.png 2x, img/backuprunning_3x.png 3x">
+    <img *ngIf="backupIcon === 'backuppause'" src="img/backuppause.png" srcset="img/backuppause.png 1x, img/backuppause_2x.png 2x, img/backuppause_3x.png 3x">
+    {{backupName}}
+    <img *ngIf="expanded" src="img/arrow_collapse_blue.png" srcset="img/arrow_collapse_blue.png 1x, img/arrow_collapse_blue_2x.png 2x, img/arrow_collapse_blue_3x.png 3x">
+    <img *ngIf="!expanded" src="img/arrow_expand_blue.png" srcset="img/arrow_expand_blue.png 1x, img/arrow_expand_blue_2x.png 2x, img/arrow_expand_blue_3x.png 3x">
+  </a>
+
+  <dl class="taskmenu" *ngIf="expanded">
+    <dt *ngIf="description" translate>Description:</dt>
+    <dd *ngIf="description">
+      {{description}}
+    </dd>
+
+    <dt translate>Operations:</dt>
+    <dd>
+      <p (click)="doRun()" translate>Run now</p>
+      <p (click)="doRestore()" translate>Restore files …</p>
+    </dd>
+
+    <dt translate>Configuration:</dt>
+    <dd>
+      <p (click)="doEdit()" translate>Edit …</p>
+      <p (click)="doExport()" translate>Export …</p>
+      <p (click)="doDelete()" translate>Delete …</p>
+
+    </dd>
+
+    <dt translate>Advanced:</dt>
+    <dd>
+      <p (click)="doLocalDb()" translate>Database …</p>
+      <p (click)="doVerifyRemote()" translate>Verify files</p>
+      <p (click)="doCompact()" translate>Compact now</p>
+      <p (click)="doCommandLine()" translate>Commandline …</p>
+    </dd>
+
+    <dt translate>Reporting:</dt>
+    <dd>
+      <p (click)="doShowLog()" translate>Show log …</p>
+      <p (click)="doCreateBugReport()" translate>Create bug report …</p>
+    </dd>
+  </dl>
+
+  <dl>
+    <dt translate>Last successful backup:</dt>
+    <dd *ngIf="lastBackupFinished != null"
+        title="{{lastBackupFinished}}">
+      {{lastBackupFinishedTime}} (took {{lastBackupFinishedDuration}})
+    </dd>
+    <dd *ngIf="lastBackupFinished == null">
+      <span>Never - </span><a routerLink="." class="action-link" (click)="doRun()" translate>Run now</a>
+    </dd>
+
+    <dt *ngIf="nextScheduledRun" translate>Next scheduled run:</dt>
+    <dd *ngIf="nextScheduledRun" title="{{nextScheduledRun}}">{{nextScheduledRunDate}}</dd>
+    <dt *ngIf="sourceSizeString" translate>Source:</dt>
+    <dd *ngIf="sourceSizeString">{{sourceSizeString}}</dd>
+    <dt *ngIf="targetSizeString" translate>Backup:</dt>
+    <dd *ngIf="targetSizeString" translate>
+      <!--translate-n="backupListCount" translate-plural="{{targetSizeString}} / {{backupListCount}} Versions"-->
+      {{targetSizeString}} / {{backupListCount}} Version
+    </dd>
+
+    <ng-container *ngIf="isActive && progressCurrentFilename != null">
+      <dt translate>Current action:</dt>
+      <dd>{{progressPhase}}</dd>
+      <dt translate>Progress:</dt>
+      <dd>
+        <div class="progress-small-bg">
+          <div class="progress-small" style="width: {{progressBarPercentage * 2}}px">
+            {{progressBarPercentage | number:'1.0-2'}}%
+          </div>
+        </div>
+      </dd>
+      <dt translate>Current file:</dt>
+      <dd>{{progressCurrentFilename}}</dd>
+    </ng-container>
+  </dl>
+</div>
