@@ -1,6 +1,6 @@
 <div *ngIf="dialogService.currentItem != null && dialogService.currentItem.title != null" class="blocker"></div>
 
-<div *ngIf="dialogService.currentItem != null && dialogService.currentItem.title != null" class="modal-dialog ng-cloak">
+<div *ngIf="dialogService.currentItem != null && dialogService.currentItem.title != null" class="modal-dialog">
   <div class="info">
     <div class="title">{{dialogService.currentItem.title}}</div>
     <div class="content" *ngIf="dialogService.currentItem.message || dialogService.currentItem.enableTextarea">

@@ -2,6 +2,7 @@ import { SimpleChanges } from '@angular/core';
 import { Component, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { AddOrUpdateBackupData } from '../backup';
+import { BackupService } from '../services/backup.service';
 
 @Component({
   selector: 'app-backup-task',
@@ -46,7 +47,7 @@ export class BackupTaskComponent {
     }
   }
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private backupService: BackupService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ('backup' in changes) {
@@ -88,7 +89,7 @@ export class BackupTaskComponent {
   }
 
   doRun(): void {
-    //post('/backup/' + id + '/run')
+    this.backupService.doRun(this.backupId!);
   }
   doRestore(): void { this.router.navigate(['restore', this.backupId!]); }
   doEdit(): void { this.router.navigate(['edit', this.backupId!]); }
@@ -96,14 +97,14 @@ export class BackupTaskComponent {
   doDelete(): void { this.router.navigate(['delete', this.backupId!]); }
   doLocalDb(): void { this.router.navigate(['localdb', this.backupId!]); }
   doCompact(): void {
-    //post('/backup/' + id + '/compact');
+    this.backupService.doCompact(this.backupId!);
   }
   doCommandLine(): void { this.router.navigate(['commandline', this.backupId!]); }
   doShowLog(): void { this.router.navigate(['log', this.backupId!]); }
   doCreateBugReport(): void {
-    //post('/backup/' + id + '/createreport'):
+    this.backupService.doCreateBugReport(this.backupId!);
   }
   doVerifyRemote(): void {
-    //post('/backup/' + id + '/verify');
+    this.backupService.doVerifyRemote(this.backupId!);
   }
 }

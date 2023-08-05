@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -13,6 +13,11 @@ import { HomeComponent } from './home/home.component';
 import { BackupTaskComponent } from './backup-task/backup-task.component';
 import { DialogComponent } from './dialog/dialog.component';
 import { FormsModule } from '@angular/forms';
+import { ConnectionLostComponent } from './connection-lost/connection-lost.component';
+import { CookieService } from 'ngx-cookie-service';
+import { httpInterceptorProviders } from './interceptors';
+import { API_URL } from './interceptors/api-url-interceptor';
+
 
 @NgModule({
   declarations: [
@@ -24,15 +29,24 @@ import { FormsModule } from '@angular/forms';
     MainMenuComponent,
     HomeComponent,
     BackupTaskComponent,
-    DialogComponent
+    DialogComponent,
+    ConnectionLostComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    HttpClientXsrfModule.withOptions({
+      headerName: 'X-XSRF-Token',
+      cookieName: 'xsrf-token'
+    })
   ],
-  providers: [],
+  providers: [
+    CookieService,
+    { provide: API_URL, useValue: 'http://localhost:8300/api/v1' },
+    httpInterceptorProviders
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
