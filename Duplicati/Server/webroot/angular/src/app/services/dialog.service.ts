@@ -117,4 +117,29 @@ export class DialogService {
       this.dismissCurrent();
     }
   }
+
+  notifyInputError(msg: string) {
+    return this.dialog('Error', msg);
+  }
+
+  connectionError(txt: string): ((msg: string | any) => void);
+  connectionError(txt: string | any, msg?: string | any): ((msg: string | any) => void) | void {
+    if (typeof txt === 'string') {
+      if (msg == null)
+        return (msg) => {
+          if (msg && msg.data && msg.data.Message)
+            this.dialog('Error', txt + msg.data.Message);
+          else
+            this.dialog('Error', txt + msg.statusText);
+        };
+    } else {
+      msg = txt;
+      txt = '';
+    }
+
+    if (msg && msg.data && msg.data.Message)
+      this.dialog('Error', txt + msg.data.Message);
+    else
+      this.dialog('Error', txt + msg.statusText);
+  }
 }

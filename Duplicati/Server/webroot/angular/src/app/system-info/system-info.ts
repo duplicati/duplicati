@@ -24,6 +24,21 @@ export interface BrowserLocale {
   DisplayName: string
 }
 
+export interface CommandLineArgument {
+  Aliases: string[] | null;
+  LongDescription: string;
+  Name: string;
+  ShortDescription: string;
+  Type: string;
+  ValidValues: string[] | null;
+  DefaultValue: string | null;
+  Typename: string;
+  Deprecated: boolean;
+  DeprectaionMessage: string;
+
+  Category?: string;
+}
+
 export interface SystemInfo {
   // TODO: Fix any
   APIVersion: number,
@@ -48,7 +63,7 @@ export interface SystemInfo {
   MonoVersion: string | null,
   NewLine: string,
   OSType: string,
-  Options: any[],
+  Options: CommandLineArgument[],
   PasswordPlaceholder: string,
   PathSeparator: string,
   ServerModules: any[],

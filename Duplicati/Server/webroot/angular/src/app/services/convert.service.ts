@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CookieService } from 'ngx-cookie-service';
+import { ServerSettingsService } from './server-settings.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,11 +14,12 @@ export class ConvertService {
   private dateFormatOptions: Intl.DateTimeFormatOptions = {
     dateStyle: 'medium'
   };
+  private timeFormatOptions: Intl.DateTimeFormatOptions = {
+    timeStyle: 'short'
+  }
 
-  // TODO: Update from system settings --force-actual-date
-  private forceActualDate: boolean = false;
-
-  constructor(private cookies: CookieService) { }
+  constructor(private cookies: CookieService,
+    private serverSettings: ServerSettingsService) { }
 
   parseDate(v: string): Date {
     const msec = Date.parse(v);
@@ -54,10 +56,18 @@ export class ConvertService {
   }
 
   formatDate(dt: Date): string {
-    if (this.forceActualDate) {
+    if (this.serverSettings.forceActualDate) {
       return this.toDisplayDateAndTime(dt);
     } else {
-      return dt.toLocaleDateString(this.getLocale(), this.dateFormatOptions);
+      const now = new Date();
+      // TODO: Use some library to format like moment.js calendar()
+      if (dt.getFullYear() == now.getFullYear()
+        && dt.getMonth() == now.getMonth()
+        && dt.getDate() == now.getDate()) {
+        return 'Today at ' + dt.toLocaleTimeString(this.getLocale(), this.timeFormatOptions);
+      } else {
+        return dt.toLocaleDateString(this.getLocale(), this.dateFormatOptions);
+      }
     }
   }
 
@@ -96,5 +106,44 @@ export class ConvertService {
     }
 
     return val + ' bytes';
+  }
+
+  pregQuote(str: string): string {
+    // http://kevin.vanzonneveld.net
+    // +   original by: booeyOH
+    // +   improved by: Ates Goral (http://magnetiq.com)
+    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // +   bugfixed by: Onno Marsman
+    // *     example 1: pregQuote("$40");
+    // *     returns 1: '\$40'
+    // *     example 2: pregQuote("*RRRING* Hello?");
+    // *     returns 2: '\*RRRING\* Hello\?'
+    // *     example 3: pregQuote("\\.+*?[^]$(){}=!<>|:");
+    // *     returns 3: '\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:'
+
+    return (str + '').replace(/([\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
+  }
+
+  replaceAllInsensitive(str: string, pattern: string, replacement: string) {
+    return str.replace(new RegExp(`(${this.pregQuote(pattern)})`, 'gi'), replacement);
+  }
+
+  replaceAll(str: string, pattern: string, replacement: string) {
+    return str.replace(new RegExp(`(${this.pregQuote(pattern)})`, 'g'), replacement);
+  }
+
+  format(...args: string[]): string | null {
+    if (args == null || args.length < 1) {
+      return null;
+    }
+    let msg = args[0];
+    if (args.length == 1) {
+      return msg;
+    }
+
+    for (let i = 0; i < args.length; ++i) {
+      msg = this.replaceAll(msg, `{${i - 1}}`, args[i]);
+    }
+    return msg;
   }
 }

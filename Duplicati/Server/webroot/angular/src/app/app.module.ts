@@ -17,6 +17,7 @@ import { ConnectionLostComponent } from './connection-lost/connection-lost.compo
 import { CookieService } from 'ngx-cookie-service';
 import { httpInterceptorProviders } from './interceptors';
 import { API_URL } from './interceptors/api-url-interceptor';
+import { SettingsComponent } from './settings/settings.component';
 
 
 @NgModule({
@@ -30,7 +31,8 @@ import { API_URL } from './interceptors/api-url-interceptor';
     HomeComponent,
     BackupTaskComponent,
     DialogComponent,
-    ConnectionLostComponent
+    ConnectionLostComponent,
+    SettingsComponent
   ],
   imports: [
     BrowserModule,

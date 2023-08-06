@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, map, Observable, ReplaySubject, Subject, Subscription, timeout } from 'rxjs';
 import { ConvertService } from './convert.service';
-import { ProgressEvent, ScheduleEntry, ServerStatus } from './server-status';
+import { ProgressEvent, ScheduleEntry, ServerStatus, TaskInfo } from './server-status';
 
 
 @Injectable({
@@ -38,7 +38,7 @@ export class ServerStatusService {
   statusRequest?: Subscription;
   progressEvent$ = new Subject<ProgressEvent>();
 
-  private waitingForTask = new Map<string, (() => void)[]>();
+  private waitingForTask = new Map<number, (() => void)[]>();
   private longPollRetryTimer?: number;
   private progressPollRunning = false;
   private progressPollTimer?: number;
@@ -76,7 +76,7 @@ export class ServerStatusService {
     }
   }
   reconnect(): void { this.longpoll(true); }
-  callWhenTaskCompletes(taskid: string, callback: () => void) {
+  callWhenTaskCompletes(taskid: number, callback: () => void) {
     let callbacks = this.waitingForTask.get(taskid);
     if (callbacks === undefined) {
       this.waitingForTask.set(taskid, [callback]);
@@ -137,7 +137,9 @@ export class ServerStatusService {
             location.reload();
         }
 
-        // if(pauseTimerUpdater()) anyChanged=true;
+        if (this.pauseTimerUpdater(true)) {
+          anyChanged = true;
+        }
 
         if (anyChanged) {
           this.status$.next(this.status);
@@ -246,6 +248,18 @@ export class ServerStatusService {
     return new Observable<never>();
   }
 
+  private activeTaskChanged(newTask: TaskInfo | null): void {
+    const newTaskId = newTask?.Item1;
+    const lastTaskId = this.status.activeTask?.Item1;
+
+    if (lastTaskId != null && newTaskId != lastTaskId && this.waitingForTask.has(lastTaskId)) {
+      for (let callback of this.waitingForTask.get(lastTaskId)!) {
+        callback();
+      }
+      this.waitingForTask.delete(lastTaskId);
+    }
+  }
+
   private updateStatus(v: any): boolean {
     let anyChanged = false;
     if (v['LastEventID'] !== this.status.lastEventId) {
@@ -261,7 +275,8 @@ export class ServerStatusService {
       anyChanged = true;
     }
     if (v['ActiveTask'] !== this.status.activeTask) {
-      this.status.activeTask = v['activeTask'];
+      this.activeTaskChanged(v['ActiveTask']);
+      this.status.activeTask = v['ActiveTask'];
       anyChanged = true;
     }
     if (v['ProgramState'] !== this.status.programState) {

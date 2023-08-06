@@ -51,8 +51,8 @@
         title="{{lastBackupFinished}}">
       {{lastBackupFinishedTime}} (took {{lastBackupFinishedDuration}})
     </dd>
-    <dd *ngIf="lastBackupFinished == null">
-      <span>Never - </span><a routerLink="." class="action-link" (click)="doRun()" translate>Run now</a>
+    <dd>
+      <span *ngIf="lastBackupFinished == null">Never - </span><a routerLink="." class="action-link" (click)="doRun()" translate>Run now</a>
     </dd>
 
     <dt *ngIf="nextScheduledRun" translate>Next scheduled run:</dt>

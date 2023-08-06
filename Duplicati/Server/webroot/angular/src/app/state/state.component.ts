@@ -3,9 +3,12 @@ import { Observable, Subscription } from 'rxjs';
 import { AddOrUpdateBackupData } from '../backup';
 import { BackupListService } from '../services/backup-list.service';
 import { ConvertService } from '../services/convert.service';
+import { DialogCallback } from '../services/dialog-config';
+import { DialogService } from '../services/dialog.service';
 import { ProgressService } from '../services/progress.service';
 import { ServerStatus } from '../services/server-status';
 import { ServerStatusService } from '../services/server-status.service';
+import { TaskService } from '../services/task.service';
 
 @Component({
   selector: 'app-state',
@@ -33,8 +36,9 @@ export class StateComponent {
   constructor(private serverStatus: ServerStatusService,
     private backupList: BackupListService,
     private convert: ConvertService,
-    private progressService: ProgressService
-  ) { }
+    private progressService: ProgressService,
+    private taskService: TaskService,
+    private dialog: DialogService) { }
   ngOnInit() {
     this.subscription = this.serverStatus.getStatus().subscribe(s => {
       this.state = s;
@@ -87,6 +91,33 @@ export class StateComponent {
   }
 
   stopDialog() {
+    if (this.activeTaskID == null) {
+      return;
+    }
 
+    const taskId = this.activeTaskID;
+    const txt = this.state?.lastPgEvent == null ? '' : (this.state.lastPgEvent.Phase || '');
+
+    const handleClick: DialogCallback = (idx) => {
+      if (idx === 0) {
+        this.taskService.stopAfterCurrentFile(taskId).subscribe();
+        this.stopReqId = taskId;
+      } else if (idx === 1) {
+        this.taskService.stopNow(taskId).subscribe();
+        this.stopReqId = taskId;
+      }
+    };
+
+    if (txt.indexOf('Backup_') === 0) {
+      this.dialog.dialog('Stop running backup',
+        'You can stop the backup after any file uploads currently in progress have finished.',
+        ['Stop after current file', 'Stop now', 'Cancel'],
+        handleClick);
+    } else {
+      this.dialog.dialog('Stop running task',
+        'You can stop the task immediately, or allow the process to continue its current file and then stop.',
+        ['Stop after the current file', 'Stop now', 'Cancel'],
+        handleClick);
+    }
   }
 }

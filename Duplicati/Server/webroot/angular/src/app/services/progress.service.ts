@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { map, Observable, of } from 'rxjs';
-import { merge, startWith } from 'rxjs/operators';
+import { distinctUntilChanged, filter, merge, startWith, tap } from 'rxjs/operators';
 import { ConvertService } from './convert.service';
-import { ServerStatus } from './server-status';
+import { ServerStatus, ProgressEvent, TaskInfo } from './server-status';
 import { ServerStatusService } from './server-status.service';
 
 @Injectable({
@@ -51,37 +51,47 @@ export class ProgressService {
   constructor(private serverStatus: ServerStatusService,
     private convert: ConvertService) { }
 
+  private activeTask: TaskInfo | null = null;
+
+  getProgressEvents(): Observable<ProgressEvent | null> {
+    const statusUpdates = this.serverStatus.getStatus().pipe(
+      tap(s => this.activeTask = s.activeTask),
+      map(s => s.lastPgEvent));
+    return this.serverStatus.progressEvent$.pipe(
+      merge(statusUpdates));
+  }
+
   getProgressStatusText(): Observable<string> {
     // Begin with undefined so a value is always returned immediately
-    return this.serverStatus.getStatus().pipe(
-      startWith(undefined),
-      map(s => this.getStatusText(s))
-    );
+    return this.getProgressEvents().pipe(
+      startWith(null),
+      map(e => this.getStatusText(e)),
+      distinctUntilChanged());
   }
 
   getProgressStatus(): Observable<number> {
     // Begin with undefined so a value is always returned immediately
-    return this.serverStatus.getStatus().pipe(
-      startWith(undefined),
-      map(s => this.getProgress(s))
-    );
+    return this.getProgressEvents().pipe(
+      startWith(null),
+      map(e => this.getProgress(e)),
+      distinctUntilChanged());
   }
 
-  private getProgress(s: ServerStatus | undefined): number {
+  private getProgress(e: ProgressEvent | null): number {
     let pg = -1;
-    if (s == null) {
+    if (e == null) {
       return pg;
     }
-    if (s.lastPgEvent != null && s.activeTask != null) {
-      const phase = s.lastPgEvent.Phase || '';
+    if (e != null && this.activeTask != null) {
+      const phase = e.Phase || '';
       if (phase == 'Backup_ProcessingFiles' || phase == 'Restore_DownloadingRemoteFiles') {
-        if (s.lastPgEvent.StillCounting) {
+        if (e.StillCounting) {
           pg = 0;
         } else {
-          const unaccountedbytes = s.lastPgEvent.CurrentFilecomplete ? 0 : s.lastPgEvent.CurrentFileoffset;
-          pg = (s.lastPgEvent.ProcessedFileSize + unaccountedbytes) / s.lastPgEvent.TotalFileSize;
+          const unaccountedbytes = e.CurrentFilecomplete ? 0 : e.CurrentFileoffset;
+          pg = (e.ProcessedFileSize + unaccountedbytes) / e.TotalFileSize;
 
-          if (s.lastPgEvent.ProcessedFileCount == 0) {
+          if (e.ProcessedFileCount == 0) {
             pg = 0;
           } else if (pg >= 0.9) {
             pg = 0.9;
@@ -95,33 +105,33 @@ export class ProgressService {
         pg = 0.98;
       } else if (phase == 'Backup_Complete' || phase == 'Backup_WaitForUpload') {
         pg = 1;
-      } else if (s.lastPgEvent.OverallProgress > 0) {
-        pg = s.lastPgEvent.OverallProgress;
+      } else if (e.OverallProgress > 0) {
+        pg = e.OverallProgress;
       }
     }
     return pg;
   }
 
-  private getStatusText(s: ServerStatus | undefined): string {
+  private getStatusText(e: ProgressEvent | null): string {
     let text = 'Running …';
-    if (s == null) {
+    if (e == null) {
       return text;
     }
 
-    if (s.lastPgEvent != null && s.activeTask != null) {
-      const phase = s.lastPgEvent.Phase || '';
+    if (e != null && this.activeTask != null) {
+      const phase = e.Phase || '';
       text = this.progressStateTexts.get(phase) || phase;
 
       if (phase === 'Backup_ProcessingFiles' || phase === 'Restore_DownloadingRemoteFiles') {
-        if (s.lastPgEvent.StillCounting) {
-          text = `Counting (${s.lastPgEvent.TotalFileCount} files found, ${this.convert.formatSizeString(s.lastPgEvent.TotalFileSize)})`;
+        if (e.StillCounting) {
+          text = `Counting (${e.TotalFileCount} files found, ${this.convert.formatSizeString(e.TotalFileSize)})`;
         } else {
-          const unaccountedbytes = s.lastPgEvent.CurrentFilecomplete ? 0 : s.lastPgEvent.CurrentFileoffset;
-          const filesleft = s.lastPgEvent.TotalFileSize - s.lastPgEvent.ProcessedFileCount;
-          const sizeleft = s.lastPgEvent.TotalFileSize - s.lastPgEvent.ProcessedFileSize - unaccountedbytes;
+          const unaccountedbytes = e.CurrentFilecomplete ? 0 : e.CurrentFileoffset;
+          const filesleft = e.TotalFileSize - e.ProcessedFileCount;
+          const sizeleft = e.TotalFileSize - e.ProcessedFileSize - unaccountedbytes;
 
           // If we have a speed append it
-          const speed_txt = s.lastPgEvent.BackendSpeed < 0 ? '' : `at ${this.convert.formatSizeString(s.lastPgEvent.BackendSpeed)}/s`;
+          const speed_txt = e.BackendSpeed < 0 ? '' : `at ${this.convert.formatSizeString(e.BackendSpeed)}/s`;
 
           const restoring_text = phase == 'Restore_DownloadingRemoteFiles' ? 'Restoring' : '';
 
