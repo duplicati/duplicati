@@ -3,6 +3,7 @@ import { Component, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { AddOrUpdateBackupData } from '../backup';
 import { BackupService } from '../services/backup.service';
+import { ConvertService } from '../services/convert.service';
 
 @Component({
   selector: 'app-backup-task',
@@ -21,10 +22,10 @@ export class BackupTaskComponent {
   isRunning: boolean = false;
   isPaused: boolean = false;
   description?: string;
-  lastBackupFinished?: string;
+  lastBackupFinished?: Date;
   lastBackupFinishedTime?: string;
   lastBackupFinishedDuration?: string;
-  nextScheduledRun?: string;
+  nextScheduledRun?: Date;
   nextScheduledRunDate?: string;
   sourceSizeString?: string;
   targetSizeString?: string;
@@ -47,7 +48,7 @@ export class BackupTaskComponent {
     }
   }
 
-  constructor(private router: Router, private backupService: BackupService) { }
+  constructor(private router: Router, private backupService: BackupService, private convert: ConvertService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ('backup' in changes) {
@@ -61,19 +62,19 @@ export class BackupTaskComponent {
   updateBackup(b: AddOrUpdateBackupData) {
     this.backupName = b.Backup.Name;
     this.backupId = b.Backup.ID;
-    this.isScheduled = b.Backup.Metadata.has('NextScheduledRun');
+    this.isScheduled = 'NextScheduledRun' in b.Backup.Metadata;
     this.isActive = b.Backup.ID === this.state?.activeTask.Item2;
     this.isRunning = this.isActive && this.state?.programState === 'Running';
     this.isPaused = this.isActive && this.state?.programState === 'Paused';
     this.description = b.Backup.Description;
-    //this.lastBackupFinished = b.Backup.Metadata.get('LastBackupFinished') | parsetimestamp;
-    //this.lastBackupTime = backup?.Backup?.Metadata?.LastBackupFinished | parseDate:forceActualDate
-    //this.lastBackupDuration = formatDuration(backup?.Backup?.Metadata?.LastBackupDuration || backup?.Backup?.Metadata?.LastDuration)
-    //this.nextScheduledRun = backup?.Backup?.Metadata?.NextScheduledRun | parsetimestamp
-    //this.nextScheduledRunDate = backup?.Backup?.Metadata?.NextScheduledRun | parseDate:forceActualDate
-    this.sourceSizeString = b.Backup.Metadata.get('SourceSizeString');
-    this.targetSizeString = b.Backup.Metadata.get('TargetSizeString');
-    this.backupListCount = parseInt(b.Backup.Metadata.get('BackupListCount') || '0');
+    this.lastBackupFinished = this.convert.parseTimestamp(b.Backup.Metadata['LastBackupFinished']);
+    this.lastBackupFinishedTime = this.lastBackupFinished ? this.convert.formatDate(this.lastBackupFinished) : undefined;
+    this.lastBackupFinishedDuration = this.convert.formatDuration(b.Backup.Metadata['LastBackupDuration'] || b.Backup.Metadata['LastDuration']);
+    this.nextScheduledRun = this.convert.parseTimestamp(b.Backup.Metadata['NextScheduledRun']);
+    this.nextScheduledRunDate = this.nextScheduledRun ? this.convert.formatDate(this.nextScheduledRun) : undefined;
+    this.sourceSizeString = b.Backup.Metadata['SourceSizeString'];
+    this.targetSizeString = b.Backup.Metadata['TargetSizeString'];
+    this.backupListCount = parseInt(b.Backup.Metadata['BackupListCount'] || '0');
   }
 
   updateProgress() {

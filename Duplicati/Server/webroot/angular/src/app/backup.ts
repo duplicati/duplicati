@@ -18,7 +18,7 @@ export interface Backup {
   Sources: string[],
   Settings: any[],
   Filters: any[],
-  Metadata: Map<string, string>,
+  Metadata: Record<string, string>,
   IsTemporary: boolean
 }
 

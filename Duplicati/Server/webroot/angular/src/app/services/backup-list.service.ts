@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { AddOrUpdateBackupData } from '../backup';
@@ -7,26 +8,9 @@ import { AddOrUpdateBackupData } from '../backup';
 })
 export class BackupListService {
 
-  constructor() { }
+  constructor(private client: HttpClient) { }
 
   public getBackups(): Observable<AddOrUpdateBackupData[]> {
-    let mockBackup: AddOrUpdateBackupData = {
-      IsUnencryptedOrPassphraseStored: false,
-      Schedule: null,
-      Backup: {
-        ID: 'id',
-        Name: 'backup name',
-        Description: 'what',
-        Tags: [],
-        TargetURL: 'asdf',
-        DBPath: 'path',
-        Sources: [],
-        Settings: [],
-        Filters: [],
-        Metadata: new Map<string, string>([['NextScheduledRun', 'now']]),
-        IsTemporary: false
-      }
-    };
-    return of([mockBackup]);
+    return this.client.get<AddOrUpdateBackupData[]>('/backups');
   }
 }

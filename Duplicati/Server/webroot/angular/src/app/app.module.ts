@@ -44,7 +44,6 @@ import { API_URL } from './interceptors/api-url-interceptor';
   ],
   providers: [
     CookieService,
-    { provide: API_URL, useValue: 'http://localhost:8300/api/v1' },
     httpInterceptorProviders
   ],
   bootstrap: [AppComponent]
