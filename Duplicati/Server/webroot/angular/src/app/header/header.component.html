@@ -16,7 +16,7 @@
   </div>
 
 
-  <a routerLink="." class="menubutton hidden" data-target="mainmenu" translate>Menu</a>
+  <a routerLink="." class="menubutton hidden" data-target="mainmenu" translate (click)="onClickMenu($event)">Menu</a>
 
   <div class="action-icons-small">
     <div class="pause" [class]="{'active': state?.programState != 'Running'}" (click)="pauseOptions()" [title]="state?.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'"></div>

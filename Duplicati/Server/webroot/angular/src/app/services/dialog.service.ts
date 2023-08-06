@@ -37,7 +37,7 @@ export class DialogService {
     });
   }
 
-  dialog(title: string, message: string, buttons: string[], callback: DialogCallback, onshow?: () => void): DialogConfig | undefined {
+  dialog(title: string, message: string, buttons?: string[], callback?: DialogCallback, onshow?: () => void): DialogConfig | undefined {
     return this.enqueueDialog({
       message: message,
       title: title,

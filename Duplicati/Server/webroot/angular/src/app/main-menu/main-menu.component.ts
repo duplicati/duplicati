@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { SystemInfoService } from '../system-info/system-info.service';
 
 @Component({
   selector: 'app-main-menu',
@@ -12,7 +13,9 @@ export class MainMenuComponent {
   public state: any;
   public isLoggedIn: boolean = true;
 
-  constructor() { }
+  @Input() openOnMobile: boolean = false;
+
+  constructor(private systemInfo: SystemInfoService) { }
 
   public resume(): void { }
   public log_out(): void { }

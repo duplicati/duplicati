@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { BrandingService } from '../services/branding.service';
 import { SystemInfoService } from '../system-info/system-info.service';
-import { SystemState } from '../system-info/system-state';
+import { SystemInfo } from '../system-info/system-info';
+import { Observable } from 'rxjs';
+import { ServerStatus } from '../services/server-status';
 
 @Component({
   selector: 'app-header',
@@ -13,9 +15,12 @@ export class HeaderComponent {
     public brandingService: BrandingService,
     private systemInfoService: SystemInfoService) { }
 
-  public systemInfo: SystemState | null = null;
-  public state: any;
+  public systemInfo?: SystemInfo;
+  public state?: ServerStatus;
   public throttle_active: boolean = false;
+
+  @Output() toggleMenu = new EventEmitter<void>();
+
 
   ngOnInit(): void {
     this.systemInfoService.getState().subscribe(v => { this.systemInfo = v; });
@@ -27,5 +32,11 @@ export class HeaderComponent {
 
   public throttleOptions(): void {
 
+  }
+
+  onClickMenu(event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    this.toggleMenu.emit();
   }
 }

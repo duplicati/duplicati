@@ -24,7 +24,7 @@ export interface BrowserLocale {
   DisplayName: string
 }
 
-export interface SystemState {
+export interface SystemInfo {
   // TODO: Fix any
   APIVersion: number,
   BackendModules: BackendModule[],

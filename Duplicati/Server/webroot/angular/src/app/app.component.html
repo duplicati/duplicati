@@ -1,7 +1,7 @@
-<div class="container">
-  <app-header></app-header>
+<div class="container" (click)="closeMenus($event)">
+  <app-header (toggleMenu)="menuExpanded = !menuExpanded"></app-header>
   <div class="body">
-    <app-main-menu></app-main-menu>
+    <app-main-menu [openOnMobile]="menuExpanded"></app-main-menu>
     <div class="content">
       <router-outlet></router-outlet>
     </div>

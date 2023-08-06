@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
-import { SystemState } from './system-state';
+import { map, Observable, ReplaySubject, share, shareReplay, Subscription } from 'rxjs';
+import { SystemInfo } from './system-info';
 
 @Injectable({
   providedIn: 'root'
@@ -47,14 +47,32 @@ export class SystemInfoService {
   };
   private GroupTypes: string[] = ['Local storage', 'Standard protocols', 'Proprietary', 'Others'];
 
+  private state$?: ReplaySubject<SystemInfo>;
+  private stateRequest$?: Subscription;
+
   constructor(private http: HttpClient) { }
 
-  getState(): Observable<SystemState> {
-    return this.http.get<SystemState>('/systeminfo').pipe(map(state => { this.loadTexts(state); return state; }));
+  getState(): Observable<SystemInfo> {
+    if (this.state$ === undefined) {
+      this.state$ = new ReplaySubject<SystemInfo>(1);
+      this.reload();
+    }
+    return this.state$.asObservable();
   }
 
-  private loadTexts(state: SystemState): void {
+  private loadTexts(state: SystemInfo): void {
     state.backendgroups = this.backendgroups;
     state.GroupTypes = this.GroupTypes;
+  }
+
+  reload(): void {
+    if (this.stateRequest$) {
+      this.stateRequest$?.unsubscribe();
+    }
+    if (this.state$ === undefined) {
+      this.state$ = new ReplaySubject<SystemInfo>(1);
+    }
+    this.stateRequest$ = this.http.get<SystemInfo>('/systeminfo').pipe(map(state => { this.loadTexts(state); return state; }))
+      .subscribe(s => this.state$!.next(s));
   }
 }

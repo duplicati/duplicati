@@ -83,4 +83,18 @@ export class ConvertService {
 
     return timespanArray.join(':');
   }
+
+  formatSizeString(val: number) {
+    var formatSizes = ['TB', 'GB', 'MB', 'KB'];
+    //val = parseInt(val || 0);
+    var max = formatSizes.length;
+    for (var i = 0; i < formatSizes.length; i++) {
+      var m = Math.pow(1024, max - i);
+      if (val > m) {
+        return (val / m).toFixed(2) + ' ' + formatSizes[i];
+      }
+    }
+
+    return val + ' bytes';
+  }
 }
