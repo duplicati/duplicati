@@ -18,6 +18,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { httpInterceptorProviders } from './interceptors';
 import { API_URL } from './interceptors/api-url-interceptor';
 import { SettingsComponent } from './settings/settings.component';
+import { AboutComponent } from './about/about.component';
 
 
 @NgModule({
@@ -32,7 +33,8 @@ import { SettingsComponent } from './settings/settings.component';
     BackupTaskComponent,
     DialogComponent,
     ConnectionLostComponent,
-    SettingsComponent
+    SettingsComponent,
+    AboutComponent
   ],
   imports: [
     BrowserModule,

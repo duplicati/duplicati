@@ -1,6 +1,6 @@
 <div class="header">
   <div class="logo">
-    <a href="#/">
+    <a routerLink="/">
       <img class="mainlogo" src="{{brandingService.getAppLogoPath() | async}}" />
     </a>
 
@@ -11,7 +11,7 @@
     </div>
   </div>
 
-  <div class="donate" ng-hide="systemInfo.SuppressDonationMessages">
+  <div class="donate" *ngIf="systemInfo?.SuppressDonationMessages !== true">
     <app-external-link link="'https://www.duplicati.com/donate'">Donate</app-external-link>
   </div>
 

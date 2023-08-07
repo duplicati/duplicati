@@ -1,0 +1,71 @@
+<div>
+  <h1 translate>About {{appName}}</h1>
+  <ul class="tabs">
+    <li [class]="{active: page=='general'}"><a [routerLink]="[{page: 'general'}]" translate>General</a></li>
+    <li [class]="{active: page=='changelog'}"><a [routerLink]="[{page: 'changelog'}]" translate>Changelog</a></li>
+    <li [class]="{active: page=='licenses'}"><a [routerLink]="[{page: 'licenses'}]" translate>Libraries</a></li>
+    <li [class]="{active: page=='sysinfo'}"><a [routerLink]="[{page: 'sysinfo'}]" translate>System info</a></li>
+    <li [class]="{active: page=='logdata'}"><a routerLink="/log" translate>Show log</a></li>
+  </ul>
+
+  <div *ngIf="page == 'general'">
+    <p translate>
+      {{appName}} was primarily developed by <a href="{{mail1}}">{{dev1}}</a> and <a href="{{mail2}}">{{dev2}}</a>.
+      {{appName}} can be downloaded from <a href="{{websitelink}}">{{websitename}}</a>.
+      {{appName}} is licensed under the <a href="{{licenselink}}">{{licensename}}</a>.
+    </p>
+
+    <div translate>You are currently running {{appName}} {{version}}</div>
+
+    <div *ngIf="status?.updatedVersion != null && !status?.updateReady && status?.updaterState === 'Waiting'">
+      Update <a routerLink="." (click)="doShowUpdateChangelog()">{{status?.updatedVersion}}</a> is available, <a routerLink="." (click)="doStartUpdateDownload()">download now</a>
+    </div>
+    <div *ngIf="status?.updatedVersion != null && status?.updateReady && status?.updaterState === 'Waiting'">
+      Update <a routerLink="." ng-click="doShowUpdateChangelog()">{{status?.updatedVersion}}</a> is installed, <a href ng-click="doStartUpdateActivate()">activate now</a>
+    </div>
+
+    <a *ngIf="status?.updaterState == 'Waiting'" routerLink="." (click)="doCheckForUpdates()" translate>Check for updates now</a>
+    <div *ngIf="status?.updaterState == 'Checking'" translate>Checking for updates …</div>
+
+    <!--<progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update …'" , ng-progress="state.updateDownloadProgress">
+    </progress-bar>-->
+
+    <div>&nbsp;</div>
+
+    <div class="prewrapped-text" *ngIf="Acknowledgements != null">{{Acknowledgements}}</div>
+    <div class="prewrapped-text" *ngIf="Acknowledgements == null" translate>Loading …</div>
+  </div>
+
+  <div *ngIf="page == 'changelog'">
+    <div class="prewrapped-text fixed-width-font" *ngIf="ChangeLog != null">{{ChangeLog}}</div>
+    <div class="prewrapped-text fixed-width-font" *ngIf="ChangeLog == null" translate="">Loading …</div>
+  </div>
+
+  <div *ngIf="page == 'licenses'" class="licenses">
+    {{appName}} is using the following third party libraries:
+    <ul>
+      <li *ngIf="Licenses == null" translate>Loading …</li>
+      <li *ngFor="let item of Licenses" class="licenseentry">
+        <app-external-link class="itemlink" link="item.link">{{item.name}}</app-external-link>: {{item.description}}. <app-external-link class="licenselink" [link]="item.licenselink">{{item.license}} licensed</app-external-link>
+      </li>
+    </ul>
+  </div>
+
+  <div *ngIf="page == 'sysinfo'">
+    <h2 translate>System properties</h2>
+    <ul style="overflow: auto;">
+      <li *ngFor="let e of systemInfoProperties | keyvalue"><strong>{{e.key}}: </strong>{{e.value}}</li>
+      <li><strong>Backend modules: </strong><span *ngFor="let item of backendModules">{{item.Key}} </span></li>
+      <li><strong>Compression modules: </strong><span *ngFor="let item of compressionModules">{{item.Key}} </span></li>
+      <li><strong>Encryption modules: </strong><span *ngFor="let item of encryptionModules">{{item.Key}} </span></li>
+    </ul>
+
+    <h2 translate>Server state properties</h2>
+    <ul style="overflow: auto;">
+      <li *ngFor="let e of statusProperties | keyvalue"><strong>{{e.key}} :</strong> {{e.value}}</li>
+
+    </ul>
+  </div>
+
+
+</div>
