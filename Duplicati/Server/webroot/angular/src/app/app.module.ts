@@ -19,6 +19,7 @@ import { httpInterceptorProviders } from './interceptors';
 import { API_URL } from './interceptors/api-url-interceptor';
 import { SettingsComponent } from './settings/settings.component';
 import { AboutComponent } from './about/about.component';
+import { NotificationAreaComponent } from './notification-area/notification-area.component';
 
 
 @NgModule({
@@ -34,7 +35,8 @@ import { AboutComponent } from './about/about.component';
     DialogComponent,
     ConnectionLostComponent,
     SettingsComponent,
-    AboutComponent
+    AboutComponent,
+    NotificationAreaComponent
   ],
   imports: [
     BrowserModule,

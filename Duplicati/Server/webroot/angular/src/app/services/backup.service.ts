@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { tap } from 'rxjs';
+import { map, Observable, tap } from 'rxjs';
 import { DialogService } from './dialog.service';
 import { ServerStatusService } from './server-status.service';
 
@@ -33,4 +33,13 @@ export class BackupService {
   doVerifyRemote(id: string): void {
     this.client.post('/backup/' + id + '/verify', '').subscribe();
   }
+  isActive(id: string): Observable<boolean> {
+    return this.client.get<{ Status: string, Active: boolean }>('/backup/' + id + '/isactive').pipe(
+      map(resp => resp.Status === 'OK' && resp.Active)
+    );
+  }
+  doRepair(id: string): void {
+    this.client.post('/backup/' + id + '/repair', '').subscribe();
+  }
+
 }

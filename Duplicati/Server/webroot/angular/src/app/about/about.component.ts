@@ -6,6 +6,7 @@ import { BrandingService } from '../services/branding.service';
 import { DialogService } from '../services/dialog.service';
 import { ServerStatus } from '../services/server-status';
 import { ServerStatusService } from '../services/server-status.service';
+import { UpdateService } from '../services/update.service';
 import { BackendModule } from '../system-info/system-info';
 import { SystemInfoService } from '../system-info/system-info.service';
 
@@ -57,6 +58,7 @@ export class AboutComponent {
   constructor(private brandingService: BrandingService,
     private systemInfoService: SystemInfoService,
     private statusService: ServerStatusService,
+    private updateService: UpdateService,
     private client: HttpClient,
     private dialog: DialogService,
     private router: Router,
@@ -123,15 +125,15 @@ export class AboutComponent {
     this.router.navigate(['updatechangelog']);
   }
   doStartUpdateDownload() {
-    this.client.post('/updates/install', '').subscribe();
+    this.updateService.startUpdateDownload().subscribe();
   }
   doStartUpdateActivate() {
-    this.client.post('/updates/activate', '').subscribe({
+    this.updateService.startUpdateActivate().subscribe({
       error: this.dialog.connectionError('Activate failed: ')
     });
   }
   doCheckForUpdates() {
-    this.client.post('/updates/check', '').subscribe();
+    this.updateService.checkForUpdates().subscribe();
   }
 
 }

@@ -123,6 +123,7 @@ export class DialogService {
   }
 
   connectionError(txt: string): ((msg: string | any) => void);
+  connectionError(txt: string | any, msg: any): void;
   connectionError(txt: string | any, msg?: string | any): ((msg: string | any) => void) | void {
     if (typeof txt === 'string') {
       if (msg == null)
