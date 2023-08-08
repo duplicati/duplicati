@@ -1,0 +1,14 @@
+<li [class.expanded]="expanded">
+  <div *ngIf="item" (click)="expanded = !expanded" class="entryline" class="entryline clickable">
+    {{item.Timestamp * 1000 | date:'medium'}}: {{item.Message}}
+    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+    <div style="clear: both;"></div>
+  </div>
+  <div *ngIf="itemLive" (click)="expanded = !expanded" class="entryline" [class.noexception]="itemLive.Exception == null" [class.clickable]="itemLive.Exception != null">
+    {{itemLive.When | date:'medium'}}: {{itemLive.Message}}
+    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+    <div style="clear: both;"></div>
+  </div>
+  <div *ngIf="expanded && item != null" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
+  <div *ngIf="expanded && itemLive?.Exception != null" class="prewrapped-text exceptiontext">{{itemLive?.Exception}}</div>
+</li>

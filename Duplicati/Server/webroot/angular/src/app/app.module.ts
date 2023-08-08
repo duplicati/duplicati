@@ -20,6 +20,8 @@ import { API_URL } from './interceptors/api-url-interceptor';
 import { SettingsComponent } from './settings/settings.component';
 import { AboutComponent } from './about/about.component';
 import { NotificationAreaComponent } from './notification-area/notification-area.component';
+import { ServerLogComponent } from './server-log/server-log.component';
+import { LogEntryComponent } from './server-log/log-entry.component';
 
 
 @NgModule({
@@ -36,7 +38,9 @@ import { NotificationAreaComponent } from './notification-area/notification-area
     ConnectionLostComponent,
     SettingsComponent,
     AboutComponent,
-    NotificationAreaComponent
+    NotificationAreaComponent,
+    ServerLogComponent,
+    LogEntryComponent
   ],
   imports: [
     BrowserModule,

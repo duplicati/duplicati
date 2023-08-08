@@ -1,0 +1,34 @@
+<div class="logpage">
+
+  <h1 translate>Log data from the server</h1>
+
+  <ul class="tabs">
+    <li [class]="{active: page=='stored'}"><a [routerLink]="[{page: 'stored'}]" translate>Stored</a></li>
+    <li [class]="{active: page=='live'}"><a [routerLink]="[{page: 'live'}]" translate>Live</a></li>
+  </ul>
+
+  <div *ngIf="page=='stored'">
+    <ul class="entries">
+      <li *ngIf="LogData == null" translate>Loading …</li>
+      <app-log-entry *ngFor="let item of LogData" [item]="item"></app-log-entry>
+    </ul>
+    <div *ngIf="LogData != null && !LogDataComplete" class="button" (click)="loadMoreStoredData()">
+      <span *ngIf="LoadingData" translate>Loading …</span>
+      <span *ngIf="!LoadingData" translate>Load older data</span>
+    </div>
+  </div>
+
+  <div *ngIf="page=='live'">
+    <div>
+      <div translate>Select a log level and see messages as they happen:</div>
+      <select [ngModel]="LiveLogLevel" (ngModelChange)="setLiveLogLevel($event)" standalone>
+        <option value="" translate>Disabled</option>
+        <option value="level" *ngFor="let level of LogLevels">{{level}}</option>
+      </select>
+    </div>
+
+    <ul class="entries livedata">
+      <app-log-entry *ngFor="let item of LiveData" [itemLive]="item"></app-log-entry>
+    </ul>
+  </div>
+</div>
