@@ -1,0 +1,65 @@
+<ul class="advancedoptions" [formGroup]="form">
+  <ng-container formArrayName="items">
+    <li class="advancedentry" *ngFor="let item of items.controls;let i=index">
+      <div>
+        <label class="shortname" for="advanced-{{i}}">{{getShortName(i)}}</label>
+        <ng-container [ngSwitch]="getInputType(i)">
+          <select *ngSwitchCase="'enum'" id="advanced-{{i}}" [formControlName]="i">
+            <option [value]="e" *ngFor="let e of getEnumerations(i)">{{e}}</option>
+          </select>
+          <select *ngSwitchCase="'flags'" [formControlName]="i" multiple>
+            <option [value]="e" *ngFor="let e of getEnumerations(i)">{{e}}</option>
+          </select>
+          <input *ngSwitchCase="'bool'" type="checkbox" [formControlName]="i" parse-advanced-option-bool />
+          <input *ngSwitchCase="'password'" type="password" [formControlName]="i" parse-advanced-option />
+          <input *ngSwitchCase="'text'" type="text" id="advanced-{{i}}" [formControlName]="i" parse-advanced-option />
+          <input *ngSwitchCase="'int'" type="number" id="advanced-{{i}}" [formControlName]="i" parse-advanced-option-integer />
+
+          <div *ngSwitchCase="'size'" class="input type multiple" [formGroupName]="i">
+            <input type="number" id="advanced-{{i}}" formControlName="value" />
+            <select formControlName="unit">
+            </select>
+          </div>
+
+          <div *ngSwitchCase="'speed'" class="input type multiple" [formGroupName]="i">
+            <input type="number" id="advanced-{{i}}" formControlName="value" />
+            <select formControlName="unit">
+              <option [value]="e.value" *ngFor="let e of speedMultipliers">{{e.name}}</option>
+            </select>
+          </div>
+
+          <div *ngSwitchCase="'timespan'" class="input type multiple" [formGroupName]="i">
+            <input type="number" id="advanced-{{i}}" formControlName="value" />
+            <select formControlName="unit">
+              <option value="" translate>custom</option>
+              <option [value]="e.value" *ngFor="let e of timerangeMultipliers">{{e.name}}</option>
+            </select>
+          </div>
+
+          <div *ngSwitchCase="'shorttimespan'" class="input type multiple" [formGroupName]="i">
+            <input parse-advanced-option-size-number type="number" id="advanced-{{i}}" formControlName="value" />
+            <select parse-advanced-option-size-multiplier formControlName="unit" ng-options="item.value as item.name for item in shorttimerangeMultipliers">
+              <option value="" translate>custom</option>
+            </select>
+          </div>
+        </ng-container>
+      </div>
+
+      <a routerLink="." (click)="deleteItem(i)" title="Remove option">x</a>
+
+      <div *ngIf="getDeprecationMessage(i)" class="longdescription">DEPRECATED: {{getDeprecationMessage(i)}}</div>
+      <div class="longdescription">{{getLongDescription(i)}}<br>Default value: "{{getDefaultValue(i)}}"</div>
+    </li>
+  </ng-container>
+  <li>
+    <label translate>Add advanced option</label>
+    <select formControlName="newItem">
+      <option value="" translate>- pick an option -</option>
+      <optgroup [label]="optGroup.key" *ngFor="let optGroup of optionListGrouped | keyvalue">
+        <option [value]="opt.Name" *ngFor="let opt of optGroup.value">
+          {{getDisplayName(opt)}}
+        </option>
+      </optgroup>
+    </select>
+  </li>
+</ul>

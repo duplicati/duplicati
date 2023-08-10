@@ -1,29 +1,3 @@
-export interface OptionDescription {
-  Name: string,
-  Aliases: string | null,
-  Type: string,
-  Typename: string,
-  ValidValues: string[] | null,
-  ShortDescription: string,
-  LongDescription: string,
-  Deprecated: boolean,
-  DeprecationMessage: string,
-  DefaultValue: string
-}
-
-export interface BackendModule {
-  Key: string,
-  Description: string,
-  DisplayName: string,
-  Options: OptionDescription[]
-}
-
-export interface BrowserLocale {
-  Code: string,
-  EnglishName: string,
-  DisplayName: string
-}
-
 export interface CommandLineArgument {
   Aliases: string[] | null;
   LongDescription: string;
@@ -34,28 +8,41 @@ export interface CommandLineArgument {
   DefaultValue: string | null;
   Typename: string;
   Deprecated: boolean;
-  DeprectaionMessage: string;
+  DeprecationMessage: string;
 
   Category?: string;
+}
+
+export interface ModuleDescription {
+  Key: string,
+  Description: string,
+  DisplayName: string,
+  Options: CommandLineArgument[] | null
+}
+
+export interface BrowserLocale {
+  Code: string,
+  EnglishName: string,
+  DisplayName: string
 }
 
 export interface SystemInfo {
   // TODO: Fix any
   APIVersion: number,
-  BackendModules: BackendModule[],
+  BackendModules: ModuleDescription[],
   BaseVersionName: string,
   BrowserLocale: BrowserLocale,
   BrowserLocaleSupported: boolean,
   CLROSInfo: any,
   CLRVersion: string,
   CaseSensitiveFilesystem: boolean,
-  CompressionModules: any,
+  CompressionModules: ModuleDescription[],
   ConnectionModules: any,
   DefaultUpdateChannel: string,
   DefaultUsageReportLevel: string,
   DirectorySeparator: string,
-  EncryptionModules: any[],
-  GenericModules: any[],
+  EncryptionModules: ModuleDescription[],
+  GenericModules: ModuleDescription[],
   GroupTypes: string[],
   GroupedBackendModules: any[],
   LogLevels: string[],

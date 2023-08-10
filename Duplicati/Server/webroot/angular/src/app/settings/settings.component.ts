@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 import { Subscription } from 'rxjs';
 import { ConvertService } from '../services/convert.service';
@@ -39,18 +40,23 @@ export class SettingsComponent {
   showAdvancedTextArea: boolean = false;
 
   private subscription?: Subscription;
+  private settingsSubscription?: Subscription;
   systemInfo?: SystemInfo;
-  private advancedOptionList?: CommandLineArgument[];
+  advancedOptionList?: CommandLineArgument[];
 
   constructor(private serverSettings: ServerSettingsService,
     private systemInfoService: SystemInfoService,
     public convert: ConvertService,
     public parser: ParserService,
+    private router: Router,
     private dialog: DialogService) { }
 
   ngOnInit() {
-    this.subscription = this.systemInfoService.getState().subscribe(s => this.systemInfo = s);
-    this.subscription.add(this.serverSettings.getServerSettings().subscribe(s => this.updateSettings(s)));
+    this.subscription = this.systemInfoService.getState().subscribe(s => {
+      this.systemInfo = s;
+      this.reloadOptionsList();
+    });
+    this.settingsSubscription = this.serverSettings.getServerSettings().subscribe(s => this.updateSettings(s));
   }
 
   reloadOptionsList() {
@@ -88,13 +94,20 @@ export class SettingsComponent {
     this.advancedOptions = this.parser.serializeAdvancedOptionsToArray(s);
     this.servermodulesettings = {};
 
+    this.uiLanguage = this.serverSettings.getUILanguage();
+    this.theme = this.serverSettings.savedTheme || 'default';
+
     this.parser.extractServerModuleOptions(this.advancedOptions, this.serverModules, this.servermodulesettings, 'SupportedGlobalCommands');
   }
 
   ngOnDestroy() {
     this.subscription?.unsubscribe();
+    this.settingsSubscription?.unsubscribe();
   }
 
+  cancel() {
+    this.router.navigate(['/']);
+  }
   save() {
     // TODO: Should probably not trim passwords?
     if (this.requireRemotePassword && this.remotePassword.trim().length === 0) {
@@ -146,6 +159,14 @@ export class SettingsComponent {
     }, this.dialog.connectionError('Failed to save: '));
   }
 
-  suppressDonationMessages() { }
-  displayDonationMessages() { }
+  suppressDonationMessages() {
+    this.systemInfoService.suppressDonationMessages(true).subscribe({
+      error: this.dialog.connectionError('Operation failed: ')
+    });
+  }
+  displayDonationMessages() {
+    this.systemInfoService.suppressDonationMessages(false).subscribe({
+      error: this.dialog.connectionError('Operation failed: ')
+    });
+  }
 }

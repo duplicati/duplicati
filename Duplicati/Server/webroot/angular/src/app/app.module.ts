@@ -12,7 +12,7 @@ import { MainMenuComponent } from './main-menu/main-menu.component';
 import { HomeComponent } from './home/home.component';
 import { BackupTaskComponent } from './backup-task/backup-task.component';
 import { DialogComponent } from './dialog/dialog.component';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConnectionLostComponent } from './connection-lost/connection-lost.component';
 import { CookieService } from 'ngx-cookie-service';
 import { httpInterceptorProviders } from './interceptors';
@@ -22,6 +22,8 @@ import { AboutComponent } from './about/about.component';
 import { NotificationAreaComponent } from './notification-area/notification-area.component';
 import { ServerLogComponent } from './server-log/server-log.component';
 import { LogEntryComponent } from './server-log/log-entry.component';
+import { AdvancedOptionsEditorComponent } from './advanced-options-editor/advanced-options-editor.component';
+import { StringArrayTextDirective } from './directives/string-array-text.directive';
 
 
 @NgModule({
@@ -40,13 +42,16 @@ import { LogEntryComponent } from './server-log/log-entry.component';
     AboutComponent,
     NotificationAreaComponent,
     ServerLogComponent,
-    LogEntryComponent
+    LogEntryComponent,
+    AdvancedOptionsEditorComponent,
+    StringArrayTextDirective
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
     FormsModule,
+    ReactiveFormsModule,
     HttpClientXsrfModule.withOptions({
       headerName: 'X-XSRF-Token',
       cookieName: 'xsrf-token'

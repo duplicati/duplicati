@@ -91,8 +91,8 @@ systemInfo.BrowserLocaleSupported ?
       <h2 translate>Update channel</h2>
       <div class="input checkbox">
         <input type="radio" class="checkbox" id="updateChannelDefault" value="" name="updateChannel" [(ngModel)]="updateChannel" />
-        <label for="updateChannelDefault" translate translate-params-channelname="systemInfo.DefaultUpdateChannel">Default ({{channelname}})</label>
-        <div class="sublabel" class="" translate translate-params-channelname="systemInfo.BaseVersionName">Same as the base install version: {{channelname}}</div>
+        <label for="updateChannelDefault" translate>Default ({{systemInfo.DefaultUpdateChannel}})</label>
+        <div class="sublabel" class="" translate>Same as the base install version: {{systemInfo.BaseVersionName}}</div>
       </div>
 
       <!--
@@ -162,17 +162,17 @@ systemInfo.BrowserLocaleSupported ?
     <div class="input textarea" *ngIf="showAdvancedTextArea">
       <label for="backupOptions" translate>Options</label>
       <a routerLink="." (click)="showAdvancedTextArea = false" class="advanced-toggle" translate>Edit as list</a>
-      <textarea id="backupOptions" name="backupOptions" [(ngModel)]="advancedOptions" string-array-as-text placeholder="{{convert.format(parser.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
+      <textarea id="backupOptions" name="backupOptions" [(ngModel)]="advancedOptions" appStringArrayText placeholder="{{convert.format(parser.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
     </div>
 
-    <div class="input" *ngIf="!showAdvancedTextArea">
+    <div class="input" *ngIf="!showAdvancedTextArea && advancedOptionList">
       <label for="backupOptions" translate>Options</label>
       <a routerLink="." (click)="showAdvancedTextArea = true" class="advanced-toggle" translate>Edit as text</a>
-      <!--<advanced-options-editor ng-option-list="advancedOptionList" [(ngModel)]="advancedOptions"></advanced-options-editor>-->
+      <app-advanced-options-editor [optionList]="advancedOptionList!" [(options)]="advancedOptions"></app-advanced-options-editor>
     </div>
 
     <div class="buttons">
-      <input type="reset" id="cancel" class="submit" value="Cancel" translate />
+      <input type="button" id="cancel" class="submit" value="Cancel" translate (click)="cancel()" />
       <input type="submit" id="save" name="save" class="submit" value="OK" />
     </div>
   </form>

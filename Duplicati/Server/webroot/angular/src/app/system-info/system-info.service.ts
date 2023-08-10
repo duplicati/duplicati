@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable, ReplaySubject, share, shareReplay, Subscription } from 'rxjs';
+import { map, Observable, ReplaySubject, share, shareReplay, Subscription, tap } from 'rxjs';
 import { SystemInfo } from './system-info';
 
 @Injectable({
@@ -47,6 +47,7 @@ export class SystemInfoService {
   };
   private GroupTypes: string[] = ['Local storage', 'Standard protocols', 'Proprietary', 'Others'];
 
+  private state?: SystemInfo;
   private state$?: ReplaySubject<SystemInfo>;
   private stateRequest$?: Subscription;
 
@@ -73,6 +74,20 @@ export class SystemInfoService {
       this.state$ = new ReplaySubject<SystemInfo>(1);
     }
     this.stateRequest$ = this.http.get<SystemInfo>('/systeminfo').pipe(map(state => { this.loadTexts(state); return state; }))
-      .subscribe(s => this.state$!.next(s));
+      .subscribe(s => {
+        this.state = s;
+        this.state$!.next(s);
+      });
+  }
+
+  suppressDonationMessages(suppress: boolean): Observable<void> {
+    return this.http.post<void>(suppress ? '/systeminfo/suppressdonationmessages' : '/systeminfo/showdonationmessages', '').pipe(
+      tap(() => {
+        if (this.state) {
+          this.state.SuppressDonationMessages = suppress;
+          this.state$?.next(this.state);
+        }
+      })
+    );
   }
 }

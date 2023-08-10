@@ -1,7 +1,7 @@
 <div class="mainmenu menu" [class.mobile-open]="openOnMobile" id="mainmenu">
   <ul>
     <li>
-      <a class="home" routerLink="/" routerLinkActive="active" ariaCurrentWhenActive="page" translate>Home</a>
+      <a class="home" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" ariaCurrentWhenActive="page" translate>Home</a>
     </li>
     <li>
       <a class="add" routerLink="/addstart" routerLinkActive="active" ariaCurrentWhenActive="page" translate>Add backup</a>

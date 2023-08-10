@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CommandLineArgument, SystemInfo } from '../system-info/system-info';
+import { CommandLineArgument, ModuleDescription, SystemInfo } from '../system-info/system-info';
 import { ConvertService } from './convert.service';
 
 @Injectable({
@@ -8,6 +8,53 @@ import { ConvertService } from './convert.service';
 export class ParserService {
 
   exampleOptionString = '--dblock-size=100MB';
+
+  get speedMultipliers(): ({ name: string, value: string })[] {
+    return [
+      { name: 'bytes/s', value: 'b' },
+      { name: 'KByte/s', value: 'KB' },
+      { name: 'MByte/s', value: 'MB' },
+      { name: 'GByte/s', value: 'GB' },
+      { name: 'TByte/s', value: 'TB' }
+    ];
+  }
+  get fileSizeMultipliers(): ({ name: string, value: string })[] {
+    return [
+      { name: 'byte', value: 'b' },
+      { name: 'KByte', value: 'KB' },
+      { name: 'MByte', value: 'MB' },
+      { name: 'GByte', value: 'GB' },
+      { name: 'TByte', value: 'TB' }
+    ];
+  }
+  get timerangeMultipliers(): ({ name: string, value: string })[] {
+    return [
+      { name: 'Minutes', value: 'm' },
+      { name: 'Hours', value: 'h' },
+      { name: 'Days', value: 'D' },
+      { name: 'Weeks', value: 'W' },
+      { name: 'Months', value: 'M' },
+      { name: 'Years', value: 'Y' }
+    ];
+  }
+  get shorttimerangeMultipliers(): ({ name: string, value: string })[] {
+    return [
+      { name: 'Seconds', value: 's' },
+      { name: 'Minutes', value: 'm' },
+      { name: 'Hours', value: 'h' }
+    ];
+  }
+  get daysOfWeek(): ({ name: string, value: string })[] {
+    return [
+      { name: 'Mon', value: 'mon' },
+      { name: 'Tue', value: 'tue' },
+      { name: 'Wed', value: 'wed' },
+      { name: 'Thu', value: 'thu' },
+      { name: 'Fri', value: 'fri' },
+      { name: 'Sat', value: 'sat' },
+      { name: 'sun', value: 'sun' },
+    ];
+  }
 
   constructor() { }
 
@@ -19,6 +66,15 @@ export class ParserService {
       return true;
     }
     return def === undefined ? false : def;
+  }
+
+  splitSizeString(text: string): [number, string | null] {
+    const m = (/(\d*)(\w*)/mg).exec(text);
+    if (!m) {
+      return [parseInt(text), null];
+    } else {
+      return [parseInt(m[1]), m[2]];
+    }
   }
 
   serializeAdvancedOptionsToArray(options: Record<string, string>): string[] {
@@ -60,7 +116,7 @@ export class ParserService {
       item.Category = 'Core options';
     }
 
-    let copyToList = (lst: any[], key?: string | boolean) => {
+    let copyToList = (lst: ModuleDescription[], key?: string | boolean) => {
       if (typeof key != 'string') {
         key = undefined;
       }
@@ -68,10 +124,12 @@ export class ParserService {
       for (let e of lst) {
         if (key == null || key.toLowerCase() == e.Key.toLowerCase()) {
           let m = structuredClone(e.Options);
-          for (let item of m) {
-            item.Category = e.DisplayName;
+          if (m != null) {
+            for (let item of m) {
+              item.Category = e.DisplayName;
+            }
+            items.push.apply(items, m);
           }
-          items.push.apply(items, m);
         }
       }
     };
@@ -120,6 +178,8 @@ export class ParserService {
         if (validateCallback)
           if (!validateCallback(dict, key, value))
             return null;
+
+        dict['--' + key] = value;
       }
     }
     return dict;
@@ -155,5 +215,96 @@ export class ParserService {
           target[n] = null;
 
     return true;
+  }
+
+  parseOptionString(option: string): { name: string, value: string | null } {
+    let idx = option.indexOf('=');
+    if (idx >= 0) {
+      return {
+        name: option.substr(0, idx),
+        value: option.substr(idx + 1)
+      };
+    } else {
+      return { name: option, value: null };
+    }
+  }
+
+  parseOptionFlags(option: string, flags?: string[]): { name: string, value: string[] } {
+    let idx = option.indexOf('=');
+    if (idx >= 0) {
+      let name = option.substr(0, idx);
+      let value = option.substr(idx + 1);
+
+      let vals: string[] = [];
+
+      if (value.indexOf(',') >= 0) {
+        vals = value.split(',');
+      } else {
+        vals.push(value);
+      }
+      if (flags !== undefined) {
+        // Match case of given values
+        let result: string[] = [];
+        for (let v of vals) {
+          let f = flags.find(f => f.toLowerCase() === v.toLowerCase());
+          if (f !== undefined) {
+            result.push(f);
+          } else {
+            result.push(v);
+          }
+        }
+        return { name: name, value: result };
+      } else {
+        return { name: name, value: vals };
+      }
+    }
+    return { name: option, value: [] };
+  }
+
+  parseOptionEnum(option: string, values?: string[]): { name: string, value: string | null } {
+    let res = this.parseOptionString(option);
+    if (res.value != null && values != null) {
+      // Match case of given values
+      let v = values.find(v => v.toLowerCase() === res.value?.toLowerCase());
+      if (v !== undefined) {
+        res.value = v;
+      }
+    }
+    return res;
+  }
+
+  parseOptionBool(option: string): { name: string, value: boolean | null } {
+    let res = this.parseOptionString(option);
+    if (res.value != null) {
+      return { name: res.name, value: this.parseBoolString(res.value, true) };
+    }
+    return { name: res.name, value: null };
+  }
+
+  parseOptionInteger(option: string): { name: string, value: number | null } {
+    let res = this.parseOptionString(option);
+    if (res.value != null) {
+      return { name: res.name, value: parseInt(res.value, 10) };
+    }
+    return { name: res.name, value: null };
+  }
+
+  parseOptionSize(option: string, sizeCase?: 'lowercase' | 'uppercase'): { name: string, value: number | null, multiplier: string | null } {
+    let res = this.parseOptionString(option);
+    if (res.value != null) {
+      let parts = this.splitSizeString(res.value);
+      if (parts != null) {
+        let multiplier: string | null;
+        if (parts[1] != null && sizeCase === 'lowercase') {
+          multiplier = parts[1].toLowerCase();
+        } else if (parts[1] != null && sizeCase === 'uppercase') {
+          multiplier = parts[1].toUpperCase();
+        } else {
+          multiplier = parts[1];
+        }
+        return { name: res.name, value: parts[0], multiplier: multiplier };
+      }
+    }
+    return { name: res.name, value: null, multiplier: null };
   }
 }

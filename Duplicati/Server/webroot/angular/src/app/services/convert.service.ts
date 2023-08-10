@@ -132,6 +132,11 @@ export class ConvertService {
     return str.replace(new RegExp(`(${this.pregQuote(pattern)})`, 'g'), replacement);
   }
 
+  removeEmptyEntries(l: (string | undefined | null)[]): string[] {
+    // null or undefined values are removed
+    return l.filter(v => v != null && v.trim().length > 0) as string[];
+  }
+
   format(...args: string[]): string | null {
     if (args == null || args.length < 1) {
       return null;

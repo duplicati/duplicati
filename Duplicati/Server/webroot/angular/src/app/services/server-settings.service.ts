@@ -69,6 +69,9 @@ export class ServerSettingsService {
     });
   }
 
+  getUILanguage(): string {
+    return this.cookies.get('ui-locale') || '';
+  }
   setUILanguage(uiLanguage: string) {
     if (uiLanguage.trim().length == 0) {
       this.cookies.delete('ui-locale');

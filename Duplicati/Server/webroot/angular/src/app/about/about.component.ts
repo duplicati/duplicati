@@ -7,7 +7,7 @@ import { DialogService } from '../services/dialog.service';
 import { ServerStatus } from '../services/server-status';
 import { ServerStatusService } from '../services/server-status.service';
 import { UpdateService } from '../services/update.service';
-import { BackendModule } from '../system-info/system-info';
+import { ModuleDescription } from '../system-info/system-info';
 import { SystemInfoService } from '../system-info/system-info.service';
 
 @Component({
@@ -49,9 +49,9 @@ export class AboutComponent {
   };
 
 
-  backendModules?: BackendModule[];
-  encryptionModules?: BackendModule[];
-  compressionModules?: BackendModule[];
+  backendModules?: ModuleDescription[];
+  encryptionModules?: ModuleDescription[];
+  compressionModules?: ModuleDescription[];
   systemInfoProperties?: Map<string, string>;
   statusProperties?: Map<string, string>;
 
