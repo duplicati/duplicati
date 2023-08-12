@@ -20,6 +20,11 @@ export interface ModuleDescription {
   Options: CommandLineArgument[] | null
 }
 
+export interface GroupedModuleDescription extends ModuleDescription {
+  GroupType: string;
+  OrderKey: number;
+}
+
 export interface BrowserLocale {
   Code: string,
   EnglishName: string,
@@ -44,7 +49,7 @@ export interface SystemInfo {
   EncryptionModules: ModuleDescription[],
   GenericModules: ModuleDescription[],
   GroupTypes: string[],
-  GroupedBackendModules: any[],
+  GroupedBackendModules?: GroupedModuleDescription[],
   LogLevels: string[],
   MachineName: string,
   MonoVersion: string | null,

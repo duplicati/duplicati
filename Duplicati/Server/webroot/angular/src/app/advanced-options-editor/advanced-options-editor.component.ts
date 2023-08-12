@@ -1,6 +1,7 @@
 import { getNumberOfCurrencyDigits } from '@angular/common';
 import { Component, EventEmitter, Input, IterableChangeRecord, IterableDiffer, IterableDiffers, Output, SimpleChange, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { GroupedOptions, GroupedOptionService } from '../services/grouped-option.service';
 import { ParserService } from '../services/parser.service';
 import { CommandLineArgument } from '../system-info/system-info';
 
@@ -19,7 +20,7 @@ export class AdvancedOptionsEditorComponent {
     newItem: ['']
   });
 
-  optionListGrouped: { [p: string]: CommandLineArgument[] } = {};
+  optionListGrouped: GroupedOptions<CommandLineArgument> = [];
 
   // Overrides to display a custom layout for a specific option
   private overrides: Record<string, string> = {
@@ -45,7 +46,8 @@ export class AdvancedOptionsEditorComponent {
 
   constructor(private fb: FormBuilder,
     private parser: ParserService,
-    private differs: IterableDiffers) { }
+    private differs: IterableDiffers,
+    private groupService: GroupedOptionService) { }
 
   ngOnChanges(changes: SimpleChanges) {
     if ('optionList' in changes) {
@@ -160,18 +162,11 @@ export class AdvancedOptionsEditorComponent {
   }
   private updateOptionList(): void {
     // Group by category and order by name
-    this.optionListGrouped = {};
-    this.optionsMap.clear();
-    for (let opt of this.optionList) {
-      let category = opt.Category || '';
-      if (!(category in this.optionListGrouped)) {
-        this.optionListGrouped[category] = [];
-      }
-      this.optionListGrouped[category].push(opt);
-      this.optionsMap.set(opt.Name.toLowerCase(), opt);
-    }
-    for (let key in this.optionListGrouped) {
-      this.optionListGrouped[key].sort();
+    this.optionListGrouped = this.groupService.groupOptions(this.optionList,
+      v => v.Category || '');
+    
+    for (let group of this.optionListGrouped) {
+      group.value.sort();
     }
   }
 

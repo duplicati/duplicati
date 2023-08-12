@@ -138,7 +138,6 @@ a {
     display: block;
     border: 1px solid lightgray;
     padding: 2px;
-    height: 100%;
     overflow: scroll;
     box-sizing: border-box;
 }
@@ -1367,14 +1366,6 @@ body {
                     .steps-boxes {
                         padding-left: 40px;
 
-                        .step {
-                            display: none;
-                        }
-
-                        .step.active {
-                            display: block;
-                        }
-
                         .box.browser {
                             .checklinks {
                                 a {
@@ -1665,12 +1656,12 @@ body {
                 div.add {
                     @legends-steps: 5;
                     @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @legends-padding-left: ((700px - @legends-width) / 2);
                     @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
+                    @step-width: (@legends-width / @legends-steps);
 
                     .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+                        margin-left: ((@step-width - @circle-width) / 2) + @legends-padding-left;
 
                         .step {
                             padding-left: @step-width - @circle-width;

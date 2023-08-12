@@ -5,10 +5,10 @@
         <label class="shortname" for="advanced-{{i}}">{{getShortName(i)}}</label>
         <ng-container [ngSwitch]="getInputType(i)">
           <select *ngSwitchCase="'enum'" id="advanced-{{i}}" [formControlName]="i">
-            <option [value]="e" *ngFor="let e of getEnumerations(i)">{{e}}</option>
+            <option [ngValue]="e" *ngFor="let e of getEnumerations(i)">{{e}}</option>
           </select>
           <select *ngSwitchCase="'flags'" [formControlName]="i" multiple>
-            <option [value]="e" *ngFor="let e of getEnumerations(i)">{{e}}</option>
+            <option [ngValue]="e" *ngFor="let e of getEnumerations(i)">{{e}}</option>
           </select>
           <input *ngSwitchCase="'bool'" type="checkbox" [formControlName]="i" parse-advanced-option-bool />
           <input *ngSwitchCase="'password'" type="password" [formControlName]="i" parse-advanced-option />
@@ -18,13 +18,14 @@
           <div *ngSwitchCase="'size'" class="input type multiple" [formGroupName]="i">
             <input type="number" id="advanced-{{i}}" formControlName="value" />
             <select formControlName="unit">
+              <option [ngValue]="e.value" *ngFor="let e of fileSizeMultipliers">{{e.name}}</option>
             </select>
           </div>
 
           <div *ngSwitchCase="'speed'" class="input type multiple" [formGroupName]="i">
             <input type="number" id="advanced-{{i}}" formControlName="value" />
             <select formControlName="unit">
-              <option [value]="e.value" *ngFor="let e of speedMultipliers">{{e.name}}</option>
+              <option [ngValue]="e.value" *ngFor="let e of speedMultipliers">{{e.name}}</option>
             </select>
           </div>
 
@@ -32,7 +33,7 @@
             <input type="number" id="advanced-{{i}}" formControlName="value" />
             <select formControlName="unit">
               <option value="" translate>custom</option>
-              <option [value]="e.value" *ngFor="let e of timerangeMultipliers">{{e.name}}</option>
+              <option [ngValue]="e.value" *ngFor="let e of timerangeMultipliers">{{e.name}}</option>
             </select>
           </div>
 
@@ -55,8 +56,8 @@
     <label translate>Add advanced option</label>
     <select formControlName="newItem">
       <option value="" translate>- pick an option -</option>
-      <optgroup [label]="optGroup.key" *ngFor="let optGroup of optionListGrouped | keyvalue">
-        <option [value]="opt.Name" *ngFor="let opt of optGroup.value">
+      <optgroup [label]="optGroup.key" *ngFor="let optGroup of optionListGrouped">
+        <option [ngValue]="opt.Name" *ngFor="let opt of optGroup.value">
           {{getDisplayName(opt)}}
         </option>
       </optgroup>

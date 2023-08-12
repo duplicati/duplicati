@@ -16,7 +16,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConnectionLostComponent } from './connection-lost/connection-lost.component';
 import { CookieService } from 'ngx-cookie-service';
 import { httpInterceptorProviders } from './interceptors';
-import { API_URL } from './interceptors/api-url-interceptor';
 import { SettingsComponent } from './settings/settings.component';
 import { AboutComponent } from './about/about.component';
 import { NotificationAreaComponent } from './notification-area/notification-area.component';
@@ -24,7 +23,21 @@ import { ServerLogComponent } from './server-log/server-log.component';
 import { LogEntryComponent } from './server-log/log-entry.component';
 import { AdvancedOptionsEditorComponent } from './advanced-options-editor/advanced-options-editor.component';
 import { StringArrayTextDirective } from './directives/string-array-text.directive';
-
+import { AddWizardComponent } from './add-wizard/add-wizard.component';
+import { EditBackupComponent } from './edit-backup/edit-backup.component';
+import { BackupGeneralSettingsComponent } from './edit-backup/backup-general-settings/backup-general-settings.component';
+import { BackupDestinationSettingsComponent } from './edit-backup/backup-destination-settings/backup-destination-settings.component';
+import { BackupEditUriComponent } from './edit-backup/backup-edit-uri/backup-edit-uri.component';
+import { ContextMenuComponent } from './context-menu/context-menu.component';
+import { EditorHostDirective } from './directives/editor-host.directive';
+import { EditFileComponent } from './editors/edit-file/edit-file.component';
+import { backendEditorProviders } from './editors';
+import { DestinationFolderPickerComponent } from './destination-folder-picker/destination-folder-picker.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatTreeModule } from '@angular/material/tree';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @NgModule({
   declarations: [
@@ -44,7 +57,16 @@ import { StringArrayTextDirective } from './directives/string-array-text.directi
     ServerLogComponent,
     LogEntryComponent,
     AdvancedOptionsEditorComponent,
-    StringArrayTextDirective
+    StringArrayTextDirective,
+    AddWizardComponent,
+    EditBackupComponent,
+    BackupGeneralSettingsComponent,
+    BackupDestinationSettingsComponent,
+    BackupEditUriComponent,
+    ContextMenuComponent,
+    EditorHostDirective,
+    EditFileComponent,
+    DestinationFolderPickerComponent
   ],
   imports: [
     BrowserModule,
@@ -52,14 +74,20 @@ import { StringArrayTextDirective } from './directives/string-array-text.directi
     HttpClientModule,
     FormsModule,
     ReactiveFormsModule,
+    MatTreeModule,
+    MatIconModule,
+    MatButtonModule,
+    MatProgressBarModule,
     HttpClientXsrfModule.withOptions({
       headerName: 'X-XSRF-Token',
       cookieName: 'xsrf-token'
-    })
+    }),
+    BrowserAnimationsModule
   ],
   providers: [
     CookieService,
-    httpInterceptorProviders
+    httpInterceptorProviders,
+    backendEditorProviders
   ],
   bootstrap: [AppComponent]
 })

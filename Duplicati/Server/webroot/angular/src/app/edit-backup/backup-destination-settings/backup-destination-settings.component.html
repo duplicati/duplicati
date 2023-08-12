@@ -1,0 +1,27 @@
+<form class="styled">
+  <div class="headerthreedotmenu">
+    <h2 translate>Backup destination</h2>
+
+    <div class="contextmenu_container">
+      <a routerLink="." title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton" /></a>
+
+      <div class="contextmenu" id="threedotmenu_add_destination">
+        <ul>
+          <li>
+            <a routerLink="." (click)="importUrl()" translate>Import Destination URL</a>
+          </li>
+          <li>
+            <a routerLink="." (click)="copyUrlToClipboard()" translate>Copy Destination URL to Clipboard</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <app-backup-edit-uri uri="Backup.TargetURL" set-builduri-fn="setBuilduriFn(builduriFn)"></app-backup-edit-uri>
+
+  <div class="buttons">
+    <input class="submit next" type="button" id="nextStep2" (click)="next.emit()" value="Next &gt;" />
+    <input class="submit prev" type="button" id="prevStep2" (click)="prev.emit()" value="&lt; Previous" />
+  </div>
+</form>

@@ -33,6 +33,7 @@
               "src/img"
             ],
             "styles": [
+              "@angular/material/prebuilt-themes/indigo-pink.css",
               "src/less/default.less"
             ],
             "scripts": []
@@ -102,6 +103,7 @@
               "src/img"
             ],
             "styles": [
+              "@angular/material/prebuilt-themes/indigo-pink.css",
               "src/less/default.less"
             ],
             "scripts": []
