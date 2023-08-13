@@ -291,7 +291,7 @@ namespace Duplicati.Library.SQLiteHelper
             if (!Platform.IsClientWindows)
                 fileExists = File.Exists(path);
 
-            con.ConnectionString = "Data Source=" + path;
+            con.ConnectionString = string.Format("Data Source={0};PRAGMA journal_mode = WAL;PRAGMA mmap_size = 268435456;PRAGMA locking_mode = EXCLUSIVE;", path);
             con.Open();
 
             // If we are non-Windows, make the file only accessible by the current user
