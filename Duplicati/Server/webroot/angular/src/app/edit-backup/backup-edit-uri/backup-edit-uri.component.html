@@ -34,18 +34,12 @@
     </a>
 
     <div class="contextmenu_container" *ngIf="showAdvanced">
-      <a routerLink="." title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination_adv" class="threedotmenubutton" title="Menu" /></a>
+      <a routerLink="." title="Menu" [matMenuTriggerFor]="menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination_adv" class="threedotmenubutton" title="Menu" /></a>
 
-      <div class="contextmenu" id="threedotmenu_add_destination_adv">
-        <ul>
-          <li>
-            <a routerLink="." *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" translate>Edit as list</a>
-          </li>
-          <li>
-            <a routerLink="." *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" translate>Edit as text</a>
-          </li>
-        </ul>
-      </div>
+      <mat-menu class="contextmenu" id="threedotmenu_add_destination_adv" #menu="matMenu">
+        <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" translate>Edit as list</button>
+        <button mat-menu-item *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" translate>Edit as text</button>
+      </mat-menu>
     </div>
   </div>
 

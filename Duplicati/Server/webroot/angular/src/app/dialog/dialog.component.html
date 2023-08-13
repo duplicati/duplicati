@@ -18,7 +18,7 @@
           <ng-container *ngTemplateOutlet="buttonTemplate"></ng-container>
         </li>
         <li *ngFor="let btn of dialogService.currentItem.buttons; index as i; trackBy: trackByIndex" style="display: inline-block">
-          <a routerLink="." class="button" (click)="onButtonClick(i)">{{btn}}</a>
+          <button class="button" (click)="onButtonClick(i)">{{btn}}</button>
         </li>
       </ul>
     </div>

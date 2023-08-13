@@ -42,7 +42,7 @@ export interface SystemInfo {
   CLRVersion: string,
   CaseSensitiveFilesystem: boolean,
   CompressionModules: ModuleDescription[],
-  ConnectionModules: any,
+  ConnectionModules: ModuleDescription[],
   DefaultUpdateChannel: string,
   DefaultUsageReportLevel: string,
   DirectorySeparator: string,

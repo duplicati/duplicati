@@ -77,13 +77,22 @@ export class ParserService {
     }
   }
 
-  serializeAdvancedOptionsToArray(options: Record<string, string>): string[] {
+  serializeAdvancedOptionsToArray(options: Record<string, string> | Map<string, string>): string[] {
     let res: string[] = [];
-    for (let k in options) {
-      if (k.indexOf('--') == 0) {
-        res.push(k + '=' + options[k]);
+    if (options instanceof Map) {
+      for (let [k, v] of options.entries()) {
+        if (k.indexOf('--') == 0) {
+          res.push(k + '=' + v);
+        }
+      }
+    } else {
+      for (let k in options) {
+        if (k.indexOf('--') == 0) {
+          res.push(k + '=' + options[k]);
+        }
       }
     }
+
 
     return res;
   }
@@ -306,5 +315,73 @@ export class ParserService {
       }
     }
     return { name: res.name, value: null, multiplier: null };
+  }
+
+
+  private URL_REGEXP_FIELDS = ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'];
+  private URL_REGEXP = /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/;
+  // Same as URL_REGEXP, but also accepts :\\ as a separator between drive letter (server for legacy reasons) and path
+  private FILE_REGEXP = /(file)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:(?:\/|\:\\)([^\?]*))?(?:\?(.+))?/;
+  private QUERY_REGEXP = /(?:^|&)([^&=]*)=?([^&]*)/g;
+
+  decodeBackendUri(uri: string, backendSchemes?: Map<string, string>): Map<string, string> {
+    let res = new Map<string, string>();
+
+
+    // File URLs contain backslashes on Win which breaks the other regexp
+    // This is not standard, but for compatibility it is allowed for now
+    const fileMatch = this.FILE_REGEXP.exec(uri);
+    if (fileMatch) {
+      for (let i = 0; i < this.URL_REGEXP_FIELDS.length; ++i) {
+        res.set(this.URL_REGEXP_FIELDS[i], fileMatch[i] || '');
+      }
+    } else {
+      const m = this.URL_REGEXP.exec(uri);
+
+      // Invalid URI
+      if (!m) {
+        return res;
+      }
+
+      for (let i = 0; i < this.URL_REGEXP_FIELDS.length; ++i) {
+        res.set(this.URL_REGEXP_FIELDS[i], m[i] || '');
+      }
+    }
+
+    let querystring = res.get('querystring');
+    if (querystring !== undefined) {
+      querystring = querystring.replace(this.QUERY_REGEXP, (str, key, val) => {
+        if (key) {
+          res.set('--' + key, decodeURIComponent((val || '').replace(/\+/g, '%20')));
+        }
+        return '';
+      });
+      res.set('querystring', querystring);
+    }
+    // Replace secure variants
+    let scheme = res.get('backend-type');
+    if (scheme && scheme.endsWith('s') && !backendSchemes?.has(scheme) && backendSchemes?.has(scheme.substr(0, scheme.length - 1))) {
+      res.set('backend-type', scheme.substr(0, scheme.length - 1));
+      res.set('--use-ssl', 'true');
+    }
+
+    return res;
+  }
+  encodeDictAsUrl(dict?: Record<string, string>): string {
+    if (dict == null) {
+      return '';
+    }
+    let list: string[] = [];
+    for (let p in dict) {
+      let x = encodeURIComponent(p);
+      if (dict[p] != null) {
+        x += '=' + encodeURIComponent(dict[p]);
+      }
+      list.push(x);
+    }
+    if (list.length === 0) {
+      return '';
+    }
+    return '?' + list.join('&');
   }
 }

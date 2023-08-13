@@ -1,6 +1,6 @@
 <div *ngIf="hideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
   <label for="file_path" translate>Folder path</label>
-  <input type="text" name="file_path" id="file_path" [ngModel]="path" (ngModelChange)="path=$event;pathChange.emit(path)" placeholder="Enter the destination path" />
+  <input type="text" name="file_path" id="file_path" [(ngModel)]="path" placeholder="Enter the destination path" />
   <a routerLink="." id="file_targetFolderPathAdd" class="button" (click)="hideFolderBrowser = false" translate>Browse</a>
 </div>
 
@@ -22,9 +22,9 @@
 
 <div class="input text">
   <label for="file_username" translate>Username</label>
-  <input type="text" name="file_username" id="file_username" [ngModel]="username" (ngModelChange)="username=$event;usernameChange.emit(username)" placeholder="Optional authentication username" />
+  <input type="text" name="file_username" id="file_username" [(ngModel)]="username" placeholder="Optional authentication username" />
 </div>
 <div class="input password">
   <label for="file_password" translate>Password</label>
-  <input autocomplete="new-password" type="password" name="file_password" id="file_password" [ngModel]="password" (ngModelChange)="password=$event;passwordChange.emit(password)" placeholder="Optional authentication password" />
+  <input autocomplete="new-password" type="password" name="file_password" id="file_password" [(ngModel)]="password" placeholder="Optional authentication password" />
 </div>

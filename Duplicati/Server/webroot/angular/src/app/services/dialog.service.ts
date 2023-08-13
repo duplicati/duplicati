@@ -58,7 +58,7 @@ export class DialogService {
   }
 
   textareaDialog(title: string, message: string, placeholder: string | undefined, textarea: string,
-    buttons: string[], buttonTemplate: string, callback: DialogCallback, onshow?: () => void): DialogConfig | undefined {
+    buttons: string[], buttonTemplate: string | undefined, callback?: DialogCallback, onshow?: () => void): DialogConfig | undefined {
     return this.enqueueDialog({
       enableTextarea: true,
       title: title,

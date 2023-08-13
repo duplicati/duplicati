@@ -9,7 +9,9 @@ import { FileDataSource, FileFlatNode, FolderDatabase } from './file-data-source
 @Component({
   selector: 'app-destination-folder-picker',
   templateUrl: './destination-folder-picker.component.html',
-  styleUrls: ['./destination-folder-picker.component.less']
+  styleUrls: ['./destination-folder-picker.component.less'],
+  // Provide new folder database instance for every folder picker component
+  providers: [FolderDatabase]
 })
 export class DestinationFolderPickerComponent {
   @Input() showHidden: boolean = false;
@@ -23,12 +25,16 @@ export class DestinationFolderPickerComponent {
   constructor(private fileService: FileService,
     private folderDatabase: FolderDatabase,
     private dialog: DialogService) {
-    this.dataSource = new FileDataSource(this.treeControl, this.fileService, folderDatabase);
+    this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.folderDatabase, this.dialog.connectionError('Failed to load files: '));
   }
 
   ngOnInit() {
     this.dataSource.data = this.folderDatabase.initialData(this.hideUserNode);
-    this.dataSource.data.forEach(n => this.dataSource.toggleNode(n, true));
+    this.dataSource.data.forEach(n => {
+      if (n.level === 0) {
+        this.treeControl.expand(n);
+      }
+    });
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -38,13 +44,21 @@ export class DestinationFolderPickerComponent {
     if ('showHidden' in changes) {
       this.dataSource.showHidden(this.showHidden);
     }
+    if ('hiderUserNode' in changes) {
+      if (!changes['hideUserNode'].isFirstChange()) {
+        // Have to re-initialize tree if changed
+        this.dataSource.data = this.folderDatabase.initialData(this.hideUserNode);
+        this.dataSource.data.forEach(n => {
+          if (n.level === 0) {
+            this.treeControl.expand(n);
+          }
+        });
+      }
+    }
   }
 
   hasChild(_: number, node: FileFlatNode): boolean {
     return node.expandable;
-  }
-  isInvisible(_: number, node: FileFlatNode): boolean {
-    return node.invisible;
   }
 
   toggleSelected(node: FileFlatNode): void {

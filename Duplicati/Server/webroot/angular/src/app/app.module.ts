@@ -37,7 +37,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatTreeModule } from '@angular/material/tree';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatMenuModule } from '@angular/material/menu';
 
 @NgModule({
   declarations: [
@@ -77,7 +77,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     MatTreeModule,
     MatIconModule,
     MatButtonModule,
-    MatProgressBarModule,
+    MatMenuModule,
     HttpClientXsrfModule.withOptions({
       headerName: 'X-XSRF-Token',
       cookieName: 'xsrf-token'

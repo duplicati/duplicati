@@ -1,7 +1,10 @@
 import { CollectionViewer, DataSource, SelectionChange } from "@angular/cdk/collections";
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { Injectable } from "@angular/core";
-import { filter } from "rxjs";
+import { catchError, filter, ReplaySubject } from "rxjs";
+import { connect } from "rxjs";
+import { Subscription } from "rxjs";
+import { concat } from "rxjs";
 import { take } from "rxjs";
 import { tap } from "rxjs";
 import { map } from "rxjs";
@@ -13,6 +16,8 @@ export class FileFlatNode {
   public selected = false;
   public entrytype: string = '';
   public invisible = false;
+
+  public subscription?: Subscription;
 
   get text(): string {
     return this.node.text;
@@ -26,7 +31,7 @@ export class FileFlatNode {
   ) { }
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class FolderDatabase {
   rootLevelNodes: FileNode[] = [
     {
@@ -41,7 +46,7 @@ export class FolderDatabase {
   ];
 
 
-  cachedNodes = new Map<string | number, FileNode[]>();
+  cachedNodes = new Map<string | number, BehaviorSubject<FileNode[] | undefined>>();
   rootCacheLoaded = new BehaviorSubject<boolean>(false);
 
   constructor(private fileService: FileService) { }
@@ -66,11 +71,36 @@ export class FolderDatabase {
           systemChildren.push(c);
         }
       }
-      this.cachedNodes.set(0, userChildren);
-      this.cachedNodes.set(1, systemChildren);
-      this.rootCacheLoaded.next(true);
+      this.updateCache(0, userChildren);
+      this.updateCache(1, systemChildren);
+    }, error => {
+      this.cacheError(0, error);
+      this.cacheError(1, error);
+    });
+  }
+
+  private cacheError(key: string | number, err: any): void {
+    this.cachedNodes.get(key)?.error(err);
+  }
+
+  private getCache(key: string | number): Observable<FileNode[]> {
+    if (!this.cachedNodes.has(key)) {
+      this.cachedNodes.set(key, new BehaviorSubject<FileNode[] | undefined>(undefined));
     }
-    );
+    return this.cachedNodes.get(key)!.pipe(
+      filter(v => v != null),
+      map(v => v as FileNode[]));
+  }
+
+  private updateCache(key: string | number, n: FileNode[]): void {
+    if (this.cachedNodes.has(key)) {
+      let s = this.cachedNodes.get(key)!;
+      if (s.value !== n) {
+        s.next(n);
+      }
+    } else {
+      this.cachedNodes.set(key, new BehaviorSubject<FileNode[] | undefined>(n));
+    }
   }
 
 
@@ -81,22 +111,22 @@ export class FolderDatabase {
       if (idx < 0) {
         return of(undefined);
       } else {
-        return this.rootCacheLoaded.pipe(
-          filter(loaded => loaded),
-          map(() => this.cachedNodes.get(idx)),
-          take(1));
+        return this.getCache(idx);
       }
     } else if (node.id == null) {
       return of(undefined);
     }
-    if (this.cachedNodes.has(node.id)) {
-      return of(this.cachedNodes.get(node.id));
+
+    if (this.cachedNodes.has(node.id) && !this.cachedNodes.get(node.id)!.hasError) {
+      return this.getCache(node.id);
     } else {
-      return this.fileService.getFileChildren(node.id, true, true).pipe(
-        tap(children => {
-          this.cachedNodes.set(node.id!, children);
-        })
-      );
+      let obs = this.getCache(node.id);
+      let s = this.cachedNodes.get(node.id);
+      // Ignore completion events for the subject
+      this.fileService.getFileChildren(node.id, true, true).subscribe(
+        v => s?.next(v),
+        err => s?.error(err));
+      return obs;
     }
 
   }
@@ -128,14 +158,17 @@ export class FileDataSource implements DataSource<FileFlatNode> {
 
   constructor(private treeControl: FlatTreeControl<FileFlatNode>,
     private fileService: FileService,
-    private database: FolderDatabase) { }
-
-  connect(collectionViewer: CollectionViewer): Observable<readonly FileFlatNode[]> {
+    private database: FolderDatabase,
+    private errorHandler?: (err: any) => void) {
+    // Subscribe to changes before connect(), because that is called too late
     this.treeControl.expansionModel.changed.subscribe(change => {
       if ((change as SelectionChange<FileFlatNode>).added || (change as SelectionChange<FileFlatNode>).removed) {
         this.handleTreeControl(change as SelectionChange<FileFlatNode>);
       }
     });
+  }
+
+  connect(collectionViewer: CollectionViewer): Observable<readonly FileFlatNode[]> {
     return merge(collectionViewer.viewChange, this.dataChange).pipe(map(() => this.data.filter(
       n => !n.invisible
     )));
@@ -143,7 +176,7 @@ export class FileDataSource implements DataSource<FileFlatNode> {
   disconnect(collectionViewer: CollectionViewer): void { }
 
   // Handle expand/collapse behaviors
-  handleTreeControl(change: SelectionChange<FileFlatNode>) {
+  private handleTreeControl(change: SelectionChange<FileFlatNode>) {
     if (change.added) {
       change.added.forEach(node => this.toggleNode(node, true));
     }
@@ -153,27 +186,35 @@ export class FileDataSource implements DataSource<FileFlatNode> {
   }
 
   // Toggle node, remove from display list
-  toggleNode(node: FileFlatNode, expand: boolean) {
+  private toggleNode(node: FileFlatNode, expand: boolean) {
     const index = this.data.indexOf(node);
     if (index < 0) {
       return;
     }
     node.isLoading = true;
+    node.subscription?.unsubscribe();
     if (expand) {
-      this.database.getChildren(node.node).subscribe(
-        children => {
-          if (children) {
-            const nodes = children.map(n => {
-              let flatNode = new FileFlatNode(n, node.level + 1, !n.leaf);
-              this.initializeNode(flatNode, node);
-              return flatNode;
-            });
-            this.data.splice(index + 1, 0, ...nodes);
-            this.dataChange.next(this.data);
+      node.subscription = this.database.getChildren(node.node).pipe(take(1))
+        .subscribe(
+          children => {
+            if (children) {
+              const nodes = children.map(n => {
+                let flatNode = new FileFlatNode(n, node.level + 1, !n.leaf);
+                this.initializeNode(flatNode, node);
+                return flatNode;
+              });
+              this.data.splice(index + 1, 0, ...nodes);
+              this.dataChange.next(this.data);
+            }
+            node.isLoading = false;
+          },
+          err => {
+            node.isLoading = false;
+            if (this.errorHandler) {
+              this.errorHandler(err);
+            }
           }
-          node.isLoading = false;
-        }
-      );
+        );
     } else {
       let count = 0;
       // Remove all nodes from data which are under this one
@@ -230,7 +271,7 @@ export class FileDataSource implements DataSource<FileFlatNode> {
     this.dataChange.next(this.data);
   }
 
-  initializeNode(n: FileFlatNode, parent?: FileFlatNode): void {
+  private initializeNode(n: FileFlatNode, parent?: FileFlatNode): void {
     n.entrytype = this.database.getEntryType(n.node);
     if (this.selectedPath != null) {
       if (n.node.id != null

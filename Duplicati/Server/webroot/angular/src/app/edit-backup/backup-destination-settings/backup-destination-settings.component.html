@@ -3,22 +3,16 @@
     <h2 translate>Backup destination</h2>
 
     <div class="contextmenu_container">
-      <a routerLink="." title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton" /></a>
+      <a routerLink="." [matMenuTriggerFor]="menu" title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton" /></a>
 
-      <div class="contextmenu" id="threedotmenu_add_destination">
-        <ul>
-          <li>
-            <a routerLink="." (click)="importUrl()" translate>Import Destination URL</a>
-          </li>
-          <li>
-            <a routerLink="." (click)="copyUrlToClipboard()" translate>Copy Destination URL to Clipboard</a>
-          </li>
-        </ul>
-      </div>
+      <mat-menu class="contextmenu" id="threedotmenu_add_destination" #menu="matMenu">
+        <button mat-menu-item (click)="importUrl()" translate>Import Destination URL</button>
+        <button mat-menu-item (click)="copyUrlToClipboard()" translate>Copy Destination URL to Clipboard</button>
+      </mat-menu>
     </div>
   </div>
 
-  <app-backup-edit-uri uri="Backup.TargetURL" set-builduri-fn="setBuilduriFn(builduriFn)"></app-backup-edit-uri>
+  <app-backup-edit-uri></app-backup-edit-uri>
 
   <div class="buttons">
     <input class="submit next" type="button" id="nextStep2" (click)="next.emit()" value="Next &gt;" />

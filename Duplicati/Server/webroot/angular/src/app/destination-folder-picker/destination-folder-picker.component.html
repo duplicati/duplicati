@@ -1,14 +1,14 @@
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="tree-view">
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="16px">
-    <div [class.selected]="node.selected">
+    <div class="fill-node" [class.selected]="node.selected">
       <a class="nav leaf" [attr.aria-label]="'Toggle ' + node.text" [class.expanded]="treeControl.isExpanded(node)"></a>
       <a class="type {{node.node.iconCls}}" [attr.aria-label]="node.entrytype" [class.invisible]="node.node.hidden" [class.loading]="node.isLoading"></a>
 
-      <span class="toggle" (click)="toggleSelected(node)">{{node.text}}</span>
+      <span [class.toggle]="node.node.id != null" (click)="toggleSelected(node)">{{node.text}}</span>
     </div>
   </mat-tree-node>
   <mat-tree-node *matTreeNodeDef="let node; when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="16px">
-    <div [class.selected]="node.selected">
+    <div class="fill-node" [class.selected]="node.selected">
       <a class="nav" [attr.aria-label]="'Toggle ' + node.text" [class.expanded]="treeControl.isExpanded(node)" matTreeNodeToggle></a>
       <a class="type {{node.node.iconCls}}" [attr.aria-label]="node.entrytype" [class.invisible]="node.node.hidden" [class.loading]="node.isLoading"></a>
 

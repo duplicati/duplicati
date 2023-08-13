@@ -168,6 +168,10 @@ export class AdvancedOptionsEditorComponent {
     for (let group of this.optionListGrouped) {
       group.value.sort();
     }
+    this.optionsMap.clear();
+    this.optionList.forEach(option => {
+      this.optionsMap.set(option.Name.toLowerCase(), option);
+    });
   }
 
   private getCoreName(key: string | CommandLineArgument | undefined): string {
@@ -261,7 +265,7 @@ export class AdvancedOptionsEditorComponent {
   addNewOption(key: string) {
     let opt = '--' + key;
     let item = this.getEntry(opt);
-    if (item != null && item.DefaultValue != null) {
+    if (item != null) {
       opt += '=' + item.DefaultValue;
     }
     this.options.push(opt);
