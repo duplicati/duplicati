@@ -14,6 +14,7 @@
 //  You should have received a copy of the GNU Lesser General Public
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+using Duplicati.Logging.Duplicati.Library.Logging;
 using System;
 namespace Duplicati.Library.Localization
 {
@@ -38,8 +39,9 @@ namespace Duplicati.Library.Localization
         /// <param name="ci">The localization to use.</param>
         public LocalizationContext(System.Globalization.CultureInfo ci)
         {
-            m_prev = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LocalizationService.LOGICAL_CONTEXT_KEY);
-            System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);
+            m_prev = CallContext.GetData(LocalizationService.LOGICAL_CONTEXT_KEY) as string;
+            CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);
+
             m_isDisposed = false;
         }
 
@@ -56,7 +58,8 @@ namespace Duplicati.Library.Localization
         {
             if (!m_isDisposed)
             {
-                System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, m_prev);
+                CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, m_prev);
+
                 m_isDisposed = true;
             }
         }
