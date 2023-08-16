@@ -71,6 +71,11 @@ namespace Duplicati.Library.Main
         private readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
+        /// The default number of file processors instances
+        /// </summary>
+        private readonly int DEFAULT_FILE_PROCESSORS = 1;
+
+        /// <summary>
         /// The default number of hasher instances
         /// </summary>
         private readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
@@ -390,6 +395,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("concurrency-max-threads", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencymaxthreadsShort, Strings.Options.ConcurrencymaxthreadsLong, "0"),
                     new CommandLineArgument("concurrency-block-hashers", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencyblockhashersShort, Strings.Options.ConcurrencyblockhashersLong, DEFAULT_BLOCK_HASHERS.ToString()),
                     new CommandLineArgument("concurrency-compressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencycompressorsShort, Strings.Options.ConcurrencycompressorsLong, DEFAULT_COMPRESSORS.ToString()),
+                    new CommandLineArgument("concurrency-fileprocessors", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencyfileprocessorsShort, Strings.Options.ConcurrencyfileprocessorsLong, DEFAULT_FILE_PROCESSORS.ToString()),
                     
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
@@ -1834,6 +1840,24 @@ namespace Duplicati.Library.Main
 
                 if (string.IsNullOrEmpty(value))
                     return DEFAULT_COMPRESSORS;
+                else
+                    return Math.Max(1, int.Parse(value));
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of concurrent file processors
+        /// </summary>
+        public int ConcurrencyFileprocessors
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-fileprocessors", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_FILE_PROCESSORS;
                 else
                     return Math.Max(1, int.Parse(value));
             }

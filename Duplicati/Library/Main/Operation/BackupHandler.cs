@@ -211,6 +211,10 @@ namespace Duplicati.Library.Main.Operation
                                 Enumerable.Range(0, options.ConcurrencyCompressors - 1).Select(x =>
                                     Backup.DataBlockProcessor.Run(database, options, taskreader))
                             )
+                            .Union(
+                                Enumerable.Range(0, options.ConcurrencyFileprocessors - 1).Select(x =>
+                                    Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader, token))
+                            )
                     );
                 }
 
