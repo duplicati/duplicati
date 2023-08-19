@@ -1,0 +1,7 @@
+<ul id="simplefilterlist">
+  <li *ngFor="let f of filters; let i=index; trackBy: trackIndex">
+    <app-backup-filter [filter]="f" (filterChange)="setFilter(i,$event)" (remove)="removeFilter(i)"></app-backup-filter>
+  </li>
+
+</ul>
+<a routerLink="." (click)="addFilter('-*')" translate>Add filter</a>

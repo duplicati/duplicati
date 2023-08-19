@@ -1,0 +1,14 @@
+<select [ngModel]="filterType" (ngModelChange)="setFilterType($event)">
+  <option [value]="item.key" *ngFor="let item of filterClasses">{{item.name}}</option>
+</select>
+
+<div *ngIf="!isFilterGroup()">
+  <input type="text" [ngModel]="filterBody" (ngModelChange)="setFilterBody($event)" [ngModelOptions]="{updateOn: 'blur'}" placeholder="Enter expression here" />
+</div>
+<div *ngIf="isFilterGroup()">
+  <select class="groups" [ngModel]="selectedGroups" (ngModelChange)="setFilterGroups($event)" multiple>
+    <option [ngValue]="item.value" *ngFor="let item of filterGroups">{{item.name}}</option>
+  </select>
+</div>
+
+<a class="button" routerLink="." title="Remove" (click)="remove.emit()">X</a>

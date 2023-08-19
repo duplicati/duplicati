@@ -55,7 +55,7 @@
         <textarea id="FilterList" name="FilterList" appStringArrayText [(ngModel)]="backup.Filters" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
       </div>
       <div class="input textarea" [hidden]="editFilterAdvanced">
-        <app-backup-filters [(filters)]="backup.Filters"></app-backup-filters>
+        <app-backup-filter-list [(filters)]="backup.Filters"></app-backup-filter-list>
       </div>
     </div>
   </div>
@@ -74,19 +74,20 @@
           <input id="fileattr_{{attr.value}}"
                  type="checkbox"
                  name="fileattr_{{attr.value}}"
-                 value="{{attr.value}}"
-                 ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
-                 ng-click="toggleExcludeAttributes(attr.value)" />
+                 [value]="attr.value"
+                 [ngModel]="attributeExcluded(attr.value)"
+                 (ngModelChange)="excludeAttribute(attr.value,$event)" />
           <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
         </div>
       </div>
 
       <div class="input text select multiple">
-        <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
+        <input name="exclude-large-files" id="exclude-large-files" type="checkbox" class="simple-checkbox" [(ngModel)]="excludeLargeFiles" />
         <label for="exclude-large-files" translate>Files larger than:</label>
 
-        <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
-        <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value.toUpperCase() as item.name for item in AppUtils.fileSizeMultipliers">
+        <input type="number" [(ngModel)]="fileSizeInput" name="exclude-larger-than-number" id="exclude-larger-than-number" [disabled]="!excludeLargeFiles" />
+        <select name="exclude-larger-than-multiplier" id="exclude-larger-than-multiplier" [(ngModel)]="fileSizeMultiplier" [disabled]="!excludeLargeFiles">
+          <option [value]="item.value.toUpperCase()" *ngFor="let item of fileSizeMultipliers">{{item.name}}</option>
         </select>
       </div>
     </div>

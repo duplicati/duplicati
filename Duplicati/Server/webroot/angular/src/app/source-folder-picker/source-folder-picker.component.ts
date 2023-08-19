@@ -5,6 +5,7 @@ import { SimpleChanges } from '@angular/core';
 import { Component, Input } from '@angular/core';
 import { BehaviorSubject, Subscription } from 'rxjs';
 import { FileDataSource, FileFlatNode, FileDatabase } from '../destination-folder-picker/file-data-source';
+import { ConvertService } from '../services/convert.service';
 import { DialogService } from '../services/dialog.service';
 import { EditUriService } from '../services/edit-uri.service';
 import { FileFilterService } from '../services/file-filter.service';
@@ -65,7 +66,8 @@ export class SourceFolderPickerComponent {
 
   constructor(private fileService: FileService,
     private dialog: DialogService,
-    private filterService: FileFilterService) {
+    private filterService: FileFilterService,
+    private convert: ConvertService) {
     this.fileDatabase = new SourceFileDatabase(false, this.fileService, this.filterService);
     this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.fileDatabase, this.dialog.connectionError('Failed to load files: '));
     this.fileDatabase.setSourceNodeChildren(this.sourceNodeChildren);
@@ -73,6 +75,7 @@ export class SourceFolderPickerComponent {
   }
 
   ngOnInit() {
+    this.filterService.loadFilterGroups().subscribe();
     this.dataSource.data = this.fileDatabase.initialData(false).concat([]);
     this.dataSource.data.forEach(n => {
       if (n.level === 0) {
@@ -292,7 +295,7 @@ export class SourceFolderPickerComponent {
       }
       if (this.filterService.isExcludedBySize(node.node, this.excludeSize)) {
         this.dialog.dialog(`Cannot include "${node.node.text}`,
-          `The file size is ${node.node.fileSize}, larger than the maximum specified size. If the file size decreases, it will be included in future backups.`);
+          `The file size is ${this.convert.formatSizeString(node.node.fileSize || 0)}, larger than the maximum specified size. If the file size decreases, it will be included in future backups.`);
       }
     }
 

@@ -137,6 +137,13 @@ export class FileService {
       map(nodes => nodes.map(n => this.setIconCls(n))));
   }
 
+  whenDirsepReady(): Observable<string> {
+    return this.systemInfoReady.pipe(
+      filter(v => v),
+      take(1),
+      map(() => this.dirsep));
+  }
+
   checkDefunct(n: FileNode): Observable<boolean> {
     if (n.id == null) {
       return of(false);
@@ -147,16 +154,14 @@ export class FileService {
       this.defunctMap.set(cp, true);
 
       let p = n.id;
-      return this.systemInfoReady.pipe(
-        filter(v => v),
-        take(1),
+      return this.whenDirsepReady().pipe(
         map(() => {
           if (p.startsWith('%') && p.endsWith('%')) {
             p += this.dirsep;
           }
           return this.client.post('/filesystem/validate', '', { params: { path: p } }).pipe(
             map(() => {
-                this.defunctMap.set(cp, false);
+              this.defunctMap.set(cp, false);
               return false;
             }),
             catchError(err => {

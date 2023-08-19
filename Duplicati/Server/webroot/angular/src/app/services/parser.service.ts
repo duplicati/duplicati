@@ -77,6 +77,19 @@ export class ParserService {
     }
   }
 
+  parseSizeString(val: string) {
+    if (val == null) {
+      return null;
+    }
+    var split = this.splitSizeString(val.toUpperCase());
+    var formatSizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var idx = formatSizes.indexOf((split[1] || '').toUpperCase());
+    if (idx == -1) {
+      idx = 0;
+    }
+    return split[0] * Math.pow(1024, idx);
+  }
+
   serializeAdvancedOptionsToArray(options: Record<string, string> | Map<string, string>): string[] {
     let res: string[] = [];
     if (options instanceof Map) {

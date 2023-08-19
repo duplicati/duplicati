@@ -1,4 +1,9 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { tap } from 'rxjs';
+import { map } from 'rxjs';
+import { of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ConvertService } from './convert.service';
 import { FileNode, FileService } from './file.service';
 
@@ -62,6 +67,10 @@ export class FilterClass {
   }
 }
 
+interface FilterGroups {
+  FilterGroups: Record<string, string[]>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -120,7 +129,7 @@ export class FileFilterService {
   }),
   //// Since all the current filter groups are intended for exclusion, there isn't a reason to show the 'Include group' section in the UI yet.
   //new FilterClass( {
-  //  name: gettextCatalog.getString('Include filter group'),
+  //  name: 'Include filter group',
   //  key: '+{}',
   //  prefix: '+{',
   //  suffix: '}'
@@ -134,15 +143,67 @@ export class FileFilterService {
     key: '-',
     prefix: '-'
   })];
+  private filterGroups: ({ name: string, value: string })[] = [{
+    name: 'Default excludes',
+    value: 'DefaultExcludes'
+  }, {
+    //// As the DefaultIncludes are currently empty, we don't need to include them in the UI yet.
+    //    name: 'Default includes',
+    //    value: 'DefaultIncludes'
+    //}, {
+    name: 'System Files',
+    value: 'SystemFiles'
+  }, {
+    name: 'Operating System',
+    value: 'OperatingSystem'
+  }, {
+    name: 'Cache Files',
+    value: 'CacheFiles'
+  }, {
+    name: 'Temporary Files',
+    value: 'TemporaryFiles'
+  }, {
+    name: 'Applications',
+    value: 'Applications'
+  }];
+  private fileAttributes: ({ name: string, value: string })[] = [
+    { name: 'Hidden files', value: 'hidden' },
+    { name: 'System files', value: 'system' },
+    { name: 'Temporary files', value: 'temporary' },
+  ];
 
   private filterTypeMap: Map<string, FilterClass>;
-  private filterGroupMap: Map<string, string[]>;
+  private filterGroupMap?: Map<string, string[]>;
   private displayMap = new Map<string, string>();
 
   constructor(private convertService: ConvertService,
+    private client: HttpClient,
     private fileService: FileService) {
     this.filterTypeMap = new Map<string, FilterClass>(this.filterClasses.map(f => [f.key, f]));
-    this.filterGroupMap = new Map<string, string[]>();
+  }
+
+  getFilterClasses(): FilterClass[] {
+    return this.filterClasses;
+  }
+
+  loadFilterGroups(reload?: boolean): Observable<Map<string, string[]>> {
+    if (reload || this.filterGroupMap == null) {
+      return this.client.get<FilterGroups>('/systeminfo/filtergroups').pipe(
+        map(groups => {
+          this.filterGroupMap = new Map<string, string[]>(Object.entries(groups.FilterGroups));
+          return this.filterGroupMap;
+        })
+      );
+    }
+    return of(this.filterGroupMap);
+  }
+
+  getFilterGroups(): ({ name: string, value: string })[] {
+    return this.filterGroups;
+  }
+
+  getFileAttributes(): ({ name: string, value: string })[] {
+    return this.fileAttributes;
   }
 
   splitFilterIntoTypeAndBody(filter: string | undefined): { type: string, body: string } | undefined {
