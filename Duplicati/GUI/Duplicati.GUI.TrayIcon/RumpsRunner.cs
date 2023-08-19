@@ -92,14 +92,15 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly string ICON_NORMAL = ICON_PATH + "normal.png";
         private static readonly string ICON_PAUSED = ICON_PATH + "normal-pause.png";
         private static readonly string ICON_RUNNING = ICON_PATH + "normal-running.png";
-        private static readonly string ICON_WARNING = ICON_PATH + "normal-error.png"; // TODO: create a normal-warning.png, for now use normal-error.png
+        private static readonly string ICON_WARNING = ICON_PATH + "normal-warning.png";
         private static readonly string ICON_ERROR = ICON_PATH + "normal-error.png";
 
         private readonly Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string> m_images = new Dictionary<Duplicati.GUI.TrayIcon.TrayIcons, string>();
 
         private System.Diagnostics.Process m_rumpsProcess;
 
-        private static readonly string RUMPS_PYTHON = string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RUMPS_PYTHON")) ? "/usr/bin/python2.7" : Environment.GetEnvironmentVariable("RUMPS_PYTHON");
+        private static readonly string SYSTEM_PYTHON = System.IO.Directory.Exists("/usr/bin/python2.7") ? "/usr/bin/python2.7" : "/usr/bin/python3";
+        private static readonly string RUMPS_PYTHON = string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RUMPS_PYTHON")) ? SYSTEM_PYTHON : Environment.GetEnvironmentVariable("RUMPS_PYTHON");
 
         private static readonly string SCRIPT_PATH = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "OSXTrayHost", "osx-trayicon-rumps.py");
         private IsolatedChannelScope m_scope;

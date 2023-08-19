@@ -28,6 +28,9 @@ override_dh_clean:
 override_dh_auto_build:
 	echo "Not building, using binary package"
 
+override_dh_builddeb:
+	dh_builddeb -- -Zgzip
+
 override_dh_auto_install:
 	mkdir ../temp
 	cp -r * ../temp

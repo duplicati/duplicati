@@ -82,11 +82,11 @@ def alert(title=None, message='', ok=None, cancel=None):
                    created.
     :return: a number representing the button pressed. The "ok" button is ``1`` and "cancel" is ``0``.
     """
-    message = unicode(message)
+    message = str(message)
     if title is not None:
-        title = unicode(title)
+        title = str(title)
     _require_string_or_none(ok)
-    if not isinstance(cancel, basestring):
+    if not isinstance(cancel, str):
         cancel = 'Cancel' if cancel else None
     alert = NSAlert.alertWithMessageText_defaultButton_alternateButton_otherButton_informativeTextWithFormat_(
         title, ok, cancel, None, message)
@@ -176,13 +176,13 @@ def _nsimage_from_file(filename, dimensions=None):
 
 def _require_string(*objs):
     for obj in objs:
-        if not isinstance(obj, basestring):
+        if not isinstance(obj, str):
             raise TypeError('a string is required but given {0}, a {1}'.format(obj, type(obj).__name__))
 
 
 def _require_string_or_none(*objs):
     for obj in objs:
-        if not(obj is None or isinstance(obj, basestring)):
+        if not(obj is None or isinstance(obj, str)):
             raise TypeError('a string or None is required but given {0}, a {1}'.format(obj, type(obj).__name__))
 
 
@@ -361,14 +361,14 @@ class Menu(ListDict):
                 menu.add(iterable)
                 return
 
-            for n, ele in enumerate(iterable.iteritems() if isinstance(iterable, Mapping) else iterable):
+            for n, ele in enumerate(iter(iterable.items()) if isinstance(iterable, Mapping) else iterable):
 
                 # for mappings we recurse but don't drop down a level in the menu
                 if not isinstance(ele, MenuItem) and isinstance(ele, Mapping):
                     parse_menu(ele, menu, depth)
 
                 # any iterables other than strings and MenuItems
-                elif not isinstance(ele, (basestring, MenuItem)) and isinstance(ele, Iterable):
+                elif not isinstance(ele, (str, MenuItem)) and isinstance(ele, Iterable):
                     try:
                         menuitem, submenu = ele
                     except TypeError:
@@ -484,7 +484,7 @@ class MenuItem(Menu):
     def __init__(self, title, callback=None, key=None, icon=None, dimensions=None):
         if isinstance(title, MenuItem):  # don't initialize already existing instances
             return
-        self._menuitem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(unicode(title), None, '')
+        self._menuitem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(str(title), None, '')
         self._menuitem.setTarget_(NSApp)
         self._menu = self._icon = None
         self.set_callback(callback, key)
@@ -498,7 +498,7 @@ class MenuItem(Menu):
         super(MenuItem, self).__setitem__(key, value)
 
     def __repr__(self):
-        return '<{0}: [{1} -> {2}; callback: {3}]>'.format(type(self).__name__, repr(self.title), map(str, self),
+        return '<{0}: [{1} -> {2}; callback: {3}]>'.format(type(self).__name__, repr(self.title), list(map(str, self)),
                                                            repr(self.callback))
 
     @property
@@ -510,7 +510,7 @@ class MenuItem(Menu):
 
     @title.setter
     def title(self, new_title):
-        new_title = unicode(new_title)
+        new_title = str(new_title)
         self._menuitem.setTitle_(new_title)
 
     @property
@@ -707,14 +707,14 @@ class Window(object):
     """
 
     def __init__(self, message='', title='', default_text='', ok=None, cancel=None, dimensions=(320, 160)):
-        message = unicode(message)
-        title = unicode(title)
+        message = str(message)
+        title = str(title)
 
         self._cancel = bool(cancel)
         self._icon = None
 
         _require_string_or_none(ok)
-        if not isinstance(cancel, basestring):
+        if not isinstance(cancel, str):
             cancel = 'Cancel' if cancel else None
 
         self._alert = NSAlert.alertWithMessageText_defaultButton_alternateButton_otherButton_informativeTextWithFormat_(
@@ -736,7 +736,7 @@ class Window(object):
 
     @title.setter
     def title(self, new_title):
-        new_title = unicode(new_title)
+        new_title = str(new_title)
         self._alert.setMessageText_(new_title)
 
     @property
@@ -748,7 +748,7 @@ class Window(object):
 
     @message.setter
     def message(self, new_message):
-        new_message = unicode(new_message)
+        new_message = str(new_message)
         self._alert.setInformativeText_(new_message)
 
     @property
@@ -763,7 +763,7 @@ class Window(object):
 
     @default_text.setter
     def default_text(self, new_text):
-        new_text = unicode(new_text)
+        new_text = str(new_text)
         self._default_text = new_text
         self._textfield.setStringValue_(new_text)
 
@@ -805,7 +805,7 @@ class Window(object):
         """
         if iterable is None:
             return
-        if isinstance(iterable, basestring):
+        if isinstance(iterable, str):
             self.add_button(iterable)
         else:
             for ele in iterable:
