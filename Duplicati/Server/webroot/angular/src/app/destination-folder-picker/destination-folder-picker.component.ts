@@ -1,17 +1,16 @@
+import { SelectionModel } from '@angular/cdk/collections';
 import { FlatTreeControl, NestedTreeControl } from '@angular/cdk/tree';
 import { SimpleChanges } from '@angular/core';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatTreeFlattener, MatTreeNestedDataSource } from '@angular/material/tree';
 import { DialogService } from '../services/dialog.service';
 import { FileNode, FileService } from '../services/file.service';
-import { FileDataSource, FileFlatNode, FolderDatabase } from './file-data-source';
+import { FileDataSource, FileFlatNode, FileDatabase } from './file-data-source';
 
 @Component({
   selector: 'app-destination-folder-picker',
   templateUrl: './destination-folder-picker.component.html',
-  styleUrls: ['./destination-folder-picker.component.less'],
-  // Provide new folder database instance for every folder picker component
-  providers: [FolderDatabase]
+  styleUrls: ['./destination-folder-picker.component.less']
 })
 export class DestinationFolderPickerComponent {
   @Input() showHidden: boolean = false;
@@ -20,16 +19,19 @@ export class DestinationFolderPickerComponent {
   @Input() hideUserNode: boolean = false;
 
   treeControl = new FlatTreeControl<FileFlatNode>(node => node.level, node => node.expandable);
+  private fileDatabase: FileDatabase;
   dataSource: FileDataSource;
 
+  selection = new SelectionModel<string>(false);
+
   constructor(private fileService: FileService,
-    private folderDatabase: FolderDatabase,
     private dialog: DialogService) {
-    this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.folderDatabase, this.dialog.connectionError('Failed to load files: '));
+    this.fileDatabase = new FileDatabase(true, this.fileService);
+    this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.fileDatabase, this.dialog.connectionError('Failed to load files: '));
   }
 
   ngOnInit() {
-    this.dataSource.data = this.folderDatabase.initialData(this.hideUserNode);
+    this.dataSource.data = this.fileDatabase.initialData(this.hideUserNode);
     this.dataSource.data.forEach(n => {
       if (n.level === 0) {
         this.treeControl.expand(n);
@@ -39,15 +41,15 @@ export class DestinationFolderPickerComponent {
 
   ngOnChanges(changes: SimpleChanges) {
     if ('path' in changes) {
-      this.dataSource.setSelected(this.path);
+      this.selection.select(this.fileService.comparablePath(this.path));
     }
     if ('showHidden' in changes) {
       this.dataSource.showHidden(this.showHidden);
     }
-    if ('hiderUserNode' in changes) {
+    if ('hideUserNode' in changes) {
       if (!changes['hideUserNode'].isFirstChange()) {
         // Have to re-initialize tree if changed
-        this.dataSource.data = this.folderDatabase.initialData(this.hideUserNode);
+        this.dataSource.data = this.fileDatabase.initialData(this.hideUserNode);
         this.dataSource.data.forEach(n => {
           if (n.level === 0) {
             this.treeControl.expand(n);
@@ -61,12 +63,18 @@ export class DestinationFolderPickerComponent {
     return node.expandable;
   }
 
+  isSelected(node: FileFlatNode): boolean {
+    if (node.node.id == null) {
+      return false;
+    }
+    return this.selection.isSelected(this.fileService.comparablePath(node.node.id));
+  }
+
   toggleSelected(node: FileFlatNode): void {
     if (node.node.id != null) {
-      this.dataSource.setSelected(node);
+      this.selection.toggle(this.fileService.comparablePath(node.node.id));
       this.path = node.node.id;
       this.pathChange.emit(this.path);
     }
   }
-
 }

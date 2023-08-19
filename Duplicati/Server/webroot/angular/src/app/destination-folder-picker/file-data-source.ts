@@ -13,7 +13,6 @@ import { BehaviorSubject, merge, Observable } from "rxjs";
 import { FileNode, FileService } from "../services/file.service";
 
 export class FileFlatNode {
-  public selected = false;
   public entrytype: string = '';
   public invisible = false;
 
@@ -25,50 +24,60 @@ export class FileFlatNode {
 
   constructor(
     public node: FileNode,
-    public level = 1,
+    public level = 0,
     public expandable = false,
     public isLoading = false
   ) { }
 }
 
-@Injectable()
-export class FolderDatabase {
-  rootLevelNodes: FileNode[] = [
-    {
-      text: 'User data',
-      root: true,
-      iconCls: 'x-tree-icon-userdata'
-    }, {
-      text: 'System data',
-      root: true,
-      iconCls: 'x-tree-icon-computer'
-    }
+export class FileDatabase {
+  protected userNode = new FileFlatNode({
+    text: 'User data',
+    root: true,
+    iconCls: 'x-tree-icon-userdata'
+  }, 0, true);
+  protected systemNode = new FileFlatNode({
+    text: 'System data',
+    root: true,
+    iconCls: 'x-tree-icon-computer'
+  }, 0, true);
+
+  rootLevelNodes: FileFlatNode[] = [
+    this.userNode, this.systemNode
   ];
 
-
-  cachedNodes = new Map<string | number, BehaviorSubject<FileNode[] | undefined>>();
+  cachedNodes = new Map<string | number, BehaviorSubject<FileFlatNode[] | undefined>>();
   rootCacheLoaded = new BehaviorSubject<boolean>(false);
 
-  constructor(private fileService: FileService) { }
+  constructor(private onlyFolders: boolean, private fileService: FileService) { }
 
   initialData(hideUserNode: boolean): FileFlatNode[] {
     this.fetchInitialNodes();
+    let nodes = this.rootLevelNodes;
     if (hideUserNode) {
-      return [new FileFlatNode(this.rootLevelNodes[1], 0, true)];
+      nodes = this.rootLevelNodes.filter(d => d !== this.userNode);
+    }
+    return nodes;
+  }
+
+  public getRootNode(path: string | undefined): FileFlatNode {
+    if (path?.startsWith('%')) {
+      return this.userNode;
     } else {
-      return this.rootLevelNodes.map(n => new FileFlatNode(n, 0, true));
+      return this.systemNode;
     }
   }
 
   private fetchInitialNodes(): void {
-    this.fileService.getFileChildren('/', true, true).subscribe(children => {
+    this.fileService.getFileChildren('/', this.onlyFolders, true).subscribe(children => {
       let userChildren = [];
       let systemChildren = [];
       for (let c of children) {
-        if (c.id?.indexOf('%') === 0) {
-          userChildren.push(c);
-        } else {
-          systemChildren.push(c);
+        const rootNode = this.getRootNode(c.id)
+        if (rootNode === this.userNode) {
+          userChildren.push(this.initializeNode(c, rootNode));
+        } else if (rootNode === this.systemNode) {
+          systemChildren.push(this.initializeNode(c, rootNode));
         }
       }
       this.updateCache(0, userChildren);
@@ -83,29 +92,28 @@ export class FolderDatabase {
     this.cachedNodes.get(key)?.error(err);
   }
 
-  private getCache(key: string | number): Observable<FileNode[]> {
+  protected getCache(key: string | number): Observable<FileFlatNode[]> {
     if (!this.cachedNodes.has(key)) {
-      this.cachedNodes.set(key, new BehaviorSubject<FileNode[] | undefined>(undefined));
+      this.cachedNodes.set(key, new BehaviorSubject<FileFlatNode[] | undefined>(undefined));
     }
     return this.cachedNodes.get(key)!.pipe(
       filter(v => v != null),
-      map(v => v as FileNode[]));
+      map(v => v!));
   }
 
-  private updateCache(key: string | number, n: FileNode[]): void {
+  protected updateCache(key: string | number, n: FileFlatNode[]): void {
     if (this.cachedNodes.has(key)) {
       let s = this.cachedNodes.get(key)!;
       if (s.value !== n) {
         s.next(n);
       }
     } else {
-      this.cachedNodes.set(key, new BehaviorSubject<FileNode[] | undefined>(n));
+      this.cachedNodes.set(key, new BehaviorSubject<FileFlatNode[] | undefined>(n));
     }
   }
 
-
-  getChildren(node: FileNode): Observable<FileNode[] | undefined> {
-    if (node.root) {
+  getChildren(node: FileFlatNode): Observable<FileFlatNode[] | undefined> {
+    if (node.node.root) {
       // Use number instad of path as key for cache
       let idx = this.rootLevelNodes.indexOf(node);
       if (idx < 0) {
@@ -113,22 +121,31 @@ export class FolderDatabase {
       } else {
         return this.getCache(idx);
       }
-    } else if (node.id == null) {
+    } else if (node.node.id == null) {
       return of(undefined);
     }
 
-    if (this.cachedNodes.has(node.id) && !this.cachedNodes.get(node.id)!.hasError) {
-      return this.getCache(node.id);
+    if (this.cachedNodes.has(node.node.id) && !this.cachedNodes.get(node.node.id)!.hasError) {
+      return this.getCache(node.node.id);
     } else {
-      let obs = this.getCache(node.id);
-      let s = this.cachedNodes.get(node.id);
+      let obs = this.getCache(node.node.id);
+      let s = this.cachedNodes.get(node.node.id);
       // Ignore completion events for the subject
-      this.fileService.getFileChildren(node.id, true, true).subscribe(
-        v => s?.next(v),
+      this.fileService.getFileChildren(node.node.id, this.onlyFolders, true).subscribe(
+        v => s?.next(v.map(fileNode => this.initializeNode(fileNode, node))),
         err => s?.error(err));
       return obs;
     }
 
+  }
+
+  protected initializeNode(fileNode: FileNode, parent?: FileFlatNode): FileFlatNode {
+    let n = new FileFlatNode(fileNode, parent ? parent.level + 1 : 0, !fileNode.leaf);
+    n.entrytype = this.getEntryType(n.node);
+    if (parent && parent.invisible) {
+      n.invisible = true;
+    }
+    return n;
   }
 
   getEntryType(node: FileNode): string {
@@ -151,14 +168,11 @@ export class FileDataSource implements DataSource<FileFlatNode> {
     this.dataChange.next(value);
   }
 
-  private selectedNode?: FileFlatNode;
-  private selectedPath?: string;
-
   private showHiddenFiles: boolean = false;
 
-  constructor(private treeControl: FlatTreeControl<FileFlatNode>,
-    private fileService: FileService,
-    private database: FolderDatabase,
+  constructor(protected treeControl: FlatTreeControl<FileFlatNode>,
+    protected fileService: FileService,
+    protected database: FileDatabase,
     private errorHandler?: (err: any) => void) {
     // Subscribe to changes before connect(), because that is called too late
     this.treeControl.expansionModel.changed.subscribe(change => {
@@ -169,9 +183,8 @@ export class FileDataSource implements DataSource<FileFlatNode> {
   }
 
   connect(collectionViewer: CollectionViewer): Observable<readonly FileFlatNode[]> {
-    return merge(collectionViewer.viewChange, this.dataChange).pipe(map(() => this.data.filter(
-      n => !n.invisible
-    )));
+    return merge(collectionViewer.viewChange, this.dataChange).pipe(
+      map(() => this.data.filter(n => !n.invisible)));
   }
   disconnect(collectionViewer: CollectionViewer): void { }
 
@@ -185,6 +198,55 @@ export class FileDataSource implements DataSource<FileFlatNode> {
     }
   }
 
+  getParentNode(node: FileFlatNode): FileFlatNode | null {
+    if (node.level < 1) {
+      return null;
+    }
+    const index = this.data.indexOf(node);
+    if (index < 0) {
+      return null;
+    }
+    for (let i = index; i >= 0; --i) {
+      if (this.data[i].level < node.level) {
+        return this.data[i];
+      }
+    }
+    return null;
+  }
+
+  // Set children of parent node, replaces existing children
+  private setChildren(parent: FileFlatNode, children: FileFlatNode[] | null): void {
+    // Check if parent is still in list
+    const index = this.data.indexOf(parent);
+    if (index < 0) {
+      return;
+    }
+
+    let count = 0;
+    // Remove all nodes from data which are under this one
+    for (let i = index + 1; i < this.data.length && this.data[i].level > parent.level; i++, count++) {
+    }
+    this.data.splice(index + 1, count);
+
+    if (children != null) {
+      const nodes = children.map(n => {
+        if (!this.showHiddenFiles && n.node.hidden) {
+          n.invisible = true;
+        }
+        return n;
+      });
+      this.data.splice(index + 1, 0, ...nodes);
+      for (let m of nodes) {
+        // Add recursive child nodes if expanded (after inserting)
+        if (this.treeControl.isExpanded(m)) {
+          this.toggleNode(m, true);
+        }
+      }
+    }
+    // Notify change
+    this.dataChange.next(this.data);
+  }
+
   // Toggle node, remove from display list
   private toggleNode(node: FileFlatNode, expand: boolean) {
     const index = this.data.indexOf(node);
@@ -194,55 +256,21 @@ export class FileDataSource implements DataSource<FileFlatNode> {
     node.isLoading = true;
     node.subscription?.unsubscribe();
     if (expand) {
-      node.subscription = this.database.getChildren(node.node).pipe(take(1))
-        .subscribe(
-          children => {
-            if (children) {
-              const nodes = children.map(n => {
-                let flatNode = new FileFlatNode(n, node.level + 1, !n.leaf);
-                this.initializeNode(flatNode, node);
-                return flatNode;
-              });
-              this.data.splice(index + 1, 0, ...nodes);
-              this.dataChange.next(this.data);
-            }
-            node.isLoading = false;
-          },
-          err => {
-            node.isLoading = false;
-            if (this.errorHandler) {
-              this.errorHandler(err);
-            }
+      node.subscription = this.database.getChildren(node).subscribe(
+        children => {
+          this.setChildren(node, children != null ? children : null);
+          node.isLoading = false;
+        },
+        err => {
+          node.isLoading = false;
+          if (this.errorHandler) {
+            this.errorHandler(err);
           }
-        );
+        }
+      );
     } else {
-      let count = 0;
-      // Remove all nodes from data which are under this one
-      for (let i = index + 1; i < this.data.length && this.data[i].level > node.level; i++, count++) { }
-      this.data.splice(index + 1, count);
-      // Notify change
-      this.dataChange.next(this.data);
+      this.setChildren(node, null);
       node.isLoading = false;
-    }
-  }
-
-  setSelected(node: FileFlatNode | string | undefined): void {
-    if (this.selectedNode != null) {
-      this.selectedNode.selected = false;
-      this.selectedNode = undefined;
-    }
-    let path: string | undefined = undefined;
-    if (typeof node === 'string') {
-      path = node;
-      node = this.data.find(n => n.node.id != null
-        && this.fileService.pathsEqual(n.node.id, path!));
-    } else if (node instanceof FileFlatNode) {
-      path = node.node.id;
-    }
-    this.selectedPath = path;
-    if (node != null) {
-      this.selectedNode = node;
-      this.selectedNode.selected = true;
     }
   }
 
@@ -269,22 +297,5 @@ export class FileDataSource implements DataSource<FileFlatNode> {
       }
     }
     this.dataChange.next(this.data);
-  }
-
-  private initializeNode(n: FileFlatNode, parent?: FileFlatNode): void {
-    n.entrytype = this.database.getEntryType(n.node);
-    if (this.selectedPath != null) {
-      if (n.node.id != null
-        && this.fileService.pathsEqual(n.node.id, this.selectedPath)) {
-        n.selected = true;
-        this.selectedNode = n;
-      }
-    }
-    if (!this.showHiddenFiles && n.node.hidden) {
-      n.invisible = true;
-    }
-    if (parent && parent.invisible) {
-      n.invisible = true;
-    }
   }
 }

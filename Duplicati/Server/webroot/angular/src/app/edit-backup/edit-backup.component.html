@@ -27,11 +27,14 @@
   </ol>
   <!-- .steps-legend -->
   <div class="steps-boxes">
-    <div class="step step1" [hidden]="CurrentStep !== 0" >
+    <div class="step step1" [hidden]="CurrentStep !== 0">
       <app-backup-general-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()"></app-backup-general-settings>
     </div>
-    <div class="step step2" [hidden]="CurrentStep !== 1" >
+    <div class="step step2" [hidden]="CurrentStep !== 1">
       <app-backup-destination-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()" (prev)="prevStep()"></app-backup-destination-settings>
+    </div>
+    <div class="step step3" [hidden]="CurrentStep !== 2">
+      <app-backup-source-settings [(backup)]="backup" (next)="nextStep()" (prev)="prevStep()"></app-backup-source-settings>
     </div>
 
   </div>

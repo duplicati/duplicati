@@ -1,6 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { of } from 'rxjs';
+import { take } from 'rxjs';
+import { BehaviorSubject, map, Observable, zip } from 'rxjs';
+import { catchError, filter, switchAll } from 'rxjs/operators';
 import { SystemInfo } from '../system-info/system-info';
 import { SystemInfoService } from '../system-info/system-info.service';
 
@@ -18,6 +21,7 @@ export interface FileNode {
   temporary?: boolean;
   symlink?: boolean;
   fileSize?: number;
+  tooltip?: string;
 }
 
 @Injectable({
@@ -26,14 +30,21 @@ export interface FileNode {
 export class FileService {
 
   private systemInfo?: SystemInfo;
+  private systemInfoReady = new BehaviorSubject(false);
+  private defunctMap = new Map<string, boolean>();
 
   constructor(private client: HttpClient,
     private systemInfoService: SystemInfoService) {
-    systemInfoService.getState().subscribe(s => this.systemInfo = s);
+    systemInfoService.getState().subscribe(s => {
+      this.systemInfo = s; this.systemInfoReady.next(true);
+    });
   }
 
   get dirsep(): string {
     return this.systemInfo?.DirectorySeparator || '/';
+  }
+  get isCaseSensitive(): boolean {
+    return this.systemInfo?.CaseSensitiveFilesystem || false;
   }
 
   comparablePath(path: string): string {
@@ -80,8 +91,9 @@ export class FileService {
     return res;
   }
 
-  private setIconCls(n: FileNode): FileNode {
-    var cp = this.comparablePath(n.id || '');
+  setIconCls(n: FileNode): FileNode {
+    const id = n.id || '';
+    const cp = this.comparablePath(id);
 
     if (cp == this.comparablePath('%MY_DOCUMENTS%'))
       n.iconCls = 'x-tree-icon-mydocuments';
@@ -93,19 +105,68 @@ export class FileService {
       n.iconCls = 'x-tree-icon-desktop';
     else if (cp == this.comparablePath('%HOME%'))
       n.iconCls = 'x-tree-icon-home';
-    else if (cp.substr(cp.length - 1, 1) != this.dirsep)
+    else if (id.startsWith('%HYPERV%\\') && id.length >= 10) {
+      n.iconCls = 'x-tree-icon-hypervmachine';
+      n.tooltip = `ID: ${id.substring(9, id.length)}`;
+    } else if (id.startsWith('%HYPERV%'))
+      n.iconCls = 'x-tree-icon-hyperv';
+    else if (id.startsWith('%MSSQL%\\') && id.length >= 9) {
+      n.iconCls = 'x-tree-icon-mssqldb';
+      n.tooltip = `ID: ${id.substring(8, id.length)}`;
+    } else if (id.startsWith('%MSSQL%'))
+      n.iconCls = 'x-tree-icon-mssql';
+    else if (this.defunctMap.get(cp))
+      n.iconCls = 'x-tree-icon-broken';
+    else if (!cp.endsWith(this.dirsep))
       n.iconCls = 'x-tree-icon-leaf';
 
     return n;
   }
 
   getFileChildren(path: string, onlyfolders?: boolean, showhidden?: boolean): Observable<FileNode[]> {
-    return this.client.get<FileNode[]>('/filesystem', {
+
+    const req = this.client.get<FileNode[]>('/filesystem', {
       params: {
         'onlyfolders': onlyfolders != null ? onlyfolders : false,
         'showhidden': showhidden != null ? showhidden : false,
         'path': path
       }
-    }).pipe(map(nodes => nodes.map(n => this.setIconCls(n))));
+    });
+    // Wait for system info to be ready before assigning icons
+    return zip(req, this.systemInfoReady.pipe(filter(v => v)), (n, v) => n).pipe(
+      map(nodes => nodes.map(n => this.setIconCls(n))));
+  }
+
+  checkDefunct(n: FileNode): Observable<boolean> {
+    if (n.id == null) {
+      return of(false);
+    }
+    const cp = this.comparablePath(n.id);
+    if (!this.defunctMap.has(cp) && n.iconCls != 'x-tree-icon-hyperv' && n.iconCls != 'x-tree-icon-hypervmachine'
+      && n.iconCls != 'x-tree-icon-mssql' && n.iconCls != 'x-tree-icon-mssqldb') {
+      this.defunctMap.set(cp, true);
+
+      let p = n.id;
+      return this.systemInfoReady.pipe(
+        filter(v => v),
+        take(1),
+        map(() => {
+          if (p.startsWith('%') && p.endsWith('%')) {
+            p += this.dirsep;
+          }
+          return this.client.post('/filesystem/validate', '', { params: { path: p } }).pipe(
+            map(() => {
+                this.defunctMap.set(cp, false);
+              return false;
+            }),
+            catchError(err => {
+              return of(true);
+            }));
+        }),
+        switchAll());
+
+    } else {
+      return of(false);
+    }
   }
 }

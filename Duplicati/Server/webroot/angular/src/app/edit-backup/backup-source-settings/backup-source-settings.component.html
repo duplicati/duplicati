@@ -1,0 +1,98 @@
+<form class="styled">
+  <div class="box browser">
+    <div class="headerthreedotmenu">
+      <h2 translate>Source data</h2>
+
+      <div class="contextmenu_container">
+        <a routerLink="." [matMenuTriggerFor]="sourceMenu" title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_source_folders" class="threedotmenubutton" /></a>
+
+        <mat-menu class="contextmenu" id="threedotmenu_add_source_folders" #sourceMenu="matMenu">
+          <button mat-menu-item *ngIf="!editSourceAdvanced" (click)="editSourceAdvanced = true" translate>Show advanced editor</button>
+          <button mat-menu-item *ngIf="editSourceAdvanced" (click)="editSourceAdvanced = false" translate>Show treeview</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <div class="input checklinks">
+      <a routerLink="." [class.inactive]="editSourceAdvanced" (click)="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> Show hidden folders</a>
+    </div>
+    <div class="resizable" [hidden]="editSourceAdvanced">
+      <app-source-folder-picker class="filepicker" [(sources)]="backup.Sources" [(filters)]="backup.Filters" [showHidden]="showhiddenfolders" [excludeAttributes]="excludeAttributes" [excludeSize]="excludeFileSize"></app-source-folder-picker>
+    </div>
+    <div class="input textarea" *ngIf="editSourceAdvanced">
+      <label for="SourcePathList" translate>Source folders</label>
+      <textarea id="SourcePathList" name="SourcePathList" appStringArrayText [(ngModel)]="backup.Sources" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
+    </div>
+    <div class="input text overlayButton">
+      <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" [(ngModel)]="manualSourcePath" [disabled]="validatingSourcePath" />
+      <button id="sourceFolderPathAdd" class="button" [disabled]="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" (click)="addManualSourcePath()">
+        <span *ngIf="validatingSourcePath" translate>Validating …</span>
+        <span *ngIf="!validatingSourcePath" translate>Add path</span>
+      </button>
+    </div>
+  </div>
+  <div class="box filters">
+    <div class="headerthreedotmenu">
+      <a routerLink="." (click)="showFilter = !showFilter" class="expandable">
+        <h2 translate>Filters</h2>
+        <img *ngIf="showFilter" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
+        <img *ngIf="!showFilter" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
+      </a>
+
+      <div class="contextmenu_container" *ngIf="showFilter">
+        <a routerLink="." [matMenuTriggerFor]="filterMenu" title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_source_folders" class="threedotmenubutton" /></a>
+
+        <mat-menu class="contextmenu" id="threedotmenu_add_source_folders" #filterMenu="matMenu">
+          <button mat-menu-item *ngIf="editFilterAdvanced" (click)="editFilterAdvanced = false" translate>Edit as list</button>
+          <button mat-menu-item *ngIf="!editFilterAdvanced" (click)="editFilterAdvanced = true" translate>Edit as text</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <div *ngIf="showFilter">
+      <div class="input textarea" *ngIf="editFilterAdvanced">
+        <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
+        <textarea id="FilterList" name="FilterList" appStringArrayText [(ngModel)]="backup.Filters" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
+      </div>
+      <div class="input textarea" [hidden]="editFilterAdvanced">
+        <app-backup-filters [(filters)]="backup.Filters"></app-backup-filters>
+      </div>
+    </div>
+  </div>
+  <div class="box exclude">
+    <div class="expandable">
+      <a routerLink="." (click)="showExclude = !showExclude">
+        <h2 translate>Exclude</h2>
+        <img *ngIf="showExclude" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
+        <img *ngIf="!showExclude" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
+      </a>
+    </div>
+
+    <div *ngIf="showExclude">
+      <div class="input checkbox multiple">
+        <div *ngFor="let attr of fileAttributes">
+          <input id="fileattr_{{attr.value}}"
+                 type="checkbox"
+                 name="fileattr_{{attr.value}}"
+                 value="{{attr.value}}"
+                 ng-checked="ExcludeAttributes.indexOf(attr.value) > -1"
+                 ng-click="toggleExcludeAttributes(attr.value)" />
+          <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
+        </div>
+      </div>
+
+      <div class="input text select multiple">
+        <input id="exclude-large-files" type="checkbox" class="simple-checkbox" ng-model="ExcludeLargeFiles" />
+        <label for="exclude-large-files" translate>Files larger than:</label>
+
+        <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
+        <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value.toUpperCase() as item.name for item in AppUtils.fileSizeMultipliers">
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="buttons">
+    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="Next &gt;" />
+    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; Previous" />
+  </div>
+</form>

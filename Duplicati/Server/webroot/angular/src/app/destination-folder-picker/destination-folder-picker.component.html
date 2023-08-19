@@ -1,6 +1,6 @@
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="tree-view">
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="16px">
-    <div class="fill-node" [class.selected]="node.selected">
+    <div class="fill-node" [class.selected]="isSelected(node)">
       <a class="nav leaf" [attr.aria-label]="'Toggle ' + node.text" [class.expanded]="treeControl.isExpanded(node)"></a>
       <a class="type {{node.node.iconCls}}" [attr.aria-label]="node.entrytype" [class.invisible]="node.node.hidden" [class.loading]="node.isLoading"></a>
 
@@ -8,7 +8,7 @@
     </div>
   </mat-tree-node>
   <mat-tree-node *matTreeNodeDef="let node; when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="16px">
-    <div class="fill-node" [class.selected]="node.selected">
+    <div class="fill-node" [class.selected]="isSelected(node)">
       <a class="nav" [attr.aria-label]="'Toggle ' + node.text" [class.expanded]="treeControl.isExpanded(node)" matTreeNodeToggle></a>
       <a class="type {{node.node.iconCls}}" [attr.aria-label]="node.entrytype" [class.invisible]="node.node.hidden" [class.loading]="node.isLoading"></a>
 

@@ -1,0 +1,18 @@
+<ul id="simplefilterlist">
+  <li *ngFor="let f of filters; let i=index">
+    <select parse-filter-type ng-model="Backup.Filters[$index]" ng-options="item.key as item.name for item in AppUtils.filterClasses">
+    </select>
+
+    <div ng-show="!(Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0)">
+      <input type="text" parse-filter-content ng-model="Backup.Filters[$index]" ng-model-options="{updateOn: 'blur'}" placeholder="Enter expression here" />
+    </div>
+    <div ng-show="Backup.Filters[$index].indexOf('-{') == 0 || Backup.Filters[$index].indexOf('+{') == 0">
+      <select parse-filter-content ng-model="Backup.Filters[$index]" ng-options="item.value as item.name for item in AppUtils.filterGroups">
+      </select>
+    </div>
+
+    <a class="button" routerLink="." title="Remove" (click)="filters.splice(i, 1)">X</a>
+  </li>
+
+</ul>
+<a routerLink="." (click)="filters.push('-*')" translate>Add filter</a>

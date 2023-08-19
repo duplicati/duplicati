@@ -38,6 +38,9 @@ import { MatTreeModule } from '@angular/material/tree';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { SourceFolderPickerComponent } from './source-folder-picker/source-folder-picker.component';
+import { BackupSourceSettingsComponent } from './edit-backup/backup-source-settings/backup-source-settings.component';
+import { BackupFiltersComponent } from './edit-backup/backup-filters/backup-filters.component';
 
 @NgModule({
   declarations: [
@@ -66,7 +69,10 @@ import { MatMenuModule } from '@angular/material/menu';
     ContextMenuComponent,
     EditorHostDirective,
     EditFileComponent,
-    DestinationFolderPickerComponent
+    DestinationFolderPickerComponent,
+    SourceFolderPickerComponent,
+    BackupSourceSettingsComponent,
+    BackupFiltersComponent
   ],
   imports: [
     BrowserModule,

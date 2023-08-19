@@ -151,4 +151,11 @@ export class ConvertService {
     }
     return msg;
   }
+
+  globToRegexp(str: string): string {
+    // Escape special chars, except ? and *
+    str = (str + '').replace(/([\\\.\+\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
+    // Replace ? and * with .? and .*
+    return str.replace(/(\?|\*)/g, ".$1");
+  }
 }
