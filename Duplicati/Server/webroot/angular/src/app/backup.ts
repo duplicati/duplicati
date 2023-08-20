@@ -17,7 +17,7 @@ export interface Backup {
   DBPath: string,
   Sources: string[],
   Settings: any[],
-  Filters: any[],
+  Filters: string[],
   Metadata: Record<string, string>,
   IsTemporary: boolean
 }

@@ -144,6 +144,24 @@ export class FileService {
       map(() => this.dirsep));
   }
 
+  validateFile(p: string): Observable<boolean> {
+    const cp = this.comparablePath(p);
+    return this.whenDirsepReady().pipe(
+      map(() => {
+        if (p.startsWith('%') && p.endsWith('%')) {
+          p += this.dirsep;
+        }
+        return this.client.post('/filesystem/validate', '', { params: { path: p } }).pipe(
+          map(() => {
+            this.defunctMap.set(cp, false);
+            return true;
+          }),
+          catchError(err => {
+            return of(false);
+          }));
+      }),
+      switchAll());
+  }
   checkDefunct(n: FileNode): Observable<boolean> {
     if (n.id == null) {
       return of(false);
@@ -154,24 +172,19 @@ export class FileService {
       this.defunctMap.set(cp, true);
 
       let p = n.id;
-      return this.whenDirsepReady().pipe(
-        map(() => {
-          if (p.startsWith('%') && p.endsWith('%')) {
-            p += this.dirsep;
-          }
-          return this.client.post('/filesystem/validate', '', { params: { path: p } }).pipe(
-            map(() => {
-              this.defunctMap.set(cp, false);
-              return false;
-            }),
-            catchError(err => {
-              return of(true);
-            }));
-        }),
-        switchAll());
-
+      return this.validateFile(p).pipe(map(v => !v));
     } else {
-      return of(false);
+      return of(this.defunctMap.get(cp) || false);
     }
+  }
+
+  isValidSourcePath(path: string): boolean {
+    // Check if th start is absolute on Unix
+    if (this.dirsep === '/') {
+      if (!path.startsWith('/') && !path.startsWith('%')) {
+        return true;
+      }
+    }
+    return false;
   }
 }

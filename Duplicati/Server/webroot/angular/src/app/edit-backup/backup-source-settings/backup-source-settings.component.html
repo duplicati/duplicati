@@ -17,11 +17,11 @@
       <a routerLink="." [class.inactive]="editSourceAdvanced" (click)="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> Show hidden folders</a>
     </div>
     <div class="resizable" [hidden]="editSourceAdvanced">
-      <app-source-folder-picker class="filepicker" [(sources)]="backup.Sources" [(filters)]="backup.Filters" [showHidden]="showhiddenfolders" [excludeAttributes]="excludeAttributes" [excludeSize]="excludeFileSize"></app-source-folder-picker>
+      <app-source-folder-picker class="filepicker" [(sources)]="sources" [(filters)]="filters" [showHidden]="showhiddenfolders" [excludeAttributes]="excludeAttributes" [excludeSize]="excludeFileSize"></app-source-folder-picker>
     </div>
     <div class="input textarea" *ngIf="editSourceAdvanced">
       <label for="SourcePathList" translate>Source folders</label>
-      <textarea id="SourcePathList" name="SourcePathList" appStringArrayText [(ngModel)]="backup.Sources" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
+      <textarea id="SourcePathList" name="SourcePathList" appStringArrayText [(ngModel)]="sources" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
     </div>
     <div class="input text overlayButton">
       <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" [(ngModel)]="manualSourcePath" [disabled]="validatingSourcePath" />
@@ -52,10 +52,10 @@
     <div *ngIf="showFilter">
       <div class="input textarea" *ngIf="editFilterAdvanced">
         <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
-        <textarea id="FilterList" name="FilterList" appStringArrayText [(ngModel)]="backup.Filters" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
+        <textarea id="FilterList" name="FilterList" appStringArrayText [(ngModel)]="filters" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
       </div>
       <div class="input textarea" [hidden]="editFilterAdvanced">
-        <app-backup-filter-list [(filters)]="backup.Filters"></app-backup-filter-list>
+        <app-backup-filter-list [(filters)]="filters"></app-backup-filter-list>
       </div>
     </div>
   </div>

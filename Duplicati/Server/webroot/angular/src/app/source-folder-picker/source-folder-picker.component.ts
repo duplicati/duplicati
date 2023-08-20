@@ -327,6 +327,8 @@ export class SourceFolderPickerComponent {
         if (this.fileDatabase.getRootNode(cp) === n) {
           return true;
         }
+      } else if (this.sourceNodeChildren.value.includes(n)) {
+        return false;
       } else if (!n.invisible && n.node.id != null) {
         const nodePath = this.fileService.comparablePath(n.node.id);
         if (nodePath === cp) {

@@ -23,6 +23,7 @@ export class BackupGeneralSettingsComponent {
     return this.backup.Name;
   }
   set name(v: string) {
+    this.backup = { ...this.backup };
     this.backup.Name = v;
     this.backupChange.emit(this.backup);
   }
@@ -30,6 +31,7 @@ export class BackupGeneralSettingsComponent {
     return this.backup.Description;
   }
   set description(v: string) {
+    this.backup = { ...this.backup };
     this.backup.Description = v;
     this.backupChange.emit(this.backup);
   }
@@ -37,6 +39,7 @@ export class BackupGeneralSettingsComponent {
     return this.options.encryptionModule;
   }
   set encryptionModule(v: string) {
+    this.options = { ...this.options };
     this.options.encryptionModule = v;
     this.optionsChange.emit(this.options);
   }
@@ -44,6 +47,7 @@ export class BackupGeneralSettingsComponent {
     return this.options.passphrase;
   }
   set passphrase(v: string) {
+    this.options = { ...this.options };
     this.options.passphrase = v;
     this.optionsChange.emit(this.options);
   }
@@ -79,6 +83,7 @@ export class BackupGeneralSettingsComponent {
   }
 
   generatePassphrase(): void {
+    this.options = { ...this.options };
     this.options.passphrase = this.repeatPasshrase = this.passphraseService.generatePassphrase();
     this.showPassphrase = true;
     this.options.hasGeneratedPassphrase = true;
