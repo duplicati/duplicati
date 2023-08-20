@@ -93,7 +93,7 @@
     </div>
   </div>
   <div class="buttons">
-    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="Next &gt;" />
-    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; Previous" />
+    <input class="submit next" type="button" id="nextStep3" (click)="next.emit()" value="Next &gt;" />
+    <input class="submit prev" type="button" id="prevStep3" (click)="prev.emit()" value="&lt; Previous" />
   </div>
 </form>

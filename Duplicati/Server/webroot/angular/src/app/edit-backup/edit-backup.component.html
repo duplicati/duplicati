@@ -36,7 +36,9 @@
     <div class="step step3" [hidden]="CurrentStep !== 2">
       <app-backup-source-settings [(backup)]="backup" (next)="nextStep()" (prev)="prevStep()"></app-backup-source-settings>
     </div>
-
+    <div class="step step4" [hidden]="CurrentStep !== 3">
+      <app-backup-schedule [(schedule)]="schedule" (next)="nextStep()" (prev)="prevStep()"></app-backup-schedule>
+    </div>
   </div>
   <!-- .steps-boxes -->
 </div>

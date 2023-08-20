@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, IsActiveMatchOptions, Router } from '@angular/router';
-import { Backup } from '../backup';
+import { Backup, Schedule } from '../backup';
 import { BackupOptions } from './backup-options';
 
 @Component({
@@ -17,6 +17,7 @@ export class EditBackupComponent {
   };
 
   CurrentStep: number = 0;
+  schedule: Schedule | null = null;
   backup: Backup = {
     DBPath: '',
     Description: '',

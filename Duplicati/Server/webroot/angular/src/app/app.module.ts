@@ -42,6 +42,7 @@ import { SourceFolderPickerComponent } from './source-folder-picker/source-folde
 import { BackupSourceSettingsComponent } from './edit-backup/backup-source-settings/backup-source-settings.component';
 import { BackupFilterComponent } from './edit-backup/backup-filter/backup-filter.component';
 import { BackupFilterListComponent } from './edit-backup/backup-filter/backup-filter-list.component';
+import { BackupScheduleComponent } from './edit-backup/backup-schedule/backup-schedule.component';
 
 @NgModule({
   declarations: [
@@ -74,7 +75,8 @@ import { BackupFilterListComponent } from './edit-backup/backup-filter/backup-fi
     SourceFolderPickerComponent,
     BackupSourceSettingsComponent,
     BackupFilterComponent,
-    BackupFilterListComponent
+    BackupFilterListComponent,
+    BackupScheduleComponent
   ],
   imports: [
     BrowserModule,

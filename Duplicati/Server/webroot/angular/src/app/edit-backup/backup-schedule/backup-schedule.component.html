@@ -1,0 +1,45 @@
+<form class="styled">
+  <h2 translate>Schedule</h2>
+  <div class="input checkbox multiple">
+    <input type="checkbox" name="useScheduleRun" id="useScheduleRun" [(ngModel)]="scheduleEnabled" />
+    <label for="useScheduleRun" translate>Automatically run backups.</label>
+  </div>
+  <div *ngIf="schedule != null">
+    <div translate>If a date was missed, the job will run as soon as possible.</div>
+    <br />
+    <div class="input text multiple">
+      <label for="nextRunTime" translate>Next time</label>
+      <input type="time" [(ngModel)]="scheduleTime" name="nextRunTime" id="nextRunTime" [ngModelOptions]="{updateOn: 'blur'}" />
+      <input type="date" [(ngModel)]="scheduleDate" name="nextRunDate" id="nextRunDate" [ngModelOptions]="{updateOn: 'blur'}" />
+    </div>
+    <div class="input text select multiple repeat">
+      <label for="repeatRunNumber" translate>Run again every</label>
+      <input *ngIf="isTimerangeMultiplier()" type="number" [(ngModel)]="repeatRunNumber" id="repeatRunNumber" name="repeatRunNumber" [ngModelOptions]="{updateOn: 'blur'}" />
+      <select parse-size-multiplier [(ngModel)]="repeatRunMultiplier" name="repeatRunMultiplier" id="repeatRunMultiplier">
+        <option value="" translate>custom</option>
+        <option [value]="item.value" *ngFor="let item of timerangeMultipliers">{{item.name}}</option>
+      </select>
+
+      <input type="text" *ngIf="!isTimerangeMultiplier()" name="repeatRunCustom" [(ngModel)]="repeatRun" [ngModelOptions]="{updateOn: 'blur'}" />
+    </div>
+    <div class="input checkbox multiple">
+      <strong translate>Allowed days</strong>
+
+      <div *ngFor="let day of daysOfWeek">
+        <input class="simple-checkbox"
+               id="dayofweek_{{day.value}}"
+               type="checkbox"
+               name="dayofweek_{{day.value}}"
+               value="{{day.value}}"
+               [ngModel]="isDayAllowed(day.value)"
+               (ngModelChange)="setDayAllowed(day.value,$event)" />
+        <label for="dayofweek_{{day.value}}">{{day.name}}</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <input class="submit next" type="button" id="nextStep4" (click)="next.emit()" value="Next &gt;" />
+    <input class="submit prev" type="button" id="prevStep4" (click)="prev.emit()" value="&lt; Previous" />
+  </div>
+</form>

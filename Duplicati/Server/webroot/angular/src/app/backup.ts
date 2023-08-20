@@ -1,10 +1,10 @@
 export interface Schedule {
-  ID: number,
+  ID?: number,
   Tags: string[],
-  Time: string,
+  Time?: string,
   Repeat: string,
-  LastRun: string,
-  Rule: string,
+  LastRun?: string,
+  Rule?: string,
   AllowedDays: string[]
 }
 

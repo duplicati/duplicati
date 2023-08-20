@@ -52,7 +52,7 @@ export class ParserService {
       { name: 'Thu', value: 'thu' },
       { name: 'Fri', value: 'fri' },
       { name: 'Sat', value: 'sat' },
-      { name: 'sun', value: 'sun' },
+      { name: 'Sun', value: 'sun' },
     ];
   }
 
