@@ -34,7 +34,9 @@ namespace Duplicati.Library
         // Whenever a response includes a Retry-After header, we'll update this timestamp with when we can next
         // send a request. And before sending any requests, we'll make sure to wait until at least this time.
         // Since this may be read and written by multiple threads, it is stored as a long and updated using Interlocked.Exchange.
-        private long retryAfter = DateTimeOffset.MinValue.UtcTicks;
+        // it is made static because when the retry is set, the call fails and the backend is recreated, wiping out the delay
+        // ** this is a hack ** a proper fix would be to not fail and directly wait in the backend when the cloud set retry-after
+        private static long retryAfter = DateTimeOffset.MinValue.UtcTicks;
 
         public void SetRetryAfter(RetryConditionHeaderValue retryAfter)
         {
@@ -60,7 +62,7 @@ namespace Duplicati.Library
                     long currentRetryAfter;
                     do
                     {
-                        currentRetryAfter = Interlocked.Read(ref this.retryAfter);
+                        currentRetryAfter = Interlocked.Read(ref RetryAfterHelper.retryAfter);
 
                         if (newRetryAfter < currentRetryAfter)
                         {
@@ -69,7 +71,7 @@ namespace Duplicati.Library
                         }
                         else
                         {
-                            replacedRetryAfter = Interlocked.CompareExchange(ref this.retryAfter, newRetryAfter, currentRetryAfter);
+                            replacedRetryAfter = Interlocked.CompareExchange(ref RetryAfterHelper.retryAfter, newRetryAfter, currentRetryAfter);
                         }
                     }
                     while (replacedRetryAfter != currentRetryAfter);
@@ -88,9 +90,10 @@ namespace Duplicati.Library
 
             if (delay > TimeSpan.Zero)
             {
-                Log.WriteProfilingMessage(
+                Log.WriteWarningMessage(
                     LOGTAG,
                     "RetryAfterWait",
+		    null,
                     "Waiting for {0} to respect Retry-After header",
                     delay);
 
@@ -102,7 +105,7 @@ namespace Duplicati.Library
         {
             // Make sure this is thread safe in case multiple calls are made concurrently to this backend
             // This is done by reading the value into a local value which is then parsed and operated on locally.
-            long retryAfterTicks = Interlocked.Read(ref this.retryAfter);
+            long retryAfterTicks = Interlocked.Read(ref RetryAfterHelper.retryAfter);
             DateTimeOffset delayUntil = new DateTimeOffset(retryAfterTicks, TimeSpan.Zero);
 
             TimeSpan delay;
