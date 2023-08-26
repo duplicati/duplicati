@@ -25,25 +25,14 @@
   <a routerLink="." *ngIf="testing" class="test-connection" translate>Testing …</a>
 </div>
 
-<div class="input textarea">
-  <div class="headerthreedotmenu">
-    <a routerLink="." (click)="showAdvanced = !showAdvanced" class="expandable">
-      <h2 translate>Advanced options</h2>
-      <img *ngIf="showAdvanced" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x" />
-      <img *ngIf="!showAdvanced" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x" />
-    </a>
+<app-expand-box class="input textarea">
+  <h2 translate header>Advanced options</h2>
+  <ng-template appExpandMenu>
+    <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" translate>Edit as list</button>
+    <button mat-menu-item *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" translate>Edit as text</button>
+  </ng-template>
 
-    <div class="contextmenu_container" *ngIf="showAdvanced">
-      <a routerLink="." title="Menu" [matMenuTriggerFor]="menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination_adv" class="threedotmenubutton" title="Menu" /></a>
-
-      <mat-menu class="contextmenu" id="threedotmenu_add_destination_adv" #menu="matMenu">
-        <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" translate>Edit as list</button>
-        <button mat-menu-item *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" translate>Edit as text</button>
-      </mat-menu>
-    </div>
-  </div>
-
-  <div *ngIf="showAdvanced">
+  <div>
     <div *ngIf="showAdvancedTextArea">
       <label for="targetOptions" translate>Options</label>
       <textarea id="targetOptions" name="targetOptions" appStringArrayText placeholder="{{convert.format(parser.exampleOptionString, '--use-ssl=true')}}" [(ngModel)]="advancedOptions"></textarea>
@@ -51,4 +40,4 @@
 
     <app-advanced-options-editor *ngIf="!showAdvancedTextArea" [optionList]="advancedOptionList" [options]="advancedOptions"></app-advanced-options-editor>
   </div>
-</div>
+</app-expand-box>

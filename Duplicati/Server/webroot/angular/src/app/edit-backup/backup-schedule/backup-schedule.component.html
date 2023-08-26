@@ -13,14 +13,9 @@
       <input type="date" [(ngModel)]="scheduleDate" name="nextRunDate" id="nextRunDate" [ngModelOptions]="{updateOn: 'blur'}" />
     </div>
     <div class="input text select multiple repeat">
-      <label for="repeatRunNumber" translate>Run again every</label>
-      <input *ngIf="isTimerangeMultiplier()" type="number" [(ngModel)]="repeatRunNumber" id="repeatRunNumber" name="repeatRunNumber" [ngModelOptions]="{updateOn: 'blur'}" />
-      <select parse-size-multiplier [(ngModel)]="repeatRunMultiplier" name="repeatRunMultiplier" id="repeatRunMultiplier">
-        <option value="" translate>custom</option>
-        <option [value]="item.value" *ngFor="let item of timerangeMultipliers">{{item.name}}</option>
-      </select>
-
-      <input type="text" *ngIf="!isTimerangeMultiplier()" name="repeatRunCustom" [(ngModel)]="repeatRun" [ngModelOptions]="{updateOn: 'blur'}" />
+      <app-input-multiplier name="repeatRun" [(value)]="repeatRun" hasCustom="true" [multipliers]="timerangeMultipliers">
+        Run again every
+      </app-input-multiplier>
     </div>
     <div class="input checkbox multiple">
       <strong translate>Allowed days</strong>

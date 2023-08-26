@@ -7,7 +7,7 @@ import { ConvertService } from './convert.service';
 })
 export class ParserService {
 
-  exampleOptionString = '--dblock-size=100MB';
+  exampleOptionString = 'Enter one option per line in command-line format, eg. {0}';
 
   get speedMultipliers(): ({ name: string, value: string })[] {
     return [
@@ -128,7 +128,7 @@ export class ParserService {
     }
   }
 
-  buildOptionList(sysInfo: SystemInfo, encmodule: boolean | string, compmodule: boolean | string, backmodule: boolean): CommandLineArgument[] {
+  buildOptionList(sysInfo: SystemInfo, encmodule: boolean | string, compmodule: boolean | string, backmodule: boolean | string): CommandLineArgument[] {
     if (sysInfo == null || sysInfo.Options == null) {
       return [];
     }

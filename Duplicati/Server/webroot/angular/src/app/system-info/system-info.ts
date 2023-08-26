@@ -20,6 +20,12 @@ export interface ModuleDescription {
   Options: CommandLineArgument[] | null
 }
 
+export interface ServerModuleDescription extends ModuleDescription {
+  SupportedGlobalCommands: CommandLineArgument[] | null;
+  SupportedLocalCommands: CommandLineArgument[] | null;
+  ServiceLink: string | null;
+}
+
 export interface GroupedModuleDescription extends ModuleDescription {
   GroupType: string;
   OrderKey: number;
@@ -58,7 +64,7 @@ export interface SystemInfo {
   Options: CommandLineArgument[],
   PasswordPlaceholder: string,
   PathSeparator: string,
-  ServerModules: any[],
+  ServerModules: ServerModuleDescription[],
   ServerTime: string,
   ServerVersion: string,
   ServerVersionName: string,

@@ -23,7 +23,6 @@ export class BackupEditUriComponent {
   editorComponent?: ComponentRef<BackendEditorComponent>;
   groupedBackendModules: GroupedOptions<ModuleDescription> = [];
   testing: boolean = false;
-  showAdvanced: boolean = false;
   showAdvancedTextArea: boolean = false;
   advancedOptions: string[] = [];
   advancedOptionList: CommandLineArgument[] = [];

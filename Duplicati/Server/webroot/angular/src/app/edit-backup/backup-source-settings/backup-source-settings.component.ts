@@ -41,10 +41,7 @@ export class BackupSourceSettingsComponent {
   fileAttributes: ({ name: string, value: string })[] = [];
   excludeAttributes: string[] = [];
   excludeFileSize: number | null = null;
-  showFilter: boolean = false;
   editFilterAdvanced: boolean = false;
-  showExclude: boolean = false;
-
 
   private _excludeLargeFiles: boolean = false;
   private _fileSize: number | null = null;

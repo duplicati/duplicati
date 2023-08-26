@@ -37,43 +37,12 @@ export class BackupScheduleComponent {
   set repeatRun(value: string) {
     if (this._repeatRun !== value) {
       this._repeatRun = value;
-      if (value.length > 0) {
-        let res = this.parser.splitSizeString(value || '');
-        this._repeatRunNumber = res[0];
-        if (this.isTimerangeMultiplier(res[1] || '')) {
-          this._repeatRunMultiplier = res[1] || '';
-        } else {
-          this._repeatRunMultiplier = '';
-        }
-      } else {
-        this._repeatRunNumber = null;
-        this._repeatRunMultiplier = '';
-      }
       if (this.schedule && this.schedule.Repeat !== value) {
         this.schedule = { ...this.schedule, Repeat: value };
         this.scheduleChange.emit(this.schedule);
       }
     }
   }
-  get repeatRunNumber(): number | null {
-    return this._repeatRunNumber;
-  }
-  set repeatRunNumber(value: number | null) {
-    if (this._repeatRunNumber !== value) {
-      this._repeatRunNumber = value;
-      this.repeatRun = (value || '0') + this.repeatRunMultiplier;
-    }
-  }
-  get repeatRunMultiplier(): string {
-    return this._repeatRunMultiplier;
-  }
-  set repeatRunMultiplier(value: string) {
-    if (this._repeatRunMultiplier !== value) {
-      this._repeatRunMultiplier = value;
-      this.repeatRun = (this.repeatRunNumber || '0') + value;
-    }
-  }
-
 
   get scheduleEnabled(): boolean {
     return this.schedule != null;
@@ -133,13 +102,6 @@ export class BackupScheduleComponent {
       AllowedDays: this.daysOfWeek.map(v => v.value),
       Time: nextTime.toISOString()
     };
-  }
-
-  isTimerangeMultiplier(mult?: string): boolean {
-    if (mult === undefined) {
-      mult = this.repeatRunMultiplier;
-    }
-    return this.timerangeMultipliers.findIndex(m => m.value === mult) >= 0;
   }
 
   isDayAllowed(day: string): boolean {

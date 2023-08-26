@@ -31,67 +31,47 @@
       </button>
     </div>
   </div>
-  <div class="box filters">
-    <div class="headerthreedotmenu">
-      <a routerLink="." (click)="showFilter = !showFilter" class="expandable">
-        <h2 translate>Filters</h2>
-        <img *ngIf="showFilter" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
-        <img *ngIf="!showFilter" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
-      </a>
+  <app-expand-box class="box filters">
+    <h2 translate header>Filters</h2>
+    <ng-template appExpandMenu>
+      <button mat-menu-item *ngIf="editFilterAdvanced" (click)="editFilterAdvanced = false" translate>Edit as list</button>
+      <button mat-menu-item *ngIf="!editFilterAdvanced" (click)="editFilterAdvanced = true" translate>Edit as text</button>
+    </ng-template>
 
-      <div class="contextmenu_container" *ngIf="showFilter">
-        <a routerLink="." [matMenuTriggerFor]="filterMenu" title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_source_folders" class="threedotmenubutton" /></a>
+    <div class="input textarea" *ngIf="editFilterAdvanced">
+      <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
+      <textarea id="FilterList" name="FilterList" appStringArrayText [(ngModel)]="filters" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
+    </div>
 
-        <mat-menu class="contextmenu" id="threedotmenu_add_source_folders" #filterMenu="matMenu">
-          <button mat-menu-item *ngIf="editFilterAdvanced" (click)="editFilterAdvanced = false" translate>Edit as list</button>
-          <button mat-menu-item *ngIf="!editFilterAdvanced" (click)="editFilterAdvanced = true" translate>Edit as text</button>
-        </mat-menu>
+    <div class="input textarea" [hidden]="editFilterAdvanced">
+      <app-backup-filter-list [(filters)]="filters"></app-backup-filter-list>
+    </div>
+  </app-expand-box>
+  <app-expand-box class="box excludes">
+    <h2 translate header>Exclude</h2>
+
+    <div class="input checkbox multiple">
+      <div *ngFor="let attr of fileAttributes">
+        <input id="fileattr_{{attr.value}}"
+               type="checkbox"
+               name="fileattr_{{attr.value}}"
+               [value]="attr.value"
+               [ngModel]="attributeExcluded(attr.value)"
+               (ngModelChange)="excludeAttribute(attr.value,$event)" />
+        <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
       </div>
     </div>
 
-    <div *ngIf="showFilter">
-      <div class="input textarea" *ngIf="editFilterAdvanced">
-        <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
-        <textarea id="FilterList" name="FilterList" appStringArrayText [(ngModel)]="filters" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
-      </div>
-      <div class="input textarea" [hidden]="editFilterAdvanced">
-        <app-backup-filter-list [(filters)]="filters"></app-backup-filter-list>
-      </div>
-    </div>
-  </div>
-  <div class="box exclude">
-    <div class="expandable">
-      <a routerLink="." (click)="showExclude = !showExclude">
-        <h2 translate>Exclude</h2>
-        <img *ngIf="showExclude" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
-        <img *ngIf="!showExclude" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
-      </a>
-    </div>
+    <div class="input text select multiple">
+      <input name="exclude-large-files" id="exclude-large-files" type="checkbox" class="simple-checkbox" [(ngModel)]="excludeLargeFiles" />
+      <label for="exclude-large-files" translate>Files larger than:</label>
 
-    <div *ngIf="showExclude">
-      <div class="input checkbox multiple">
-        <div *ngFor="let attr of fileAttributes">
-          <input id="fileattr_{{attr.value}}"
-                 type="checkbox"
-                 name="fileattr_{{attr.value}}"
-                 [value]="attr.value"
-                 [ngModel]="attributeExcluded(attr.value)"
-                 (ngModelChange)="excludeAttribute(attr.value,$event)" />
-          <label for="fileattr_{{attr.value}}">{{attr.name}}</label>
-        </div>
-      </div>
-
-      <div class="input text select multiple">
-        <input name="exclude-large-files" id="exclude-large-files" type="checkbox" class="simple-checkbox" [(ngModel)]="excludeLargeFiles" />
-        <label for="exclude-large-files" translate>Files larger than:</label>
-
-        <input type="number" [(ngModel)]="fileSizeInput" name="exclude-larger-than-number" id="exclude-larger-than-number" [disabled]="!excludeLargeFiles" />
-        <select name="exclude-larger-than-multiplier" id="exclude-larger-than-multiplier" [(ngModel)]="fileSizeMultiplier" [disabled]="!excludeLargeFiles">
-          <option [value]="item.value.toUpperCase()" *ngFor="let item of fileSizeMultipliers">{{item.name}}</option>
-        </select>
-      </div>
+      <input type="number" [(ngModel)]="fileSizeInput" name="exclude-larger-than-number" id="exclude-larger-than-number" [disabled]="!excludeLargeFiles" />
+      <select name="exclude-larger-than-multiplier" id="exclude-larger-than-multiplier" [(ngModel)]="fileSizeMultiplier" [disabled]="!excludeLargeFiles">
+        <option [value]="item.value.toUpperCase()" *ngFor="let item of fileSizeMultipliers">{{item.name}}</option>
+      </select>
     </div>
-  </div>
+  </app-expand-box>
   <div class="buttons">
     <input class="submit next" type="button" id="nextStep3" (click)="next.emit()" value="Next &gt;" />
     <input class="submit prev" type="button" id="prevStep3" (click)="prev.emit()" value="&lt; Previous" />

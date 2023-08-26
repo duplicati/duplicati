@@ -43,6 +43,8 @@ import { BackupSourceSettingsComponent } from './edit-backup/backup-source-setti
 import { BackupFilterComponent } from './edit-backup/backup-filter/backup-filter.component';
 import { BackupFilterListComponent } from './edit-backup/backup-filter/backup-filter-list.component';
 import { BackupScheduleComponent } from './edit-backup/backup-schedule/backup-schedule.component';
+import { BackupOptionsComponent } from './edit-backup/backup-options/backup-options.component';
+import { WidgetsModule } from './widgets/widgets.module';
 
 @NgModule({
   declarations: [
@@ -76,7 +78,8 @@ import { BackupScheduleComponent } from './edit-backup/backup-schedule/backup-sc
     BackupSourceSettingsComponent,
     BackupFilterComponent,
     BackupFilterListComponent,
-    BackupScheduleComponent
+    BackupScheduleComponent,
+    BackupOptionsComponent
   ],
   imports: [
     BrowserModule,
@@ -92,7 +95,8 @@ import { BackupScheduleComponent } from './edit-backup/backup-schedule/backup-sc
       headerName: 'X-XSRF-Token',
       cookieName: 'xsrf-token'
     }),
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    WidgetsModule
   ],
   providers: [
     CookieService,
