@@ -35,6 +35,16 @@
                 <bindingRedirect oldVersion="0.0.0.0-4.2.0.0" newVersion = "4.0.0.0" />
             </dependentAssembly>
 
+	    <!-- Support for backends that wants older version of System.Memory and System.Runtime.CompilerServices.Unsafe -->
+            <!-- The spaces near the equation sign are used to prevent the version being set to the current build by the VersionStamp tool -->
+           <dependentAssembly>
+            <assemblyIdentity name="System.Runtime.CompilerServices.Unsafe" publicKeyToken="b03f5f7f11d50a3a" culture="neutral"/>
+            <bindingRedirect oldVersion="0.0.0.0-4.0.4.1" newVersion = "6.0.0.0"/>
+          </dependentAssembly>
+          <dependentAssembly>
+            <assemblyIdentity name="System.Memory" publicKeyToken="cc7b13ffcd2ddd51" culture="neutral"/>
+            <bindingRedirect oldVersion="0.0.0.0-4.0.1.1" newVersion = "4.0.1.2"/>
+          </dependentAssembly>
 
         </assemblyBinding>
     </runtime>
