@@ -2705,16 +2705,6 @@ msgstr ""
 "Le chemin doit être absolu, c.-à-d. qu'il doit commencer par une barre "
 "oblique '/'"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-"Le chemin d'accès doit commencer par \"{{prefix1}}\" ou \"{{prefix2}}\", sinon vous ne pourrez pas voir les fichiers dans l'interface web d'HubiC.\n"
-"\n"
-"Voulez-vous ajouter automatiquement le préfixe au chemin ?"
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr ""

@@ -2635,16 +2635,6 @@ msgid ""
 msgstr ""
 "Путь должен быть абсолютным, то есть он должен начинаться с косой черты «/»"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-"Путь должен начинаться с «{{prefix1}}\" или \"{{prefix2}}\", иначе вы не сможете увидеть файлы через веб-интерфейс HubiC.\n"
-"\n"
-"Вы хотите, чтобы префикс был добавлен в путь автоматически?"
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr "Параметр «регион» применяется только при создании нового bucket"

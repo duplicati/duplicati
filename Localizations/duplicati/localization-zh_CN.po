@@ -789,7 +789,7 @@ msgstr "你必须通过 --{0} 为创建 bucket 提供项目 ID"
 #: Library/Backend/GoogleServices/Strings.cs:26
 #: Library/Backend/GoogleServices/Strings.cs:42
 #: Library/Backend/Box/Strings.cs:23 Library/Backend/OneDrive/Strings.cs:6
-#: Library/Backend/HubiC/Strings.cs:23 Library/Backend/Dropbox/Strings.cs:24
+#: Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
 msgstr "授权码"
@@ -797,7 +797,7 @@ msgstr "授权码"
 #: Library/Backend/GoogleServices/Strings.cs:27
 #: Library/Backend/GoogleServices/Strings.cs:43
 #: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:7
-#: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:25
+#: Library/Backend/Dropbox/Strings.cs:25
 #: Library/Backend/OAuthHelper/Strings.cs:10
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
@@ -1772,16 +1772,6 @@ msgstr "给定的 Email 地址存在多个组： {0}"
 #, csharp-format
 msgid "Conflicting group IDs used: given {0} but found {1}"
 msgstr "组 ID 冲突：设置为 {0} 而找到的是 {1}"
-
-#: Library/Backend/HubiC/Strings.cs:21
-msgid ""
-"This backend can read and write data to HubiC. Supported format is "
-"\"hubic://container/folder\"."
-msgstr "此后端能读写 HubiC 中数据，支持的格式为 \"hubic://container/folder\""
-
-#: Library/Backend/HubiC/Strings.cs:22
-msgid "HubiC"
-msgstr "HubiC"
 
 #: Library/Backend/AzureBlob/Strings.cs:4
 msgid "All files will be written to the container specified"
