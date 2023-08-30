@@ -2570,13 +2570,6 @@ msgid ""
 "'/'"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr ""

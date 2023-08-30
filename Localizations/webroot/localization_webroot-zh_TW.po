@@ -2613,16 +2613,6 @@ msgid ""
 "'/'"
 msgstr "必須是絕對路徑，也就是說必須以斜線開頭 '/'"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr "區域參數只有在建立新 Bucket 時套用"

@@ -94,10 +94,6 @@
       <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
       <Name>Duplicati.Library.Backend.GoogleServices</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
-      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
-      <Name>Duplicati.Library.Backend.HubiC</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj">
       <Project>{6b594d23-b629-465c-b799-70ee9e56c218}</Project>
       <Name>Duplicati.Library.Backend.Idrivee2</Name>

@@ -2689,16 +2689,6 @@ msgstr ""
 "O caminho deve ser um caminho absoluto, ou seja, deve começar com uma barra "
 "progressiva '/'"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-"O caminho deve começar com \"{{prefix1}}\" ou \"{{prefix2}}\", caso contrário você não poderá ver os arquivos na interface web do HubiC.\n"
-"\n"
-"Deseja adicionar o prefixo ao caminho automaticamente?"
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr "O parâmetro de região só é aplicado ao criar um novo bucket"
