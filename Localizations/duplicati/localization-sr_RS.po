@@ -6,6 +6,7 @@
 # Translators:
 # Milan Marinković <xaoc994@gmail.com>, 2017
 # Stefan Kostic <reddevilserbia@gmail.com>, 2017
+# Zoran Tasić <sagitarion.tasic@gmail.com>, 2023
 # 
 #, fuzzy
 msgid ""
@@ -14,8 +15,8 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-21 17:27+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Stefan Kostic <reddevilserbia@gmail.com>, 2017\n"
-"Language-Team: Serbian (Serbia) (https://www.transifex.com/duplicati/teams/67655/sr_RS/)\n"
+"Last-Translator: Zoran Tasić <sagitarion.tasic@gmail.com>, 2023\n"
+"Language-Team: Serbian (Serbia) (https://app.transifex.com/duplicati/teams/67655/sr_RS/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -24,7 +25,7 @@ msgstr ""
 
 #: Server/Strings.cs:7
 msgid "Another instance is running, and was notified"
-msgstr ""
+msgstr "Još jedna instanca je pokrenuta i obaveštena je"
 
 #: Server/Strings.cs:8
 #, csharp-format
@@ -37,7 +38,7 @@ msgstr ""
 
 #: Server/Strings.cs:10
 msgid "Displays this help"
-msgstr ""
+msgstr "Prikazuje ovu pomoć"
 
 #: Server/Strings.cs:11
 msgid ""
@@ -66,6 +67,16 @@ msgid ""
 "parameter file. Each filter must be prefixed with either a + or a -, and "
 "multiple filters must be joined with {5} "
 msgstr ""
+"Ova opcija se može koristiti za čuvanje nekih ili svih opcija koje su date "
+"klijentu komandne linije. Datoteka mora biti obična tekstualna datoteka, "
+"poželjno je UTF-8 kodiranje. Svaki red u datoteci treba da bude u formatu "
+"--option=value. Posebne opcije --{0} i --{1} mogu da se koriste da bi se "
+"zamenila lokalna putanja i uri udaljenog odredišta, respektivno. Opcije u "
+"ovoj datoteci imaju prednost nad opcijama datim na komandnoj liniji. Ne "
+"možete navesti filtere u datoteci i na komandnoj liniji. Umesto toga, možete"
+" koristiti posebne opcije --{2}, --{3} ili --{4} da biste naveli filtere "
+"unutar datoteke parametara. Svaki filter mora imati prefiks sa + ili -, a "
+"više filtera mora biti spojeno sa {5}"
 
 #: Server/Strings.cs:16 CommandLine/Strings.cs:22
 msgid "Path to a file with parameters"
@@ -79,6 +90,10 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
+"Filteri se ne mogu navesti na komandnoj liniji ako su filteri prisutni i u "
+"datoteci parametara. Koristite posebne opcije --{0}, --{1} ili --{2} da "
+"biste naveli filtere unutar datoteke parametara. Svaki filter mora imati "
+"prefiks sa + ili -, a više filtera mora biti spojeno sa {3}"
 
 #: Server/Strings.cs:18 CommandLine/Strings.cs:18
 #, csharp-format
@@ -98,6 +113,8 @@ msgid ""
 "Activates portable mode where the database is placed below the program "
 "executable"
 msgstr ""
+"Aktivira prenosivi režim gde je baza podataka smeštena ispod izvršnog "
+"programa"
 
 #: Server/Strings.cs:23
 #, csharp-format
@@ -128,6 +145,8 @@ msgid ""
 "The path to the folder where the static files for the webserver is present. "
 "The folder must be located beneath the installation folder"
 msgstr ""
+"Putanja do fascikle u kojoj s nalaze statički fajlovi za veb server. "
+"Fascikla se mora nalaziti ispod instalacione fascikle"
 
 #: Server/Strings.cs:29
 msgid ""
@@ -142,6 +161,8 @@ msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL. "
 "Only RSA/DSA keys are supported."
 msgstr ""
+"Fajl sertifikata i ključa u PKCS #12 formatu koji veb server koristi za SSL."
+" Podržani su samo RSA/DSA ključevi."
 
 #: Server/Strings.cs:31
 msgid "The password for decryption of certificate PKCS #12 file."
@@ -153,6 +174,9 @@ msgid ""
 " means any interface. The special value \"loopback\" means the loopback "
 "adapter."
 msgstr ""
+"Interfejs koji veb server sluša. Posebne vrednosti \"*\" i \"any\" "
+"označavaju bilo koji interfejs. Posebna vrednost \"loopback\" označava "
+"adapter za hvatanje petlje."
 
 #: Server/Strings.cs:33
 msgid ""
@@ -160,6 +184,9 @@ msgid ""
 "do not need to set it on each run. Setting an empty value disables the "
 "password."
 msgstr ""
+"Lozinka potrebna za pristup veb serveru. Ova opcija je sačuvana tako da ne "
+"morate da je postavljate pri svakom pokretanju. Postavljanje prazne "
+"vrednosti onemogućava lozinku."
 
 #: Server/Strings.cs:34
 msgid ""
@@ -167,10 +194,13 @@ msgid ""
 "hostnames are \"*\", all hostnames are allowed and the hostname checking is "
 "disabled."
 msgstr ""
+"Imena hostova koja su prihvaćena odvojena su tačkom i zarezom. Ako je neko "
+"od imena hosta \"*\", sva imena hostova su dozvoljena i provera imena hosta "
+"je onemogućena."
 
 #: Server/Strings.cs:35
 msgid "Enables the ping-pong responder"
-msgstr ""
+msgstr "Omogućuje ping-pong automatski odgovor"
 
 #: Server/Strings.cs:36
 msgid ""
@@ -178,18 +208,23 @@ msgid ""
 " responding. If this option is enabled, the server reads stdin and writes a "
 "reply to each line read"
 msgstr ""
+"Kada radi kao server, servisni demon proces mora da proveri da li proces "
+"automatski odgovara. Ako je ova opcija omogućena, server čita standardni "
+"unos - stdin i piše odgovor na svaki pročitan red"
 
 #: Server/Strings.cs:37 Library/Main/Strings.cs:214
 msgid "Clean up old log data"
-msgstr ""
+msgstr "Očistite stare podatke dnevnika"
 
 #: Server/Strings.cs:38 Library/Main/Strings.cs:215
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
+"Podesite vreme nakon kojeg će podaci dnevnika biti očišćeni iz baze "
+"podataka."
 
 #: Server/Strings.cs:39
 msgid "Sets the folder where settings are stored"
-msgstr ""
+msgstr "Postavlja fasciklu u kojoj se čuvaju podešavanja"
 
 #: Server/Strings.cs:40
 #, csharp-format
@@ -198,6 +233,10 @@ msgid ""
 " to choose where the settings are stored. This option can also be set with "
 "the environment variable {0}."
 msgstr ""
+"Program Duplicati treba da uskladišti malu bazu podataka sa svim "
+"podešavanjima. Koristite ovu opciju da izaberete gde će se podešavanja "
+"čuvati. Ova opcija se takođe može podesiti pomoću promenljive okruženja "
+"{0}."
 
 #: Server/Strings.cs:41
 msgid "Sets the database encryption key"
@@ -210,6 +249,10 @@ msgid ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
+"Ova opcija postavlja ključ za enkripciju koji se koristi za skremblovanje "
+"lokalnih podešavanja baze podataka. Ova opcija se takođe može podesiti "
+"pomoću promenljive okruženja {0}. Koristite opciju --{1} da biste "
+"onemogućili skremblovanje baze podataka."
 
 #: Server/Strings.cs:43 Library/Main/Strings.cs:74
 msgid "Temporary storage folder"
@@ -221,6 +264,10 @@ msgid ""
 "storage. By default the system default temporary folder is used. Note that "
 "also SQLite will put temporary files in this temporary folder."
 msgstr ""
+"Ova opcija se može koristiti da obezbedi alternativne fascikle za privremeno"
+" skladište. Podrazumevano se koristi sistemska podrazumevana privremena "
+"fascikla. Imajte na umu da će SQLite takođe staviti privremene fajlove u "
+"ovu privremenu fasciklu."
 
 #: Server/Strings.cs:47
 #, csharp-format
@@ -228,6 +275,8 @@ msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr ""
+"Nije moguće pronaći važeći datum, s obzirom na datum početka {0}, "
+"interval ponavljanja {1} i dozvoljene dane {2}"
 
 #: Server/Strings.cs:52
 #, csharp-format
@@ -247,16 +296,19 @@ msgstr ""
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr ""
+"Nije moguće otvoriti priključak za slušanje, pokušali su portovi: {0}"
 
 #: Library/Encryption/Strings.cs:26
 msgid ""
 "This module encrypts all files in the same way that AESCrypt does, using 256"
 " bit AES encryption."
 msgstr ""
+"Ovaj modul šifruje sve fajlove na isti način kao AESCrypt Ovaj modul šifruje"
+" sve datoteke na isti način kao 256 bit-nu AES enkripciju."
 
 #: Library/Encryption/Strings.cs:27
 msgid "AES-256 encryption, built in"
-msgstr ""
+msgstr "AES-256 enkripcija, ugrađena"
 
 #: Library/Encryption/Strings.cs:28
 msgid "Empty passphrase not allowed"
@@ -268,15 +320,19 @@ msgid ""
 "Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. "
 "multithreading)"
 msgstr ""
+"Koristite ovu opciju da podesite nivo niti dozvoljen za operacije AES "
+"kriptovanja. Važeće vrednosti su 0 (koristi se podrazumevano) ili od 1 (bez"
+" višenitne) do 4 (maks. višenitno)"
 
 #: Library/Encryption/Strings.cs:30
 msgid "Set thread level utilized for crypting (0-4)"
-msgstr ""
+msgstr "Podesite nivo niti koji se koristi za šifrovanje (0-4)"
 
 #: Library/Encryption/Strings.cs:34
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr ""
+"Dešifrovanje podataka nije uspelo (nevažeća pristupna fraza lozinke?): {0}"
 
 #: Library/Encryption/Strings.cs:38
 msgid ""
@@ -287,79 +343,96 @@ msgid ""
 "program is available via the PATH environment variable. It is possible to "
 "supply the path to GPG using the --gpg-program-path switch."
 msgstr ""
+"GPG modul za šifrovanje koristi program GNU Privaci Guard za šifrovanjei i "
+"dešifrovanje fajlova. Zahteva da je gpg izvršni fajl dostupan na sistemu. Na"
+" Vindouzu se pretpostavlja da je ovo u podrazumevanoj fascikli za "
+"instalaciju pod programskim fajlova, pod Linux i OSX se pretpostavlja da je "
+"program dostupan preko PATH promenljive okruženja. Moguće je obezbediti "
+"putanju do GPG-a pomoću prekidača --gpg-program-path."
 
 #: Library/Encryption/Strings.cs:39
 msgid "GNU Privacy Guard, external"
-msgstr ""
+msgstr "GNU Privacy Guard, eksterni"
 
 #: Library/Encryption/Strings.cs:40
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
 msgstr ""
+"Koristite ovaj prekidač da odredite sve dodatne opcije za GPG. Ovde ne "
+"možete navesti opciju --passphrase-fd. Opcija --decript je uvek navedena."
 
 #: Library/Encryption/Strings.cs:41
 msgid "Extra GPG commandline options for decryption"
-msgstr ""
+msgstr "Dodatne GPG opcije komandne linije za dešifrovanje"
 
 #: Library/Encryption/Strings.cs:42
 msgid ""
 "The GPG encryption/decryption will use the --armor option for GPG to protect"
 " the files with armor. Specify this switch to remove the --armor option."
 msgstr ""
+"GPG šifrovanje/dešifrovanje će koristiti opciju --armor za GPG da zaštiti "
+"fajlove oklopom. Odredite ovaj prekidač da biste uklonili opciju --armor."
 
 #: Library/Encryption/Strings.cs:43
 msgid "Don't use GPG Armor"
-msgstr ""
+msgstr "Nemojte koristiti GPG Armor kodiranje"
 
 #: Library/Encryption/Strings.cs:44
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
 msgstr ""
+"Koristite ovaj prekidač da odredite sve dodatne opcije za GPG. Ovde ne "
+"možete navesti opciju --passphrase-fd. Opcija --encript je uvek navedena."
 
 #: Library/Encryption/Strings.cs:45
 msgid "Extra GPG commandline options for encryption"
-msgstr ""
+msgstr "Dodatne GPG opcije komandne linije za šifrovanje"
 
 #: Library/Encryption/Strings.cs:46
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
-msgstr ""
+msgstr "Izvršavanje GPG-a nije uspelo sa \"{0} {1}\": {2}"
 
 #: Library/Encryption/Strings.cs:47
 msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "assume that the program \"gpg\" is available in the system path."
 msgstr ""
+"Putanja do programa GNU Privaci Guard. Ako nije navedena, Duplicati će "
+"pretpostaviti da je program \"gpg\" dostupan na sistemskoj putanji."
 
 #: Library/Encryption/Strings.cs:48
 msgid "The path to GnuPG"
-msgstr ""
+msgstr "Putanja do GnuPG-a"
 
 #: Library/Encryption/Strings.cs:49
 #, csharp-format
 msgid ""
 "This option has non-standard handling, please use the --{0} option instead."
 msgstr ""
+"Ova opcija ima nestandardno rukovanje, umesto toga koristite opciju --{0}."
 
 #: Library/Encryption/Strings.cs:50
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
 msgstr ""
+"Koristite ovu opciju da obezbedite opciju --armor GPG-u. Fajlovi će biti "
+"veći, ali se mogu poslati kao čisti tekstualni fajlovi."
 
 #: Library/Encryption/Strings.cs:51
 msgid "Use GPG Armor"
-msgstr ""
+msgstr "Koristite GPG Armor kodiranje"
 
 #: Library/Encryption/Strings.cs:52
 msgid "Overrides the GPG command supplied for decryption"
-msgstr ""
+msgstr "Zamenjuje komandu GPG koja je data za dešifrovanje"
 
 #: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
-msgstr ""
+msgstr "GPG komanda za dešifrovanje"
 
 #: Library/Encryption/Strings.cs:54
 #, csharp-format
@@ -367,10 +440,12 @@ msgid ""
 "Overrides the default GPG encryption command \"{0}\", normal usage is to "
 "request asymetric encryption with the setting {1}"
 msgstr ""
+"Zamenjuje podrazumevanu GPG komandu za šifrovanje „{0}“, normalna upotreba "
+"je da se zahteva asimetrično šifrovanje sa podešavanjem {1}"
 
 #: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
-msgstr ""
+msgstr "Komanda za GPG šifrovanje"
 
 #: Library/Encryption/Strings.cs:59
 #, csharp-format
@@ -379,11 +454,11 @@ msgstr "Dešifrovanje nije uspelo: {0}"
 
 #: Library/Encryption/Strings.cs:60
 msgid "Failure while invoking GnuPG, program won't flush output"
-msgstr ""
+msgstr "Greška prilikom pozivanja GnuPG-a, program neće isprazniti izlaz"
 
 #: Library/Encryption/Strings.cs:61
 msgid "Failure while invoking GnuPG, program won't terminate"
-msgstr ""
+msgstr "Neuspeh pri pozivanju GnuPG-a, program se neće prekinuti"
 
 #: Library/Interface/Strings.cs:4
 msgid "aliases"
@@ -403,39 +478,39 @@ msgstr "vrednosti"
 
 #: Library/Interface/Strings.cs:10
 msgid "Boolean"
-msgstr ""
+msgstr "Bulova logika"
 
 #: Library/Interface/Strings.cs:11
 msgid "Enumeration"
-msgstr ""
+msgstr "Nabrajanje"
 
 #: Library/Interface/Strings.cs:12
 msgid "Flags"
-msgstr ""
+msgstr "Flegovi"
 
 #: Library/Interface/Strings.cs:13
 msgid "Integer"
-msgstr ""
+msgstr "Ceo broj"
 
 #: Library/Interface/Strings.cs:14
 msgid "Path"
-msgstr ""
+msgstr "Putanja"
 
 #: Library/Interface/Strings.cs:15
 msgid "Size"
-msgstr ""
+msgstr "Veličina"
 
 #: Library/Interface/Strings.cs:16
 msgid "String"
-msgstr ""
+msgstr "Niz znakova"
 
 #: Library/Interface/Strings.cs:17
 msgid "Timespan"
-msgstr ""
+msgstr "Vremenski raspon"
 
 #: Library/Interface/Strings.cs:18
 msgid "Unknown"
-msgstr ""
+msgstr "Nepoznat"
 
 #: Library/Interface/Strings.cs:21
 msgid "The folder cannot be created because it already exists"
@@ -462,17 +537,23 @@ msgid ""
 "Error message: {0}\n"
 "Command: {1} {2}"
 msgstr ""
+"TSpoljna komanda nije uspela da se pokrene.\n"
+"Poruka o grešci: {0}\n"
+"Komanda: {1} {2}"
 
 #: Library/Snapshots/Strings.cs:7
 #, csharp-format
 msgid ""
 "The external command failed to complete within the set time limit: {0} {1}"
 msgstr ""
+"Spoljna komanda nije uspela da se završi u okviru postavljenog vremenskog "
+"ograničenja: {0} {1}"
 
 #: Library/Snapshots/Strings.cs:8
 #, csharp-format
 msgid "Unable to match local path {0} with any snapshot path: {1}"
 msgstr ""
+"Nije moguće upariti lokalnu putanju {0} sa bilo kojom putanjom snimka: {1}"
 
 #: Library/Snapshots/Strings.cs:9
 #, csharp-format
@@ -506,63 +587,67 @@ msgstr ""
 
 #: Library/Snapshots/Strings.cs:15
 msgid "Unable to determine full file path for USN entry"
-msgstr ""
+msgstr "Nije moguće utvrditi punu fajl putanju za USN unos"
 
 #: Library/Snapshots/Strings.cs:16
 msgid "USN journal entries were purged since last scan"
-msgstr ""
+msgstr "Unosi u USN dnevnik su očišćeni kod poslednjeg skeniranja"
 
 #: Library/Snapshots/Strings.cs:17
 msgid "Unexpected empty response while enumerating"
-msgstr ""
+msgstr "Neočekivani prazan odgovor tokom nabrajanja"
 
 #: Library/Snapshots/Strings.cs:18
 msgid "USN is not supported on Linux"
-msgstr ""
+msgstr "USN nije podržan na Linux-u"
 
 #: Library/Snapshots/Strings.cs:19
 msgid ""
 "The number of files returned by USN was zero. This is likely an error. To "
 "remedy this, USN has been disabled."
 msgstr ""
+"Broj fajlova koje je vratio USN je nula. Ovo je verovatno greška. Da bi se "
+"ovo popravilo, USN je onemogućen."
 
 #: Library/Snapshots/Strings.cs:20
 msgid "Unexpected path format encountered"
-msgstr ""
+msgstr "Pojavio se na neočekivan format putanje"
 
 #: Library/Snapshots/Strings.cs:21
 msgid "Unsupported USN journal version."
-msgstr ""
+msgstr "Nepodržana USN verzija žurnala."
 
 #: Library/Snapshots/Strings.cs:22
 msgid "Previous backup did not record USN journal info"
-msgstr ""
+msgstr "Prethodna rezervna kopija nije zabeležila informacije o USN žurnalu"
 
 #: Library/Snapshots/Strings.cs:23
 msgid "USN journal ID changed"
-msgstr ""
+msgstr "ID USN žurnala je promenjen"
 
 #: Library/Snapshots/Strings.cs:24
 msgid "Next USN is zero"
-msgstr ""
+msgstr "Sledeći USN je nula"
 
 #: Library/Snapshots/Strings.cs:25
 msgid "Backup configuration changed"
-msgstr ""
+msgstr "Konfiguracija rezervne kopije je promenjena"
 
 #: Library/Snapshots/Strings.cs:28
 msgid "Calling process does not have the backup privilege"
-msgstr "Pozivanje procesa nema backup dozvole"
+msgstr "Pozivanje procesa nema dozvole rezervne kopije"
 
 #: Library/Backend/OpenStack/Strings.cs:23
 msgid ""
 "This backend can read and write data to Swift (OpenStack Object Storage). "
 "Supported format is \"openstack://container/folder\"."
 msgstr ""
+"Ova pozadina može čitati i pisati podatke u Swift (Open Stack Object "
+"Storage). Podržani format je \"openstack://container/folder\"."
 
 #: Library/Backend/OpenStack/Strings.cs:24
 msgid "OpenStack Simple Storage"
-msgstr ""
+msgstr "OpenStack Simple Storage"
 
 #: Library/Backend/OpenStack/Strings.cs:25
 #, csharp-format
@@ -576,6 +661,9 @@ msgid ""
 " environment variable \"AUTH_PASSWORD\". If the password is supplied, --{0} "
 "must also be set"
 msgstr ""
+"Lozinka koja se koristi za povezivanje sa serverom. Ovo se takođe može "
+"dostaviti kao promenljiva okruženja „AUTH_PASSVORD“. Ako je lozinka "
+"navedena, --{0} takođe mora biti podešen"
 
 #: Library/Backend/OpenStack/Strings.cs:27 Library/Backend/FTP/Strings.cs:13
 #: Library/Backend/CloudFiles/Strings.cs:7 Library/Backend/S3/Strings.cs:10
@@ -586,15 +674,15 @@ msgstr ""
 #: Library/Backend/Jottacloud/Strings.cs:14 Library/Backend/Mega/Strings.cs:6
 #: Library/Backend/SharePoint/Strings.cs:9 Library/Backend/WEBDAV/Strings.cs:8
 msgid "Supplies the password used to connect to the server"
-msgstr ""
+msgstr "Daje lozinku koja se koristi za povezivanje sa serverom"
 
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "The domain name of the user used to connect to the server."
-msgstr ""
+msgstr "Ime domena korisnika koji se koristi za povezivanje sa serverom."
 
 #: Library/Backend/OpenStack/Strings.cs:29
 msgid "Supplies the domain used to connect to the server"
-msgstr ""
+msgstr "Obezbeđuje domen koji se koristi za povezivanje sa serverom"
 
 #: Library/Backend/OpenStack/Strings.cs:30 Library/Backend/FTP/Strings.cs:14
 #: Library/Backend/CloudFiles/Strings.cs:8 Library/Backend/S3/Strings.cs:11
@@ -609,6 +697,8 @@ msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
 msgstr ""
+"Korisničko ime koje se koristi za povezivanje sa serverom. Ovo se takođe "
+"može dostaviti kao promenljiva okruženja „AUTH_USERNAME“."
 
 #: Library/Backend/OpenStack/Strings.cs:31 Library/Backend/FTP/Strings.cs:15
 #: Library/Backend/CloudFiles/Strings.cs:9 Library/Backend/S3/Strings.cs:12
@@ -620,7 +710,7 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:11
 #: Library/Backend/WEBDAV/Strings.cs:10
 msgid "Supplies the username used to connect to the server"
-msgstr ""
+msgstr "Daje korisničko ime koje se koristi za povezivanje sa serverom"
 
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid ""
@@ -628,20 +718,25 @@ msgid ""
 "be supplied when authenticating with a password, but is not required when "
 "using an API key."
 msgstr ""
+"Ime zakupca je obično ime korisničkog naloga koji se plaća. Ova opcija mora"
+" da se obezbedi prilikom autentifikacije pomoću lozinke, ali nije potrebna "
+"kada se koristi API ključ."
 
 #: Library/Backend/OpenStack/Strings.cs:33
 msgid "Supplies the Tenant Name used to connect to the server"
-msgstr ""
+msgstr "Daje Ime zakupca koji se koristi za povezivanje sa serverom"
 
 #: Library/Backend/OpenStack/Strings.cs:34
 msgid ""
 "The API key can be used to connect without supplying a password and tenant "
 "ID with some providers."
 msgstr ""
+"API ključ se može koristiti za povezivanje bez davanja lozinke i ID-a "
+"zakupca sa nekim provajderima."
 
 #: Library/Backend/OpenStack/Strings.cs:35
 msgid "Supplies the API key used to connect to the server"
-msgstr ""
+msgstr "Obezbeđuje API ključ koji se koristi za povezivanje sa serverom"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 #, csharp-format
@@ -649,18 +744,22 @@ msgid ""
 "The authentication URL is used to authenticate the user and find the storage"
 " service. The URL commonly ends with \"/v2.0\". Known providers are: {0}{1}"
 msgstr ""
+"URL za autentifikaciju se koristi za autentifikaciju korisnika i "
+"pronalaženje usluge skladištenja. URL se obično završava sa „/v2.0“. Poznati"
+" dobavljači su: {0}{1}"
 
 #: Library/Backend/OpenStack/Strings.cs:37
 msgid "Supplies the authentication URL"
-msgstr ""
+msgstr "Obezbeđuje URL za autentifikaciju"
 
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid "The keystone API version to use, valid values are 'v2' and 'v3'."
 msgstr ""
+"Keystone API verzija koju treba koristiti, važeće vrednosti su 'v2' i 'v3'."
 
 #: Library/Backend/OpenStack/Strings.cs:39
 msgid "The keystone API version to use"
-msgstr ""
+msgstr "Keistone API verzija koju treba koristiti"
 
 #: Library/Backend/OpenStack/Strings.cs:40
 msgid ""
@@ -668,10 +767,13 @@ msgid ""
 "where the container should be placed. Consult your provider for a list of "
 "valid regions, or leave empty for the default region."
 msgstr ""
+"Ova opcija se koristi samo pri kreiranju kontejnera i koristi se za "
+"označavanje gde kontejner treba da se postavi. Konsultujte svog provajdera "
+"za listu važećih regiona ili ostavite prazno za podrazumevani region."
 
 #: Library/Backend/OpenStack/Strings.cs:41
 msgid "Supplies the region used for creating a container"
-msgstr ""
+msgstr "Snabdeva region koji se koristi za kreiranje kontejnera"
 
 #: Library/Backend/FTP/Strings.cs:7
 msgid ""
@@ -679,16 +781,22 @@ msgid ""
 "formats are \"ftp://hostname/folder\" or "
 "\"ftp://username:password@hostname/folder\""
 msgstr ""
+"Ova pozadina može čitati i pisati podatke na pozadinu zasnovanu na FTP-u. "
+"Dozvoljeni formati su \"ftp://hostname/folder\" ili "
+"\"ftp://username:password@hostname/folder\""
 
 #: Library/Backend/FTP/Strings.cs:8
 msgid ""
 "If this flag is set, the FTP connection is made in active mode. Even if the "
 "\"ftp-passive\" flag is also set, the connection will be made in active mode"
 msgstr ""
+"Ako je ova zastavica postavljena, FTP veza se uspostavlja u aktivnom režimu."
+" Čak i ako je postavljena zastavica \"ftp-passive\", veza će biti "
+"uspostavljena u aktivnom režimu"
 
 #: Library/Backend/FTP/Strings.cs:9 Library/Backend/FTP/Strings.cs:11
 msgid "Toggles the FTP connections method"
-msgstr ""
+msgstr "Uključuje metod FTP veze"
 
 #: Library/Backend/FTP/Strings.cs:10
 msgid ""
@@ -696,6 +804,9 @@ msgid ""
 " better with some firewalls. If the \"ftp-regular\" flag is also set, this "
 "flag is ignored"
 msgstr ""
+"Ako je ova zastavica postavljena, FTP veza se uspostavlja u pasivnom režimu,"
+" što bolje funkcioniše sa nekim zaštitnim zidovima. Ako je takođe "
+"postavljena zastavica \"ftp-regular\", ova zastavica se ignoriše"
 
 #: Library/Backend/FTP/Strings.cs:12 Library/Backend/CloudFiles/Strings.cs:6
 #: Library/Backend/S3/Strings.cs:9
@@ -709,16 +820,20 @@ msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
 msgstr ""
+"Lozinka koja se koristi za povezivanje sa serverom. Ovo se takođe može "
+"dostaviti kao promenljiva okruženja \"AUTH_PASSWORD\"."
 
 #: Library/Backend/FTP/Strings.cs:16
 msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over ftp "
 "(ftps)."
 msgstr ""
+"Koristite ovu zastavicu za komunikaciju korišćenjem Secure Socket Layer "
+"(SSL) preko ftp (ftps)."
 
 #: Library/Backend/FTP/Strings.cs:17
 msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr ""
+msgstr "Naređuje Duplicati-ju da koristi SSL (ftps) vezu"
 
 #: Library/Backend/FTP/Strings.cs:18
 msgid "FTP"
@@ -737,6 +852,8 @@ msgid ""
 "The file {0} was uploaded but not found afterwards, the file listing "
 "returned {1}"
 msgstr ""
+"Fajl {0} je otpremljen, ali nije pronađen kasnije, lista fajlova je vratila "
+"{1}"
 
 #: Library/Backend/FTP/Strings.cs:21
 #: Library/Backend/AlternativeFTP/Strings.cs:17
@@ -745,11 +862,13 @@ msgid ""
 "The file {0} was uploaded but the returned size was {1} and it was expected "
 "to be {2}"
 msgstr ""
+"Fajl {0} je otpremljen, ali vraćena veličina je bila {1} a očekivalo se da "
+"će biti {2}"
 
 #: Library/Backend/FTP/Strings.cs:22
 #: Library/Backend/AlternativeFTP/Strings.cs:18
 msgid "Disable upload verification"
-msgstr ""
+msgstr "Onemogući verifikaciju otpremanja"
 
 #: Library/Backend/FTP/Strings.cs:23
 msgid ""
@@ -757,12 +876,17 @@ msgid ""
 "verified. Use this option to disable this verification to make the upload "
 "faster but less reliable."
 msgstr ""
+"Da bismo se zaštitili od kvarova na mreži, svako otpremanje će se pokušati "
+"verifikovati. Koristite ovu opciju da onemogućite ovu verifikaciju da "
+"otpremanje bude brže, ali manje pouzdano."
 
 #: Library/Backend/GoogleServices/Strings.cs:22
 msgid ""
 "This backend can read and write data to Google Cloud Storage. Supported "
 "format is \"gcs://bucket/folder\"."
 msgstr ""
+"Ova pozadina može da čita i upisuje podatke u Google Cloud Storage. Podržani"
+" format je \"gcs://bucket/folder\"."
 
 #: Library/Backend/GoogleServices/Strings.cs:23
 msgid "Google Cloud Storage"
@@ -772,12 +896,12 @@ msgstr "Google Cloud skladište"
 #: Library/Backend/OAuthHelper/Strings.cs:6
 #, csharp-format
 msgid "You need an AuthID, you can get it from: {0}"
-msgstr ""
+msgstr "Treba Vam AuthID, možete ga dobiti od: {0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:25
 #, csharp-format
 msgid "You must supply a project ID with --{0} for creating a bucket"
-msgstr ""
+msgstr "Morate da navedete ID projekta sa --{0} za pravljenje segmenta"
 
 #: Library/Backend/GoogleServices/Strings.cs:26
 #: Library/Backend/GoogleServices/Strings.cs:42
@@ -785,7 +909,7 @@ msgstr ""
 #: Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
-msgstr ""
+msgstr "Autorizacioni kod"
 
 #: Library/Backend/GoogleServices/Strings.cs:27
 #: Library/Backend/GoogleServices/Strings.cs:43
@@ -794,7 +918,7 @@ msgstr ""
 #: Library/Backend/OAuthHelper/Strings.cs:10
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
-msgstr ""
+msgstr "Token autorizacije preuzet sa {0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:29
 #, csharp-format
@@ -802,10 +926,12 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:\n"
 "{0}"
 msgstr ""
+"Ova opcija se koristi samo kada se kreiraju novi segmenti. Koristite ovu opciju da biste promenili region u kom se podaci čuvaju. Naknade zavise od lokacije segmenta. Poznate lokacije segmenta:\n"
+"{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:31
 msgid "Specifies location option for creating a bucket"
-msgstr ""
+msgstr "Određuje opciju lokacije za kreiranje segmenta"
 
 #: Library/Backend/GoogleServices/Strings.cs:32
 #, csharp-format
@@ -813,14 +939,16 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:\n"
 "{0}"
 msgstr ""
+"Ova opcija se koristi samo kada se kreiraju novi segmenti. Koristite ovu opciju da promenite koji tip skladištenja ima segment. Punjenje i funkcionalnost variraju u zavisnosti od klase segmenta skladištenja. Poznate klase skladištenja:\n"
+"{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:34
 msgid "Specifies storage class for creating a bucket"
-msgstr ""
+msgstr "Određuje klasu skladištenja za kreiranje segmenta"
 
 #: Library/Backend/GoogleServices/Strings.cs:35
 msgid "Specifies project for creating a bucket"
-msgstr ""
+msgstr "Određuje projekat za kreiranje segmenta"
 
 #: Library/Backend/GoogleServices/Strings.cs:36
 msgid ""
@@ -828,12 +956,17 @@ msgid ""
 "supply the project ID that the bucket is attached to. The project determines"
 " where usage charges are applied"
 msgstr ""
+"Ova opcija se koristi samo kada se kreiraju novi segmenti. Koristite ovu "
+"opciju da unesete ID projekta za koji je segment dodat. Projekat određuje "
+"gde se primenjuju naknade za korišćenje"
 
 #: Library/Backend/GoogleServices/Strings.cs:41
 msgid ""
 "This backend can read and write data to Google Drive. Supported format is "
 "\"googledrive://folder/subfolder\"."
 msgstr ""
+"Ova pozadina može da čita i upisuje podatke na Google disk. Podržan format "
+"je \"googledrive://folder/subfolder\"."
 
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid "Google Drive"
@@ -842,17 +975,19 @@ msgstr "Google disk"
 #: Library/Backend/GoogleServices/Strings.cs:45
 #, csharp-format
 msgid "There is more than one item named \"{0}\" in the folder \"{1}\""
-msgstr ""
+msgstr "Postoji više od jedne stavke pod nazivom \"{0}\" u fascikli \"{1}\""
 
 #: Library/Backend/GoogleServices/Strings.cs:46
 msgid "Team drive ID"
-msgstr ""
+msgstr "Team drive ID"
 
 #: Library/Backend/GoogleServices/Strings.cs:47
 msgid ""
 "This option sets the team drive to use. Leaving it empty uses the personal "
 "drive"
 msgstr ""
+"Ova opcija postavlja Team drive za korišćenje. Ako ga ostavite praznim, "
+"koristi se lični disk"
 
 #: Library/Backend/CloudFiles/Strings.cs:4
 #, csharp-format
@@ -861,18 +996,23 @@ msgid ""
 "account resides, use this option to set an alternate authentication URL. "
 "This option overrides --{0}."
 msgstr ""
+"CloudFiles koriste različite servere za autentifikaciju na osnovu toga gde "
+"se nalog nalazi, koristite ovu opciju da postavite alternativni URL za "
+"autentifikaciju. Ova opcija zamenjuje --{0}."
 
 #: Library/Backend/CloudFiles/Strings.cs:5
 msgid "Provide another authentication URL"
-msgstr ""
+msgstr "Navedite drugu adresu URL za autentifikaciju"
 
 #: Library/Backend/CloudFiles/Strings.cs:10
 msgid "Supplies the API Access Key used to authenticate with CloudFiles."
 msgstr ""
+"Obezbeđuje pristupni ključ API-ja koji se koristi za autentifikaciju pomoću"
+" CloudFiles-a."
 
 #: Library/Backend/CloudFiles/Strings.cs:11
 msgid "Supplies the access key used to connect to the server"
-msgstr ""
+msgstr "Obezbeđuje pristupni ključ koji se koristi za povezivanje sa serverom"
 
 #: Library/Backend/CloudFiles/Strings.cs:12
 #, csharp-format
@@ -881,32 +1021,40 @@ msgid ""
 "this option if the account is a UK based account. Note that this is "
 "equivalent to setting --{0}={1}."
 msgstr ""
+"Duplicati će pretpostaviti da su dati akreditivi za nalog u SAD, koristite "
+"ovu opciju ako je nalog nalog sa sedištem u UK. Imajte na umu da je ovo "
+"ekvivalentno podešavanju --{0}={1}."
 
 #: Library/Backend/CloudFiles/Strings.cs:13
 msgid "Use a UK account"
-msgstr ""
+msgstr "Koristite nalog u UK"
 
 #: Library/Backend/CloudFiles/Strings.cs:14
 msgid "Supplies the username used to authenticate with CloudFiles."
 msgstr ""
+"Pruža korisničko ime koje se koristi za autentifikaciju pomoću "
+"CloudFiles-a."
 
 #: Library/Backend/CloudFiles/Strings.cs:15
 msgid "Supplies the username used to authenticate with CloudFiles"
 msgstr ""
+"Pruža korisničko ime koje se koristi za autentifikaciju pomoću CloudFiles-a"
 
 #: Library/Backend/CloudFiles/Strings.cs:16
 msgid ""
 "Supports connections to the CloudFiles backend. Allowed formats is "
 "\"cloudfiles://container/folder\"."
 msgstr ""
+"Podržava veze sa CloudFiles pozadinom. Dozvoljeni formati su "
+"\"cloudfiles://container/folder\"."
 
 #: Library/Backend/CloudFiles/Strings.cs:17
 msgid "Rackspace CloudFiles"
-msgstr ""
+msgstr "Rackspace CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:18
 msgid "MD5 Hash (ETag) verification failed"
-msgstr ""
+msgstr "MD5 heš (ETag) verifikacija nije uspela"
 
 #: Library/Backend/CloudFiles/Strings.cs:19
 msgid "Failed to delete file"
@@ -915,51 +1063,55 @@ msgstr "Brisanje datoteke nije uspelo"
 #: Library/Backend/CloudFiles/Strings.cs:20
 #: Library/Backend/Jottacloud/Strings.cs:11
 msgid "Failed to upload file"
-msgstr ""
+msgstr "Otpremanje fajla nije uspelo"
 
 #: Library/Backend/CloudFiles/Strings.cs:21
 msgid "No CloudFiles API Access Key given"
-msgstr ""
+msgstr "Nije dat ključ za pristup CloudFiles API-ju"
 
 #: Library/Backend/CloudFiles/Strings.cs:22
 msgid "No CloudFiles userID given"
-msgstr ""
+msgstr "Nije dat korisnički ID za CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:23
 msgid "Unexpected CloudFiles response, perhaps the API has changed?"
-msgstr ""
+msgstr "Neočekivan odgovor CloudFiles-a, možda se API promenio?"
 
 #: Library/Backend/S3/Strings.cs:4
 msgid ""
 "The AWS \"Secret Access Key\" can be obtained after logging into your AWS "
 "account, this can also be supplied through the \"auth-password\" property"
 msgstr ""
+"AWS \"Tajni pristupni ključ\" se može dobiti nakon što se prijavite na vaš "
+"AWS nalog, a može se dobiti i preko svojstva \"auth-password\""
 
 #: Library/Backend/S3/Strings.cs:5
 msgid "The AWS \"Secret Access Key\""
-msgstr ""
+msgstr "AWS \"Tajni pristupni ključ\""
 
 #: Library/Backend/S3/Strings.cs:6
 msgid ""
 "The AWS \"Access Key ID\" can be obtained after logging into your AWS "
 "account, this can also be supplied through the \"auth-username\" property"
 msgstr ""
+"AWS \"Tajni pristupni ključ\" se može dobiti nakon što se prijavite na vaš "
+"AVS nalog, on se takođe može dostaviti preko svojstva \"auth-username\""
 
 #: Library/Backend/S3/Strings.cs:7
 msgid "The AWS \"Access Key ID\""
-msgstr ""
+msgstr "AWS \"ID ključa za pristup\""
 
 #: Library/Backend/S3/Strings.cs:8
 msgid "S3 compatible"
-msgstr ""
+msgstr "S3 kompatibilan"
 
 #: Library/Backend/S3/Strings.cs:13
 msgid "No S3 secret key given"
-msgstr ""
+msgstr "Nije dat tajni ključ S3"
 
 #: Library/Backend/S3/Strings.cs:14
 msgid "No S3 userID given"
-msgstr ""
+msgstr "Nije dat S3 korisnički ID"
 
 #: Library/Backend/S3/Strings.cs:15
 msgid ""
@@ -967,6 +1119,10 @@ msgid ""
 "bucket is created on a European server. This flag forces the \"s3-use-new-"
 "style\" flag. Amazon charges slightly more for European buckets."
 msgstr ""
+"Ova zastavica se koristi samo kada se kreiraju novi segmenti. Ako je "
+"zastavica postavljena, segment se kreira na evropskom serveru. Ova zastavica"
+" nameće zastavicu \"s3-use-new-style\". Amazon naplaćuje nešto više za "
+"evropske segmente."
 
 #: Library/Backend/S3/Strings.cs:16
 msgid "Use a European server"
@@ -977,27 +1133,34 @@ msgid ""
 "Specify this argument to make the S3 backend use subdomains rather than the "
 "previous url prefix method. See the S3 documentation for more details."
 msgstr ""
+"Navedite ovaj argument da bi S3 pozadina koristila poddomene, a ne prethodni"
+" metod prefiksa URL-a. Pogledajte S3 dokumentaciju za više detalja."
 
 #: Library/Backend/S3/Strings.cs:18
 msgid "Use subdomain calling style"
-msgstr ""
+msgstr "Koristite stil pozivanja poddomena"
 
 #: Library/Backend/S3/Strings.cs:19
 #, csharp-format
 msgid "Unable to determine the bucket name for host: {0}"
-msgstr ""
+msgstr "Nije moguće utvrditi naziv segmenta za host: {0}"
 
 #: Library/Backend/S3/Strings.cs:20
 msgid ""
 "This flag toggles the use of the special RRS header. Files stored using RRS "
 "are more likely to disappear than those stored normally, but also costs less"
-" to store. See the full description here: http://aws.amazon.com/about-aws"
-"/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
+" to store. See the full description here: http://aws.amazon.com/about-"
+"aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
 msgstr ""
+"Ova zastavica isključuje upotrebu posebnog RRS zaglavlja. Fajlovi koji se "
+"čuvaju pomoću RRS-a imaju veću verovatnoću da će nestati od onih koje se"
+" čuvaju normalno, ali takođe koštaju manje za skladištenje. Pogledajte "
+"kompletan opis ovde: http://aws.amazon.com/about-aws/whats-"
+"new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
 
 #: Library/Backend/S3/Strings.cs:21
 msgid "Use Reduced Redundancy Storage"
-msgstr ""
+msgstr "Koristite smanjeno redundantno skladište"
 
 #: Library/Backend/S3/Strings.cs:22
 #, csharp-format
@@ -1009,6 +1172,8 @@ msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
 "formats are: \"s3://bucketname/prefix\""
 msgstr ""
+"Ova pozadina može čitati i pisati podatke na server kompatibilan sa S3. "
+"Dozvoljeni formati su: \"s3://bucketname/prefix\""
 
 #: Library/Backend/S3/Strings.cs:24
 #, csharp-format
@@ -1026,10 +1191,12 @@ msgid ""
 "This option is only used when creating new buckets. Use this option to change what region the data is stored in. Amazon charges slightly more for non-US buckets. Known bucket locations:\n"
 "{0}"
 msgstr ""
+"Ova opcija se koristi samo kada se kreiraju novi segmenti. Koristite ovu opciju da promenite region u kom se podaci čuvaju. Amazon naplaćuje nešto više za segmente koji nisu iz SAD. Poznate lokacije segmenta:\n"
+"{0}"
 
 #: Library/Backend/S3/Strings.cs:28
 msgid "Specifies S3 location constraints"
-msgstr ""
+msgstr "Određuje S3 ograničenja lokacije"
 
 #: Library/Backend/S3/Strings.cs:29
 #, csharp-format
@@ -1037,20 +1204,24 @@ msgid ""
 "Companies other than Amazon are now supporting the S3 API, meaning that this backend can read and write data to those providers as well. Use this option to set the hostname. Currently known providers are:\n"
 "{0}"
 msgstr ""
+"Kompanije koje nisu Amazon sada podržavaju S3 API, što znači da ova pozadina može čitati i pisati podatke i tim provajderima. Koristite ovu opciju da podesite ime hosta. Trenutno poznati provajderi su:\n"
+"{0}"
 
 #: Library/Backend/S3/Strings.cs:31
 msgid "Specifies an alternate S3 server name"
-msgstr ""
+msgstr "Određuje ime alternativnog S3 servera"
 
 #: Library/Backend/S3/Strings.cs:32
 msgid "Specifies the S3 client library to use"
-msgstr ""
+msgstr "Određuje S3 klijent biblioteku koju treba koristiti"
 
 #: Library/Backend/S3/Strings.cs:33
 msgid ""
 "The subdomain calling option does nothing, the library will pick the right "
 "calling convention"
 msgstr ""
+"Opcija pozivanja poddomena ne radi ništa, biblioteka će izabrati pravu "
+"konvenciju pozivanja"
 
 #: Library/Backend/S3/Strings.cs:34
 msgid ""
@@ -1058,27 +1229,34 @@ msgid ""
 "(https). Note that bucket names containing a period has problems with SSL "
 "connections."
 msgstr ""
+"Koristite ovu zastavicu za komunikaciju pomoću sloja bezbedne utičnice "
+"(SSL) preko http (https). Imajte na umu da nazivi segmenta koji sadrže tačku"
+" imaju problema sa SSL vezama."
 
 #: Library/Backend/S3/Strings.cs:35
 msgid ""
 "Set either to aws or minio . Then either the AWS SDK or Minio SDK will used "
 "to communicate with S3 services."
 msgstr ""
+"Postavite ili na aws ili minio. Tada će se ili AWS SDK ili Minio SDK "
+"koristiti za komunikaciju sa S3 uslugama."
 
 #: Library/Backend/S3/Strings.cs:36 Library/Backend/WEBDAV/Strings.cs:20
 #: Library/Backend/TahoeLAFS/Strings.cs:6
 msgid "Instructs Duplicati to use an SSL (https) connection"
-msgstr ""
+msgstr "Naređuje Duplicati-ju da koristi SSL (https) vezu"
 
 #: Library/Backend/S3/Strings.cs:38
 msgid ""
 "Use this option to specify a storage class. If this option is not used, the "
 "server will choose a default storage class."
 msgstr ""
+"Koristite ovu opciju da odredite klasu skladištenja. Ako se ova opcija ne "
+"koristi, server će izabrati podrazumevanu klasu skladištenja."
 
 #: Library/Backend/S3/Strings.cs:39
 msgid "Specify storage class"
-msgstr ""
+msgstr "Navedite klasu skladištenja"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:9
 msgid ""
@@ -1086,10 +1264,13 @@ msgid ""
 "alternative FTP client. Allowed formats are \"aftp://hostname/folder\" or "
 "\"aftp://username:password@hostname/folder\""
 msgstr ""
+"Ova pozadina može čitati i pisati podatke na pozadinu zasnovanu na FTP-u "
+"koristeći alternativni FTP klijent. Dozvoljeni formati su "
+"\"aftp://hostname/folder\" ili \"aftp://username:password@hostname/folder\""
 
 #: Library/Backend/AlternativeFTP/Strings.cs:14
 msgid "Alternative FTP"
-msgstr ""
+msgstr "Alternativni FTP"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:15
 #, csharp-format
@@ -1102,34 +1283,45 @@ msgid ""
 "attempted to be verified. Use this option to disable this verification to "
 "make the upload faster but less reliable."
 msgstr ""
+"Da bismo se zaštitili od grešaka na mreži ili serveru, svako otpremanje će "
+"se pokušati verifikovati. Koristite ovu opciju da onemogućite ovu "
+"verifikaciju da otpremanje bude brže, ali manje pouzdano."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:20
 msgid ""
 "If this flag is set, the FTP data connection type will be changed to the "
 "selected option."
 msgstr ""
+"Ako je ova zastavica postavljena, tip FTP data veze će biti promenjen u "
+"izabranu opciju."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:21
 msgid "Configure the FTP data connection type"
-msgstr ""
+msgstr "Konfigurišite tip FTP veze za prenos podataka"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:22
 msgid ""
 "If this flag is set, the FTP encryption mode will be changed to the selected"
 " option."
 msgstr ""
+"Ako je ova zastavica postavljena, režim FTP šifrovanja će biti promenjen na"
+" izabranu opciju."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:23
 msgid "Configure the FTP encryption mode"
-msgstr ""
+msgstr "Konfigurišite režim FTP šifrovanja"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:24
 msgid "This flag controls the SSL policy to use when encryption is enabled."
 msgstr ""
+"Ova oznaka kontroliše SSL politiku koja se koristi kada je šifrovanje "
+"omogućeno."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:25
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr ""
+"Konfigurišite SSL politiku koja će se koristiti kada je šifrovanje "
+"omogućeno"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:26
 msgid ""
@@ -1137,10 +1329,14 @@ msgid ""
 "The required delay depends on network topology. If you experience errors "
 "related to the upload size not matching, try adding a few seconds delay."
 msgstr ""
+"Nekim FTP serverima je potrebno malo kašnjenje pre nego što prijave tačnu "
+"veličinu fajla. Potrebno kašnjenje zavisi od topologije mreže. Ako naiđete "
+"na greške u vezi sa veličinom otpremanja koja se ne podudara, pokušajte da "
+"dodate odlaganje od nekoliko sekundi."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:27
 msgid "Add a delay after uploading a file"
-msgstr ""
+msgstr "Dodajte odlaganje nakon otpremanja fajla"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:28
 #, csharp-format
@@ -1159,7 +1355,7 @@ msgstr "Greška prilikom upisa u datoteku: {0}"
 
 #: Library/Backend/SSHv2/Strings.cs:4
 msgid "Module for generating SSH private/public keys"
-msgstr ""
+msgstr "Modul za generisanje SSH privatnih/javnih ključeva"
 
 #: Library/Backend/SSHv2/Strings.cs:5
 msgid "SSH Key Generator"
@@ -1167,19 +1363,19 @@ msgstr "SSH generator ključeva"
 
 #: Library/Backend/SSHv2/Strings.cs:6
 msgid "Public key username"
-msgstr ""
+msgstr "Korisničko ime javnog ključa"
 
 #: Library/Backend/SSHv2/Strings.cs:7
 msgid "A username to append to the public key"
-msgstr ""
+msgstr "Korisničko ime koje se dodaje javnom ključu"
 
 #: Library/Backend/SSHv2/Strings.cs:8
 msgid "The key type"
-msgstr ""
+msgstr "Tip ključa"
 
 #: Library/Backend/SSHv2/Strings.cs:9
 msgid "Determines the type of key to generate"
-msgstr ""
+msgstr "Određuje tip ključa za generisanje"
 
 #: Library/Backend/SSHv2/Strings.cs:10
 msgid "The key length"
@@ -1191,29 +1387,31 @@ msgstr "Dužina ključa u bitovima"
 
 #: Library/Backend/SSHv2/Strings.cs:14
 msgid "Module for uploading SSH public keys"
-msgstr ""
+msgstr "Modul za učitavanje SSH javnih ključeva"
 
 #: Library/Backend/SSHv2/Strings.cs:15
 msgid "SSH Key Uploader"
-msgstr ""
+msgstr "Alat za učitavanje SSH ključa"
 
 #: Library/Backend/SSHv2/Strings.cs:16
 msgid "The SSH connection URL"
-msgstr ""
+msgstr "URL SSH veze"
 
 #: Library/Backend/SSHv2/Strings.cs:17
 msgid "The SSH connection URL used to establish the connection"
-msgstr ""
+msgstr "URL SSH veze koji se koristi za uspostavljanje veze"
 
 #: Library/Backend/SSHv2/Strings.cs:18
 msgid "The SSH public key to append"
-msgstr ""
+msgstr "SSH javni ključ za dodavanje"
 
 #: Library/Backend/SSHv2/Strings.cs:19
 msgid ""
 "The SSH public key must be a valid SSH string, which is appended to the "
 ".ssh/authorized_keys file"
 msgstr ""
+"SSH javni ključ mora biti važeći SSH string, koji se dodaje "
+".ssh/authorized_keys fajlu"
 
 #: Library/Backend/SSHv2/Strings.cs:22
 msgid ""
@@ -1221,16 +1419,23 @@ msgid ""
 "Allowed formats are \"ssh://hostname/folder\" or "
 "\"ssh://username:password@hostname/folder\"."
 msgstr ""
+"Ova pozadina može čitati i pisati podatke u pozadinu zasnovanu na SSH-u, "
+"koristeći SFTP. Dozvoljeni formati su \"ssh://hostname/folder\" ili "
+"\"ssh://username:password@hostname/folder\"."
 
 #: Library/Backend/SSHv2/Strings.cs:27
 msgid ""
 "The server fingerprint used for validation of server identity. Format is eg."
 " \"ssh-rsa 4096 11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66\"."
 msgstr ""
+"Otisak prsta servera koji se koristi za validaciju identiteta servera. "
+"Format je npr. \"ssh-rsa 4096 "
+"11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66\"."
 
 #: Library/Backend/SSHv2/Strings.cs:28
 msgid "Supplies server fingerprint used for validation of server identity"
 msgstr ""
+"Snabdeva otisak prsta servera koji se koristi za proveru identiteta servera"
 
 #: Library/Backend/SSHv2/Strings.cs:29
 msgid ""
@@ -1238,10 +1443,14 @@ msgid ""
 "verified on connection. Use this option to disable host-key fingerprint "
 "verification. You should only use this option for testing."
 msgstr ""
+"Da bi se zaštitili od napada man-in-the-middle, otisak prsta servera se "
+"verifikuje povezivanjem. Koristite ovu opciju da biste onemogućili "
+"verifikaciju otiska prsta ključem hosta. Ovu opciju treba da koristite samo "
+"za testiranje."
 
 #: Library/Backend/SSHv2/Strings.cs:30
 msgid "Disables fingerprint validation"
-msgstr ""
+msgstr "Onemogućava proveru otiska prsta"
 
 #: Library/Backend/SSHv2/Strings.cs:31
 msgid ""
@@ -1250,10 +1459,14 @@ msgid ""
 "password is not used to authenticate. This option only works when using the "
 "managed SSH client."
 msgstr ""
+"Pokazuje na važeću OpenSSH ključni-fajl. Ako je fajl šifrovan, data lozinka"
+" se koristi za dešifrovanje fajla ključa. Ako je ova opcija navedena, "
+"lozinka se ne koristi za autentifikaciju. Ova opcija funkcioniše samo kada "
+"koristite upravljani SSH klijent."
 
 #: Library/Backend/SSHv2/Strings.cs:32 Library/Backend/SSHv2/Strings.cs:34
 msgid "Uses a SSH private key to authenticate"
-msgstr ""
+msgstr "Koristi SSH privatni ključ za autentifikaciju"
 
 #: Library/Backend/SSHv2/Strings.cs:33
 #, csharp-format
@@ -1263,16 +1476,23 @@ msgid ""
 "keyfile.  If this option is supplied, the password is not used to "
 "authenticate. This option only works when using the managed SSH client."
 msgstr ""
+"SSH privatni ključ kodiran u URL-u. Privatni ključ mora imati prefiks {0}. "
+"Ako je fajl šifrovan, data lozinka se koristi za dešifrovanje datoteke "
+"ključa. Ako je ova opcija navedena, lozinka se ne koristi za "
+"autentifikaciju. Ova opcija funkcioniše samo kada koristite upravljani SSH "
+"klijent."
 
 #: Library/Backend/SSHv2/Strings.cs:35
 msgid ""
 "Use this option to manage the internal timeout for SSH operations. If this "
 "options is set to zero, the operations will not time out"
 msgstr ""
+"Koristite ovu opciju za upravljanje internim vremenskim ograničenjem za SSH "
+"operacije. Ako su ove opcije postavljene na nulu, operacije neće isteći"
 
 #: Library/Backend/SSHv2/Strings.cs:36
 msgid "Sets the operation timeout value"
-msgstr ""
+msgstr "Postavlja vrednost vremenskog ograničenja operacije"
 
 #: Library/Backend/SSHv2/Strings.cs:37
 msgid ""
@@ -1281,10 +1501,14 @@ msgid ""
 "connection. Using keep-alive will keep the connection open in this scenario."
 " If this value is set to zero, the keep-alive is disabled."
 msgstr ""
+"Ova opcija se može koristiti za omogućavanje intervala održavanja za SSH "
+"vezu. Ako je veza neaktivna, agresivni zaštitni zidovi mogu zatvoriti vezu. "
+"Korišćenje Keep-alive će zadržati vezu otvorenom u ovom scenariju. Ako je "
+"ova vrednost postavljena na nulu, održavanje u životu je onemogućeno."
 
 #: Library/Backend/SSHv2/Strings.cs:38
 msgid "Sets a keepalive value"
-msgstr ""
+msgstr "Postavlja vrednost održavanja"
 
 #: Library/Backend/SSHv2/Strings.cs:39
 msgid "SFTP (SSH)"
@@ -1302,6 +1526,9 @@ msgid ""
 "\"{0}\". Cause of this message is either not correct configuration or Man-"
 "in-the-middle attack!"
 msgstr ""
+"Provera otiska prsta servera nije uspela. Server je vratio otisak prsta "
+"\"{0}\". Uzrok ove poruke je ili neispravna konfiguracija ili Man-in-the-"
+"middle napad!"
 
 #: Library/Backend/SSHv2/Strings.cs:42
 #, csharp-format
@@ -1309,12 +1536,16 @@ msgid ""
 "Please add --{1}=\"{0}\" to trust this host. Optionally you can use --{2} "
 "(NOT SECURE) for testing!"
 msgstr ""
+"Dodajte --{1}=\"{0}\" da biste verovali ovom hostu. Opciono možete koristiti"
+" --{2} (NIJE BEZBEDNO) za testiranje!"
 
 #: Library/Backend/Box/Strings.cs:21
 msgid ""
 "This backend can read and write data to Box.com. Supported format is "
 "\"box://folder/subfolder\"."
 msgstr ""
+"Ova pozadina može čitati i pisati podatke na Box.com. Podržani format je "
+"\"box://folder/subfolder\"."
 
 #: Library/Backend/Box/Strings.cs:22
 msgid "Box.com"
@@ -1330,59 +1561,68 @@ msgid ""
 "deleted after a grace period. Use this command to force immediate removal of"
 " delete files."
 msgstr ""
+"Nakon brisanja fajla, on može završiti u fascikli za smeće gde će biti "
+"izbrisan nakon perioda odlaganja. Koristite ovu komandu da biste nametnuli "
+"trenutno uklanjanje fajlova za brisanje."
 
 #: Library/Backend/Rclone/Strings.cs:6
 msgid "Rclone"
-msgstr ""
+msgstr "Rclone"
 
 #: Library/Backend/Rclone/Strings.cs:7
 msgid "This backend can read and write data to Rclone."
-msgstr ""
+msgstr "Ova pozadina može čitati i pisati podatke u Rclone."
 
 #: Library/Backend/Rclone/Strings.cs:8
 msgid "Local repository"
-msgstr ""
+msgstr "Lokalno skladište"
 
 #: Library/Backend/Rclone/Strings.cs:9
 msgid ""
 "Local repository for Rclone. Make sure it is configured as a local drive, as"
 " it needs access to the files generated by Duplicati."
 msgstr ""
+"Lokalno spremište za Rclone. Uverite se da je konfigurisan kao lokalni disk,"
+" jer mu je potreban pristup fajlovima koje generiše Duplicati."
 
 #: Library/Backend/Rclone/Strings.cs:10
 msgid "Remote repository"
-msgstr ""
+msgstr "Udaljeno spremište"
 
 #: Library/Backend/Rclone/Strings.cs:11
 msgid ""
 "Remote repository for Rclone. This can be any of the backends provided by "
 "Rclone. More info available on https://rclone.org/."
 msgstr ""
+"Udaljeno spremište za Rclone. Ovo može biti bilo koja od pozadina koje "
+"obezbeđuje Rclone. Više informacija dostupno na https://rclone.org/."
 
 #: Library/Backend/Rclone/Strings.cs:12
 msgid "Remote path"
-msgstr ""
+msgstr "Udaljena putanja"
 
 #: Library/Backend/Rclone/Strings.cs:13
 msgid "Path on the Remote repository. "
-msgstr ""
+msgstr "Putanja do udaljenog spremišta."
 
 #: Library/Backend/Rclone/Strings.cs:14
 msgid "Rclone options."
-msgstr ""
+msgstr "Rclone opcije"
 
 #: Library/Backend/Rclone/Strings.cs:15
 msgid "Options will be transferred to rclone."
-msgstr ""
+msgstr "Opcije će biti prenete u Rclone."
 
 #: Library/Backend/Rclone/Strings.cs:16
 msgid "Rclone executable"
-msgstr ""
+msgstr "Rclone izvršna"
 
 #: Library/Backend/Rclone/Strings.cs:17
 msgid ""
 "Full path to the rclone executable. Only needed if it's not in your path."
 msgstr ""
+"Puna putanja do izvršnog fajla Rclone. Potrebno je samo ako vam nije na "
+"putanji."
 
 #: Library/Backend/File/Strings.cs:4
 #, csharp-format
@@ -1395,6 +1635,13 @@ msgid ""
 "unwanted external drive. The contents of the file are never examined, only "
 "file existence."
 msgstr ""
+"Ova opcija funkcioniše samo kada je takođe navedena opcija --{0}. Ako su "
+"navedene alternativne putanje, ova opcija označava ime marker fajla koji "
+"mora biti prisutan u fascikli. Ovo se može koristiti za rešavanje situacija "
+"u kojima spoljni disk menja slovo diska ili tačku montiranja. Uveravanjem da"
+" određeni fajl postoji, moguće je sprečiti upisivanje podataka na neželjeni"
+" spoljni disk. Sadržaj fajla se nikada ne ispituje, već samo postojanje "
+"fajla."
 
 #: Library/Backend/File/Strings.cs:5
 msgid "Look for a file in the destination folder"
@@ -1414,10 +1661,19 @@ msgid ""
 " a username and password is supplied, the same credentials are used for all "
 "destinations."
 msgstr ""
+"Ova opcija omogućava da se navede više ciljeva. Primarna ciljna putanja je "
+"postavljena ispred liste putanja koja su obezbeđena ovom opcijom. Pre "
+"pokretanja rezervne kopije, proverava se postojanje svake fascikle na listi "
+"i opciono prisustvo marker fajla koju je obezbedio --{0}. Prva postojeća "
+"putanja koja opciono sadrži marker fajla se tada koristi kao odredište. Više"
+" odredišta je odvojeno sa \"{1}\". U Vindouz-u, putanja može biti UNC "
+"putanja, a slovo disk jedinice može biti zamenjeno zvezdicom (*), na primer:"
+" \"*:\\backup\", koja će ispitati sva slova disk jedinice. Ako se unese "
+"korisničko ime i lozinka, isti akreditivi se koriste za sva odredišta."
 
 #: Library/Backend/File/Strings.cs:7
 msgid "A list of secondary target paths"
-msgstr ""
+msgstr "Lista sekundarnih ciljnih putanja"
 
 #: Library/Backend/File/Strings.cs:8
 msgid ""
@@ -1427,6 +1683,11 @@ msgid ""
 "\"file://\\\\server\\folder\") or local paths (eg: (win) "
 "\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 msgstr ""
+"Ova pozadina može čitati i pisati podatke u fajl baziranu pozadinu. "
+"Dozvoljeni formati su \"file://hostname/folder\" ili "
+"\"file://username:password@hostname/folder\". Možete da navedete UNC putanje"
+" (npr.: \"file://\\\\server\\folder\") ili lokalne putanje (npr.: (vin) "
+"\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 
 #: Library/Backend/File/Strings.cs:13
 msgid "Local folder or drive"
@@ -1443,6 +1704,7 @@ msgid ""
 "The marker file \"{0}\" was not found in any of the examined destinations: "
 "{1}"
 msgstr ""
+"Marker fajl \"{0}\" nije pronađen ni na jednom od ispitanih odredišta: {1}"
 
 #: Library/Backend/File/Strings.cs:16
 msgid ""
@@ -1452,6 +1714,11 @@ msgid ""
 "to fail.  This option has no effect unless the --disable-streaming-transfers"
 " option is activated."
 msgstr ""
+"Prilikom skladištenja fajla, standardna operacija je kopiranje fajla i "
+"brisanje originala. Ova sekvenca osigurava da se operacija može ponoviti ako"
+" nešto krene naopako. Aktiviranje ove opcije može dovesti do neuspeha "
+"operacije ponovnog pokušaja. Ova opcija nema efekta osim ako je opcija "
+"--disable-streaming-transfers aktivirana."
 
 #: Library/Backend/File/Strings.cs:17
 msgid "Move the file instead of copying it"
@@ -1459,13 +1726,15 @@ msgstr "Premesti datoteku umesto kopiranja"
 
 #: Library/Backend/File/Strings.cs:18
 msgid "Force authentication against remote share"
-msgstr ""
+msgstr "Prisilna provera autentičnosti za daljinsko deljenje"
 
 #: Library/Backend/File/Strings.cs:19
 msgid ""
 "If this option is set, any existing authentication against the remote share "
 "is dropped before attempting to authenticate"
 msgstr ""
+"Ako je ova opcija postavljena, svaka postojeća autentifikacija na udaljenom"
+" deljenom mestu se odbacuje pre pokušaja autentifikacije"
 
 #: Library/Backend/Backblaze/Strings.cs:4
 msgid ""
@@ -1473,10 +1742,13 @@ msgid ""
 "your Backblaze account, this can also be supplied through the \"auth-"
 "password\" property"
 msgstr ""
+"\"B2 Cloud Storage Application Key\"“ se može dobiti nakon prijavljivanja na"
+" vaš Backblaze nalog, on se takođe može dostaviti preko svojstva \"auth-"
+"password\""
 
 #: Library/Backend/Backblaze/Strings.cs:5
 msgid "The \"B2 Cloud Storage Application Key\""
-msgstr ""
+msgstr "\"B2 Cloud Storage Application Key\""
 
 #: Library/Backend/Backblaze/Strings.cs:6
 msgid ""
@@ -1484,38 +1756,45 @@ msgid ""
 "Backblaze account, this can also be supplied through the \"auth-username\" "
 "property"
 msgstr ""
+"\"B2 Cloud Storage Account ID\" se može dobiti nakon prijavljivanja na vaš "
+"Backblaze nalog, on se takođe može dostaviti preko svojstva \"auth-"
+"username\""
 
 #: Library/Backend/Backblaze/Strings.cs:7
 msgid "The \"B2 Cloud Storage Account ID\""
-msgstr ""
+msgstr "\"B2 Cloud Storage Account ID\""
 
 #: Library/Backend/Backblaze/Strings.cs:8
 msgid "B2 Cloud Storage"
-msgstr ""
+msgstr "B2 skladište u oblaku"
 
 #: Library/Backend/Backblaze/Strings.cs:13
 msgid "No \"B2 Cloud Storage Application Key\" given"
-msgstr ""
+msgstr "Nije dat \"B2 Cloud Storage Application Key\"."
 
 #: Library/Backend/Backblaze/Strings.cs:14
 msgid "No \"B2 Cloud Storage Account ID\" given"
-msgstr ""
+msgstr "Nije dat \"B2 Cloud Storage Account ID\""
 
 #: Library/Backend/Backblaze/Strings.cs:15
 msgid ""
 "This backend can read and write data to the Backblaze B2 Cloud Storage. "
 "Allowed formats are: \"b2://bucketname/prefix\""
 msgstr ""
+"Ova pozadina može da čita i upisuje podatke u Backblaze B2 Cloud Storage. "
+"Dozvoljeni formati su: \"b2://bucketname/prefix\""
 
 #: Library/Backend/Backblaze/Strings.cs:16
 msgid ""
 "By default, a private bucket is created. Use this option to set the bucket "
 "type. Refer to the B2 documentation for allowed types "
 msgstr ""
+"Podrazumevano se kreira privatni segment. Koristite ovu opciju da podesite "
+"tip segmenta. Za dozvoljene tipove pogledajte B2 dokumentaciju"
 
 #: Library/Backend/Backblaze/Strings.cs:17
 msgid "The bucket type used when creating a bucket"
-msgstr ""
+msgstr "Tip segmenta koji se koristi prilikom kreiranja segmenta"
 
 #: Library/Backend/Backblaze/Strings.cs:18
 msgid ""
@@ -1523,10 +1802,13 @@ msgid ""
 "lower number means less data, but can increase the number of Class C "
 "transaction on B2. Suggested values are between 100 and 1000"
 msgstr ""
+"Koristite ovu opciju da biste podesili veličinu stranice za navođenje "
+"sadržaja B2 segmenata. Manji broj znači manje podataka, ali može povećati "
+"broj transakcija klase C na B2. Predložene vrednosti su između 100 i 1000"
 
 #: Library/Backend/Backblaze/Strings.cs:19
 msgid "The size of file-listing pages"
-msgstr ""
+msgstr "Veličina stranica sa spiskom fajlova"
 
 #: Library/Backend/Backblaze/Strings.cs:20
 msgid ""
@@ -1534,54 +1816,57 @@ msgid ""
 "uploading will not be affected. The default download url depends on your "
 "account and looks like \"https://f00X.backblazeb2.com\""
 msgstr ""
+"Promenite ovo ako želite da koristite svoj prilagođeni domen za preuzimanja "
+"fajlova i to neće uticati na otpremanje. Podrazumevani URL za preuzimanje "
+"zavisi od vašeg naloga i izgleda kao \"https://f00X.backblazeb2.com\""
 
 #: Library/Backend/Backblaze/Strings.cs:21
 msgid "The base URL to use for downloading files"
-msgstr ""
+msgstr "Osnovni URL koji se koristi za preuzimanje fajlova"
 
 #: Library/Backend/Backblaze/Strings.cs:22
 #, csharp-format
 msgid ""
 "The setting \"{0}\" is invalid for \"{1}\", it must be an integer larger "
 "than zero"
-msgstr ""
+msgstr "Podešavanje \"{0}\" je nevažeće za \"{1}\", mora biti ceo broj veći od nule"
 
 #: Library/Backend/Sia/Strings.cs:6
 msgid "Sia Decentralized Cloud"
-msgstr ""
+msgstr "Sia decentralizovani oblak"
 
 #: Library/Backend/Sia/Strings.cs:7
 msgid "This backend can read and write data to Sia."
-msgstr ""
+msgstr "Ova pozadina može čitati i pisati podatke u Sia."
 
 #: Library/Backend/Sia/Strings.cs:8
 msgid "Backup path"
-msgstr ""
+msgstr "Putanja rezervne kopije"
 
 #: Library/Backend/Sia/Strings.cs:9
 msgid "Target path, ie /backup"
-msgstr ""
+msgstr "Ciljna putanja, odnosno /rezervna kopija"
 
 #: Library/Backend/Sia/Strings.cs:10 Library/Backend/Sia/Strings.cs:11
 msgid "Sia password"
-msgstr ""
+msgstr "Sia lozinka"
 
 #: Library/Backend/Sia/Strings.cs:12
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: Library/Backend/Sia/Strings.cs:13
 msgid "Minimum value is 3."
-msgstr ""
+msgstr "Minimalna vrednost je 3."
 
 #: Library/Backend/OneDrive/Strings.cs:8
 #, csharp-format
 msgid "No Auth-ID was provided - you can get one from {0}"
-msgstr ""
+msgstr "Auth-ID nije naveden – možete ga dobiti od {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:9
 msgid "Fragment size for large uploads"
-msgstr ""
+msgstr "Veličina fragmenta za velika otpremanja"
 
 #: Library/Backend/OneDrive/Strings.cs:10
 msgid ""
@@ -1590,38 +1875,46 @@ msgid ""
 "better on a slower or less reliable connection), and to be a multiple of 320"
 " KiB."
 msgstr ""
+"Veličina pojedinačnih fragmenata koji se zasebno učitavaju za velike "
+"fajlove. Preporučuje se da bude između 5-10 MiB (iako manja vrednost može "
+"bolje da funkcioniše na sporijoj ili manje pouzdanoj vezi) i da bude "
+"višestruka od 320 KiB."
 
 #: Library/Backend/OneDrive/Strings.cs:11
 msgid "Number of retries for each fragment"
-msgstr ""
+msgstr "Broj ponovnih pokušaja za svaki fragment"
 
 #: Library/Backend/OneDrive/Strings.cs:12
 msgid ""
 "Number of retry attempts made for each fragment before failing the overall "
 "file upload"
 msgstr ""
+"Broj ponavljanja ponovnog pokušaja za svaki fragment pre neuspeha celokupnog"
+" otpremanja fajla"
 
 #: Library/Backend/OneDrive/Strings.cs:13
 msgid "Millisecond delay between fragment errors"
-msgstr ""
+msgstr "Kašnjenje u milisekundi između grešaka fragmenta"
 
 #: Library/Backend/OneDrive/Strings.cs:14
 msgid ""
 "Amount of time (in milliseconds) to wait between failures when uploading "
 "fragments"
 msgstr ""
+"Količina vremena (u milisekundama) za čekanje između grešaka prilikom "
+"otpremanja fragmenata"
 
 #: Library/Backend/OneDrive/Strings.cs:15
 msgid "Whether the HttpClient class should be used"
-msgstr ""
+msgstr "Da li treba koristiti klasu HttpClient"
 
 #: Library/Backend/OneDrive/Strings.cs:16
 msgid "Whether the HttpClient class should be used to perform HTTP requests"
-msgstr ""
+msgstr "Da li klasu HttpClient treba koristiti za obavljanje HTTP zahteva"
 
 #: Library/Backend/OneDrive/Strings.cs:21
 msgid "Microsoft OneDrive v2"
-msgstr ""
+msgstr "Microsoft OneDrive v2"
 
 #: Library/Backend/OneDrive/Strings.cs:22
 #, csharp-format
@@ -1630,10 +1923,13 @@ msgid ""
 "the Microsoft Graph API. Usage of this backend requires that you agree to "
 "the terms in {0} ({1}) and {2} ({3})"
 msgstr ""
+"Čuva fajlove u Microsoft OneDrive ili Microsoft OneDrive for Business preko "
+"Microsoft Graph API-ja. Korišćenje ovog pozadinskog dela zahteva da "
+"prihvatite uslove u {0} ({1}) i {2} ({3})"
 
 #: Library/Backend/OneDrive/Strings.cs:23
 msgid "Optional ID of the drive"
-msgstr ""
+msgstr "Opcioni ID disk jedinice"
 
 #: Library/Backend/OneDrive/Strings.cs:24
 #, csharp-format
@@ -1641,10 +1937,13 @@ msgid ""
 "ID of the drive to store data in. If no drive is specified, the default "
 "OneDrive or OneDrive for Business drive will be used via '{0}'."
 msgstr ""
+"ID disk jedinice na kojoj se čuvaju podaci. Ako nije naveden nijedan disk, "
+"podrazumevani OneDrive ili OneDrive for Business disk će se koristiti preko"
+" '{0}'."
 
 #: Library/Backend/OneDrive/Strings.cs:29
 msgid "Microsoft SharePoint v2"
-msgstr ""
+msgstr "Microsoft SharePoint v2"
 
 #: Library/Backend/OneDrive/Strings.cs:30
 #, csharp-format
@@ -1653,27 +1952,31 @@ msgid ""
 "Usage of this backend requires that you agree to the terms in {0} ({1}) and "
 "{2} ({3})"
 msgstr ""
+"Čuva fajlove na Microsoft SharePoint lokaciji preko Microsoft Graph API-ja. "
+"Korišćenje ovog pozadinskog dela zahteva da prihvatite uslove u {0} ({1}) i"
+" {2} ({3})"
 
 #: Library/Backend/OneDrive/Strings.cs:31
 msgid "ID of the site"
-msgstr ""
+msgstr "ID sajta"
 
 #: Library/Backend/OneDrive/Strings.cs:32
 msgid "ID of the site to store data in"
-msgstr ""
+msgstr "ID sajta za skladištenje podataka"
 
 #: Library/Backend/OneDrive/Strings.cs:33
 msgid "No site ID was provided"
-msgstr ""
+msgstr "Nije naveden ID sajta"
 
 #: Library/Backend/OneDrive/Strings.cs:34
 #, csharp-format
 msgid "Conflicting site IDs used: given {0} but found {1}"
 msgstr ""
+"Korišćeni neusaglašeni ID-ovi sajtova: dati su {0}, ali pronađeni {1}"
 
 #: Library/Backend/OneDrive/Strings.cs:39
 msgid "Microsoft Office 365 Group"
-msgstr ""
+msgstr "Microsoft Office 365 Group"
 
 #: Library/Backend/OneDrive/Strings.cs:40
 #, csharp-format
@@ -1686,115 +1989,132 @@ msgid ""
 "specify the SharePoint site's ID via --site-id). Usage of this backend "
 "requires that you agree to the terms in {0} ({1}) and {2} ({3})"
 msgstr ""
+"Čuva fajlove u Microsoft Office 365 grupi preko Microsoft Graph API-ja. "
+"Dozvoljeni formati su "
+"\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
+" (sa \"//\" koja se opciono koristi za označavanje osnovnog foldera "
+"dokumenta) ili samo \"sharepoint://subfolder\" (u tom slučaju takođe morate "
+"eksplicitno da navedete ID SharePoint sajta preko --site-id). Korišćenje "
+"ovog pozadinskog dela zahteva da prihvatite uslove u {0} ({1}) i {2} ({3})"
 
 #: Library/Backend/OneDrive/Strings.cs:41
 msgid "ID of the group"
-msgstr ""
+msgstr "ID grupe"
 
 #: Library/Backend/OneDrive/Strings.cs:42
 msgid "ID of the group to store data in"
-msgstr ""
+msgstr "ID grupe u kojoj se čuvaju podaci"
 
 #: Library/Backend/OneDrive/Strings.cs:43
 msgid "Email address of the group"
-msgstr ""
+msgstr "Adresa e-pošte grupe"
 
 #: Library/Backend/OneDrive/Strings.cs:44
 msgid "Email address of the group to store data in"
-msgstr ""
+msgstr "Adresa e-pošte grupe u kojoj se čuvaju podaci"
 
 #: Library/Backend/OneDrive/Strings.cs:45
 msgid "No group ID or group email address was provided"
-msgstr ""
+msgstr "Nije naveden ID grupe ili adresa e-pošte grupe"
 
 #: Library/Backend/OneDrive/Strings.cs:46
 #, csharp-format
 msgid "No groups were found with the given email address: {0}"
-msgstr ""
+msgstr "Nije pronađena nijedna grupa sa datom adresom e-pošte: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:47
 #, csharp-format
 msgid "Multiple groups were found with the given email address: {0}"
-msgstr ""
+msgstr "Pronađeno je više grupa sa datom adresom e-pošte: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:48
 #, csharp-format
 msgid "Conflicting group IDs used: given {0} but found {1}"
-msgstr ""
+msgstr "Korišćeni ID-ovi neusaglašenih grupa: dati su {0}, ali pronađeni {1}"
 
 #: Library/Backend/AzureBlob/Strings.cs:4
 msgid "All files will be written to the container specified"
-msgstr ""
+msgstr "Svi fajlovi će biti zapisani u navedeni kontejner"
 
 #: Library/Backend/AzureBlob/Strings.cs:5
 msgid "The name of the storage container "
-msgstr ""
+msgstr "Naziv kontejnera za skladištenje"
 
 #: Library/Backend/AzureBlob/Strings.cs:6
 msgid "Azure blob"
-msgstr ""
+msgstr "Azure Blob"
 
 #: Library/Backend/AzureBlob/Strings.cs:7
 msgid "No Azure storage account name given"
-msgstr ""
+msgstr "Nije navedeno ime Azure naloga za skladištenje"
 
 #: Library/Backend/AzureBlob/Strings.cs:8
 msgid ""
 "The Azure storage account name which can be obtained by clicking the "
 "\"Manage Access Keys\" button on the storage account dashboard"
 msgstr ""
+"Naziv Azure naloga za skladištenje koji se može dobiti klikom na dugme "
+"„Upravljaj pristupnim ključevima“ na kontrolnoj tabli naloga za skladištenje"
 
 #: Library/Backend/AzureBlob/Strings.cs:9
 msgid "The storage account name"
-msgstr ""
+msgstr "Ime naloga za skladištenje"
 
 #: Library/Backend/AzureBlob/Strings.cs:10
 msgid ""
 "The Azure access key which can be obtained by clicking the \"Manage Access "
 "Keys\" button on the storage account dashboard"
 msgstr ""
+"Azure pristupni ključ koji se može dobiti klikom na dugme „Upravljaj "
+"pristupnim ključevima“ na kontrolnoj tabli naloga za skladištenje"
 
 #: Library/Backend/AzureBlob/Strings.cs:11
 msgid "The access key"
-msgstr ""
+msgstr "Ključ za pristup"
 
 #: Library/Backend/AzureBlob/Strings.cs:12
 msgid "No Azure access key given"
-msgstr ""
+msgstr "Nije dat Azure pristupni ključ"
 
 #: Library/Backend/AzureBlob/Strings.cs:17
 msgid ""
 "This backend can read and write data to Azure blob storage.  Allowed formats"
 " are: \"azure://bucketname\""
 msgstr ""
+"Ovaa pozadina može da čita i upisuje podatke u Azure blob skladište. "
+"Dozvoljeni formati su: \"azure://bucketname\""
 
 #: Library/Backend/Tardigrade/Strings.cs:12
 msgid "Tardigrade Decentralized Cloud Storage"
-msgstr ""
+msgstr "Tardigrade decentralizovano skladište u oblaku"
 
 #: Library/Backend/Tardigrade/Strings.cs:13
 msgid ""
 "This backend can read and write data to the Tardigrade Decentralized Cloud "
 "Storage."
 msgstr ""
+"Ova pozadina može da čita i upisuje podatke u Tardigrade decentralizovano "
+"skladište u oblaku."
 
 #: Library/Backend/Tardigrade/Strings.cs:14
 msgid "The connection-test failed."
-msgstr ""
+msgstr "Test veze nije uspeo."
 
 #: Library/Backend/Tardigrade/Strings.cs:15
 msgid "The authentication method"
-msgstr ""
+msgstr "Metod autentifikacije"
 
 #: Library/Backend/Tardigrade/Strings.cs:16
 msgid ""
 "The authentication method describes which way to use to connect to the "
 "network - either via API key or via an access grant."
 msgstr ""
+"Metod autentikacije opisuje koji način da se koristi za povezivanje na mrežu"
+" - bilo preko API ključa ili preko odobrenja pristupa."
 
 #: Library/Backend/Tardigrade/Strings.cs:17
 msgid "The satellite"
-msgstr ""
+msgstr "Satelit"
 
 #: Library/Backend/Tardigrade/Strings.cs:18
 msgid ""
@@ -1802,10 +2122,13 @@ msgid ""
 "server for high-performance SLA-backed connectivity or use a community "
 "server. Or even host your own."
 msgstr ""
+"Satelit koji prati sve metapodatke. Koristite server na nivou Tardigrade za "
+"SLA-podržano povezivanje visokih performansi ili koristite server zajednice."
+" Ili čak svoj host."
 
 #: Library/Backend/Tardigrade/Strings.cs:19
 msgid "The API key"
-msgstr ""
+msgstr "API ključ"
 
 #: Library/Backend/Tardigrade/Strings.cs:20
 msgid ""
@@ -1813,10 +2136,13 @@ msgid ""
 "Head over to the dashboard of your satellite to create one if you do not "
 "already have an API key."
 msgstr ""
+"API ključ omogućava pristup određenom projektu na odabranom satelitu. "
+"Pređite na kontrolnu tablu svog satelita da biste je napravili ako već "
+"nemate API ključ."
 
 #: Library/Backend/Tardigrade/Strings.cs:21
 msgid "The encryption passphrase"
-msgstr ""
+msgstr "Pristupna fraza za šifrovanje"
 
 #: Library/Backend/Tardigrade/Strings.cs:22
 msgid ""
@@ -1825,32 +2151,38 @@ msgid ""
 "for Tardigrade you do not necessary need any additional encryption (from "
 "Duplicati) in place."
 msgstr ""
+"Pristupna fraza za šifrovanje se koristi za šifrovanje vaših podataka pre "
+"slanja na tardigrade mrežu. Ova pristupna fraza može biti jedina tajna koju "
+"treba obezbediti - za Tardigrade vam nije potrebna dodatna enkripcija (od "
+"Duplicatija)."
 
 #: Library/Backend/Tardigrade/Strings.cs:23
 msgid "The access grant"
-msgstr ""
+msgstr "Odobrenje pristupa"
 
 #: Library/Backend/Tardigrade/Strings.cs:24
 msgid ""
 "An access grant contains all information in one encrypted string. You may "
 "use it instead of a satellite, API key and secret."
 msgstr ""
+"Odobrenje pristupa sadrži sve informacije u jednom šifrovanom stringu. "
+"Možete ga koristiti umesto satelita, API ključa i tajne."
 
 #: Library/Backend/Tardigrade/Strings.cs:25
 msgid "The bucket"
-msgstr ""
+msgstr "Segment"
 
 #: Library/Backend/Tardigrade/Strings.cs:26
 msgid "The bucket where the backup will reside in."
-msgstr ""
+msgstr "Segment u kojem će se nalaziti rezervna kopija."
 
 #: Library/Backend/Tardigrade/Strings.cs:27
 msgid "The folder"
-msgstr ""
+msgstr "Fascikla"
 
 #: Library/Backend/Tardigrade/Strings.cs:28
 msgid "The folder within the bucket where the backup will reside in."
-msgstr ""
+msgstr "Fascikla unutar segmenta u kojem će se nalaziti rezervna kopija."
 
 #: Library/Backend/Jottacloud/Strings.cs:5
 msgid "Jottacloud"
@@ -1861,6 +2193,8 @@ msgid ""
 "This backend can read and write data to Jottacloud using it's REST protocol."
 " Allowed format is \"jottacloud://folder/subfolder\"."
 msgstr ""
+"Ova pozadina može čitati i pisati podatke u Jottacloud koristeći svoj REST "
+"protokol. Dozvoljeni format je \"jottacloud://folder/subfolder\"."
 
 #: Library/Backend/Jottacloud/Strings.cs:7 Library/Backend/Mega/Strings.cs:10
 msgid "No username given"
@@ -1872,15 +2206,15 @@ msgstr "Nije data lozinka"
 
 #: Library/Backend/Jottacloud/Strings.cs:9
 msgid "No path given, cannot upload files to the root folder"
-msgstr ""
+msgstr "Putanja nije data, ne mogu da se otpreme fajlovi u osnovnu fasciklu"
 
 #: Library/Backend/Jottacloud/Strings.cs:10
 msgid "Illegal mount point given."
-msgstr ""
+msgstr "Data je nedozvoljena tačka montiranja."
 
 #: Library/Backend/Jottacloud/Strings.cs:16
 msgid "Supplies the backup device to use"
-msgstr ""
+msgstr "Obezbeđuje uređaj rezervne kopije za korišćenje"
 
 #: Library/Backend/Jottacloud/Strings.cs:17
 #, csharp-format
@@ -1890,10 +2224,14 @@ msgid ""
 "When you specify a custom device you should also specify the mount point to "
 "use on this device with the \"{0}\" option."
 msgstr ""
+"Rezervni uređaj za korišćenje rezervne kopije. Biće kreiran ako već ne "
+"postoji. Možete upravljati svojim uređajima sa rezervne kopije u Jottacloud "
+"veb interfejsu. Kada navedete prilagođeni uređaj, trebalo bi da navedete i "
+"tačku montiranja koja će se koristiti na ovom uređaju sa opcijom \"{0}\"."
 
 #: Library/Backend/Jottacloud/Strings.cs:18
 msgid "Supplies the mount point to use on the server"
-msgstr ""
+msgstr "Obezbeđuje tačku montiranja za korišćenje na serveru"
 
 #: Library/Backend/Jottacloud/Strings.cs:19
 #, csharp-format
@@ -1904,10 +2242,15 @@ msgid ""
 "custom device with option \"{0}\" you are free to name the mount point as "
 "you like."
 msgstr ""
+"Tačka montiranja koja se koristi na serveru. Podrazumevano je \"Archive\" za"
+" korišćenje ugrađene tačke montiranja arhive. Podesite ovu opciju na "
+"\"Sync\" da biste umesto nje koristili ugrađenu tačku montiranja za "
+"sinhronizaciju, ili ako ste naveli prilagođeni uređaj sa opcijom \"{0}\", "
+"slobodni ste da imenujete tačku montiranja kako želite."
 
 #: Library/Backend/Jottacloud/Strings.cs:20
 msgid "Number of threads for restore operations."
-msgstr ""
+msgstr "Broj niti za operacije vraćanja."
 
 #: Library/Backend/Jottacloud/Strings.cs:21
 msgid ""
@@ -1915,16 +2258,21 @@ msgid ""
 " limited to 18.5 Mbps per stream. Use multiple threads to increase "
 "throughput."
 msgstr ""
+"Broj niti za operacije vraćanja. U nekim slučajevima brzina preuzimanja je "
+"ograničena na 18,5 Mbps po strimu. Koristite više niti da povećate "
+"propusnost."
 
 #: Library/Backend/Jottacloud/Strings.cs:22
 msgid "The chunk size for simultaneous downloading."
-msgstr ""
+msgstr "Veličina dela za istovremeno preuzimanje."
 
 #: Library/Backend/Jottacloud/Strings.cs:23
 msgid ""
 "The chunk size for simultaneous downloading. These chunks will be held in "
 "memory, so keep it as low as possible."
 msgstr ""
+"Veličina dela za istovremeno preuzimanje. Ovi delovi će biti sačuvani u "
+"memoriji, pa ih držite što je moguće niže."
 
 #: Library/Backend/Mega/Strings.cs:4
 msgid "mega.nz"
@@ -1935,6 +2283,8 @@ msgid ""
 "This backend can read and write data to Mega.co.nz. Allowed formats are: "
 "\"mega://folder/subfolder\""
 msgstr ""
+"Ova pozadina može čitati i pisati podatke na Mega.co.nz. Dozvoljeni formati "
+"su: \"mega://folder/subfolder\""
 
 #: Library/Backend/SharePoint/Strings.cs:6
 msgid "Microsoft SharePoint"
@@ -1949,6 +2299,12 @@ msgid ""
 " Use a double slash '//' in the path to denote the web from the documents "
 "library."
 msgstr ""
+"Podržava veze sa SharePoint serverom (uključujući OneDrive for Business). "
+"Dozvoljeni formati su "
+"\"mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\" ili "
+"\"mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\"."
+" Koristite dvostruku kosu crtu '//' na putanji da označite veb iz biblioteke"
+" dokumenata."
 
 #: Library/Backend/SharePoint/Strings.cs:12
 #: Library/Backend/WEBDAV/Strings.cs:11
@@ -1957,21 +2313,27 @@ msgid ""
 "option enables that authentication method. This is likely only available "
 "with windows servers and clients."
 msgstr ""
+"Ako i server i klijent podržavaju integrisanu autentifikaciju, ova opcija "
+"omogućava taj metod provjere autentičnosti. Ovo je verovatno dostupno samo "
+"sa Vindouz serverima i klijentima."
 
 #: Library/Backend/SharePoint/Strings.cs:13
 #: Library/Backend/WEBDAV/Strings.cs:12
 msgid "Use windows integrated authentication to connect to the server"
 msgstr ""
+"Koristite Vindouz integrisanu autentifikaciju za povezivanje sa serverom"
 
 #: Library/Backend/SharePoint/Strings.cs:14
 msgid ""
 "Use this option to have files moved to the recycle bin folder instead of "
 "removing them permanently when compacting or deleting backups."
 msgstr ""
+"Koristite ovu opciju da biste premeštali fajlove u fasciklu korpe za otpatke"
+" umesto da ih trajno uklanjate kada sabijate ili brišete rezervne kopije."
 
 #: Library/Backend/SharePoint/Strings.cs:15
 msgid "Move deleted files to the recycle bin"
-msgstr "Premesti obrisane datoteke u korpu za otpatke"
+msgstr "Premesti obrisane fajlove u korpu za otpatke"
 
 #: Library/Backend/SharePoint/Strings.cs:17
 msgid ""
@@ -1980,35 +2342,44 @@ msgid ""
 "recoverable timeouts under certain conditions. Use this option only with "
 "very fast and stable internet connections."
 msgstr ""
+"Koristite ovu opciju da otpremite fajlove u SharePoint kao celinu u režimu "
+"BinariDirect. Ovo je najefikasniji način otpremanja, ali može da izazove "
+"nenadoknadivo vremensko ograničenje pod određenim uslovima. Koristite ovu "
+"opciju samo sa veoma brzim i stabilnim internet vezama."
 
 #: Library/Backend/SharePoint/Strings.cs:18
 msgid "Upload files using binary direct mode."
-msgstr ""
+msgstr "Otpremite fajlove koristeći binarni direktni režim."
 
 #: Library/Backend/SharePoint/Strings.cs:20
 msgid ""
 "Use this option to specify a custom value for timeouts of web operation when"
 " communicating with SharePoint Server. Recommended value is 180s."
 msgstr ""
+"Koristite ovu opciju da biste naveli prilagođenu vrednost za vremensko "
+"ograničenje veb operacija prilikom komunikacije sa SharePoint serverom. "
+"Preporučena vrednost je 180s."
 
 #: Library/Backend/SharePoint/Strings.cs:21
 msgid "Set timeout for SharePoint web operations."
-msgstr ""
+msgstr "Podesite vremensko ograničenje za SharePoint veb operacije."
 
 #: Library/Backend/SharePoint/Strings.cs:23
 msgid ""
 "Use this option to specify the size of each chunk when uploading to "
 "SharePoint Server. Recommended value is 4MB."
 msgstr ""
+"Koristite ovu opciju da biste odredili veličinu svakog dela prilikom "
+"otpremanja na SharePoint Server. Preporučena vrednost je 4MB."
 
 #: Library/Backend/SharePoint/Strings.cs:24
 msgid "Set block size for chunked uploads to SharePoint."
-msgstr ""
+msgstr "Podesite veličinu bloka za otpremanja u komadima u SharePoint."
 
 #: Library/Backend/SharePoint/Strings.cs:26
 #, csharp-format
 msgid "Element with path '{0}' not found on host '{1}'."
-msgstr ""
+msgstr "Element sa putanjom '{0}' nije pronađen na hostu '{1}'."
 
 #: Library/Backend/SharePoint/Strings.cs:27
 #, csharp-format
@@ -2016,12 +2387,17 @@ msgid ""
 "No SharePoint web could be logged in to at path '{0}'. Maybe wrong "
 "credentials. Or try using '//' in path to separate web from folder path."
 msgstr ""
+"Nije moguće prijaviti SharePoint veb na putanji '{0}'. Možda pogrešni "
+"podaci. Ili pokušajte da koristite '//' u putanji da odvojite putanju veba "
+"od putanje fascikle."
 
 #: Library/Backend/SharePoint/Strings.cs:28
 msgid ""
 "Everything seemed alright, but then web title could not be read to test "
 "connection. Something's wrong."
 msgstr ""
+"Činilo se da je sve u redu, ali tada veb naslov nije mogao da se pročita da "
+"bi se testirala veza. Nešto nije u redu."
 
 #: Library/Backend/SharePoint/Strings.cs:33
 msgid "Microsoft OneDrive for Business"
@@ -2037,12 +2413,20 @@ msgid ""
 " You can use a double slash '//' in the path to denote the base path from "
 "the documents folder."
 msgstr ""
+"Podržava veze sa Microsoft OneDrive for Business. Dozvoljeni formati su "
+"\"od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder\""
+" ili "
+"\"od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder\"."
+" Možete koristiti dvostruku kosu crtu '//' u putanji da označite osnovnu "
+"putanju iz fascikle dokumenata."
 
 #: Library/Backend/Dropbox/Strings.cs:22
 msgid ""
 "This backend can read and write data to Dropbox. Supported format is "
 "\"dropbox://folder/subfolder\"."
 msgstr ""
+"Ova pozadina može čitati i pisati podatke u Dropbox. Podržani format je "
+"\"dropbox://folder/subfolder\"."
 
 #: Library/Backend/Dropbox/Strings.cs:23
 msgid "Dropbox"
@@ -2054,6 +2438,9 @@ msgid ""
 "protocol. Allowed formats are \"webdav://hostname/folder\" or "
 "\"webdav://username:password@hostname/folder\"."
 msgstr ""
+"Podržava veze sa WEBDAV omogućenim veb serverom, koristeći HTTP protokol. "
+"Dozvoljeni formati su \"webdav://hostname/folder\" ili "
+"\"webdav://username:password@hostname/folder\"."
 
 #: Library/Backend/WEBDAV/Strings.cs:5
 msgid ""
@@ -2064,10 +2451,16 @@ msgid ""
 "attacker. Using this flag, the client does not accept this, and always uses "
 "Digest authentication or fails to connect."
 msgstr ""
+"Korišćenje HTTP Digest metode autentifikacije omogućava korisniku da se "
+"autentifikuje na serveru, bez slanja jasne lozinke. Međutim, napad „man-in-"
+"the-middle“ je lak, jer HTTP protokol navodi rezervni deo za osnovnu "
+"autentifikaciju, što će naterati klijenta da pošalje lozinku napadaču. "
+"Koristeći ovu zastavicu, klijent ovo ne prihvata i uvek koristi Digest "
+"autentifikaciju ili ne uspeva da se poveže."
 
 #: Library/Backend/WEBDAV/Strings.cs:6
 msgid "Force the use of the HTTP Digest authentication method"
-msgstr ""
+msgstr "Prisilite upotrebu metode HTTP Digest autentifikacije"
 
 #: Library/Backend/WEBDAV/Strings.cs:13
 msgid "WebDAV"
@@ -2079,6 +2472,8 @@ msgid ""
 "The server returned the error code {0} ({1}), indicating that the server "
 "does not support WebDAV connections"
 msgstr ""
+"Server je vratio kod greške {0} ({1}), što ukazuje da server ne podržava "
+"WebDAV veze"
 
 #: Library/Backend/WEBDAV/Strings.cs:16
 #, csharp-format
@@ -2087,28 +2482,37 @@ msgid ""
 "This can be because the file is deleted or unavailable, but it can also be because the file extension {2} is blocked by the web server. IIS blocks unknown extensions by default.\n"
 "Error message: {3}"
 msgstr ""
+"Prilikom navođenja fascikle {0} fajl {1} je bio naveden, ali server sada izveštava da fajl nije pronađen.\n"
+"To može biti zato što je fajl izbrisan ili nedostupan, ali može biti i zato što je ekstenziju fajla {2} blokirao veb server. IIS podrazumevano blokira nepoznate ekstenzije.\n"
+"Poruka o grešci: {3}"
 
 #: Library/Backend/WEBDAV/Strings.cs:19 Library/Backend/TahoeLAFS/Strings.cs:5
 msgid ""
 "Use this flag to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
 msgstr ""
+"Koristite ovu zastavicu za komunikaciju pomoću sloja bezbedne utičnice "
+"(SSL) preko http (https)."
 
 #: Library/Backend/WEBDAV/Strings.cs:21
 msgid ""
 "To aid in debugging issues, it is possible to set a path to a file that will"
 " be overwritten with the PROPFIND response"
 msgstr ""
+"Da biste pomogli u otklanjanju grešaka, moguće je postaviti putanju do "
+"fajla koji će biti prepisan sa PROPFIND odgovorom"
 
 #: Library/Backend/WEBDAV/Strings.cs:22
 msgid "Dump the PROPFIND response"
-msgstr ""
+msgstr "Izbacite PROPFIND odgovor"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:4
 msgid ""
 "This backend can read and write data to a Tahoe-LAFS based backend. Allowed "
 "format is \"tahoe://hostname:port/uri/$DIRCAP\"."
 msgstr ""
+"Ova pozadina može čitati i pisati podatke u pozadinu zasnovanu na Tahoe-"
+"LAFS-u. Dozvoljeni format je \"tahoe://hostname:port/uri/$DIRCAP\"."
 
 #: Library/Backend/TahoeLAFS/Strings.cs:7
 msgid "Tahoe-LAFS"
@@ -2124,6 +2528,8 @@ msgid ""
 "Failed to authorize using the OAuth service: {0}. If the problem persists, "
 "try generating a new authid token from: {1}"
 msgstr ""
+"Ovlašćenje pomoću OAuth usluge nije uspelo: {0}. Ako se problem i dalje "
+"javlja, pokušajte da generišete novi autid token sa: {1}"
 
 #: Library/Backend/OAuthHelper/Strings.cs:8
 #, csharp-format
@@ -2133,16 +2539,18 @@ msgstr "Neočekivan kod greške: {0} - {1}"
 #: Library/Backend/OAuthHelper/Strings.cs:11
 msgid "The OAuth service is currently over quota, try again in a few hours"
 msgstr ""
+"OAuth usluga je trenutno prekoračena, pokušajte ponovo za nekoliko sati"
 
 #: Library/DynamicLoader/Strings.cs:4
 #, csharp-format
 msgid "Failed to load assembly {0}, error message: {1}"
-msgstr ""
+msgstr "Učitavanje sklopa {0} nije uspelo, poruka o grešci: {1}"
 
 #: Library/DynamicLoader/Strings.cs:5
 #, csharp-format
 msgid "Failed to load process type {0} assembly {1}, error message: {2}"
 msgstr ""
+"Učitavanje tipa procesa {0} sklop {1} nije uspelo, poruka o grešci: {2}"
 
 #: Library/Compression/Strings.cs:4
 #, csharp-format
@@ -2168,26 +2576,33 @@ msgid ""
 "LZMA. Note that using another value than Deflate will cause the {0} option "
 "to be ignored."
 msgstr ""
+"Ova opcija se može koristiti za podešavanje alternativnog metoda kompresije,"
+" kao što je LZMA. Imajte na umu da će korišćenje druge vrednosti osim "
+"Deflate prouzrokovati ignorisanje opcije {0}."
 
 #: Library/Compression/Strings.cs:8
 msgid "Sets the Zip compression method"
-msgstr ""
+msgstr "Postavlja metod Zip kompresije"
 
 #: Library/Compression/Strings.cs:9
 msgid "Toggles Zip64 support"
-msgstr ""
+msgstr "Uključuje podršku za Zip64"
 
 #: Library/Compression/Strings.cs:10
 msgid ""
 "The zip64 format is required for files larger than 4GiB, use this flag to "
 "toggle it"
 msgstr ""
+"Zip64 format je neophodan za fajlove veće od 4GiB, koristite ovu zastavicu "
+"da biste ga uključili"
 
 #: Library/Compression/Strings.cs:11
 msgid ""
 "This module provides the industry standard Zip compression. Files created "
 "with this module can be read by any standard-compliant zip application."
 msgstr ""
+"Ovaj modul obezbeđuje industrijski standard Zip kompresije. Fajlovi kreirani"
+" pomoću ovog modula mogu se čitati bilo kojom standardnom zip aplikacijom."
 
 #: Library/Compression/Strings.cs:12
 msgid "Zip compression"
@@ -2196,7 +2611,7 @@ msgstr "Zip kompresija"
 #: Library/Compression/Strings.cs:13
 #, csharp-format
 msgid "File not found: {0}"
-msgstr "Datoteka nije pronađena: {0}"
+msgstr "Fajl nije pronađen: {0}"
 
 #: Library/Compression/Strings.cs:16
 msgid "Archive not opened for writing"
@@ -2208,15 +2623,15 @@ msgstr "Arhiva nije otvorena za čitanje"
 
 #: Library/Compression/Strings.cs:18
 msgid "The given file is not part of this archive"
-msgstr "Data datoteka nije deo ove arhive"
+msgstr "Dati fajl nije deo ove arhive"
 
 #: Library/Compression/Strings.cs:19
 msgid "*Experimental*: 7z Archive with LZMA2 support."
-msgstr ""
+msgstr "*Eksperimentalno*: 7z arhiva sa podrškom za LZMA2."
 
 #: Library/Compression/Strings.cs:20
 msgid "Experimental - 7z Archive"
-msgstr ""
+msgstr "Eksperimentalno - 7z Arhiva"
 
 #: Library/Compression/Strings.cs:21
 msgid ""
@@ -2240,19 +2655,22 @@ msgid ""
 "will cause 7z to use the fast algorithm, which produces slightly less "
 "compression."
 msgstr ""
+"Ova opcija kontroliše korišćeni algoritam kompresije. Omogućavanje ove "
+"opcije će prouzrokovati da 7z koristi brzi algoritam, koji proizvodi nešto "
+"manje kompresije."
 
 #: Library/Compression/Strings.cs:26
 msgid "Sets the 7z fast algorithm usage"
-msgstr ""
+msgstr "Postavlja upotrebu brzog algoritma 7z"
 
 #: Library/SQLiteHelper/Strings.cs:4
 msgid "backup"
-msgstr "backup"
+msgstr "rezervna kopija"
 
 #: Library/SQLiteHelper/Strings.cs:5
 #, csharp-format
 msgid "Unable to determine database format: {0}"
-msgstr ""
+msgstr "Nije moguće odrediti format baze podataka: {0}"
 
 #: Library/SQLiteHelper/Strings.cs:6
 #, csharp-format
@@ -2263,10 +2681,15 @@ msgid ""
 "This is likely caused by upgrading to a newer version and then downgrading.\n"
 "If this is the case, there is likely a backup file of the previous database version in the folder {2}."
 msgstr ""
+"\n"
+"Baza podataka ima verziju {0}, ali najveća podržana verzija je {1}.\n"
+"\n"
+"Ovo je verovatno uzrokovano nadogradnjom na noviju verziju, a zatim vraćanjem na stariju verziju.\n"
+"Ako je to slučaj, verovatno postoji rezervna kopija fajla prethodne verzije baze podataka u fascikli {2}."
 
 #: Library/SQLiteHelper/Strings.cs:11
 msgid "Unknown table layout detected"
-msgstr ""
+msgstr "Otkriven je nepoznat izgled tabele"
 
 #: Library/SQLiteHelper/Strings.cs:12
 #, csharp-format
@@ -2275,18 +2698,21 @@ msgid ""
 "Error: {1}\n"
 "Database is NOT upgraded."
 msgstr ""
+"Izvršavanje SKL-a nije uspelo: {0}\n"
+"Greška: {1}\n"
+"Baza podataka NIJE nadograđena."
 
 #: Library/Main/Strings.cs:8
 #, csharp-format
 msgid "Hash mismatch on file \"{0}\", recorded hash: {1}, actual hash {2}"
-msgstr ""
+msgstr "Heš nepodudaranje u fajlu „{0}“, zabeleženi heš: {1}, stvarni heš {2}"
 
 #: Library/Main/Strings.cs:9
 #, csharp-format
 msgid ""
 "The file {0} was downloaded and had size {1} but the size was expected to be"
 " {2}"
-msgstr ""
+msgstr "Heš nepodudaranje u fajlu „{0}“, zabeleženi heš: {1}, stvarni heš {2}"
 
 #: Library/Main/Strings.cs:10
 #, csharp-format
@@ -2297,21 +2723,24 @@ msgstr "Opcija {0} je zastarela: {1}"
 #, csharp-format
 msgid ""
 "The option --{0} exists more than once, please report this to the developers"
-msgstr ""
+msgstr "Opcija --{0} postoji više puta, prijavite ovo programerima"
 
 #: Library/Main/Strings.cs:12
 msgid "No source folders specified for backup"
-msgstr "Nema navedenih izvorišnih fascikla za backup"
+msgstr "Nema navedenih izvorišnih fascikli za rezervnu kopiju"
 
 #: Library/Main/Strings.cs:13
 #, csharp-format
 msgid "The source folder {0} does not exist, aborting backup"
-msgstr "Izvorišna fascikla {0} ne postoji, prekidanje backup-a"
+msgstr ""
+"Izvorni direktorijum {0} ne postoji, prekidanje pravljenja rezervne kopije"
 
 #: Library/Main/Strings.cs:14
 #, csharp-format
 msgid "Unauthorized to access source folder {0}, aborting backup"
 msgstr ""
+"Neovlašćen pristup izvornoj fascikli {0}, prekidanje pravljenja rezervne "
+"kopije"
 
 #: Library/Main/Strings.cs:15
 #, csharp-format
@@ -2319,6 +2748,8 @@ msgid ""
 "The value \"{1}\" supplied to --{0} does not parse into a valid boolean, "
 "this will be treated as if it was set to \"true\""
 msgstr ""
+"Vrednost „{1}“ dostavljena u --{0} se ne raščlanjuje u važeću logičku "
+"vrednost, ovo će se tretirati kao da je postavljeno na „true“"
 
 #: Library/Main/Strings.cs:16
 #, csharp-format
@@ -2333,53 +2764,55 @@ msgid ""
 "The option --{0} does not support the value \"{1}\", supported flag values "
 "are: {2}"
 msgstr ""
+"Opcija --{0} ne podržava vrednost \"{1}\", podržane vrednosti zastavice su: "
+"{2}"
 
 #: Library/Main/Strings.cs:18
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid integer"
-msgstr ""
+msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja važeći ceo broj"
 
 #: Library/Main/Strings.cs:19
 #, csharp-format
 msgid ""
 "The option --{0} is not supported because the module {1} is not currently "
 "loaded"
-msgstr ""
+msgstr "Opcija --{0} nije podržana jer modul {1} trenutno nije učitan"
 
 #: Library/Main/Strings.cs:20
 #, csharp-format
 msgid "The supplied option --{0} is not supported and will be ignored"
-msgstr ""
+msgstr "Dostavljena opcija --{0} nije podržana i biće ignorisana"
 
 #: Library/Main/Strings.cs:21
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid path"
-msgstr ""
+msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja ispravnu putanju"
 
 #: Library/Main/Strings.cs:22
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid size"
-msgstr ""
+msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja ispravnu veličinu"
 
 #: Library/Main/Strings.cs:23
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid time"
-msgstr ""
+msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja važeće vreme"
 
 #: Library/Main/Strings.cs:24
 #, csharp-format
 msgid "The operation {0} has started"
-msgstr ""
+msgstr "Operacija {0} je počela"
 
 #: Library/Main/Strings.cs:25
 #, csharp-format
 msgid "The operation {0} has completed"
-msgstr ""
+msgstr "Operacija {0} je završena"
 
 #: Library/Main/Strings.cs:26
 #, csharp-format
 msgid "The operation {0} has failed with error: {1}"
-msgstr ""
+msgstr "Operacija {0} nije uspela sa greškom: {1}"
 
 #: Library/Main/Strings.cs:27
 #, csharp-format
@@ -2392,17 +2825,23 @@ msgid ""
 "Failed to apply 'force-locale' setting. Please try to update .NET-Framework."
 " Exception was: \"{0}\" "
 msgstr ""
+"Primena podešavanja 'force-locale' nije uspela. Pokušajte da ažurirate .NET-"
+"Framevork. Izuzetak je bio: \"{0}\""
 
 #: Library/Main/Strings.cs:29
 #, csharp-format
 msgid "The source {0} uses an invalid volume name, aborting backup"
 msgstr ""
+"Izvor {0} koristi nevažeće ime volumena, čime se prekida pravljenje "
+"rezervne kopije"
 
 #: Library/Main/Strings.cs:30
 #, csharp-format
 msgid ""
 "The source {0} is on volume {1}, which could not be found, aborting backup"
 msgstr ""
+"Izvor {0} je na volumenu {1}, koji nije mogao biti pronađen, pa se rezervna "
+"kopija prekida"
 
 #: Library/Main/Strings.cs:31
 #, csharp-format
@@ -2411,6 +2850,8 @@ msgid ""
 "etc). A multiplier is recommended to avoid unexpected changes if the program"
 " is updated."
 msgstr ""
+"Veličina \"{1}\" data za --{0} nema množilac (b, kb, mb, etc). Preporučuje "
+"se množilac da biste izbegli neočekivane promene ako se program ažurira."
 
 #: Library/Main/Strings.cs:36
 msgid ""
@@ -2418,10 +2859,14 @@ msgid ""
 " backend. Using this flag, Duplicati will automatically remove such files "
 "when encountered."
 msgstr ""
+"Ako je rezervna kopija prekinuta, verovatno će biti delimični fajlovi "
+"prisutni na pozadini. Koristeći ovu zastavicu, Duplicati će automatski "
+"ukloniti takve fajlove kada naiđu."
 
 #: Library/Main/Strings.cs:37
 msgid "A flag indicating that Duplicati should remove unused files"
 msgstr ""
+"Oznaka koja pokazuje da Duplicati treba da ukloni neiskorišćene fajlove"
 
 #: Library/Main/Strings.cs:38
 msgid ""
@@ -2430,10 +2875,14 @@ msgid ""
 "a hyphen (-), but can contain all other characters allowed by the remote "
 "storage."
 msgstr ""
+"Niz koji se koristi za prefiks imena fajlova udaljenih volumena, može se "
+"koristiti za skladištenje više rezervnih kopija u istoj udaljenoj fascikli. "
+"Prefiks ne može da sadrži crticu (-), ali može da sadrži sve druge znakove "
+"koje dozvoljava udaljeno skladište."
 
 #: Library/Main/Strings.cs:39
 msgid "Remote filename prefix"
-msgstr ""
+msgstr "Prefiks udaljenog naziva fajla"
 
 #: Library/Main/Strings.cs:40
 msgid ""
@@ -2442,30 +2891,38 @@ msgid ""
 "modified. If some application deliberately modifies this information, "
 "Duplicati won't work correctly unless this flag is set."
 msgstr ""
+"Operativni sistem prati poslednji put kada je fajl napisan. Koristeći ove "
+"informacije, Duplicati može brzo da utvrdi da li je fajl izmenjen. Ako neka "
+"aplikacija namerno izmeni ove informacije, Duplicati neće raditi ispravno "
+"osim ako se ova zastavica ne postavi."
 
 #: Library/Main/Strings.cs:41
 msgid "Disable checks based on file time"
-msgstr ""
+msgstr "Onemogućite provere na osnovu vremena fajla"
 
 #: Library/Main/Strings.cs:42
 msgid ""
 "By default, files will be restored in the source folders, use this option to"
 " restore to another folder"
 msgstr ""
+"Podrazumevano, fajlovi će biti vraćeni u izvorne fascikle, koristite ovu "
+"opciju za vraćanje u drugu fasciklu"
 
 #: Library/Main/Strings.cs:43
 msgid "Restore to another folder"
-msgstr ""
+msgstr "Vratite u drugu fasciklu"
 
 #: Library/Main/Strings.cs:44
 msgid "Toggles system sleep mode"
-msgstr ""
+msgstr "Uključuje režim mirovanja sistema"
 
 #: Library/Main/Strings.cs:45
 msgid ""
 "Allow system to enter sleep power modes for inactivity during backup/restore"
 " operations (Windows/OSX only)"
 msgstr ""
+"Dozvolite sistemu da uđe u režim spavanja radi neaktivnosti tokom operacija "
+"pravljenja rezervnih kopija/vraćanja (samo za Vindouz/OSX)"
 
 #: Library/Main/Strings.cs:46
 msgid ""
@@ -2473,10 +2930,13 @@ msgid ""
 "for downloads. Setting this limit can make the backups take longer, but will"
 " make Duplicati less intrusive."
 msgstr ""
+"Postavljanjem ove vrednosti možete ograničiti koliko propusnog opsega "
+"Duplicati troši za preuzimanja. Podešavanje ovog ograničenja može produžiti "
+"pravljenje rezervnih kopija, ali će Duplicati učiniti manje nametljivim."
 
 #: Library/Main/Strings.cs:47
 msgid "Max number of kilobytes to download pr. second"
-msgstr ""
+msgstr "Maksimalni broj kilobajta za preuzimanje u sekundi"
 
 #: Library/Main/Strings.cs:48
 msgid ""
@@ -2484,16 +2944,22 @@ msgid ""
 "for uploads. Setting this limit can make the backups take longer, but will "
 "make Duplicati less intrusive."
 msgstr ""
+"Postavljanjem ove vrednosti možete ograničiti koliko propusnog opsega "
+"Duplicati troši za otpremanje. Podešavanje ovog ograničenja može produžiti "
+"pravljenje rezervnih kopija, ali će Duplicati učiniti manje nametljivim."
 
 #: Library/Main/Strings.cs:49
 msgid "Max number of kilobytes to upload pr. second"
-msgstr ""
+msgstr "Maksimalan broj kilobajta za otpremanje u sekundi"
 
 #: Library/Main/Strings.cs:50
 msgid ""
 "If you store the backups on a local disk, and prefer that they are kept "
 "unencrypted, you can turn of encryption completely by using this switch."
 msgstr ""
+"Ako čuvate rezervne kopije na lokalnom disku i želite da se čuvaju "
+"nešifrovane, možete u potpunosti da isključite šifrovanje pomoću ovog "
+"prekidača."
 
 #: Library/Main/Strings.cs:51
 msgid "Disable encryption"
@@ -2504,10 +2970,13 @@ msgid ""
 "If an upload or download fails, Duplicati will retry a number of times "
 "before failing. Use this to handle unstable network connections better."
 msgstr ""
+"Ako otpremanje ili preuzimanje ne uspe, Duplicati će pokušati nekoliko puta"
+" pre nego što ne uspe. Koristite ovo za bolje rukovanje nestabilnim mrežnim "
+"vezama."
 
 #: Library/Main/Strings.cs:53
 msgid "Number of times to retry a failed transmission"
-msgstr ""
+msgstr "Broj ponavljanja neuspelog prenosa"
 
 #: Library/Main/Strings.cs:54
 msgid ""
@@ -2515,10 +2984,14 @@ msgid ""
 "making them unreadable without the passphrase. This variable can also be "
 "supplied through the environment variable PASSPHRASE."
 msgstr ""
+"Navedite pristupnu frazu koju će Duplicati koristiti za šifrovanje volumena"
+" rezervnih kopija, čineći ih nečitljivim bez pristupne fraze. Ova "
+"promenljiva se takođe može dostaviti preko promenljive okruženja "
+"PASSPHRASE.."
 
 #: Library/Main/Strings.cs:55
 msgid "Passphrase used to encrypt backups"
-msgstr ""
+msgstr "Pristupna fraza koja se koristi za šifrovanje rezervnih kopija"
 
 #: Library/Main/Strings.cs:56
 msgid ""
@@ -2526,10 +2999,14 @@ msgid ""
 "backup, use this option to select another item. You may use relative times, "
 "like \"-2M\" for a backup from two months ago."
 msgstr ""
+"Podrazumevano, Duplicati će prikazati i vratiti fajlove iz najnovije "
+"rezervne kopije, koristite ovu opciju da izaberete drugu stavku. Možete "
+"koristiti relativna vremena, na primer \"-2M\" za rezervnu kopiju od pre dva"
+" meseca."
 
 #: Library/Main/Strings.cs:57
 msgid "The time to list/restore files"
-msgstr ""
+msgstr "Vreme za listanje/vraćanje fajlova"
 
 #: Library/Main/Strings.cs:58
 msgid ""
@@ -2537,16 +3014,22 @@ msgid ""
 "backup, use this option to select another item. You may enter multiple "
 "values separated with comma, and ranges using -, e.g. \"0,2-4,7\" ."
 msgstr ""
+"Podrazumevano, Duplicati će prikazati i vratiti fajlove iz najnovije "
+"rezervne kopije, koristite ovu opciju da izaberete drugu stavku. Možete da "
+"unesete više vrednosti razdvojenih zarezom i opsege koristeći -, "
+"npr.\"0,2-4,7\" ."
 
 #: Library/Main/Strings.cs:59
 msgid "The version to list/restore files"
-msgstr ""
+msgstr "Verzija za listanje/vraćanje fajlova"
 
 #: Library/Main/Strings.cs:60
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
 msgstr ""
+"Kada se traže fajlovi, traži se samo najnovija rezervna kopija. Koristite "
+"ovu opciju da prikažete i sve prethodne verzije"
 
 #: Library/Main/Strings.cs:61
 msgid "Show all versions"
@@ -2557,16 +3040,21 @@ msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
 msgstr ""
+"Kada tražite fajlove, vraćaju se svi odgovarajući fajlovi. Koristite ovu "
+"opciju da biste vratili samo najveću putanju uobičajenog prefiksa."
 
 #: Library/Main/Strings.cs:63
 msgid "Show largest prefix"
-msgstr ""
+msgstr "Prikaži najveći prefiks"
 
 #: Library/Main/Strings.cs:64
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
 msgstr ""
+"Kada tražite fajlove, vraćaju se svi odgovarajući fajlovi. Koristite ovu "
+"opciju da biste vratili samo unose pronađene u fascikli navedenoj kao "
+"filter."
 
 #: Library/Main/Strings.cs:65
 msgid "Show folder contents"
@@ -2578,6 +3066,8 @@ msgid ""
 "attempting again. This is useful if the network drops out occasionally "
 "during transmissions."
 msgstr ""
+"Nakon neuspelog prenosa, Duplicati će sačekati kratko vreme pre nego što "
+"pokuša ponovo. Ovo je korisno ako mreža povremeno ispadne tokom prenosa."
 
 #: Library/Main/Strings.cs:67
 msgid "Time to wait between retries"
@@ -2586,36 +3076,46 @@ msgstr "Vreme čekanja između pokušaja"
 #: Library/Main/Strings.cs:68
 msgid "Use this option to attach extra files to the newly uploaded filelists."
 msgstr ""
+"Koristite ovu opciju da priložite dodatne fajlove novootpremljenim listama "
+"fajlova."
 
 #: Library/Main/Strings.cs:69
 msgid "Set control files"
-msgstr ""
+msgstr "Podesite kontrolne fajlove"
 
 #: Library/Main/Strings.cs:70
 msgid ""
 "If the hash for the volume does not match, Duplicati will refuse to use the "
 "backup. Supply this flag to allow Duplicati to proceed anyway."
 msgstr ""
+"Ako se heš za volumen ne poklapa, Duplicati će odbiti da koristi rezervnu "
+"kopiju. Nabavite ovu zastavicu da biste Duplicati-u omogućili da ipak "
+"nastavi."
 
 #: Library/Main/Strings.cs:71
 msgid "Set this flag to skip hash checks"
-msgstr ""
+msgstr "Postavite ovu zastavicu da preskočite heš provere"
 
 #: Library/Main/Strings.cs:72
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large."
 msgstr ""
+"Ova opcija vam omogućava da isključite fajlove koji su veći od date "
+"vrednosti. Koristite ovo da sprečite da rezervne kopije postanu izuzetno "
+"velike."
 
 #: Library/Main/Strings.cs:73
 msgid "Limit the size of files being backed up"
-msgstr ""
+msgstr "Ograničite veličinu fajlova za koje se pravi rezervna kopija"
 
 #: Library/Main/Strings.cs:76
 msgid ""
 "Selects another thread priority for the process. Use this to set Duplicati "
 "to be more or less CPU intensive."
 msgstr ""
+"Bira drugi prioritet niti za proces. Koristite ovo da podesite Duplicati da "
+"bude više ili manje CPU intenzivan."
 
 #: Library/Main/Strings.cs:77
 msgid "Thread priority"
@@ -2626,10 +3126,13 @@ msgid ""
 "This option can change the maximum size of dblock files. Changing the size "
 "can be useful if the backend has a limit on the size of each individual file"
 msgstr ""
+"Ova opcija može da promeni maksimalnu veličinu dblock fajlova. Promena "
+"veličine može biti korisna ako pozadina ima ograničenje veličine svakog "
+"pojedinačnog fajla"
 
 #: Library/Main/Strings.cs:79
 msgid "Limit the size of the volumes"
-msgstr ""
+msgstr "Ograničite veličinu volumena"
 
 #: Library/Main/Strings.cs:80
 msgid ""
@@ -2637,10 +3140,13 @@ msgid ""
 "means that transfer progress bars will not show, and bandwidth throttle "
 "settings will be ignored."
 msgstr ""
+"Omogućavanje ove opcije će onemogućiti korišćenje interfejsa za "
+"striming, što znači da se trake napetka prenosa neće prikazivati, a "
+"podešavanja opsega propusnog opsega će biti zanemarena."
 
 #: Library/Main/Strings.cs:81
 msgid "Disables use of the streaming transfer method"
-msgstr ""
+msgstr "Onemogućava upotrebu metode prenosa strimovanja"
 
 #: Library/Main/Strings.cs:82
 msgid ""
@@ -2648,10 +3154,13 @@ msgid ""
 "This also implies that file hashes are not checked either. Use only for "
 "disaster recovery."
 msgstr ""
+"Ova opcija će osigurati da se sadržaj fajla manifesta ne pročita. Ovo "
+"takođe znači da se ne proveravaju ni heševi fajlova. Koristite samo za "
+"oporavak od katastrofe."
 
 #: Library/Main/Strings.cs:83
 msgid "An option that prevents verifying the manifests"
-msgstr ""
+msgstr "Opcija koja sprečava verifikaciju manifesta"
 
 #: Library/Main/Strings.cs:84
 msgid ""
@@ -2660,10 +3169,14 @@ msgid ""
 "volumes, when reading an existing file, the filename is used to select the "
 "compression module."
 msgstr ""
+"Duplicati podržava module kompresije koji se mogu priključiti. Koristite ovu"
+" opciju da izaberete modul koji ćete koristiti za kompresiju. Ovo se "
+"primenjuje samo kada se kreiraju novi volumeni, kada se čita postojeći "
+"fajl, ime fajla se koristi za izbor modula kompresije."
 
 #: Library/Main/Strings.cs:85
 msgid "Select what module to use for compression"
-msgstr ""
+msgstr "Izaberite koji modul želite da koristite za kompresiju"
 
 #: Library/Main/Strings.cs:86
 msgid ""
@@ -2672,26 +3185,34 @@ msgid ""
 "volumes, when reading an existing file, the filename is used to select the "
 "encryption module."
 msgstr ""
+"Duplicati podržava module za šifrovanje koji se mogu priključiti. Koristite "
+"ovu opciju da izaberete modul koji ćete koristiti za šifrovanje. Ovo se "
+"primenjuje samo kada se kreiraju novi volumeni, kada se čita postojeći "
+"fajl, ime fajla se koristi za izbor modula za šifrovanje."
 
 #: Library/Main/Strings.cs:87
 msgid "Select what module to use for encryption"
-msgstr ""
+msgstr "Izaberite koji modul želite da koristite za šifrovanje"
 
 #: Library/Main/Strings.cs:88
 msgid "Supply one or more module names, separated by commas to unload them"
 msgstr ""
+"Navedite jedan ili više naziva modula, razdvojenih zarezima da biste ih "
+"izbacili"
 
 #: Library/Main/Strings.cs:89
 msgid "Disables one or more modules"
-msgstr ""
+msgstr "Onemogućava jedan ili više modula"
 
 #: Library/Main/Strings.cs:90
 msgid "Supply one or more module names, separated by commas to load them"
 msgstr ""
+"Navedite jedan ili više naziva modula, odvojenih zarezima da biste ih "
+"učitali"
 
 #: Library/Main/Strings.cs:91
 msgid "Enables one or more modules"
-msgstr ""
+msgstr "Omogućava jedan ili više modula"
 
 #: Library/Main/Strings.cs:92
 msgid ""
@@ -2707,10 +3228,22 @@ msgid ""
 "and requires administrative privileges. On Linux this uses Logical Volume "
 "Management (LVM) and requires root privileges."
 msgstr ""
+"Ova postavka kontroliše upotrebu snimaka, što omogućava Duplicati-ju da "
+"pravi rezervne kopije fajlova koje su zaključali drugi programi. Ako je ovo "
+"podešeno na \"isključeno\", Duplicati neće pokušati da napravi snimak "
+"diska. Postavljanjem ovog na \"auto\" Duplicati pokušava da napravi snimak i"
+" ne uspe u tišini ako to nije dozvoljeno ili podržano (imajte na umu da OS "
+"može i dalje da evidentira sistemska upozorenja). Postavka \"uključeno\" će"
+" takođe učiniti da Duplicati pokuša da napravi snimak, ali će proizvesti "
+"poruku upozorenja u evidenciji ako ne uspe. Ako ga postavite na "
+"\"obavezno\", Duplicati će prekinuti pravljenje rezervne kopije ako "
+"pravljenje snimka ne uspe. Na Vindouz-u ovo koristi volumen Shadov Copi "
+"Services (VSS) i zahteva administrativne privilegije. Na Linux-u ovo koristi"
+" upravljanje logičkim volumenom (LVM) i zahteva root privilegije."
 
 #: Library/Main/Strings.cs:93
 msgid "Controls the use of disk snapshots"
-msgstr ""
+msgstr "Kontroliše upotrebu snimaka diska"
 
 #: Library/Main/Strings.cs:94
 msgid ""
@@ -2718,10 +3251,14 @@ msgid ""
 "default, this option can set a different folder for placing the temporary "
 "volumes, despite the name, this also works for synchronous runs"
 msgstr ""
+"Unapred generisani volumeni će podrazumevano biti smešteni u privremenu "
+"fasciklu, ova opcija može podesiti drugu fasciklu za postavljanje "
+"privremenih volumena, uprkos nazivu, ovo takođe funkcioniše za sinhrona "
+"pokretanja"
 
 #: Library/Main/Strings.cs:95
 msgid "The path where ready volumes are placed until uploaded"
-msgstr ""
+msgstr "Putanja na koju se spremni volumeni postavljaju do učitavanja"
 
 #: Library/Main/Strings.cs:96
 msgid ""
@@ -2730,63 +3267,75 @@ msgid ""
 "option limits the number of pending uploads. Set to zero to disable the "
 "limit"
 msgstr ""
+"Prilikom asinhronog otpremanja, Duplicati će kreirati volumene koji se mogu"
+" otpremiti. Da biste sprečili Duplicati da generiše previše volumena, ova "
+"opcija ograničava broj otpremanja na čekanju. Postavite na nulu da biste "
+"onemogućili ograničenje"
 
 #: Library/Main/Strings.cs:97
 msgid "The number of volumes to create ahead of time"
-msgstr ""
+msgstr "Broj volumena koje treba kreirati unapred"
 
 #: Library/Main/Strings.cs:98
 msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
 msgstr ""
+"Prilikom asinhronog otpremanja, dozvoljen je maksimalan broj istovremenih "
+"otpremanja. Postavite na nulu da biste onemogućili ograničenje."
 
 #: Library/Main/Strings.cs:99
 msgid "The number of concurrent uploads allowed"
-msgstr ""
+msgstr "Broj dozvoljenih istovremenih otpremanja"
 
 #: Library/Main/Strings.cs:100
 msgid ""
 "Activating this option will make some error messages more verbose, which may"
 " help you track down a particular issue"
 msgstr ""
+"Aktiviranjem ove opcije neke poruke o grešci će biti opširnije, što vam "
+"može pomoći da pronađete određeni problem"
 
 #: Library/Main/Strings.cs:101
 msgid "Enables debugging output"
-msgstr ""
+msgstr "Omogućava izlaz za otklanjanje grešaka"
 
 #: Library/Main/Strings.cs:102
 msgid "Log internal information to a file"
-msgstr ""
+msgstr "Zabeležite interne informacije u fajl"
 
 #: Library/Main/Strings.cs:103
 msgid "Logs information to the file specified"
-msgstr ""
+msgstr "Zapisuje informacije u navedeni fajl"
 
 #: Library/Main/Strings.cs:104
 msgid ""
 "Specifies the amount of log information to write into the file specified by "
 "--log-file"
 msgstr ""
+"Određuje količinu informacija dnevnika za pisanje u fajl koji je naveo "
+"--log-file"
 
 #: Library/Main/Strings.cs:105
 msgid "Log information level"
-msgstr ""
+msgstr "Nivo informacija dnevnika"
 
 #: Library/Main/Strings.cs:106
 #, csharp-format
 msgid "Use the {0} and {1} options instead"
-msgstr ""
+msgstr "Umesto toga koristite opcije {0} i {1}"
 
 #: Library/Main/Strings.cs:107
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
 msgstr ""
+"Ako Duplicati otkrije da ciljni folder nedostaje, automatski će ga "
+"kreirati. Aktivirajte ovu opciju da sprečite automatsko kreiranje fascikli."
 
 #: Library/Main/Strings.cs:108
 msgid "Disables automatic folder creation"
-msgstr ""
+msgstr "Onemogućava automatsko kreiranje fascikli"
 
 #: Library/Main/Strings.cs:109
 msgid ""
@@ -2796,11 +3345,18 @@ msgid ""
 "Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs "
 "are allowed, including with and without curly braces."
 msgstr ""
+"Koristite ovu opciju da biste isključili neispravne pisce iz snimka. Ovo je "
+"ekvivalentno zastavici -wx alatke vshadow.exe, osim što prihvata samo GUID-"
+"ove klase pisca, a ne imena komponenti ili GUID-ove instance. Više GUID-ova "
+"mora biti odvojeno tačkom i zarezom, a većina oblika GUID-a je dozvoljena, "
+"uključujući sa i bez vitičastih zagrada."
 
 #: Library/Main/Strings.cs:110
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
+"Lista vodiča VSS pisaca odvojenih tačkom i zarezom za izuzimanje (samo za "
+"Vindouz)"
 
 #: Library/Main/Strings.cs:111
 msgid ""
@@ -2814,10 +3370,20 @@ msgid ""
 "usage fails. This feature is only supported on Windows and requires "
 "administrative privileges."
 msgstr ""
+"Ova postavka kontroliše upotrebu NTFS USN brojeva, što omogućava "
+"Duplicatiju da dobije listu fajlova i fascikli mnogo brže. Ako je ovo "
+"podešeno na \"isključeno\", Duplicati neće pokušati da koristi USN. "
+"Podešavanje na \"auto\" čini da Duplicati pokušava da koristi USN i ne uspe "
+"u tišini ako to nije dozvoljeno ili podržano. Postavka „uključeno“ će "
+"takođe učiniti da Duplicati pokuša da koristi USN, ali će proizvesti poruku"
+" upozorenja u evidenciji ako ne uspe. Ako ga postavite na „obavezno“, "
+"Duplicati će prekinuti pravljenje rezervne kopije ako upotreba USN-a ne "
+"uspe. Ova funkcija je podržana samo na Vindouz-u i zahteva administrativne "
+"privilegije."
 
 #: Library/Main/Strings.cs:112
 msgid "Controls the use of NTFS Update Sequence Numbers"
-msgstr ""
+msgstr "Kontroliše upotrebu rednih brojeva ažuriranja NTFS-a"
 
 #: Library/Main/Strings.cs:113
 #, csharp-format
@@ -2831,14 +3397,23 @@ msgid ""
 "1% tolerance (max 1 hour). Use this option to disable the tolerance, and use"
 " strict time checking"
 msgstr ""
+"Prilikom uparivanja vremenskih oznaka, Duplicati će prilagoditi vremena za "
+"mali deo kako bi obezbedio da manje vremenske razlike ne izazovu neočekivana"
+" ažuriranja. Ako je opcija --{0} podešena da čuva nedelju dana rezervnih "
+"kopija, a rezervna kopija se pravi u isto vreme svake nedelje, moguće je da"
+" se sat malo pomeri, tako da je cela nedelja upravo prošla, što će dovesti "
+"do toga da Duplicati izbriše starije rezervne kopije ranije nego što se "
+"očekivalo. Da bi se ovo izbeglo, Duplicati ubacuje toleranciju od 1% "
+"(maksimalno 1 sat). Koristite ovu opciju da onemogućite toleranciju i "
+"koristite strogu proveru vremena"
 
 #: Library/Main/Strings.cs:114
 msgid "Deactivates tolerance when comparing times"
-msgstr ""
+msgstr "Deaktivira toleranciju prilikom upoređivanja vremena"
 
 #: Library/Main/Strings.cs:115
 msgid "Verify uploads by listing contents"
-msgstr ""
+msgstr "Potvrdite otpremanja navođenjem sadržaja"
 
 #: Library/Main/Strings.cs:116
 msgid ""
@@ -2846,10 +3421,13 @@ msgid ""
 "which usually makes the backup faster. Use this flag to turn the behavior "
 "off, so that Duplicati will wait for each volume to complete."
 msgstr ""
+"Duplicati će otpremiti fajlove dok skenira disk i proizvodi volumene, što "
+"obično čini rezervnu kopiju bržom. Koristite ovu zastavicu da isključite to "
+"ponašanje, tako da će Duplicati čekati da se završi svaki volumen."
 
 #: Library/Main/Strings.cs:117
 msgid "Upload files synchronously"
-msgstr ""
+msgstr "Sinhrono otpremajte fajlove"
 
 #: Library/Main/Strings.cs:118
 msgid ""
@@ -2858,10 +3436,14 @@ msgid ""
 "process. This option can be used to ensure that each operation is performed "
 "on a seperate connection"
 msgstr ""
+"Duplicati će pokušati da izvrši više operacija na jednoj vezi, jer se na "
+"taj način izbegavaju ponovljeni pokušaji prijave i na taj način ubrzava "
+"proces. Ova opcija se može koristiti da bi se osiguralo da se svaka "
+"operacija izvodi na posebnoj vezi"
 
 #: Library/Main/Strings.cs:119
 msgid "Do not re-use connections"
-msgstr ""
+msgstr "Nemojte ponovo koristiti veze"
 
 #: Library/Main/Strings.cs:120
 msgid ""
@@ -2869,10 +3451,13 @@ msgid ""
 "number of retries. Enable this option to have the error messages displayed "
 "when a retry is performed."
 msgstr ""
+"Kada dođe do greške, Duplicati će tiho pokušati ponovo i prijaviti samo "
+"broj ponovnih pokušaja. Omogućite ovu opciju da bi se poruke o grešci "
+"prikazivale kada se izvrši ponovni pokušaj."
 
 #: Library/Main/Strings.cs:121
 msgid "Show error messages when a retry is performed"
-msgstr ""
+msgstr "Prikaži poruke o grešci kada se izvrši ponovni pokušaj"
 
 #: Library/Main/Strings.cs:122
 msgid ""
@@ -2880,20 +3465,27 @@ msgid ""
 "backup data is used to verify that a backup was executed, this option will "
 "make Duplicati upload a backupset even if it is empty"
 msgstr ""
+"Ako se nijedan od fajlova ne promeni, Duplicati neće otpremati skup "
+"rezervnih kopija. Ako se podaci rezervne kopije koriste za proveru da je "
+"rezervna kopija izvršena, ova opcija će učiniti da Duplicati otprema "
+"rezervnu kopiju čak i ako je prazan"
 
 #: Library/Main/Strings.cs:123
 msgid "Upload empty backup files"
-msgstr ""
+msgstr "Otpremite prazne fajlove rezervnih kopija"
 
 #: Library/Main/Strings.cs:124
 msgid ""
 "This value can be used to set a known upper limit on the amount of space a "
 "backend has. If the backend reports the size itself, this value is ignored"
 msgstr ""
+"Ova vrednost se može koristiti za postavljanje poznate gornje granice "
+"količine prostora koji ima pozadinska strana. Ako pozadina prijavljuje samu "
+"veličinu, ova vrednost se ignoriše"
 
 #: Library/Main/Strings.cs:125
 msgid "A reported maximum storage"
-msgstr ""
+msgstr "Prijavljeni maksimalni prostor za skladištenje"
 
 #: Library/Main/Strings.cs:126
 msgid ""
@@ -2903,14 +3495,19 @@ msgid ""
 "size. If the backend does not report the quota information, this value will "
 "be ignored"
 msgstr ""
+"Postavlja prag kada treba upozoriti da je pozadinska kvota skoro "
+"prekoračena. Daje se u procentima, a upozorenje se generiše ako je količina "
+"raspoložive kvote manja od ovog procenta ukupne veličine rezervne kopije. "
+"Ako pozadina ne prijavi informacije o kvoti, ova vrednost će biti "
+"zanemarena"
 
 #: Library/Main/Strings.cs:127
 msgid "Threshold for warning about low quota"
-msgstr ""
+msgstr "Prag za upozorenje o niskoj kvoti"
 
 #: Library/Main/Strings.cs:128
 msgid "Symlink handling"
-msgstr ""
+msgstr "Upravljanje simboličkim vezama"
 
 #: Library/Main/Strings.cs:129
 #, csharp-format
@@ -2923,10 +3520,18 @@ msgid ""
 "with the symlink name. Early versions of Duplicati did not support this "
 "option and bevhaved as if \"{2}\" was specified."
 msgstr ""
+"Koristite ovu opciju da drugačije rukujete simboličkim vezama. Opcija "
+"\"{0}\" će jednostavno snimiti simboličku vezu sa njenim imenom i "
+"odredištem, a vraćanje će ponovo kreirati simboličku vezu kao vezu. "
+"Koristite opciju \"{1}\" da ignorišete sve simbolične veze i ne čuvate "
+"nikakve informacije o njima. Opcija \"{2}\" će prouzrokovati da se napravi "
+"rezervna kopija simbolizovanog cilja i da se vrati kao normalni fajl sa "
+"imenom simbolične veze. Rane verzije Duplicati-ja nisu podržavale ovu opciju"
+" i ponašale su se kao da je navedeno \"{2}\"."
 
 #: Library/Main/Strings.cs:130
 msgid "Hardlink handling"
-msgstr ""
+msgstr "Rukovanje čvrstim vezama"
 
 #: Library/Main/Strings.cs:131
 #, csharp-format
@@ -2937,10 +3542,16 @@ msgid ""
 "information, and treat each hardlink as a unique path. The option \"{2}\" "
 "will ignore all hardlinks with more than one link."
 msgstr ""
+"Koristite ovu opciju za rukovanje tvrdim vezama (radi samo na Linux/OSX). "
+"Opcija \"{0}\" će zabeležiti ID čvrste veze za svaku čvrstu vezu kako bi se"
+" izbeglo višestruko skladištenje tvrdo povezanih putanja. Opcija \"{1}\" će"
+" ignorisati informacije o čvrstoj vezi i tretirati svaku čvrstu vezu kao "
+"jedinstvenu putanju. Opcija \"{2}\" će ignorisati sve tvrde veze sa više od"
+" jedne veze."
 
 #: Library/Main/Strings.cs:132
 msgid "Exclude files by attribute"
-msgstr ""
+msgstr "Izuzmi fajlove prema atributima"
 
 #: Library/Main/Strings.cs:133
 #, csharp-format
@@ -2949,6 +3560,9 @@ msgid ""
 "separated list of attribute names to specify more than one. Possible values "
 "are: {0}"
 msgstr ""
+"Koristite ovu opciju da biste isključili fajlove sa određenim atributima. "
+"Koristite listu imena atributa odvojenu zarezima da biste naveli više od "
+"jednog. Moguće vrednosti su: {0}"
 
 #: Library/Main/Strings.cs:134
 msgid ""
@@ -2957,20 +3571,26 @@ msgid ""
 "then used to access the contents of a snapshot. This workaround can speed up"
 " file access on Windows XP."
 msgstr ""
+"Aktivirajte ovu opciju da biste mapirali VSS snimke na disk jedinicu (slično"
+" SUBST-u, koristeći Win32 DefineDosDevice). Ovo će stvoriti privremene "
+"disk jedinice koje se zatim koriste za pristup sadržaju snimka. Ovo rešenje "
+"može da ubrza pristup fajlu u operativnom sistemu Vindouz XP."
 
 #: Library/Main/Strings.cs:135
 msgid "Map snapshots to a drive (Windows only)"
-msgstr ""
+msgstr "Mapirajte snimke na disk (samo za Vindouz)"
 
 #: Library/Main/Strings.cs:136
 msgid ""
 "A display name that is attached to this backup. Can be used to identify the "
 "backup when sending mail or running scripts."
 msgstr ""
+"Ime za prikaz koje je priloženo ovoj rezervnoj kopiji. Može se koristiti za "
+"identifikaciju rezervne kopije prilikom slanja pošte ili pokretanja skripti."
 
 #: Library/Main/Strings.cs:137
 msgid "Name of the backup"
-msgstr "Naziv backup-a"
+msgstr "Naziv rezervne kopije"
 
 #: Library/Main/Strings.cs:138
 #, csharp-format
@@ -2983,10 +3603,17 @@ msgid ""
 "is supplied, that also serves as an example. The default file is placed in "
 "{0}."
 msgstr ""
+"Ovo svojstvo se može koristiti za ukazivanje na tekstualni fajl u kojem "
+"svaki red sadrži ekstenziju fajla koji označava fajl koji se ne može "
+"kompresovati. Fajlovi koje imaju ekstenziju pronađenu u fajlu neće biti "
+"komprimovane, već jednostavno uskladištene u arhivi. Format fajla ignoriše "
+"sve redove koji ne počinju tačkom i uzima u obzir razmak koji označava kraj "
+"ekstenzije. Isporučuje se podrazumevani fajl, koja takođe služi kao primer. "
+"Podrazumevani fajl je smeštena u {0}."
 
 #: Library/Main/Strings.cs:139
 msgid "Manage non-compressible file extensions"
-msgstr ""
+msgstr "Upravljajte ekstenzijama fajlova koji nisu komprimovani"
 
 #: Library/Main/Strings.cs:140
 msgid ""
@@ -2995,6 +3622,10 @@ msgid ""
 "cause a large overhead on storage of file lists. Note that the value cannot "
 "be changed after remote files are created."
 msgstr ""
+"Veličina bloka određuje kako su fajlovi fragmentirani. Odabir velike "
+"vrednosti će izazvati veće troškove prilikom izmena fajlova, a izbor male "
+"vrednosti će izazvati velike troškove skladištenja lista fajlova. Imajte na"
+" umu da se vrednost ne može promeniti nakon kreiranja udaljenih fajlova."
 
 #: Library/Main/Strings.cs:141
 msgid "Block size used in hashing"
@@ -3006,19 +3637,23 @@ msgid ""
 "have changed. This is usually only activated in combination with a "
 "filesystem watcher that keeps track of file changes."
 msgstr ""
+"Ova opcija se može koristiti da ograniči skeniranje samo na fajlove za koje "
+"se zna da su promenjeni. Ovo se obično aktivira samo u kombinaciji sa "
+"posmatračem sistema fajlova koji prati promene fajlova."
 
 #: Library/Main/Strings.cs:143
 msgid "List of files to examine for changes"
-msgstr ""
+msgstr "Lista fajlova koje treba pregledati za promene"
 
 #: Library/Main/Strings.cs:144
 msgid ""
 "Path to the file containing the local cache of the remote file database"
 msgstr ""
+"Putanja do fajla koji sadrži lokalni keš baze podataka udaljenih fajlova"
 
 #: Library/Main/Strings.cs:145
 msgid "Path to the local state database"
-msgstr ""
+msgstr "Putanja do baze podataka lokalne države"
 
 #: Library/Main/Strings.cs:146
 #, csharp-format
@@ -3026,29 +3661,36 @@ msgid ""
 "This option can be used to supply a list of deleted files. This option will "
 "be ignored unless the option --{0} is also set."
 msgstr ""
+"Ova opcija se može koristiti za isporuku liste izbrisanih fajlova. Ova "
+"opcija će biti zanemarena osim ako nije podešena i opcija --{0}."
 
 #: Library/Main/Strings.cs:147
 msgid "List of deleted files"
-msgstr "Lista obrisanih datoteka"
+msgstr "Lista obrisanih fajlova"
 
 #: Library/Main/Strings.cs:148
 msgid ""
 "This option can be used to reduce the memory footprint by not keeping paths "
 "and modification timestamps in memory"
 msgstr ""
+"Ova opcija se može koristiti da smanji memorijski otisak tako što se ne "
+"čuvaju putanje i vremenske oznake modifikacije u memoriji"
 
 #: Library/Main/Strings.cs:149
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr ""
+"Smanjite memorijskog otiska tako što ćete onemogućiti pretrage u memoriji"
 
 #: Library/Main/Strings.cs:150
 msgid ""
 "This option can be used to increase speed in exchange for extra memory use."
 msgstr ""
+"Ova opcija se može koristiti za povećanje brzine u zamenu za dodatnu "
+"upotrebu memorije."
 
 #: Library/Main/Strings.cs:151
 msgid "Store an in-memory block cache"
-msgstr ""
+msgstr "Sačuvajte blok predmemoriju u memoriju"
 
 #: Library/Main/Strings.cs:152
 msgid ""
@@ -3056,10 +3698,14 @@ msgid ""
 "filelist on startup. The intended usage for this option is to work correctly"
 " in cases where the filelisting is broken or unavailable."
 msgstr ""
+"Ako je ova zastavica postavljena, lokalna baza podataka se ne poredi sa "
+"udaljenom listom fajlova pri pokretanju. Predviđena upotreba ove opcije je "
+"da ispravno radi u slučajevima kada je lista fajlova pokvarena ili "
+"nedostupna."
 
 #: Library/Main/Strings.cs:153
 msgid "Do not query backend at startup"
-msgstr ""
+msgstr "Nemojte postavljati upite pozadini pri pokretanju"
 
 #: Library/Main/Strings.cs:154
 msgid ""
@@ -3069,10 +3715,15 @@ msgid ""
 "tradeoff is that larger index files take up more remote space and which may "
 "never be used."
 msgstr ""
+"Indeksni fajlovi se koriste za ograničavanje potrebe za preuzimanjem dblock "
+"fajlova kada ne postoji lokalna baza podataka. Što je više informacija "
+"zabeleženo u indeksnim fajlovima, brže se operacije mogu nastaviti bez baze "
+"podataka. Kompromis je u tome što veći indeksni fajlovi zauzimaju više "
+"udaljenog prostora i koji se možda nikada neće koristiti."
 
 #: Library/Main/Strings.cs:155
 msgid "Determines usage of index files"
-msgstr ""
+msgstr "Određuje upotrebu indeksnih fajlova"
 
 #: Library/Main/Strings.cs:156
 msgid ""
@@ -3081,20 +3732,26 @@ msgid ""
 "contain before being reclaimed. This value is a percentage used on each "
 "volume and the total storage."
 msgstr ""
+"Kako se fajlovi menjaju, neki podaci uskladišteni na udaljenom odredištu "
+"možda neće biti potrebni. Ova opcija kontroliše koliko izgubljenog prostora"
+" odredište može da sadrži pre nego što bude zauzeto. Ova vrednost je "
+"procenat koji se koristi za svaki volumen i ukupno skladište."
 
 #: Library/Main/Strings.cs:157
 msgid "The maximum wasted space in percent"
-msgstr ""
+msgstr "Maksimalni izgubljeni prostor u procentima"
 
 #: Library/Main/Strings.cs:158
 msgid ""
 "This option can be used to experiment with different settings and observe "
 "the outcome without changing actual files."
 msgstr ""
+"Ova opcija se može koristiti za eksperimentisanje sa različitim "
+"podešavanjima i posmatranje ishoda bez promene stvarnih fajlova."
 
 #: Library/Main/Strings.cs:159
 msgid "Does not perform any modifications"
-msgstr ""
+msgstr "Ne vrši nikakve modifikacije"
 
 #: Library/Main/Strings.cs:160
 msgid ""
@@ -3102,6 +3759,9 @@ msgid ""
 "hash algorithm with smaller or larger hash size, for performance or storage "
 "space reasons."
 msgstr ""
+"Ovo je veoma napredna opcija! Ova opcija se može koristiti za izbor "
+"algoritma za heš blok sa manjom ili većom veličinom heša, zbog performansi "
+"ili prostora za skladištenje."
 
 #: Library/Main/Strings.cs:161
 msgid "The hash algorithm used on blocks"
@@ -3113,10 +3773,13 @@ msgid ""
 "hash algorithm with smaller or larger hash size, for performance or storage "
 "space reasons."
 msgstr ""
+"Ovo je veoma napredna opcija! Ova opcija se može koristiti za izbor "
+"algoritma za heš fajla sa manjom ili većom veličinom heša, zbog performansi"
+" ili prostora za skladištenje."
 
 #: Library/Main/Strings.cs:163
 msgid "The hash algorithm used on files"
-msgstr "Heš algoritam korišćen na datotekama"
+msgstr "Heš algoritam korišćen na fajlovima"
 
 #: Library/Main/Strings.cs:164
 msgid ""
@@ -3125,10 +3788,15 @@ msgid ""
 "Use this option to disable such automatic compacting and only compact when "
 "running the compact command."
 msgstr ""
+"Ako se tokom pravljenja rezervne kopije otkrije veliki broj malih fajlova "
+"ili se pronađe izgubljeni prostor nakon brisanja rezervnih kopija, udaljeni "
+"podaci će biti sabijeni. Koristite ovu opciju da onemogućite takvo "
+"automatsko sažimanje i samo kompaktiranje kada se izvodi komanda za "
+"sažimanje."
 
 #: Library/Main/Strings.cs:165
 msgid "Disable automatic compacting"
-msgstr ""
+msgstr "Onemogućite automatsko sažimanje"
 
 #: Library/Main/Strings.cs:166
 msgid ""
@@ -3137,10 +3805,14 @@ msgid ""
 "ensures that large volumes which may have a few bytes wasted space are not "
 "downloaded and rewritten."
 msgstr ""
+"Kada se ispituje veličina volumena koja se razmatra za sažimanje, koristi se"
+" mala vrednost tolerancije, podrazumevano 20 procenata veličine volumena. "
+"Ovo osigurava da se veliki volumeni koji mogu imati nekoliko bajtova "
+"izgubljenog prostora ne preuzimaju i ponovo pišu."
 
 #: Library/Main/Strings.cs:167
 msgid "Volume size threshold"
-msgstr ""
+msgstr "Prag veličine volumena"
 
 #: Library/Main/Strings.cs:168
 msgid ""
@@ -3148,10 +3820,13 @@ msgid ""
 "grouping small files. The small volumes will always be combined when they "
 "can fill an entire volume."
 msgstr ""
+"Da biste izbegli popunjavanje udaljenog skladišta malim fajlovima, ova "
+"vrednost može prinudno grupisati male fajlove. Male količine će uvek biti "
+"kombinovane kada mogu da popune ceo volumen."
 
 #: Library/Main/Strings.cs:169
 msgid "Maximum number of small volumes"
-msgstr ""
+msgstr "Maksimalan broj malih volumna"
 
 #: Library/Main/Strings.cs:170
 msgid ""
@@ -3159,10 +3834,13 @@ msgid ""
 " blocks. This is a fairly slow operation but can limit the size of "
 "downloads."
 msgstr ""
+"Omogućite ovu opciju da biste pregledali druge fajlove na ovoj mašini da "
+"biste pronašli postojeće blokove. Ovo je prilično spora operacija, ali može"
+" ograničiti veličinu preuzimanja."
 
 #: Library/Main/Strings.cs:171
 msgid "Use local file data when restoring"
-msgstr ""
+msgstr "Prilikom vraćanja koristite lokalne podatke o fajlu"
 
 #: Library/Main/Strings.cs:172
 msgid "Disables the local database"
@@ -3174,16 +3852,21 @@ msgid ""
 "skipped. This is usually slower, but can be used to verify the actual "
 "contents of the remote store"
 msgstr ""
+"Prilikom navođenja sadržaja ili prilikom vraćanja fajlova, lokalna baza "
+"podataka se može preskočiti. Ovo je obično sporije, ali se može koristiti za"
+" proveru stvarnog sadržaja udaljenog skladišta"
 
 #: Library/Main/Strings.cs:174
 msgid "Keep a number of versions"
-msgstr ""
+msgstr "Čuvajte nekoliko verzija"
 
 #: Library/Main/Strings.cs:175
 msgid ""
 "Use this option to set number of versions to keep, supply -1 to keep all "
 "versions"
 msgstr ""
+"Koristite ovu opciju da podesite broj verzija za čuvanje, navedite -1 da "
+"zadržite sve verzije"
 
 #: Library/Main/Strings.cs:176
 msgid "Keep all versions within a timespan"
@@ -3192,12 +3875,12 @@ msgstr "Zadrži sve verzije iz vremenskog intervala"
 #: Library/Main/Strings.cs:177
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
-"Koristite ovu opciju da postavite vremenski interval iz kojeg će backup-ovi "
-"biti zadžani."
+"Koristite ovu opciju da postavite vremenski interval iz kojeg će rezervne "
+"kopije biti zadžane."
 
 #: Library/Main/Strings.cs:178
 msgid "Reduce number of versions by deleting old intermediate backups"
-msgstr ""
+msgstr "Smanjite broj verzija brisanjem starih srednjih rezervnih kopija"
 
 #: Library/Main/Strings.cs:179
 msgid ""
@@ -3210,26 +3893,36 @@ msgid ""
 "also supports using the specifier \"U\" to indicate an unlimited time "
 "interval."
 msgstr ""
+"Koristite ovu opciju da biste smanjili broj verzija koje se čuvaju sa "
+"povećanjem starosti verzije tako što ćete izbrisati većinu starih "
+"rezervnih kopija. Očekivani format je lista vremenskih okvira i parova "
+"intervala razdvojenih zarezima. Na primer, vrednost \"7D:0s,3M:1D,10Y:2M\" "
+"znači \"7 dana čuvajte sve rezervne kopije, 3 meseca čuvajte jednu rezervnu "
+"kopiju svaki dan, 10 godina jednu rezervnu kopiju svakog drugog meseca i "
+"izbrišite svaku rezervnu kopiju stariju od ove.\". Ova opcija takođe "
+"podržava korišćenje specifikacije \"U\" za označavanje neograničenog "
+"vremenskog intervala."
 
 #: Library/Main/Strings.cs:180
 msgid "Ignore missing source elements"
-msgstr ""
+msgstr "Zanemarite izvorne elemente koji nedostaju"
 
 #: Library/Main/Strings.cs:181
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
+"Koristite ovu opciju da nastavite čak i ako neki izvorni unosi nedostaju."
 
 #: Library/Main/Strings.cs:182
 msgid "Overwrite files when restoring"
-msgstr "Prepiši datoteke kad vraćaš"
+msgstr "Prepiši fajlove kad vraćaš"
 
 #: Library/Main/Strings.cs:183
 msgid ""
 "Use this option to overwrite target files when restoring, if this option is "
 "not set the files will be restored with a timestamp and a number appended."
 msgstr ""
-"Koristite opciju da prepišete odredišne datoteke prilikom vraćanja, ako ova "
-"opcija nije podešena datoteke će biti vraćene sa dodatim vremenom i brojem."
+"Koristite opciju da prepišete odredišne fajlove prilikom vraćanja, ako ova "
+"opcija nije podešena fajlovi će biti vraćeni sa dodatim vremenom i brojem."
 
 #: Library/Main/Strings.cs:184
 msgid "Output more progress information"
@@ -3240,10 +3933,13 @@ msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
 msgstr ""
+"Koristite ovu opciju da povećate količinu izlaza koja se generiše kada se "
+"pokrene opcija. Generalno, ova opcija će proizvesti liniju za svaku "
+"obrađeni fajl."
 
 #: Library/Main/Strings.cs:186
 msgid "Set a log-level for the desired output method instead"
-msgstr ""
+msgstr "Umesto toga, podesite nivo evidencije za željeni izlazni metod"
 
 #: Library/Main/Strings.cs:187
 msgid "Output full results"
@@ -3254,10 +3950,12 @@ msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
 msgstr ""
+"Koristite ovu opciju da povećate količinu izlaza generisanog kao rezultat "
+"operacije, uključujući sva imena datoteka."
 
 #: Library/Main/Strings.cs:189
 msgid "Determine if verification files are uploaded"
-msgstr ""
+msgstr "Utvrdite da li su fajlovi za verifikaciju otpremljeni"
 
 #: Library/Main/Strings.cs:190
 msgid ""
@@ -3266,10 +3964,13 @@ msgid ""
 "of all the remote files and can be used to verify the integrity of the "
 "files."
 msgstr ""
+"Koristite ovu opciju da otpremite verifikacioni fajl nakon promene udaljenog"
+" skladišta. Fajl nije šifrovan i sadrži veličinu i SHA256 hešove svih "
+"udaljenih fajlova i može se koristiti za proveru integriteta fajlova."
 
 #: Library/Main/Strings.cs:191
 msgid "The number of samples to test after a backup"
-msgstr ""
+msgstr "Broj uzoraka za testiranje nakon pravljenja rezervne kopije"
 
 #: Library/Main/Strings.cs:192
 #, csharp-format
@@ -3280,10 +3981,16 @@ msgid ""
 "samples tested is the maximum implied by the two options. If this value is "
 "set to 0 or the option --{0} is set, no remote files are verified"
 msgstr ""
+"Nakon što je rezervna kopija završena, neki (dblock, dindex, dlist) fajlovi "
+"sa udaljene pozadine se biraju za verifikaciju. Koristite ovu opciju da "
+"promenite koliko. Ako je takođe obezbeđena opcija backup-test-percentage, "
+"broj testiranih uzoraka je maksimum koji podrazumevaju dve opcije. Ako je "
+"ova vrednost postavljena na 0 ili je podešena opcija --{0}, nijedan udaljeni"
+" fajlovi se ne verifikuje"
 
 #: Library/Main/Strings.cs:193
 msgid "The percentage of samples to test after a backup"
-msgstr ""
+msgstr "Procenat uzoraka za testiranje nakon pravljenja rezervne kopije"
 
 #: Library/Main/Strings.cs:194
 msgid ""
@@ -3294,10 +4001,16 @@ msgid ""
 "implied by the two options. If the no-backend-verification option is "
 "provided, no remote files are verified."
 msgstr ""
+"Nakon što je rezervna kopija završena, neki (dblock, dindex, dlist) fajlovi "
+"sa udaljene pozadine se biraju za verifikaciju. Koristite ovu opciju da "
+"odredite procenat (između 0 i 100) fajlova za testiranje. Ako je takođe "
+"obezbeđena opcija backup-test-samples, broj testiranih uzoraka je maksimum "
+"koji podrazumevaju dve opcije. Ako je obezbeđena opcija no-backend-"
+"verification, udaljeni fajlovi se ne verifikuje."
 
 #: Library/Main/Strings.cs:195
 msgid "Activates in-depth verification of files"
-msgstr ""
+msgstr "Aktivira detaljnu verifikaciju fajlova"
 
 #: Library/Main/Strings.cs:196
 #, csharp-format
@@ -3309,36 +4022,49 @@ msgid ""
 "--{0} is set, no remote files are verified. This option is automatically set"
 " when then verification is performed directly."
 msgstr ""
+"Nakon što je rezervna kopija završena, neke (dblock, dindex, dlist) fajlovi "
+"sa udaljen pozadine se biraju za verifikaciju. Koristite ovu opciju da "
+"uključite potpunu verifikaciju, koja će dešifrovati fajlove i ispitati "
+"unutrašnjost svakog volumena, umesto jednostavne verifikacije spoljnog heša."
+" Ako je opcija --{0} podešena, udaljeni fajlovi se ne verifikuju. Ova opcija"
+" se automatski postavlja kada se verifikacija izvrši direktno."
 
 #: Library/Main/Strings.cs:197
 msgid "Size of the file read buffer"
-msgstr "Veličina bafera za čitanje datoteke"
+msgstr "Veličina bafera za čitanje fajla"
 
 #: Library/Main/Strings.cs:198
 msgid ""
 "Use this size to control how many bytes are read from a file before "
 "processing"
 msgstr ""
+"Koristite ovu veličinu da kontrolišete koliko bajtova se čita iz fajla pre "
+"obrade"
 
 #: Library/Main/Strings.cs:199
 msgid "Allow the passphrase to change"
-msgstr ""
+msgstr "Dozvolite da se pristupna fraza promeni"
 
 #: Library/Main/Strings.cs:200
 msgid ""
 "Use this option to allow the passphrase to change, note that this option is "
 "not permitted for a backup or repair operation"
 msgstr ""
+"Koristite ovu opciju da biste dozvolili da se pristupna fraza promeni, "
+"imajte na umu da ova opcija nije dozvoljena za operaciju pravljenja rezervne"
+" kopije ili popravke"
 
 #: Library/Main/Strings.cs:201
 msgid "List only filesets"
-msgstr ""
+msgstr "Navedite samo setove fajlova"
 
 #: Library/Main/Strings.cs:202
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process"
 msgstr ""
+"Koristite ovu opciju da navedete samo setove fajlova i izbegavate prelaženje"
+" imena fajlova i drugih metapodataka koji usporavaju proces"
 
 #: Library/Main/Strings.cs:204
 msgid "Don't store metadata"
@@ -3350,20 +4076,26 @@ msgid ""
 " Disabling metadata storage will speed up the backup and restore operations,"
 " but does not affect file size much."
 msgstr ""
+"Koristite ovu opciju da biste onemogućili skladištenje metapodataka, kao "
+"što su vremenske oznake fajla. Onemogućavanje skladištenja metapodataka "
+"ubrzaće operacije pravljenja rezervnih kopija i vraćanja, ali ne utiče "
+"mnogo na veličinu fajla."
 
 #: Library/Main/Strings.cs:206
 msgid "Restore file permissions"
-msgstr "Vrati dozvole datoteke"
+msgstr "Vrati dozvole fajla"
 
 #: Library/Main/Strings.cs:207
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
 msgstr ""
+"Podrazumevano se dozvole ne vraćaju jer bi vas mogle sprečiti da pristupite"
+" vašim fajlovima. Koristite ovu opciju i da vratite dozvole."
 
 #: Library/Main/Strings.cs:208
 msgid "Skip restored file check"
-msgstr "Preskoči proveru vraćenih datoteka"
+msgstr "Preskoči proveru vraćenih fajlova"
 
 #: Library/Main/Strings.cs:209
 msgid ""
@@ -3371,6 +4103,9 @@ msgid ""
 "verify that the restore was successful. Use this option to disable the check"
 " and avoid waiting for the verification."
 msgstr ""
+"Nakon vraćanja fajlova, heš fajl svih vraćenih fajlova se proverava da bi "
+"se potvrdilo da je vraćanje bilo uspešno. Koristite ovu opciju da biste "
+"onemogućili proveru i izbegli čekanje na verifikaciju."
 
 #: Library/Main/Strings.cs:210
 msgid "Do not use local data"
@@ -3382,6 +4117,9 @@ msgid ""
 "of downloaded data. Use this option to skip this optimization and only use "
 "remote data."
 msgstr ""
+"Duplicati će pokušati da koristi podatke iz izvornih fajlova kako bi "
+"minimizirao količinu preuzetih podataka. Koristite ovu opciju da preskočite "
+"ovu optimizaciju i koristite samo udaljene podatke."
 
 #: Library/Main/Strings.cs:212
 msgid "Check block hashes"
@@ -3392,10 +4130,13 @@ msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
 msgstr ""
+"Koristite ovu opciju da povećate verifikaciju tako što ćete proveriti heš "
+"blokova pročitanih sa volumena pre nego što zakrpite vraćene fajlove sa "
+"podacima."
 
 #: Library/Main/Strings.cs:216
 msgid "Repair database with paths"
-msgstr ""
+msgstr "Popravite bazu podataka sa putanjama"
 
 #: Library/Main/Strings.cs:217
 msgid ""
@@ -3404,10 +4145,15 @@ msgid ""
 "locate certain content without needing to reconstruct all information. The "
 "resulting database can be searched, but cannot be used to restore data with."
 msgstr ""
+"Koristite ovu opciju da napravite lokalnu bazu podataka koja se može "
+"pretraživati i koja sadrži samo informacije o putanji. Ova opcija je "
+"upotrebljiva za brzu izgradnju baze podataka za lociranje određenog sadržaja"
+" bez potrebe za rekonstruisanjem svih informacija. Dobijena baza podataka "
+"može se pretraživati, ali se ne može koristiti za vraćanje podataka."
 
 #: Library/Main/Strings.cs:218
 msgid "Force the locale setting"
-msgstr ""
+msgstr "Prisilno podesite lokalizaciju"
 
 #: Library/Main/Strings.cs:219
 msgid ""
@@ -3416,10 +4162,15 @@ msgid ""
 " in another language. This option can be used to set the locale. Supply a "
 "blank string to choose the \"Invariant Culture\"."
 msgstr ""
+"Podrazumevano će se koristiti vaš sistemski jezik i postavke kulture. U "
+"nekim slučajevima možda ćete više voleti da koristite drugu lokaciju, na "
+"primer da biste dobijali poruke na drugom jeziku. Ova opcija se može "
+"koristiti za podešavanje lokalizacije. Navedite prazan niz da biste izabrali"
+" \"Invariant Culture\"."
 
 #: Library/Main/Strings.cs:220
 msgid "Forces the display of the actual date instead of calendar date"
-msgstr ""
+msgstr "Forsira prikaz stvarnog datuma umesto kalendarskog datuma"
 
 #: Library/Main/Strings.cs:221
 msgid ""
@@ -3427,10 +4178,13 @@ msgid ""
 " \"Last Thursday\". By setting this option, only the actual dates are "
 "displayed, \"Nov 12, 2018, 8:01 AM\" for example."
 msgstr ""
+"Podrazumevano, datumi se prikazuju u kalendarskom formatu, što znači "
+"\"Danas\" ili \"Prošli četvrtak\". Podešavanjem ove opcije, prikazuju se "
+"samo stvarni datumi, na primer „12. novembar 2018, 20:01“."
 
 #: Library/Main/Strings.cs:222
 msgid "Handle file communication with backend using threaded pipes"
-msgstr ""
+msgstr "Rukujte komunikacijom fajla sa pozadinom koristeći niti"
 
 #: Library/Main/Strings.cs:223
 msgid ""
@@ -3438,10 +4192,13 @@ msgid ""
 " can significantly speed up backend operations depending on the hardware "
 "you're running on and the transfer rate of your backend."
 msgstr ""
+"Koristite ovu opciju da onemogućite višenitno rukovanje naviše- i "
+"preuzimanjima, što može značajno da ubrza pozadinske operacije u zavisnosti "
+"od hardvera na kome radite i brzine prenosa vaše pozadine."
 
 #: Library/Main/Strings.cs:224
 msgid "Limit number of concurrent threads"
-msgstr ""
+msgstr "Ograničenje broja istovremenih niti"
 
 #: Library/Main/Strings.cs:225
 msgid ""
@@ -3449,25 +4206,32 @@ msgid ""
 "value to zero or less will dynamically balance the number of active threads "
 "to fit the hardware."
 msgstr ""
+"Koristite ovu opciju da podesite maksimalan broj korišćenih niti. "
+"Postavljanje ove vrednosti na nulu ili manje će dinamički izbalansirati "
+"broj aktivnih niti kako bi odgovarao hardveru."
 
 #: Library/Main/Strings.cs:226
 msgid "Specify the number of concurrent hashing processes"
-msgstr ""
+msgstr "Navedite broj istovremenih procesa heširanja"
 
 #: Library/Main/Strings.cs:227
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
+"Koristite ovu opciju da podesite broj procesa koji obavljaju heširanje "
+"podataka."
 
 #: Library/Main/Strings.cs:228
 msgid "Specify the number of concurrent compression processes"
-msgstr ""
+msgstr "Odredite broj istovremenih procesa kompresije"
 
 #: Library/Main/Strings.cs:229
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr ""
+"Koristite ovu opciju da podesite broj procesa koji vrše kompresiju izlaznih "
+"podataka."
 
 #: Library/Main/Strings.cs:230
 msgid ""
@@ -3475,10 +4239,14 @@ msgid ""
 "generate a filelist that is a merge of the last completed backup and the "
 "contents that were uploaded in the incomplete backup session."
 msgstr ""
+"Ako Duplicati otkrije da prethodna rezervna kopija nije završena, "
+"generisaće listu fajlova koja predstavlja spajanje poslednje završene "
+"rezervne kopije i sadržaja koji je učitan u nepotpunoj sesiji pravljenja "
+"rezervne kopije."
 
 #: Library/Main/Strings.cs:231
 msgid "Disables synthetic filelist"
-msgstr ""
+msgstr "Onemogućava sintetičku listu fajlova"
 
 #: Library/Main/Strings.cs:232
 msgid ""
@@ -3487,14 +4255,18 @@ msgid ""
 "number of files and notice that the scanning takes a long time with "
 "unmodified files."
 msgstr ""
+"Ova zastavica upućuje Duplicati da ne gleda u metapodatke ili veličinu "
+"fajla kada odlučuje da skenira fajl u potrazi za promenama. Koristite ovu "
+"opciju ako imate veliki broj fajlova i primetite da skeniranje traje dugo sa"
+" neizmenjenim fajlovima."
 
 #: Library/Main/Strings.cs:233
 msgid "Checks only file lastmodified"
-msgstr ""
+msgstr "Proverava samo poslednji izmenjeni fajl"
 
 #: Library/Main/Strings.cs:234
 msgid "Disables path compression on restore"
-msgstr ""
+msgstr "Onemogućava kompresiju putanje pri vraćanju"
 
 #: Library/Main/Strings.cs:235
 msgid ""
@@ -3503,10 +4275,15 @@ msgid ""
 "flag to skip this compression, such that the entire original folder "
 "structure is preserved, including upper level empty folders."
 msgstr ""
+"Kada vratite podskup rezervne kopije u novu fasciklu, najkraća moguća "
+"putanja se koristi da bi se izbeglo generisanje dubokih putanja sa praznim "
+"fasciklama. Koristite ovu zastavicu da preskočite ovu kompresiju, tako da se"
+" sačuva cela originalna struktura fascikli, uključujući prazne fascikle na "
+"gornjem nivou."
 
 #: Library/Main/Strings.cs:236
 msgid "Allow removing all filesets"
-msgstr ""
+msgstr "Dozvoli uklanjanje svih skupova set fajlova"
 
 #: Library/Main/Strings.cs:237
 msgid ""
@@ -3514,10 +4291,16 @@ msgid ""
 "sure that all remote data is not deleted by a configuration mistake. Use "
 "this flag to disable that protection, such that all filesets can be deleted."
 msgstr ""
+"Podrazumevano, poslednji skup fajlova ne može da se ukloni. Ovo je zaštita "
+"da biste bili sigurni da svi udaljeni podaci ne budu izbrisani greškom u "
+"konfiguraciji. Koristite ovu zastavicu da onemogućite tu zaštitu, tako da "
+"se svi setovi fajlova mogu izbrisati."
 
 #: Library/Main/Strings.cs:238
 msgid "Allow automatic rebuilding of local database to save space."
 msgstr ""
+"Dozvolite automatsko obnavljanje lokalne baze podataka da biste sačuvali "
+"prostor."
 
 #: Library/Main/Strings.cs:239
 msgid ""
@@ -3528,10 +4311,16 @@ msgid ""
 "this to true will allow Duplicati to perform VACUUM operations at its "
 "discretion."
 msgstr ""
+"Neke operacije koje manipulišu lokalnom bazom podataka ostavljaju "
+"neiskorišćene unose. Ovi unosi se ne brišu sa čvrstog diska dok se ne "
+"pokrene operacija VACUUM. Ova operacija dugoročno štedi prostor na disku, "
+"ali treba privremeno da kreira kopiju svih važećih unosa u bazi podataka. "
+"Podešavanje ovog na true će omogućiti Duplicati-ju da izvrši VACUUM "
+"operacije po sopstvenom nahođenju."
 
 #: Library/Main/Strings.cs:240
 msgid "Disable the read-ahead scanner"
-msgstr ""
+msgstr "Onemogućite skener za čitanje unapred"
 
 #: Library/Main/Strings.cs:241
 msgid ""
@@ -3540,10 +4329,14 @@ msgid ""
 "Using this flag can speed up the backup by reducing disk access, but will "
 "give a less accurate progress indicator."
 msgstr ""
+"Kada je ova zastavica omogućena, skener koji izračunava veličinu izvornih "
+"fajlova je onemogućen, a umesto toga prijavljena veličina se čita iz baze "
+"podataka. Korišćenje ove zastavice može ubrzati pravljenje rezervne kopije "
+"smanjenjem pristupa disku, ali će dati manje precizan indikator napretka."
 
 #: Library/Main/Strings.cs:242
 msgid "Disable filelist consistency checks"
-msgstr ""
+msgstr "Onemogućite proveru doslednosti liste fajlova"
 
 #: Library/Main/Strings.cs:243
 msgid ""
@@ -3551,10 +4344,14 @@ msgid ""
 "large part of the backup time. If you disable the checks, make sure you run "
 "regular check commands to ensure that everything is working as expected."
 msgstr ""
+"U rezervnim kopijama sa velikim brojem setova fajlova, verifikacija može "
+"zauzeti veliki deo vremena pravljenja rezervne kopije. Ako onemogućite "
+"provere, uverite se da pokrećete redovne komande za proveru da biste bili "
+"sigurni da sve funkcioniše kako se očekuje."
 
 #: Library/Main/Strings.cs:244
 msgid "Disable the backup when on battery power"
-msgstr ""
+msgstr "Onemogućite rezervnu kopiju kada je napajanje preko baterije"
 
 #: Library/Main/Strings.cs:245
 msgid ""
@@ -3563,14 +4360,19 @@ msgid ""
 " still be run).  If the detected power source is mains (i.e., AC) or "
 "unknown, then scheduled backups will proceed as normal."
 msgstr ""
+"Kada je ova oznaka omogućena, planirana rezervna kopija se neće pokrenuti "
+"ako se otkrije da sistem radi na baterijsko napajanje (ručne rezervne kopije"
+" ili rezervne kopije komandne linije će se i dalje pokretati). Ako je "
+"detektovani izvor napajanja mrežni (tj. AC) ili nepoznat, planirane rezervne"
+" kopije će se nastaviti normalno."
 
 #: Library/Main/Strings.cs:247
 msgid "Log file information level"
-msgstr ""
+msgstr "Nivo podataka o fajlu dnevnika"
 
 #: Library/Main/Strings.cs:248
 msgid "Applies filters to the file log data"
-msgstr ""
+msgstr "Primenjuje filtere na podatke evidencije fajla"
 
 #: Library/Main/Strings.cs:249
 #, csharp-format
@@ -3581,18 +4383,23 @@ msgid ""
 "they start with '-'. Regular expressions are supported within hard braces. "
 "Example: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 msgstr ""
+"Ova opcija prihvata filtere koji uklanjaju ili uključuju poruke bez obzira "
+"na njihov nivo evidencije. Više filtera je podržano odvajanjem sa {0}. "
+"Filteri se podudaraju sa oznakom dnevnika i pretpostavlja se da uključuju, "
+"osim ako ne počinju sa '-'. Regularni izrazi su podržani u uglasim "
+"zagradama. Primer: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
 #: Library/Main/Strings.cs:250
 msgid "Console information level"
-msgstr ""
+msgstr "Nivo informacija konzole"
 
 #: Library/Main/Strings.cs:251
 msgid "Applies filters to the console log data"
-msgstr ""
+msgstr "Primenjuje filtere na podatke dnevnika konzole"
 
 #: Library/Main/Strings.cs:254
 msgid "Sets the process to use low IO priority"
-msgstr ""
+msgstr "Podešava proces da koristi niski IO prioritet"
 
 #: Library/Main/Strings.cs:255
 msgid ""
@@ -3600,10 +4407,13 @@ msgid ""
 "use the lowest IO priority level, which can make operations run slower but "
 "will interfere less with other operations running at the same time"
 msgstr ""
+"Ova opcija nalaže operativnom sistemu da podesi trenutni proces da koristi "
+"najniži nivo IO prioriteta, što može učiniti da operacije budu sporije, ali "
+"će manje ometati druge operacije koje se izvršavaju u isto vreme"
 
 #: Library/Main/Strings.cs:259
 msgid "List of filenames that exclude folders"
-msgstr ""
+msgstr "Lista imena fajlova koji isključuju fascikle"
 
 #: Library/Main/Strings.cs:260
 msgid ""
@@ -3612,10 +4422,14 @@ msgid ""
 "file named something like \".nobackup\" and place this file into folders "
 "that should not be backed up."
 msgstr ""
+"Koristite ovu opciju da biste podesili ime fajla ili listu imena fajlova "
+"koji označavaju izuzimanje fascikle koja ga sadrži. Uobičajena upotreba bi "
+"bila da se fajlovi zovu nešto poput „.nobackup“ i da se ovaj fajl smešta u "
+"fascikle za koje ne treba praviti rezervnu kopiju."
 
 #: Library/Main/Strings.cs:266
 msgid "Activates logging of all database queries"
-msgstr ""
+msgstr "Aktivira evidentiranje svih upita baze podataka"
 
 #: Library/Main/Strings.cs:267
 #, csharp-format
@@ -3625,6 +4439,10 @@ msgid ""
 "remember to set either --{0}={2} or --{1}={2} to report the additional log "
 "data"
 msgstr ""
+"Da bi se poboljšale performanse rezervnih kopija, česti upiti prema bazi "
+"podataka se podrazumevano ne evidentiraju. Omogućite ovu opciju da biste "
+"evidentirali sve upite baze podataka i ne zaboravite da podesite --{0}={2} "
+"ili --{1}={2} da biste prijavili dodatne podatke evidencije"
 
 #: Library/Main/Strings.cs:279
 #, csharp-format
@@ -3632,65 +4450,69 @@ msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr ""
+"Kriptoteka ne podržava transformacije koje se mogu ponovo koristiti za heš "
+"algoritam {0}"
 
 #: Library/Main/Strings.cs:280
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
-msgstr ""
+msgstr "Kriptoteka ne podržava heš algoritam {0}"
 
 #: Library/Main/Strings.cs:281
 msgid "The passphrase cannot be changed for an existing backup"
-msgstr ""
+msgstr "Pristupna fraza se ne može promeniti za postojeću rezervnu kopiju"
 
 #: Library/Main/Strings.cs:282
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
-msgstr ""
+msgstr "Pravljenje snimka nije uspelo: {0}"
 
 #: Library/Main/BackendManager.cs:589
 #, csharp-format
 msgid "Failed to delete file {0}, testing if file exists"
-msgstr ""
-"Brisanje datoteke {0} nije uspelo, proveravanje da li datoteka postoji"
+msgstr "Brisanje fajlova {0} nije uspelo, proveravanje da li fajl postoji"
 
 #: Library/Main/BackendManager.cs:595
 #, csharp-format
 msgid "Recovered from problem with attempting to delete non-existing file {0}"
-msgstr ""
+msgstr "Oporavljeno od problema sa pokušajem brisanja nepostojećeg fajla {0}"
 
 #: Library/Main/BackendManager.cs:600
 #, csharp-format
 msgid "Failed to recover from error deleting file {0}"
-msgstr ""
+msgstr "Oporavak od greške prilikom brisanja fajla {0} nije uspeo"
 
 #: Library/Main/BackendManager.cs:1102
 #, csharp-format
 msgid "Delete operation failed for {0} with FileNotFound, listing contents"
 msgstr ""
+"Operacija brisanja nije uspela za {0} sa FileNotFound, navodeći sadržaj"
 
 #: Library/Main/BackendManager.cs:1115
 #, csharp-format
 msgid "Listing indicates file {0} was deleted correctly"
-msgstr ""
+msgstr "Listing pokazuje da je fajl {0} ispravno izbrisan"
 
 #: Library/Main/BackendManager.cs:1120
 #, csharp-format
 msgid "Listing confirms file {0} was not deleted"
-msgstr ""
+msgstr "Listing potvrđuje da fajl {0} nije izbrisan"
 
 #: Library/Modules/Builtin/Strings.cs:8
 msgid "Confirm encryption passphrase"
-msgstr ""
+msgstr "Potvrdite pristupnu frazu za enkripciju"
 
 #: Library/Modules/Builtin/Strings.cs:9
 msgid ""
 "This module will ask the user for an encryption password on the command line"
 " unless encryption is disabled or the password is supplied by other means"
 msgstr ""
+"Ovaj modul će od korisnika tražiti lozinku za šifrovanje u komandnoj liniji"
+" osim ako šifrovanje nije onemogućeno ili lozinka nije data na drugi način"
 
 #: Library/Modules/Builtin/Strings.cs:10
 msgid "Password prompt"
-msgstr ""
+msgstr "Prompt za lozinku"
 
 #: Library/Modules/Builtin/Strings.cs:11
 msgid "Empty passphrases are not allowed"
@@ -3698,7 +4520,7 @@ msgstr "Prazne lozinke nisu dozvoljene"
 
 #: Library/Modules/Builtin/Strings.cs:12
 msgid "Enter encryption passphrase"
-msgstr "Unesite lozinku šifrovanja"
+msgstr "Unesite šifrovanu pristupnu frazu"
 
 #: Library/Modules/Builtin/Strings.cs:13
 msgid "The passphrases do not match"
@@ -3706,7 +4528,7 @@ msgstr "Lozinke se ne poklapaju"
 
 #: Library/Modules/Builtin/Strings.cs:14
 msgid "Read passphrase from STDIN"
-msgstr ""
+msgstr "Pročitajte pristupnu frazu iz STDIN-a"
 
 #: Library/Modules/Builtin/Strings.cs:15
 msgid ""
@@ -3716,12 +4538,19 @@ msgid ""
 "Set this flag to prevent trying a TTY read and only read the passphrase from"
 " STDIN."
 msgstr ""
+"Podrazumevano, pristupna fraza se pokušava čitati direktno sa TTY uređaja, "
+"povećavajući bezbednost tako što se pristupna fraza ne kopira u tok. U "
+"nekim podešavanjima, kao što je kada se pokreće odvojeno od konzole, ovo ne"
+" funkcioniše. Podesite ovu zastavicu da sprečite pokušaj čitanja TTY-ja i "
+"čitajte samo pristupnu frazu iz STDIN-a."
 
 #: Library/Modules/Builtin/Strings.cs:18
 msgid ""
 "When running with Mono, this module will check if any certificates are "
 "installed and suggest installing them otherwise"
 msgstr ""
+"Kada radi sa Mono, ovaj modul će proveriti da li su neki sertifikati "
+"instalirani i predložiće da ih instalirate u suprotnom"
 
 #: Library/Modules/Builtin/Strings.cs:19
 msgid "Check for SSL certificates"
@@ -3736,12 +4565,19 @@ msgid ""
 "derivatives{0}    curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync "
 "--user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}"
 msgstr ""
+"Nisu pronađeni sertifikati, možete ih instalirati pomoću jedne od ovih "
+"komandi:{0}   cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian "
+"sisteme{0}   cert-sinc /etc/pki/tls/certs/ca-bundle.crt #for RedHat "
+"derivatives{0}  curl -O https://curl.haxx.se/ca/cacert.pem; cert-sync --user"
+" cacert.pem; rm cacert.pem #for MacOS{0}Pročitajte više: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:23
 msgid ""
 "This module exposes a number of properties that can be used to change the "
 "way http requests are issued"
 msgstr ""
+"Ovaj modul otkriva brojna svojstva koja se mogu koristiti za promenu načina "
+"na koji se izdaju http zahtevi"
 
 #: Library/Modules/Builtin/Strings.cs:24
 msgid ""
@@ -3749,6 +4585,9 @@ msgid ""
 "it may have. Please use --accept-specified-ssl-hash instead, whenever "
 "possible."
 msgstr ""
+"Koristite ovu opciju da prihvatite bilo koji sertifikat servera, bez obzira "
+"na greške koje može imati. Koristite --accept-specified-ssl-hash umesto "
+"toga, kad god je to moguće."
 
 #: Library/Modules/Builtin/Strings.cs:25
 msgid "Accept any server certificate"
@@ -3761,6 +4600,10 @@ msgid ""
 "anyway. The hash value must be entered in hex format without spaces or "
 "colons. You can enter multiple hashes separated by commas."
 msgstr ""
+"Ako je vaš sertifikat servera prijavljen kao nevažeći (npr. sa "
+"samopotpisanim sertifikatima), možete uneti heš sertifikata (SHA1) da biste "
+"ga ipak odobrili. Heš vrednost se mora uneti u heksadecimalnom formatu bez "
+"razmaka ili dvotačka. Možete da unesete više hešova odvojenih zarezima."
 
 #: Library/Modules/Builtin/Strings.cs:27
 msgid "Optionally accept a known SSL certificate"
@@ -3772,20 +4615,25 @@ msgid ""
 "which allows some optimizations when authenticating, but also breaks some "
 "web servers, causing them to report \"417 - Expectation failed\""
 msgstr ""
+"Podrazumevani HTTP zahtev ima priloženo zaglavlje „Expect: 100-Continue“, "
+"što omogućava neke optimizacije prilikom autentifikacije, ali i kvari neke "
+"veb servere, zbog čega prijavljuju „417 – Expectation failed“"
 
 #: Library/Modules/Builtin/Strings.cs:29
 msgid "Disable the expect header"
-msgstr ""
+msgstr "Onemogućite očekivano zaglavlje"
 
 #: Library/Modules/Builtin/Strings.cs:30
 msgid ""
 "By default the http requests use the RFC 896 nagling algorithm to support "
 "transfer of small packages more efficiently."
 msgstr ""
+"Podrazumevano, http zahtevi koriste RFC 896 algoritam naglovanja da bi "
+"efikasnije podržali prenos malih paketa."
 
 #: Library/Modules/Builtin/Strings.cs:31
 msgid "Disable nagling"
-msgstr ""
+msgstr "Onemogući naglovanje"
 
 #: Library/Modules/Builtin/Strings.cs:32
 msgid "Configure http requests"
@@ -3793,7 +4641,7 @@ msgstr "Podesi http zahteve"
 
 #: Library/Modules/Builtin/Strings.cs:33
 msgid "Alternate OAuth URL"
-msgstr ""
+msgstr "Alternativni OAuth URL"
 
 #: Library/Modules/Builtin/Strings.cs:34
 msgid ""
@@ -3801,6 +4649,9 @@ msgid ""
 "If you have set up your own Duplicati OAuth server, you can supply the "
 "refresh url."
 msgstr ""
+"Duplicati koristi eksterni server da podrži tok OAuth autentikacije. Ako ste"
+" podesili sopstveni Duplicati OAuth server, možete da navedete URL za "
+"osvežavanje."
 
 #: Library/Modules/Builtin/Strings.cs:35
 msgid "Sets allowed SSL versions"
@@ -3818,17 +4669,19 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:37
 msgid "Sets the default operation timeout"
-msgstr ""
+msgstr "Postavlja podrazumevano vremensko ograničenje operacije"
 
 #: Library/Modules/Builtin/Strings.cs:38
 msgid ""
 "This option changes the default timeout for any HTTP request, the time "
 "covers the entire operation from initial packet to shutdown"
 msgstr ""
+"Ova opcija menja podrazumevano vremensko ograničenje za bilo koji HTTP "
+"zahtev, vreme pokriva celu operaciju od početnog paketa do gašenja"
 
 #: Library/Modules/Builtin/Strings.cs:39
 msgid "Sets readwrite"
-msgstr ""
+msgstr "Postavlja čitanje i pisanje"
 
 #: Library/Modules/Builtin/Strings.cs:40
 msgid ""
@@ -3836,10 +4689,14 @@ msgid ""
 "used to detect a stalled requests, and this option configures the maximum "
 "time between activity on a connection."
 msgstr ""
+"Ova opcija menja podrazumevano vremensko ograničenje čitanja i pisanja. "
+"Vremenska ograničenja čitanja i pisanja se koriste za otkrivanje "
+"zaustavljenih zahteva, a ova opcija konfiguriše maksimalno vreme između "
+"aktivnosti na vezi."
 
 #: Library/Modules/Builtin/Strings.cs:41
 msgid "Sets HTTP buffering"
-msgstr ""
+msgstr "Postavlja HTTP baferovanje"
 
 #: Library/Modules/Builtin/Strings.cs:42
 #, csharp-format
@@ -3847,12 +4704,16 @@ msgid ""
 "This option sets the HTTP buffering. Setting this to \"{0}\" can cause "
 "memory leaks, but can also improve performance in some cases."
 msgstr ""
+"Ova opcija postavlja HTTP baferovanje. Podešavanje na \"{0}\"“ može da "
+"izazove curenje memorije, ali i da poboljša performanse u nekim slučajevima."
 
 #: Library/Modules/Builtin/Strings.cs:45
 msgid ""
 "This module works internaly to parse source parameters to backup Hyper-V "
 "virtual machines"
 msgstr ""
+"Ovaj modul interno radi za raščlanjivanje izvornih parametara za pravljenje "
+"rezervnih kopija Hiper-V virtuelnih mašina"
 
 #: Library/Modules/Builtin/Strings.cs:46
 msgid "Configure Hyper-V module"
@@ -3863,6 +4724,8 @@ msgid ""
 "This module works internaly to parse source parameters to backup Microsoft "
 "SQL Server databases"
 msgstr ""
+"Ovaj modul interno radi na raščlanjivanju izvornih parametara za pravljenje "
+"rezervnih kopija Microsoft SQL Servera baze podataka"
 
 #: Library/Modules/Builtin/Strings.cs:51
 msgid "Configure Microsoft SQL Server module"
@@ -3882,6 +4745,8 @@ msgid ""
 "Executes a script after performing an operation. The script will receive the"
 " operation results written to stdout."
 msgstr ""
+"Izvršava skriptu nakon izvođenja operacije. Skripta će dobiti rezultate "
+"operacije zapisane u stdout."
 
 #: Library/Modules/Builtin/Strings.cs:57
 msgid "Run a script on exit"
@@ -3895,7 +4760,7 @@ msgstr "Skripta \"{0}\" je završena sa izlaznim kodom {1}"
 #: Library/Modules/Builtin/Strings.cs:59
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}{2}"
-msgstr ""
+msgstr "Skripta \"{0}\" se vratila sa izlaznim kodom {1}{2}"
 
 #: Library/Modules/Builtin/Strings.cs:60
 msgid ""
@@ -3903,6 +4768,10 @@ msgid ""
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
+"Izvršava skriptu pre izvođenja operacije. Operacija će se blokirati dok se "
+"skripta ne završi ili ne istekne vremensko ograničenje. Ako skripta vrati "
+"kod greške različit od nule ili istekne vremensko ograničenje, operacija će"
+" biti prekinuta."
 
 #: Library/Modules/Builtin/Strings.cs:61
 msgid "Run a required script on startup"
@@ -3911,13 +4780,13 @@ msgstr "Pokreni zahtevanu skriptu prilikom pokretanja"
 #: Library/Modules/Builtin/Strings.cs:62
 #: Library/Modules/Builtin/Strings.cs:185
 msgid "Selects the output format for results"
-msgstr ""
+msgstr "Bira izlazni format za rezultate"
 
 #: Library/Modules/Builtin/Strings.cs:63
 #: Library/Modules/Builtin/Strings.cs:186
 #, csharp-format
 msgid "Selects the output format for results. Available formats: {0}"
-msgstr ""
+msgstr "Bira izlazni format za rezultate. Dostupni formati: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:64
 #, csharp-format
@@ -3927,13 +4796,15 @@ msgstr "Greška u toku izvršavanja skripte \"{0}\": {1}"
 #: Library/Modules/Builtin/Strings.cs:65
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
-msgstr ""
+msgstr "Isteklo je vreme za izvršavanje skripte \"{0}\"."
 
 #: Library/Modules/Builtin/Strings.cs:66
 msgid ""
 "Executes a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
+"Izvršava skriptu pre izvođenja operacije. Operacija će se blokirati dok se "
+"skripta ne završi ili ne istekne vremensko ograničenje."
 
 #: Library/Modules/Builtin/Strings.cs:67
 msgid "Run a script on startup"
@@ -3950,10 +4821,13 @@ msgid ""
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr ""
+"Postavlja maksimalno vreme koje je skripti dozvoljeno da se izvrši. Ako se "
+"skripta ne dovrši u tom roku, nastaviće da se izvršava, ali će se i "
+"operacija nastaviti i nijedan izlaz skripte neće biti obrađen."
 
 #: Library/Modules/Builtin/Strings.cs:70
 msgid "Sets the script timeout"
-msgstr ""
+msgstr "Postavlja vremensko ograničenje skripte"
 
 #: Library/Modules/Builtin/Strings.cs:73
 msgid "This module can send email after an operation completes"
@@ -3984,6 +4858,15 @@ msgid ""
 "\n"
 "All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
+"Ova vrednost može biti ime fajla. Ako fajl postoji, sadržaj fajla će se koristiti kao telo poruke.\n"
+"\n"
+"U telu poruke, određeni tokeni se zamenjuju:\n"
+"%OPERATIONNAME% – Naziv operacije, obično „Backup“\n"
+"%REMOTEURL% – URL udaljenog servera\n"
+"%LOCALPATH% - putanja do lokalnih fajlova ili fascikli uključenih u operaciju (ako ih ima)\n"
+"%PARSEDRESULT% - raščlanjeni rezultat, ako je operacija rezervna kopija. Moguće vrednosti su: Error, Varning, Success\n"
+"\n"
+"Sve opcije komandne linije su takođe prijavljene u okviru %value%, npr. %volsize%. Svaka nepoznata/nepodešena vrednost se uklanja."
 
 #: Library/Modules/Builtin/Strings.cs:85
 msgid "The message body"
@@ -3992,6 +4875,7 @@ msgstr "Telo poruke"
 #: Library/Modules/Builtin/Strings.cs:86
 msgid "The password used to authenticate with the SMTP server if required."
 msgstr ""
+"Lozinka koja se koristi za autentifikaciju sa SMTP serverom ako je potrebno."
 
 #: Library/Modules/Builtin/Strings.cs:87
 msgid "SMTP Password"
@@ -4004,22 +4888,26 @@ msgid ""
 "\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 msgstr ""
+"Ovo podešavanje je potrebno ako treba da se pošalje mail, sva ostala podešavanja imaju podrazumevane vrednosti. Možete da navedete više adresa e-pošte razdvojenih zarezima i možete koristiti normalni format adrese kao što je navedeno u RFC2822 odeljku 3.4.\n"
+"Primer sa 3 primaoca:\n"
+"\n"
+"Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 
 #: Library/Modules/Builtin/Strings.cs:92
 msgid "Email recipient(s)"
-msgstr "Primalac/oci email-a"
+msgstr "Primaoc(i) e-pošte"
 
 #: Library/Modules/Builtin/Strings.cs:93
 msgid ""
 "By default, mail will only be sent after a Backup operation. Use this option"
 " to send mail for all operations."
 msgstr ""
-"Podrazumevano, mail će biti poslat samo nakon backup operacije. Koristite "
-"ovu opciju da se mail šalje za sve operacije."
+"Podrazumevano, pošta će biti poslata samo nakon operacije rezervne kopije. "
+"Koristite ovu opciju za slanje pošte za sve operacije."
 
 #: Library/Modules/Builtin/Strings.cs:94
 msgid "Send email for all operations"
-msgstr "Šalji email za sve operacije"
+msgstr "Pošaljite e-poštu za sve operacije"
 
 #: Library/Modules/Builtin/Strings.cs:95
 msgid ""
@@ -4030,10 +4918,16 @@ msgid ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 msgstr ""
+"Adresa pošiljaoca e-pošte. Ako nije naveden nijedan host, koristi se ime hosta prvog primaoca. Primeri dozvoljenih formata:\n"
+"\n"
+"pošiljalac\n"
+"sender@example.com\n"
+"Mail Sender <sender>\n"
+"Pošiljalac pošte <sender@example.com>"
 
 #: Library/Modules/Builtin/Strings.cs:101
 msgid "Email sender"
-msgstr "Pošiljalac email-a"
+msgstr "Pošiljalac e-pošte"
 
 #: Library/Modules/Builtin/Strings.cs:102
 #, csharp-format
@@ -4043,6 +4937,10 @@ msgid ""
 " \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup "
 "operations to send an email."
 msgstr ""
+"Možete da navedete jedan od \"{0}\", \"{1}\", \"{2}\", \"{3}\". Možete da "
+"navedete više opcija sa zarezom, npr. \"{0},{1}\". Posebna vrednost \"{4}\" "
+"je skraćenica za \"{0},{1},{2},{3}\" i dovešće do slanja e-pošte svim "
+"operacijama rezervnih kopija."
 
 #: Library/Modules/Builtin/Strings.cs:103
 #: Library/Modules/Builtin/Strings.cs:135
@@ -4057,6 +4955,10 @@ msgid ""
 "\n"
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
+"URL za SMTP server, npr. smtp://example.com:25. Više servera se može isporučiti u listi prioriteta, odvojenih tačkom i zarezom. Ako server ne uspe, pokušava se sledeći server na listi, sve dok se poruka ne pošalje.\n"
+"Ako nijedan server nije obezbeđen, vrši se DNS pretraga da bi se pronašao MX zapis prvog primaoca, a svi SMTP serveri se pokušavaju po svom prioritetnom redosledu dok se poruka ne pošalje.\n"
+"\n"
+"Da biste omogućili SMTP preko SSL-a, koristite format smtps://example.com. Da biste omogućili SMTP STARTTLS, koristite format smtp://example.com:25/?starttls=when-available ili smtp://example.com:25/?starttls=always. Ako port nije naveden, port 25 se koristi za ne-ssl, a 465 za SSL veze. Da biste naterali da ne koristite STARTTLS koristite smtp://example.com:25/?starttls=never."
 
 #: Library/Modules/Builtin/Strings.cs:108
 msgid "SMTP Url"
@@ -4068,14 +4970,18 @@ msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
 " the description for --{0}."
 msgstr ""
+"Ovo podešavanje daje temu e-pošte. Vrednosti se zamenjuju kao što je opisano"
+" u opisu za --{0}."
 
 #: Library/Modules/Builtin/Strings.cs:110
 msgid "The email subject"
-msgstr "Predmet email-a"
+msgstr "Predmet e-pošte"
 
 #: Library/Modules/Builtin/Strings.cs:111
 msgid "The username used to authenticate with the SMTP server if required."
 msgstr ""
+"Korisničko ime koje se koristi za autentifikaciju sa SMTP serverom ako je "
+"potrebno."
 
 #: Library/Modules/Builtin/Strings.cs:112
 msgid "SMTP Username"
@@ -4084,7 +4990,7 @@ msgstr "SMTP korisničko ime"
 #: Library/Modules/Builtin/Strings.cs:113
 #, csharp-format
 msgid "Failed to send email: {0}"
-msgstr "Slanje email-a nije uspelo: {0}"
+msgstr "Slanje e-pošte nije uspelo: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:114
 #, csharp-format
@@ -4095,17 +5001,17 @@ msgstr "Cela SMTP komunikacija: {0}"
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
-"Slanje mejla sa serverom: {0} nije uspelo, poruka: {1}, ponovni pokušaj sa "
+"Slanje e-pošte sa servera: {0} nije uspelo, poruka: {1}, ponovni pokušaj sa "
 "{2}"
 
 #: Library/Modules/Builtin/Strings.cs:116
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
-msgstr "Email uspešno poslat sa serverom: {0}"
+msgstr "E-pošta je uspešno poslata pomoću servera: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:119
 msgid "XMPP recipient email"
-msgstr ""
+msgstr "XMPP adresa e-pošte primaoca"
 
 #: Library/Modules/Builtin/Strings.cs:120
 msgid ""
@@ -4118,7 +5024,7 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:121
 #: Library/Modules/Builtin/Strings.cs:151
 msgid "The message template"
-msgstr ""
+msgstr "Šablon poruke"
 
 #: Library/Modules/Builtin/Strings.cs:122
 #: Library/Modules/Builtin/Strings.cs:152
@@ -4133,20 +5039,31 @@ msgid ""
 "\n"
 "All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
 msgstr ""
+"Ova vrednost može biti ime fajla. Ako fajl postoji, sadržaj fajla će se koristiti kao poruka.\n"
+"\n"
+"U poruci, određeni tokeni su zamenjeni:\n"
+"%OPERATIONNAME% – Naziv operacije, obično \"Backup\"\n"
+"%REMOTEURL% – URL udaljenog servera\n"
+"%LOCALPATH% - putanja do lokalnih fajlova ili fascikli uključenih u operaciju (ako ih ima)\n"
+"%PARSEDRESULT% - raščlanjeni rezultat, ako je operacija rezervna kopija. Moguće vrednosti su: Error, Warning, Success\n"
+"\n"
+"Sve opcije komandne linije su takođe prijavljene u okviru %value%, npr. %volsize%. Svaka nepoznata/nepodešena vrednost se uklanja."
 
 #: Library/Modules/Builtin/Strings.cs:131
 msgid "The XMPP username"
-msgstr ""
+msgstr "XMPP ime korisnika"
 
 #: Library/Modules/Builtin/Strings.cs:132
 msgid ""
 "The username for the account that will send the message, including the "
 "hostname. I.e. \"account@jabber.org/Home\""
 msgstr ""
+"Korisničko ime za nalog koji će poslati poruku, uključujući ime hosta. tj."
+" \"account@jabber.org/Home\""
 
 #: Library/Modules/Builtin/Strings.cs:133
 msgid "The XMPP password"
-msgstr ""
+msgstr "XMPP lozinka"
 
 #: Library/Modules/Builtin/Strings.cs:134
 msgid "The password for the account that will send the message"
@@ -4159,6 +5076,8 @@ msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
 "You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
 msgstr ""
+"Možete da navedete jedan od \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
+"Možete da navedete više opcija sa zarezom, npr. \"{0},{1}\". Posebna vrednost \"{4}\" je skraćenica za \"{0},{1},{2},{3}\" i dovešće do slanja poruke svim operacijama rezervnih kopija."
 
 #: Library/Modules/Builtin/Strings.cs:138
 #: Library/Modules/Builtin/Strings.cs:168
@@ -4171,128 +5090,142 @@ msgid ""
 "By default, messages will only be sent after a Backup operation. Use this "
 "option to send messages for all operations"
 msgstr ""
-"Podrazumevano, poruke će biti poslate samo nakon backup operacije. Koristite"
-" ovu opciju da se poruke šalju za sve operacije."
+"Podrazumevano, poruke će biti poslate samo nakon  operacije rezervne kopije."
+" Koristite ovu opciju da se poruke šalju za sve operacije."
 
 #: Library/Modules/Builtin/Strings.cs:140
 msgid "XMPP report module"
-msgstr ""
+msgstr "XMPP modul izveštaja"
 
 #: Library/Modules/Builtin/Strings.cs:141
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
+"Ovaj modul pruža podršku za slanje izveštaja o statusu putem XMPP poruka"
 
 #: Library/Modules/Builtin/Strings.cs:142
 msgid "Timeout occurred while logging in to jabber server"
 msgstr ""
+"Došlo je do vremenskog ograničenja prilikom prijavljivanja na jabber server"
 
 #: Library/Modules/Builtin/Strings.cs:143
 #, csharp-format
 msgid "Failed to send jabber message: {0}"
-msgstr ""
+msgstr "Slanje jabber poruke nije uspelo: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:147
 msgid "HTTP report module"
-msgstr ""
+msgstr "HTTP modul izveštaja"
 
 #: Library/Modules/Builtin/Strings.cs:148
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
+"Ovaj modul pruža podršku za slanje izveštaja o statusu putem HTTP poruka"
 
 #: Library/Modules/Builtin/Strings.cs:149
 #: Library/Modules/Builtin/Strings.cs:150
 msgid "HTTP report url"
-msgstr ""
+msgstr "URL HTTP izveštaja"
 
 #: Library/Modules/Builtin/Strings.cs:161
 msgid "The name of the parameter to send the message as"
-msgstr ""
+msgstr "Naziv parametra za slanje poruke"
 
 #: Library/Modules/Builtin/Strings.cs:162
 msgid "The name of the parameter to send the message as."
-msgstr ""
+msgstr "Naziv parametra za slanje poruke."
 
 #: Library/Modules/Builtin/Strings.cs:163
 msgid "Extra parameters to add to the http message"
-msgstr ""
+msgstr "Dodatni parametri za dodavanje u http poruku"
 
 #: Library/Modules/Builtin/Strings.cs:164
 msgid ""
 "Extra parameters to add to the http message. I.e. "
 "\"parameter1=value1&parameter2=value2\""
 msgstr ""
+"Dodatni parametri za dodavanje u http poruku. tj. "
+"\"parameter1=value1&parameter2=value2\""
 
 #: Library/Modules/Builtin/Strings.cs:170
 #, csharp-format
 msgid "Failed to send http message: {0}"
-msgstr ""
+msgstr "Slanje http poruke nije uspelo: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:171
 msgid "Send data as JSON body"
-msgstr ""
+msgstr "Pošaljite podatke kao JSON telo"
 
 #: Library/Modules/Builtin/Strings.cs:172
 msgid "Use this flag to send the result data as a JSON object"
 msgstr ""
+"Koristite ovu zastavicu da pošaljete podatke o rezultatu kao JSON objekat"
 
 #: Library/Modules/Builtin/Strings.cs:173
 msgid "Sets the HTTP verb to use"
-msgstr ""
+msgstr "Postavlja HTTP glagol za upotrebu"
 
 #: Library/Modules/Builtin/Strings.cs:174
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report"
 msgstr ""
+"Koristite ovu opciju da promenite podrazumevani HTTP glagol koji se koristi "
+"za podnošenje izveštaja"
 
 #: Library/Modules/Builtin/Strings.cs:178
 #, csharp-format
 msgid "Failed to send message: {0}"
-msgstr ""
+msgstr "Slanje poruke nije uspelo: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:179
 msgid "Defines a log level for messages"
-msgstr ""
+msgstr "Definiše nivo dnevnika za poruke"
 
 #: Library/Modules/Builtin/Strings.cs:180
 msgid ""
 "Use this option to set the log level for messages to include in the report"
 msgstr ""
+"Koristite ovu opciju da podesite nivo evidencije za poruke koje će se "
+"uključiti u izveštaj"
 
 #: Library/Modules/Builtin/Strings.cs:181
 msgid "Log message filter"
-msgstr ""
+msgstr "Filter za poruke dnevnika"
 
 #: Library/Modules/Builtin/Strings.cs:182
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report"
 msgstr ""
+"Koristite ovu opciju da postavite izraz filtera koji definiše koje su opcije"
+" uključene u izveštaj"
 
 #: Library/Modules/Builtin/Strings.cs:183
 msgid "Limits log lines"
-msgstr ""
+msgstr "Ograničava linije dnevnika"
 
 #: Library/Modules/Builtin/Strings.cs:184
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
 msgstr ""
+"Koristite ovu opciju da biste podesili maksimalan broj redova dnevnika koji "
+"će se uključiti u izveštaj. Nula ili negativna vrednost znači neograničeno."
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:19
 #, csharp-format
 msgid "The format is not supported: {0}"
-msgstr ""
+msgstr "Format nije podržan: {0}"
 
 #: Library/Utility/Strings.cs:7
 #, csharp-format
 msgid "Invalid size value: {0}"
-msgstr ""
+msgstr "Nevažeća vrednost veličine: {0}"
 
 #: Library/Utility/Strings.cs:10
 msgid "The SSL certificate validator was called in an incorrect order"
-msgstr ""
+msgstr "Validator SSL sertifikata je pozvan netačnim redosledom"
 
 #: Library/Utility/Strings.cs:11
 #, csharp-format
@@ -4302,6 +5235,10 @@ msgid ""
 "certificates.crt #for Debian based systems{0}    cert-sync "
 "/etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}Read more: {1}"
 msgstr ""
+"{0}Možda ćete želeti da uvezete skup pouzdanih sertifikata u Mono skladište"
+" sertifikata.{0}Koristite komandu:{0} cert-sinc /etc/ssl/certs/ca-"
+"certificates.crt #for Debian sisteme{ 0} cert-sinc /etc/pki/tls/certs/ca-"
+"bundle.crt #for RedHat derivate{0}Pročitajte više: {1}"
 
 #: Library/Utility/Strings.cs:12
 #, csharp-format
@@ -4311,6 +5248,11 @@ msgid ""
 " to accept the server certificate anyway.{2}You can also attempt to import "
 "the server certificate into your operating systems trust pool."
 msgstr ""
+"Sertifikat servera je imao grešku {0} i heš {1}{2}Ako verujete ovom "
+"sertifikatu, koristite opciju komandne linije --accept-specified-ssl-"
+"hash={1} da biste ipak prihvatili sertifikat servera.{2 }Takođe možete "
+"pokušati da uvezete sertifikat servera u skup poverenja vašeg operativnog "
+"sistema."
 
 #: Library/Utility/Strings.cs:13
 #, csharp-format
@@ -4318,6 +5260,8 @@ msgid ""
 "Failed while validating certificate hash, error message: {0}, SSL error "
 "name: {1}"
 msgstr ""
+"Nije uspelo pri validaciji heš sertifikata, poruka o grešci: {0}, naziv "
+"greške SSL: {1}"
 
 #: Library/Utility/Strings.cs:16
 #, csharp-format
@@ -4327,12 +5271,12 @@ msgstr "Privremena fascikla ne postoji: {0}"
 #: Library/Utility/Strings.cs:19
 #, csharp-format
 msgid "Failed to parse the segment: {0}, invalid integer"
-msgstr ""
+msgstr "Raščlanjivanje segmenta nije uspelo: {0}, nevažeći ceo broj"
 
 #: Library/Utility/Strings.cs:20
 #, csharp-format
 msgid "Invalid specifier: {0}"
-msgstr ""
+msgstr "Neispravan specifikator: {0}"
 
 #: Library/Utility/Strings.cs:21
 #, csharp-format
@@ -4347,7 +5291,7 @@ msgstr "Uri nije važeći: {0}"
 #: Library/Utility/Strings.cs:25
 #, csharp-format
 msgid "The Uri is missing a hostname: {0}"
-msgstr ""
+msgstr "Uri-ju nedostaje ime hosta: {0}"
 
 #: Library/Utility/Strings.cs:28
 #, csharp-format
@@ -4389,26 +5333,31 @@ msgid ""
 "The string {0} does not represent a known filter group name. Valid values "
 "are: {1}"
 msgstr ""
+"Niz {0} ne predstavlja poznato ime grupe filtera. Važeće vrednosti su: {1}"
 
 #: Library/Utility/FilterGroups.cs:185
 #, csharp-format
 msgid "{0}: Selects no filters."
-msgstr ""
+msgstr "{0}: Ne bira filtere."
 
 #: Library/Utility/FilterGroups.cs:186
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
+"{0}: Skup podrazumevanih filtera za izuzimanje, trenutno se procenjuje na: "
+"{1}."
 
 #: Library/Utility/FilterGroups.cs:187
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
+"{0}: Skup podrazumevanih filtera za uključivanje, trenutno se procenjuje na:"
+" {1}."
 
 #: Library/Utility/FilterGroups.cs:198
 #, csharp-format
 msgid " Aliases: {0}"
-msgstr ""
+msgstr "Alijasi: {0}"
 
 #: Library/Utility/FilterGroups.cs:211
 #, csharp-format
@@ -4417,6 +5366,10 @@ msgid ""
 "includes any operating system reported protected files. Most users should at"
 " least apply these filters."
 msgstr ""
+"{0}: Fajlovi koji su u vlasništvu sistema ili koji nisu pogodni za "
+"pravljenje rezervnih kopija. Ovo uključuje sve zaštićene fajlove "
+"prijavljene operativnim sistemom. Većina korisnika bi trebalo da primeni "
+"barem ove filtere."
 
 #: Library/Utility/FilterGroups.cs:213
 #, csharp-format
@@ -4424,11 +5377,14 @@ msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 msgstr ""
+"{0}: Fajlovi koji pripadaju operativnom sistemu. Ovi fajlovi se vraćaju "
+"kada se operativni sistem ponovo instalira."
 
 #: Library/Utility/FilterGroups.cs:215
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr ""
+"{0}: Fajlovi i fascikle za koje se zna da su skladište privremenih podataka."
 
 #: Library/Utility/FilterGroups.cs:217
 #, csharp-format
@@ -4436,11 +5392,15 @@ msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 msgstr ""
+"{0}: Fajlovi i fascikle koji su poznate lokacije keša za operativni sistem i"
+" razne aplikacije"
 
 #: Library/Utility/FilterGroups.cs:219
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr ""
+"{0}: Instalirani programi i njihove biblioteke, ali ne i njihova "
+"podešavanja."
 
 #: CommandLine/Strings.cs:4
 #, csharp-format
@@ -4454,7 +5414,7 @@ msgid ""
 "Found {0} commands but expected {1}, commands: \n"
 "{2}"
 msgstr ""
-"Pronađeno {0} komandi, a očekivano {1}, komande:\n"
+"Pronađeno {0} komandi, a očekivano {1}, komandi:\n"
 "{2}"
 
 #: CommandLine/Strings.cs:7
@@ -4464,11 +5424,11 @@ msgstr "Komanda nije podržana: {0}"
 
 #: CommandLine/Strings.cs:8
 msgid "No filesets matched the criteria"
-msgstr ""
+msgstr "Nijedan set fajlova nije odgovarao kriterijumima"
 
 #: CommandLine/Strings.cs:9
 msgid "The following filesets would be deleted:"
-msgstr ""
+msgstr "Sledeći setovi fajlova će biti izbrisani:"
 
 #: CommandLine/Strings.cs:10
 msgid "These filesets were deleted:"
@@ -4476,7 +5436,7 @@ msgstr "Sledeći setovi fajlova će biti obrisani"
 
 #: CommandLine/Strings.cs:11
 msgid "Supported backends:"
-msgstr ""
+msgstr "Podržane pozadine:"
 
 #: CommandLine/Strings.cs:12
 msgid "Supported compression modules:"
@@ -4493,14 +5453,17 @@ msgstr "Podržane opcije:"
 #: CommandLine/Strings.cs:15
 msgid "Module is loaded automatically, use --disable-module to prevent this"
 msgstr ""
+"Modul se automatski učitava, koristite --disable-module da biste ovo "
+"sprečili"
 
 #: CommandLine/Strings.cs:16
 msgid "Module is not loaded automatically, use --enable-module to load it"
 msgstr ""
+"Modul se ne učitava automatski, koristite --enable-module da ga učitate"
 
 #: CommandLine/Strings.cs:17
 msgid "Supported generic modules:"
-msgstr ""
+msgstr "Podržani generički moduli:"
 
 #: CommandLine/Strings.cs:20
 #, csharp-format
@@ -4508,6 +5471,8 @@ msgid ""
 "The option --{0} was supplied, but it is reserved for internal use and may "
 "not be set on the commandline"
 msgstr ""
+"Opcija --{0} je dostavljena, ali je rezervisana za internu upotrebu i možda "
+"nije podešena na komandnoj liniji"
 
 #: CommandLine/Strings.cs:23
 #, csharp-format
@@ -4529,10 +5494,17 @@ msgid ""
 "files and folders) can be specified by using curly braces, i.e. "
 "{{Applications}}."
 msgstr ""
+"Uključi fajlove koje odgovaraju ovom filteru. Specijalni znak * označava "
+"bilo koji broj karaktera, a specijalni znak ? znači bilo koji pojedinačni "
+"znak, koristite *.txt da biste uključili sve fajlove sa ekstenzijom txt. "
+"Regularni izrazi su takođe podržani i mogu se obezbediti korišćenjem "
+"uglastih zagrada, tj. [.*\\.txt]. Grupe filtera (koje obuhvataju ugrađeni "
+"skup dobro poznatih fajlova i fascikli) mogu se navesti korišćenjem "
+"vitičastih zagrada, tj. {{Applications}}."
 
 #: CommandLine/Strings.cs:26
 msgid "Include files"
-msgstr ""
+msgstr "Uključi fajlove"
 
 #: CommandLine/Strings.cs:27
 msgid ""
@@ -4544,10 +5516,17 @@ msgid ""
 "files and folders) can be specified by using curly braces, i.e. "
 "{{TemporaryFiles}}."
 msgstr ""
+"Izuzmi fajlove koje odgovaraju ovom filteru. Specijalni znak * označava bilo"
+" koji broj karaktera, a specijalni znak ? znači bilo koji pojedinačni znak, "
+"koristite *.txt da biste isključili sve fajlove sa ekstenzijom txt. "
+"Regularni izrazi su takođe podržani i mogu se obezbediti korišćenjem "
+"uglastih zagrada, tj. [.*\\.txt]. Grupe filtera (koje obuhvataju ugrađeni "
+"skup dobro poznatih fajlova i fascikli) mogu se navesti korišćenjem "
+"vitičastih zagrada, tj. {{TemporaryFiles}}."
 
 #: CommandLine/Strings.cs:28
 msgid "Exclude files"
-msgstr "Izuzmi datoteke"
+msgstr "Izuzmi fajlove"
 
 #: CommandLine/Strings.cs:29
 msgid ""
@@ -4555,6 +5534,10 @@ msgid ""
 "of files to add to the filesets. When used with list or restore, it will "
 "list or restore the control files instead of the normal files."
 msgstr ""
+"Ako se ova opcija koristi sa operacijom rezervne kopije, ona se tumači kao "
+"lista fajlova za dodavanje u setove fajlova. Kada se koristi sa listom ili "
+"vraćanjem, on će prikazati ili vratiti kontrolne fajlove umesto normalnih "
+"fajlova."
 
 #: CommandLine/Strings.cs:30
 msgid "Use control files"
@@ -4565,6 +5548,8 @@ msgid ""
 "If this option is set, progress reports and other messages that would "
 "normally go to the console will be redirected to the log."
 msgstr ""
+"Ako je ova opcija podešena, izveštaji o napretku i druge poruke koje bi "
+"inače išle na konzolu biće preusmerene u dnevnik."
 
 #: CommandLine/Strings.cs:32
 msgid "Disable console output"
@@ -4573,7 +5558,7 @@ msgstr "Onemogući ispis u konzolu"
 #: CommandLine/Strings.cs:41
 #, csharp-format
 msgid "This link may provide additional information: {0}"
-msgstr ""
+msgstr "Ova veza može da pruži dodatne informacije: {0}"
 
 #: CommandLine/Program.cs:283
 msgid "Toggle automatic updates"
