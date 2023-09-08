@@ -52,8 +52,12 @@ export class AdvancedOptionsEditorComponent {
   ngOnChanges(changes: SimpleChanges) {
     if ('optionList' in changes) {
       this.updateOptionList();
+      if (this.optionList.length > 0) {
+        this.updateOptionsForm();
+      }
     }
-    if ('options' in changes) {
+    // TODO: Make this more robust if optionList is changed after the form is initialized
+    if ('options' in changes && this.optionList.length > 0) {
       this.updateOptionsForm();
     }
   }

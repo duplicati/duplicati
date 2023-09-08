@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
+import { AddOrUpdateBackupData } from '../backup';
 import { DialogService } from './dialog.service';
 import { ServerStatusService } from './server-status.service';
 
@@ -41,5 +42,16 @@ export class BackupService {
   doRepair(id: string): void {
     this.client.post('/backup/' + id + '/repair', '').subscribe();
   }
-
+  putBackup(id: string, b: AddOrUpdateBackupData): Observable<void> {
+    return this.client.put<void>('/backup/' + id, b);
+  }
+  getBackup(id: string): Observable<AddOrUpdateBackupData> {
+    return this.client.get<{ success: boolean, data: AddOrUpdateBackupData }>('/backup/' + id).pipe(
+      map(resp => {
+        if (!resp.success) {
+          throw new Error('Failed to get backup');
+        }
+        return resp.data;
+      }));
+  }
 }

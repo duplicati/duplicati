@@ -47,4 +47,12 @@ export class PassphraseService {
 
     return pwd.join('');
   }
+
+
+  checkGpgAsymmetric(encryptionModule: string, extendedOptions: string[]): boolean {
+    if (encryptionModule == null || encryptionModule == '') {
+      return false;
+    }
+    return extendedOptions.includes('--gpg-encryption-command=--encrypt');
+  }
 }

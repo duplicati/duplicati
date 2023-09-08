@@ -16,8 +16,11 @@ import { BackupOptions } from '../backup-options';
 export class BackupOptionsComponent {
   private _options!: BackupOptions;
   @Input({ required: true }) set options(value: BackupOptions) {
-    this._options = value;
-    this.updateRetentionFromOptions();
+    if (this._options !== value) {
+      this._options = value;
+      this.updateRetentionFromOptions();
+      this.showAdvanced = value.extendedOptions.length > 0;
+    }
   }
   get options(): BackupOptions {
     return this._options;
@@ -29,7 +32,15 @@ export class BackupOptionsComponent {
 
   serverModules: ServerModuleDescription[] = [];
   extendedOptionList: CommandLineArgument[] = [];
-  extendedOptions: string[] = [];
+  get extendedOptions(): string[] {
+    return this.options.extendedOptions;
+  }
+  set extendedOptions(value: string[]) {
+    if (value !== this.options.extendedOptions) {
+      this._options = Object.assign(new BackupOptions(), { ...this.options, extendedOptions: value });
+      this.optionsChange.emit(this.options);
+    }
+  }
   private _keepType: string = '';
   get keepType(): string {
     return this._keepType;
@@ -48,6 +59,7 @@ export class BackupOptionsComponent {
     { name: 'Years', value: 'Y' }
   ];
 
+  showAdvanced = false;
   showAdvancedTextArea = false;
   private subscription?: Subscription;
 
@@ -55,7 +67,7 @@ export class BackupOptionsComponent {
     return this.options.dblockSize;
   }
   set dblockSize(value: string) {
-    this.options = { ...this.options, dblockSize: value };
+    this._options = Object.assign(new BackupOptions(), { ...this.options, dblockSize: value });
     this.optionsChange.emit(this.options);
   }
 
@@ -100,21 +112,22 @@ export class BackupOptionsComponent {
     this.subscription?.unsubscribe();
   }
 
-  getServerModuleSettings(name: string): string[] {
+  getServerModuleSettings(name: string): string {
     let settings = this.options.serverModuleSettings?.get(name);
-    return settings || [];
+    return settings || '';
   }
 
-  setServerModuleSettings(name: string, value: string[]) {
-    this.options = {
-      ...this.options,
-      serverModuleSettings: new Map<string, string[]>(
-        [
-          ...(this.options.serverModuleSettings?.entries() || []),
-          [name, value]
-        ]
-      )
-    };
+  setServerModuleSettings(name: string, value: string) {
+    this._options = Object.assign(new BackupOptions(),
+      {
+        ...this.options,
+        serverModuleSettings: new Map<string, string>(
+          [
+            ...(this.options.serverModuleSettings?.entries() || []),
+            [name, value]
+          ]
+        )
+      });
     this.optionsChange.emit(this.options);
   }
 
@@ -136,43 +149,44 @@ export class BackupOptionsComponent {
     let newOptions: BackupOptions | undefined = undefined;
     if (this.keepType === '') {
       if (this.options.retention != null) {
-        newOptions = { ...this.options, retention: null };
+        newOptions = Object.assign(new BackupOptions(), { ...this.options, retention: null });
       }
     } else if (this.keepType === 'custom') {
       if (this.options.retention == null || this.options.retention.type !== 'custom'
         || this.options.retention.policy !== this.retentionPolicy) {
-        newOptions = {
+        newOptions = Object.assign(new BackupOptions(), {
           ...this.options,
           retention: {
             type: 'custom',
             policy: this.retentionPolicy
           }
-        };
+        });
       }
     } else if (this.keepType === 'time') {
       if (this.options.retention == null || this.options.retention.type !== 'time'
         || this.options.retention.keepTime !== this.keepTime) {
-        newOptions = {
+        newOptions = Object.assign(new BackupOptions(), {
           ...this.options,
           retention: {
             type: 'time',
             keepTime: this.keepTime
           }
-        };
+        });
       }
     } else if (this.keepType === 'versions') {
       if (this.options.retention == null || this.options.retention.type !== 'versions'
         || this.options.retention.keepVersions !== this.keepVersions) {
-        newOptions = {
+        newOptions = Object.assign(new BackupOptions(), {
           ...this.options,
           retention: {
             type: 'versions',
             keepVersions: this.keepVersions
           }
-        };
+        });
       }
     }
     if (newOptions !== undefined) {
+      this._options = newOptions;
       this.optionsChange.emit(newOptions);
     }
   }

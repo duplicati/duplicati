@@ -1,12 +1,13 @@
-import { EventEmitter, Input } from '@angular/core';
+import { EventEmitter, Input, SimpleChanges } from '@angular/core';
 import { Output } from '@angular/core';
 import { Component } from '@angular/core';
-import { Backup } from '../../backup';
+import { Backup, BackupFilter } from '../../backup';
 import { ConvertService } from '../../services/convert.service';
 import { DialogService } from '../../services/dialog.service';
 import { FileFilterService } from '../../services/file-filter.service';
 import { FileService } from '../../services/file.service';
 import { ParserService } from '../../services/parser.service';
+import { BackupOptions } from '../backup-options';
 
 @Component({
   selector: 'app-backup-source-settings',
@@ -15,7 +16,9 @@ import { ParserService } from '../../services/parser.service';
 })
 export class BackupSourceSettingsComponent {
   @Input({ required: true }) backup!: Backup;
+  @Input({ required: true }) options!: BackupOptions;
   @Output() backupChange = new EventEmitter<Backup>();
+  @Output() optionsChange = new EventEmitter<BackupOptions>();
   @Output() next = new EventEmitter<void>();
   @Output() prev = new EventEmitter<void>();
 
@@ -26,11 +29,21 @@ export class BackupSourceSettingsComponent {
     this.backup = { ...this.backup, Sources: v };
     this.backupChange.emit(this.backup);
   }
+  private _filters: string[] = [];
   get filters(): string[] {
-    return this.backup.Filters;
+    return this._filters;
   }
   set filters(v: string[]) {
-    this.backup = { ...this.backup, Filters: v };
+    this.backup = {
+      ...this.backup,
+      Filters: v.map((v, i) => {
+        return {
+          Order: i,
+          Include: v.startsWith('+'),
+          Expression: v.substr(1)
+        }
+      })
+    };
     this.backupChange.emit(this.backup);
   }
 
@@ -39,8 +52,20 @@ export class BackupSourceSettingsComponent {
   manualSourcePath: string = '';
   validatingSourcePath: boolean = false;
   fileAttributes: ({ name: string, value: string })[] = [];
-  excludeAttributes: string[] = [];
-  excludeFileSize: number | null = null;
+  get excludeAttributes(): string[] {
+    return this.options.excludeFileAttributes;
+  }
+  set excludeAttributes(value: string[]) {
+    this.options = { ...this.options, excludeFileAttributes: value };
+    this.optionsChange.emit(this.options);
+  }
+  get excludeFileSize(): number | null {
+    return this.options.excludeFileSize;
+  }
+  set excludeFileSize(value: number | null) {
+    this.options = { ...this.options, excludeFileSize: value };
+    this.optionsChange.emit(this.options);
+  }
   editFilterAdvanced: boolean = false;
 
   private _excludeLargeFiles: boolean = false;
@@ -85,6 +110,12 @@ export class BackupSourceSettingsComponent {
   ngOnInit() {
     this.fileAttributes = this.filterService.getFileAttributes();
     this.fileSizeMultipliers = this.parser.fileSizeMultipliers;
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if ('backup' in changes) {
+      this._filters = this.backup.Filters.map(f => (f.Include ? '+' : '-') + f.Expression);
+    }
   }
 
   private validateSourcePath(): void {

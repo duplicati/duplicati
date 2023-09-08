@@ -79,13 +79,14 @@ export class BackupEditUriComponent {
     this.loadEditor();
   }
 
-  buildUri(next: (uri: string) => void): void {
+  buildUri(): string | null {
     if (this.editorComponent) {
       const uri = this.editorComponent.instance.buildUri(this.advancedOptions);
       if (uri != null) {
-        next(uri);
+        return uri;
       }
     }
+    return null;
   }
 
   private updateAdvancedOptionList(): void {
@@ -157,6 +158,9 @@ export class BackupEditUriComponent {
   }
 
   testConnection(): void {
-    this.buildUri(uri => { this.connectionTester.performConnectionTest(uri, this.advancedOptions, next => this.buildUri(next)); });
+    const uri = this.buildUri();
+    if (uri != null) {
+      this.connectionTester.performConnectionTest(uri, this.advancedOptions, () => this.buildUri());
+    }
   }
 }

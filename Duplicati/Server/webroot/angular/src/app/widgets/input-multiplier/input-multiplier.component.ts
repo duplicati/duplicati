@@ -45,6 +45,7 @@ export class InputMultiplierComponent {
     return this._multiplier;
   }
   set multiplier(value: string) {
+    value = this.transformCase(value);
     if (this._multiplier !== value) {
       this._multiplier = value;
       this.value = (this.number || '0') + value;
@@ -71,7 +72,7 @@ export class InputMultiplierComponent {
   }
 
   isValidMultiplier(mult: string): boolean {
-    return this.multipliers.findIndex(m => this.transformCase(m.value) === mult) >= 0;
+    return this.multipliers.findIndex(m => this.transformCase(m.value) === this.transformCase(mult)) >= 0;
   }
 
   private updateFields(value: string) {

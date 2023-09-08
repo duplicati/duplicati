@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
 import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
@@ -41,8 +41,10 @@ export class EditFileComponent implements BackendEditorComponent {
     private dialog: DialogService,
     private parser: ParserService) { }
 
-  ngOnInit() {
-    this.hideFolderBrowser = this.path != '';
+  ngOnChanges(changes: SimpleChanges) {
+    if ('commonData' in changes) {
+      this.hideFolderBrowser = this.path != '';
+    }
   }
 
   parseUriParts(data: CommonBackendData, parts: Map<string, string>): void {

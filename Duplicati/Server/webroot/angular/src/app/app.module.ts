@@ -45,6 +45,7 @@ import { BackupFilterListComponent } from './edit-backup/backup-filter/backup-fi
 import { BackupScheduleComponent } from './edit-backup/backup-schedule/backup-schedule.component';
 import { BackupOptionsComponent } from './edit-backup/backup-options/backup-options.component';
 import { WidgetsModule } from './widgets/widgets.module';
+import { backupCheckerProviders } from './backup-checks';
 
 @NgModule({
   declarations: [
@@ -83,7 +84,6 @@ import { WidgetsModule } from './widgets/widgets.module';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule,
     HttpClientModule,
     FormsModule,
     ReactiveFormsModule,
@@ -96,12 +96,14 @@ import { WidgetsModule } from './widgets/widgets.module';
       cookieName: 'xsrf-token'
     }),
     BrowserAnimationsModule,
-    WidgetsModule
+    WidgetsModule,
+    AppRoutingModule,
   ],
   providers: [
     CookieService,
     httpInterceptorProviders,
-    backendEditorProviders
+    backendEditorProviders,
+    backupCheckerProviders
   ],
   bootstrap: [AppComponent]
 })

@@ -60,7 +60,7 @@
     </div>
   </div>
 
-  <app-expand-box>
+  <app-expand-box [expanded]="showAdvanced">
     <h2 translate header>Advanced options</h2>
     <ng-template appExpandMenu>
       <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" translate>Edit as list</button>

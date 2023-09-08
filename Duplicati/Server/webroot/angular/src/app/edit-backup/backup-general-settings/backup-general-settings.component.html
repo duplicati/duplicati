@@ -24,11 +24,11 @@
 
     <div class="input password" *ngIf="!checkGpgAsymmetric() && (encryptionModule || '').length != 0">
       <label for="passphrase" translate>Passphrase</label>
-      <input autocomplete="new-password" type="{{showPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" [ngModel]="passphrase" (ngModelChange)="passphrase=$event;computePassPhraseStrength()" />
+      <input autocomplete="new-password" type="{{showPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" [(ngModel)]="passphrase" />
     </div>
     <div class="input password" *ngIf="!checkGpgAsymmetric() && (encryptionModule || '').length != 0">
       <label for="repeat-passphrase" translate>Repeat Passphrase</label>
-      <input autocomplete="new-password" type="{{showPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" [ngModel]="repeatPasshrase" (ngModelChange)="repeatPasshrase=$event;computePassPhraseStrength()"/>
+      <input autocomplete="new-password" type="{{showPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" [(ngModel)]="repeatPassphrase" />
 
       <div class="tools">
         <ul>

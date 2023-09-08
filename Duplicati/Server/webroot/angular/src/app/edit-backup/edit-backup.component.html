@@ -31,10 +31,10 @@
       <app-backup-general-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()"></app-backup-general-settings>
     </div>
     <div class="step step2" [hidden]="CurrentStep !== 1">
-      <app-backup-destination-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()" (prev)="prevStep()"></app-backup-destination-settings>
+      <app-backup-destination-settings (next)="nextStep()" (prev)="prevStep()"></app-backup-destination-settings>
     </div>
     <div class="step step3" [hidden]="CurrentStep !== 2">
-      <app-backup-source-settings [(backup)]="backup" (next)="nextStep()" (prev)="prevStep()"></app-backup-source-settings>
+      <app-backup-source-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()" (prev)="prevStep()"></app-backup-source-settings>
     </div>
     <div class="step step4" [hidden]="CurrentStep !== 3">
       <app-backup-schedule [(schedule)]="schedule" (next)="nextStep()" (prev)="prevStep()"></app-backup-schedule>

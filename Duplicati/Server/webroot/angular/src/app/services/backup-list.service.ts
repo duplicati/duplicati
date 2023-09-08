@@ -13,6 +13,17 @@ export class BackupListService {
 
   constructor(private client: HttpClient, private serverStatus: ServerStatusService) { }
 
+  addBackup(b: AddOrUpdateBackupData): Observable<string> {
+    return this.client.post<{ status: string, ID?: string }>('/backups', b).pipe(
+      map(resp => {
+        if (resp.status === 'OK' && resp.ID != null) {
+          return resp.ID;
+        } else {
+          throw Error("Failed to add backup");
+        }
+      }));
+  }
+
   getBackups(): Observable<AddOrUpdateBackupData[]> {
     return this.client.get<AddOrUpdateBackupData[]>('/backups').pipe(
       combineLatest(this.serverStatus.getProposedSchedule()),

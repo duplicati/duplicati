@@ -1,4 +1,4 @@
-import { Component, ContentChild } from '@angular/core';
+import { Component, ContentChild, Input } from '@angular/core';
 import { ExpandMenuDirective } from './expand-menu.directive';
 
 @Component({
@@ -7,6 +7,7 @@ import { ExpandMenuDirective } from './expand-menu.directive';
   styleUrls: ['./expand-box.component.less']
 })
 export class ExpandBoxComponent {
-  expanded = false;
+  @Input() expanded: boolean = false;
   @ContentChild(ExpandMenuDirective) menu?: ExpandMenuDirective;
+
 }

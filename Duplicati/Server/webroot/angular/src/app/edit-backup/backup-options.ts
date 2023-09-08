@@ -16,11 +16,17 @@ export interface TimeRetention {
 
 export class BackupOptions {
   passphrase: string = '';
+  repeatPassphrase: string = '';
   encryptionModule: string = '';
   extendedOptions: string[] = [];
   hasGeneratedPassphrase: boolean = false;
   dblockSize: string = '50MB';
   retention: SmartRetention | CustomRetention | VersionsRetention | TimeRetention | null = null;
-  serverModuleSettings: Map<string, string[]> | null = null;
+  serverModuleSettings: Map<string, string> | null = null;
   compressionModule: string = 'zip';
+  excludeFileSize: number | null = null;
+  excludeFileAttributes: string[] = [];
+  isNew: boolean = true;
+
+
 }

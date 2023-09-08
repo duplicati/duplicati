@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Inject, Input, Output, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { Backup } from '../../backup';
+import { EditBackupService } from '../../services/edit-backup.service';
 import { PassphraseService } from '../../services/passphrase.service';
 import { SystemInfo } from '../../system-info/system-info';
 import { SystemInfoService } from '../../system-info/system-info.service';
@@ -50,8 +51,17 @@ export class BackupGeneralSettingsComponent {
     this.options = { ...this.options };
     this.options.passphrase = v;
     this.optionsChange.emit(this.options);
+    this.computePassPhraseStrength();
   }
-  repeatPasshrase: string = '';
+  get repeatPassphrase(): string {
+    return this.options.repeatPassphrase;
+  }
+  set repeatPassphrase(v: string) {
+    this.options = { ...this.options };
+    this.options.repeatPassphrase = v;
+    this.optionsChange.emit(this.options);
+    this.computePassPhraseStrength();
+  }
   passphraseScore: string | number = '';
   passphraseScoreString?: string;
 
@@ -76,15 +86,12 @@ export class BackupGeneralSettingsComponent {
   }
 
   checkGpgAsymmetric(): boolean {
-    if (this.encryptionModule == null || this.encryptionModule == '') {
-      return false;
-    }
-    return this.options.extendedOptions.includes('--gpg-encryption-command=--encrypt');
+    return this.passphraseService.checkGpgAsymmetric(this.options.encryptionModule, this.options.extendedOptions);
   }
 
   generatePassphrase(): void {
     this.options = { ...this.options };
-    this.options.passphrase = this.repeatPasshrase = this.passphraseService.generatePassphrase();
+    this.options.passphrase = this.options.repeatPassphrase = this.passphraseService.generatePassphrase();
     this.showPassphrase = true;
     this.options.hasGeneratedPassphrase = true;
     this.optionsChange.emit(this.options);
@@ -100,7 +107,7 @@ export class BackupGeneralSettingsComponent {
       4: 'Very strong'
     };
     const passphrase = this.passphrase;
-    if (this.repeatPasshrase !== passphrase) {
+    if (this.repeatPassphrase !== passphrase) {
       this.passphraseScore = 'x';
     } else if (passphrase == '') {
       this.passphraseScore = '';

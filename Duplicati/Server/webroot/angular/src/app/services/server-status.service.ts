@@ -113,14 +113,14 @@ export class ServerStatusService {
         if (this.status.proposedSchedule.length !== v['ProposedSchedule'].length
           || !this.status.proposedSchedule.every((val, index) => val === v['ProposedSchedule'][index])) {
           this.status.proposedSchedule.length = 0;
-          this.status.proposedSchedule.push(v['ProposedSchedule']);
+          this.status.proposedSchedule.push(...v['ProposedSchedule']);
           anyChanged = true;
         }
 
         if (this.status.schedulerQueueIds.length !== v['SchedulerQueueIds'].length
           || !this.status.schedulerQueueIds.every((val, index) => val === v['SchedulerQueueIds'][index])) {
           this.status.schedulerQueueIds.length = 0;
-          this.status.schedulerQueueIds.push(v['SchedulerQueueIds']);
+          this.status.schedulerQueueIds.push(...v['SchedulerQueueIds']);
           anyChanged = true;
         }
 

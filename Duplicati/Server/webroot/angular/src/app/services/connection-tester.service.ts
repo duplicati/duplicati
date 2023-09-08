@@ -17,7 +17,7 @@ export class ConnectionTester {
     return this.testing;
   }
 
-  performConnectionTest(uri: string, advancedOptions: string[], builduri: (next: (uri: string) => void) => void, backendTester?: () => boolean): void {
+  performConnectionTest(uri: string, advancedOptions: string[], builduri: () => string | null, backendTester?: () => boolean): void {
     let hasTriedCreate = false;
     let hasTriedCert = false;
     let hasTriedMozroots = false;
@@ -74,10 +74,11 @@ export class ConnectionTester {
         (idx) => {
           if (idx === 1) {
             appendApprovedCert(hash);
-            builduri(res => {
-              uri = res;
+            const newUri = builduri();
+            if (newUri != null) {
+              uri = newUri;
               testConnection();
-            });
+            }
           }
         });
     };
