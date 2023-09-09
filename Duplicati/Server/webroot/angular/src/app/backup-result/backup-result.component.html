@@ -1,0 +1,97 @@
+<div class="backup-result">
+  <div class="box one"><ng-content *ngTemplateOutlet="topLeftBox"></ng-content></div>
+  <div class="box two"><ng-content *ngTemplateOutlet="topRightBox"></ng-content></div>
+  <div class="box wide three">
+    <span *ngIf="result.MainOperation === 'Restore'"><ng-content *ngTemplateOutlet="restoreItems"></ng-content></span>
+    <span *ngIf="result.MainOperation === 'Test'"><ng-content *ngTemplateOutlet="testItems"></ng-content></span>
+
+    <span *ngIf="result.TestResults" class="item"><app-test-phase [results]="result.TestResults"></app-test-phase></span>
+    <span *ngIf="result.CompactResults" class="item"><app-compact-phase [results]="result.CompactResults"></app-compact-phase></span>
+    <span *ngIf="result.DeleteResults" class="item"><app-delete-phase [results]="result.DeleteResults"></app-delete-phase></span>
+    <span *ngIf="result.RepairResults" class="item"><app-repair-phase [results]="result.RepairResults"></app-repair-phase></span>
+    <span *ngIf="result.RecreateDatabaseResults" class="item"><app-phase-base [results]="result.RecreateDatabaseResults" title="Recreate Database Phase"></app-phase-base></span>
+    <span *ngIf="result.PurgeResults" class="item"><app-purge-phase [results]="result.PurgeResults"></app-purge-phase></span>
+
+    <app-message-list class="item" [messages]="result.Warnings" [length]="result.WarningsActualLength" type="Warning" title="Warnings"></app-message-list>
+    <app-message-list class="item" [messages]="result.Errors" [length]="result.ErrorsActualLength" type="Error" title="Errors"></app-message-list>
+  </div>
+  <div class="box item wide four">
+    <div class="log-expand-copy">
+      <span (click)="logExpanded = !logExpanded" class="key" [style]="{ cursor: 'pointer' }">
+        Complete log
+        <i class="fa fa-angle-{{logExpanded ? 'up': 'down'}}"></i>
+      </span>
+
+      <a routerLink="." *ngIf="logExpanded">
+        <i class="fa fa-clipboard"></i>
+        Copy log
+      </a>
+    </div>
+
+    <textarea readonly *ngIf="logExpanded" class="exceptiontext" wrap="off">
+            {{ formatted }}
+    </textarea>
+  </div>
+</div>
+
+<ng-template #topLeftBox>
+  <span class="title" translate>Time</span>
+  <span class="item">
+    <span class="key" translate>Start </span>
+    <span class="value">{{ parseTimestampToSeconds(result.BeginTime) }}</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>End </span>
+    <span class="value">{{ parseTimestampToSeconds(result.EndTime) }}</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Duration </span>
+    <span class="value">{{ convert.formatDuration(result.Duration) }}</span>
+  </span>
+</ng-template>
+
+<ng-template #topRightBox>
+  <span class="title" translate>Source Files</span>
+  <span class="item">
+    <span class="key" translate>Examined </span>
+    <span class="value">{{ result.ExaminedFiles || '0' }} ({{ convert.formatSizeString(result.SizeOfExaminedFiles) }})</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Opened </span>
+    <span class="value">{{ result.OpenedFiles || '0' }} ({{ convert.formatSizeString(result.SizeOfOpenedFiles) }})</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Added </span>
+    <span class="value">{{ result.AddedFiles || '0' }} ({{ convert.formatSizeString(result.SizeOfAddedFiles) }})</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Modified </span>
+    <span class="value">{{ result.ModifiedFiles || '0' }} ({{ convert.formatSizeString(result.SizeOfModifiedFiles) }})</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Deleted</span>
+    <span class="value">{{ result.DeletedFiles || '0' }}</span>
+  </span>
+</ng-template>
+
+<ng-template #restoreItems>
+  <span class="item">
+    <span class="key" translate>Restored Files </span>
+    <span class="value">{{ result.RestoredFiles || '0' }} ({{ convert.formatSizeString(result.SizeOfRestoredFiles) }})</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Restored Folders </span>
+    <span class="value">{{ result.RestoredFolders || '0' }}</span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Restored Symlinks </span>
+    <span class="value">{{ result.RestoredSymlinks || '0' }}</span>
+  </span>
+</ng-template>
+
+<ng-template #testItems>
+  <span class="item">
+    <span class="key" translate>Verifications </span>
+    <span class="value">{{ result.VerificationsActualLength }}</span>
+  </span>
+</ng-template>

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AboutComponent } from './about/about.component';
 import { AddWizardComponent } from './add-wizard/add-wizard.component';
+import { BackupLogComponent } from './backup-log/backup-log.component';
 import { DeleteComponent } from './delete/delete.component';
 import { EditBackupComponent } from './edit-backup/edit-backup.component';
 import { HomeComponent } from './home/home.component';
@@ -16,6 +17,7 @@ const routes: Routes = [
   { path: 'settings', component: SettingsComponent },
   { path: 'about', component: AboutComponent },
   { path: 'log', component: ServerLogComponent },
+  { path: 'log/:backupId', component: BackupLogComponent },
   { path: 'addstart', component: AddWizardComponent },
   { path: 'add', component: EditBackupComponent },
   { path: 'add-import', component: EditBackupComponent, data: { import: true } },

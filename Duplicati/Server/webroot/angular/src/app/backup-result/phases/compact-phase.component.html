@@ -1,0 +1,23 @@
+<app-phase-base [results]="results" title="Compact Phase">
+  <span class="item">
+    <span class="key" translate>Deleted files </span>
+    <span class="value">
+      {{ results.DeletedFileCount }}
+      ({{ convert.formatSizeString(results.DeletedFileSize) }})
+    </span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Downloaded files </span>
+    <span class="value">
+      {{ results.DownloadedFileCount }}
+      ({{ convert.formatSizeString(results.DownloadedFileSize) }})
+    </span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Uploaded files </span>
+    <span class="value">
+      {{ results.UploadedFileCount }}
+      ({{ convert.formatSizeString(results.UploadedFileSize) }})
+    </span>
+  </span>
+</app-phase-base>

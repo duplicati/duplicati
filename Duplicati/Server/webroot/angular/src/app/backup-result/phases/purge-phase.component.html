@@ -1,0 +1,15 @@
+<app-phase-base [results]="results" title="Purge Phase">
+  <div class="horizontal-rule"></div>
+
+  <span class="item">
+    <span class="key" translate>Removed files </span>
+    <span class="value">
+      {{ results.RemovedFileCount }}
+      ({{ convert.formatSizeString(results.RemovedFileSize) }})
+    </span>
+  </span>
+  <span class="item">
+    <span class="key" translate>Rewritten File Lists </span>
+    <span class="value">{{ results.RewrittenFileLists }}</span>
+  </span>
+</app-phase-base>

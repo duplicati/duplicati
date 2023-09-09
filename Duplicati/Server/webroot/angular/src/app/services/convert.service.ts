@@ -1,3 +1,4 @@
+import { formatDate } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { CookieService } from 'ngx-cookie-service';
 import { ServerSettingsService } from './server-settings.service';
@@ -71,6 +72,10 @@ export class ConvertService {
     }
   }
 
+  formatTimestampToSeconds(timestamp: number | string) {
+    return formatDate(timestamp, 'YYYY-MM-dd HH:mm:ss', 'en');
+  }
+
   formatDuration(duration: string | undefined): string | undefined {
     // duration is a timespan string in format (dd.)hh:mm:ss.sss
     // the part (dd.) is as indicated optional
@@ -94,7 +99,10 @@ export class ConvertService {
     return timespanArray.join(':');
   }
 
-  formatSizeString(val: number) {
+  formatSizeString(val: number | undefined) {
+    if (val == null) {
+      return '0 bytes';
+    }
     var formatSizes = ['TB', 'GB', 'MB', 'KB'];
     //val = parseInt(val || 0);
     var max = formatSizes.length;

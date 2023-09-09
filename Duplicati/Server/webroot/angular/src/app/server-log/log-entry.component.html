@@ -9,6 +9,12 @@
     <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
     <div style="clear: both;"></div>
   </div>
+  <div *ngIf="itemRemote" (click)="expanded = !expanded" class="entryline clickable">
+    {{itemRemote.Timestamp * 1000 | date:'medium'}}: {{itemRemote.Operation}} {{itemRemote.Path}}
+    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+    <div style="clear: both;"></div>
+  </div>
   <div *ngIf="expanded && item != null" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
   <div *ngIf="expanded && itemLive?.Exception != null" class="prewrapped-text exceptiontext">{{itemLive?.Exception}}</div>
+  <div *ngIf="expanded && itemRemote?.Data != null" class="prewrapped-text exceptiontext">{{itemRemote?.Data}}</div>
 </li>

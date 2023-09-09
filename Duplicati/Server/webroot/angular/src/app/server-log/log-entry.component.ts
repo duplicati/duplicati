@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { LiveLogEntry, ServerLogEntry } from '../services/log-entry';
+import { LiveLogEntry, RemoteLogEntry, ServerLogEntry } from '../services/log-entry';
 
 @Component({
   selector: 'app-log-entry',
@@ -10,5 +10,6 @@ export class LogEntryComponent {
 
   @Input() item?: ServerLogEntry;
   @Input() itemLive?: LiveLogEntry;
+  @Input() itemRemote?: RemoteLogEntry
   expanded: boolean = false;
 }

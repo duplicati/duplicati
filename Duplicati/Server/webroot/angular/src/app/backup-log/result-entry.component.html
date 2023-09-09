@@ -1,0 +1,12 @@
+<li>
+  <div (click)="expanded = !expanded" class="entryline clickable">
+    <i class="{{icon.resultIcon(item.Result ? item.Result.ParsedResult : 'None')}}"></i>
+    {{item.Timestamp *1000 | date:'medium'}} - Operation: {{item.Result ? item.Result.MainOperation : item.Type}}
+    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+    <div style="clear: both;"></div>
+  </div>
+  <div *ngIf="expanded && item.Result">
+    <app-backup-result [result]="item.Result" [formatted]="item.Formatted"></app-backup-result>
+  </div>
+  <div *ngIf="expanded && !item.Result" class="prewrapped-text exceptiontext">{{item.Message}}</div>
+</li>

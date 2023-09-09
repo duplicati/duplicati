@@ -5,6 +5,28 @@ export interface ServerLogEntry {
   Timestamp: number;
 }
 
+export interface BackupLogEntry {
+  ID: number;
+  OperationID: number;
+  Timestamp: number;
+  Type: string;
+  Message: string;
+  Exception?: string;
+
+  // Parsed by client:
+  Result?: any;
+  Formatted?: string;
+}
+
+export interface RemoteLogEntry {
+  ID: number;
+  OperationID: number;
+  Timestamp: number;
+  Operation: string;
+  Path: string;
+  Data?: string;
+}
+
 export interface LiveLogEntry {
   ID: number;
   When: string;

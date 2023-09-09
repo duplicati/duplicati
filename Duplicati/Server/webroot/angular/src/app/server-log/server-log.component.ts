@@ -52,7 +52,7 @@ export class ServerLogComponent {
         if (this.LogData == null) {
           this.LogData = logs;
         } else {
-          this.LogData.push.apply(this.LogData, logs);
+          this.LogData.push(...logs);
         }
       },
       error: this.dialog.connectionError('Failed to connect: '),

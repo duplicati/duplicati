@@ -1,0 +1,4 @@
+<app-phase-base [results]="results" title="Repair Phase">
+  <app-message-list class="item" [messages]="results.RecreateDatabaseResults.Warnings" [length]="results.RecreateDatabaseResults.WarningsActualLength" type="Warning" title="Database Recreation Warnings"></app-message-list>
+  <app-message-list class="item" [messages]="results.RecreateDatabaseResults.Errors" [length]="results.RecreateDatabaseResults.ErrorsActualLength" type="Error" title="Database Recreation Errors"></app-message-list>
+</app-phase-base>

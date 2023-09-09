@@ -50,6 +50,16 @@ import { LocalDatabaseComponent } from './local-database/local-database.componen
 import { DeleteComponent } from './delete/delete.component';
 import { UpdateChangelogComponent } from './update-changelog/update-changelog.component';
 import { ImportComponent } from './import/import.component';
+import { BackupLogComponent } from './backup-log/backup-log.component';
+import { ResultEntryComponent } from './backup-log/result-entry.component';
+import { BackupResultComponent } from './backup-result/backup-result.component';
+import { MessageListComponent } from './backup-result/message-list.component';
+import { TestPhaseComponent } from './backup-result/phases/test-phase.component';
+import { CompactPhaseComponent } from './backup-result/phases/compact-phase.component';
+import { PhaseBaseComponent } from './backup-result/phases/phase-base.component';
+import { RepairPhaseComponent } from './backup-result/phases/repair-phase.component';
+import { DeletePhaseComponent } from './backup-result/phases/delete-phase.component';
+import { PurgePhaseComponent } from './backup-result/phases/purge-phase.component';
 
 @NgModule({
   declarations: [
@@ -88,7 +98,17 @@ import { ImportComponent } from './import/import.component';
     LocalDatabaseComponent,
     DeleteComponent,
     UpdateChangelogComponent,
-    ImportComponent
+    ImportComponent,
+    BackupLogComponent,
+    ResultEntryComponent,
+    BackupResultComponent,
+    MessageListComponent,
+    TestPhaseComponent,
+    CompactPhaseComponent,
+    PhaseBaseComponent,
+    RepairPhaseComponent,
+    DeletePhaseComponent,
+    PurgePhaseComponent
   ],
   imports: [
     BrowserModule,

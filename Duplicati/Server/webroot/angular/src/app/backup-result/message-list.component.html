@@ -1,0 +1,13 @@
+<span (click)="expanded = !expanded" [style]="{ cursor: hasItems ? 'pointer' : '' }">
+  <i class="{{icon.resultIcon(hasItems ? type : 'Success')}}"></i>
+  <span class="key">{{title}}</span>
+  <span class="value">
+    {{ length }}
+    <i *ngIf="hasItems" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+  </span>
+</span>
+<div *ngIf="expanded && hasItems" class="expanded">
+  <ul>
+    <li *ngFor="let elem of messages">{{elem}}</li>
+  </ul>
+</div>
