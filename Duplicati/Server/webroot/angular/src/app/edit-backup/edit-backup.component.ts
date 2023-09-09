@@ -63,10 +63,11 @@ export class EditBackupComponent {
   }
 
   ngOnInit() {
-    this.router.navigate([{ step: 0 }], { relativeTo: this.route });
+    // Replace current history state, so that navigating back skips past the last one
+    this.router.navigate([{ step: 0 }], { relativeTo: this.route, replaceUrl: true });
     this.route.paramMap.subscribe(params => {
       this.CurrentStep = parseInt(params.get('step') || '0');
-      let backupId = params.get('id') ?? undefined;
+      let backupId = params.get('backupId') ?? undefined;
       if (backupId !== this.backupId) {
         this.backupId = backupId;
         this.load();

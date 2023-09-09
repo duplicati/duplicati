@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
 import { AddOrUpdateBackupData } from '../backup';
@@ -26,6 +26,7 @@ export class BackupService {
     })).subscribe();
   }
   doCompact(id: string): void {
+    // TODO: add error message
     this.client.post('/backup/' + id + '/compact', '').subscribe();
   }
   doCreateBugReport(id: string): void {
@@ -53,5 +54,42 @@ export class BackupService {
         }
         return resp.data;
       }));
+  }
+  deleteDatabase(backupId: string): Observable<void> {
+    return this.client.post<void>(`/backup/${backupId}/deletedb`, '');
+  }
+  updateDatabase(backupId: string, path: string, move?: boolean): Observable<void> {
+    const target = move ? 'movedb' : 'updatedb';
+    let formData = new FormData();
+    formData.append('path', path);
+    return this.client.post<void>(`/backup/${backupId}/${target}`, formData);
+  }
+
+  isDbUsedElsewhere(backupId: string, path: string): Observable<boolean> {
+    return this.client.get<{ inuse: boolean }>(`/backup/${backupId}/isdbusedelsewhere`, { params: { path: path } }).pipe(
+      map(resp => resp.inuse)
+    );
+  }
+
+  // Returns task id of report task
+  startSizeReport(backupId: string): Observable<string> {
+    return this.client.post<{ Status: string, ID: string }>(`/backup/${backupId}/report-remote-size`, '').pipe(
+      map(resp => resp.ID)
+    );
+  }
+  // Returns task id
+  deleteBackup(backupId: string, deleteLocalDb: boolean, deleteRemoteFiles: boolean, captchaToken?: string, captchaAnswer?: string): Observable<string> {
+    let params = new HttpParams();
+    params.append('delete-local-db', deleteLocalDb);
+    params.append('delete-remote-files', deleteRemoteFiles);
+    if (captchaToken != null) {
+      params.append('captcha-token', captchaToken);
+    }
+    if (captchaAnswer != null) {
+      params.append('captcha-answer', captchaAnswer);
+    }
+    return this.client.delete<{ Status: string, ID: string }>(`/backup/${backupId}`, { params: params }).pipe(
+      map(resp => resp.ID)
+    );
   }
 }

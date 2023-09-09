@@ -46,6 +46,8 @@ import { BackupScheduleComponent } from './edit-backup/backup-schedule/backup-sc
 import { BackupOptionsComponent } from './edit-backup/backup-options/backup-options.component';
 import { WidgetsModule } from './widgets/widgets.module';
 import { backupCheckerProviders } from './backup-checks';
+import { LocalDatabaseComponent } from './local-database/local-database.component';
+import { DeleteComponent } from './delete/delete.component';
 
 @NgModule({
   declarations: [
@@ -80,7 +82,9 @@ import { backupCheckerProviders } from './backup-checks';
     BackupFilterComponent,
     BackupFilterListComponent,
     BackupScheduleComponent,
-    BackupOptionsComponent
+    BackupOptionsComponent,
+    LocalDatabaseComponent,
+    DeleteComponent
   ],
   imports: [
     BrowserModule,
