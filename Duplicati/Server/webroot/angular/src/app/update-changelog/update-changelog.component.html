@@ -1,0 +1,15 @@
+<div>
+  <h1 translate>Changelog for {{brandingService.getAppName() | async}} {{version || '-unknown-'}}</h1>
+
+  <div translate>Current version is {{systemInfo?.ServerVersionName}} ({{systemInfo?.ServerVersion}})</div>
+
+  <div class="prewrapped-text fixed-width-font" *ngIf="changelog">{{changelog}}</div>
+  <div class="prewrapped-text fixed-width-font" *ngIf="changelog == null" translate>Loading …</div>
+
+  <div class="buttons">
+    <a routerLink="." class="button" *ngIf="serverstate?.updaterState == 'Waiting' && serverstate?.updatedVersion != null" (click)="doInstall()" translate>Install</a>
+    <a routerLink="." class="button" *ngIf="serverstate?.updateReady" (click)="doActivate()" translate>Activate</a>
+  </div>
+
+
+</div>

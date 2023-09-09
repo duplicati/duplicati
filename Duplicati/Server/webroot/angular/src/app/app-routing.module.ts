@@ -5,9 +5,11 @@ import { AddWizardComponent } from './add-wizard/add-wizard.component';
 import { DeleteComponent } from './delete/delete.component';
 import { EditBackupComponent } from './edit-backup/edit-backup.component';
 import { HomeComponent } from './home/home.component';
+import { ImportComponent } from './import/import.component';
 import { LocalDatabaseComponent } from './local-database/local-database.component';
 import { ServerLogComponent } from './server-log/server-log.component';
 import { SettingsComponent } from './settings/settings.component';
+import { UpdateChangelogComponent } from './update-changelog/update-changelog.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -16,9 +18,12 @@ const routes: Routes = [
   { path: 'log', component: ServerLogComponent },
   { path: 'addstart', component: AddWizardComponent },
   { path: 'add', component: EditBackupComponent },
+  { path: 'add-import', component: EditBackupComponent, data: { import: true } },
+  { path: 'import', component: ImportComponent },
   { path: 'edit/:backupId', component: EditBackupComponent },
   { path: 'localdb/:backupId', component: LocalDatabaseComponent },
-  { path: 'delete/:backupId', component: DeleteComponent }
+  { path: 'delete/:backupId', component: DeleteComponent },
+  { path: 'updatechangelog', component: UpdateChangelogComponent }
 ];
 
 @NgModule({

@@ -48,6 +48,8 @@ import { WidgetsModule } from './widgets/widgets.module';
 import { backupCheckerProviders } from './backup-checks';
 import { LocalDatabaseComponent } from './local-database/local-database.component';
 import { DeleteComponent } from './delete/delete.component';
+import { UpdateChangelogComponent } from './update-changelog/update-changelog.component';
+import { ImportComponent } from './import/import.component';
 
 @NgModule({
   declarations: [
@@ -84,7 +86,9 @@ import { DeleteComponent } from './delete/delete.component';
     BackupScheduleComponent,
     BackupOptionsComponent,
     LocalDatabaseComponent,
-    DeleteComponent
+    DeleteComponent,
+    UpdateChangelogComponent,
+    ImportComponent
   ],
   imports: [
     BrowserModule,

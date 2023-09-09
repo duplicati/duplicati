@@ -7,6 +7,7 @@ import { BackupListService } from '../services/backup-list.service';
 import { BackupService } from '../services/backup.service';
 import { DialogService } from '../services/dialog.service';
 import { EditBackupService, RejectToStep } from '../services/edit-backup.service';
+import { ImportService } from '../services/import.service';
 import { ParserService } from '../services/parser.service';
 import { SystemInfoService } from '../system-info/system-info.service';
 import { BackupDestinationSettingsComponent } from './backup-destination-settings/backup-destination-settings.component';
@@ -58,6 +59,7 @@ export class EditBackupComponent {
     private parser: ParserService,
     private dialog: DialogService,
     private systemInfoService: SystemInfoService,
+    private importService: ImportService,
     private editBackupService: EditBackupService) {
     this.systemInfoService.getState().subscribe(info => this.hasAnyEncryptionModules = info.EncryptionModules.length > 0);
   }
@@ -119,7 +121,13 @@ export class EditBackupComponent {
     if (this.backupId == null) {
       // Create new backup
       this.subscription = this.backupDefaults.getBackupDefaults().subscribe(
-        b => this.initialize(b),
+        b => {
+          if (this.route.snapshot.data['import'] == true) {
+            let importConfig = this.importService.getImportData();
+            Object.assign(b, importConfig);
+          }
+          this.initialize(b)
+        },
         err => {
           this.dialog.connectionError('Failed to read backup defaults: ', err);
           this.router.navigate(['/']);

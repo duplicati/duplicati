@@ -15,6 +15,14 @@ export class UrlService {
     return encodeURIComponent(this.cookies.get('xsrf-token'));
   }
 
+  getImportUrl(passphrase?: string): string {
+    let rurl = `${this.apiUrl}/backups/import?x-xsrf-token=${this.getEncodedXsrfToken()}`;
+    if ((passphrase || '').trim().length > 0) {
+      rurl += `&passphrase=${encodeURIComponent(passphrase as string)}`;
+    }
+    return rurl;
+  }
+
   getExportUrl(backupid: string, passphrase: string | undefined, exportPasswords: boolean): string {
     let rurl = `${this.apiUrl}/backup/${backupid}/export?x-xsrf-token=${this.getEncodedXsrfToken()}&export-passwords=${encodeURIComponent(exportPasswords)}`;
     if ((passphrase || '').trim().length > 0) {

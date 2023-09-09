@@ -18,4 +18,8 @@ export class UpdateService {
   checkForUpdates(): Observable<void> {
     return this.client.post<void>('/updates/check', '');
   }
+
+  getUpdateChangelog(): Observable<{ Version: string, Changelog: string }> {
+    return this.client.get<{ Version: string, Changelog: string }>('/changelog?from-update=true');
+  }
 }

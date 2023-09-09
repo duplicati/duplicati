@@ -91,13 +91,13 @@ export class EditBackupService {
     return true;
   }
 
-  optionsToMap(options: BackupOptions): Record<string, any> {
+  optionsToMap(options: BackupOptions): Record<string, string> {
     let res: Record<string, any> = {};
     if (options.excludeFileSize != null) {
       res['--skip-files-larger-than'] = this.convert.formatSizeString(options.excludeFileSize);
     }
     if (options.encryptionModule.length == 0) {
-      res['--no-encryption'] = true;
+      res['--no-encryption'] = 'true';
     } else {
       res['encryption-module'] = options.encryptionModule;
     }
