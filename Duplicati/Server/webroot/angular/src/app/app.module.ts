@@ -60,6 +60,7 @@ import { PhaseBaseComponent } from './backup-result/phases/phase-base.component'
 import { RepairPhaseComponent } from './backup-result/phases/repair-phase.component';
 import { DeletePhaseComponent } from './backup-result/phases/delete-phase.component';
 import { PurgePhaseComponent } from './backup-result/phases/purge-phase.component';
+import { ExportComponent } from './export/export.component';
 
 @NgModule({
   declarations: [
@@ -108,7 +109,8 @@ import { PurgePhaseComponent } from './backup-result/phases/purge-phase.componen
     PhaseBaseComponent,
     RepairPhaseComponent,
     DeletePhaseComponent,
-    PurgePhaseComponent
+    PurgePhaseComponent,
+    ExportComponent
   ],
   imports: [
     BrowserModule,

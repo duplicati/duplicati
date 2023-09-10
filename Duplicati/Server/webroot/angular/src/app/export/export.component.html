@@ -1,0 +1,60 @@
+<div class="exportpage">
+  <h1 translate>Export backup configuration</h1>
+  <form class="styled">
+    <div *ngIf="!completed">
+      <div class="input checkbox multiple">
+        <div style="display: inline-block">
+          <input type="radio" name="export-type" value="commandline" id="type-commandline" [(ngModel)]="exportType" />
+          <label for="type-commandline" translate>As Command-line</label>
+        </div>
+      </div>
+
+      <div class="input checkbox multiple">
+        <input type="radio" name="export-type" value="file" id="type-file" [(ngModel)]="exportType" />
+        <label for="type-file" translate>To File</label>
+      </div>
+      <div class="input checkbox multiple">
+        <input type="checkbox" name="encrypt-passwords" id="encrypt-passwords" [(ngModel)]="exportPasswords" />
+        <label for="encrypt-passwords" translate>Export passwords</label>
+      </div>
+      <div class="input checkbox multiple" ng-show="ExportType == 'file'">
+        <input type="checkbox" name="use-encryption" id="use-encryption" [(ngModel)]="useEncryption" />
+        <label for="use-encryption" translate>Encrypt file</label>
+      </div>
+      <div class="input text" *ngIf="useEncryption && exportType == 'file'">
+        <label for="encryption-passphrase" translate>Passphrase</label>
+        <input type="password" name="encryption-password" id="encryption-passphrase" [(ngModel)]="passphrase" placeholder="Enter encryption passphrase">
+      </div>
+      <div class="input text" *ngIf="useEncryption && exportType == 'file'">
+        <label for="encryption-passphrase" translate>Confirm passphrase</label>
+        <input type="password" name="confirm-encryption-password" id="confirm-encryption-passphrase" [(ngModel)]="confirmPassphrase" placeholder="Confirm encryption passphrase">
+      </div>
+
+      <div class="buttons" *ngIf="!connecting">
+        <a routerLink="/" class="submit" translate>Cancel</a>
+        <a routerLink="." (click)="doExport()" translate>Export</a>
+      </div>
+
+      <div class="buttons" *ngIf="connecting">
+        <a routerLink="." translate>Exporting …</a>
+      </div>
+    </div>
+
+    <div *ngIf="completed">
+      <div class="input textarea commandline" *ngIf="commandLine != null">
+        {{commandLine}}
+      </div>
+
+      <div *ngIf="downloadURL != null">
+        <div translate>If the backup file was not downloaded automatically, <a href="{{downloadURL}}" target="_blank">right click and choose &quot;Save as …&quot;</a></div>
+      </div>
+
+      <div class="buttons">
+        <a routerLink="/" class="submit" translate>Done</a>
+      </div>
+    </div>
+
+  </form>
+
+  <iframe style="display:none" *ngIf="downloadURL" [src]="downloadURL"></iframe>
+</div>

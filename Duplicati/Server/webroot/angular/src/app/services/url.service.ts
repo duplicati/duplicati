@@ -24,7 +24,7 @@ export class UrlService {
   }
 
   getExportUrl(backupid: string, passphrase: string | undefined, exportPasswords: boolean): string {
-    let rurl = `${this.apiUrl}/backup/${backupid}/export?x-xsrf-token=${this.getEncodedXsrfToken()}&export-passwords=${encodeURIComponent(exportPasswords)}`;
+    let rurl = `${this.apiUrl}/backup/${encodeURIComponent(backupid)}/export?x-xsrf-token=${this.getEncodedXsrfToken()}&export-passwords=${encodeURIComponent(exportPasswords)}`;
     if ((passphrase || '').trim().length > 0) {
       rurl += `&passphrase=${encodeURIComponent(passphrase as string)}`;
     }

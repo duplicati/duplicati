@@ -92,4 +92,13 @@ export class BackupService {
       map(resp => resp.ID)
     );
   }
+  exportCommandLine(backupId: string, exportPasswords: boolean): Observable<string> {
+    return this.client.get<{ Command: string }>(`/backup/${backupId}/export`, {
+      params: {
+        'cmdline': true, 'export-passwords': exportPasswords
+      }
+    }).pipe(
+      map(resp => resp.Command)
+    );
+  }
 }

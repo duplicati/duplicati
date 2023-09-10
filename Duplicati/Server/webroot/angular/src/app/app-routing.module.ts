@@ -5,6 +5,7 @@ import { AddWizardComponent } from './add-wizard/add-wizard.component';
 import { BackupLogComponent } from './backup-log/backup-log.component';
 import { DeleteComponent } from './delete/delete.component';
 import { EditBackupComponent } from './edit-backup/edit-backup.component';
+import { ExportComponent } from './export/export.component';
 import { HomeComponent } from './home/home.component';
 import { ImportComponent } from './import/import.component';
 import { LocalDatabaseComponent } from './local-database/local-database.component';
@@ -22,6 +23,7 @@ const routes: Routes = [
   { path: 'add', component: EditBackupComponent },
   { path: 'add-import', component: EditBackupComponent, data: { import: true } },
   { path: 'import', component: ImportComponent },
+  { path: 'export/:backupId', component: ExportComponent },
   { path: 'edit/:backupId', component: EditBackupComponent },
   { path: 'localdb/:backupId', component: LocalDatabaseComponent },
   { path: 'delete/:backupId', component: DeleteComponent },
