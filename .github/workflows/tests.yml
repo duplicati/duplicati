@@ -24,6 +24,8 @@ jobs:
 
     - name: Checkout Source
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
     - name: Restore NuGet Packages
       run: nuget restore Duplicati.sln
@@ -51,7 +53,17 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         nuget install NUnit.Runners -Version 3.12.0 -OutputDirectory nunit
-        nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll
+        nuget install OpenCover -Version 4.7.1221 -OutputDirectory opencover
+        dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.10
+        opencover/OpenCover.4.7.1221/tools/OpenCover.Console.exe -register:user -target:nunit/NUnit.ConsoleRunner.3.12.0/tools/nunit3-console.exe -targetargs:Duplicati/UnitTest/bin/Release/Duplicati.UnitTest.dll -filter:"+[Duplicati.Library.Main]* -[UnitTest]*" -output:opencover.xml
+        reportgenerator -reports:opencover.xml -targetdir:coverage -reporttypes:lcov
+        
+    - name: Coveralls
+      if: matrix.os == 'windows-latest'
+      uses: coverallsapp/github-action@1.1.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
 
   ui_tests:
     name: UI tests
