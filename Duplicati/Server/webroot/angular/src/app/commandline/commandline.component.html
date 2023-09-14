@@ -1,0 +1,76 @@
+<div class="commandline form">
+  <form class="styled" *ngIf="mode == 'submit'">
+    <div *ngIf="editUriState">
+      <app-backup-edit-uri [uri]="targetURL"></app-backup-edit-uri>
+
+      <div class="buttons">
+        <input class="submit run" type="submit" id="run" (click)="submitURI()" value="OK" />
+      </div>
+    </div>
+    <div *ngIf="!editUriState">
+
+      <div class="input mixed">
+        <label for="command">Command</label>
+        <select name="command" id="command" [(ngModel)]="command">
+          <option [value]="item" *ngFor="let item of supportedCommands">{{item}}</option>
+        </select>
+        <div style="float: left">{{commandHelp.get(command || '')}}</div>
+      </div>
+
+
+      <div class="input textarea linklabel">
+        <label for="target"><a routerLink="." class="target" (click)="editUriState = true">Target URL &gt;</a></label>
+        <textarea name="target" id="target" [(ngModel)]="targetURL" placeholder="Enter a url, or click the 'Target URL &gt;' link"></textarea>
+      </div>
+
+      <div class="input textarea">
+        <label for="arguments">Commandline arguments</label>
+        <textarea name="arguments" id="arguments" [(ngModel)]="arguments" appStringArrayText placeholder="Enter one argument per line without quotes, e.g. *.txt"></textarea>
+      </div>
+
+      <div class="input textarea" *ngIf="showAdvancedTextArea">
+        <label for="backupOptions">Advanced options</label>
+        <div>
+          <a routerLink="." (click)="showAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> Edit as text</a>
+          <textarea name="backupOptions" id="backupOptions" [(ngModel)]="extendedOptions" appStringArrayText placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+        </div>
+      </div>
+
+      <div class="input" *ngIf="!showAdvancedTextArea">
+        <label for="backupOptions">Advanced options</label>
+        <a routerLink="." (click)="showAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> Edit as text</a>
+        <app-advanced-options-editor [optionList]="extendedOptionList" [options]="extendedOptions"></app-advanced-options-editor>
+      </div>
+
+      <div class="buttons">
+        <input class="submit run" type="submit" id="run" (click)="run()" value="Run &quot;{{command}}&quot; command now" />
+      </div>
+
+    </div>
+  </form>
+
+  <div *ngIf="mode == 'view' && serverstate != null">
+    <h2 translate>Running commandline entry</h2>
+    <p *ngIf="serverstate.programState == 'Paused' && started != true">
+      Server is currently paused, <a style="cursor: pointer" (click)="serverStatus.resume()" translate>resume now</a>
+    </p>
+    <p *ngIf="serverstate.programState != 'Paused' && started == null" translate>
+      Connecting to task ....
+    </p>
+    <p *ngIf="serverstate.programState != 'Paused' && started == false" translate>
+      Waiting for task to start ....
+    </p>
+    <p *ngIf="started == true && finished == false">
+      <span translate>Running ....</span> <a routerLink="." (click)="abort()" *ngIf="!rawFinished">stop now</a>
+    </p>
+    <p *ngIf="started == true && finished == true" translate>
+      Finished!
+    </p>
+
+    <div *ngIf="started == true" class="prewrapped-text" style="overflow-x: auto;">
+      <div class="fixed-width-font" style="white-space: pre" *ngFor="let line of viewLines">{{line}}</div>
+    </div>
+
+  </div>
+
+</div>

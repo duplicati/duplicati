@@ -69,6 +69,7 @@ import { WaitAreaComponent } from './wait-area/wait-area.component';
 import { RestoreSelectFilesComponent } from './restore/restore-select-files.component';
 import { RestoreLocationComponent } from './restore/restore-location.component';
 import { HighlightPipe } from './pipes/highlight.pipe';
+import { CommandlineComponent } from './commandline/commandline.component';
 
 @NgModule({
   declarations: [
@@ -126,7 +127,8 @@ import { HighlightPipe } from './pipes/highlight.pipe';
     WaitAreaComponent,
     RestoreSelectFilesComponent,
     RestoreLocationComponent,
-    HighlightPipe
+    HighlightPipe,
+    CommandlineComponent
   ],
   imports: [
     BrowserModule,

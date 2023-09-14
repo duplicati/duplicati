@@ -111,6 +111,14 @@ export class BackupService {
       map(resp => resp.Command)
     );
   }
+  exportCommandLineArgs(backupId: string, exportPasswords: boolean): Observable<{ Backend: string, Arguments: string[], Options: string[] }> {
+    return this.client.get<{ Backend: string, Arguments: string[], Options: string[] }>(`/backup/${backupId}/export`, {
+      params: {
+        'argsonly': true,
+        'export-passwords': exportPasswords
+      }
+    });
+  }
   searchFiles(backupId: string, searchFilter: string | null, timestamp: string,
     params?: { prefixOnly?: boolean, folderContents?: boolean, exactMatch?: boolean }):
     Observable<{ Filesets: Fileset[], Files: ListFile[], [k: string]: string | Fileset[] | ListFile[] }> {

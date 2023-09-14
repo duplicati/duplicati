@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { AboutComponent } from './about/about.component';
 import { AddWizardComponent } from './add-wizard/add-wizard.component';
 import { BackupLogComponent } from './backup-log/backup-log.component';
+import { CommandlineComponent } from './commandline/commandline.component';
 import { DeleteComponent } from './delete/delete.component';
 import { EditBackupComponent } from './edit-backup/edit-backup.component';
 import { ExportComponent } from './export/export.component';
@@ -35,7 +36,11 @@ const routes: Routes = [
   { path: 'restore/:backupId', component: RestoreComponent },
   { path: 'localdb/:backupId', component: LocalDatabaseComponent },
   { path: 'delete/:backupId', component: DeleteComponent },
-  { path: 'updatechangelog', component: UpdateChangelogComponent }
+  { path: 'updatechangelog', component: UpdateChangelogComponent },
+  { path: 'commandline', component: CommandlineComponent },
+  { path: 'commandline/:backupid', component: CommandlineComponent },
+  { path: 'commandline/view/:viewid', component: CommandlineComponent },
+  { path: '**', redirectTo: '' }
 ];
 
 @NgModule({

@@ -17,6 +17,9 @@ import { SystemInfoService } from '../../system-info/system-info.service';
   styleUrls: ['./backup-edit-uri.component.less']
 })
 export class BackupEditUriComponent {
+  @Input({ alias: 'uri' }) set uriInput(v: string) {
+    this.setUri(v);
+  }
   uri?: string;
   backend?: ModuleDescription;
   defaultBackend?: ModuleDescription;
