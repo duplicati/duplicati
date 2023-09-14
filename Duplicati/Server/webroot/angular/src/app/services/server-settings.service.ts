@@ -11,35 +11,14 @@ import { ParserService } from './parser.service';
 })
 export class ServerSettingsService {
 
-
-  saveThemeOnServer = false;
-  activeTheme: string = 'default';
-  savedTheme?: string;
-
   forceActualDate: boolean = false;
   throttleActive: boolean = false;
 
   constructor(private client: HttpClient,
-    private cookies: CookieService,
     private parser: ParserService,
     private dialog: DialogService,
+    private cookies: CookieService,
     private router: Router) { }
-
-  loadCurrentTheme() {
-    if (this.saveThemeOnServer) {
-      this.client.get<any>('/uisettings/ngax').subscribe(data => {
-        let theme = 'default';
-        if (data != null && (data['theme'] || '').trim().length > 0) {
-          theme = data['theme'];
-        }
-
-        let now = new Date();
-        let exp = new Date(now.getFullYear() + 10, now.getMonth(), now.getDate());
-        this.cookies.set('current-theme', theme, exp);
-        this.savedTheme = this.activeTheme = theme;
-      });
-    }
-  }
 
   getServerSettings(): Observable<Record<string, string>> {
     return this.client.get<Record<string, string>>('/serversettings');
@@ -82,10 +61,6 @@ export class ServerSettingsService {
       let exp = new Date(now.getFullYear() + 10, now.getMonth(), now.getDate());
       this.cookies.set('ui-locale', uiLanguage.replace('-', '_'), exp);
     }
-  }
-
-  updateTheme(theme: string) {
-    // TODO: Update theme
   }
 
   checkForUpdates(): Observable<void> {

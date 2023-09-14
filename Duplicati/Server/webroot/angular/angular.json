@@ -34,7 +34,14 @@
             ],
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",
-              "src/less/default.less"
+              {
+                "input": "src/less/default.less",
+                "inject": false
+              },
+              {
+                "input": "src/less/dark.less",
+                "inject": false
+              }
             ],
             "scripts": []
           },

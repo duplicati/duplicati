@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ServerSettingsService } from './services/server-settings.service';
+import { ThemeService } from './services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -11,10 +12,12 @@ export class AppComponent {
 
   menuExpanded = false;
 
-  constructor(private serverSettings: ServerSettingsService) { }
+  constructor(private serverSettings: ServerSettingsService,
+    private theme: ThemeService) { }
 
   ngOnInit() {
     this.serverSettings.initSettings();
+    this.theme.loadCurrentTheme();
   }
 
   closeMenus(event: Event) {

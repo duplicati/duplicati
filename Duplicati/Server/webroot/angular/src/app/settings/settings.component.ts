@@ -6,6 +6,7 @@ import { ConvertService } from '../services/convert.service';
 import { DialogService } from '../services/dialog.service';
 import { ParserService } from '../services/parser.service';
 import { ServerSettingsService } from '../services/server-settings.service';
+import { ThemeService } from '../services/theme.service';
 import { CommandLineArgument, SystemInfo } from '../system-info/system-info';
 import { SystemInfoService } from '../system-info/system-info.service';
 
@@ -33,7 +34,14 @@ export class SettingsComponent {
   uiLanguage: string = '';
   langBrowserDefault: string = 'Browser default';
   langDefault: string = 'Default';
-  theme: string = '';
+  private _theme: string = '';
+  get theme(): string {
+    return this._theme;
+  }
+  set theme(t: string) {
+    this._theme = t;
+    this.themeService.previewTheme(t);
+  }
   channelname: string = '';
   levelname: string = '';
   serverModules: any[] = [];
@@ -46,6 +54,7 @@ export class SettingsComponent {
 
   constructor(private serverSettings: ServerSettingsService,
     private systemInfoService: SystemInfoService,
+    private themeService: ThemeService,
     public convert: ConvertService,
     public parser: ParserService,
     private router: Router,
@@ -95,7 +104,7 @@ export class SettingsComponent {
     this.servermodulesettings = {};
 
     this.uiLanguage = this.serverSettings.getUILanguage();
-    this.theme = this.serverSettings.savedTheme || 'default';
+    this.theme = this.themeService.savedTheme || 'default';
 
     this.parser.extractServerModuleOptions(this.advancedOptions, this.serverModules, this.servermodulesettings, 'SupportedGlobalCommands');
   }
@@ -103,6 +112,7 @@ export class SettingsComponent {
   ngOnDestroy() {
     this.subscription?.unsubscribe();
     this.settingsSubscription?.unsubscribe();
+    this.themeService.previewTheme();
   }
 
   cancel() {
@@ -147,7 +157,7 @@ export class SettingsComponent {
       patchdata['--' + n] = this.servermodulesettings[n];
     }
 
-    this.serverSettings.updateTheme(this.theme);
+    this.themeService.updateTheme(this.theme);
     this.serverSettings.updateSettings(patchdata).subscribe(() => {
       this.serverSettings.setUILanguage(this.uiLanguage);
 
