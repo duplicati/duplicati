@@ -1,6 +1,6 @@
 import { NgZone } from '@angular/core';
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DialogService } from '../services/dialog.service';
 import { ImportService } from '../services/import.service';
 import { UrlService } from '../services/url.service';
@@ -21,6 +21,7 @@ export class ImportComponent {
   callbackMethod: string = '';
 
   constructor(private router: Router,
+    private route: ActivatedRoute,
     private dialog: DialogService,
     private importService: ImportService,
     private ngZone: NgZone,
@@ -53,6 +54,7 @@ export class ImportComponent {
           }
         }, 100));
     };
+    this.restoremode = this.route.snapshot.data['restoremode'] ?? false;
     this.importService.resetImportData();
   }
 

@@ -1,0 +1,23 @@
+<div class="waitarea">
+  <div *ngIf="serverstate?.activeTask == null || serverstate?.activeTask?.Item1 != taskid" translate>Waiting for task to begin</div>
+  <div *ngIf="serverstate?.activeTask != null && serverstate?.activeTask?.Item1 == taskid">
+    <div *ngIf="text">{{text}}</div>
+    <div *ngIf="!text" translate>Task is running</div>
+    <div class="progress" style="border: 1px solid;">
+      <span>{{statusText}}</span>
+
+      <div class="progress-bar progress-bar-striped" [class]="{active: (serverstate?.lastPgEvent?.OverallProgress ?? -1) <= 0}" role="progressbar"
+           [attr.aria-valuenow]="(serverstate?.lastPgEvent?.OverallProgress || 0)* 100" aria-valuemin="0" aria-valuemax="100" style="width:{{(serverstate?.lastPgEvent?.OverallProgress || 0) * 100}}%">
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="serverstate?.programState == 'Paused'">
+    Server is currently paused, <a style="cursor: pointer" (click)="serverStatus.resume()" translate>resume now</a>
+  </div>
+
+  <div *ngIf="allowCancel">
+    <a href class="button" (click)="cancelTask()" translate>Cancel</a>
+  </div>
+
+</div>

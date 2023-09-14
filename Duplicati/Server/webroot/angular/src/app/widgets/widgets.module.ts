@@ -6,6 +6,8 @@ import { AppRoutingModule } from '../app-routing.module';
 import { ExpandMenuDirective } from './expand-box/expand-menu.directive';
 import { InputMultiplierComponent } from './input-multiplier/input-multiplier.component';
 import { FormsModule } from '@angular/forms';
+import { StepsComponent } from './steps/steps.component';
+import { StepDirective } from './steps/step.directive';
 
 
 
@@ -13,7 +15,9 @@ import { FormsModule } from '@angular/forms';
   declarations: [
     ExpandBoxComponent,
     ExpandMenuDirective,
-    InputMultiplierComponent
+    InputMultiplierComponent,
+    StepsComponent,
+    StepDirective
   ],
   imports: [
     AppRoutingModule,
@@ -24,7 +28,9 @@ import { FormsModule } from '@angular/forms';
   exports: [
     ExpandBoxComponent,
     ExpandMenuDirective,
-    InputMultiplierComponent
+    InputMultiplierComponent,
+    StepsComponent,
+    StepDirective
   ]
 })
 export class WidgetsModule { }

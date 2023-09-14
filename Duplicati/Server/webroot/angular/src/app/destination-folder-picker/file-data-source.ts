@@ -49,7 +49,7 @@ export class FileDatabase {
   cachedNodes = new Map<string | number, BehaviorSubject<FileFlatNode[] | undefined>>();
   rootCacheLoaded = new BehaviorSubject<boolean>(false);
 
-  constructor(private onlyFolders: boolean, private fileService: FileService) { }
+  constructor(private onlyFolders: boolean, protected fileService: FileService) { }
 
   initialData(hideUserNode: boolean): FileFlatNode[] {
     this.fetchInitialNodes();
@@ -68,8 +68,18 @@ export class FileDatabase {
     }
   }
 
+  getAllCachedNodes(): FileFlatNode[] {
+    let nodes = [...this.rootLevelNodes];
+    for (let n of this.cachedNodes.values()) {
+      if (n.value) {
+        nodes.push(...n.value);
+      }
+    }
+    return nodes;
+  }
+
   private fetchInitialNodes(): void {
-    this.fileService.getFileChildren('/', this.onlyFolders, true).subscribe(children => {
+    this.fetchChildren('/').subscribe(children => {
       let userChildren = [];
       let systemChildren = [];
       for (let c of children) {
@@ -131,12 +141,16 @@ export class FileDatabase {
       let obs = this.getCache(node.node.id);
       let s = this.cachedNodes.get(node.node.id);
       // Ignore completion events for the subject
-      this.fileService.getFileChildren(node.node.id, this.onlyFolders, true).subscribe(
+      this.fetchChildren(node.node.id).subscribe(
         v => s?.next(v.map(fileNode => this.initializeNode(fileNode, node))),
         err => s?.error(err));
       return obs;
     }
 
+  }
+
+  protected fetchChildren(path: string): Observable<FileNode[]> {
+    return this.fileService.getFileChildren(path, this.onlyFolders, true);
   }
 
   protected initializeNode(fileNode: FileNode, parent?: FileFlatNode): FileFlatNode {
@@ -212,6 +226,27 @@ export class FileDataSource implements DataSource<FileFlatNode> {
       }
     }
     return null;
+  }
+
+  getExpandedChildren(node: FileFlatNode, recursive?: boolean): FileFlatNode[] {
+    const index = this.data.indexOf(node);
+    if (index < 0) {
+      return [];
+    }
+
+    let count = 0;
+    // Go over all nodes from data which are under this one
+    for (let i = index + 1; i < this.data.length && this.data[i].level > node.level; i++, count++) {
+    }
+    let slice = this.data.slice(index + 1, index + count + 1);
+    if (!recursive) {
+      slice = slice.filter(v => v.level === node.level + 1);
+    }
+    return slice;
+  }
+
+  getRootNodes(): FileFlatNode[] {
+    return this.data.filter(v => v.level === 0);
   }
 
   // Set children of parent node, replaces existing children

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Backup } from '../backup';
+import { AddOrUpdateBackupData, Backup } from '../backup';
 
 @Injectable({
   providedIn: 'root'
@@ -7,18 +7,18 @@ import { Backup } from '../backup';
 export class ImportService {
 
   // Global state to communicate between ImportComponent and EditBackupComponent
-  private currentData?: Partial<Backup>;
+  private currentData?: Partial<AddOrUpdateBackupData>;
 
   constructor() { }
 
   resetImportData() {
     this.currentData = undefined;
   }
-  setImportData(importConfig: Partial<Backup>) {
+  setImportData(importConfig: Partial<AddOrUpdateBackupData>) {
     this.currentData = importConfig;
   }
 
-  getImportData(): Partial<Backup> | undefined {
+  getImportData(): Partial<AddOrUpdateBackupData> | undefined {
     return this.currentData;
   }
 }

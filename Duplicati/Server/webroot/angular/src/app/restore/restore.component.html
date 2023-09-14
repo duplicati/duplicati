@@ -1,0 +1,52 @@
+<div class="restore" [class]="{'restore-direct': isBackupTemporary}">
+
+  <form id="restore" class="styled">
+    <!-- Use hidden instead of ngIf to preserve the state at step 3 -->
+    <app-steps *ngIf="isBackupTemporary" [hidden]="restoreStep >= 2">
+      <ng-template [appStep]="0" name="Backup location" enabled="false">
+      </ng-template>
+      <ng-template [appStep]="1" name="Encryption" enabled="false">
+      </ng-template>
+      <ng-template [appStep]="2" name="Select files">
+        <app-restore-select-files [hidden]="connecting" [isBackupTemporary]="isBackupTemporary" [backupId]="backupId" [restoreStep]="restoreStep" [connecting]="connecting" [filesets]="filesets" [(selected)]="selected"
+                                  (restoreStamp)="restoreStamp=$event"
+                                  (connectionProgress)="setProgressDelay($event)" (next)="onClickNext()" (prev)="onClickBack()"></app-restore-select-files>
+      </ng-template>
+      <ng-template [appStep]="3" name="Restore options" [enabled]="selected.length > 0">
+        <app-restore-location [backup]="backup" (restore)="onStartRestore($event)" (prev)="restoreStep = 0"></app-restore-location>
+      </ng-template>
+    </app-steps>
+
+    <app-steps *ngIf="!isBackupTemporary" [hidden]="restoreStep >= 2">
+      <ng-template [appStep]="0" name="Select files">
+        <app-restore-select-files [hidden]="connecting" [isBackupTemporary]="isBackupTemporary" [backupId]="backupId" [restoreStep]="restoreStep" [connecting]="connecting" [filesets]="filesets" [(selected)]="selected"
+                                  (restoreStamp)="restoreStamp=$event"
+                                  (connectionProgress)="setProgressDelay($event)" (next)="onClickNext()" (prev)="onClickBack()"></app-restore-select-files>
+      </ng-template>
+      <ng-template [appStep]="1" name="Restore options" [enabled]="selected.length > 0">
+        <app-restore-location [backup]="backup" (restore)="onStartRestore($event)" (prev)="restoreStep = 0"></app-restore-location>
+      </ng-template>
+    </app-steps>
+
+    <div *ngIf="restoreStep == 3 && connecting == false">
+      <h3>
+        <div class="hint-text" translate>Your files and folders have been restored successfully.</div>
+        <div [hidden]="systemInfo?.SuppressDonationMessages">
+          <div id="restore-hint-donate" class="hint-text" translate>Did we help save your files? If so, please consider supporting Duplicati with a donation. We suggest {{smallamount}} for private use and {{largeamount}} for commercial use.</div>
+          <div id="restore-hint-donate" class="hint-text"><a href="https://www.duplicati.com/donate" target="blank" translate>We accept donations via different services, such as OpenCollective, PayPal, BountySource and various crypto currencies.</a></div>
+        </div>
+      </h3>
+      <div class="buttons">
+        <a routerLink="/" class="submit" translate>OK</a>
+      </div>
+    </div>
+
+    <div *ngIf="connecting == true && taskid != null">
+      <app-wait-area [taskid]="taskid" [text]="connectionProgress" allowCancel="true"></app-wait-area>
+    </div>
+
+    <div *ngIf="connecting == true && taskid == null">
+      {{connectionProgress}}
+    </div>
+  </form>
+</div>

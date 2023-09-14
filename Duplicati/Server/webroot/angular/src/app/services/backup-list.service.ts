@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, of } from 'rxjs';
 import { combineLatest } from 'rxjs/operators';
-import { AddOrUpdateBackupData } from '../backup';
+import { AddOrUpdateBackupData, Backup } from '../backup';
 import { ScheduleEntry, ServerStatus } from './server-status';
 import { ServerStatusService } from './server-status.service';
 
@@ -61,5 +61,11 @@ export class BackupListService {
     }
 
     return backups;
+  }
+
+  createTemporaryBackup(backup: { Backup: Partial<Backup> }): Observable<string> {
+    return this.client.post<{ ID: string }>('/backups?temporary=true', backup).pipe(
+      map(v => v.ID)
+    );
   }
 }

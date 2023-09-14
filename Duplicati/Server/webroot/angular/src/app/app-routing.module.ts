@@ -9,6 +9,9 @@ import { ExportComponent } from './export/export.component';
 import { HomeComponent } from './home/home.component';
 import { ImportComponent } from './import/import.component';
 import { LocalDatabaseComponent } from './local-database/local-database.component';
+import { RestoreDirectComponent } from './restore-direct/restore-direct.component';
+import { RestoreWizardComponent } from './restore-wizard/restore-wizard.component';
+import { RestoreComponent } from './restore/restore.component';
 import { ServerLogComponent } from './server-log/server-log.component';
 import { SettingsComponent } from './settings/settings.component';
 import { UpdateChangelogComponent } from './update-changelog/update-changelog.component';
@@ -25,6 +28,11 @@ const routes: Routes = [
   { path: 'import', component: ImportComponent },
   { path: 'export/:backupId', component: ExportComponent },
   { path: 'edit/:backupId', component: EditBackupComponent },
+  { path: 'restorestart', component: RestoreWizardComponent },
+  { path: 'restore-import', component: ImportComponent, data: { restoremode: true } },
+  { path: 'restoredirect', component: RestoreDirectComponent },
+  { path: 'restoredirect-import', component: RestoreDirectComponent, data: { import: true } },
+  { path: 'restore/:backupId', component: RestoreComponent },
   { path: 'localdb/:backupId', component: LocalDatabaseComponent },
   { path: 'delete/:backupId', component: DeleteComponent },
   { path: 'updatechangelog', component: UpdateChangelogComponent }

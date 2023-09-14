@@ -112,7 +112,7 @@ export class ProgressService {
     return pg;
   }
 
-  private getStatusText(e: ProgressEvent | null): string {
+  public getStatusText(e: ProgressEvent | null): string {
     let text = 'Running …';
     if (e == null) {
       return text;

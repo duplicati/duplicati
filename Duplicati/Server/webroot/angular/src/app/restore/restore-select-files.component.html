@@ -1,0 +1,29 @@
+<h1 *ngIf="isBackupTemporary" translate>Restore files</h1>
+<h1 *ngIf="!isBackupTemporary" translate>Restore files from {{backup?.Backup?.Name}}</h1>
+<div class="input timestamp">
+  <label for="restoreversion" translate>Restore from</label>
+
+  <select name="restoreversion" id="restoreversion" [(ngModel)]="restoreVersion">
+    <optgroup [label]="g.key" *ngFor="let g of groupedFilesets">
+      <option [ngValue]="fs.Version" *ngFor="let fs of g.value">{{fs.DisplayLabel}}</option>
+    </optgroup>
+  </select>
+</div>
+
+<div class="input text search overlayButton multiple" style="max-width: none">
+  <label for="searchfilter" translate>Search for files</label>
+  <input type="search" id="searchfilter" name="searchfilter" [(ngModel)]="searchFilter" placeholder="Type to highlight files"
+         (change)="searchChanged(searchfilter.value)" (keyup.enter)="doSearch()" (keydown.escape)="clearSearch()" #searchfilter />
+  <a routerLink="." id="searchfiltersubmit" class="button" (click)="doSearch()" [class.enabled]="!searching">
+    <span *ngIf="searching" translate>Busy ...</span>
+    <span *ngIf="!searching" translate>Search</span>
+  </a>
+</div>
+
+<div class="resizable">
+  <app-restore-file-picker class="filepicker" id="restore_file_picker" [selected]="selected" (selectedChange)="selectedChange.emit($event)" [sources]="paths" [backupId]="backupId" [timestamp]="filesetStamps.get(restoreVersion + '')" [searchFilter]="searchFilter" [searchNodes]="searchNodes"></app-restore-file-picker>
+</div>
+<div class="buttons">
+  <a routerLink="." class="submit" (click)="next.emit()" translate>Continue</a>
+  <a routerLink="." class="submit" *ngIf="isBackupTemporary" (click)="prev.emit()" translate>Back</a>
+</div>

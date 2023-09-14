@@ -1,0 +1,27 @@
+<div class="steps">
+  <ng-container *ngFor="let s of steps; let i=index">
+    <a *ngIf="s.enabled" class="step step{{i+1}}" [routerLink]="[{step: i}]" routerLinkActive="active" [routerLinkActiveOptions]="isActiveOptions">
+      <span>{{i+1}}</span>
+    </a>
+    <a *ngIf="!s.enabled" class="step step{{i+1}} not-clickable">
+      <span>{{i+1}}</span>
+    </a>
+  </ng-container>
+</div>
+<ol class="steps-legend">
+  <ng-container *ngFor="let s of steps; let i=index">
+    <li *ngIf="s.enabled" class="step{{i+1}}" [routerLink]="[{step: i}]" routerLinkActive="active" [routerLinkActiveOptions]="isActiveOptions" translate>
+      {{s.name}}
+    </li>
+    <li *ngIf="!s.enabled" class="step{{i+1}} not-clickable" translate>
+      {{s.name}}
+    </li>
+  </ng-container>
+</ol>
+
+<div class="steps-boxes">
+  <div *ngFor="let s of steps; let i=index"
+       class="step step{{i+1}}" [hidden]="currentStep !== i">
+    <ng-container [ngTemplateOutlet]="s.templateRef"></ng-container>
+  </div>
+</div>

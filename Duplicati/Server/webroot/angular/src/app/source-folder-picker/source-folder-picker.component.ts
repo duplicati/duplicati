@@ -12,14 +12,14 @@ import { FileFilterService } from '../services/file-filter.service';
 import { FileNode, FileService } from '../services/file.service';
 import { SourceFileDatabase } from './source-file-database';
 
-const IncludeMarker = {
+export const IncludeMarker = {
   Unchecked: '',
   Included: '+',
   Partial: ' ',
   Excluded: '-',
 } as const;
 
-type IncludeMarkerType = typeof IncludeMarker[keyof typeof IncludeMarker];
+export type IncludeMarkerType = typeof IncludeMarker[keyof typeof IncludeMarker];
 
 @Component({
   selector: 'app-source-folder-picker',

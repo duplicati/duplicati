@@ -22,16 +22,20 @@ export class ConvertService {
   constructor(private cookies: CookieService,
     private serverSettings: ServerSettingsService) { }
 
-  parseDate(v: string): Date {
-    const msec = Date.parse(v);
-    if (isNaN(msec)) {
-      if (v.length == 16 && v[8] == 'T' && v[15] == 'Z') {
-        v = v.substr(0, 4) + '-' + v.substr(4, 2) + '-' + v.substr(6, 2) + 'T' +
-          v.substr(9, 2) + ':' + v.substr(11, 2) + ':' + v.substr(13, 2) + 'Z';
+  parseDate(v: string | number): Date {
+    if (typeof v === 'string') {
+      const msec = Date.parse(v);
+      if (isNaN(msec)) {
+        if (v.length == 16 && v[8] == 'T' && v[15] == 'Z') {
+          v = v.substr(0, 4) + '-' + v.substr(4, 2) + '-' + v.substr(6, 2) + 'T' +
+            v.substr(9, 2) + ':' + v.substr(11, 2) + ':' + v.substr(13, 2) + 'Z';
+        }
+        return new Date(v);
+      } else {
+        return new Date(msec);
       }
-      return new Date(v);
     } else {
-      return new Date(msec);
+      return new Date(v);
     }
   }
 

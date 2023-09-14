@@ -138,8 +138,8 @@ export class DialogService {
       txt = '';
     }
 
-    if (msg && msg.data && msg.data.Message)
-      this.dialog('Error', txt + msg.data.Message);
+    if (msg && msg.error && msg.error.Message)
+      this.dialog('Error', txt + msg.error.Message);
     else
       this.dialog('Error', txt + msg.statusText);
   }

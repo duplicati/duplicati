@@ -1680,12 +1680,12 @@ body {
                 div.restore {
                     @legends-steps: 2;
                     @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @legends-padding-left: ((700px - @legends-width) / 2);
                     @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
+                    @step-width: (@legends-width / @legends-steps);
 
                     .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+                        margin-left: ((@step-width - @circle-width) / 2) + @legends-padding-left;
 
                         .step {
                             padding-left: @step-width - @circle-width;
@@ -1704,12 +1704,12 @@ body {
                 div.restore.restore-direct {
                     @legends-steps: 4;
                     @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @legends-padding-left: ((700px - @legends-width) / 2);
                     @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
+                    @step-width: (@legends-width / @legends-steps);
 
                     .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+                        margin-left: ((@step-width - @circle-width) / 2) + @legends-padding-left;
 
                         .step {
                             padding-left: @step-width - @circle-width;

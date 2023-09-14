@@ -1,6 +1,6 @@
 <div class="backup-result">
-  <div class="box one"><ng-content *ngTemplateOutlet="topLeftBox"></ng-content></div>
-  <div class="box two"><ng-content *ngTemplateOutlet="topRightBox"></ng-content></div>
+  <div class="box one"><ng-container *ngTemplateOutlet="topLeftBox"></ng-container></div>
+  <div class="box two"><ng-container *ngTemplateOutlet="topRightBox"></ng-container></div>
   <div class="box wide three">
     <span *ngIf="result.MainOperation === 'Restore'"><ng-content *ngTemplateOutlet="restoreItems"></ng-content></span>
     <span *ngIf="result.MainOperation === 'Test'"><ng-content *ngTemplateOutlet="testItems"></ng-content></span>

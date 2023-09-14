@@ -1,20 +1,20 @@
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="tree-view">
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="16px">
-    <div class="fill-node" [id]="node.node.id != null ? 'node-' + node.node.id : undefined">
+    <div>
       <a class="nav leaf" role="button" [attr.aria-label]="'Toggle ' + node.text" [class.expanded]="treeControl.isExpanded(node)"></a>
-      <a class="check"  (click)="toggleChecked(node)" [attr.aria-label]="getIncludeLabel(node)" [class.include]="getIncludeMarker(node) === IncludeMarker.Included" [class.exclude]="getIncludeMarker(node) === IncludeMarker.Excluded" [class.partial]="getIncludeMarker(node) === IncludeMarker.Partial" [class.root]="node.node.root"></a>
+      <a class="check" (click)="toggleChecked(node)" [attr.aria-label]="getIncludeLabel(node)" [class.include]="getIncludeMarker(node) === IncludeMarker.Included" [class.exclude]="getIncludeMarker(node) === IncludeMarker.Excluded" [class.partial]="getIncludeMarker(node) === IncludeMarker.Partial" [class.root]="node.node.root"></a>
       <a class="type {{node.node.iconCls}}" [attr.aria-label]="node.isLoading ? 'loading' : node.entrytype" [class.invisible]="node.node.hidden" [class.loading]="node.isLoading"></a>
 
-      <span [class.toggle]="node.node.id != null" (dblclick)="doubleClick(node)">{{node.text}}</span>
+      <span (click)="toggleChecked(node)" [innerHTML]="node.text | highlight:searchRegexp"></span>
     </div>
   </mat-tree-node>
   <mat-tree-node *matTreeNodeDef="let node; when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="16px">
-    <div class="fill-node" [id]="node.node.id != null ? 'node-' + node.node.id : undefined">
+    <div>
       <a class="nav" role="button" [attr.aria-label]="'Toggle ' + node.text" [class.expanded]="treeControl.isExpanded(node)" matTreeNodeToggle></a>
       <a class="check" (click)="toggleChecked(node)" role="checkbox" [attr.aria-label]="getIncludeLabel(node)" [class.include]="getIncludeMarker(node) === IncludeMarker.Included" [class.exclude]="getIncludeMarker(node) === IncludeMarker.Excluded" [class.partial]="getIncludeMarker(node) === IncludeMarker.Partial" [class.root]="node.node.root"></a>
       <a class="type {{node.node.iconCls}}" [attr.aria-label]="node.isLoading ? 'loading' : node.entrytype" [class.invisible]="node.node.hidden" [class.loading]="node.isLoading"></a>
 
-      <span [class.toggle]="node.node.id != null" (dblclick)="doubleClick(node)">{{node.text}}</span>
+      <span (click)="toggleChecked(node)" [innerHTML]="node.text | highlight:searchRegexp"></span>
     </div>
   </mat-tree-node>
 </mat-tree>

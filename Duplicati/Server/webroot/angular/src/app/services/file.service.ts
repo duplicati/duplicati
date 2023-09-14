@@ -187,4 +187,8 @@ export class FileService {
     }
     return false;
   }
+
+  guessDirsep(path: string): string {
+    return path[0] == '/' ? '/' : '\\';
+  }
 }

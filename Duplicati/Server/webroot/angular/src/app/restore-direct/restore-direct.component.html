@@ -1,0 +1,62 @@
+<div class="restore restore-direct">
+  <form id="restore" class="styled">
+    <div [hidden]="connecting">
+      <app-steps>
+        <ng-template [appStep]="0" name="Backup location">
+          <div class="headerthreedotmenu">
+            <h2 translate>Backup destination</h2>
+
+            <div class="contextmenu_container">
+              <a routerLink="." [matMenuTriggerFor]="menu" title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton" /></a>
+
+              <mat-menu class="contextmenu" id="threedotmenu_add_destination" #menu="matMenu">
+                <button mat-menu-item (click)="importUrl()" translate>Import Destination URL</button>
+                <button mat-menu-item (click)="copyUrlToClipboard()" translate>Copy Destination URL to Clipboard</button>
+              </mat-menu>
+            </div>
+          </div>
+
+          <app-backup-edit-uri></app-backup-edit-uri>
+
+          <div class="buttons">
+            <input class="submit next" type="button" id="nextStep2" (click)="nextPage()" value="Next &gt;" />
+          </div>
+        </ng-template>
+        <ng-template [appStep]="1" name="Encryption">
+          <h2 translate>Encryption</h2>
+          <div class="input password">
+            <label for="password" translate>Passphrase</label>
+            <input type="password" id="password" name="password" [(ngModel)]="encryptionPassphrase" placeholder="Enter backup passphrase, if any" />
+          </div>
+
+          <app-expand-box [expanded]="showAdvanced">
+            <h2 translate header>Advanced Options</h2>
+            <div class="input textarea">
+              <label for="options">Advanced Options</label>
+              <textarea id="options" name="options" [(ngModel)]="extendedOptions" appStringArrayText placeholder="{{convert.format(parser.exampleOptionString, '--prefix')}}"></textarea>
+            </div>
+          </app-expand-box>
+
+          <div class="buttons" *ngIf="!connecting">
+            <input class="submit" type="button" id="connect" (click)="doConnect()" value="Connect" />
+            <input class="submit prev" type="button" id="prevStep2" (click)="prevPage()" value="&lt; Previous" />
+          </div>
+          <div *ngIf="connecting">
+            {{connectionProgress}}
+          </div>
+        </ng-template>
+        <ng-template [appStep]="2" name="Select files" enabled="false">
+        </ng-template>
+        <ng-template [appStep]="3" name="Restore options" enabled="false">
+        </ng-template>
+      </app-steps>
+    </div>
+
+    <div *ngIf="connecting && taskid == null">
+      {{connectionProgress}}
+      <div *ngIf="serverstate?.programState == 'Paused'">
+        Server is currently paused, <a style="cursor: pointer" (click)="serverStatus.resume()" translate>resume now</a>
+      </div>
+    </div>
+  </form>
+</div>

@@ -37,6 +37,19 @@ export interface Backup {
   IsTemporary: boolean
 }
 
+export interface Fileset {
+  Version: number;
+  IsFullBackup: number;
+  Time: string;
+  FileCount: number;
+  FileSizes: number;
+}
+
+export interface ListFile {
+  Path: string;
+  Sizes: number[];
+}
+
 export interface AddOrUpdateBackupData {
   IsUnencryptedOrPassphraseStored?: boolean,
   Schedule: Schedule | null,

@@ -61,6 +61,14 @@ import { RepairPhaseComponent } from './backup-result/phases/repair-phase.compon
 import { DeletePhaseComponent } from './backup-result/phases/delete-phase.component';
 import { PurgePhaseComponent } from './backup-result/phases/purge-phase.component';
 import { ExportComponent } from './export/export.component';
+import { RestoreComponent } from './restore/restore.component';
+import { RestoreWizardComponent } from './restore-wizard/restore-wizard.component';
+import { RestoreDirectComponent } from './restore-direct/restore-direct.component';
+import { RestoreFilePickerComponent } from './restore-file-picker/restore-file-picker.component';
+import { WaitAreaComponent } from './wait-area/wait-area.component';
+import { RestoreSelectFilesComponent } from './restore/restore-select-files.component';
+import { RestoreLocationComponent } from './restore/restore-location.component';
+import { HighlightPipe } from './pipes/highlight.pipe';
 
 @NgModule({
   declarations: [
@@ -110,7 +118,15 @@ import { ExportComponent } from './export/export.component';
     RepairPhaseComponent,
     DeletePhaseComponent,
     PurgePhaseComponent,
-    ExportComponent
+    ExportComponent,
+    RestoreComponent,
+    RestoreWizardComponent,
+    RestoreDirectComponent,
+    RestoreFilePickerComponent,
+    WaitAreaComponent,
+    RestoreSelectFilesComponent,
+    RestoreLocationComponent,
+    HighlightPipe
   ],
   imports: [
     BrowserModule,

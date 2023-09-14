@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
-import { AddOrUpdateBackupData } from '../backup';
+import { AddOrUpdateBackupData, ListFile, Fileset } from '../backup';
 import { DialogService } from './dialog.service';
 import { ServerStatusService } from './server-status.service';
 
@@ -55,6 +55,16 @@ export class BackupService {
         return resp.data;
       }));
   }
+  getFilesets(id: string, includeMetadata?: boolean, fromRemoteOnly?: boolean): Observable<Fileset[]> {
+    let params: Record<string, string | number | boolean> = {};
+    if (includeMetadata !== undefined) {
+      params['include-metadata'] = includeMetadata;
+    }
+    if (fromRemoteOnly !== undefined) {
+      params['from-remote-only'] = fromRemoteOnly;
+    }
+    return this.client.get<Fileset[]>(`/backup/${id}/filesets`, { params: params });
+  }
   deleteDatabase(backupId: string): Observable<void> {
     return this.client.post<void>(`/backup/${backupId}/deletedb`, '');
   }
@@ -78,7 +88,7 @@ export class BackupService {
     );
   }
   // Returns task id
-  deleteBackup(backupId: string, deleteLocalDb: boolean, deleteRemoteFiles: boolean, captchaToken?: string, captchaAnswer?: string): Observable<string> {
+  deleteBackup(backupId: string, deleteLocalDb: boolean, deleteRemoteFiles: boolean, captchaToken?: string, captchaAnswer?: string): Observable<number> {
     let params = new HttpParams();
     params.append('delete-local-db', deleteLocalDb);
     params.append('delete-remote-files', deleteRemoteFiles);
@@ -88,7 +98,7 @@ export class BackupService {
     if (captchaAnswer != null) {
       params.append('captcha-answer', captchaAnswer);
     }
-    return this.client.delete<{ Status: string, ID: string }>(`/backup/${backupId}`, { params: params }).pipe(
+    return this.client.delete<{ Status: string, ID: number }>(`/backup/${backupId}`, { params: params }).pipe(
       map(resp => resp.ID)
     );
   }
@@ -100,5 +110,57 @@ export class BackupService {
     }).pipe(
       map(resp => resp.Command)
     );
+  }
+  searchFiles(backupId: string, searchFilter: string | null, timestamp: string,
+    params?: { prefixOnly?: boolean, folderContents?: boolean, exactMatch?: boolean }):
+    Observable<{ Filesets: Fileset[], Files: ListFile[], [k: string]: string | Fileset[] | ListFile[] }> {
+    let filterString = searchFilter || '';
+    if (!params?.exactMatch) {
+      filterString = searchFilter != null ? `*${searchFilter}*` : '*';
+    }
+    let requestParams: Record<string, string | number | boolean> = {
+      'prefix-only': params?.prefixOnly ?? false,
+      'time': timestamp
+    };
+    if (searchFilter != null) {
+      requestParams['filter'] = params?.exactMatch ? `@${searchFilter}` : filterString!;
+    }
+    if (params?.folderContents !== undefined) {
+      requestParams['folder-contents'] = params.folderContents;
+    }
+    return this.client.get<{ Filesets: Fileset[], Files: ListFile[], [k: string]: string | Fileset[] | ListFile[] }>(
+      `/backup/${backupId}/files/${encodeURIComponent(filterString)}`, {
+      params: requestParams
+    });
+  }
+  restore(backupId: string, params?: any): Observable<number> {
+    let formData = new FormData();
+    for (const k in params) {
+      formData.set(k, params[k]?.toString() || '');
+    }
+    return this.client.post<{ TaskID: number }>(`/backup/${backupId}/restore`, formData).pipe(
+      map(v => v.TaskID)
+    );
+  }
+  repair(backupId: string, params?: any): Observable<number> {
+    let formData = new FormData();
+    for (const k in params) {
+      formData.set(k, params[k]);
+    }
+    return this.client.post<{ Status: string, ID: number }>(`/backup/${backupId}/repair`, formData).pipe(
+      map(v => v.ID)
+    );
+  }
+  repairUpdateTemporary(backupId: string, timestamp: string): Observable<number> {
+    let formData = new FormData();
+    formData.set('only-paths', 'true');
+    formData.set('time', timestamp);
+    return this.client.post<{ Status: string, ID: number }>(`/backup/${backupId}/repairupdate`, formData).pipe(
+      map(v => v.ID)
+    );
+  }
+  copyToTemp(backupId: string): Observable<string> {
+    return this.client.post<{ Status: string, ID: string }>(`/backup/${backupId}/copytotemp`, '').pipe(
+      map(v => v.ID));
   }
 }
