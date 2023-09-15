@@ -35,8 +35,10 @@ export class GcsComponent extends OauthComponent {
 
   override ngOnInit() {
     super.ngOnInit();
-    this.gcsService.getLocations().subscribe(v => this.gcsLocations = v);
-    this.gcsService.getStorageClasses().subscribe(v => this.gcsStorageClasses = v);
+    this.gcsService.getLocations().subscribe(v => this.gcsLocations = v,
+      this.dialog.connectionError);
+    this.gcsService.getStorageClasses().subscribe(v => this.gcsStorageClasses = v,
+      this.dialog.connectionError);
   }
 
   compareValue(a: KeyValue<string, string | null>, b: KeyValue<string, string | null>) {

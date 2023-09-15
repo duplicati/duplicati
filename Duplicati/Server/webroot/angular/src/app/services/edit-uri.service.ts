@@ -1,5 +1,5 @@
-import { inject, Inject, Injectable, Type } from '@angular/core';
-import { BackendEditorComponent, BACKEND_EDITORS, CommonBackendData } from '../editors/backend-editor';
+import { inject, Inject, Injectable, Injector, Type } from '@angular/core';
+import { BackendEditorComponent, BACKEND_EDITORS, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData, DEFAULT_BACKEND_EDITOR } from '../editors/backend-editor';
 import { GroupedModuleDescription, ModuleDescription } from '../system-info/system-info';
 import { DialogService } from './dialog.service';
 import { ParserService } from './parser.service';
@@ -11,6 +11,7 @@ export class EditUriService {
   private editors = new Map<string, Type<BackendEditorComponent>>();
 
   constructor(@Inject(BACKEND_EDITORS) editorTypes: ({ key: string, type: Type<BackendEditorComponent> })[],
+    @Inject(DEFAULT_BACKEND_EDITOR) private defaultEditor: Type<BackendEditorComponent> | undefined,
     private dialog: DialogService,
     private parser: ParserService) {
     for (let e of editorTypes) {
@@ -23,9 +24,31 @@ export class EditUriService {
   }
 
   getEditorType(key: string): Type<BackendEditorComponent> | undefined {
-    return this.editors.get(key);
+    return this.editors.get(key) ?? this.defaultEditor;
   }
 
+  createEditorInjector(backend: ModuleDescription, parent: Injector): Injector {
+    return Injector.create({
+      providers: [
+        { provide: BACKEND_KEY, useValue: backend.Key || '' },
+        { provide: BACKEND_SUPPORTS_SSL, useValue: this.isSslSupported(backend) }
+      ],
+      parent: parent,
+      name: 'Backend editor injector'
+    });
+  }
+
+  getBackend(uri: string, backends: GroupedModuleDescription[]): GroupedModuleDescription | null {
+    const backendType = this.parser.decodeBackendUri(uri).get('backend-type') ?? null;
+    if (backendType != null) {
+      for (let m of backends) {
+        if (m.Key === backendType) {
+          return m;
+        }
+      }
+    }
+    return null;
+  }
   parseUri(uri: string, backends?: GroupedModuleDescription[], parser?: (data: CommonBackendData, parts: Map<string, string>) => void): { backend: GroupedModuleDescription | undefined, data: CommonBackendData, advanced: string[] } {
     let parts = this.parser.decodeBackendUri(uri);
 

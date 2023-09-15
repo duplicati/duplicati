@@ -1,0 +1,23 @@
+<div *ngIf="supportsSSL" class="input checkbox">
+  <label for="generic_ssl" translate>Use SSL</label>
+  <input type="checkbox" style="width: 15px; margin-right: 65%;" name="generic_ssl" id="generic_ssl" [(ngModel)]="useSSL" />
+</div>
+<div class="input text">
+  <label for="generic_server" translate>Server and port</label>
+  <input type="text" style="width: 345px" name="generic_server" id="generic_server" [(ngModel)]="server" placeholder="Server hostname or IP" />
+  <input type="text" style="width: 50px" name="generic_port" id="generic_port" [(ngModel)]="port" placeholder="Port" />
+</div>
+
+<div class="input text">
+  <label for="generic_path" translate>Path on server</label>
+  <input type="text" name="generic_path" id="generic_path" [(ngModel)]="path" placeholder="Enter the destination path" />
+</div>
+
+<div class="input text">
+  <label for="generic_username" translate>Username</label>
+  <input type="text" name="generic_username" id="generic_username" [(ngModel)]="username" placeholder="Authentication username" />
+</div>
+<div class="input password">
+  <label for="generic_password" translate>Password</label>
+  <input autocomplete="new-password" type="password" name="generic_password" id="generic_password" [(ngModel)]="password" placeholder="Authentication password" />
+</div>

@@ -39,23 +39,13 @@ export class BackupEditUriComponent {
 
   @ViewChild(DynamicHostDirective, { static: true }) editorHost!: DynamicHostDirective;
 
-  private editorInjector: Injector;
-
   constructor(public parser: ParserService,
     public convert: ConvertService,
-    injector: Injector,
+    private injector: Injector,
     private systemInfoService: SystemInfoService,
     private editUriService: EditUriService,
     private groupService: GroupedOptionService,
     private connectionTester: ConnectionTester) {
-    this.editorInjector = Injector.create({
-      providers: [
-        { provide: BACKEND_KEY, useFactory: () => this.backend?.Key || '' },
-        { provide: BACKEND_SUPPORTS_SSL, useFactory: () => this.editUriService.isSslSupported(this.backend) }
-      ],
-      parent: injector,
-      name: 'Backend editor injector'
-    });
   }
 
   ngOnInit() {
@@ -127,21 +117,26 @@ export class BackupEditUriComponent {
     if (this.systemInfo == null) {
       return;
     }
-    this.backend = this.defaultBackend;
     if (this.uri == null || this.uri.trim().length === 0) {
+      this.setBackend(this.defaultBackend);
       this.commonData = {};
       this.advancedOptions = [];
       return;
     }
+    // Set backend to load correct editor
+    const uriBackend = this.editUriService.getBackend(this.uri, this.systemInfo.GroupedBackendModules ?? []);
+    if (uriBackend != null) {
+      this.setBackend(uriBackend);
+    } else {
+      this.setBackend(this.defaultBackend);
+    }
+
     let parser = undefined;
     if (this.editorComponent != null) {
       parser = (data: CommonBackendData, parts: Map<string, string>) => this.editorComponent!.instance.parseUriParts(data, parts);
     }
     let res = this.editUriService.parseUri(this.uri, this.systemInfo?.GroupedBackendModules, parser);
     this.commonData = res.data;
-    if (this.backend !== res.backend) {
-      this.setBackend(res.backend);
-    }
     if (this.editorComponent != null) {
       // Have to re-trigger change detection, because it does not work automatically
       this.editorComponent.setInput('commonData', this.commonData);
@@ -157,8 +152,10 @@ export class BackupEditUriComponent {
     if (this.backend) {
       const editor = this.editUriService.getEditorType(this.backend.Key);
       if (editor) {
+        // Have to create new injectors for every backend type, otherwise it will not update
+        let editorInjector = this.editUriService.createEditorInjector(this.backend, this.injector);
         this.editorComponent = viewContainerRef.createComponent<BackendEditorComponent>(editor, {
-          injector: this.editorInjector
+          injector: editorInjector
         });
         if (this.commonData == null) {
           this.commonData = {};

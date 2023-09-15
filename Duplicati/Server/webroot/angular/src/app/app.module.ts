@@ -82,6 +82,17 @@ import { CosComponent } from './editors/cos/cos.component';
 import { E2Component } from './editors/e2/e2.component';
 import { GcsComponent } from './editors/gcs/gcs.component';
 import { OauthComponent } from './editors/oauth/oauth.component';
+import { GenericComponent } from './editors/generic/generic.component';
+import { JottacloudComponent } from './editors/jottacloud/jottacloud.component';
+import { MegaComponent } from './editors/mega/mega.component';
+import { MsgroupComponent } from './editors/msgroup/msgroup.component';
+import { OpenstackComponent } from './editors/openstack/openstack.component';
+import { RcloneComponent } from './editors/rclone/rclone.component';
+import { S3Component } from './editors/s3/s3.component';
+import { SharepointComponent } from './editors/sharepoint/sharepoint.component';
+import { SiaComponent } from './editors/sia/sia.component';
+import { StorjComponent } from './editors/storj/storj.component';
+import { TardigradeComponent } from './editors/tardigrade/tardigrade.component';
 
 @NgModule({
   declarations: [
@@ -151,7 +162,18 @@ import { OauthComponent } from './editors/oauth/oauth.component';
     CosComponent,
     E2Component,
     GcsComponent,
-    OauthComponent
+    OauthComponent,
+    GenericComponent,
+    JottacloudComponent,
+    MegaComponent,
+    MsgroupComponent,
+    OpenstackComponent,
+    RcloneComponent,
+    S3Component,
+    SharepointComponent,
+    SiaComponent,
+    StorjComponent,
+    TardigradeComponent
   ],
   imports: [
     BrowserModule,

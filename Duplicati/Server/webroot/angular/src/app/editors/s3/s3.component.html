@@ -1,0 +1,96 @@
+<div *ngIf="supportsSSL" class="input checkbox">
+  <label for="s3_ssl" translate>Use SSL</label>
+  <input type="checkbox" style="width: 15px; margin-right: 65%;" name="s3_ssl" id="s3_ssl" [(ngModel)]="useSSL" />
+</div>
+
+<div class="input select">
+
+  <label for="s3_server" translate>Server</label>
+
+  <select name="s3_server" id="s3_server" [(ngModel)]="s3Server">
+    <option [ngValue]="e.value" *ngFor="let e of s3Providers | keyvalue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
+    <option value="_custom" translate translate-params-server="s3_server_custom || ''">
+      Custom server url ({{s3ServerCustom}})
+    </option>
+  </select>
+
+  <input *ngIf="isCustomServer()" type="text" id="s3_server_custom"
+         [(ngModel)]="s3ServerCustom" placeholder="Custom S3 endpoint" />
+
+</div>
+
+<div class="input text">
+  <label for="s3_bucket" translate>Bucket name</label>
+  <input type="text" id="s3_bucket" [(ngModel)]="server" placeholder="Bucket name" />
+</div>
+
+
+<div class="input select">
+
+  <label for="s3_region" translate>Bucket create region</label>
+
+  <select name="s3_region" id="s3_region" [(ngModel)]="s3Region"
+          title="The region parameter is only applied when creating a new bucket">
+    <option [ngValue]="e.value" *ngFor="let e of s3Regions | keyvalue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
+    <option value="_custom" translate translate-params-region="s3_region_custom || ''">
+      Custom region value ({{s3RegionCustom}})
+    </option>
+  </select>
+
+  <input *ngIf="isCustomRegion()" type="text" id="s3_region_custom"
+         [(ngModel)]="s3RegionCustom" placeholder="Custom region for creating buckets" />
+
+</div>
+
+<div class="input select">
+
+  <label for="s3_storageclass" translate>Storage class</label>
+
+  <select name="s3_storageclass" id="s3_storageclass" [(ngModel)]="s3StorageClass"
+          title="The storage class affects the availability and price for a stored file">
+    <option [ngValue]="e.value" *ngFor="let e of s3StorageClasses | keyvalue:compareValue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
+    <option value="_custom" translate translate-params-class="s3_storageclass_custom || ''">
+      Custom storage class
+      ({{s3StorageClassCustom}})
+    </option>
+  </select>
+
+  <input *ngIf="isCustomStorageClass()" type="text" id="s3_storageclass_custom"
+         [(ngModel)]="s3StorageClassCustom" placeholder="Custom bucket storage class" />
+
+</div>
+
+<div class="input text">
+  <label for="s3_path" translate>Folder path</label>
+  <input type="text" name="s3_path" id="s3_path" [(ngModel)]="path"
+         placeholder="Path or subfolder in the bucket" />
+</div>
+
+<div class="input text">
+  <label for="s3_username" translate>AWS Access ID</label>
+  <input type="text" name="s3_username" id="s3_username" [(ngModel)]="username"
+         placeholder="AWS Access ID" />
+</div>
+<div class="input password">
+  <label for="s3_password" translate>AWS Access Key</label>
+  <input autocomplete="new-password" type="password" name="s3_password" id="s3_password" [(ngModel)]="password"
+         placeholder="AWS Access Key" />
+</div>
+
+<div class="input select">
+
+  <label for="s3_client" translate>Client library to use</label>
+
+  <select name="s3_client" id="s3_client" [(ngModel)]="s3Client"
+          title="Some S3 providers might only be compatible with a certain client library">
+    <option [ngValue]="e.name" *ngFor="let e of s3ClientOptions">{{e.label}}</option>
+  </select>
+
+</div>
+
+<div class="buttons">
+  <a routerLink="." (click)="createIAMPolicy()" *ngIf="canGeneratePolicy()" translate>
+    Generate IAM
+    access policy
+  </a>
+</div>

@@ -149,17 +149,13 @@ export class ConvertService {
     return l.filter(v => v != null && v.trim().length > 0) as string[];
   }
 
-  format(...args: string[]): string | null {
-    if (args == null || args.length < 1) {
-      return null;
-    }
-    let msg = args[0];
-    if (args.length == 1) {
+  format(msg: string, ...args: string[]): string {
+    if (args == null || args.length == 0) {
       return msg;
     }
 
     for (let i = 0; i < args.length; ++i) {
-      msg = this.replaceAll(msg, `{${i - 1}}`, args[i]);
+      msg = this.replaceAll(msg, `{${i}}`, args[i]);
     }
     return msg;
   }

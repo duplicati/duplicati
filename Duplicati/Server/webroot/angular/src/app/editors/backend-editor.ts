@@ -18,6 +18,8 @@ export const BACKEND_EDITORS = new InjectionToken<({ key: string, type: Type<Bac
   factory: () => []
 });
 
+export const DEFAULT_BACKEND_EDITOR = new InjectionToken<Type<BackendEditorComponent>>('Default backend editor');
+
 export interface BackendEditorComponent {
   commonData: CommonBackendData;
   commonDataChange: EventEmitter<CommonBackendData>;

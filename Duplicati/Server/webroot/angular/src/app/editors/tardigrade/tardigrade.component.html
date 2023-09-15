@@ -1,0 +1,47 @@
+<div class="input select">
+  <label for="tardigrade_auth_method" translate>Authentication method</label>
+  <select name="tardigrade_auth_method" id="tardigrade_auth_method" [(ngModel)]="storjAuthMethod">
+    <option [ngValue]="e.value" *ngFor="let e of storjAuthMethods | keyvalue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
+    <option value="" translate>
+      Authentication method ()
+    </option>
+  </select>
+</div>
+<ng-container *ngIf="storjAuthMethod == 'API key'">
+  <div class="input select">
+    <label for="tardigrade_satellite" translate>Satellite</label>
+    <select name="tardigrade_satellite" id="tardigrade_satellite" [(ngModel)]="storjSatellite">
+      <option [ngValue]="e.value" *ngFor="let e of storjSatellites | keyvalue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
+      <option value="" translate translate-params-satellite="tardigrade_satellite_custom || ''">
+        Custom Satellite ({{storjSatelliteCustom}})
+      </option>
+    </select>
+
+    <input *ngIf="isCustomSatellite()" type="text" id="tardigrade_satellite_custom"
+           [(ngModel)]="storjSatelliteCustom" placeholder="Custom Satellite" />
+  </div>
+  <div class="input text">
+    <label for="tardigrade_api_key" translate>API key</label>
+    <input type="text" name="tardigrade_api_key" id="tardigrade_api_key" [(ngModel)]="storjApiKey" placeholder="The API key" />
+  </div>
+  <div class="input password">
+    <label for="tardigrade_secret" translate>Encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="tardigrade_secret" id="tardigrade_secret" [(ngModel)]="storjSecret" placeholder="The encryption passphrase" />
+  </div>
+  <div class="input password">
+    <label for="tardigrade_secret_verify" translate>Verify encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="tardigrade_secret_verify" id="tardigrade_secret_verify" [(ngModel)]="storjSecretVerify" placeholder="The encryption passphrase (for verification)" />
+  </div>
+</ng-container>
+<div class="input text" *ngIf="storjAuthMethod == 'Access grant'">
+  <label for="tardigrade_shared_access" translate>Access grant</label>
+  <input type="text" name="tardigrade_shared_access" id="tardigrade_shared_access" [(ngModel)]="storjSharedAccess" placeholder="The access grant instead of the info above" />
+</div>
+<div class="input text">
+  <label for="tardigrade_bucket" translate>Bucket</label>
+  <input type="text" name="tardigrade_bucket" id="tardigrade_bucket" [(ngModel)]="storjBucket" placeholder="The bucket for storing the backup" />
+</div>
+<div class="input text">
+  <label for="tardigrade_folder" translate>Folder path</label>
+  <input type="text" name="tardigrade_folder" id="tardigrade_folder" [(ngModel)]="storjFolder" placeholder="The folder within the bucket for storing the backup" />
+</div>

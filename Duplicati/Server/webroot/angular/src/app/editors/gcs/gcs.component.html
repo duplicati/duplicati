@@ -16,7 +16,7 @@
 
   <select name="gcs_location" id="gcs_location" [(ngModel)]="gcsLocation" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_locations | orderBy: k">
     <option [ngValue]="e.value" *ngFor="let e of gcsLocations | keyvalue:compareValue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
-    <option value="" translate translate-params-server="gcs_server_custom || ''">Custom location ({{''}})</option>
+    <option value="" translate translate-params-server="gcs_server_custom || ''">Custom location ({{gcsLocationCustom}})</option>
   </select>
 
   <input *ngIf="isCustomLocation()" type="text" id="gcs_location_custom" [(ngModel)]="gcsLocationCustom" placeholder="Location where buckets are created" />
@@ -28,7 +28,7 @@
 
   <select name="gcs_storageclass" id="gcs_storageclass" [(ngModel)]="gcsStorageClass">
     <option [ngValue]="e.value" *ngFor="let e of gcsStorageClasses | keyvalue:compareValue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
-    <option value="" translate translate-params-class="gcs_storageclass_custom">Custom storage class ({{''}})</option>
+    <option value="" translate translate-params-class="gcs_storageclass_custom">Custom storage class ({{gcsStorageClassCustom}})</option>
   </select>
 
   <input *ngIf="isCustomStorageClass()" type="text" id="gcs_storageclass_custom" [(ngModel)]="gcsStorageClassCustom" placeholder="Storage class for creating a bucket" />
