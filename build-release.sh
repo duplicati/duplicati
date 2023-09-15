@@ -10,7 +10,7 @@ else
 	RELEASE_TYPE=$1
 fi
 
-RELEASE_VERSION="2.0.6.${RELEASE_INC_VERSION}"
+RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 
 RELEASE_CHANGELOG_FILE="changelog.txt"
@@ -32,6 +32,7 @@ DISCOURSE_TOKEN_FILE="${HOME}/.config/discourse-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
+XAMARIN=/Library/Frameworks/Xamarin.Mac.framework
 GPG=/usr/local/bin/gpg2
 AWS=/usr/local/bin/aws
 GITHUB_RELEASE=/usr/local/bin/github-release
@@ -156,7 +157,12 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 "${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
-"${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
+if [ ! -d "$XAMARIN" ]; then
+    read -p"Warning, this build will not enable tray icon on Mac, hit any key to continue."
+    "${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
+else
+    "${XBUILD}" -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" /p:Configuration=Release "Duplicati.sln"
+fi
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then

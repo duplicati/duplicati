@@ -82,23 +82,43 @@ namespace Duplicati.UnitTest
             try
             {
                 // check if the file should be downloaded, exception if not
-                using ((HttpWebResponse)webRequest.GetResponse())
+                using (var wr = (HttpWebResponse)webRequest.GetResponse())
 
                 using (WebClient client = new WebClient())
-                {
-                    client.DownloadFile(url, destinationFilePath);
+                { // try to workaround a weird intermittent bug where downloaded size
+                  // differs from real size but no error is thrown
+                    Console.WriteLine("downloading test file to: {0}, length: {1}", destinationFilePath, wr.ContentLength);
+                    var maxAttempts = 5;
+                    while (maxAttempts-- > 0) {
+                        DateTime beginTime = DateTime.Now;
+                        client.DownloadFile(url, destinationFilePath);
+                        long length = new System.IO.FileInfo(destinationFilePath).Length;
+                        Console.WriteLine("downloaded test file: {0}: length {1}, duration {2}", destinationFilePath, length, (DateTime.Now - beginTime).TotalSeconds);
+                        if (length == wr.ContentLength) {
+                            maxAttempts = -1;
+                        } else {
+                            Console.WriteLine("invalid downloaded length {0}, should be {1}...", length, wr.ContentLength);
+                            System.Threading.Thread.Sleep(120000);
+                        }
+                    }
+                    if (maxAttempts == 0) {
+                        throw new Exception(string.Format("Unable to download test file from {0}", url));
+                    }
                 }
             }
             catch (WebException ex)
             {
                 if (ex.Response == null){
+                    Console.WriteLine("ex.Response is null !");
                     throw;
                 }
 
                 if (((HttpWebResponse) ex.Response).StatusCode != HttpStatusCode.NotModified)
                 {
+                    Console.WriteLine("file to download {0} already exists and is up to date", destinationFilePath);
                     throw;
                 }
+                Console.WriteLine("download exception: {0}", ex.Response);
             }
         }
 

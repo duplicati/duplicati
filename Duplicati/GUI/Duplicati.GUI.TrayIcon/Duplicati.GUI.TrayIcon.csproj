@@ -59,6 +59,9 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
+    <DefineConstants>XAMARIN_MAC</DefineConstants>
+  </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Duplicati.GUI.TrayIcon.Program</StartupObject>
   </PropertyGroup>
@@ -69,8 +72,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.13.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -105,8 +108,8 @@
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <Package>gtk-sharp-2.0</Package>
     </Reference>
-    <Reference Include="MonoMac">
-      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
+    <Reference Include="Xamarin.Mac" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
+      <HintPath>\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\lib\64bits\full\Xamarin.Mac.dll</HintPath>
     </Reference>
     <Reference Include="notify-sharp">
       <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
@@ -146,13 +149,16 @@
     <EmbeddedResource Include="Resources\TrayWorking.ico" />
     <Compile Include="ImageLoader.cs" />
     <Compile Include="GtkRunner.cs" />
-    <Compile Include="CocoaRunner.cs">
+    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
       <DependentUpon>CocoaRunner.cs</DependentUpon>
     </Compile>
     <EmbeddedResource Include="OSX Icons\normal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="OSX Icons\normal-error.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OSX Icons\normal-warning.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="OSX Icons\normal-pause.png">
@@ -167,6 +173,10 @@
     <EmbeddedResource Include="Resources\context_menu_pause.ico" />
     <EmbeddedResource Include="Resources\context_menu_play.ico" />
     <EmbeddedResource Include="Resources\context_menu_quit.ico" />
+    <None Include="\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\SDKs\Xamarin.macOS.sdk\lib\libxammac.dylib" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
+      <Link>libxammac.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj">
@@ -320,10 +330,6 @@
     <ProjectReference Include="..\..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
       <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
       <Name>Duplicati.Library.Backend.OpenStack</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
-      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
-      <Name>Duplicati.Library.Backend.HubiC</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
       <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>

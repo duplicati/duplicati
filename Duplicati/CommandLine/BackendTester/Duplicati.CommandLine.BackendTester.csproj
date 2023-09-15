@@ -138,10 +138,6 @@
       <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
       <Name>Duplicati.Library.Backend.OpenStack</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
-      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
-      <Name>Duplicati.Library.Backend.HubiC</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>

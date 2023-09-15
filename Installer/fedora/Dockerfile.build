@@ -16,7 +16,7 @@ RUN curl https://download.mono-project.com/repo/centos8-stable.repo | tee /etc/y
 RUN dnf -y update
 
 # Install mono things
-RUN dnf -y install mono-devel gnome-sharp-devel dos2unix git nuget
+RUN dnf -y install mono-devel gnome-sharp-devel dos2unix git nuget desktop-file-utils
 
 # Fix nuget
 RUN cert-sync /etc/pki/tls/certs/ca-bundle.crt
