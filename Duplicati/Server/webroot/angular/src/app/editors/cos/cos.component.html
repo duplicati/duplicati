@@ -1,0 +1,35 @@
+<div class="input text">
+  <label for="cos_app_id" translate>COS App Id</label>
+  <input type="text" name="cos_app_id" id="cos_app_id" [(ngModel)]="cosAppId"
+         placeholder="Tencent Cloud Account APPID" />
+</div>
+
+<div class="input text">
+  <label for="cos_secret_id" translate>COS Secret Id</label>
+  <input type="text" name="cos_secret_id" id="cos_secret_id" [(ngModel)]="cosSecretId"
+         placeholder="Cloud API Secret Id" />
+</div>
+
+<div class="input password">
+  <label for="cos_secret_key" translate>COS Secret Key</label>
+  <input autocomplete="new-password" type="password" name="cos_secret_key" id="cos_secret_key" [(ngModel)]="cosSecretKey"
+         placeholder="Cloud API Secret Key" />
+</div>
+
+<div class="input text">
+  <label for="cos_region" translate>Region</label>
+  <input type="text" name="cos_region" id="cos_region" [(ngModel)]="cosRegion" placeholder="Bucket region ap-guangzhou" />
+</div>
+
+<div class="input text">
+  <label for="cos_bucket" translate>Bucket name</label>
+  <input type="text" name="cos_bucket" id="cos_bucket" [(ngModel)]="cosBucket" placeholder="Bucket, format: BucketName-APPID" />
+</div>
+
+<div class="input text">
+  <label for="cos_path" translate>Folder path</label>
+  <input type="text" name="cos_path" id="cos_path" [(ngModel)]="path"
+         placeholder="COS Path or subfolder in the bucket" />
+</div>
+
+<div><a target="_blank" href="https://cloud.tencent.com/product/cos/document">Tencent Cloud COS documents and resources</a></div>

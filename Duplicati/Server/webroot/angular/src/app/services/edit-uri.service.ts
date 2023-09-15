@@ -1,6 +1,7 @@
 import { inject, Inject, Injectable, Type } from '@angular/core';
 import { BackendEditorComponent, BACKEND_EDITORS, CommonBackendData } from '../editors/backend-editor';
-import { GroupedModuleDescription } from '../system-info/system-info';
+import { GroupedModuleDescription, ModuleDescription } from '../system-info/system-info';
+import { DialogService } from './dialog.service';
 import { ParserService } from './parser.service';
 
 @Injectable({
@@ -10,6 +11,7 @@ export class EditUriService {
   private editors = new Map<string, Type<BackendEditorComponent>>();
 
   constructor(@Inject(BACKEND_EDITORS) editorTypes: ({ key: string, type: Type<BackendEditorComponent> })[],
+    private dialog: DialogService,
     private parser: ParserService) {
     for (let e of editorTypes) {
       this.editors.set(e.key, e.type);
@@ -92,5 +94,41 @@ export class EditUriService {
       }
     }
     return true;
+  }
+
+  mergeServerAndPath(commonData: CommonBackendData) {
+    if ((commonData.server || '') != '') {
+      let p = commonData.path;
+      commonData.path = commonData.server;
+      if ((p || '') != '') {
+        commonData.path += '/' + p;
+      }
+      commonData.server = undefined;
+    }
+  }
+
+  requireField<Data>(data: Data, field: keyof (Data) & string, label?: string): boolean {
+    if (((data[field] || '') as string).trim().length == 0) {
+      this.dialog.dialog('Error', `You must fill in ${label || field}`);
+      return false;
+    }
+    return true;
+  }
+
+  recommendField<Data>(data: Data, field: keyof (Data) & string, warning: string): boolean {
+    if (((data[field] || '') as string).trim().length == 0) {
+      this.dialog.dialog('Confirmation required', warning, ['No', 'Yes'],
+        (ix) => {
+          if (ix == 1) {
+            //continuation()
+          }
+        });
+      return false;
+    }
+    return true;
+  }
+
+  isSslSupported(backend: ModuleDescription | undefined): boolean {
+    return backend?.Options?.find(opt => opt.Name == 'use-ssl') != null || false;
   }
 }

@@ -1,7 +1,7 @@
-import { ComponentRef, SimpleChanges } from '@angular/core';
+import { ComponentRef, Injector, SimpleChanges } from '@angular/core';
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { DynamicHostDirective } from '../../directives/dynamic-host.directive';
-import { BackendEditorComponent, CommonBackendData } from '../../editors/backend-editor';
+import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../editors/backend-editor';
 import { ConnectionTester } from '../../services/connection-tester.service';
 import { ConvertService } from '../../services/convert.service';
 import { EditUriService } from '../../services/edit-uri.service';
@@ -33,16 +33,30 @@ export class BackupEditUriComponent {
   uriParts?: Map<string, string>;
   commonData?: CommonBackendData;
 
+  private backendSupportsSsl: boolean = false;
+
   private systemInfo?: SystemInfo;
 
   @ViewChild(DynamicHostDirective, { static: true }) editorHost!: DynamicHostDirective;
 
+  private editorInjector: Injector;
+
   constructor(public parser: ParserService,
     public convert: ConvertService,
+    injector: Injector,
     private systemInfoService: SystemInfoService,
     private editUriService: EditUriService,
     private groupService: GroupedOptionService,
-    private connectionTester: ConnectionTester) { }
+    private connectionTester: ConnectionTester) {
+    this.editorInjector = Injector.create({
+      providers: [
+        { provide: BACKEND_KEY, useFactory: () => this.backend?.Key || '' },
+        { provide: BACKEND_SUPPORTS_SSL, useFactory: () => this.editUriService.isSslSupported(this.backend) }
+      ],
+      parent: injector,
+      name: 'Backend editor injector'
+    });
+  }
 
   ngOnInit() {
     this.systemInfoService.getState().subscribe(s => {
@@ -141,9 +155,11 @@ export class BackupEditUriComponent {
     this.editorComponent = undefined;
 
     if (this.backend) {
-      const editor = this.editUriService.getEditorType(this.backend?.Key);
+      const editor = this.editUriService.getEditorType(this.backend.Key);
       if (editor) {
-        this.editorComponent = viewContainerRef.createComponent<BackendEditorComponent>(editor);
+        this.editorComponent = viewContainerRef.createComponent<BackendEditorComponent>(editor, {
+          injector: this.editorInjector
+        });
         if (this.commonData == null) {
           this.commonData = {};
         }

@@ -8,8 +8,6 @@ import { BackupLogEntry, LiveLogEntry, RemoteLogEntry, ServerLogEntry } from './
 })
 export class LogService {
 
-  private liveLog$?: ReplaySubject<ServerLogEntry>;
-
   constructor(private client: HttpClient) { }
 
   private getLogPage<LogEntry>(url: string, pageSize: number, offset?: number): Observable<LogEntry[]> {

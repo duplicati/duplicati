@@ -9,6 +9,10 @@ export interface CommonBackendData {
   path?: string;
 }
 
+// Injection tokens that need to be provided for the editors:
+export const BACKEND_KEY = new InjectionToken<string>('Backend key');
+export const BACKEND_SUPPORTS_SSL = new InjectionToken<boolean>('Backend supports ssl');
+
 export const BACKEND_EDITORS = new InjectionToken<({ key: string, type: Type<BackendEditorComponent> })[]>('backend editors', {
   providedIn: 'root',
   factory: () => []

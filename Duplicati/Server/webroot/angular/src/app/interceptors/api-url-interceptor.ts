@@ -11,7 +11,8 @@ export class APIUrlInterceptor implements HttpInterceptor {
   constructor(@Inject(API_URL) private api_url: string) { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    if (req.context.get(ADD_API_URL)) {
+    // jsonp does not allow adding context tokens, but is used for external requests
+    if (req.context.get(ADD_API_URL) && req.method != 'JSONP') {
       req = req.clone({ url: this.api_url + req.url });
     }
     return next.handle(req);

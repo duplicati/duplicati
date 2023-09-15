@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientJsonpModule, HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -76,6 +76,12 @@ import { ThrottleComponent } from './dialog-templates/throttle/throttle.componen
 import { PauseComponent } from './dialog-templates/pause/pause.component';
 import { DynamicContentComponent } from './dynamic-content/dynamic-content.component';
 import { ClipboardModule } from 'ngx-clipboard';
+import { AzureComponent } from './editors/azure/azure.component';
+import { B2Component } from './editors/b2/b2.component';
+import { CosComponent } from './editors/cos/cos.component';
+import { E2Component } from './editors/e2/e2.component';
+import { GcsComponent } from './editors/gcs/gcs.component';
+import { OauthComponent } from './editors/oauth/oauth.component';
 
 @NgModule({
   declarations: [
@@ -139,11 +145,18 @@ import { ClipboardModule } from 'ngx-clipboard';
     CaptchaComponent,
     ThrottleComponent,
     PauseComponent,
-    DynamicContentComponent
+    DynamicContentComponent,
+    AzureComponent,
+    B2Component,
+    CosComponent,
+    E2Component,
+    GcsComponent,
+    OauthComponent
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
+    HttpClientJsonpModule,
     FormsModule,
     ReactiveFormsModule,
     MatTreeModule,
