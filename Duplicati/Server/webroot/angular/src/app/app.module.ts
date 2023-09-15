@@ -30,8 +30,6 @@ import { BackupDestinationSettingsComponent } from './edit-backup/backup-destina
 import { BackupEditUriComponent } from './edit-backup/backup-edit-uri/backup-edit-uri.component';
 import { ContextMenuComponent } from './context-menu/context-menu.component';
 import { DynamicHostDirective } from './directives/dynamic-host.directive';
-import { EditFileComponent } from './editors/edit-file/edit-file.component';
-import { backendEditorProviders } from './editors';
 import { DestinationFolderPickerComponent } from './destination-folder-picker/destination-folder-picker.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatTreeModule } from '@angular/material/tree';
@@ -76,23 +74,9 @@ import { ThrottleComponent } from './dialog-templates/throttle/throttle.componen
 import { PauseComponent } from './dialog-templates/pause/pause.component';
 import { DynamicContentComponent } from './dynamic-content/dynamic-content.component';
 import { ClipboardModule } from 'ngx-clipboard';
-import { AzureComponent } from './editors/azure/azure.component';
-import { B2Component } from './editors/b2/b2.component';
-import { CosComponent } from './editors/cos/cos.component';
-import { E2Component } from './editors/e2/e2.component';
-import { GcsComponent } from './editors/gcs/gcs.component';
-import { OauthComponent } from './editors/oauth/oauth.component';
-import { GenericComponent } from './editors/generic/generic.component';
-import { JottacloudComponent } from './editors/jottacloud/jottacloud.component';
-import { MegaComponent } from './editors/mega/mega.component';
-import { MsgroupComponent } from './editors/msgroup/msgroup.component';
-import { OpenstackComponent } from './editors/openstack/openstack.component';
-import { RcloneComponent } from './editors/rclone/rclone.component';
-import { S3Component } from './editors/s3/s3.component';
-import { SharepointComponent } from './editors/sharepoint/sharepoint.component';
-import { SiaComponent } from './editors/sia/sia.component';
-import { StorjComponent } from './editors/storj/storj.component';
-import { TardigradeComponent } from './editors/tardigrade/tardigrade.component';
+import { BackendEditorsModule } from './backend-editors/backend-editors.module';
+import { EditFileComponent } from './edit-file/edit-file.component';
+import { BACKEND_EDITORS } from './backend-editor';
 
 @NgModule({
   declarations: [
@@ -156,24 +140,7 @@ import { TardigradeComponent } from './editors/tardigrade/tardigrade.component';
     CaptchaComponent,
     ThrottleComponent,
     PauseComponent,
-    DynamicContentComponent,
-    AzureComponent,
-    B2Component,
-    CosComponent,
-    E2Component,
-    GcsComponent,
-    OauthComponent,
-    GenericComponent,
-    JottacloudComponent,
-    MegaComponent,
-    MsgroupComponent,
-    OpenstackComponent,
-    RcloneComponent,
-    S3Component,
-    SharepointComponent,
-    SiaComponent,
-    StorjComponent,
-    TardigradeComponent
+    DynamicContentComponent
   ],
   imports: [
     BrowserModule,
@@ -186,6 +153,7 @@ import { TardigradeComponent } from './editors/tardigrade/tardigrade.component';
     MatButtonModule,
     MatMenuModule,
     ClipboardModule,
+    BackendEditorsModule,
     HttpClientXsrfModule.withOptions({
       headerName: 'X-XSRF-Token',
       cookieName: 'xsrf-token'
@@ -197,7 +165,7 @@ import { TardigradeComponent } from './editors/tardigrade/tardigrade.component';
   providers: [
     CookieService,
     httpInterceptorProviders,
-    backendEditorProviders,
+    { provide: BACKEND_EDITORS, useValue: { key: 'file', type: EditFileComponent }, multi: true },
     backupCheckerProviders
   ],
   bootstrap: [AppComponent]

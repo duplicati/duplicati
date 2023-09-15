@@ -1,5 +1,5 @@
-import { inject, Inject, Injectable, Injector, Type } from '@angular/core';
-import { BackendEditorComponent, BACKEND_EDITORS, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData, DEFAULT_BACKEND_EDITOR } from '../editors/backend-editor';
+import { Inject, Injectable, Injector, Type } from '@angular/core';
+import { BackendEditorComponent, BACKEND_EDITORS, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData, DEFAULT_BACKEND_EDITOR } from '../backend-editor';
 import { GroupedModuleDescription, ModuleDescription } from '../system-info/system-info';
 import { DialogService } from './dialog.service';
 import { ParserService } from './parser.service';

@@ -1,7 +1,7 @@
 import { ComponentRef, Injector, SimpleChanges } from '@angular/core';
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { DynamicHostDirective } from '../../directives/dynamic-host.directive';
-import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../editors/backend-editor';
+import { BackendEditorComponent, CommonBackendData } from '../../backend-editor';
 import { ConnectionTester } from '../../services/connection-tester.service';
 import { ConvertService } from '../../services/convert.service';
 import { EditUriService } from '../../services/edit-uri.service';
