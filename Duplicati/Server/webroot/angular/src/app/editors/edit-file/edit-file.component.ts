@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/
 import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
-import { BackendEditorComponent, CommonBackendData } from '../backend-editor.component';
+import { BackendEditorComponent, CommonBackendData } from '../backend-editor';
 
 @Component({
   templateUrl: './edit-file.component.html',

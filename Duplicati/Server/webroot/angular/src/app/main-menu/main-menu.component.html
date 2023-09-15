@@ -9,8 +9,8 @@
     <li>
       <a routerLink="/restorestart" routerLinkActive="active" ariaCurrentWhenActive="page" class="restore" translate>Restore</a>
     </li>
-    <li [hidden]="state?.programState != 'Running'">
-      <a href (click)="resume()" id="resume" class="resume" translate>Resume</a>
+    <li *ngIf="state.programState != 'Running'">
+      <a href="javascript:void(0)" (click)="resume()" id="resume" class="resume" translate>Resume</a>
     </li>
     <li>
       <a routerLink="/settings" class="settings" routerLinkActive="active" ariaCurrentWhenActive="page" translate>Settings</a>
@@ -19,7 +19,7 @@
       <a routerLink="/about" class="about" routerLinkActive="active" ariaCurrentWhenActive="page" translate>About</a>
     </li>
     <li [hidden]="!isLoggedIn">
-      <a href (click)="log_out()" class="logout" translate>Log out</a>
+      <a href="javascript:void(0)" (click)="log_out()" class="logout" translate>Log out</a>
     </li>
   </ul>
 </div>

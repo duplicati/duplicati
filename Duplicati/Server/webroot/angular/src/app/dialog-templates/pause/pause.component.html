@@ -1,0 +1,18 @@
+<div class="pauseoptions">
+  <form class="styled">
+    <ul>
+      <li class="input" (click)="time = t" *ngFor="let t of times">
+        <input type="radio" name="timesel" [id]="'sel_' + t" [(ngModel)]="time" [value]="t">
+        <label *ngIf="t.endsWith('m')" [for]="'sel_' + t" class="pause-{{stripUnit(t)}}" translate translate-params-number="stripUnit(t)">{{stripUnit(t)}} Minutes</label>
+        <label *ngIf="t.endsWith('h') && stripUnit(t) == 1" [for]="'sel_' + t" class="pause-{{stripUnit(t)*60}}" translate translate-params-number="stripUnit(t)">{{stripUnit(t)}} Hour</label>
+        <label *ngIf="t.endsWith('h') && stripUnit(t) != 1" [for]="'sel_' + t" class="pause-{{stripUnit(t)*60}}" translate translate-params-number="stripUnit(t)">{{stripUnit(t)}} Hours</label>
+      </li>
+
+      <li class="input" (click)="time = 'infinite'">
+        <input type="radio" name="timesel" id="infinite" [(ngModel)]="time" value="infinite">
+        <label for="infinite" class="pause-x" translate>Until resumed</label>
+      </li>
+    </ul>
+  </form>
+
+</div>

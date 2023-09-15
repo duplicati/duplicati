@@ -1,0 +1,22 @@
+<div class="throttlesettings">
+  <form class="styled">
+    <div class="input mixed multiple" [class.disabled]="!uploadthrottleenabled">
+      <input type="checkbox" class="checkbox" name="uploadthrottleenabled" [(ngModel)]="uploadthrottleenabled">
+      <label (click)="uploadthrottleenabled = !uploadthrottleenabled" for="uploadspeedNumber" translate>Max upload speed</label>
+      <app-input-multiplier name="uploadspeed" [disabled]="!uploadthrottleenabled" [multipliers]="speedMultipliers" case="uppercase" [(value)]="uploadspeed"></app-input-multiplier>
+    </div>
+
+    <div class="input mixed multiple" [class.disabled]="!downloadthrottleenabled">
+      <input type="checkbox" class="checkbox" name="downloadthrottleenabled" [(ngModel)]="downloadthrottleenabled">
+
+      <label (click)="downloadthrottleenabled = !downloadthrottleenabled" for="downloadspeedNumber" translate>Max download speed</label>
+      <app-input-multiplier name="downloadspeed" [disabled]="!downloadthrottleenabled" [multipliers]="speedMultipliers" case="uppercase" [(value)]="downloadspeed"></app-input-multiplier>
+
+    </div>
+
+    <div>
+      Note that speeds are entered in bytes, and line speeds are typically reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line is equivalent to 1 MByte/s.
+    </div>
+  </form>
+
+</div>

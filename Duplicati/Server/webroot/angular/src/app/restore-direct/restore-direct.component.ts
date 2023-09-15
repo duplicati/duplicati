@@ -3,6 +3,7 @@ import { Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AddOrUpdateBackupData, Backup } from '../backup';
+import { CopyClipboardButtonsComponent } from '../dialog-templates/copy-clipboard-buttons/copy-clipboard-buttons.component';
 import { BackupEditUriComponent } from '../edit-backup/backup-edit-uri/backup-edit-uri.component';
 import { BackupListService } from '../services/backup-list.service';
 import { BackupService } from '../services/backup.service';
@@ -97,7 +98,7 @@ export class RestoreDirectComponent {
   copyUrlToClipboard(): void {
     const uri = this.editUri.buildUri();
     if (uri != null) {
-      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], 'copy_clipboard_buttons.html',);
+      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent);
     }
   }
 

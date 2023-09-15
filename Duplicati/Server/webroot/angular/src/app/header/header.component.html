@@ -12,14 +12,14 @@
   </div>
 
   <div class="donate" *ngIf="systemInfo?.SuppressDonationMessages !== true">
-    <app-external-link link="'https://www.duplicati.com/donate'">Donate</app-external-link>
+    <app-external-link link="https://www.duplicati.com/donate">Donate</app-external-link>
   </div>
 
 
   <a href="javascript:void(0)" class="menubutton hidden" data-target="mainmenu" translate (click)="onClickMenu($event)">Menu</a>
 
   <div class="action-icons-small">
-    <div class="pause" [class]="{'active': state?.programState != 'Running'}" (click)="pauseOptions()" [title]="state?.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'"></div>
+    <div class="pause" [class]="{'active': state.programState != 'Running'}" (click)="pauseOptions()" [title]="state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'"></div>
     <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" (click)="throttleOptions()" title="Click to set throttle options" aria-label="Click to set throttle options"></div>
   </div>
 
@@ -27,8 +27,8 @@
     <app-state></app-state>
 
     <div class="action-icons">
-      <div class="pause" ng-class="{'active': state?.programState != 'Running'}" ng-click="pauseOptions()" title="{{state?.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
-      <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" ng-click="throttleOptions()" title="Click to set throttle options" alt="Click to set throttle options"></div>
+      <div class="pause" [class]="{active: state.programState != 'Running'}" (click)="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
+      <div class="throttle" [class.active]="throttle_active" [class.inactive]="!throttle_active" (click)="throttleOptions()" title="Click to set throttle options" alt="Click to set throttle options"></div>
     </div>
   </div>
 </div>

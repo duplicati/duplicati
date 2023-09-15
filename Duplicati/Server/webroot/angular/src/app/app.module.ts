@@ -29,7 +29,7 @@ import { BackupGeneralSettingsComponent } from './edit-backup/backup-general-set
 import { BackupDestinationSettingsComponent } from './edit-backup/backup-destination-settings/backup-destination-settings.component';
 import { BackupEditUriComponent } from './edit-backup/backup-edit-uri/backup-edit-uri.component';
 import { ContextMenuComponent } from './context-menu/context-menu.component';
-import { EditorHostDirective } from './directives/editor-host.directive';
+import { DynamicHostDirective } from './directives/dynamic-host.directive';
 import { EditFileComponent } from './editors/edit-file/edit-file.component';
 import { backendEditorProviders } from './editors';
 import { DestinationFolderPickerComponent } from './destination-folder-picker/destination-folder-picker.component';
@@ -70,6 +70,12 @@ import { RestoreSelectFilesComponent } from './restore/restore-select-files.comp
 import { RestoreLocationComponent } from './restore/restore-location.component';
 import { HighlightPipe } from './pipes/highlight.pipe';
 import { CommandlineComponent } from './commandline/commandline.component';
+import { CopyClipboardButtonsComponent } from './dialog-templates/copy-clipboard-buttons/copy-clipboard-buttons.component';
+import { CaptchaComponent } from './dialog-templates/captcha/captcha.component';
+import { ThrottleComponent } from './dialog-templates/throttle/throttle.component';
+import { PauseComponent } from './dialog-templates/pause/pause.component';
+import { DynamicContentComponent } from './dynamic-content/dynamic-content.component';
+import { ClipboardModule } from 'ngx-clipboard';
 
 @NgModule({
   declarations: [
@@ -96,7 +102,7 @@ import { CommandlineComponent } from './commandline/commandline.component';
     BackupDestinationSettingsComponent,
     BackupEditUriComponent,
     ContextMenuComponent,
-    EditorHostDirective,
+    DynamicHostDirective,
     EditFileComponent,
     DestinationFolderPickerComponent,
     SourceFolderPickerComponent,
@@ -128,7 +134,12 @@ import { CommandlineComponent } from './commandline/commandline.component';
     RestoreSelectFilesComponent,
     RestoreLocationComponent,
     HighlightPipe,
-    CommandlineComponent
+    CommandlineComponent,
+    CopyClipboardButtonsComponent,
+    CaptchaComponent,
+    ThrottleComponent,
+    PauseComponent,
+    DynamicContentComponent
   ],
   imports: [
     BrowserModule,
@@ -139,6 +150,7 @@ import { CommandlineComponent } from './commandline/commandline.component';
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
+    ClipboardModule,
     HttpClientXsrfModule.withOptions({
       headerName: 'X-XSRF-Token',
       cookieName: 'xsrf-token'

@@ -1,9 +1,10 @@
+import { Input, Type } from '@angular/core';
 import { Directive, ViewContainerRef } from '@angular/core';
 
 @Directive({
-  selector: '[appEditorHost]'
+  selector: '[appDynamicHost]'
 })
-export class EditorHostDirective {
+export class DynamicHostDirective {
 
   constructor(public viewContainerRef: ViewContainerRef) { }
 

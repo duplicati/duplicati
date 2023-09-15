@@ -1,0 +1,4 @@
+<a href="javascript:void(0)" class="button" ngxClipboard [cbContent]="config?.textarea || ''" (cbOnSuccess)="onCopySuccess($event);" (cbOnError)="onCopyError($event);" #tooltipTarget>
+  <img src="img/clippy.png" srcset="img/clippy.png 1x, img/clippy_2x.png 2x, img/clippy_3x.png 3x" style="vertical-align: middle;" />
+  <span translate style="vertical-align: middle;">Copy</span>
+</a>

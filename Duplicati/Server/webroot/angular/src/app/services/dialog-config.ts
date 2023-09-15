@@ -1,5 +1,12 @@
+import { TemplateRef, Type } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
+
 export interface DialogCallback {
   (buttonIndex: number, input: string | undefined, dialog: DialogConfig): void;
+}
+
+export interface DialogTemplate {
+  config: DialogConfig | undefined;
 }
 
 export interface DialogConfig {
@@ -14,12 +21,14 @@ export interface DialogConfig {
   enableTextarea?: boolean;
   placeholder?: string;
   textarea?: string;
+  // Data can be set by templates
+  data?: any;
 
-  htmltemplate?: string;
-  buttonTemplate?: string;
+  htmltemplate?: Type<DialogTemplate>;
+  buttonTemplate?: Type<DialogTemplate>;
 }
 
 export interface DialogState {
-  CurrentItem?: DialogConfig;
+  CurrentItem: BehaviorSubject<DialogConfig | undefined>;
   Queue: DialogConfig[];
 }

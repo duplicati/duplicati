@@ -1,5 +1,8 @@
 import { Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { ServerStatus } from '../services/server-status';
+import { ServerStatusService } from '../services/server-status.service';
 import { SystemInfoService } from '../system-info/system-info.service';
 
 @Component({
@@ -10,13 +13,21 @@ import { SystemInfoService } from '../system-info/system-info.service';
 export class MainMenuComponent {
 
   public current_page: string = 'home';
-  public state: any;
+  public get state(): ServerStatus {
+    return this.serverStatus.status;
+  }
   public isLoggedIn: boolean = true;
 
   @Input() openOnMobile: boolean = false;
 
-  constructor(private systemInfo: SystemInfoService) { }
+  private subscription?: Subscription;
 
-  public resume(): void { }
-  public log_out(): void { }
+  constructor(private systemInfo: SystemInfoService, private serverStatus: ServerStatusService) { }
+
+
+  public resume(): void {
+    this.serverStatus.resume();
+  }
+  public log_out(): void {
+  }
 }

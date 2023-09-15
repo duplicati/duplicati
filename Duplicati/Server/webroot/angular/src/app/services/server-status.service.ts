@@ -12,7 +12,7 @@ export class ServerStatusService {
 
   longpolltime = 5 * 60 * 1000;
 
-  status: ServerStatus = {
+  private _status: ServerStatus = {
     lastEventId: -1,
     lastDataUpdateId: -1,
     lastNotificationUpdateId: -1,
@@ -33,6 +33,9 @@ export class ServerStatusService {
     proposedSchedule: [],
     schedulerQueueIds: []
   };
+  get status(): ServerStatus {
+    return this._status;
+  }
 
   private status$ = new ReplaySubject<ServerStatus>(1);
   statusRequest?: Subscription;
@@ -66,11 +69,9 @@ export class ServerStatusService {
   }
   pause(duration?: string): void {
     if (duration !== undefined) {
-      this.client.post('/serverstate/pause', '', {
-        params: {
-          duration: duration
-        }
-      }).subscribe();
+      let formData = new FormData();
+      formData.set('duration', duration);
+      this.client.post('/serverstate/pause', formData).subscribe();
     } else {
       this.client.post('/serverstate/pause', '').subscribe();
     }
@@ -159,7 +160,7 @@ export class ServerStatusService {
 
     this.status.pauseTimeRemain = Math.max(0, this.status.estimatedPauseEnd.getTime() - new Date().getTime());
     if (this.status.pauseTimeRemain > 0 && this.updatePauseTimer === undefined) {
-      this.updatePauseTimer = setInterval(this.pauseTimerUpdater, 500);
+      this.updatePauseTimer = setInterval(() => this.pauseTimerUpdater(false), 500);
     } else if (this.status.pauseTimeRemain <= 0 && this.updatePauseTimer !== undefined) {
       clearInterval(this.updatePauseTimer);
       this.updatePauseTimer = undefined;

@@ -1,5 +1,5 @@
 import { inject, Inject, Injectable, Type } from '@angular/core';
-import { BackendEditorComponent, BACKEND_EDITORS, CommonBackendData } from '../editors/backend-editor.component';
+import { BackendEditorComponent, BACKEND_EDITORS, CommonBackendData } from '../editors/backend-editor';
 import { GroupedModuleDescription } from '../system-info/system-info';
 import { ParserService } from './parser.service';
 

@@ -1,4 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, SecurityContext, SimpleChange, SimpleChanges } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-external-link',

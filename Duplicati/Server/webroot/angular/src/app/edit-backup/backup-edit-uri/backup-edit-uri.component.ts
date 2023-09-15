@@ -1,7 +1,7 @@
 import { ComponentRef, SimpleChanges } from '@angular/core';
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { EditorHostDirective } from '../../directives/editor-host.directive';
-import { BackendEditorComponent, CommonBackendData } from '../../editors/backend-editor.component';
+import { DynamicHostDirective } from '../../directives/dynamic-host.directive';
+import { BackendEditorComponent, CommonBackendData } from '../../editors/backend-editor';
 import { ConnectionTester } from '../../services/connection-tester.service';
 import { ConvertService } from '../../services/convert.service';
 import { EditUriService } from '../../services/edit-uri.service';
@@ -35,7 +35,7 @@ export class BackupEditUriComponent {
 
   private systemInfo?: SystemInfo;
 
-  @ViewChild(EditorHostDirective, { static: true }) editorHost!: EditorHostDirective;
+  @ViewChild(DynamicHostDirective, { static: true }) editorHost!: DynamicHostDirective;
 
   constructor(public parser: ParserService,
     public convert: ConvertService,

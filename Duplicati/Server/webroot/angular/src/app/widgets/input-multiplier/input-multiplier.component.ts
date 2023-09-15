@@ -18,6 +18,7 @@ export class InputMultiplierComponent {
     this._value = value;
   }
   @Output() valueChange = new EventEmitter<string>();
+  @Input() disabled: boolean = false;
 
   private _value: string = '';
   private _number: number | null = null;

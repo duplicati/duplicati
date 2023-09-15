@@ -1,6 +1,7 @@
 import { ViewChild } from '@angular/core';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Backup } from '../../backup';
+import { CopyClipboardButtonsComponent } from '../../dialog-templates/copy-clipboard-buttons/copy-clipboard-buttons.component';
 import { DialogService } from '../../services/dialog.service';
 import { BackupEditUriComponent } from '../backup-edit-uri/backup-edit-uri.component';
 import { BackupOptions } from '../backup-options';
@@ -29,7 +30,7 @@ export class BackupDestinationSettingsComponent {
   copyUrlToClipboard(): void {
     const uri = this.editUri.buildUri();
     if (uri != null) {
-      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], 'copy_clipboard_buttons.html',);
+      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent);
     }
   }
   getUri(): string | null {

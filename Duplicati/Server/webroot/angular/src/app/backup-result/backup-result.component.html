@@ -22,7 +22,7 @@
         <i class="fa fa-angle-{{logExpanded ? 'up': 'down'}}"></i>
       </span>
 
-      <a routerLink="." *ngIf="logExpanded">
+      <a routerLink="." ngxClipboard [cbContent]="formatted" *ngIf="logExpanded">
         <i class="fa fa-clipboard"></i>
         Copy log
       </a>

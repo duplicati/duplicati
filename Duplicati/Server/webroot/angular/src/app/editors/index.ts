@@ -1,4 +1,4 @@
-import { BACKEND_EDITORS } from "./backend-editor.component";
+import { BACKEND_EDITORS } from "./backend-editor";
 import { EditFileComponent } from "./edit-file/edit-file.component";
 
 export const backendEditorProviders = [
