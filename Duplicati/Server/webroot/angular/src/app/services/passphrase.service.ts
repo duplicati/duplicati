@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { zxcvbn } from '@zxcvbn-ts/core';
 
 @Injectable({
   providedIn: 'root'
@@ -8,8 +9,7 @@ export class PassphraseService {
   constructor() { }
 
   computeStrength(passphrase: string): number {
-    //return (zxcvbn(passphrase.substring(0, 100)) || { 'score': -1 }).score;
-    return 0;
+    return (zxcvbn(passphrase.substring(0, 100)) || { 'score': -1 }).score;
   }
 
   generatePassphrase(): string {
