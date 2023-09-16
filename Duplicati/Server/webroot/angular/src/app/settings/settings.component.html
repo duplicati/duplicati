@@ -83,7 +83,7 @@ systemInfo.BrowserLocaleSupported ?
 
       <h2 translate>Donation messages</h2>
       <div class="input checkbox">
-        <label for="suppresDonationMessages" translate>Donation messages</label>
+        <label translate>Donation messages</label>
         <a routerLink="." (click)="suppressDonationMessages()" *ngIf="!systemInfo.SuppressDonationMessages" translate>Donation messages are visible, click to hide</a>
         <a routerLink="." (click)="displayDonationMessages()" *ngIf="systemInfo.SuppressDonationMessages" translate>Donation messages are hidden, click to show</a>
       </div>
@@ -166,7 +166,7 @@ systemInfo.BrowserLocaleSupported ?
     </div>
 
     <div class="input" *ngIf="!showAdvancedTextArea && advancedOptionList">
-      <label for="backupOptions" translate>Options</label>
+      <label translate>Options</label>
       <a routerLink="." (click)="showAdvancedTextArea = true" class="advanced-toggle" translate>Edit as text</a>
       <app-advanced-options-editor [optionList]="advancedOptionList!" [(options)]="advancedOptions"></app-advanced-options-editor>
     </div>

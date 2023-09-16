@@ -11,7 +11,7 @@ export class LoginInterceptor implements HttpInterceptor {
   constructor(private dialogService: DialogService, private router: Router) { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    return next.handle(req).pipe(catchError(this.handleError));
+    return next.handle(req).pipe(catchError(e => this.handleError(e)));
   }
 
   private handleError(error: HttpErrorResponse) {

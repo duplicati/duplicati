@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 import { Subscription } from 'rxjs';
 import { ConvertService } from '../services/convert.service';
+import { CryptoService } from '../services/crypto.service';
 import { DialogService } from '../services/dialog.service';
 import { ParserService } from '../services/parser.service';
 import { ServerSettingsService } from '../services/server-settings.service';
@@ -58,6 +59,7 @@ export class SettingsComponent {
     public convert: ConvertService,
     public parser: ParserService,
     private router: Router,
+    private crypto: CryptoService,
     private dialog: DialogService) { }
 
   ngOnInit() {
@@ -88,7 +90,7 @@ export class SettingsComponent {
   updateSettings(s: Record<string, string>): void {
     this.rawdata = s;
     this.requireRemotePassword = s['server-passphrase'] != null && s['server-passphrase'] != '';
-    this.remotePassword = s['server-phassphrase'] || '';
+    this.remotePassword = s['server-passphrase'] || '';
     this.confirmPassword = '';
     this.allowRemoteAccess = s['server-listen-interface'] !== 'loopback';
     const startupDelay = s['startup-delay'] || '';
@@ -119,7 +121,6 @@ export class SettingsComponent {
     this.router.navigate(['/']);
   }
   save() {
-    // TODO: Should probably not trim passwords?
     if (this.requireRemotePassword && this.remotePassword.trim().length === 0) {
       this.dialog.notifyInputError('Cannot use empty password');
       return;
@@ -140,13 +141,18 @@ export class SettingsComponent {
       'disable-tray-icon-login': this.disableTrayIconLogin
     };
 
+    let hashPromise: Promise<void> | undefined;
+
     if (this.requireRemotePassword && this.rawdata['server-passphrase'] !== this.remotePassword) {
       if (this.remotePassword !== this.confirmPassword) {
         this.dialog.notifyInputError('The passwords do not match');
         return;
       }
-      //patchdata['server-passphrase-salt'] = CryptoJS.lib.WordArray.random(256 / 8).toString(CryptoJS.enc.Base64);
-      //patchdata['server-passphrase'] = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(CryptoJS.enc.Utf8.parse($scope.remotePassword) + CryptoJS.enc.Base64.parse(patchdata['server-passphrase-salt']))).toString(CryptoJS.enc.Base64);
+      let salt = this.crypto.generateSaltBase64(256 / 8);
+      patchdata['server-passphrase-salt'] = salt;
+      hashPromise = this.crypto.saltedHashBase64(this.remotePassword, salt).then(v => {
+        patchdata['server-passphrase'] = v;
+      });
     } else if (!this.requireRemotePassword) {
       patchdata['server-passphrase-salt'] = null;
       patchdata['server-passphrase'] = null;
@@ -158,15 +164,28 @@ export class SettingsComponent {
     }
 
     this.themeService.updateTheme(this.theme);
-    this.serverSettings.updateSettings(patchdata).subscribe(() => {
-      this.serverSettings.setUILanguage(this.uiLanguage);
+    let apply = () => {
+      this.serverSettings.updateSettings(patchdata).subscribe(() => {
+        this.serverSettings.setUILanguage(this.uiLanguage);
 
-      if (this.updateChannel !== this.originalUpdateChannel) {
-        this.serverSettings.checkForUpdates().subscribe();
-      }
+        if (this.updateChannel !== this.originalUpdateChannel) {
+          this.serverSettings.checkForUpdates().subscribe();
+        }
 
-      location.reload();
-    }, this.dialog.connectionError('Failed to save: '));
+        location.reload();
+      }, this.dialog.connectionError('Failed to save: '));
+    };
+    if (hashPromise == null) {
+      apply();
+    } else {
+      hashPromise.then(apply, err => {
+        if (typeof err === 'string') {
+          this.dialog.alert(err);
+        } else {
+          this.dialog.alert('Failed to generate hash')
+        }
+      });
+    }
   }
 
   suppressDonationMessages() {

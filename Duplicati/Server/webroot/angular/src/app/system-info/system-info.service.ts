@@ -48,17 +48,17 @@ export class SystemInfoService {
   private GroupTypes: string[] = ['Local storage', 'Standard protocols', 'Proprietary', 'Others'];
 
   private state?: SystemInfo;
+  private hasError: boolean = false;
   private state$?: ReplaySubject<SystemInfo>;
   private stateRequest$?: Subscription;
 
   constructor(private http: HttpClient) { }
 
   getState(): Observable<SystemInfo> {
-    if (this.state$ === undefined) {
-      this.state$ = new ReplaySubject<SystemInfo>(1);
+    if (this.state$ === undefined || this.hasError) {
       this.reload();
     }
-    return this.state$.asObservable();
+    return this.state$!.asObservable();
   }
 
   private reloadBackendConfig(state: SystemInfo): void {
@@ -118,13 +118,19 @@ export class SystemInfoService {
     if (this.stateRequest$) {
       this.stateRequest$?.unsubscribe();
     }
-    if (this.state$ === undefined) {
+    if (this.state$ === undefined || this.hasError) {
+      // Have to recreate after error, because nothing else can be sent after
       this.state$ = new ReplaySubject<SystemInfo>(1);
     }
     this.stateRequest$ = this.http.get<SystemInfo>('/systeminfo').pipe(map(state => { this.loadTexts(state); return state; }))
       .subscribe(s => {
+        this.hasError = false;
         this.state = s;
         this.state$!.next(s);
+      }, err => {
+        this.hasError = true;
+        this.state = undefined;
+        this.state$!.error(err);
       });
   }
 
