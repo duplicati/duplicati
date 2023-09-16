@@ -3,6 +3,8 @@ import { ConvertService } from '../../services/convert.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../backend-editor';
+import { Observable } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-generic',
@@ -64,21 +66,21 @@ export class GenericComponent implements BackendEditorComponent {
 
   parseUriParts(data: CommonBackendData, parts: Map<string, string>): void { }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {};
     this.editUri.mergeAdvancedOptions(this.commonData, advancedOptions, opts);
 
-    return this.convert.format('{0}{1}://{2}{3}/{4}{5}',
+    return of(this.convert.format('{0}{1}://{2}{3}/{4}{5}',
       this.key,
       (this.supportsSSL && this.commonData.useSSL) ? 's' : '',
       this.commonData.server || '',
       (this.commonData.port || '') == '' ? '' : ':' + this.commonData.port,
       this.commonData.path || '',
       this.parser.encodeDictAsUrl(opts)
-    );
+    ));
   }
 
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 }

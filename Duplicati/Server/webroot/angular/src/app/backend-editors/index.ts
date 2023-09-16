@@ -1,5 +1,5 @@
 import { StaticProvider } from "@angular/core";
-//import { AzureComponent } from "./azure/azure.component";
+import { AzureComponent } from "./azure/azure.component";
 import { B2Component } from "./b2/b2.component";
 import { BACKEND_EDITORS, DEFAULT_BACKEND_EDITOR } from "../backend-editor";
 import { CosComponent } from "./cos/cos.component";
@@ -17,7 +17,6 @@ import { SharepointComponent } from "./sharepoint/sharepoint.component";
 import { SiaComponent } from "./sia/sia.component";
 import { StorjComponent } from "./storj/storj.component";
 import { TardigradeComponent } from "./tardigrade/tardigrade.component";
-import { AzureComponent } from "./azure/azure.component";
 
 export const backendEditorProviders: StaticProvider[] = [
   { provide: DEFAULT_BACKEND_EDITOR, useValue: GenericComponent },

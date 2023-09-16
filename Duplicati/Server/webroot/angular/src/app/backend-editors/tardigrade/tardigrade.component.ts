@@ -1,4 +1,7 @@
 import { Component } from '@angular/core';
+import { NEVER } from 'rxjs';
+import { of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { CommonBackendData } from '../../backend-editor';
 import { StorjComponent } from '../storj/storj.component';
 
@@ -26,7 +29,7 @@ export class TardigradeComponent extends StorjComponent {
     }
   }
 
-  override buildUri(advancedOptions: string[]): string | undefined {
+  override buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'tardigrade-auth-method': this.storjAuthMethod,
       'tardigrade-satellite': this.storjSatellite,
@@ -41,12 +44,12 @@ export class TardigradeComponent extends StorjComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return NEVER;
     }
 
-    return this.convert.format('{0}://tardigrade.io/config{1}',
+    return of(this.convert.format('{0}://tardigrade.io/config{1}',
       this.key,
       this.parser.encodeDictAsUrl(opts)
-    );
+    ));
   }
 }

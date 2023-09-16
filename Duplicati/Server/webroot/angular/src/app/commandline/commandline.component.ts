@@ -1,6 +1,6 @@
 import { Component, Input, SimpleChanges, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription, timer } from 'rxjs';
+import { defaultIfEmpty, EMPTY, Subscription, timer } from 'rxjs';
 import { BackupEditUriComponent } from '../edit-backup/backup-edit-uri/backup-edit-uri.component';
 import { BackupService } from '../services/backup.service';
 import { CommandlineService } from '../services/commandline.service';
@@ -107,8 +107,12 @@ export class CommandlineComponent {
   }
 
   submitURI() {
-    this.targetURL = this.editUri?.buildUri() || '';
-    this.editUriState = false;
+    (this.editUri?.buildUri() ?? EMPTY).pipe(defaultIfEmpty('')).subscribe(
+      url => {
+        this.targetURL = url;
+        this.editUriState = false;
+      }
+    );
   }
 
   run() {

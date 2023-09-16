@@ -3,6 +3,8 @@ import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { Observable, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-editor-e2',
@@ -59,7 +61,7 @@ export class E2Component implements BackendEditorComponent {
     parts.delete('--access-key-secret');
   }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {};
     this.editUri.mergeAdvancedOptions(this.commonData, advancedOptions, opts);
 
@@ -68,10 +70,10 @@ export class E2Component implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}://${this.commonData.server || ''}/${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}://${this.commonData.server || ''}/${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
 
   private validate(): boolean {
@@ -103,7 +105,7 @@ export class E2Component implements BackendEditorComponent {
 
     return res;
   }
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 }

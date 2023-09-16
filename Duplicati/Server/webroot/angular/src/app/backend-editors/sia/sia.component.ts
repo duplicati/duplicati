@@ -4,6 +4,9 @@ import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { Observable } from 'rxjs';
+import { EMPTY } from 'rxjs';
+import { of } from 'rxjs';
 
 export const EXAMPLE_SIA_SERVER = new InjectionToken<string>("Example sia server", {
   providedIn: 'root', factory: () => '127.0.0.1:9980'
@@ -53,7 +56,7 @@ export class SiaComponent implements BackendEditorComponent {
     }
   }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'sia-password': this.siaPassword,
       'sia-targetpath': this.siaTargetpath,
@@ -64,19 +67,19 @@ export class SiaComponent implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return this.convert.format('{0}://{1}/{2}{3}',
+    return of(this.convert.format('{0}://{1}/{2}{3}',
       this.key,
       this.commonData.server || '',
       this.siaTargetpath || '',
       this.parser.encodeDictAsUrl(opts)
-    );
+    ));
   }
 
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 
   private validate(): boolean {

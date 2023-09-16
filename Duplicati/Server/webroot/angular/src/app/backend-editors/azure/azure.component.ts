@@ -2,6 +2,9 @@ import { Component, EventEmitter, Inject, Input, Output } from '@angular/core';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { EMPTY } from 'rxjs';
+import { of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-editor-azure',
@@ -41,7 +44,7 @@ export class AzureComponent implements BackendEditorComponent {
   parseUriParts(data: CommonBackendData, parts: Map<string, string>): void {
     this.editUri.mergeServerAndPath(data);
   }
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {};
     this.editUri.mergeAdvancedOptions(this.commonData, advancedOptions, opts);
 
@@ -52,13 +55,13 @@ export class AzureComponent implements BackendEditorComponent {
       && this.editUri.requireField(this.commonData, 'password', 'Access key')
       && this.editUri.requireField(this.commonData, 'path', 'Container name');
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}://${this.commonData.path}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}://${this.commonData.path}${this.parser.encodeDictAsUrl(opts)}`);
   }
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 
 }

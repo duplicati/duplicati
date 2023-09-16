@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { map, Observable, of } from 'rxjs';
 import { DialogConfig } from './dialog-config';
 import { DialogService } from './dialog.service';
 
@@ -17,7 +18,7 @@ export class ConnectionTester {
     return this.testing;
   }
 
-  performConnectionTest(uri: string, advancedOptions: string[], builduri: () => string | null, backendTester?: () => boolean): void {
+  performConnectionTest(uri: string, advancedOptions: string[], builduri: () => Observable<string>, backendTester?: () => Observable<boolean>): void {
     let hasTriedCreate = false;
     let hasTriedCert = false;
     let hasTriedMozroots = false;
@@ -36,9 +37,12 @@ export class ConnectionTester {
           if (dlg?.dismiss) {
             dlg.dismiss();
           }
-          if (backendTester == null || backendTester()) {
-            this.dialog.dialog('Success', 'Connection worked');
-          }
+          let test = backendTester != null ? backendTester() : of(true);
+          test.subscribe(v => {
+            if (v) {
+              this.dialog.dialog('Success', 'Connection worked')
+            }
+          });
         }, handleError);
       });
     };
@@ -74,13 +78,13 @@ export class ConnectionTester {
         (idx) => {
           if (idx === 1) {
             appendApprovedCert(hash);
-            const newUri = builduri();
-            if (newUri != null) {
+            builduri().pipe(map(newUri => {
               uri = newUri;
               testConnection();
-            }
+            })).subscribe();
           }
-        });
+        }
+      );
     };
 
     let hasCertApproved = (hash: string): boolean => {
@@ -106,7 +110,7 @@ export class ConnectionTester {
 
       } else if (!hasTriedHostkey && message.startsWith('incorrect-host-key:')) {
 
-      } else {
+      } else if (err) {
         this.dialog.connectionError('Failed to connect: ', err);
       }
     };

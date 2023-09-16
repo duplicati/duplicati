@@ -5,6 +5,9 @@ import { ConvertService } from '../../services/convert.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { Observable } from 'rxjs';
+import { EMPTY } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-mega',
@@ -46,7 +49,7 @@ export class MegaComponent implements BackendEditorComponent {
   parseUriParts(data: CommonBackendData, parts: Map<string, string>): void {
     this.editUri.mergeServerAndPath(data);
   }
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {};
     this.editUri.mergeAdvancedOptions(this.commonData, advancedOptions, opts);
 
@@ -55,17 +58,17 @@ export class MegaComponent implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return this.convert.format('{0}://{1}{2}',
+    return of(this.convert.format('{0}://{1}{2}',
       this.key,
       this.commonData.path || '',
       this.parser.encodeDictAsUrl(opts)
-    );
+    ));
   }
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 
   private validate(): boolean {

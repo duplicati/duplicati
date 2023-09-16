@@ -1,5 +1,6 @@
 import { SimpleChanges, ViewChild } from '@angular/core';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Backup } from '../../backup';
 import { CopyClipboardButtonsComponent } from '../../dialog-templates/copy-clipboard-buttons/copy-clipboard-buttons.component';
 import { DialogService } from '../../services/dialog.service';
@@ -36,12 +37,11 @@ export class BackupDestinationSettingsComponent {
     });
   }
   copyUrlToClipboard(): void {
-    const uri = this.editUri.buildUri();
-    if (uri != null) {
-      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent);
-    }
+    this.editUri.buildUri().subscribe(uri =>
+      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent));
+
   }
-  getUri(): string | null {
+  getUri(): Observable<string>{
     return this.editUri.buildUri();
   }
   setUri(uri: string) {

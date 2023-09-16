@@ -1,3 +1,4 @@
+import { Optional } from '@angular/core';
 import { Inject, Injectable, Injector, Type } from '@angular/core';
 import { BackendEditorComponent, BACKEND_EDITORS, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData, DEFAULT_BACKEND_EDITOR } from '../backend-editor';
 import { GroupedModuleDescription, ModuleDescription } from '../system-info/system-info';
@@ -11,7 +12,7 @@ export class EditUriService {
   private editors = new Map<string, Type<BackendEditorComponent>>();
 
   constructor(@Inject(BACKEND_EDITORS) editorTypes: ({ key: string, type: Type<BackendEditorComponent> })[],
-    @Inject(DEFAULT_BACKEND_EDITOR) private defaultEditor: Type<BackendEditorComponent> | undefined,
+    @Inject(DEFAULT_BACKEND_EDITOR) @Optional() private defaultEditor: Type<BackendEditorComponent> | null,
     private dialog: DialogService,
     private parser: ParserService) {
     for (let e of editorTypes) {
@@ -23,7 +24,7 @@ export class EditUriService {
     return 'file';
   }
 
-  getEditorType(key: string): Type<BackendEditorComponent> | undefined {
+  getEditorType(key: string): Type<BackendEditorComponent> | null {
     return this.editors.get(key) ?? this.defaultEditor;
   }
 

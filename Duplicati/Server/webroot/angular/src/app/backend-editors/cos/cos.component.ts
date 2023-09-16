@@ -3,6 +3,8 @@ import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { Observable, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-editor-cos',
@@ -45,7 +47,7 @@ export class CosComponent implements BackendEditorComponent {
 
     this.editUri.mergeServerAndPath(data);
   }
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'cos-app-id': this.cosAppId,
       'cos-region': this.cosRegion,
@@ -57,13 +59,13 @@ export class CosComponent implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 
   private validate(): boolean {

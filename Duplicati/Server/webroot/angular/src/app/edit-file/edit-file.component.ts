@@ -3,6 +3,7 @@ import { DialogService } from '../services/dialog.service';
 import { EditUriService } from '../services/edit-uri.service';
 import { ParserService } from '../services/parser.service';
 import { BackendEditorComponent, CommonBackendData } from '../backend-editor';
+import { EMPTY, Observable, of } from 'rxjs';
 
 @Component({
   templateUrl: './edit-file.component.html',
@@ -80,16 +81,16 @@ export class EditFileComponent implements BackendEditorComponent {
       data.path = newPath;
     }
   }
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {};
     if (!this.editUri.mergeAdvancedOptions(this.commonData, advancedOptions, opts)) {
       this.dialog.dialog('Error', 'Failed to process advanced options');
-      return undefined;
+      return EMPTY;
     }
-    return `file://${this.path}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`file://${this.path}${this.parser.encodeDictAsUrl(opts)}`);
   }
-  extraConnectionTests(): boolean {
+  extraConnectionTests(): Observable<boolean> {
     // Nothing to test
-    return true;
+    return of(true);
   }
 }

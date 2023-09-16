@@ -2,7 +2,7 @@ import { Inject, Injectable, InjectionToken } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { AddOrUpdateBackupData, Backup, BackupSetting, Schedule } from '../backup';
 import { BackupOptions } from '../edit-backup/backup-options';
-import { CommandLineArgument } from '../system-info/system-info';
+import { CommandLineArgument, ServerModuleDescription } from '../system-info/system-info';
 import { ConvertService } from './convert.service';
 import { FileFilterService } from './file-filter.service';
 import { ParserService } from './parser.service';
@@ -138,7 +138,7 @@ export class EditBackupService {
     return res;
   }
 
-  parseOptions(b: Backup): BackupOptions {
+  parseOptions(b: Backup, serverModules?: ServerModuleDescription[]): BackupOptions {
     let options = new BackupOptions();
 
     let optMap = new Map<string, string>();
@@ -208,9 +208,10 @@ export class EditBackupService {
       extopts.delete(opt);
     }
     options.extendedOptions = this.parser.serializeAdvancedOptionsToArray(extopts);
-    // TODO: Initialize server module settings
-    // options.serverModuleSettings = new Map();
-    // this.parser.extractServerModuleOptions(options.extendedOptions, this.serverModules, options.serverModuleSettings, 'SupportedLocalCommands');
+
+    let serverModuleSettings: Record<string, string> = {};
+    this.parser.extractServerModuleOptions(options.extendedOptions, serverModules || [], serverModuleSettings, 'SupportedLocalCommands');
+    options.serverModuleSettings = new Map(Object.entries(serverModuleSettings));
 
     return options;
   }

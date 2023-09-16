@@ -3,6 +3,8 @@ import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { EMPTY, Observable } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-rclone',
@@ -48,7 +50,7 @@ export class RcloneComponent implements BackendEditorComponent {
     }
   }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'rclone-local-repository': this.localRepository,
       //'rclone-option': this.rcloneOption,
@@ -62,10 +64,10 @@ export class RcloneComponent implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}://${this.commonData.server || ''}/${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}://${this.commonData.server || ''}/${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
 
   private validate(): boolean {
@@ -97,8 +99,8 @@ export class RcloneComponent implements BackendEditorComponent {
 
     return res;
   }
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 }
 

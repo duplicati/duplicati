@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CommandLineArgument, ModuleDescription, SystemInfo } from '../system-info/system-info';
+import { CommandLineArgument, ModuleDescription, ServerModuleDescription, SystemInfo } from '../system-info/system-info';
 import { ConvertService } from './convert.service';
 
 @Injectable({
@@ -110,17 +110,17 @@ export class ParserService {
     return res;
   }
 
-  extractServerModuleOptions(advancedOptions: string[], servermodulelist: any[], servermodulesettings: Record<string, string>, optionlistname?: string) {
+  extractServerModuleOptions(advancedOptions: string[], servermodulelist: ServerModuleDescription[], servermodulesettings: Record<string, string>, optionlistname?: keyof (ServerModuleDescription)) {
     if (optionlistname == null) {
       optionlistname = 'SupportedCommands';
     }
 
     for (let module of servermodulelist) {
-      for (let option of module[optionlistname]) {
-        const prefixstr = `--${option.Name}=`;
+      for (let option of module[optionlistname] || []) {
+        const prefixstr = `--${(option as CommandLineArgument).Name}=`;
         for (let i = advancedOptions.length - 1; i >= 0; i--) {
           if (advancedOptions[i].indexOf(prefixstr) == 0) {
-            servermodulesettings[option.Name] = advancedOptions[i].substring(prefixstr.length);
+            servermodulesettings[(option as CommandLineArgument).Name] = advancedOptions[i].substring(prefixstr.length);
             advancedOptions.splice(i, 1);
           }
         }

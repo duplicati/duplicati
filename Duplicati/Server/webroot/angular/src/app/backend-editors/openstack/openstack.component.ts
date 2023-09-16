@@ -5,6 +5,8 @@ import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { EMPTY, Observable } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-openstack',
@@ -86,7 +88,7 @@ export class OpenstackComponent implements BackendEditorComponent {
     this.editUri.mergeServerAndPath(data);
   }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'openstack-domain-name': this.openstackDomainname,
       'openstack-authuri': (this.isCustomServer() ? this.openstackServerCustom : this.openstackServer) ?? '',
@@ -111,10 +113,10 @@ export class OpenstackComponent implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
 
   private validate(): boolean {
@@ -162,20 +164,21 @@ export class OpenstackComponent implements BackendEditorComponent {
 
     return res;
   }
-extraConnectionTests(): boolean {
-  return true;
-}
 
-compareValue(a: KeyValue < string, string | null >, b: KeyValue<string, string | null>) {
-  if((a.value || '') < (b.value || '')) {
-  return -1;
-} else if (a.value == b.value) {
-  return 0;
-}
-return 1;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 
-isCustomServer(): boolean {
-  return !Object.values(this.openstackProviders).includes(this.openstackServer ?? null);
-}
+  compareValue(a: KeyValue<string, string | null>, b: KeyValue<string, string | null>) {
+    if ((a.value || '') < (b.value || '')) {
+      return -1;
+    } else if (a.value == b.value) {
+      return 0;
+    }
+    return 1;
+  }
+
+  isCustomServer(): boolean {
+    return !Object.values(this.openstackProviders).includes(this.openstackServer ?? null);
+  }
 }

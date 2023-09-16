@@ -6,6 +6,9 @@ import { EditUriService } from '../../services/edit-uri.service';
 import { OauthService } from '../services/oauth.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../backend-editor';
+import { Observable } from 'rxjs';
+import { EMPTY } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-oauth',
@@ -55,7 +58,7 @@ export class OauthComponent implements BackendEditorComponent {
     this.editUri.mergeServerAndPath(data);
   }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       authid: this.authID
     };
@@ -63,14 +66,14 @@ export class OauthComponent implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}${this.supportsSSL && this.commonData.useSSL ? 's' : ''}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}${this.supportsSSL && this.commonData.useSSL ? 's' : ''}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
 
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 
   oauthStartTokenCreation() {

@@ -9,6 +9,8 @@ import { GroupedOptions, GroupedOptionService } from '../../services/grouped-opt
 import { ParserService } from '../../services/parser.service';
 import { CommandLineArgument, GroupedModuleDescription, ModuleDescription, SystemInfo } from '../../system-info/system-info';
 import { SystemInfoService } from '../../system-info/system-info.service';
+import { map, Observable } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
 
 @Component({
@@ -86,14 +88,11 @@ export class BackupEditUriComponent {
     this.loadEditor();
   }
 
-  buildUri(): string | null {
+  buildUri(): Observable<string> {
     if (this.editorComponent) {
-      const uri = this.editorComponent.instance.buildUri(this.advancedOptions);
-      if (uri != null) {
-        return uri;
-      }
+      return this.editorComponent.instance.buildUri(this.advancedOptions);
     }
-    return null;
+    return EMPTY;
   }
 
   private updateAdvancedOptionList(): void {
@@ -174,9 +173,8 @@ export class BackupEditUriComponent {
   }
 
   testConnection(): void {
-    const uri = this.buildUri();
-    if (uri != null) {
-      this.connectionTester.performConnectionTest(uri, this.advancedOptions, () => this.buildUri());
-    }
+    this.buildUri().subscribe(uri => this.connectionTester.performConnectionTest(uri, this.advancedOptions, () => this.buildUri(),
+      this.editorComponent == null ? undefined : () => this.editorComponent!.instance.extraConnectionTests())
+    );
   }
 }

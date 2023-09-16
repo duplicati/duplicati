@@ -8,6 +8,8 @@ import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../backend-editor';
+import { EMPTY } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-s3',
@@ -132,7 +134,7 @@ export class S3Component implements BackendEditorComponent {
     }
   }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       's3-server-name': (this.isCustomServer() ? this.s3ServerCustom : this.s3Server) ?? ''
     };
@@ -152,49 +154,55 @@ export class S3Component implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return this.convert.format('{0}{1}://{2}/{3}{4}',
+    return of(this.convert.format('{0}{1}://{2}/{3}{4}',
       this.key,
       (this.supportsSSL && this.commonData.useSSL) ? 's' : '',
       this.commonData.server || '',
       this.commonData.path || '',
       this.parser.encodeDictAsUrl(opts)
-    );
+    ));
   }
 
-  extraConnectionTests(): boolean {
-    let dlg = this.dialog.dialog('Testing permissions...', 'Testing permissions …', [], undefined, () => {
-      this.s3Service.testPermissions(this.username, this.password).subscribe(res => {
-        if (dlg?.dismiss) {
-          dlg.dismiss();
-        }
+  extraConnectionTests(): Observable<boolean> {
+    return new Observable(subscriber => {
+      let dlg = this.dialog.dialog('Testing permissions...', 'Testing permissions …', [], undefined, () => {
+        this.s3Service.testPermissions(this.username, this.password).subscribe(res => {
+          if (dlg?.dismiss) {
+            dlg.dismiss();
+          }
 
-        if (res.isroot.toLowerCase() == 'true') {
-          this.dialog.dialog('User has too many permissions',
-            'The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?',
-            ['Cancel', 'No', 'Yes'],
-            (ix) => {
-              if (ix == 0 || ix == 1) {
-                //callback();
-              } else {
-                this.directCreateIAMUser().subscribe(() => {
-                  this.s3BucketCheckName = this.server;
-                  this.s3BucketCheckUser = this.username;
-                  //callback()
-                });
-              }
-            });
-        }
-      }, err => {
-        if (dlg?.dismiss) {
-          dlg.dismiss();
-        }
-        this.dialog.connectionError(err);
+          if (res.isroot.toLowerCase() == 'true') {
+            this.dialog.dialog('User has too many permissions',
+              'The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?',
+              ['Cancel', 'No', 'Yes'],
+              (ix) => {
+                if (ix == 0 || ix == 1) {
+                  subscriber.next(true);
+                  subscriber.complete();
+                } else {
+                  this.directCreateIAMUser().subscribe(() => {
+                    this.s3BucketCheckName = this.server;
+                    this.s3BucketCheckUser = this.username;
+                    subscriber.next(true);
+                  },
+                    err => subscriber.next(false),
+                    () => subscriber.complete());
+                }
+              });
+          }
+        }, err => {
+          if (dlg?.dismiss) {
+            dlg.dismiss();
+          }
+          this.dialog.connectionError(err);
+          subscriber.next(false);
+          subscriber.complete();
+        });
       });
     });
-    return true;
   }
 
   canGeneratePolicy(): boolean {

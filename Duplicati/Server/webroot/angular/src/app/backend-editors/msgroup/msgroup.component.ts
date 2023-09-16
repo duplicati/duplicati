@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { of } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { CommonBackendData } from '../../backend-editor';
 import { OauthComponent } from '../oauth/oauth.component';
 
@@ -17,7 +19,7 @@ export class MsgroupComponent extends OauthComponent {
     super.parseUriParts(data, parts);
   }
 
-  override buildUri(advancedOptions: string[]): string | undefined {
+  override buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'group-email': this.groupEmail,
       authid: this.authID
@@ -29,10 +31,10 @@ export class MsgroupComponent extends OauthComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
 
   override validate(): boolean {

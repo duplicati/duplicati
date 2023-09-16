@@ -23,6 +23,7 @@ export interface ModuleDescription {
 export interface ServerModuleDescription extends ModuleDescription {
   SupportedGlobalCommands: CommandLineArgument[] | null;
   SupportedLocalCommands: CommandLineArgument[] | null;
+  SupportedCommands: CommandLineArgument[] | null;
   ServiceLink: string | null;
 }
 

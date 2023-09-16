@@ -5,6 +5,8 @@ import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
+import { EMPTY, Observable } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-storj',
@@ -61,7 +63,7 @@ export class StorjComponent implements BackendEditorComponent {
     }
   }
 
-  buildUri(advancedOptions: string[]): string | undefined {
+  buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'storj-auth-method': this.storjAuthMethod,
       'storj-satellite': this.storjSatellite,
@@ -76,17 +78,17 @@ export class StorjComponent implements BackendEditorComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return this.convert.format('{0}://storj.io/config{1}',
+    return of(this.convert.format('{0}://storj.io/config{1}',
       this.key,
       this.parser.encodeDictAsUrl(opts)
-    );
+    ));
   }
 
-  extraConnectionTests(): boolean {
-    return true;
+  extraConnectionTests(): Observable<boolean> {
+    return of(true);
   }
 
   protected validate(): boolean {

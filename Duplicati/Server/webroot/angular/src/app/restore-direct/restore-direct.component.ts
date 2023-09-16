@@ -1,7 +1,9 @@
 import { TmplAstBoundEvent } from '@angular/compiler';
 import { Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { defaultIfEmpty } from 'rxjs';
+import { single } from 'rxjs';
+import { map, Subscription } from 'rxjs';
 import { AddOrUpdateBackupData, Backup } from '../backup';
 import { CopyClipboardButtonsComponent } from '../dialog-templates/copy-clipboard-buttons/copy-clipboard-buttons.component';
 import { BackupEditUriComponent } from '../edit-backup/backup-edit-uri/backup-edit-uri.component';
@@ -96,10 +98,8 @@ export class RestoreDirectComponent {
     });
   }
   copyUrlToClipboard(): void {
-    const uri = this.editUri.buildUri();
-    if (uri != null) {
-      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent);
-    }
+    this.editUri.buildUri().subscribe(uri =>
+      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent));
   }
 
   nextPage() {
@@ -112,48 +112,50 @@ export class RestoreDirectComponent {
   }
 
   doConnect() {
-    const targetURL = this.editUri.buildUri();
-    if (targetURL == null) {
-      this.router.navigate([{ step: 0 }], { relativeTo: this.route });
-      return;
-    }
+    this.editUri.buildUri().pipe(defaultIfEmpty(null)).subscribe(
+      targetURL => {
+        if (targetURL == null) {
+          this.router.navigate([{ step: 0 }], { relativeTo: this.route });
+          return;
+        }
 
-    this.connecting = true;
-    this.connectionProgress = 'Registering temporary backup …';
+        this.connecting = true;
+        this.connectionProgress = 'Registering temporary backup …';
 
-    let opts: Record<string, string> = {};
-    let obj: { Backup: Partial<Backup> } = { Backup: { TargetURL: targetURL } };
-    if ((this.encryptionPassphrase || '') == '') {
-      opts['--no-encryption'] = 'true';
-    } else {
-      opts['passphrase'] = this.encryptionPassphrase!;
-    }
+        let opts: Record<string, string> = {};
+        let obj: { Backup: Partial<Backup> } = { Backup: { TargetURL: targetURL } };
+        if ((this.encryptionPassphrase || '') == '') {
+          opts['--no-encryption'] = 'true';
+        } else {
+          opts['passphrase'] = this.encryptionPassphrase!;
+        }
 
-    if (!this.parser.parseExtraOptions(this.extendedOptions, opts)) {
-      return;
-    }
+        if (!this.parser.parseExtraOptions(this.extendedOptions, opts)) {
+          return;
+        }
 
-    obj.Backup.Settings = [];
-    for (let k in opts) {
-      obj.Backup.Settings.push({
-        Name: k, Value: opts[k],
-        Argument: null,
-        Filter: ''
+        obj.Backup.Settings = [];
+        for (let k in opts) {
+          obj.Backup.Settings.push({
+            Name: k, Value: opts[k],
+            Argument: null,
+            Filter: ''
+          });
+        }
+
+        this.backupList.createTemporaryBackup(obj).subscribe(
+          id => {
+            this.connectionProgress = 'Listing backup dates …';
+            this.backupId = id;
+            this.fetchBackupTimes();
+          },
+          err => {
+            this.connecting = false;
+            this.connectionProgress = '';
+            this.dialog.connectionError('Failed to connect: ', err);
+          }
+        );
       });
-    }
-
-    this.backupList.createTemporaryBackup(obj).subscribe(
-      id => {
-        this.connectionProgress = 'Listing backup dates …';
-        this.backupId = id;
-        this.fetchBackupTimes();
-      },
-      err => {
-        this.connecting = false;
-        this.connectionProgress = '';
-        this.dialog.connectionError('Failed to connect: ', err);
-      }
-    );
   }
 
   fetchBackupTimes() {

@@ -7,6 +7,8 @@ import { EditUriService } from '../../services/edit-uri.service';
 import { ParserService } from '../../services/parser.service';
 import { BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../backend-editor';
 import { OauthComponent } from '../oauth/oauth.component';
+import { EMPTY, Observable } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-editor-gcs',
@@ -65,7 +67,7 @@ export class GcsComponent extends OauthComponent {
     super.parseUriParts(data, parts);
   }
 
-  override buildUri(advancedOptions: string[]): string | undefined {
+  override buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {
       'gcs-location': this.isCustomLocation() ? this.gcsLocationCustom : this.gcsLocation ?? '',
       'gcs-storage-class': this.isCustomStorageClass() ? this.gcsStorageClassCustom : this.gcsStorageClass ?? '',
@@ -85,10 +87,10 @@ export class GcsComponent extends OauthComponent {
 
     const valid = this.validate();
     if (!valid) {
-      return undefined;
+      return EMPTY;
     }
 
-    return `${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`;
+    return of(`${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
 
   isCustomLocation(): boolean {

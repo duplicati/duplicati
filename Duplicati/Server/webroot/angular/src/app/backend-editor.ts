@@ -1,4 +1,5 @@
 import { EventEmitter, InjectionToken, Type } from "@angular/core";
+import { Observable } from "rxjs";
 
 export interface CommonBackendData {
   username?: string;
@@ -26,6 +27,8 @@ export interface BackendEditorComponent {
 
   // Parse URI before extracting advanced options. Remove used parts from the map and may update data
   parseUriParts(data: CommonBackendData, parts: Map<string, string>): void;
-  buildUri(advancedOptions: string[]): string | undefined;
-  extraConnectionTests(): boolean;
+  // Return single value in observable or none if failed
+  buildUri(advancedOptions: string[]): Observable<string>;
+  // Return single value (true or false) in observable
+  extraConnectionTests(): Observable<boolean>;
 }
