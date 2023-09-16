@@ -1,6 +1,6 @@
 import { SimpleChanges } from '@angular/core';
 import { Component, Input } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Backup } from '../backup';
 import { BackupListService } from '../services/backup-list.service';
@@ -27,12 +27,14 @@ export class LocalDatabaseComponent {
     private backupList: BackupListService,
     private dialog: DialogService,
     private router: Router,
+    private route: ActivatedRoute,
     private fileService: FileService) { }
 
-  ngOnChanges(changes: SimpleChanges) {
-    if ('backupId' in changes) {
-      this.resetBackupItem();
-    }
+  ngOnInit() {
+    this.route.data.subscribe(data => {
+      this.backup = data['backup'].Backup;
+      this.updateDbPath();
+    });
   }
 
   ngOnDestroy() {
@@ -40,7 +42,22 @@ export class LocalDatabaseComponent {
     this.subscriptionValidate?.unsubscribe();
   }
 
-  resetBackupItem(force?: boolean) {
+  updateDbPath(prev?: string, force?: boolean) {
+    this.dbPath = undefined;
+    if (this.backup == null) {
+      this.noLocalDB = true;
+    } else {
+      this.dbPath = this.backup.DBPath;
+
+      if (this.dbPath !== prev || force) {
+        this.subscriptionValidate = this.fileService.validateFile(this.dbPath).subscribe(valid => {
+          this.noLocalDB = !valid;
+        });
+      }
+    }
+  }
+
+  reloadBackupItem(force?: boolean) {
     const prev = this.dbPath;
     this.subscription?.unsubscribe();
     this.subscriptionValidate?.unsubscribe();
@@ -50,19 +67,7 @@ export class LocalDatabaseComponent {
       } else {
         this.backup = undefined;
       }
-
-      this.dbPath = undefined;
-      if (this.backup == null) {
-        this.noLocalDB = true;
-      } else {
-        this.dbPath = this.backup.DBPath;
-
-        if (this.dbPath !== prev || force) {
-          this.subscriptionValidate = this.fileService.validateFile(this.dbPath).subscribe(valid => {
-            this.noLocalDB = !valid;
-          });
-        }
-      }
+      this.updateDbPath(prev, force);
     });
   }
 
@@ -71,7 +76,7 @@ export class LocalDatabaseComponent {
       this.backupService.updateDatabase(this.backupId, this.dbPath!, move).subscribe(
         () => {
           this.backup!.DBPath = this.dbPath!;
-          this.resetBackupItem(true);
+          this.reloadBackupItem(true);
           if (continuation != null) {
             continuation();
           }
@@ -139,12 +144,12 @@ export class LocalDatabaseComponent {
       (ix) => {
         if (ix == 1) {
           this.backupService.deleteDatabase(this.backupId).subscribe(() => {
-            this.resetBackupItem(true);
+            this.reloadBackupItem(true);
             if (continuation != null) {
               continuation();
             }
           }, err => {
-            this.resetBackupItem();
+            this.reloadBackupItem();
             this.dialog.connectionError('Failed to delete: ', err);
           });
         }

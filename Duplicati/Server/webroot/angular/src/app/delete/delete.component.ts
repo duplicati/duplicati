@@ -1,5 +1,5 @@
 import { Component, Input, SimpleChanges } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Backup } from '../backup';
 import { BackupListService } from '../services/backup-list.service';
@@ -43,12 +43,14 @@ export class DeleteComponent {
     private dialog: DialogService,
     private captcha: CaptchaService,
     private router: Router,
+    private route: ActivatedRoute,
     private fileService: FileService) { }
 
-  ngOnChanges(changes: SimpleChanges) {
-    if ('backupId' in changes) {
-      this.resetBackupItem();
-    }
+  ngOnInit() {
+    this.route.data.subscribe(data => {
+      this.backup = data['backup'].Backup;
+      this.updateBackup();
+    });
   }
 
   ngOnDestroy() {
@@ -56,8 +58,40 @@ export class DeleteComponent {
     this.subscriptionValidate?.unsubscribe();
     this.subscriptionUsed?.unsubscribe();
   }
+  updateBackup(prevDbPath?: string, force?: boolean) {
+    this.dbPath = undefined;
+    if (this.backup == null) {
+      this.noLocalDB = true;
+      this.dbUsedElsewhere = false;
+    } else {
+      this.dbPath = this.backup.DBPath;
 
-  resetBackupItem(force?: boolean) {
+      if (this.dbPath !== prevDbPath || force) {
+        this.subscriptionValidate = this.fileService.validateFile(this.dbPath).subscribe(valid => {
+          this.noLocalDB = !valid;
+        });
+      }
+
+      if (this.dbPath !== prevDbPath || force) {
+        this.backupService.isDbUsedElsewhere(this.backupId, this.dbPath).subscribe(used => {
+          this.dbUsedElsewhere = used;
+          // Default to not delete the db if others use it
+          if (used) {
+            this.deleteLocalDatabase = false;
+          }
+        }, err => this.dbUsedElsewhere = true);
+      }
+    }
+
+    if (this.backup != null && !this.hasRefreshedRemoteSize
+      && (this.backup.Metadata['TargetFilesCount'] == null || parseInt(this.backup.Metadata['TargetFilesCount']) <= 0)) {
+      this.hasRefreshedRemoteSize = true;
+      this.backupService.startSizeReport(this.backupId).subscribe(taskid => this.listFilesTaskid = taskid,
+        this.dialog.connectionError('Failed to refresh size: '));
+    }
+  }
+
+  reloadBackupItem(force?: boolean) {
     const prev = this.dbPath;
     this.subscription?.unsubscribe();
     this.subscriptionValidate?.unsubscribe();
@@ -67,37 +101,7 @@ export class DeleteComponent {
       } else {
         this.backup = undefined;
       }
-
-      this.dbPath = undefined;
-      if (this.backup == null) {
-        this.noLocalDB = true;
-        this.dbUsedElsewhere = false;
-      } else {
-        this.dbPath = this.backup.DBPath;
-
-        if (this.dbPath !== prev || force) {
-          this.subscriptionValidate = this.fileService.validateFile(this.dbPath).subscribe(valid => {
-            this.noLocalDB = !valid;
-          });
-        }
-
-        if (this.dbPath !== prev || force) {
-          this.backupService.isDbUsedElsewhere(this.backupId, this.dbPath).subscribe(used => {
-            this.dbUsedElsewhere = used;
-            // Default to not delete the db if others use it
-            if (used) {
-              this.deleteLocalDatabase = false;
-            }
-          }, err => this.dbUsedElsewhere = true);
-        }
-      }
-
-      if (this.backup != null && !this.hasRefreshedRemoteSize
-        && (this.backup.Metadata['TargetFilesCount'] == null || parseInt(this.backup.Metadata['TargetFilesCount']) <= 0)) {
-        this.hasRefreshedRemoteSize = true;
-        this.backupService.startSizeReport(this.backupId).subscribe(taskid => this.listFilesTaskid = taskid,
-          this.dialog.connectionError('Failed to refresh size: '));
-      }
+      this.updateBackup(prev, force);
     });
   }
 

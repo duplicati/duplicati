@@ -1,4 +1,4 @@
-import { ViewChild } from '@angular/core';
+import { SimpleChanges, ViewChild } from '@angular/core';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Backup } from '../../backup';
 import { CopyClipboardButtonsComponent } from '../../dialog-templates/copy-clipboard-buttons/copy-clipboard-buttons.component';
@@ -15,10 +15,18 @@ export class BackupDestinationSettingsComponent {
   @Output() next = new EventEmitter<void>();
   @Output() prev = new EventEmitter<void>();
 
-  @ViewChild(BackupEditUriComponent)
+  @Input() uri?: string;
+
+  @ViewChild(BackupEditUriComponent, { static: true })
   editUri!: BackupEditUriComponent;
 
   constructor(private dialog: DialogService) { }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if ('uri' in changes && this.uri != null) {
+      this.setUri(this.uri);
+    }
+  }
 
   importUrl(): void {
     this.dialog.textareaDialog('Import URL', 'Enter a Backup destination URL:', 'Enter URL', '', ['Cancel', 'OK'], undefined, (btn, input) => {

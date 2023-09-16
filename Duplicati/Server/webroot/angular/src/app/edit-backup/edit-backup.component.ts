@@ -45,9 +45,9 @@ export class EditBackupComponent {
 
   backupId?: string;
 
-  private hasAnyEncryptionModules: boolean = true;
   private subscription?: Subscription;
 
+  initialUri?: string;
   @ViewChild(BackupDestinationSettingsComponent)
   destinationSettings!: BackupDestinationSettingsComponent;
 
@@ -56,12 +56,9 @@ export class EditBackupComponent {
     private backupList: BackupListService,
     private backupService: BackupService,
     private backupDefaults: BackupDefaultsService,
-    private parser: ParserService,
     private dialog: DialogService,
-    private systemInfoService: SystemInfoService,
     private importService: ImportService,
     private editBackupService: EditBackupService) {
-    this.systemInfoService.getState().subscribe(info => this.hasAnyEncryptionModules = info.EncryptionModules.length > 0);
   }
 
   ngOnInit() {
@@ -70,12 +67,10 @@ export class EditBackupComponent {
     this.route.paramMap.subscribe(params => {
       this.CurrentStep = parseInt(params.get('step') || '0');
       let backupId = params.get('backupId') ?? undefined;
-      if (backupId !== this.backupId) {
-        this.backupId = backupId;
-        this.load();
-      }
-    })
-    this.load();
+    });
+    this.route.data.subscribe(data => {
+      this.initialize(data['backup']);
+    });
   }
 
   ngOnDestroy() {
@@ -109,37 +104,10 @@ export class EditBackupComponent {
     this.backup.Sources = this.backup.Sources ?? [];
     this.backup.Filters = this.backup.Filters ?? [];
     this.options = this.editBackupService.parseOptions(this.backup);
-    this.destinationSettings.setUri(this.backup.TargetURL);
+    this.initialUri = this.backup.TargetURL;
 
     if (this.schedule != null) {
       this.schedule.Time = this.editBackupService.initialScheduleTime(this.schedule.Time);
-    }
-  }
-
-  load() {
-    this.subscription?.unsubscribe();
-    if (this.backupId == null) {
-      // Create new backup
-      this.subscription = this.backupDefaults.getBackupDefaults().subscribe(
-        b => {
-          if (this.route.snapshot.data['import'] == true) {
-            let importConfig = this.importService.getImportData();
-            Object.assign(b, importConfig);
-          }
-          this.initialize(b)
-        },
-        err => {
-          this.dialog.connectionError('Failed to read backup defaults: ', err);
-          this.router.navigate(['/']);
-        });
-    } else {
-      // Edit existing backup
-      this.subscription = this.backupService.getBackup(this.backupId).subscribe(
-        b => this.initialize(b),
-        err => {
-          this.dialog.connectionError('', err);
-          this.router.navigate(['/']);
-        });
     }
   }
 

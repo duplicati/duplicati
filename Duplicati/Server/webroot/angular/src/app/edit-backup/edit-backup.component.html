@@ -4,7 +4,7 @@
       <app-backup-general-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()"></app-backup-general-settings>
     </ng-template>
     <ng-template [appStep]="1" name="Destination">
-      <app-backup-destination-settings (next)="nextStep()" (prev)="prevStep()"></app-backup-destination-settings>
+      <app-backup-destination-settings [uri]="initialUri" (next)="nextStep()" (prev)="prevStep()"></app-backup-destination-settings>
     </ng-template>
     <ng-template [appStep]="2" name="Source Data">
       <app-backup-source-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()" (prev)="prevStep()"></app-backup-source-settings>

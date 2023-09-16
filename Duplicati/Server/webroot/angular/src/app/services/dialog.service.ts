@@ -143,7 +143,9 @@ export class DialogService {
 
     if (msg && msg.error && msg.error.Message)
       this.dialog('Error', txt + msg.error.Message);
-    else
+    else if(msg.statusText)
       this.dialog('Error', txt + msg.statusText);
+    else
+      this.dialog('Error', txt + msg);
   }
 }

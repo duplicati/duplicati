@@ -2,7 +2,7 @@ import { Input, SimpleChanges } from '@angular/core';
 import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
-import { Backup } from '../backup';
+import { AddOrUpdateBackupData, Backup } from '../backup';
 import { BackupListService } from '../services/backup-list.service';
 import { BackupService } from '../services/backup.service';
 import { DialogService } from '../services/dialog.service';
@@ -27,7 +27,6 @@ export class BackupLogComponent {
   generalDataComplete: boolean = false;
   remoteDataComplete: boolean = false;
 
-  private subscription?: Subscription;
   private generalPageSubscription?: Subscription;
   private remotePageSubscription?: Subscription;
   private nextGeneralPage$ = new Subject<void>();
@@ -43,22 +42,21 @@ export class BackupLogComponent {
       // Reload everything
       this.generalPageSubscription?.unsubscribe();
       this.remotePageSubscription?.unsubscribe();
-      this.subscription?.unsubscribe();
       this.ngOnInit();
     }
   }
 
   ngOnInit() {
-    this.subscription = this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe(params => {
       this.setPage(params.get('page') || 'general');
     });
-    this.subscription.add(this.backupService.getBackup(this.backupId).subscribe(
-      v => this.backup = v.Backup,
-      this.dialog.connectionError('Failed to load backup: ')));
+    this.route.data.subscribe(data => {
+      const backupData: AddOrUpdateBackupData = data['backup'];
+      this.backup = backupData.Backup;
+    });
   }
 
   ngOnDestroy() {
-    this.subscription?.unsubscribe();
     this.remotePageSubscription?.unsubscribe();
   }
 

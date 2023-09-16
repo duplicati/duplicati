@@ -13,6 +13,7 @@ import { ServerStatusService } from '../services/server-status.service';
 import { TaskService } from '../services/task.service';
 import { SystemInfo } from '../system-info/system-info';
 import { RestoreLocationData } from './restore-location.component';
+import { RestoreData } from './restore.resolver';
 
 @Component({
   selector: 'app-restore',
@@ -59,20 +60,17 @@ export class RestoreComponent {
     private dialog: DialogService) { }
 
   ngOnInit() {
-    this.isBackupTemporary = parseInt(this.backupId) + '' != this.backupId;
-    this.restoreStep = 0;
-    const tempFileset = this.restoreService.getTemporaryFileset(this.backupId);
-    if (tempFileset != null) {
-      // Pass in filelist through restoreService on direct restore to avoid another query
-      this.filesets = tempFileset;
-    } else {
-      // Have to use backupList, because normal backup does not return IsUnencryptedOrPassphraseStored
-      this.backupList.getBackupsLookup().pipe(take(1)).subscribe(backups => {
-        this.backup = backups[this.backupId];
+    this.route.data.subscribe(data => {
+      const restoreData: RestoreData = data['restore'];
+      this.isBackupTemporary = restoreData.isTemp;
+      this.restoreStep = 0;
+      if (restoreData.tempFilesets != null) {
+        this.filesets = restoreData.tempFilesets;
+      } else {
+        this.backup = restoreData.backup;
         this.fetchBackupTimes();
-      },
-        this.dialog.connectionError('Failed to load backup: '));
-    }
+      }
+    });
   }
 
   fetchBackupTimes() {
