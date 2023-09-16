@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { OauthComponent } from '../oauth/oauth.component';
 
 @Component({
-  selector: 'app-jottacloud',
+  selector: 'app-editor-jottacloud',
   templateUrl: './jottacloud.component.html',
   styleUrls: ['./jottacloud.component.less']
 })

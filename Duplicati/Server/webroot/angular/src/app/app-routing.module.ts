@@ -34,7 +34,12 @@ const routes: Routes = [
         runGuardsAndResolvers: 'pathParamsChange'
       },
       { path: 'addstart', component: AddWizardComponent },
-      { path: 'add', component: EditBackupComponent },
+      {
+        path: 'add',
+        component: EditBackupComponent,
+        resolve: { backup: editBackupResolver },
+        runGuardsAndResolvers: 'pathParamsChange'
+      },
       {
         path: 'add-import',
         component: EditBackupComponent,

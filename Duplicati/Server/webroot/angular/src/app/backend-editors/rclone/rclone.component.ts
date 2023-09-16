@@ -5,7 +5,7 @@ import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
 
 @Component({
-  selector: 'app-rclone',
+  selector: 'app-editor-rclone',
   templateUrl: './rclone.component.html',
   styleUrls: ['./rclone.component.less']
 })

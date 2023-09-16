@@ -7,7 +7,7 @@ import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
 
 @Component({
-  selector: 'app-storj',
+  selector: 'app-editor-storj',
   templateUrl: './storj.component.html',
   styleUrls: ['./storj.component.less']
 })

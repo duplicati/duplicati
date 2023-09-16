@@ -9,7 +9,7 @@ import { BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../back
 import { OauthComponent } from '../oauth/oauth.component';
 
 @Component({
-  selector: 'app-gcs',
+  selector: 'app-editor-gcs',
   templateUrl: './gcs.component.html',
   styleUrls: ['./gcs.component.less']
 })

@@ -15,7 +15,7 @@ import { RestoreFileDatabase, SearchTreeNode } from './restore-file-database';
 @Component({
   selector: 'app-restore-file-picker',
   templateUrl: './restore-file-picker.component.html',
-  styleUrls: ['./restore-file-picker.component.less']
+  styleUrls: ['./restore-file-picker.component.less', '../source-folder-picker/source-folder-picker.component.less']
 })
 export class RestoreFilePickerComponent {
   @Input() sources: ListFile[] = [];

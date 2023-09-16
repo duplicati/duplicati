@@ -14,7 +14,7 @@ export const EXAMPLE_SIA_REDUNDANCY = new InjectionToken<string>("Example sia re
 
 
 @Component({
-  selector: 'app-sia',
+  selector: 'app-editor-sia',
   templateUrl: './sia.component.html',
   styleUrls: ['./sia.component.less']
 })

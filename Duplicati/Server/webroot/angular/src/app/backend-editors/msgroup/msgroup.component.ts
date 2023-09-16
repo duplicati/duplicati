@@ -3,7 +3,7 @@ import { CommonBackendData } from '../../backend-editor';
 import { OauthComponent } from '../oauth/oauth.component';
 
 @Component({
-  selector: 'app-msgroup',
+  selector: 'app-editor-msgroup',
   templateUrl: './msgroup.component.html',
   styleUrls: ['./msgroup.component.less']
 })

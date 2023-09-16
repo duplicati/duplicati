@@ -7,7 +7,7 @@ import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
 
 @Component({
-  selector: 'app-openstack',
+  selector: 'app-editor-openstack',
   templateUrl: './openstack.component.html',
   styleUrls: ['./openstack.component.less']
 })

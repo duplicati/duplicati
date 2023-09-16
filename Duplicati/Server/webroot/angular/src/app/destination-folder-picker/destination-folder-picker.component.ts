@@ -10,7 +10,7 @@ import { FileDataSource, FileFlatNode, FileDatabase } from './file-data-source';
 @Component({
   selector: 'app-destination-folder-picker',
   templateUrl: './destination-folder-picker.component.html',
-  styleUrls: ['./destination-folder-picker.component.less']
+  styleUrls: ['./destination-folder-picker.component.less', '../source-folder-picker/source-folder-picker.component.less']
 })
 export class DestinationFolderPickerComponent {
   @Input() showHidden: boolean = false;

@@ -10,7 +10,7 @@ import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../backend-editor';
 
 @Component({
-  selector: 'app-s3',
+  selector: 'app-editor-s3',
   templateUrl: './s3.component.html',
   styleUrls: ['./s3.component.less']
 })

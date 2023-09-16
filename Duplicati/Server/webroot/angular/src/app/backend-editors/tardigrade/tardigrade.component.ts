@@ -4,7 +4,7 @@ import { StorjComponent } from '../storj/storj.component';
 
 // this is only for backwards compatibility
 @Component({
-  selector: 'app-tardigrade',
+  selector: 'app-editor-tardigrade',
   templateUrl: './tardigrade.component.html',
   styleUrls: ['./tardigrade.component.less']
 })

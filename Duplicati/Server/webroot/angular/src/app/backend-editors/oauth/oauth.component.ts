@@ -8,7 +8,7 @@ import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData } from '../../backend-editor';
 
 @Component({
-  selector: 'app-oauth',
+  selector: 'app-editor-oauth',
   templateUrl: './oauth.component.html',
   styleUrls: ['./oauth.component.less']
 })

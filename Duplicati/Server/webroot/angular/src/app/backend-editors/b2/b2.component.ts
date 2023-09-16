@@ -5,7 +5,7 @@ import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
 
 @Component({
-  selector: 'app-b2',
+  selector: 'app-editor-b2',
   templateUrl: './b2.component.html',
   styleUrls: ['./b2.component.less']
 })

@@ -7,7 +7,7 @@ import { ParserService } from '../../services/parser.service';
 import { BackendEditorComponent, BACKEND_KEY, CommonBackendData } from '../../backend-editor';
 
 @Component({
-  selector: 'app-mega',
+  selector: 'app-editor-mega',
   templateUrl: './mega.component.html',
   styleUrls: ['./mega.component.less']
 })
