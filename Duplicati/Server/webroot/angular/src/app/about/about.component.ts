@@ -129,7 +129,7 @@ export class AboutComponent {
   }
   doStartUpdateActivate() {
     this.updateService.startUpdateActivate().subscribe({
-      error: this.dialog.connectionError('Activate failed: ')
+      error: this.dialog.connectionError($localize`Activate failed: `)
     });
   }
   doCheckForUpdates() {

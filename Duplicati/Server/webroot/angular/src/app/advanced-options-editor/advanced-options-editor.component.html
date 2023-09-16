@@ -32,7 +32,7 @@
           <div *ngSwitchCase="'timespan'" class="input type multiple" [formGroupName]="i">
             <input type="number" id="advanced-{{i}}" formControlName="value" />
             <select formControlName="unit">
-              <option value="" translate>custom</option>
+              <option value="" i18n>custom</option>
               <option [ngValue]="e.value" *ngFor="let e of timerangeMultipliers">{{e.name}}</option>
             </select>
           </div>
@@ -40,22 +40,22 @@
           <div *ngSwitchCase="'shorttimespan'" class="input type multiple" [formGroupName]="i">
             <input parse-advanced-option-size-number type="number" id="advanced-{{i}}" formControlName="value" />
             <select parse-advanced-option-size-multiplier formControlName="unit" ng-options="item.value as item.name for item in shorttimerangeMultipliers">
-              <option value="" translate>custom</option>
+              <option value="" i18n>custom</option>
             </select>
           </div>
         </ng-container>
       </div>
 
-      <a routerLink="." (click)="deleteItem(i)" title="Remove option">x</a>
+      <a routerLink="." (click)="deleteItem(i)" i18n-title title="Remove option">x</a>
 
       <div *ngIf="getDeprecationMessage(i)" class="longdescription">DEPRECATED: {{getDeprecationMessage(i)}}</div>
       <div class="longdescription">{{getLongDescription(i)}}<br>Default value: "{{getDefaultValue(i)}}"</div>
     </li>
   </ng-container>
   <li>
-    <label translate>Add advanced option</label>
+    <label i18n>Add advanced option</label>
     <select formControlName="newItem">
-      <option value="" translate>- pick an option -</option>
+      <option value="" i18n>- pick an option -</option>
       <optgroup [label]="optGroup.key" *ngFor="let optGroup of optionListGrouped">
         <option [ngValue]="opt.Name" *ngFor="let opt of optGroup.value">
           {{getDisplayName(opt)}}

@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { LOCALE_ID, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientJsonpModule, HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 
@@ -77,7 +77,7 @@ import { ClipboardModule } from 'ngx-clipboard';
 import { BackendEditorsModule } from './backend-editors/backend-editors.module';
 import { EditFileComponent } from './edit-file/edit-file.component';
 import { BACKEND_EDITORS } from './backend-editor';
-import { API_URL } from './interceptors/api-url-interceptor';
+import { ServerSettingsService } from './services/server-settings.service';
 
 @NgModule({
   declarations: [
@@ -167,6 +167,11 @@ import { API_URL } from './interceptors/api-url-interceptor';
     CookieService,
     httpInterceptorProviders,
     { provide: BACKEND_EDITORS, useValue: { key: 'file', type: EditFileComponent }, multi: true },
+    {
+      provide: LOCALE_ID,
+      useFactory: (settings: ServerSettingsService) => settings.getUILanguage(),
+      deps: [ServerSettingsService]
+    },
     backupCheckerProviders
   ],
   bootstrap: [AppComponent]

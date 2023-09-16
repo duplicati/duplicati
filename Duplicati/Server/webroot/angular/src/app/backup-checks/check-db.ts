@@ -20,9 +20,9 @@ export class CheckForExistingDb implements BackupChecker {
         (resp) => {
           if (resp?.Exists && resp.Path != null) {
             return new Promise((resolve, reject) => {
-              this.dialog.dialog('Use existing database?',
-                'An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?',
-                ['Cancel', 'Yes', 'No'],
+              this.dialog.dialog($localize`Use existing database?`,
+                $localize`An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?`,
+                [$localize`Cancel`, $localize`Yes`, $localize`No`],
                 (ix) => {
                   if (ix == 2) {
                     b.Backup.DBPath = resp.Path!;
@@ -40,7 +40,7 @@ export class CheckForExistingDb implements BackupChecker {
           return Promise.resolve();
         },
         (error) => {
-          this.dialog.connectionError('Connection error', error);
+          this.dialog.connectionError($localize`Connection error`, error);
           return Promise.reject(error);
         }
       );

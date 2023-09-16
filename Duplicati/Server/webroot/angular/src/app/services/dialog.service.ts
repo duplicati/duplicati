@@ -121,7 +121,7 @@ export class DialogService {
   }
 
   notifyInputError(msg: string) {
-    return this.dialog('Error', msg);
+    return this.dialog($localize`Error`, msg);
   }
 
   connectionError(txt: string): ((msg: string | any) => void);
@@ -132,9 +132,9 @@ export class DialogService {
       if (msg == null)
         return (msg) => {
           if (msg && msg.error && msg.error.Message)
-            this.dialog('Error', txt + msg.error.Message);
+            this.dialog($localize`Error`, txt + msg.error.Message);
           else
-            this.dialog('Error', txt + msg.statusText);
+            this.dialog($localize`Error`, txt + msg.statusText);
         };
     } else {
       msg = txt;
@@ -142,10 +142,10 @@ export class DialogService {
     }
 
     if (msg && msg.error && msg.error.Message)
-      this.dialog('Error', txt + msg.error.Message);
+      this.dialog($localize`Error`, txt + msg.error.Message);
     else if(msg.statusText)
-      this.dialog('Error', txt + msg.statusText);
+      this.dialog($localize`Error`, txt + msg.statusText);
     else
-      this.dialog('Error', txt + msg);
+      this.dialog($localize`Error`, txt + msg);
   }
 }

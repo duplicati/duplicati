@@ -1,19 +1,19 @@
 <div class="addwizard">
 
-  <h1><div translate>Add a new backup</div></h1>
+  <h1><div i18n>Add a new backup</div></h1>
 
   <form class="styled">
     <ul>
       <li class="input" (click)="selection.style = 'blank'">
         <input type="radio" name="blank" id="blank" [(ngModel)]="selection.style" value="blank">
-        <label for="direct" translate>Configure a new backup</label>
-        <div class="subtext" translate>Enter configuration details</div>
+        <label for="direct" i18n>Configure a new backup</label>
+        <div class="subtext" i18n>Enter configuration details</div>
       </li>
 
       <li class="input" (click)="selection.style = 'importfile'">
         <input type="radio" name="blank" id="blank" [(ngModel)]="selection.style" value="importfile">
-        <label for="direct" translate>Import from a file</label>
-        <div class="subtext" translate>Load a configuration from an exported job or a storage provider</div>
+        <label for="direct" i18n>Import from a file</label>
+        <div class="subtext" i18n>Load a configuration from an exported job or a storage provider</div>
       </li>
 
       <!--<li class="input" ng-click="selection.style = 'importremote'">
@@ -25,7 +25,7 @@
     </ul>
 
     <div class="buttons">
-      <input class="submit next" type="button" (click)="nextPage()" value="Next &gt;" />
+      <input class="submit next" type="button" (click)="nextPage()" i18n-value value="Next &gt;" />
     </div>
   </form>
 </div>
