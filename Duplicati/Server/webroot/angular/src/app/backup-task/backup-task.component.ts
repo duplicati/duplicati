@@ -1,9 +1,12 @@
 import { SimpleChanges } from '@angular/core';
 import { Component, Input } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AddOrUpdateBackupData } from '../backup';
 import { BackupService } from '../services/backup.service';
 import { ConvertService } from '../services/convert.service';
+import { ServerStatus } from '../services/server-status';
+import { ServerStatusService } from '../services/server-status.service';
 
 @Component({
   selector: 'app-backup-task',
@@ -12,7 +15,7 @@ import { ConvertService } from '../services/convert.service';
 })
 export class BackupTaskComponent {
   @Input() backup!: AddOrUpdateBackupData;
-  state?: any;
+  state?: ServerStatus;
   expanded: boolean = false;
 
   backupName?: string;
@@ -36,26 +39,41 @@ export class BackupTaskComponent {
   progressCurrentFileoffset?: number;
   progressBarPercentage: number = 0;
 
-  get backupIcon(): string {
-    if (!this.isActive && this.isScheduled) {
-      return 'backupschedule';
-    } else if (this.isScheduled && this.isRunning) {
-      return 'backuprunning';
-    } else if (this.isScheduled && this.isPaused) {
-      return 'backuppaused';
-    } else {
-      return 'backup';
-    }
+  backupIcon: string = 'backup;'
+
+  private subscription?: Subscription;
+
+  constructor(private router: Router,
+    private backupService: BackupService,
+    private serverStatus: ServerStatusService,
+    private convert: ConvertService) { }
+
+  ngOnInit() {
+    this.subscription = this.serverStatus.getStatus().subscribe(s => {
+      this.state = s;
+      this.updateProgress();
+    });
   }
 
-  constructor(private router: Router, private backupService: BackupService, private convert: ConvertService) { }
+  ngOnDestroy() {
+    this.subscription?.unsubscribe();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ('backup' in changes) {
       this.updateBackup(this.backup);
     }
-    if ('state' in changes) {
-      this.updateProgress();
+  }
+
+  private updateBackupIcon() {
+    if (!this.isActive && this.isScheduled) {
+      this.backupIcon = 'backupschedule';
+    } else if (this.isRunning) {
+      this.backupIcon = 'backuprunning';
+    } else if (this.isPaused) {
+      this.backupIcon = 'backuppause';
+    } else {
+      this.backupIcon = 'backup';
     }
   }
 
@@ -63,7 +81,7 @@ export class BackupTaskComponent {
     this.backupName = b.Backup.Name;
     this.backupId = b.Backup.ID;
     this.isScheduled = 'NextScheduledRun' in b.Backup.Metadata;
-    this.isActive = b.Backup.ID === this.state?.activeTask.Item2;
+    this.isActive = b.Backup.ID === this.state?.activeTask?.Item2;
     this.isRunning = this.isActive && this.state?.programState === 'Running';
     this.isPaused = this.isActive && this.state?.programState === 'Paused';
     this.description = b.Backup.Description;
@@ -75,18 +93,24 @@ export class BackupTaskComponent {
     this.sourceSizeString = b.Backup.Metadata['SourceSizeString'];
     this.targetSizeString = b.Backup.Metadata['TargetSizeString'];
     this.backupListCount = parseInt(b.Backup.Metadata['BackupListCount'] || '0');
+    this.updateBackupIcon();
   }
 
+
   updateProgress() {
+    this.isActive = this.backupId === this.state?.activeTask?.Item2;
+    this.isRunning = this.isActive && this.state?.programState === 'Running';
+    this.isPaused = this.isActive && this.state?.programState === 'Paused';
     this.progressPhase = this.state?.lastPgEvent?.Phase;
-    this.progressCurrentFilename = this.state?.lastPgEvent?.ProgressCurrentFilename;
-    this.progressCurrentFilesize = this.state?.lastPgEvent?.ProgressCurrentFilesize;
-    this.progressCurrentFileoffset = this.state?.lastPgEvent?.ProgressCurrentFileoffset;
+    this.progressCurrentFilename = this.state?.lastPgEvent?.CurrentFilename;
+    this.progressCurrentFilesize = this.state?.lastPgEvent?.CurrentFilesize;
+    this.progressCurrentFileoffset = this.state?.lastPgEvent?.CurrentFileoffset;
     if (this.progressCurrentFilesize !== undefined && this.progressCurrentFileoffset !== undefined) {
       this.progressBarPercentage = (1 - (this.progressCurrentFilesize! - this.progressCurrentFileoffset) / this.progressCurrentFilesize) * 100;
     } else {
       this.progressBarPercentage = 0;
     }
+    this.updateBackupIcon();
   }
 
   doRun(): void {

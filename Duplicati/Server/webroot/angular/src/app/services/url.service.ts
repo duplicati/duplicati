@@ -19,6 +19,14 @@ export class UrlService {
     return this.apiUrl;
   }
 
+  getLoginUrl(): string {
+    return '/login.html?v=2.0.0.7';
+  }
+
+  getLogoutUrl(): string {
+    return '/logout.cgi';
+  }
+
   getImportUrl(passphrase?: string): string {
     let rurl = `${this.apiUrl}/backups/import?x-xsrf-token=${this.getEncodedXsrfToken()}`;
     if ((passphrase || '').trim().length > 0) {

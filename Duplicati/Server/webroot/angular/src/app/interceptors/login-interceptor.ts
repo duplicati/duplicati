@@ -3,12 +3,11 @@ import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { catchError, Observable, throwError } from "rxjs";
 import { DialogService } from "../services/dialog.service";
+import { UrlService } from "../services/url.service";
 
 @Injectable()
 export class LoginInterceptor implements HttpInterceptor {
-  login_url = '/login.html?v=2.0.0.7';
-
-  constructor(private dialogService: DialogService, private router: Router) { }
+  constructor(private dialogService: DialogService, private router: Router, private url: UrlService) { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(catchError(e => this.handleError(e)));
@@ -17,7 +16,7 @@ export class LoginInterceptor implements HttpInterceptor {
   private handleError(error: HttpErrorResponse) {
     if (error.status == 401) {
       this.dialogService.dismissAll();
-      this.dialogService.accept('Not logged in', () => { this.router.navigateByUrl(this.login_url); });
+      this.dialogService.accept('Not logged in', () => { location.href = this.url.getLoginUrl(); });
     }
     return throwError(error);
   }

@@ -77,6 +77,7 @@ import { ClipboardModule } from 'ngx-clipboard';
 import { BackendEditorsModule } from './backend-editors/backend-editors.module';
 import { EditFileComponent } from './edit-file/edit-file.component';
 import { BACKEND_EDITORS } from './backend-editor';
+import { API_URL } from './interceptors/api-url-interceptor';
 
 @NgModule({
   declarations: [

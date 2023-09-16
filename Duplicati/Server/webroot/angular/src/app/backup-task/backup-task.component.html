@@ -1,13 +1,13 @@
 <!--TODO: Padding is wrong, because first-child,last-child always applies-->
 <div class="task">
   <a routerLink="." (click)="expanded = !expanded">
-    <img *ngIf="backupIcon === 'backup'" src="img/backup.png" srcset="img/backup.png 1x, img/backup_2x.png 2x, img/backup_3x.png 3x">
-    <img *ngIf="backupIcon === 'backupschedule'" src="img/backupschedule.png" srcset="img/backupschedule.png 1x, img/backupschedule_2x.png 2x, img/backupschedule_3x.png 3x">
-    <img *ngIf="backupIcon === 'backuprunning'" src="img/backuprunning.png" srcset="img/backuprunning.png 1x, img/backuprunning_2x.png 2x, img/backuprunning_3x.png 3x">
-    <img *ngIf="backupIcon === 'backuppause'" src="img/backuppause.png" srcset="img/backuppause.png 1x, img/backuppause_2x.png 2x, img/backuppause_3x.png 3x">
+    <img [hidden]="backupIcon != 'backup'" src="img/backup.png" srcset="img/backup.png 1x, img/backup_2x.png 2x, img/backup_3x.png 3x">
+    <img [hidden]="backupIcon != 'backupschedule'" src="img/backupschedule.png" srcset="img/backupschedule.png 1x, img/backupschedule_2x.png 2x, img/backupschedule_3x.png 3x">
+    <img [hidden]="backupIcon != 'backuprunning'" src="img/backuprunning.png" srcset="img/backuprunning.png 1x, img/backuprunning_2x.png 2x, img/backuprunning_3x.png 3x">
+    <img [hidden]="backupIcon != 'backuppause'" src="img/backuppause.png" srcset="img/backuppause.png 1x, img/backuppause_2x.png 2x, img/backuppause_3x.png 3x">
     {{backupName}}
-    <img *ngIf="expanded" src="img/arrow_collapse_blue.png" srcset="img/arrow_collapse_blue.png 1x, img/arrow_collapse_blue_2x.png 2x, img/arrow_collapse_blue_3x.png 3x">
-    <img *ngIf="!expanded" src="img/arrow_expand_blue.png" srcset="img/arrow_expand_blue.png 1x, img/arrow_expand_blue_2x.png 2x, img/arrow_expand_blue_3x.png 3x">
+    <img [hidden]="!expanded" src="img/arrow_collapse_blue.png" srcset="img/arrow_collapse_blue.png 1x, img/arrow_collapse_blue_2x.png 2x, img/arrow_collapse_blue_3x.png 3x">
+    <img [hidden]="expanded" src="img/arrow_expand_blue.png" srcset="img/arrow_expand_blue.png 1x, img/arrow_expand_blue_2x.png 2x, img/arrow_expand_blue_3x.png 3x">
   </a>
 
   <dl class="taskmenu" *ngIf="expanded">

@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { LoginService } from '../services/login.service';
 import { ServerStatus } from '../services/server-status';
 import { ServerStatusService } from '../services/server-status.service';
 import { SystemInfoService } from '../system-info/system-info.service';
@@ -20,14 +21,16 @@ export class MainMenuComponent {
 
   @Input() openOnMobile: boolean = false;
 
-  private subscription?: Subscription;
+  constructor(private serverStatus: ServerStatusService, private loginService: LoginService) { }
 
-  constructor(private systemInfo: SystemInfoService, private serverStatus: ServerStatusService) { }
-
+  ngOnInit() {
+    this.isLoggedIn = this.loginService.isLoggedIn();
+  }
 
   public resume(): void {
     this.serverStatus.resume();
   }
-  public log_out(): void {
+  public logOut(): void {
+    this.loginService.logOut().subscribe(() => location.reload());
   }
 }

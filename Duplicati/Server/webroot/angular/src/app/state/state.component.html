@@ -39,5 +39,5 @@
     <div *ngIf="activeTaskID == null && programState != 'Running'" class="resume" (click)="sendResume()" translate></div>
   </div>
 
-  <div class="progress-bar progress-bar-striped" [class]="{active: progress < 0}" role="progressbar" [attr.aria-valuenow]="progress * 100" aria-valuemin="0" aria-valuemax="100" style="width:{{progress * 100}}%"></div>
+  <div class="progress-bar progress-bar-striped" [hidden]="progress < 0" role="progressbar" [attr.aria-valuenow]="progress * 100" aria-valuemin="0" aria-valuemax="100" [style.width]="progress * 100+'%'"></div>
 </div>

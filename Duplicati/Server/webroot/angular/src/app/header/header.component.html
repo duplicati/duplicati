@@ -1,4 +1,4 @@
-<div class="header">
+<header class="header">
   <div class="logo">
     <a routerLink="/">
       <img class="mainlogo" src="{{brandingService.getAppLogoPath() | async}}" />
@@ -31,4 +31,4 @@
       <div class="throttle" [class.active]="throttle_active" [class.inactive]="!throttle_active" (click)="throttleOptions()" title="Click to set throttle options" alt="Click to set throttle options"></div>
     </div>
   </div>
-</div>
+</header>

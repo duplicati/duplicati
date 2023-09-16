@@ -18,29 +18,33 @@ import { SettingsComponent } from './settings/settings.component';
 import { UpdateChangelogComponent } from './update-changelog/update-changelog.component';
 
 const routes: Routes = [
-  { path: '', component: HomeComponent, pathMatch: 'full' },
-  { path: 'settings', component: SettingsComponent },
-  { path: 'about', component: AboutComponent },
-  { path: 'log', component: ServerLogComponent },
-  { path: 'log/:backupId', component: BackupLogComponent },
-  { path: 'addstart', component: AddWizardComponent },
-  { path: 'add', component: EditBackupComponent },
-  { path: 'add-import', component: EditBackupComponent, data: { import: true } },
-  { path: 'import', component: ImportComponent },
-  { path: 'export/:backupId', component: ExportComponent },
-  { path: 'edit/:backupId', component: EditBackupComponent },
-  { path: 'restorestart', component: RestoreWizardComponent },
-  { path: 'restore-import', component: ImportComponent, data: { restoremode: true } },
-  { path: 'restoredirect', component: RestoreDirectComponent },
-  { path: 'restoredirect-import', component: RestoreDirectComponent, data: { import: true } },
-  { path: 'restore/:backupId', component: RestoreComponent },
-  { path: 'localdb/:backupId', component: LocalDatabaseComponent },
-  { path: 'delete/:backupId', component: DeleteComponent },
-  { path: 'updatechangelog', component: UpdateChangelogComponent },
-  { path: 'commandline', component: CommandlineComponent },
-  { path: 'commandline/:backupid', component: CommandlineComponent },
-  { path: 'commandline/view/:viewid', component: CommandlineComponent },
-  { path: '**', redirectTo: '' }
+  {
+    path: '', children: [
+      { path: '', component: HomeComponent, pathMatch: 'full' },
+      { path: 'settings', component: SettingsComponent },
+      { path: 'about', component: AboutComponent },
+      { path: 'log', component: ServerLogComponent },
+      { path: 'log/:backupId', component: BackupLogComponent },
+      { path: 'addstart', component: AddWizardComponent },
+      { path: 'add', component: EditBackupComponent },
+      { path: 'add-import', component: EditBackupComponent, data: { import: true } },
+      { path: 'import', component: ImportComponent },
+      { path: 'export/:backupId', component: ExportComponent },
+      { path: 'edit/:backupId', component: EditBackupComponent },
+      { path: 'restorestart', component: RestoreWizardComponent },
+      { path: 'restore-import', component: ImportComponent, data: { restoremode: true } },
+      { path: 'restoredirect', component: RestoreDirectComponent },
+      { path: 'restoredirect-import', component: RestoreDirectComponent, data: { import: true } },
+      { path: 'restore/:backupId', component: RestoreComponent },
+      { path: 'localdb/:backupId', component: LocalDatabaseComponent },
+      { path: 'delete/:backupId', component: DeleteComponent },
+      { path: 'updatechangelog', component: UpdateChangelogComponent },
+      { path: 'commandline', component: CommandlineComponent },
+      { path: 'commandline/:backupid', component: CommandlineComponent },
+      { path: 'commandline/view/:viewid', component: CommandlineComponent },
+      { path: '**', redirectTo: '' }
+    ]
+  }
 ];
 
 @NgModule({

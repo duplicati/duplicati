@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, map, Observable, ReplaySubject, Subject, Subscription, timeout } from 'rxjs';
+import { catchError, EMPTY, map, Observable, ReplaySubject, Subject, Subscription, timeout } from 'rxjs';
 import { ConvertService } from './convert.service';
 import { ProgressEvent, ScheduleEntry, ServerStatus, TaskInfo } from './server-status';
 
@@ -246,7 +246,7 @@ export class ServerStatusService {
       }
     }
 
-    return new Observable<never>();
+    return EMPTY;
   }
 
   private activeTaskChanged(newTask: TaskInfo | null): void {

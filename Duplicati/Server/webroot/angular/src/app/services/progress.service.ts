@@ -127,7 +127,7 @@ export class ProgressService {
           text = `Counting (${e.TotalFileCount} files found, ${this.convert.formatSizeString(e.TotalFileSize)})`;
         } else {
           const unaccountedbytes = e.CurrentFilecomplete ? 0 : e.CurrentFileoffset;
-          const filesleft = e.TotalFileSize - e.ProcessedFileCount;
+          const filesleft = e.TotalFileCount - e.ProcessedFileCount;
           const sizeleft = e.TotalFileSize - e.ProcessedFileSize - unaccountedbytes;
 
           // If we have a speed append it
