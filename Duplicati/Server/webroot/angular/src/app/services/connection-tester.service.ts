@@ -1,8 +1,37 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { booleanAttribute, inject } from '@angular/core';
+import { Inject } from '@angular/core';
+import { InjectionToken } from '@angular/core';
 import { Injectable } from '@angular/core';
+import { catchError, concatMap, defaultIfEmpty, defer, EMPTY, filter, first, switchAll, switchMap, tap, throwError } from 'rxjs';
+import { distinct } from 'rxjs';
+import { from } from 'rxjs';
 import { map, Observable, of } from 'rxjs';
+import { SystemInfo } from '../system-info/system-info';
+import { SystemInfoService } from '../system-info/system-info.service';
 import { DialogConfig } from './dialog-config';
 import { DialogService } from './dialog.service';
+
+
+export interface ConnectionCreator {
+  builduri: () => Observable<string>;
+  advancedOptions: string[];
+  updateAdvancedOptions(): void;
+  backendTester?: () => Observable<boolean>;
+}
+
+
+export interface ConnectionErrorHandler {
+  // Return true if the error handler should be attempted
+  canHandleError(err: any): boolean;
+  // Can modify the arguments and return retrySource to rebuild the uri, return EMPTY to try next handler
+  // Return a value if the connection was successful
+  handleError(err: any, retrySource: Observable<void>, data: { currentUri: string, creator: ConnectionCreator, setTesting: (v: boolean) => void }): Observable<void>;
+}
+
+export const CONNECTION_ERROR_HANDLERS = new InjectionToken<(() => ConnectionErrorHandler)[]>('Connection error handlers', {
+  providedIn: 'root', factory: () => []
+});
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +39,9 @@ import { DialogService } from './dialog.service';
 export class ConnectionTester {
 
   constructor(private dialog: DialogService,
-    private client: HttpClient) { }
+    private client: HttpClient,
+    private systemInfo: SystemInfoService,
+    @Inject(CONNECTION_ERROR_HANDLERS) private connectionErrorHandlers: (() => ConnectionErrorHandler)[]) { }
 
   private testing = false;
 
@@ -18,103 +49,80 @@ export class ConnectionTester {
     return this.testing;
   }
 
-  performConnectionTest(uri: string, advancedOptions: string[], builduri: () => Observable<string>, backendTester?: () => Observable<boolean>): void {
+  performConnectionTest(connectionCreator: ConnectionCreator): Observable<void> {
     let hasTriedCreate = false;
     let hasTriedCert = false;
     let hasTriedMozroots = false;
     let hasTriedHostkey = false;
-    let dlg: DialogConfig | undefined;
+    let testingDialog: DialogConfig | undefined;
 
-    let testConnection = () => {
-      this.testing = true;
-      if (dlg != null && dlg.dismiss != null) {
-        dlg.dismiss();
-      }
-
-      dlg = this.dialog.dialog('Testing ...', 'Testing connection ...', [], undefined, () => {
-        this.client.post('/remoteoperation/test', uri).subscribe(() => {
-          this.testing = false;
-          if (dlg?.dismiss) {
-            dlg.dismiss();
-          }
-          let test = backendTester != null ? backendTester() : of(true);
-          test.subscribe(v => {
-            if (v) {
-              this.dialog.dialog('Success', 'Connection worked')
-            }
-          });
-        }, handleError);
-      });
+    const data = {
+      currentUri: '',
+      setTesting: (v: boolean) => this.testing = v,
+      creator: connectionCreator
     };
 
-    let createFolder = () => {
-      hasTriedCreate = true;
-      this.testing = true;
-      this.client.post<void>('/remoteoperation/create', uri).subscribe(testConnection, handleError);
-    };
+    let errorHandlers: ConnectionErrorHandler[] = this.connectionErrorHandlers.map(f => f());
 
-    const certOptionName = '--accept-specified-ssl-hash=';
-    let appendApprovedCert = (hash: string) => {
-      hasTriedCert = true;
-      let idx = advancedOptions.findIndex(opt => opt.startsWith(certOptionName));
-      if (idx >= 0) {
-        let certOption = advancedOptions[idx];
-        let certs = certOption.substr(certOptionName.length).split(',');
-        if (certs.includes(hash)) {
-          // Already has cert
-          return;
-        } else {
-          advancedOptions[idx] = certOption + ',' + hash;
-        }
-      } else {
-        advancedOptions.push(certOptionName + hash);
-      }
-    };
-
-    let askApproveCert = (hash: string) => {
-      this.dialog.dialog('Trust server certificate?',
-        `The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ${hash}?`,
-        ['No', 'Yes'],
-        (idx) => {
-          if (idx === 1) {
-            appendApprovedCert(hash);
-            builduri().pipe(map(newUri => {
-              uri = newUri;
-              testConnection();
-            })).subscribe();
-          }
-        }
-      );
-    };
-
-    let hasCertApproved = (hash: string): boolean => {
-      let certOption = advancedOptions.find(opt => opt.startsWith(certOptionName));
-      if (certOption != null) {
-        let certs = certOption.substr(certOptionName.length).split(',');
-        return certs.includes(hash);
-      }
-      return false;
-    };
-
-    let handleError = (err: HttpErrorResponse) => {
+    // Handle error, can return source to retry or empty to stop
+    let handleError = (err: HttpErrorResponse, source: Observable<void>) => {
       this.testing = false;
-      if (dlg != null && dlg.dismiss != null) {
-        dlg.dismiss();
+      if (testingDialog != null && testingDialog.dismiss != null) {
+        testingDialog.dismiss();
       }
 
+      return from(errorHandlers).pipe(
+        filter(h => h.canHandleError(err)),
+        defaultIfEmpty(null),
+        concatMap(h => {
+          if (h != null) {
+            return h.handleError(err, source, data);
+          } else {
+            this.dialog.connectionError('Failed to connect: ', err);
+            return EMPTY;
+          }
+        })
+      );
       const message = err.statusText;
       // TODO: Implement common error resolutions
       if (!hasTriedCreate && message == 'missing-folder') {
-
       } else if (!hasTriedCert && message.startsWith('incorrect-cert:')) {
-
       } else if (!hasTriedHostkey && message.startsWith('incorrect-host-key:')) {
-
       } else if (err) {
         this.dialog.connectionError('Failed to connect: ', err);
       }
+      return EMPTY;
     };
 
-    testConnection();
+    let testConnection = defer(() => {
+      this.testing = true;
+      testingDialog?.dismiss();
+      return connectionCreator.builduri().pipe(
+        switchMap(newUri => {
+          data.currentUri = newUri;
+          return this.dialog.dialogObservable('Testing ...', 'Testing connection ...', []).pipe(
+            filter(v => v.event == 'show'),
+            switchMap(v => {
+              testingDialog = v.config;
+              return this.client.post<void>('/remoteoperation/test', data.currentUri);
+            }));
+        }));
+    }).pipe(
+      catchError(handleError),
+      switchMap(() => {
+        this.testing = false;
+        testingDialog?.dismiss();
+        return connectionCreator.backendTester != null ? connectionCreator.backendTester() : of(true);
+      }),
+      defaultIfEmpty(false),
+      map(v => {
+        if (v) {
+          this.dialog.dialog('Success', 'Connection worked');
+        } else {
+          this.dialog.dialog('Error', 'Connection failed');
+        }
+      }));
+
+    return testConnection;
   }
 }

@@ -52,11 +52,13 @@ export class DialogComponent {
     }
     let cur = this.currentItem;
     let input = this.currentItem.textarea;
-    this.dialogService.dismissCurrent();
+    this.dialogService.dismissCurrent(false);
 
     if (cur.callback) {
       cur.callback(index, input, cur);
     }
+    cur.subject.next({ event: 'button', input: input, buttonIndex: index, config: cur });
+    cur.subject.complete();
   }
 
   initHtmlTemplate(ref: ComponentRef<unknown> | undefined) {

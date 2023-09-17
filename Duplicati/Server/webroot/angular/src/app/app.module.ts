@@ -78,6 +78,7 @@ import { BackendEditorsModule } from './backend-editors/backend-editors.module';
 import { EditFileComponent } from './edit-file/edit-file.component';
 import { BACKEND_EDITORS } from './backend-editor';
 import { ServerSettingsService } from './services/server-settings.service';
+import { connectionErrorHandlerProviders } from './services/connection-error-handlers';
 
 @NgModule({
   declarations: [
@@ -172,7 +173,8 @@ import { ServerSettingsService } from './services/server-settings.service';
       useFactory: (settings: ServerSettingsService) => settings.getUILanguage(),
       deps: [ServerSettingsService]
     },
-    backupCheckerProviders
+    backupCheckerProviders,
+    connectionErrorHandlerProviders
   ],
   bootstrap: [AppComponent]
 })

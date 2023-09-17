@@ -1,6 +1,7 @@
 import { Injectable, InjectionToken, Type } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { DialogCallback, DialogConfig, DialogState, DialogTemplate } from './dialog-config';
+import { ReplaySubject } from 'rxjs';
+import { BehaviorSubject, defer, EMPTY, Observable, Subject } from 'rxjs';
+import { DialogCallback, DialogConfig, DialogEvent, DialogState, DialogTemplate } from './dialog-config';
 
 @Injectable({
   providedIn: 'root'
@@ -49,6 +50,14 @@ export class DialogService {
     });
   }
 
+  dialogObservable(title: string, message: string, buttons?: string[]): Observable<DialogEvent> {
+    return defer(() => this.enqueueDialog({
+      message: message,
+      title: title,
+      buttons: buttons,
+    })?.subject.asObservable() ?? EMPTY);
+  }
+
   htmlDialog(title: string, htmltemplate: Type<DialogTemplate>, buttons: string[], callback: DialogCallback, onshow?: () => void): DialogConfig | undefined {
     return this.enqueueDialog({
       htmltemplate: htmltemplate,
@@ -74,7 +83,7 @@ export class DialogService {
     });
   }
 
-  enqueueDialog(config: DialogConfig): DialogConfig | undefined {
+  enqueueDialog(config: Partial<DialogConfig>): DialogConfig | undefined {
     if (config.message == null && config.htmltemplate == null && config.enableTextarea == null) {
       return undefined;
     }
@@ -82,35 +91,47 @@ export class DialogService {
     if (config.buttons == null) {
       config.buttons = ['OK'];
     }
-    this.state.Queue.push(config);
-    if (this.state.CurrentItem.value == null) {
-      this.dismissCurrent();
-    }
 
     config.dismiss = () => {
       if (this.state.CurrentItem.value === config) {
         this.dismissCurrent();
+      } else {
+        config.subject?.complete();
       }
     };
-    return config;
+    config.subject = new ReplaySubject(1);
+    this.state.Queue.push(config as DialogConfig);
+    if (this.state.CurrentItem.value == null) {
+      this.dismissCurrent();
+    }
+    return config as DialogConfig;
   }
 
-  dismissCurrent(): void {
+  dismissCurrent(complete?: boolean): void {
     if (this.state.CurrentItem.value != null) {
-      if (this.state.CurrentItem.value.ondismiss) {
-        this.state.CurrentItem.value.ondismiss();
+      const config = this.state.CurrentItem.value!;
+      if (config.ondismiss) {
+        config.ondismiss();
+      }
+      config.subject.next({ event: 'dismiss', config: config });
+      if (complete !== false) {
+        config.subject.complete();
       }
 
       this.state.CurrentItem.next(undefined);
     }
 
-    if (this.state.Queue.length > 0) {
+    while (this.state.Queue.length > 0) {
       this.state.CurrentItem.next(this.state.Queue[0]);
-      this.state.Queue.shift();
-
-      if (this.state.CurrentItem.value!.onshow) {
-        this.state.CurrentItem.value!.onshow();
+      const config = this.state.Queue.shift()!;
+      if (config.subject.closed) {
+        continue;
       }
+
+      if (config.onshow) {
+        config.onshow();
+      }
+      config.subject.next({ event: 'show', config: config });
     }
   }
 
@@ -143,7 +164,7 @@ export class DialogService {
 
     if (msg && msg.error && msg.error.Message)
       this.dialog($localize`Error`, txt + msg.error.Message);
-    else if(msg.statusText)
+    else if (msg.statusText)
       this.dialog($localize`Error`, txt + msg.statusText);
     else
       this.dialog($localize`Error`, txt + msg);

@@ -1,4 +1,5 @@
 import { TemplateRef, Type } from "@angular/core";
+import { Subject } from "rxjs";
 import { BehaviorSubject } from "rxjs";
 
 export interface DialogCallback {
@@ -9,12 +10,15 @@ export interface DialogTemplate {
   config: DialogConfig | undefined;
 }
 
+export type DialogEvent =
+  { event: 'show' | 'dismiss', config: DialogConfig } | { event: 'button', buttonIndex: number, input: string | undefined, config: DialogConfig };
+
 export interface DialogConfig {
   message?: string;
   callback?: DialogCallback;
-  title?: string;
-  buttons?: string[];
-  dismiss?: () => void;
+  title: string;
+  buttons: string[];
+  dismiss: () => void;
   onshow?: () => void;
   ondismiss?: () => void;
 
@@ -26,6 +30,8 @@ export interface DialogConfig {
 
   htmltemplate?: Type<DialogTemplate>;
   buttonTemplate?: Type<DialogTemplate>;
+
+  subject: Subject<DialogEvent>;
 }
 
 export interface DialogState {

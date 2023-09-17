@@ -9,7 +9,7 @@ import { GroupedOptions, GroupedOptionService } from '../../services/grouped-opt
 import { ParserService } from '../../services/parser.service';
 import { CommandLineArgument, GroupedModuleDescription, ModuleDescription, SystemInfo } from '../../system-info/system-info';
 import { SystemInfoService } from '../../system-info/system-info.service';
-import { map, Observable } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import { EMPTY } from 'rxjs';
 
 
@@ -173,8 +173,11 @@ export class BackupEditUriComponent {
   }
 
   testConnection(): void {
-    this.buildUri().subscribe(uri => this.connectionTester.performConnectionTest(uri, this.advancedOptions, () => this.buildUri(),
-      this.editorComponent == null ? undefined : () => this.editorComponent!.instance.extraConnectionTests())
-    );
+    this.connectionTester.performConnectionTest({
+      builduri: () => this.buildUri(),
+      advancedOptions: this.advancedOptions,
+      updateAdvancedOptions: () => this.advancedOptions = [...this.advancedOptions],
+      backendTester: this.editorComponent == null ? undefined : () => this.editorComponent!.instance.extraConnectionTests()
+    }).subscribe();
   }
 }
