@@ -30,7 +30,7 @@ export class BackupDestinationSettingsComponent {
   }
 
   importUrl(): void {
-    this.dialog.textareaDialog('Import URL', 'Enter a Backup destination URL:', 'Enter URL', '', ['Cancel', 'OK'], undefined, (btn, input) => {
+    this.dialog.textareaDialog($localize`Import URL`, $localize`Enter a Backup destination URL:`, $localize`Enter URL`, '', [$localize`Cancel`, $localize`OK`], undefined, (btn, input) => {
       if (btn === 1 && input !== undefined) {
         this.editUri.setUri(input, true);
       }
@@ -38,7 +38,7 @@ export class BackupDestinationSettingsComponent {
   }
   copyUrlToClipboard(): void {
     this.editUri.buildUri().subscribe(uri =>
-      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent));
+      this.dialog.textareaDialog($localize`Copy URL`, '', undefined, uri, [$localize`OK`], CopyClipboardButtonsComponent));
 
   }
   getUri(): Observable<string>{

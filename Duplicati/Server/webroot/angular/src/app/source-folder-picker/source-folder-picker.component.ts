@@ -69,7 +69,7 @@ export class SourceFolderPickerComponent {
     private filterService: FileFilterService,
     private convert: ConvertService) {
     this.fileDatabase = new SourceFileDatabase(false, this.fileService, this.filterService);
-    this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.fileDatabase, this.dialog.connectionError('Failed to load files: '));
+    this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.fileDatabase, this.dialog.connectionError($localize`Failed to load files: `));
     this.fileDatabase.setSourceNodeChildren(this.sourceNodeChildren);
     this.sourceSelection = new SelectionModel<string>(true, [], true, (p1, p2) => this.fileService.pathsEqual(p1, p2));
   }
@@ -216,13 +216,13 @@ export class SourceFolderPickerComponent {
   getIncludeLabel(node: FileFlatNode): string {
     let include = this.getIncludeMarker(node);
     if (include === IncludeMarker.Partial) {
-      return 'partially included';
+      return $localize`partially included`;
     } else if (include === IncludeMarker.Excluded) {
-      return 'excluded';
+      return $localize`excluded`;
     } else if (include === IncludeMarker.Included) {
-      return 'included';
+      return $localize`included`;
     }
-    return 'not checked';
+    return $localize`not checked`;
   }
 
   updateFilterList(): void {
@@ -294,8 +294,8 @@ export class SourceFolderPickerComponent {
         filtersChanged = true;
       }
       if (this.filterService.isExcludedBySize(node.node, this.excludeSize)) {
-        this.dialog.dialog(`Cannot include "${node.node.text}`,
-          `The file size is ${this.convert.formatSizeString(node.node.fileSize || 0)}, larger than the maximum specified size. If the file size decreases, it will be included in future backups.`);
+        this.dialog.dialog($localize`Cannot include "${node.node.text}`,
+          $localize`The file size is ${this.convert.formatSizeString(node.node.fileSize || 0)}, larger than the maximum specified size. If the file size decreases, it will be included in future backups.`);
       }
     }
 

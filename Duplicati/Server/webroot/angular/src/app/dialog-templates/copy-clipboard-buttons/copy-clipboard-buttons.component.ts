@@ -26,9 +26,9 @@ export class CopyClipboardButtonsComponent implements DialogTemplate {
 
   onCopySuccess(event: IClipboardResponse) {
     // clear selection
-    this.showTooltip('Copied!');
+    this.showTooltip($localize`Copied!`);
   }
   onCopyError(event: IClipboardResponse) {
-    this.showTooltip('Copy failed. Please manually copy the URL');
+    this.showTooltip($localize`Copy failed. Please manually copy the URL`);
   }
 }

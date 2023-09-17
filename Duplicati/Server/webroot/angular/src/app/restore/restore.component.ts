@@ -75,7 +75,7 @@ export class RestoreComponent {
 
   fetchBackupTimes() {
     this.connecting = true;
-    this.connectionProgress = 'Getting file versions …';
+    this.connectionProgress = $localize`Getting file versions …`;
 
     const fromRemoteOnly = this.isBackupTemporary;
     this.backupService.getFilesets(this.backupId, undefined, fromRemoteOnly).subscribe(filesets => {
@@ -85,14 +85,14 @@ export class RestoreComponent {
     }, err => {
       this.connecting = false;
       this.connectionProgress = '';
-      this.dialog.connectionError('Failed to connect: ', err);
+      this.dialog.connectionError($localize`Failed to connect: `, err);
     });
   }
 
   onClickNext() {
     let results = this.selected;
     if (results.length == 0) {
-      this.dialog.dialog('No items selected', 'No items to restore, please select one or more items');
+      this.dialog.dialog($localize`No items selected`, $localize`No items to restore, please select one or more items`);
     } else {
       this.restoreStep = 1;
     }
@@ -110,7 +110,7 @@ export class RestoreComponent {
   }
   onStartRestore(locationData: RestoreLocationData) {
     if (locationData.restoreLocation == 'custom' && locationData.restorePath.length == 0) {
-      this.dialog.alert('You have chosen to restore to a new location, but not entered one');
+      this.dialog.alert($localize`You have chosen to restore to a new location, but not entered one`);
       return;
     }
 
@@ -119,7 +119,7 @@ export class RestoreComponent {
       dirsep = this.fileService.guessDirsep(this.selected[0]);
     }
     if (locationData.restoreLocation != 'custom' && dirsep != this.fileService.dirsep) {
-      this.dialog.confirm('This backup was created on another operating system. Restoring files without specifying a destination folder can cause files to be restored in unexpected places. Are you sure you want to continue without choosing a destination folder?',
+      this.dialog.confirm($localize`This backup was created on another operating system. Restoring files without specifying a destination folder can cause files to be restored in unexpected places. Are you sure you want to continue without choosing a destination folder?`,
         (ix) => {
           if (ix == 1) {
             this.onStartRestoreProcess(locationData, dirsep);
@@ -142,7 +142,7 @@ export class RestoreComponent {
       this.restoreStep = 1;
       this.connecting = false;
       this.connectionProgress = '';
-      this.dialog.connectionError('Failed to connect: ', err);
+      this.dialog.connectionError($localize`Failed to connect: `, err);
     };
 
     let p: any = {
@@ -179,13 +179,13 @@ export class RestoreComponent {
 
     if (this.isBackupTemporary) {
       this.connecting = true;
-      this.connectionProgress = 'Creating temporary backup …';
+      this.connectionProgress = $localize`Creating temporary backup …`;
 
       let tempId: string | undefined;
       this.backupService.copyToTemp(this.backupId).pipe(
         switchMap(tmpId => {
           tempId = tmpId;
-          this.connectionProgress = 'Building partial temporary database …';
+          this.connectionProgress = $localize`Building partial temporary database …`;
           return this.backupService.repair(tmpId, p);
         })
       ).subscribe(
@@ -193,15 +193,15 @@ export class RestoreComponent {
           this.taskid = taskid;
           this.serverStatus.callWhenTaskCompletes(taskid, () => {
             this.taskService.getStatus(taskid).subscribe(status => {
-              this.connectionProgress = 'Starting the restore process …';
+              this.connectionProgress = $localize`Starting the restore process …`;
               if (status.Status == 'Completed') {
                 this.backupService.restore(tempId!, p).subscribe(taskid => {
-                  this.connectionProgress = 'Restoring files …';
+                  this.connectionProgress = $localize`Restoring files …`;
                   this.taskid = taskid;
                   this.serverStatus.callWhenTaskCompletes(taskid, () => this.onRestoreComplete(taskid));
                 }, handleError);
               } else if (status.Status == 'Failed') {
-                this.dialog.dialog('Error', 'Failed to build temporary database: ' + status.ErrorMessage);
+                this.dialog.dialog($localize`Error`, $localize`Failed to build temporary database: ` + status.ErrorMessage);
                 this.connecting = false;
                 this.connectionProgress = '';
                 this.restoreStep = 1;
@@ -213,9 +213,9 @@ export class RestoreComponent {
       );
     } else {
       this.connecting = true;
-      this.connectionProgress = 'Starting the restore process …';
+      this.connectionProgress = $localize`Starting the restore process …`;
       this.backupService.restore(this.backupId, p).subscribe(taskid => {
-        this.connectionProgress = 'Restoring files …';
+        this.connectionProgress = $localize`Restoring files …`;
         this.taskid = taskid;
         this.serverStatus.callWhenTaskCompletes(taskid, () => this.onRestoreComplete(taskid));
       }, handleError);
@@ -229,13 +229,13 @@ export class RestoreComponent {
       if (status.Status == 'Completed') {
         this.restoreStep = 3;
       } else if (status.Status == 'Failed') {
-        this.dialog.dialog('Error', 'Failed to restore files: ' + status.ErrorMessage);
+        this.dialog.dialog($localize`Error`, $localize`Failed to restore files: ` + status.ErrorMessage);
       }
     }, err => {
       this.restoreStep = 1;
       this.connecting = false;
       this.connectionProgress = '';
-      this.dialog.connectionError('Failed to connect: ', err);
+      this.dialog.connectionError($localize`Failed to connect: `, err);
     });
   }
 }

@@ -37,11 +37,11 @@ export class RestoreService {
     const lastmonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 2)));
 
     const dateBuckets = [
-      { text: 'Today', stamp: today },
-      { text: 'Yesterday', stamp: yesterday },
-      { text: 'This week', stamp: week },
-      { text: 'This month', stamp: thismonth },
-      { text: 'Last month', stamp: lastmonth },
+      { text: $localize`Today`, stamp: today },
+      { text: $localize`Yesterday`, stamp: yesterday },
+      { text: $localize`This week`, stamp: week },
+      { text: $localize`This month`, stamp: thismonth },
+      { text: $localize`Last month`, stamp: lastmonth },
     ];
 
     return (dt: Date) => {
@@ -61,9 +61,9 @@ export class RestoreService {
       const date = this.convert.parseDate(fileset.Time);
       let displayLabel = `${fileset.Version}: ${this.convert.toDisplayDateAndTime(date)}`;
       if (fileset.IsFullBackup === 0) {
-        displayLabel += ' (partial)';
+        displayLabel += $localize` (partial)`;
       }
-      const groupLabel = idx == 0 ? 'Latest' : createGroupLabel(date);
+      const groupLabel = idx == 0 ? $localize`Latest` : createGroupLabel(date);
       return {
         ...fileset,
         DisplayLabel: displayLabel,

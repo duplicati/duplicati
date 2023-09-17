@@ -51,9 +51,9 @@ export class AzureComponent implements BackendEditorComponent {
     // Slightly better error message
     //this.commonData.folder = this.commonData.server;
 
-    const valid = this.editUri.requireField(this.commonData, 'username', 'Account name')
-      && this.editUri.requireField(this.commonData, 'password', 'Access key')
-      && this.editUri.requireField(this.commonData, 'path', 'Container name');
+    const valid = this.editUri.requireField(this.commonData, 'username', $localize`Account name`)
+      && this.editUri.requireField(this.commonData, 'password', $localize`Access key`)
+      && this.editUri.requireField(this.commonData, 'path', $localize`Container name`);
     if (!valid) {
       return EMPTY;
     }

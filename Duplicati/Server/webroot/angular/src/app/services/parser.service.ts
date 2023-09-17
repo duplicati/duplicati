@@ -11,48 +11,48 @@ export class ParserService {
 
   get speedMultipliers(): ({ name: string, value: string })[] {
     return [
-      { name: 'bytes/s', value: 'b' },
-      { name: 'KByte/s', value: 'KB' },
-      { name: 'MByte/s', value: 'MB' },
-      { name: 'GByte/s', value: 'GB' },
-      { name: 'TByte/s', value: 'TB' }
+      { name: $localize`bytes/s`, value: 'b' },
+      { name: $localize`KByte/s`, value: 'KB' },
+      { name: $localize`MByte/s`, value: 'MB' },
+      { name: $localize`GByte/s`, value: 'GB' },
+      { name: $localize`TByte/s`, value: 'TB' }
     ];
   }
   get fileSizeMultipliers(): ({ name: string, value: string })[] {
     return [
-      { name: 'byte', value: 'b' },
-      { name: 'KByte', value: 'KB' },
-      { name: 'MByte', value: 'MB' },
-      { name: 'GByte', value: 'GB' },
-      { name: 'TByte', value: 'TB' }
+      { name: $localize`byte`, value: 'b' },
+      { name: $localize`KByte`, value: 'KB' },
+      { name: $localize`MByte`, value: 'MB' },
+      { name: $localize`GByte`, value: 'GB' },
+      { name: $localize`TByte`, value: 'TB' }
     ];
   }
   get timerangeMultipliers(): ({ name: string, value: string })[] {
     return [
-      { name: 'Minutes', value: 'm' },
-      { name: 'Hours', value: 'h' },
-      { name: 'Days', value: 'D' },
-      { name: 'Weeks', value: 'W' },
-      { name: 'Months', value: 'M' },
-      { name: 'Years', value: 'Y' }
+      { name: $localize`Minutes`, value: 'm' },
+      { name: $localize`Hours`, value: 'h' },
+      { name: $localize`Days`, value: 'D' },
+      { name: $localize`Weeks`, value: 'W' },
+      { name: $localize`Months`, value: 'M' },
+      { name: $localize`Years`, value: 'Y' }
     ];
   }
   get shorttimerangeMultipliers(): ({ name: string, value: string })[] {
     return [
-      { name: 'Seconds', value: 's' },
-      { name: 'Minutes', value: 'm' },
-      { name: 'Hours', value: 'h' }
+      { name: $localize`Seconds`, value: 's' },
+      { name: $localize`Minutes`, value: 'm' },
+      { name: $localize`Hours`, value: 'h' }
     ];
   }
   get daysOfWeek(): ({ name: string, value: string })[] {
     return [
-      { name: 'Mon', value: 'mon' },
-      { name: 'Tue', value: 'tue' },
-      { name: 'Wed', value: 'wed' },
-      { name: 'Thu', value: 'thu' },
-      { name: 'Fri', value: 'fri' },
-      { name: 'Sat', value: 'sat' },
-      { name: 'Sun', value: 'sun' },
+      { name: $localize`Mon`, value: 'mon' },
+      { name: $localize`Tue`, value: 'tue' },
+      { name: $localize`Wed`, value: 'wed' },
+      { name: $localize`Thu`, value: 'thu' },
+      { name: $localize`Fri`, value: 'fri' },
+      { name: $localize`Sat`, value: 'sat' },
+      { name: $localize`Sun`, value: 'sun' },
     ];
   }
 
@@ -135,7 +135,7 @@ export class ParserService {
 
     let items = structuredClone(sysInfo.Options);
     for (let item of items) {
-      item.Category = 'Core options';
+      item.Category = $localize`Core options`;
     }
 
     let copyToList = (lst: ModuleDescription[], key?: string | boolean) => {

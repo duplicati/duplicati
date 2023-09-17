@@ -15,7 +15,7 @@ export class CheckRetention implements BackupChecker {
       const valid_commas = /^(\d*\w:\d*\w,)*\d*\w:\d*\w$/;
       const retentionPolicy = opt.retention.policy;
       if (retentionPolicy.indexOf(':') <= 0 || valid_chars.test(retentionPolicy) || valid_commas.test(retentionPolicy) == false) {
-        this.dialog.dialog('Invalid retention time', 'You must enter a valid retention policy string');
+        this.dialog.dialog($localize`Invalid retention time`, $localize`You must enter a valid retention policy string`);
         return Promise.reject(new RejectToStep(4));
       }
     }

@@ -55,7 +55,7 @@ export class ServerLogComponent {
           this.LogData.push(...logs);
         }
       },
-      error: this.dialog.connectionError('Failed to connect: '),
+      error: this.dialog.connectionError($localize`Failed to connect: `),
       complete: () => this.LogDataComplete = true
     });
     this.nextPage$.next();

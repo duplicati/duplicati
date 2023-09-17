@@ -33,8 +33,8 @@ export class SettingsComponent {
   servermodulesettings: Record<string, string> = {};
 
   uiLanguage: string = '';
-  langBrowserDefault: string = 'Browser default';
-  langDefault: string = 'Default';
+  langBrowserDefault: string = $localize`Browser default`;
+  langDefault: string = $localize`Default`;
   private _theme: string = '';
   get theme(): string {
     return this._theme;
@@ -121,12 +121,12 @@ export class SettingsComponent {
   }
   save() {
     if (this.requireRemotePassword && this.remotePassword.trim().length === 0) {
-      this.dialog.notifyInputError('Cannot use empty password');
+      this.dialog.notifyInputError($localize`Cannot use empty password`);
       return;
     }
 
     if (this.rawdata == null) {
-      this.dialog.alert('The settings are not available, try reloading the page');
+      this.dialog.alert($localize`The settings are not available, try reloading the page`);
       return;
     }
 
@@ -144,7 +144,7 @@ export class SettingsComponent {
 
     if (this.requireRemotePassword && this.rawdata['server-passphrase'] !== this.remotePassword) {
       if (this.remotePassword !== this.confirmPassword) {
-        this.dialog.notifyInputError('The passwords do not match');
+        this.dialog.notifyInputError($localize`The passwords do not match`);
         return;
       }
       let salt = this.crypto.generateSaltBase64(256 / 8);
@@ -172,7 +172,7 @@ export class SettingsComponent {
         }
 
         location.reload();
-      }, this.dialog.connectionError('Failed to save: '));
+      }, this.dialog.connectionError($localize`Failed to save: `));
     };
     if (hashPromise == null) {
       apply();
@@ -181,7 +181,7 @@ export class SettingsComponent {
         if (typeof err === 'string') {
           this.dialog.alert(err);
         } else {
-          this.dialog.alert('Failed to generate hash')
+          this.dialog.alert($localize`Failed to generate hash`)
         }
       });
     }
@@ -189,12 +189,12 @@ export class SettingsComponent {
 
   suppressDonationMessages() {
     this.systemInfoService.suppressDonationMessages(true).subscribe({
-      error: this.dialog.connectionError('Operation failed: ')
+      error: this.dialog.connectionError($localize`Operation failed: `)
     });
   }
   displayDonationMessages() {
     this.systemInfoService.suppressDonationMessages(false).subscribe({
-      error: this.dialog.connectionError('Operation failed: ')
+      error: this.dialog.connectionError($localize`Operation failed: `)
     });
   }
 }

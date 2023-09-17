@@ -39,7 +39,7 @@ export class CaptchaComponent implements DialogTemplate {
       this.imageurl = this.captcha.getImageUrl(token);
     }, err => {
       this.dialog.dismissCurrent();
-      this.dialog.connectionError('Failed to connect: ', err);
+      this.dialog.connectionError($localize`Failed to connect: `, err);
     });
   }
 }

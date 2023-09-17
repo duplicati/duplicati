@@ -82,94 +82,94 @@ export class FileFilterService {
 
   // TODO: Inject this
   private filterClasses: FilterClass[] = [new FilterClass({
-    name: 'Exclude directories whose name contain',
+    name: $localize`Exclude directories whose name contain`,
     key: '-dir*',
     prefix: '-*',
     suffix: '*!'
   }), new FilterClass({
-    name: 'Exclude files whose names contain',
+    name: $localize`Exclude files whose names contain`,
     key: '-file*',
     prefix: '-[.*',
     suffix: '[^\\!]*]',    // Escape dirsep inside regexp. Required on Windows, no effect on other platforms.
     rx: '\\-\\[\\.\\*[\\^\\!\\]\\*\\]'
   }), new FilterClass({
-    name: 'Exclude folder',
+    name: $localize`Exclude folder`,
     key: '-folder',
     prefix: '-',
     suffix: '!',
     stripSep: true,
     rx: '\\-(.*)\\!'
   }), new FilterClass({
-    name: 'Exclude file',
+    name: $localize`Exclude file`,
     key: '-path',
     prefix: '-',
     stripSep: true,
     exclude: ['*', '?', '{'],
     rx: '\\-([^\\[\\{\\*\\?]+)'
   }), new FilterClass({
-    name: 'Exclude file extension',
+    name: $localize`Exclude file extension`,
     key: '-ext',
     rx: '\\-\\*\.(.*)',
     prefix: '-*.'
   }), new FilterClass({
-    name: 'Exclude regular expression',
+    name: $localize`Exclude regular expression`,
     key: '-[]',
     prefix: '-[',
     suffix: ']'
   }), new FilterClass({
-    name: 'Include regular expression',
+    name: $localize`Include regular expression`,
     key: '+[]',
     prefix: '+[',
     suffix: ']'
   }), new FilterClass({
-    name: 'Exclude filter group',
+    name: $localize`Exclude filter group`,
     key: '-{}',
     prefix: '-{',
     suffix: '}'
   }),
   //// Since all the current filter groups are intended for exclusion, there isn't a reason to show the 'Include group' section in the UI yet.
   //new FilterClass( {
-  //  name: 'Include filter group',
+  //  name: $localize`Include filter group`,
   //  key: '+{}',
   //  prefix: '+{',
   //  suffix: '}'
   //}),
   new FilterClass({
-    name: 'Include expression',
+    name: $localize`Include expression`,
     key: '+',
     prefix: '+'
   }), new FilterClass({
-    name: 'Exclude expression',
+    name: $localize`Exclude expression`,
     key: '-',
     prefix: '-'
   })];
   private filterGroups: ({ name: string, value: string })[] = [{
-    name: 'Default excludes',
+    name: $localize`Default excludes`,
     value: 'DefaultExcludes'
   }, {
     //// As the DefaultIncludes are currently empty, we don't need to include them in the UI yet.
-    //    name: 'Default includes',
+    //    name: $localize`Default includes`,
     //    value: 'DefaultIncludes'
     //}, {
-    name: 'System Files',
+    name: $localize`System Files`,
     value: 'SystemFiles'
   }, {
-    name: 'Operating System',
+    name: $localize`Operating System`,
     value: 'OperatingSystem'
   }, {
-    name: 'Cache Files',
+    name: $localize`Cache Files`,
     value: 'CacheFiles'
   }, {
-    name: 'Temporary Files',
+    name: $localize`Temporary Files`,
     value: 'TemporaryFiles'
   }, {
-    name: 'Applications',
+    name: $localize`Applications`,
     value: 'Applications'
   }];
   private fileAttributes: ({ name: string, value: string })[] = [
-    { name: 'Hidden files', value: 'hidden' },
-    { name: 'System files', value: 'system' },
-    { name: 'Temporary files', value: 'temporary' },
+    { name: $localize`Hidden files`, value: 'hidden' },
+    { name: $localize`System files`, value: 'system' },
+    { name: $localize`Temporary files`, value: 'temporary' },
   ];
 
   private filterTypeMap: Map<string, FilterClass>;

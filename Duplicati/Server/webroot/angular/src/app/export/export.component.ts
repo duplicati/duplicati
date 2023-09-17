@@ -34,9 +34,9 @@ export class ExportComponent {
   doExport() {
     let warnUnencryptedPasswords = (continuation: () => void) => {
       if (this.exportType === 'file' && this.exportPasswords && !this.fileEncrypted) {
-        this.dialog.dialog('Not using encryption',
-          'The configuration should be kept safe. Are you sure you want to save an unencrypted file containing your passwords?',
-          ['Cancel', 'Yes, I understand the risk'],
+        this.dialog.dialog($localize`Not using encryption`,
+          $localize`The configuration should be kept safe. Are you sure you want to save an unencrypted file containing your passwords?`,
+          [$localize`Cancel`, $localize`Yes, I understand the risk`],
           (ix) => {
             if (ix == 1) {
               continuation();
@@ -58,7 +58,7 @@ export class ExportComponent {
           },
           err => {
             this.connecting = false;
-            this.dialog.connectionError('Failed to connect: ', err);
+            this.dialog.connectionError($localize`Failed to connect: `, err);
           }
         );
       } else {
@@ -71,9 +71,9 @@ export class ExportComponent {
     this.fileEncrypted = false;
     if (this.useEncryption && this.exportType === 'file') {
       if (this.passphrase == null || this.passphrase.trim().length === 0) {
-        this.dialog.dialog('No passphrase entered', 'To export without a passphrase, uncheck the \"Encrypt file\" box');
+        this.dialog.dialog($localize`No passphrase entered`, $localize`To export without a passphrase, uncheck the \"Encrypt file\" box`);
       } else if (this.passphrase !== this.confirmPassphrase) {
-        this.dialog.dialog('Error', 'The passwords do not match');
+        this.dialog.dialog($localize`Error`, $localize`The passwords do not match`);
       } else {
         this.fileEncrypted = true;
       }

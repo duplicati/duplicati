@@ -81,16 +81,16 @@ export class LocalDatabaseComponent {
             continuation();
           }
         },
-        this.dialog.connectionError(move ? 'Move failed: ' : 'Update failed: ')
+        this.dialog.connectionError(move ? $localize`Move failed: ` : $localize`Update failed: `)
       );
     };
 
     let doCheckTarget = () => {
       this.fileService.validateFile(this.dbPath!).subscribe(valid => {
         if (valid) {
-          this.dialog.dialog('Existing file found',
-            'An existing file was found at the new location\nAre you sure you want the database to point to an existing file?',
-            ['Cancel', 'No', 'Yes'],
+          this.dialog.dialog($localize`Existing file found`,
+            $localize`An existing file was found at the new location\nAre you sure you want the database to point to an existing file?`,
+            [$localize`Cancel`, $localize`No`, $localize`Yes`],
             (ix) => {
               if (ix == 2) {
                 doUpdate();
@@ -109,9 +109,9 @@ export class LocalDatabaseComponent {
       if (this.noLocalDB) {
         doCheckTarget();
       } else {
-        this.dialog.dialog('Updating with existing database',
-          'You are changing the database path away from an existing database.\nAre you sure this is what you want?',
-          ['Cancel', 'No', 'Yes'],
+        this.dialog.dialog($localize`Updating with existing database`,
+          $localize`You are changing the database path away from an existing database.\nAre you sure this is what you want?`,
+          [$localize`Cancel`, $localize`No`, $localize`Yes`],
           (ix) => {
             if (ix == 2) {
               doCheckTarget();
@@ -126,8 +126,8 @@ export class LocalDatabaseComponent {
   doMove() {
     this.fileService.validateFile(this.dbPath!).subscribe(valid => {
       if (valid) {
-        this.dialog.dialog('Cannot move to existing file',
-          'An existing file was found at the new location');
+        this.dialog.dialog($localize`Cannot move to existing file`,
+          $localize`An existing file was found at the new location`);
       } else {
         this.doSave(true);
       }
@@ -138,9 +138,9 @@ export class LocalDatabaseComponent {
     this.router.navigate(['/']);
   }
   doDelete(continuation?: () => void) {
-    this.dialog.dialog('Confirm delete',
-      `Do you really want to delete the local database for: ${this.backup?.Name}`,
-      ['No', 'Yes'],
+    this.dialog.dialog($localize`Confirm delete`,
+      $localize`Do you really want to delete the local database for: ${this.backup?.Name}`,
+      [$localize`No`, $localize`Yes`],
       (ix) => {
         if (ix == 1) {
           this.backupService.deleteDatabase(this.backupId).subscribe(() => {
@@ -150,7 +150,7 @@ export class LocalDatabaseComponent {
             }
           }, err => {
             this.reloadBackupItem();
-            this.dialog.connectionError('Failed to delete: ', err);
+            this.dialog.connectionError($localize`Failed to delete: `, err);
           });
         }
       }

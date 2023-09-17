@@ -55,12 +55,12 @@ export class NotificationAreaComponent {
       }, error: (resp: HttpErrorResponse) => {
         if (resp.status === 404) {
           if (parseInt(backupid) + '' !== backupid) {
-            this.dialog.dialog('Error', 'The backup was temporary and does not exist anymore, so the log data is lost');
+            this.dialog.dialog($localize`Error`, $localize`The backup was temporary and does not exist anymore, so the log data is lost`);
           } else {
-            this.dialog.dialog('Error', 'The backup is missing, has it been deleted?');
+            this.dialog.dialog($localize`Error`, $localize`The backup is missing, has it been deleted?`);
           }
         } else {
-          this.dialog.connectionError('Failed to find backup: ', resp);
+          this.dialog.connectionError($localize`Failed to find backup: `, resp);
         }
       }
     })

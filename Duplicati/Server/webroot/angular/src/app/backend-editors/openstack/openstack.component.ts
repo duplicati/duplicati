@@ -120,43 +120,43 @@ export class OpenstackComponent implements BackendEditorComponent {
   }
 
   private validate(): boolean {
-    let res = this.editUri.requireField(this.commonData, 'username', 'Username')
-      && this.editUri.requireField(this.commonData, 'path', 'Bucket Name');
+    let res = this.editUri.requireField(this.commonData, 'username', $localize`Username`)
+      && this.editUri.requireField(this.commonData, 'path', $localize`Bucket Name`);
     if (res && (this.openstackServer || '').trim() == '' && (this.openstackServerCustom || '').trim() == '') {
-      this.dialog.dialog('Error', 'You must select or fill in the AuthURI');
+      this.dialog.dialog($localize`Error`, $localize`You must select or fill in the AuthURI`);
       res = false;
     }
 
     if (this.openstackVersion?.trim() == 'v3') {
       if (res && this.password.trim().length == 0) {
-        this.dialog.dialog('Error', 'You must enter a password to use v3 API');
+        this.dialog.dialog($localize`Error`, $localize`You must enter a password to use v3 API`);
         res = false;
       }
       if (res && this.openstackDomainname.trim().length == 0) {
-        this.dialog.dialog('Error', 'You must enter a domain name to use v3 API');
+        this.dialog.dialog($localize`Error`, $localize`You must enter a domain name to use v3 API`);
         res = false;
       }
       if (res && this.openstackTenantname.trim().length == 0) {
-        this.dialog.dialog('Error', 'You must enter a tenant (aka project) name to use v3 API');
+        this.dialog.dialog($localize`Error`, $localize`You must enter a tenant (aka project) name to use v3 API`);
         res = false;
       }
       if (res && this.openstackApiKey.length != 0) {
-        this.dialog.dialog('Error', 'Openstack API Key are not supported in v3 keystone API.');
+        this.dialog.dialog($localize`Error`, $localize`Openstack API Key are not supported in v3 keystone API.`);
         res = false;
       }
     } else {
       if ((this.openstackApiKey || '').trim().length == 0) {
         if (res && this.password.trim().length == 0) {
-          this.dialog.dialog('Error', 'You must enter either a password or an API Key');
+          this.dialog.dialog($localize`Error`, $localize`You must enter either a password or an API Key`);
           res = false;
         }
         if (res && this.openstackTenantname.trim().length == 0) {
-          this.dialog.dialog('Error', 'You must enter a tenant name if you do not provide an API Key');
+          this.dialog.dialog($localize`Error`, $localize`You must enter a tenant name if you do not provide an API Key`);
           res = false;
         }
       } else {
         if (res && this.password.trim().length != 0) {
-          this.dialog.dialog('Error', 'You must enter either a password or an API Key, not both');
+          this.dialog.dialog($localize`Error`, $localize`You must enter either a password or an API Key, not both`);
           res = false;
         }
       }

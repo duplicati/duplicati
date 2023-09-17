@@ -35,12 +35,12 @@ export const restoreResolver: ResolveFn<RestoreData> = (route, state) => {
       map(backups => {
         const res = { isTemp: isTemp, backup: backups[backupId] };
         if (res.backup == null) {
-          throw new Error('Invalid or missing backup id');
+          throw new Error($localize`Invalid or missing backup id`);
         }
         return res;
       }), catchError(err => {
         router.navigate(['/']);
-        dialog.connectionError('Failed to load backup: ', err);
+        dialog.connectionError($localize`Failed to load backup: `, err);
         return EMPTY;
       }));
   }

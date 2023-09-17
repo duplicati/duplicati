@@ -87,7 +87,7 @@ export class DeleteComponent {
       && (this.backup.Metadata['TargetFilesCount'] == null || parseInt(this.backup.Metadata['TargetFilesCount']) <= 0)) {
       this.hasRefreshedRemoteSize = true;
       this.backupService.startSizeReport(this.backupId).subscribe(taskid => this.listFilesTaskid = taskid,
-        this.dialog.connectionError('Failed to refresh size: '));
+        this.dialog.connectionError($localize`Failed to refresh size: `));
     }
   }
 
@@ -111,23 +111,23 @@ export class DeleteComponent {
   }
   doDelete() {
     if (this.deleteRemoteFiles) {
-      this.captcha.authorize('Confirm delete',
+      this.captcha.authorize($localize`Confirm delete`,
         `To confirm you want to delete all remote files for "${this.backup?.Name}", please enter the word you see below`,
         `DELETE /backup/${this.backupId}`, (token, answer) => {
           this.backupService.deleteBackup(this.backupId, this.deleteLocalDatabase, this.deleteRemoteFiles, token, answer).subscribe(
             () => this.router.navigate(['/']),
-            this.dialog.connectionError('Failed to delete backup: ')
+            this.dialog.connectionError($localize`Failed to delete backup: `)
           );
         });
     } else {
-      this.dialog.dialog('Confirm delete',
-        `Do you really want to delete the backup: "${this.backup?.Name}" ?`,
-        ['No', 'Yes'],
+      this.dialog.dialog($localize`Confirm delete`,
+        $localize`Do you really want to delete the backup: "${this.backup?.Name}" ?`,
+        [$localize`No`, $localize`Yes`],
         (ix) => {
           if (ix == 1) {
             this.backupService.deleteBackup(this.backupId, this.deleteLocalDatabase, this.deleteRemoteFiles).subscribe(
               () => this.router.navigate(['/']),
-              this.dialog.connectionError('Failed to delete backup: ')
+              this.dialog.connectionError($localize`Failed to delete backup: `)
             );
           }
         });

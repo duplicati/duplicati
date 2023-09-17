@@ -103,13 +103,13 @@ export class RestoreSelectFilesComponent {
       this.inProgress.delete(version);
       this.connecting = false;
       this.connectionProgress.emit(null);
-      this.dialog.connectionError('Failed to connect: ', err);
+      this.dialog.connectionError($localize`Failed to connect: `, err);
     };
 
     if (!this.filesetsBuilt.has(version)) {
       if (this.isBackupTemporary && !this.filesetsRepaired.has(version)) {
         this.connecting = true;
-        this.connectionProgress.emit('Fetching path information …');
+        this.connectionProgress.emit($localize`Fetching path information …`);
         this.inProgress.set(version, true);
         this.backupService.repairUpdateTemporary(this.backupId, this.filesetStamps.get(version)!).subscribe(
           taskid => {
@@ -124,7 +124,7 @@ export class RestoreSelectFilesComponent {
                   this.filesetsRepaired.set(version, true);
                   this.fetchPathInformation();
                 } else if (status.Status === 'Failed') {
-                  this.dialog.dialog('Error', 'Failed to get path information: ' + status.ErrorMessage)
+                  this.dialog.dialog($localize`Error`, $localize`Failed to get path information: ` + status.ErrorMessage)
                 }
               },
                 handleError);
@@ -140,7 +140,7 @@ export class RestoreSelectFilesComponent {
         }
 
         this.connecting = true;
-        this.connectionProgress.emit('Fetching path information …');
+        this.connectionProgress.emit($localize`Fetching path information …`);
         this.inProgress.set(version, true);
 
         this.backupService.searchFiles(this.backupId, null, stamp, { prefixOnly: true, folderContents: false }).subscribe(
@@ -229,7 +229,7 @@ export class RestoreSelectFilesComponent {
         this.searching = false;
         this.connecting = false;
         this.connectionProgress.emit(null);
-        this.dialog.connectionError('Failed to connect: ', err);
+        this.dialog.connectionError($localize`Failed to connect: `, err);
       }
     );
   }

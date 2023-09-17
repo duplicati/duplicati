@@ -15,7 +15,7 @@ export const backupResolver: ResolveFn<AddOrUpdateBackupData> = (route, state) =
   }
   return backupService.getBackup(backupId).pipe(
     catchError(err => {
-      dialog.connectionError('Failed to load backup: ', err);
+      dialog.connectionError($localize`Failed to load backup: `, err);
       return EMPTY;
     }));
 };

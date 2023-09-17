@@ -168,16 +168,16 @@ export class S3Component implements BackendEditorComponent {
 
   extraConnectionTests(): Observable<boolean> {
     return new Observable(subscriber => {
-      let dlg = this.dialog.dialog('Testing permissions...', 'Testing permissions …', [], undefined, () => {
+      let dlg = this.dialog.dialog($localize`Testing permissions...`, $localize`Testing permissions …`, [], undefined, () => {
         this.s3Service.testPermissions(this.username, this.password).subscribe(res => {
           if (dlg?.dismiss) {
             dlg.dismiss();
           }
 
           if (res.isroot.toLowerCase() == 'true') {
-            this.dialog.dialog('User has too many permissions',
-              'The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?',
-              ['Cancel', 'No', 'Yes'],
+            this.dialog.dialog($localize`User has too many permissions`,
+              $localize`The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?`,
+              [$localize`Cancel`, $localize`No`, $localize`Yes`],
               (ix) => {
                 if (ix == 0 || ix == 1) {
                   subscriber.next(true);
@@ -211,13 +211,13 @@ export class S3Component implements BackendEditorComponent {
 
   directCreateIAMUser(): Observable<void> {
     let res = new Subject<void>();
-    let dlg = this.dialog.dialog('Creating user...', 'Creating new user with limited access …', [], undefined, () => {
+    let dlg = this.dialog.dialog($localize`Creating user...`, $localize`Creating new user with limited access …`, [], undefined, () => {
       let path = (this.server || '') + '/' + (this.path || '');
       this.s3Service.createIAMUser(path, this.username, this.password).subscribe(
         v => {
           this.username = v.accessid;
           this.password = v.secretkey;
-          this.dialog.dialog('Created new limited user', `New user name is ${v.username}.\nUpdated credentials to use the new limited user`, ['OK']);
+          this.dialog.dialog($localize`Created new limited user`, $localize`New user name is ${v.username}.\nUpdated credentials to use the new limited user`, [$localize`OK`]);
           res.next();
           res.complete();
         },
@@ -236,18 +236,18 @@ export class S3Component implements BackendEditorComponent {
     if (this.validate()) {
       let path = (this.server || '') + '/' + (this.path || '');
       this.s3Service.getIAMPolicy(path).subscribe(
-        v => this.dialog.dialog('AWS IAM Policy', v.doc),
+        v => this.dialog.dialog($localize`AWS IAM Policy`, v.doc),
         err => this.dialog.connectionError(err)
       );
     }
   }
   private validate(): boolean {
-    let res = this.editUri.requireField(this.commonData, 'server', 'Bucket Name')
-      && this.editUri.requireField(this.commonData, 'username', 'AWS Access ID')
-      && this.editUri.requireField(this.commonData, 'password', 'AWS Access Key');
+    let res = this.editUri.requireField(this.commonData, 'server', $localize`Bucket Name`)
+      && this.editUri.requireField(this.commonData, 'username', $localize`AWS Access ID`)
+      && this.editUri.requireField(this.commonData, 'password', $localize`AWS Access Key`);
 
     if (res && (this.s3Server || '').trim().length == 0 && (this.s3ServerCustom || '').trim().length == 0) {
-      this.dialog.dialog('Error', 'You must select or fill in the server');
+      this.dialog.dialog($localize`Error`, $localize`You must select or fill in the server`);
       res = false;
     }
 
@@ -256,9 +256,9 @@ export class S3Component implements BackendEditorComponent {
       let checkUsernamePrefix = () => {
         if (!this.server.toLowerCase().startsWith(this.username.toLowerCase())
           && (this.s3BucketCheckName != this.server || this.s3BucketCheckUser != this.username)) {
-          this.dialog.dialog('Adjust bucket name?',
-            'The bucket name should start with your username, prepend automatically?',
-            ['Cancel', 'No', 'Yes'], (ix) => {
+          this.dialog.dialog($localize`Adjust bucket name?`,
+            $localize`The bucket name should start with your username, prepend automatically?`,
+            [$localize`Cancel`, $localize`No`, $localize`Yes`], (ix) => {
               if (ix == 2)
                 this.server = this.username.toLowerCase() + '-' + this.server;
               if (ix == 1 || ix == 2) {
@@ -274,9 +274,9 @@ export class S3Component implements BackendEditorComponent {
 
       let checkLowerCase = () => {
         if (this.server.toLowerCase() != this.server) {
-          this.dialog.dialog('Adjust bucket name?',
-            'The bucket name should be all lower-case, convert automatically?',
-            ['Cancel', 'No', 'Yes'], (ix) => {
+          this.dialog.dialog($localize`Adjust bucket name?`,
+            $localize`The bucket name should be all lower-case, convert automatically?`,
+            [$localize`Cancel`, $localize`No`, $localize`Yes`], (ix) => {
               if (ix == 2)
                 this.server = this.server.toLowerCase();
 

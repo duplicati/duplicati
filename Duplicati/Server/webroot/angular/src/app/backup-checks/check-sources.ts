@@ -11,7 +11,7 @@ export class CheckSources implements BackupChecker {
 
   check(b: AddOrUpdateBackupData, opt: BackupOptions): Promise<void> {
     if (b.Backup.Sources == null || b.Backup.Sources.length == 0) {
-      this.dialog.dialog('Missing sources', 'You must choose at least one source folder');
+      this.dialog.dialog($localize`Missing sources`, $localize`You must choose at least one source folder`);
       return Promise.reject(new RejectToStep(2));
     }
     return Promise.resolve();

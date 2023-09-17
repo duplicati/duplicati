@@ -127,7 +127,7 @@ export class BackupSourceSettingsComponent {
         this.sources = [...this.sources, this.manualSourcePath];
         this.manualSourcePath = '';
       } else {
-        this.dialog.dialog('Path not found', 'The path does not appear to exist, do you want to add it anyway?', ['No', 'Yes'], (ix) => {
+        this.dialog.dialog($localize`Path not found`, $localize`The path does not appear to exist, do you want to add it anyway?`, [$localize`No`, $localize`Yes`], (ix) => {
           if (ix == 1) {
             this.sources = [...this.sources, this.manualSourcePath];
             this.manualSourcePath = '';
@@ -150,15 +150,17 @@ export class BackupSourceSettingsComponent {
     }
 
     if (this.fileService.isValidSourcePath(this.manualSourcePath)) {
-      this.dialog.dialog('Relative paths not allowed', `The path must be an absolute path, i.e. it must start with a forward slash '/'`);
+      this.dialog.dialog($localize`Relative paths not allowed`, $localize`The path must be an absolute path, i.e. it must start with a forward slash '/'`);
     }
 
     if (!this.manualSourcePath.endsWith(this.fileService.dirsep)) {
-      this.dialog.dialog('Include a file?', `The path does not end with a '${this.fileService.dirsep}' character, which means that you include a file, not a folder.\nDo you want to include the specified file?`, ['No', 'Yes'], (idx) => {
-        if (idx == 1) {
-          this.validateSourcePath();
-        }
-      });
+      this.dialog.dialog($localize`Include a file?`,
+        $localize`The path does not end with a '${this.fileService.dirsep}' character, which means that you include a file, not a folder.\nDo you want to include the specified file?`,
+        [$localize`No`, $localize`Yes`], (idx) => {
+          if (idx == 1) {
+            this.validateSourcePath();
+          }
+        });
     } else {
       this.validateSourcePath();
     }

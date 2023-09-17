@@ -91,7 +91,7 @@ export class RestoreDirectComponent {
   }
 
   importUrl(): void {
-    this.dialog.textareaDialog('Import URL', 'Enter a Backup destination URL:', 'Enter URL', '', ['Cancel', 'OK'], undefined, (btn, input) => {
+    this.dialog.textareaDialog($localize`Import URL`, $localize`Enter a Backup destination URL:`, $localize`Enter URL`, '', [$localize`Cancel`, $localize`OK`], undefined, (btn, input) => {
       if (btn === 1 && input !== undefined) {
         this.editUri.setUri(input, true);
       }
@@ -99,7 +99,7 @@ export class RestoreDirectComponent {
   }
   copyUrlToClipboard(): void {
     this.editUri.buildUri().subscribe(uri =>
-      this.dialog.textareaDialog('Copy URL', '', undefined, uri, ['OK'], CopyClipboardButtonsComponent));
+      this.dialog.textareaDialog($localize`Copy URL`, '', undefined, uri, [$localize`OK`], CopyClipboardButtonsComponent));
   }
 
   nextPage() {
@@ -120,7 +120,7 @@ export class RestoreDirectComponent {
         }
 
         this.connecting = true;
-        this.connectionProgress = 'Registering temporary backup …';
+        this.connectionProgress = $localize`Registering temporary backup …`;
 
         let opts: Record<string, string> = {};
         let obj: { Backup: Partial<Backup> } = { Backup: { TargetURL: targetURL } };
@@ -145,14 +145,14 @@ export class RestoreDirectComponent {
 
         this.backupList.createTemporaryBackup(obj).subscribe(
           id => {
-            this.connectionProgress = 'Listing backup dates …';
+            this.connectionProgress = $localize`Listing backup dates …`;
             this.backupId = id;
             this.fetchBackupTimes();
           },
           err => {
             this.connecting = false;
             this.connectionProgress = '';
-            this.dialog.connectionError('Failed to connect: ', err);
+            this.dialog.connectionError($localize`Failed to connect: `, err);
           }
         );
       });
@@ -174,12 +174,12 @@ export class RestoreDirectComponent {
           message = err.error.Message;
         }
         if (message === 'encrypted-storage') {
-          message = 'The target folder contains encrypted files, please supply the passphrase';
+          message = $localize`The target folder contains encrypted files, please supply the passphrase`;
         }
 
         this.connecting = false;
         this.connectionProgress = '';
-        this.dialog.dialog('Error', 'Failed to connect: ' + message);
+        this.dialog.dialog($localize`Error`, $localize`Failed to connect: ` + message);
       });
   }
 }

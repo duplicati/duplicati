@@ -53,10 +53,10 @@ export class BackupOptionsComponent {
   }
   fileSizeMultipliers: ({ name: string, value: string })[] = [];
   timeMultipliers: ({ name: string, value: string })[] = [
-    { name: 'Days', value: 'D' },
-    { name: 'Weeks', value: 'W' },
-    { name: 'Months', value: 'M' },
-    { name: 'Years', value: 'Y' }
+    { name: $localize`Days`, value: 'D' },
+    { name: $localize`Weeks`, value: 'W' },
+    { name: $localize`Months`, value: 'M' },
+    { name: $localize`Years`, value: 'Y' }
   ];
 
   showAdvanced = false;

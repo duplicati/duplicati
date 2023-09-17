@@ -40,6 +40,6 @@ export class MsgroupComponent extends OauthComponent {
   override validate(): boolean {
     return super.validate()
       && this.editUri.recommendField(this, 'groupEmail',
-      'You should fill in ' + 'Group email' + ' unless you are explicitly spefifying --group-id');
+      $localize`You should fill in ` + $localize`Group email` + $localize` unless you are explicitly specifying --group-id`);
   }
 }

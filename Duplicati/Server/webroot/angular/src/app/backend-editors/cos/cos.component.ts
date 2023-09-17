@@ -69,10 +69,10 @@ export class CosComponent implements BackendEditorComponent {
   }
 
   private validate(): boolean {
-    return this.editUri.requireField(this, 'cosAppId', 'cos_app_id')
-      && this.editUri.requireField(this, 'cosSecretId', 'cos_secret_id')
-      && this.editUri.requireField(this, 'cosSecretKey', 'cos_secret_key')
-      && this.editUri.requireField(this, 'cosRegion', 'cos_region')
-      && this.editUri.requireField(this, 'cosBucket', 'cos_bucket')
+    return this.editUri.requireField(this, 'cosAppId', $localize`cos_app_id`)
+      && this.editUri.requireField(this, 'cosSecretId', $localize`cos_secret_id`)
+      && this.editUri.requireField(this, 'cosSecretKey', $localize`cos_secret_key`)
+      && this.editUri.requireField(this, 'cosRegion', $localize`cos_region`)
+      && this.editUri.requireField(this, 'cosBucket', $localize`cos_bucket`)
   }
 }

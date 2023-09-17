@@ -12,9 +12,9 @@ export class SystemInfoService {
       'ftp': null,
       'ssh': null,
       'webdav': null,
-      'openstack': 'OpenStack Object Storage / Swift',
-      's3': 'S3 Compatible',
-      'aftp': 'FTP (Alternative)'
+      'openstack': $localize`OpenStack Object Storage / Swift`,
+      's3': $localize`S3 Compatible`,
+      'aftp': $localize`FTP (Alternative)`
     },
     local: { 'file': null },
     prop: {
@@ -45,7 +45,7 @@ export class SystemInfoService {
       'cos': null
     }
   };
-  private GroupTypes: string[] = ['Local storage', 'Standard protocols', 'Proprietary', 'Others'];
+  private GroupTypes: string[] = [$localize`Local storage`, $localize`Standard protocols`, $localize`Proprietary`, $localize`Others`];
 
   private state?: SystemInfo;
   private hasError: boolean = false;

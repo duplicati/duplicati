@@ -77,16 +77,16 @@ export class E2Component implements BackendEditorComponent {
   }
 
   private validate(): boolean {
-    let res = this.editUri.requireField(this.commonData, 'username', 'Idrivee2 Access Key Id')
-      && this.editUri.requireField(this.commonData, 'password', 'Idrivee2 Access Key Secret')
-      && this.editUri.requireField(this.commonData, 'server', 'Bucket name');
+    let res = this.editUri.requireField(this.commonData, 'username', $localize`Idrivee2 Access Key Id`)
+      && this.editUri.requireField(this.commonData, 'password', $localize`Idrivee2 Access Key Secret`)
+      && this.editUri.requireField(this.commonData, 'server', $localize`Bucket name`);
 
     if (res) {
       let bucketname = this.commonData.server || '';
       let ix = bucketname.search(/[^A-Za-z0-9-]/g);
 
       if (ix >= 0) {
-        this.dialog.dialog('Error', `The 'Bucket Name' contains an invalid character: ${bucketname[ix]} (value: ${bucketname.charCodeAt(ix)}, index: ${ix})`);
+        this.dialog.dialog($localize`Error`, $localize`The 'Bucket Name' contains an invalid character: ${bucketname[ix]} (value: ${bucketname.charCodeAt(ix)}, index: ${ix})`);
         res = false;
       }
     }
@@ -96,7 +96,7 @@ export class E2Component implements BackendEditorComponent {
         var char = pathname.charCodeAt(i);
 
         if (char == '\\'.charCodeAt(0) || char == 127 || char < 32) {
-          this.dialog.dialog('Error', `The 'Path' field contains an invalid character: ${pathname[i]} (value: ${char}, index: ${i})`);
+          this.dialog.dialog($localize`Error`, $localize`The 'Path' field contains an invalid character: ${pathname[i]} (value: ${char}, index: ${i})`);
           res = false;
           break;
         }

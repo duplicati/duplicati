@@ -96,6 +96,6 @@ export class ThrottleComponent implements DialogTemplate {
       }
 
       this.config.data = data;
-    }, this.dialog.connectionError('Failed to connect: '));
+    }, this.dialog.connectionError($localize`Failed to connect: `));
   }
 }

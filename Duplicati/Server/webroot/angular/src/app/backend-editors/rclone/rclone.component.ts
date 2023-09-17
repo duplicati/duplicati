@@ -71,16 +71,16 @@ export class RcloneComponent implements BackendEditorComponent {
   }
 
   private validate(): boolean {
-    let res = this.editUri.requireField(this, 'localRepository', 'Local Repository')
-      && this.editUri.requireField(this.commonData, 'path', 'Remote Path')
-      && this.editUri.requireField(this.commonData, 'server', 'Remote Repository');
+    let res = this.editUri.requireField(this, 'localRepository', $localize`Local Repository`)
+      && this.editUri.requireField(this.commonData, 'path', $localize`Remote Path`)
+      && this.editUri.requireField(this.commonData, 'server', $localize`Remote Repository`);
 
     if (res) {
       let bucketname = this.commonData.server || '';
       let ix = bucketname.search(/[^A-Za-z0-9-]/g);
 
       if (ix >= 0) {
-        this.dialog.dialog('Error', `The 'Bucket Name' contains an invalid character: ${bucketname[ix]} (value: ${bucketname.charCodeAt(ix)}, index: ${ix})`);
+        this.dialog.dialog($localize`Error`, $localize`The 'Bucket Name' contains an invalid character: ${bucketname[ix]} (value: ${bucketname.charCodeAt(ix)}, index: ${ix})`);
         res = false;
       }
     }
@@ -90,7 +90,7 @@ export class RcloneComponent implements BackendEditorComponent {
         var char = pathname.charCodeAt(i);
 
         if (char == '\\'.charCodeAt(0) || char == 127 || char < 32) {
-          this.dialog.dialog('Error', `The 'Path' field contains an invalid character: ${pathname[i]} (value: ${char}, index: ${i})`);
+          this.dialog.dialog($localize`Error`, $localize`The 'Path' field contains an invalid character: ${pathname[i]} (value: ${char}, index: ${i})`);
           res = false;
           break;
         }

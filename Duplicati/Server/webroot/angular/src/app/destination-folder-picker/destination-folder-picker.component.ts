@@ -27,7 +27,7 @@ export class DestinationFolderPickerComponent {
   constructor(private fileService: FileService,
     private dialog: DialogService) {
     this.fileDatabase = new FileDatabase(true, this.fileService);
-    this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.fileDatabase, this.dialog.connectionError('Failed to load files: '));
+    this.dataSource = new FileDataSource(this.treeControl, this.fileService, this.fileDatabase, this.dialog.connectionError($localize`Failed to load files: `));
   }
 
   ngOnInit() {

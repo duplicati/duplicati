@@ -45,15 +45,15 @@ export class UpdateChangelogComponent {
   }
 
   doInstall() {
-    this.updateService.startUpdateDownload().subscribe({ error: this.dialog.connectionError('Install failed: ') });
+    this.updateService.startUpdateDownload().subscribe({ error: this.dialog.connectionError($localize`Install failed: `) });
   }
 
   doActivate() {
-    this.updateService.startUpdateActivate().subscribe({ error: this.dialog.connectionError('Activate failed: ') });
+    this.updateService.startUpdateActivate().subscribe({ error: this.dialog.connectionError($localize`Activate failed: `) });
   }
 
   doCheck() {
     this.updateService.checkForUpdates().subscribe(() => this.reloadChangeLog(),
-      this.dialog.connectionError('Check failed: '));
+      this.dialog.connectionError($localize`Check failed: `));
   }
 }

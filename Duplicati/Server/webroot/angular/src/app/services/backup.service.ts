@@ -17,7 +17,7 @@ export class BackupService {
   doRun(id: string): void {
     this.client.post('/backup/' + id + '/run', '').pipe(tap(() => {
       if (this.serverStatus.status.programState === 'Paused') {
-        this.dialogService.dialog('Server paused', 'Server is currently paused, do you want to resume now?', ['No', 'Yes'], (idx) => {
+        this.dialogService.dialog($localize`Server paused`, $localize`Server is currently paused, do you want to resume now?`, [$localize`No`, $localize`Yes`], (idx) => {
           if (idx == 1) {
             this.serverStatus.resume();
           }

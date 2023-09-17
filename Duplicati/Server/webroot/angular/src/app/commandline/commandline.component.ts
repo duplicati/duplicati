@@ -83,7 +83,7 @@ export class CommandlineComponent {
       this.supportedCommands = cmds;
       this.command = 'help';
     }, err => {
-      this.dialog.connectionError('Failed to connect: ', err);
+      this.dialog.connectionError($localize`Failed to connect: `, err);
       this.router.navigate(['/']);
     });
 
@@ -98,7 +98,7 @@ export class CommandlineComponent {
         this.targetURL = res.Backend;
         this.arguments = res.Arguments;
         this.extendedOptions = res.Options;
-      }, this.dialog.connectionError('Failed to connect: '));
+      }, this.dialog.connectionError($localize`Failed to connect: `));
     }
   }
 
@@ -145,7 +145,7 @@ export class CommandlineComponent {
       id => {
         this.router.navigate(['/commandline/view', id]);
       },
-      this.dialog.connectionError('Failed to connect: '));
+      this.dialog.connectionError($localize`Failed to connect: `));
   }
 
   reloadOptionsList() {
@@ -165,7 +165,7 @@ export class CommandlineComponent {
 
   abort() {
     if (this.viewid) {
-      this.commandlineService.abort(this.viewid).subscribe({ error: this.dialog.connectionError('Failed to connect: ') });
+      this.commandlineService.abort(this.viewid).subscribe({ error: this.dialog.connectionError($localize`Failed to connect: `) });
     }
   }
 
@@ -204,10 +204,10 @@ export class CommandlineComponent {
         this.timerSubscription = timer(waitTime).subscribe(() => this.fetchOutputLines());
       }, err => {
         if (err?.status == 404) {
-          this.viewLines.push('Connection lost, data has expired ...');
+          this.viewLines.push($localize`Connection lost, data has expired ...`);
           this.finished = true;
         } else {
-          this.viewLines.push('Connection error, retry in 2 sec ...');
+          this.viewLines.push($localize`Connection error, retry in 2 sec ...`);
           this.viewRefreshing = false;
           this.timerSubscription = timer(2000).subscribe(() => this.fetchOutputLines());
         }

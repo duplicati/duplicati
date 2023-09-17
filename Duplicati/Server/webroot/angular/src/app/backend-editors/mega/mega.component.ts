@@ -72,7 +72,7 @@ export class MegaComponent implements BackendEditorComponent {
   }
 
   private validate(): boolean {
-    return this.editUri.requireField(this.commonData, 'username', 'Username')
-      && this.editUri.requireField(this.commonData, 'password', 'Password');
+    return this.editUri.requireField(this.commonData, 'username', $localize`Username`)
+      && this.editUri.requireField(this.commonData, 'password', $localize`Password`);
   }
 }

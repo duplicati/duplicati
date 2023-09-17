@@ -32,9 +32,9 @@ class CreateFolderHandler implements ConnectionErrorHandler {
     const message = err.statusText;
     if (!this.hasTriedCreate && message == 'missing-folder') {
       let folder = '';
-      return this.dialog.dialogObservable('Create folder?',
-        `The folder ${folder} does not exist.\nCreate it now?`,
-        ['No', 'Yes']).pipe(
+      return this.dialog.dialogObservable($localize`Create folder?`,
+        $localize`The folder ${folder} does not exist.\nCreate it now?`,
+        [$localize`No`, $localize`Yes`]).pipe(
           filter(v => v.event == 'button' && v.buttonIndex == 1),
           switchMap(() => createFolder()),
           // Retry
@@ -91,9 +91,9 @@ class IncorrectCertificateHandler implements ConnectionErrorHandler {
     };
 
     let askApproveCert = (hash: string, source: Observable<void>) =>
-      this.dialog.dialogObservable('Trust server certificate?',
-        `The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ${hash}?`,
-        ['No', 'Yes']).pipe(
+      this.dialog.dialogObservable($localize`Trust server certificate?`,
+        $localize`The server certificate could not be validated.\nDo you want to approve the SSL certificate with the hash: ${hash}?`,
+        [$localize`No`, $localize`Yes`]).pipe(
           filter(v => v.event == 'button' && v.buttonIndex == 1),
           switchMap(() => {
             appendApprovedCert(hash);
@@ -111,20 +111,20 @@ class IncorrectCertificateHandler implements ConnectionErrorHandler {
         }),
         switchMap(d => {
           if (d.Result['count'] == '0') {
-            if (confirm('You appear to be running Mono with no SSL certificates loaded.\nDo you want to import the list of trusted certificates from Mozilla?')) {
+            if (confirm($localize`You appear to be running Mono with no SSL certificates loaded.\nDo you want to import the list of trusted certificates from Mozilla?`)) {
               data.setTesting(true);
               let formData = new FormData();
               formData.set('mono-ssl-config', 'Install');
               return this.client.post<{ Status: string, Result: Record<string, string | null> }>('/webmodule/check-mono-ssl', formData).pipe(
                 catchError(err => {
                   data.setTesting(false);
-                  this.dialog.connectionError('Failed to import:', err);
+                  this.dialog.connectionError($localize`Failed to import:`, err);
                   return EMPTY;
                 }),
                 switchMap(d => {
                   data.setTesting(false);
                   if (d.Result['count'] == '0') {
-                    this.dialog.dialog('Import failed', 'Import completed, but no certificates were found after the import');
+                    this.dialog.dialog($localize`Import failed`, $localize`Import completed, but no certificates were found after the import`);
                     return EMPTY;
                   } else {
                     return source;
@@ -191,14 +191,14 @@ class IncorrectHostKeyHandler implements ConnectionErrorHandler {
     }
 
     if (key.trim().length == 0 || key == prev) {
-      this.dialog.connectionError('Failed to connect: ', errorMessage);
+      this.dialog.connectionError($localize`Failed to connect: `, errorMessage);
       return EMPTY;
     } else {
       let message = prev.trim().length == 0 ?
         `No certificate was specified previously, please verify with the server administrator that the key is correct: ${key} \n\nDo you want to approve the reported host key?`
         : `The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n\nDo you want to REPLACE your CURRENT host key "${prev}" with the REPORTED host key: ${key}?`;
 
-      return this.dialog.dialogObservable('Trust host certificate?', message, ['No', 'Yes']).pipe(
+      return this.dialog.dialogObservable($localize`Trust host certificate?`, message, [$localize`No`, $localize`Yes`]).pipe(
         filter(v => v.event == 'button' && v.buttonIndex == 1),
         switchMap(() => {
           this.hasTriedHostkey = true;

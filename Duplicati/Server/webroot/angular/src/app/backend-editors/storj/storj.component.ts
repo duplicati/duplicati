@@ -95,28 +95,28 @@ export class StorjComponent implements BackendEditorComponent {
     let res = true;
 
     if (res && !this.storjAuthMethod) {
-      res = this.editUri.requireField(this, 'storjAuthMethod', 'Authentication method');
+      res = this.editUri.requireField(this, 'storjAuthMethod', $localize`Authentication method`);
     }
 
     if (res && this.storjAuthMethod == 'Access grant') {
-      res = this.editUri.requireField(this, 'storjSharedAccess', 'storj_shared_access')
-        && this.editUri.requireField(this, 'storjBucket', 'Bucket');
+      res = this.editUri.requireField(this, 'storjSharedAccess', $localize`storj_shared_access`)
+        && this.editUri.requireField(this, 'storjBucket', $localize`Bucket`);
     }
     if (res && this.storjAuthMethod == 'API key') {
-      res = this.editUri.requireField(this, 'storjApiKey', 'API key')
-        && this.editUri.requireField(this, 'storjSecret', 'Encryption passphrase')
-        && this.editUri.requireField(this, 'storjBucket', 'Bucket');
+      res = this.editUri.requireField(this, 'storjApiKey', $localize`API key`)
+        && this.editUri.requireField(this, 'storjSecret', $localize`Encryption passphrase`)
+        && this.editUri.requireField(this, 'storjBucket', $localize`Bucket`);
     }
     if (res && this.storjAuthMethod == 'API key' && !this.storjSatellite) {
-      res = this.editUri.requireField(this, 'storjSatelliteCustom', 'Custom Satellite');
+      res = this.editUri.requireField(this, 'storjSatelliteCustom', $localize`Custom Satellite`);
     }
     if (res && this.storjAuthMethod == 'API key' && this.storjSecret != this.storjSecretVerify) {
-      this.dialog.dialog('Error', 'The encryption passphrases do not match');
+      this.dialog.dialog($localize`Error`, $localize`The encryption passphrases do not match`);
       res = false;
     }
-    let re = new RegExp('^([a-z0-9]+([a-z0-9\-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9\-][a-z0-9])*)*$');
+    let re = /^([a-z0-9]+([a-z0-9\-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9\-][a-z0-9])*)*$/;
     if (res && (this.storjBucket && !re.test(this.storjBucket) || !(this.storjBucket.length > 2 && this.storjBucket.length < 64))) {
-      this.dialog.dialog('Error', 'Bucket name can only be between 3 and 63 characters long and contain only lower-case characters, numbers, periods and dashes');
+      this.dialog.dialog($localize`Error`, $localize`Bucket name can only be between 3 and 63 characters long and contain only lower-case characters, numbers, periods and dashes`);
       res = false;
     }
     return res;

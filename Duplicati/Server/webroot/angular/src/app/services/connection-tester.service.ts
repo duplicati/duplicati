@@ -78,20 +78,11 @@ export class ConnectionTester {
           if (h != null) {
             return h.handleError(err, source, data);
           } else {
-            this.dialog.connectionError('Failed to connect: ', err);
+            this.dialog.connectionError($localize`Failed to connect: `, err);
             return EMPTY;
           }
         })
       );
-      const message = err.statusText;
-      // TODO: Implement common error resolutions
-      if (!hasTriedCreate && message == 'missing-folder') {
-      } else if (!hasTriedCert && message.startsWith('incorrect-cert:')) {
-      } else if (!hasTriedHostkey && message.startsWith('incorrect-host-key:')) {
-      } else if (err) {
-        this.dialog.connectionError('Failed to connect: ', err);
-      }
-      return EMPTY;
     };
 
     let testConnection = defer(() => {
@@ -100,7 +91,7 @@ export class ConnectionTester {
       return connectionCreator.builduri().pipe(
         switchMap(newUri => {
           data.currentUri = newUri;
-          return this.dialog.dialogObservable('Testing ...', 'Testing connection ...', []).pipe(
+          return this.dialog.dialogObservable($localize`Testing ...`, $localize`Testing connection ...`, []).pipe(
             filter(v => v.event == 'show'),
             switchMap(v => {
               testingDialog = v.config;
@@ -117,9 +108,9 @@ export class ConnectionTester {
       defaultIfEmpty(false),
       map(v => {
         if (v) {
-          this.dialog.dialog('Success', 'Connection worked');
+          this.dialog.dialog($localize`Success`, $localize`Connection worked`);
         } else {
-          this.dialog.dialog('Error', 'Connection failed');
+          this.dialog.dialog($localize`Error`, $localize`Connection failed`);
         }
       }));
 

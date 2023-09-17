@@ -71,7 +71,7 @@ export class BackupLogComponent {
             this.generalData.push(...logs);
           }
         },
-        error: this.dialog.connectionError('Failed to connect: '),
+        error: this.dialog.connectionError($localize`Failed to connect: `),
         complete: () => this.generalDataComplete = true
       });
       this.loadMoreGeneralData();
@@ -84,7 +84,7 @@ export class BackupLogComponent {
             this.remoteData.push(...logs);
           }
         },
-        error: this.dialog.connectionError('Failed to connect: '),
+        error: this.dialog.connectionError($localize`Failed to connect: `),
         complete: () => this.remoteDataComplete = true
       });
       this.loadMoreRemoteData();

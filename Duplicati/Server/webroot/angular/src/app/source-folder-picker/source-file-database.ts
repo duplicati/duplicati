@@ -7,7 +7,7 @@ import { FileNode, FileService } from "../services/file.service";
 export class SourceFileDatabase extends FileDatabase {
 
   protected sourceNode = new FileFlatNode({
-    text: 'Source data',
+    text: $localize`Source data`,
     root: true,
     iconCls: 'x-tree-icon-others'
   }, 0, true);

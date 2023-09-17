@@ -11,41 +11,41 @@ import { ServerStatusService } from './server-status.service';
 export class ProgressService {
 
   private progressStateTexts = new Map<string, string | null>([
-    ['Backup_Begin', 'Starting backup …'],
-    ['Backup_PreBackupVerify', 'Verifying backend data …'],
-    ['Backup_PostBackupTest', 'Verifying remote data …'],
-    ['Backup_PreviousBackupFinalize', 'Completing previous backup …'],
+    ['Backup_Begin', $localize`Starting backup …`],
+    ['Backup_PreBackupVerify', $localize`Verifying backend data …`],
+    ['Backup_PostBackupTest', $localize`Verifying remote data …`],
+    ['Backup_PreviousBackupFinalize', $localize`Completing previous backup …`],
     ['Backup_ProcessingFiles', null],
-    ['Backup_Finalize', 'Completing backup …'],
-    ['Backup_WaitForUpload', 'Waiting for upload to finish …'],
-    ['Backup_Delete', 'Deleting unwanted files …'],
-    ['Backup_Compact', 'Compacting remote data ...'],
-    ['Backup_VerificationUpload', 'Uploading verification file …'],
-    ['Backup_PostBackupVerify', 'Verifying backend data …'],
-    ['Backup_Complete', 'Backup complete!'],
-    ['Restore_Begin', 'Starting restore …'],
-    ['Restore_RecreateDatabase', 'Rebuilding local database …'],
-    ['Restore_PreRestoreVerify', 'Verifying remote data …'],
-    ['Restore_CreateFileList', 'Building list of files to restore …'],
-    ['Restore_CreateTargetFolders', 'Creating target folders …'],
-    ['Restore_ScanForExistingFiles', 'Scanning existing files …'],
-    ['Restore_ScanForLocalBlocks', 'Scanning for local blocks …'],
-    ['Restore_PatchWithLocalBlocks', 'Patching files with local blocks …'],
-    ['Restore_DownloadingRemoteFiles', 'Downloading files …'],
-    ['Restore_PostRestoreVerify', 'Verifying restored files …'],
-    ['Restore_Complete', 'Restore complete!'],
-    ['Recreate_Running', 'Recreating database …'],
-    ['Vacuum_Running', 'Vacuuming database …'],
-    ['Repair_Running', 'Repairing database …'],
-    ['Verify_Running', 'Verifying files …'],
-    ['BugReport_Running', 'Creating bug report …'],
-    ['Delete_Listing', 'Listing remote files …'],
-    ['Delete_Deleting', 'Deleting remote files …'],
-    ['PurgeFiles_Begin,', 'Listing remote files for purge …'],
-    ['PurgeFiles_Process,', 'Purging files …'],
-    ['PurgeFiles_Compact', 'Compacting remote data …'],
-    ['PurgeFiles_Complete', 'Purging files complete!'],
-    ['Error', 'Error!']
+    ['Backup_Finalize', $localize`Completing backup …`],
+    ['Backup_WaitForUpload', $localize`Waiting for upload to finish …`],
+    ['Backup_Delete', $localize`Deleting unwanted files …`],
+    ['Backup_Compact', $localize`Compacting remote data ...`],
+    ['Backup_VerificationUpload', $localize`Uploading verification file …`],
+    ['Backup_PostBackupVerify', $localize`Verifying backend data …`],
+    ['Backup_Complete', $localize`Backup complete!`],
+    ['Restore_Begin', $localize`Starting restore …`],
+    ['Restore_RecreateDatabase', $localize`Rebuilding local database …`],
+    ['Restore_PreRestoreVerify', $localize`Verifying remote data …`],
+    ['Restore_CreateFileList', $localize`Building list of files to restore …`],
+    ['Restore_CreateTargetFolders', $localize`Creating target folders …`],
+    ['Restore_ScanForExistingFiles', $localize`Scanning existing files …`],
+    ['Restore_ScanForLocalBlocks', $localize`Scanning for local blocks …`],
+    ['Restore_PatchWithLocalBlocks', $localize`Patching files with local blocks …`],
+    ['Restore_DownloadingRemoteFiles', $localize`Downloading files …`],
+    ['Restore_PostRestoreVerify', $localize`Verifying restored files …`],
+    ['Restore_Complete', $localize`Restore complete!`],
+    ['Recreate_Running', $localize`Recreating database …`],
+    ['Vacuum_Running', $localize`Vacuuming database …`],
+    ['Repair_Running', $localize`Repairing database …`],
+    ['Verify_Running', $localize`Verifying files …`],
+    ['BugReport_Running', $localize`Creating bug report …`],
+    ['Delete_Listing', $localize`Listing remote files …`],
+    ['Delete_Deleting', $localize`Deleting remote files …`],
+    ['PurgeFiles_Begin,', $localize`Listing remote files for purge …`],
+    ['PurgeFiles_Process,', $localize`Purging files …`],
+    ['PurgeFiles_Compact', $localize`Compacting remote data …`],
+    ['PurgeFiles_Complete', $localize`Purging files complete!`],
+    ['Error', $localize`Error!`]
   ]);
 
   constructor(private serverStatus: ServerStatusService,
@@ -113,7 +113,7 @@ export class ProgressService {
   }
 
   public getStatusText(e: ProgressEvent | null): string {
-    let text = 'Running …';
+    let text = $localize`Running …`;
     if (e == null) {
       return text;
     }
@@ -131,11 +131,11 @@ export class ProgressService {
           const sizeleft = e.TotalFileSize - e.ProcessedFileSize - unaccountedbytes;
 
           // If we have a speed append it
-          const speed_txt = e.BackendSpeed < 0 ? '' : `at ${this.convert.formatSizeString(e.BackendSpeed)}/s`;
+          const speed_txt = e.BackendSpeed < 0 ? '' : $localize`at ${this.convert.formatSizeString(e.BackendSpeed)}/s`;
 
-          const restoring_text = phase == 'Restore_DownloadingRemoteFiles' ? 'Restoring' : '';
+          const restoring_text = phase == 'Restore_DownloadingRemoteFiles' ? $localize`Restoring` : '';
 
-          text = restoring_text + `${filesleft} files (${this.convert.formatSizeString(sizeleft)}) to go ${speed_txt}`;
+          text = restoring_text + $localize`${filesleft} files (${this.convert.formatSizeString(sizeleft)}) to go ${speed_txt}`;
         }
       }
       return text;

@@ -85,13 +85,13 @@ export class SiaComponent implements BackendEditorComponent {
   private validate(): boolean {
     let res = this.editUri.requireField(this.commonData, 'server', 'Server');
 
-    let re = new RegExp('^(([a-zA-Z0-9-])|(\/(?!\/)))*$');
+    let re = /^(([a-zA-Z0-9-])|(\/(?!\/)))*$/;
     if (res && !re.test(this.siaTargetpath)) {
-      this.dialog.dialog('Error', 'Invalid characters in path');
+      this.dialog.dialog($localize`Error`, $localize`Invalid characters in path`);
       res = false;
     }
     if (res && this.siaRedundancy.trim().length == 0 || parseFloat(this.siaRedundancy) < 1.0) {
-      this.dialog.dialog('Error', 'Minimum redundancy is 1.0');
+      this.dialog.dialog($localize`Error`, $localize`Minimum redundancy is 1.0`);
       res = false;
     }
 

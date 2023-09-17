@@ -34,7 +34,7 @@ export const editBackupResolver: ResolveFn<AddOrUpdateBackupData> = (route: Acti
     return backupService.getBackup(backupId).pipe(
       catchError(err => {
         router.navigate(['/']);
-        dialog.connectionError('Failed to load backup: ', err);
+        dialog.connectionError($localize`Failed to load backup: `, err);
         return EMPTY;
       }));
   }

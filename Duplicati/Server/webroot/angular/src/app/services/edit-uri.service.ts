@@ -133,7 +133,7 @@ export class EditUriService {
 
   requireField<Data>(data: Data, field: keyof (Data) & string, label?: string): boolean {
     if (((data[field] || '') as string).trim().length == 0) {
-      this.dialog.dialog('Error', `You must fill in ${label || field}`);
+      this.dialog.dialog($localize`Error`, $localize`You must fill in ${label || field}`);
       return false;
     }
     return true;
@@ -141,7 +141,7 @@ export class EditUriService {
 
   recommendField<Data>(data: Data, field: keyof (Data) & string, warning: string): boolean {
     if (((data[field] || '') as string).trim().length == 0) {
-      this.dialog.dialog('Confirmation required', warning, ['No', 'Yes'],
+      this.dialog.dialog($localize`Confirmation required`, warning, [$localize`No`, $localize`Yes`],
         (ix) => {
           if (ix == 1) {
             //continuation()

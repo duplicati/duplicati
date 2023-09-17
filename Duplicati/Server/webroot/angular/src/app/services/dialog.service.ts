@@ -28,7 +28,7 @@ export class DialogService {
     return this.enqueueDialog({
       message: message,
       callback: callback,
-      buttons: ['Cancel', 'OK']
+      buttons: [$localize`Cancel`, $localize`OK`]
     });
   }
 
@@ -36,7 +36,7 @@ export class DialogService {
     return this.enqueueDialog({
       message: message,
       callback: callback,
-      buttons: ['OK']
+      buttons: [$localize`OK`]
     });
   }
 
@@ -87,9 +87,9 @@ export class DialogService {
     if (config.message == null && config.htmltemplate == null && config.enableTextarea == null) {
       return undefined;
     }
-    config.title = config.title || 'Information';
+    config.title = config.title || $localize`Information`;
     if (config.buttons == null) {
-      config.buttons = ['OK'];
+      config.buttons = [$localize`OK`];
     }
 
     config.dismiss = () => {

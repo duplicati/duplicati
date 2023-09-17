@@ -109,14 +109,14 @@ export class StateComponent {
     };
 
     if (txt.indexOf('Backup_') === 0) {
-      this.dialog.dialog('Stop running backup',
-        'You can stop the backup after any file uploads currently in progress have finished.',
-        ['Stop after current file', 'Stop now', 'Cancel'],
+      this.dialog.dialog($localize`Stop running backup`,
+        $localize`You can stop the backup after any file uploads currently in progress have finished.`,
+        [$localize`Stop after current file`, $localize`Stop now`, $localize`Cancel`],
         handleClick);
     } else {
-      this.dialog.dialog('Stop running task',
-        'You can stop the task immediately, or allow the process to continue its current file and then stop.',
-        ['Stop after the current file', 'Stop now', 'Cancel'],
+      this.dialog.dialog($localize`Stop running task`,
+        $localize`You can stop the task immediately, or allow the process to continue its current file and then stop.`,
+        [$localize`Stop after the current file`, $localize`Stop now`, $localize`Cancel`],
         handleClick);
     }
   }

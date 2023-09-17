@@ -50,7 +50,7 @@ export class ImportComponent {
               this.router.navigate(['/add-import']);
             }
           } else {
-            this.dialog.dialog('Error', message);
+            this.dialog.dialog($localize`Error`, message);
           }
         }, 100));
     };

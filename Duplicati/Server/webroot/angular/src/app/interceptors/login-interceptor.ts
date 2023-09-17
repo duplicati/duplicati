@@ -16,7 +16,7 @@ export class LoginInterceptor implements HttpInterceptor {
   private handleError(error: HttpErrorResponse) {
     if (error.status == 401) {
       this.dialogService.dismissAll();
-      this.dialogService.accept('Not logged in', () => { location.href = this.url.getLoginUrl(); });
+      this.dialogService.accept($localize`Not logged in`, () => { location.href = this.url.getLoginUrl(); });
     }
     return throwError(error);
   }

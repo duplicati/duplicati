@@ -35,6 +35,6 @@ export class RestoreWizardComponent {
   }
 
   getLastDuration(metadata: Record<string, string>): string | undefined {
-    return this.convert.formatDuration(metadata['LastRestoreDuration']) || '0 seconds';
+    return this.convert.formatDuration(metadata['LastRestoreDuration']) || $localize`0 seconds`;
   }
 }

@@ -60,7 +60,7 @@ export class CaptchaService {
         cb.attempts += 1;
         cb.verifying = true;
 
-        this.dialog.dialog('Verifying answer', 'Verifying ...', [], undefined, () => {
+        this.dialog.dialog($localize`Verifying answer`, $localize`Verifying ...`, [], undefined, () => {
           let formData = new FormData();
           formData.set('target', cb.target);
           formData.set('answer', cb.answer || '');

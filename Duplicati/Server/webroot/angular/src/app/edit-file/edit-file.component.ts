@@ -84,7 +84,7 @@ export class EditFileComponent implements BackendEditorComponent {
   buildUri(advancedOptions: string[]): Observable<string> {
     let opts: Record<string, string> = {};
     if (!this.editUri.mergeAdvancedOptions(this.commonData, advancedOptions, opts)) {
-      this.dialog.dialog('Error', 'Failed to process advanced options');
+      this.dialog.dialog($localize`Error`, $localize`Failed to process advanced options`);
       return EMPTY;
     }
     return of(`file://${this.path}${this.parser.encodeDictAsUrl(opts)}`);

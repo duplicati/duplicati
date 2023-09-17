@@ -99,12 +99,12 @@ export class BackupGeneralSettingsComponent {
 
   computePassPhraseStrength(): void {
     let strengthMap: Record<string | number, string> = {
-      'x': 'Passphrases do not match',
-      0: 'Useless',
-      1: 'Very weak',
-      2: 'Weak',
-      3: 'Strong',
-      4: 'Very strong'
+      'x': $localize`Passphrases do not match`,
+      0: $localize`Useless`,
+      1: $localize`Very weak`,
+      2: $localize`Weak`,
+      3: $localize`Strong`,
+      4: $localize`Very strong`
     };
     const passphrase = this.passphrase;
     if (this.repeatPassphrase !== passphrase) {

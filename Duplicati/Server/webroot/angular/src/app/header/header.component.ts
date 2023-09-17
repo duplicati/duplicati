@@ -26,7 +26,7 @@ export class HeaderComponent {
   public throttle_active: boolean = false;
 
   get pauseState(): string {
-    return this.state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume';
+    return this.state.programState == 'Running' ? $localize`Click to see the pause options` : $localize`Click to resume`;
   }
 
   private subscription?: Subscription;
@@ -50,7 +50,7 @@ export class HeaderComponent {
     if (this.state.programState != 'Running') {
       this.serverStatus.resume();
     } else {
-      this.dialog.htmlDialog('Pause options', PauseComponent, ['OK', 'Cancel'],
+      this.dialog.htmlDialog($localize`Pause options`, PauseComponent, [$localize`OK`, $localize`Cancel`],
         (index, text, cur) => {
           if (index == 0 && cur != null && cur.data?.time != null) {
             let time = cur.data.time as string;
@@ -62,7 +62,7 @@ export class HeaderComponent {
   }
 
   public throttleOptions(): void {
-    this.dialog.htmlDialog('Throttle settings', ThrottleComponent, ['OK', 'Cancel'],
+    this.dialog.htmlDialog($localize`Throttle settings`, ThrottleComponent, [$localize`OK`, $localize`Cancel`],
       (index, text, cur) => {
         if (index == 0 && cur.data != null && cur.data.uploadspeed != null && cur.data.downloadspeed != null) {
           let patchdata = {
@@ -71,7 +71,7 @@ export class HeaderComponent {
           };
           this.serverSettings.updateSettings(patchdata).subscribe(
             () => this.throttle_active = cur.data.downloadthrottleenabled || cur.data.uploadthrottleenabled,
-            this.dialog.connectionError('Failed to connect: ')
+            this.dialog.connectionError($localize`Failed to connect: `)
           );
         }
       }

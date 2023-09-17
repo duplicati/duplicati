@@ -85,15 +85,15 @@ export class OauthComponent implements BackendEditorComponent {
       }, err => {
         this.oauthInProgress = false;
         if (!(err instanceof EmptyError)) {
-          this.dialog.connectionError('Failed to connect: ', err);
+          this.dialog.connectionError($localize`Failed to connect: `, err);
         }
       }
     );
   }
 
   protected validate(): boolean {
-    return this.editUri.requireField(this, 'authID', 'AuthID')
+    return this.editUri.requireField(this, 'authID', $localize`AuthID`)
       && this.editUri.recommendField(this.commonData, 'path',
-        'If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?');
+        $localize`If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?`);
   }
 }
