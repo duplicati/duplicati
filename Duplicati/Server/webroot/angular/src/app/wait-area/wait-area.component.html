@@ -1,8 +1,8 @@
 <div class="waitarea">
-  <div *ngIf="serverstate?.activeTask == null || serverstate?.activeTask?.Item1 != taskid" translate>Waiting for task to begin</div>
+  <div *ngIf="serverstate?.activeTask == null || serverstate?.activeTask?.Item1 != taskid" i18n>Waiting for task to begin</div>
   <div *ngIf="serverstate?.activeTask != null && serverstate?.activeTask?.Item1 == taskid">
     <div *ngIf="text">{{text}}</div>
-    <div *ngIf="!text" translate>Task is running</div>
+    <div *ngIf="!text" i18n>Task is running</div>
     <div class="progress" style="border: 1px solid;">
       <span>{{statusText}}</span>
 
@@ -13,11 +13,11 @@
   </div>
 
   <div *ngIf="serverstate?.programState == 'Paused'">
-    Server is currently paused, <a style="cursor: pointer" (click)="serverStatus.resume()" translate>resume now</a>
+    <ng-container i18n>Server is currently paused, </ng-container><a style="cursor: pointer" (click)="serverStatus.resume()" i18n>resume now</a>
   </div>
 
   <div *ngIf="allowCancel">
-    <a href class="button" (click)="cancelTask()" translate>Cancel</a>
+    <a href class="button" (click)="cancelTask()" i18n>Cancel</a>
   </div>
 
 </div>

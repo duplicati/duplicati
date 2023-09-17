@@ -16,6 +16,23 @@ export class LocalizationService {
   constructor(@Inject(LOCALE_ID) private locale: string,
     private client: HttpClient) { }
 
+  private localeToDisplay(): string {
+    if (this.locale in MESSAGES) {
+      return this.locale;
+    }
+    let normalized = this.locale.replace('_', '-');
+    let idx = normalized.indexOf('-');
+    normalized = normalized.substring(0, idx).toLowerCase() + '-' + normalized.substring(idx).toUpperCase();
+    if (normalized in MESSAGES) {
+      return normalized;
+    }
+    let langOnly = normalized.substring(0, idx);
+    if (langOnly in MESSAGES) {
+      return langOnly;
+    }
+    return this.defaultLocale;
+  }
+
   loadLanguage() { return this.loadLanguageImport(); }
 
   loadLanguageImport(): Observable<void> {
@@ -25,7 +42,8 @@ export class LocalizationService {
     // Disadvantages:
     // - have to load all languages at once
     // - json files need to be converted to scripts
-    const translations = MESSAGES[this.locale];
+    const locale = this.localeToDisplay();
+    const translations = MESSAGES[locale];
     if (translations != null) {
       loadTranslations(translations);
     }

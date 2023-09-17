@@ -7,9 +7,9 @@
       <input type="button" value="Reload" (click)="reload()" />
     </div>
 
-    <div class="centered-text" *ngIf="entry.verifying" translate>Checking ...</div>
-    <div class="centered-text warning" *ngIf="!entry.verifying && entry.hasfailed" translate>Incorrect answer, try again</div>
+    <div class="centered-text" *ngIf="entry.verifying" i18n>Checking ...</div>
+    <div class="centered-text warning" *ngIf="!entry.verifying && entry.hasfailed" i18n>Incorrect answer, try again</div>
 
   </div>
-  <div *ngIf="!entry || !imageurl" translate>Loading ...</div>
+  <div *ngIf="!entry || !imageurl" i18n>Loading ...</div>
 </div>

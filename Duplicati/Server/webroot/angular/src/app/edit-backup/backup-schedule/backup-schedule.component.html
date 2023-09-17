@@ -1,24 +1,24 @@
 <form class="styled">
-  <h2 translate>Schedule</h2>
+  <h2 i18n>Schedule</h2>
   <div class="input checkbox multiple">
     <input type="checkbox" name="useScheduleRun" id="useScheduleRun" [(ngModel)]="scheduleEnabled" />
-    <label for="useScheduleRun" translate>Automatically run backups.</label>
+    <label for="useScheduleRun" i18n>Automatically run backups.</label>
   </div>
   <div *ngIf="schedule != null">
-    <div translate>If a date was missed, the job will run as soon as possible.</div>
+    <div i18n>If a date was missed, the job will run as soon as possible.</div>
     <br />
     <div class="input text multiple">
-      <label for="nextRunTime" translate>Next time</label>
+      <label for="nextRunTime" i18n>Next time</label>
       <input type="time" [(ngModel)]="scheduleTime" name="nextRunTime" id="nextRunTime" [ngModelOptions]="{updateOn: 'blur'}" />
       <input type="date" [(ngModel)]="scheduleDate" name="nextRunDate" id="nextRunDate" [ngModelOptions]="{updateOn: 'blur'}" />
     </div>
     <div class="input text select multiple repeat">
-      <app-input-multiplier name="repeatRun" [(value)]="repeatRun" hasCustom="true" [multipliers]="timerangeMultipliers">
+      <app-input-multiplier name="repeatRun" [(value)]="repeatRun" hasCustom="true" [multipliers]="timerangeMultipliers" i18n>
         Run again every
       </app-input-multiplier>
     </div>
     <div class="input checkbox multiple">
-      <strong translate>Allowed days</strong>
+      <strong i18n>Allowed days</strong>
 
       <div *ngFor="let day of daysOfWeek">
         <input class="simple-checkbox"

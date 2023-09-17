@@ -1,53 +1,54 @@
 <div class="form">
   <form class="styled" #form="ngForm">
-    <h2 translate>General backup settings</h2>
+    <h2 i18n>General backup settings</h2>
 
     <div class="input text">
-      <label for="name" translate>Name</label>
-      <input type="text" name="name" id="name" [(ngModel)]="name" placeholder="My Photos" />
+      <label for="name" i18n>Name</label>
+      <input type="text" name="name" id="name" [(ngModel)]="name" i18n-placeholder placeholder="My Photos" />
     </div>
     <div class="input textarea">
-      <label for="description" translate>Description (optional)</label>
+      <label for="description" i18n>Description (optional)</label>
       <textarea name="description" id="description" [(ngModel)]="description"></textarea>
     </div>
     <div class="input select" *ngIf="systemInfo && systemInfo.EncryptionModules.length != 0">
-      <label for="encryption" translate>Encryption</label>
+      <label for="encryption" i18n>Encryption</label>
       <select name="encryption" id="encryption" [(ngModel)]="encryptionModule">
-        <option value="" translate>No encryption</option>
+        <option value="" i18n>No encryption</option>
         <option [value]="module.Key" *ngFor="let module of systemInfo.EncryptionModules">{{module.DisplayName}}</option>
       </select>
     </div>
 
     <div class="input encryptionhint" *ngIf="!checkGpgAsymmetric() && (encryptionModule || '').length == 0">
-      <h3 class="warning" translate>We recommend that you encrypt all backups stored outside your system</h3>
+      <h3 class="warning" i18n>We recommend that you encrypt all backups stored outside your system</h3>
     </div>
 
     <div class="input password" *ngIf="!checkGpgAsymmetric() && (encryptionModule || '').length != 0">
-      <label for="passphrase" translate>Passphrase</label>
+      <label for="passphrase" i18n>Passphrase</label>
       <input autocomplete="new-password" type="{{showPassphrase ? 'text' : 'password'}}" name="passphrase" id="passphrase" [(ngModel)]="passphrase" />
     </div>
     <div class="input password" *ngIf="!checkGpgAsymmetric() && (encryptionModule || '').length != 0">
-      <label for="repeat-passphrase" translate>Repeat Passphrase</label>
+      <label for="repeat-passphrase" i18n>Repeat Passphrase</label>
       <input autocomplete="new-password" type="{{showPassphrase ? 'text' : 'password'}}" name="repeat-passphrase" id="repeat-passphrase" [(ngModel)]="repeatPassphrase" />
 
       <div class="tools">
         <ul>
           <li>
-            <a routerLink="." (click)="togglePassphraseVisibility()" *ngIf="showPassphrase" translate>Hide</a>
-            <a routerLink="." (click)="togglePassphraseVisibility()" *ngIf="!showPassphrase" translate>Show</a>
+            <a routerLink="." (click)="togglePassphraseVisibility()" *ngIf="showPassphrase" i18n>Hide</a>
+            <a routerLink="." (click)="togglePassphraseVisibility()" *ngIf="!showPassphrase" i18n>Show</a>
           </li>
           <li>|</li>
           <li>
-            <a routerLink="." (click)="generatePassphrase()" translate>Generate</a>
+            <a routerLink="." (click)="generatePassphrase()" i18n>Generate</a>
           </li>
           <li *ngIf="passphraseScoreString">|</li>
-          <li class="strength score-{{passphraseScore}}" *ngIf="passphraseScoreString">{{passphraseScore != 'x' ? 'Strength: ' : ''}} {{passphraseScoreString}}</li>
+          <li class="strength score-{{passphraseScore}}" *ngIf="passphraseScoreString">
+            <ng-container *ngIf="passphraseScore != 'x'" i18n>Strength: </ng-container> {{passphraseScoreString}}</li>
         </ul>
       </div>
     </div>
 
     <div class="buttons">
-      <input class="submit next" type="button" id="nextStep1" (click)="nextStep()" value="Next &gt;" />
+      <input class="submit next" type="button" id="nextStep1" (click)="nextStep()" i18n-value value="Next &gt;" />
     </div>
   </form>
 </div>

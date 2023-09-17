@@ -10,10 +10,10 @@
 </div>
 <ol class="steps-legend">
   <ng-container *ngFor="let s of steps; let i=index">
-    <li *ngIf="s.enabled" class="step{{i+1}}" [routerLink]="[{step: i}]" routerLinkActive="active" [routerLinkActiveOptions]="isActiveOptions" translate>
+    <li *ngIf="s.enabled" class="step{{i+1}}" [routerLink]="[{step: i}]" routerLinkActive="active" [routerLinkActiveOptions]="isActiveOptions">
       {{s.name}}
     </li>
-    <li *ngIf="!s.enabled" class="step{{i+1}} not-clickable" translate>
+    <li *ngIf="!s.enabled" class="step{{i+1}} not-clickable">
       {{s.name}}
     </li>
   </ng-container>

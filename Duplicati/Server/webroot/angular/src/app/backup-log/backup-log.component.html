@@ -1,31 +1,31 @@
 <div class="logpage">
 
-  <h1 translate>Log data for <b>{{backup?.Name}}</b></h1>
+  <h1 i18n>Log data for <b>{{backup?.Name}}</b></h1>
 
   <ul class="tabs">
-    <li [class]="{active: page=='general'}"><a [routerLink]="[{page: 'general'}]" translate>General</a></li>
-    <li [class]="{active: page=='remote'}"><a [routerLink]="[{page: 'remote'}]" translate>Remote</a></li>
+    <li [class]="{active: page=='general'}"><a [routerLink]="[{page: 'general'}]" i18n>General</a></li>
+    <li [class]="{active: page=='remote'}"><a [routerLink]="[{page: 'remote'}]" i18n>Remote</a></li>
   </ul>
 
   <div *ngIf="page == 'general'">
     <ul class="entries backuplog">
-      <li *ngIf="generalData == null" translate>Loading …</li>
+      <li *ngIf="generalData == null" i18n>Loading …</li>
       <app-result-entry *ngFor="let item of generalData" [item]="item"></app-result-entry>
     </ul>
     <div *ngIf="generalData != null && !generalDataComplete" class="button" (click)="loadMoreGeneralData()">
-      <span *ngIf="loadingData" translate>Loading …</span>
-      <span *ngIf="!loadingData" translate>Load older data</span>
+      <span *ngIf="loadingData" i18n>Loading …</span>
+      <span *ngIf="!loadingData" i18n>Load older data</span>
     </div>
   </div>
 
   <div *ngIf="page == 'remote'">
     <ul class="entries">
-      <li *ngIf="remoteData == null" translate>Loading …</li>
+      <li *ngIf="remoteData == null" i18n>Loading …</li>
       <app-log-entry *ngFor="let item of remoteData" [itemRemote]="item"></app-log-entry>
     </ul>
     <div *ngIf="remoteData != null && !remoteDataComplete" class="button" (click)="loadMoreRemoteData()">
-      <span *ngIf="loadingData" translate>Loading …</span>
-      <span *ngIf="!loadingData" translate>Load older data</span>
+      <span *ngIf="loadingData" i18n>Loading …</span>
+      <span *ngIf="!loadingData" i18n>Load older data</span>
     </div>
   </div>
 </div>

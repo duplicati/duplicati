@@ -1,18 +1,18 @@
 <div class="add">
   <app-steps>
-    <ng-template [appStep]="0" name="General">
+    <ng-template [appStep]="0" i18n-name name="General">
       <app-backup-general-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()"></app-backup-general-settings>
     </ng-template>
-    <ng-template [appStep]="1" name="Destination">
+    <ng-template [appStep]="1" i18n-name name="Destination">
       <app-backup-destination-settings [uri]="initialUri" (next)="nextStep()" (prev)="prevStep()"></app-backup-destination-settings>
     </ng-template>
-    <ng-template [appStep]="2" name="Source Data">
+    <ng-template [appStep]="2" i18n-name name="Source Data">
       <app-backup-source-settings [(backup)]="backup" [(options)]="options" (next)="nextStep()" (prev)="prevStep()"></app-backup-source-settings>
     </ng-template>
-    <ng-template [appStep]="3" name="Schedule">
+    <ng-template [appStep]="3" i18n-name name="Schedule">
       <app-backup-schedule [(schedule)]="schedule" (next)="nextStep()" (prev)="prevStep()"></app-backup-schedule>
     </ng-template>
-    <ng-template [appStep]="4" name="Options">
+    <ng-template [appStep]="4" i18n-name name="Options">
       <app-backup-options [(options)]="options" (prev)="prevStep()" (save)="save()"></app-backup-options>
     </ng-template>
   </app-steps>

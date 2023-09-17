@@ -1,7 +1,7 @@
 <header class="header">
   <div class="logo">
     <a routerLink="/">
-      <img class="mainlogo" src="{{brandingService.getAppLogoPath() | async}}" />
+      <img class="mainlogo" [src]="brandingService.getAppLogoPath() | async" />
     </a>
 
     <div class="logotext">
@@ -12,23 +12,23 @@
   </div>
 
   <div class="donate" *ngIf="systemInfo?.SuppressDonationMessages !== true">
-    <app-external-link link="https://www.duplicati.com/donate">Donate</app-external-link>
+    <app-external-link link="https://www.duplicati.com/donate" i18n>Donate</app-external-link>
   </div>
 
 
-  <a href="javascript:void(0)" class="menubutton hidden" data-target="mainmenu" translate (click)="onClickMenu($event)">Menu</a>
+  <a href="javascript:void(0)" class="menubutton hidden" data-target="mainmenu" i18n (click)="onClickMenu($event)">Menu</a>
 
   <div class="action-icons-small">
-    <div class="pause" [class]="{'active': state.programState != 'Running'}" (click)="pauseOptions()" [title]="state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'"></div>
-    <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" (click)="throttleOptions()" title="Click to set throttle options" aria-label="Click to set throttle options"></div>
+    <div class="pause" [class]="{'active': state.programState != 'Running'}" (click)="pauseOptions()" [title]="pauseState"></div>
+    <div class="throttle {{throttle_active ? 'active' : 'inactive'}}" (click)="throttleOptions()" i18n-title title="Click to set throttle options" i18n-aria-label aria-label="Click to set throttle options"></div>
   </div>
 
   <div class="statepadding">
     <app-state></app-state>
 
     <div class="action-icons">
-      <div class="pause" [class]="{active: state.programState != 'Running'}" (click)="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></div>
-      <div class="throttle" [class.active]="throttle_active" [class.inactive]="!throttle_active" (click)="throttleOptions()" title="Click to set throttle options" alt="Click to set throttle options"></div>
+      <div class="pause" [class]="{active: state.programState != 'Running'}" (click)="pauseOptions()" [title]="pauseState"></div>
+      <div class="throttle" [class.active]="throttle_active" [class.inactive]="!throttle_active" (click)="throttleOptions()" i18n-title title="Click to set throttle options" i18n-alt alt="Click to set throttle options"></div>
     </div>
   </div>
 </header>

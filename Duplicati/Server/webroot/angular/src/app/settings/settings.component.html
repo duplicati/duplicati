@@ -1,38 +1,38 @@
 <div class="settings">
-  <h1 translate>Settings</h1>
+  <h1 i18n>Settings</h1>
 
   <form class="styled" (ngSubmit)="save()" #settingsForm="ngForm">
-    <h2 translate>Access to user interface</h2>
+    <h2 i18n>Access to user interface</h2>
     <div class="input mixed multiple">
       <input type="checkbox" class="checkbox" id="hasPassword" name="hasPassword" [(ngModel)]="requireRemotePassword" />
-      <label for="password" translate>Password</label><br>
+      <label for="password" i18n>Password</label><br>
       <input type="password" id="password" name="password" [(ngModel)]="remotePassword" />
     </div>
     <div class="input mixed multiple">
-      <label for="confirm-password" translate>Confirm password</label><br>
+      <label for="confirm-password" i18n>Confirm password</label><br>
       <input type="password" id="confirm-password" name="confirm-password" [(ngModel)]="confirmPassword" autocomplete="new-password" />
     </div>
     <div class="input checkbox">
       <input type="checkbox" class="checkbox" id="remote" name="remote" [(ngModel)]="allowRemoteAccess" />
-      <label for="remote" translate>Allow remote access (requires restart)</label>
-      <div class="sublabel" translate>By allowing remote access, the server listens to requests from any machine on your network. If you enable this option, make sure you are always using the computer on a secure firewall protected network.</div>
+      <label for="remote" i18n>Allow remote access (requires restart)</label>
+      <div class="sublabel" i18n>By allowing remote access, the server listens to requests from any machine on your network. If you enable this option, make sure you are always using the computer on a secure firewall protected network.</div>
     </div>
     <div class="input mixed multiple" *ngIf="allowRemoteAccess">
-      <label for="hostnames" translate>Hostnames</label>
+      <label for="hostnames" i18n>Hostnames</label>
       <input type="text" id="hostnames" name="hostnames" [(ngModel)]="remoteHostnames" />
-      <div class="sublabel" translate>To prevent various DNS based attacks, Duplicati limits the allowed hostnames to the ones listed here. Direct IP access and localhost is always allowed. Multiple hostnames can be supplied with a semicolon separator. If any of the allowed hostnames is an asterisk (*), all hostnames are allowed and this feature is disabled. If the field is empty, only IP address and localhost access is allowed.</div>
+      <div class="sublabel" i18n>To prevent various DNS based attacks, Duplicati limits the allowed hostnames to the ones listed here. Direct IP access and localhost is always allowed. Multiple hostnames can be supplied with a semicolon separator. If any of the allowed hostnames is an asterisk (*), all hostnames are allowed and this feature is disabled. If the field is empty, only IP address and localhost access is allowed.</div>
     </div>
 
     <div class="input checkbox">
       <input type="checkbox" class="checkbox" id="trayiconlogin" name="trayiconlogin" [(ngModel)]="disableTrayIconLogin" />
-      <label for="trayiconlogin" translate>Prevent tray icon automatic log-in</label>
-      <div class="sublabel" translate>By default, the tray icon will open the user interface with a token that unlocks the user interface. This ensures that you can access the user interface from the tray icon, while requiring others to enter a password. If you prefer having to type in the password, even when accessing the user interface from the tray icon, enable this option.</div>
+      <label for="trayiconlogin" i18n>Prevent tray icon automatic log-in</label>
+      <div class="sublabel" i18n>By default, the tray icon will open the user interface with a token that unlocks the user interface. This ensures that you can access the user interface from the tray icon, while requiring others to enter a password. If you prefer having to type in the password, even when accessing the user interface from the tray icon, enable this option.</div>
     </div>
 
 
-    <h2>Pause after startup or hibernation</h2>
+    <h2 i18n>Pause after startup or hibernation</h2>
     <div class="input mixed multiple">
-      <label for="pauseTime" translate>Pause</label>
+      <label for="pauseTime" i18n>Pause</label>
       <select id="pauseTime" name="pauseTime" [(ngModel)]="startupDelayDurationValue">
         <option value="0">0</option>
         <option value="1">1</option>
@@ -46,24 +46,24 @@
         <option value="45">45</option>
       </select>
       <select id="pauseFormat" name="pauseFormat" [(ngModel)]="startupDelayDurationMultiplier">
-        <option value="s" translate>Seconds</option>
-        <option value="m" translate>Minutes</option>
-        <option value="h" translate>Hours</option>
+        <option value="s" i18n>Seconds</option>
+        <option value="m" i18n>Minutes</option>
+        <option value="h" i18n>Hours</option>
       </select>
-      <div class="sublabel" translate>Duplicati will run when started, but will remain in a paused state for the duration. Duplicati will occupy minimal system resources and no backups will be run.</div>
+      <div class="sublabel" i18n>Duplicati will run when started, but will remain in a paused state for the duration. Duplicati will occupy minimal system resources and no backups will be run.</div>
     </div>
 
     <ng-container *ngIf="systemInfo != null">
-      <h2 translate>User interface settings</h2>
+      <h2 i18n>User interface settings</h2>
       <div class="input mixed multiple">
-        <label for="userinterfacelanguage" translate>Language in user interface</label>
+        <label for="userinterfacelanguage" i18n>Language in user interface</label>
 
         <select id="userinterfacelanguage" name="userinterfacelanguage" [(ngModel)]="uiLanguage">
           <option value="">
             {{
-systemInfo.BrowserLocaleSupported ?
-                                    langBrowserDefault + " (" + systemInfo.BrowserLocale.DisplayName + ", " + systemInfo.BrowserLocale.Code + ")" :
-                                    langDefault + " (en, English)"
+            systemInfo.BrowserLocaleSupported ?
+            langBrowserDefault + " (" + systemInfo.BrowserLocale.DisplayName + ", " + systemInfo.BrowserLocale.Code + ")"
+            : langDefault + " (en, English)"
             }}
           </option>
           <option [value]="item.Code" *ngFor="let item of systemInfo?.SupportedLocales">
@@ -73,74 +73,74 @@ systemInfo.BrowserLocaleSupported ?
       </div>
 
       <div class="input mixed multiple">
-        <label for="themedisplay" translate>Display and color theme</label>
+        <label for="themedisplay" i18n>Display and color theme</label>
 
         <select id="themedisplay" name="themedisplay" [(ngModel)]="theme">
-          <option value="default" translate>The default blue on white theme (by Alex)</option>
-          <option value="dark" translate>The dark theme (by Michal)</option>
+          <option value="default" i18n>The default blue on white theme (by Alex)</option>
+          <option value="dark" i18n>The dark theme (by Michal)</option>
         </select>
       </div>
 
-      <h2 translate>Donation messages</h2>
+      <h2 i18n>Donation messages</h2>
       <div class="input checkbox">
-        <label translate>Donation messages</label>
-        <a routerLink="." (click)="suppressDonationMessages()" *ngIf="!systemInfo.SuppressDonationMessages" translate>Donation messages are visible, click to hide</a>
-        <a routerLink="." (click)="displayDonationMessages()" *ngIf="systemInfo.SuppressDonationMessages" translate>Donation messages are hidden, click to show</a>
+        <label i18n>Donation messages</label>
+        <a routerLink="." (click)="suppressDonationMessages()" *ngIf="!systemInfo.SuppressDonationMessages" i18n>Donation messages are visible, click to hide</a>
+        <a routerLink="." (click)="displayDonationMessages()" *ngIf="systemInfo.SuppressDonationMessages" i18n>Donation messages are hidden, click to show</a>
       </div>
 
-      <h2 translate>Update channel</h2>
+      <h2 i18n>Update channel</h2>
       <div class="input checkbox">
         <input type="radio" class="checkbox" id="updateChannelDefault" value="" name="updateChannel" [(ngModel)]="updateChannel" />
-        <label for="updateChannelDefault" translate>Default ({{systemInfo.DefaultUpdateChannel}})</label>
-        <div class="sublabel" translate>Same as the base install version: {{systemInfo.BaseVersionName}}</div>
+        <label for="updateChannelDefault" i18n>Default ({{systemInfo.DefaultUpdateChannel}})</label>
+        <div class="sublabel" i18n>Same as the base install version: {{systemInfo.BaseVersionName}}</div>
       </div>
 
       <!--
-  <div class="input checkbox">
-      <input type="radio" class="checkbox" id="updateChannelStable" value="stable" name="updateChannel" [(ngModel)]="updateChannel" />
-      <label for="updateChannelStable" translate>Stable</label>
-      <div class="sublabel" class="" translate>Official releases</div>
-  </div>
-  -->
+      <div class="input checkbox">
+          <input type="radio" class="checkbox" id="updateChannelStable" value="stable" name="updateChannel" [(ngModel)]="updateChannel" />
+          <label for="updateChannelStable" i18n>Stable</label>
+          <div class="sublabel" class="" i18n>Official releases</div>
+      </div>
+      -->
       <div class="input checkbox">
         <input type="radio" class="checkbox" id="updateChannelBeta" value="beta" name="updateChannel" [(ngModel)]="updateChannel" />
-        <label for="updateChannelBeta" translate>Beta</label>
-        <div class="sublabel" translate>Try out the new features that we are working on. Currently the most stable version available. Test Restore data before using this in production environments.</div>
+        <label for="updateChannelBeta" i18n>Beta</label>
+        <div class="sublabel" i18n>Try out the new features that we are working on. Currently the most stable version available. Test Restore data before using this in production environments.</div>
       </div>
       <div class="input checkbox">
         <input type="radio" class="checkbox" id="updateChannelExperimental" value="experimental" name="updateChannel" [(ngModel)]="updateChannel" />
-        <label for="updateChannelExperimental" translate>Experimental</label>
-        <div class="sublabel" translate>Specific builds for developers only. Not for use with important data.</div>
+        <label for="updateChannelExperimental" i18n>Experimental</label>
+        <div class="sublabel" i18n>Specific builds for developers only. Not for use with important data.</div>
       </div>
       <div class="input checkbox">
         <input type="radio" class="checkbox" id="updateChannelCanary" value="canary" name="updateChannel" [(ngModel)]="updateChannel" />
-        <label for="updateChannelCanary" translate>Canary</label>
-        <div class="sublabel" translate>Individual builds for developers only. Not for use with important data.</div>
+        <label for="updateChannelCanary" i18n>Canary</label>
+        <div class="sublabel" i18n>Individual builds for developers only. Not for use with important data.</div>
       </div>
       <!--
-  <div class="input checkbox">
-      <input type="radio" class="checkbox" id="updateChannelNightly" value="nightly" name="updateChannel" [(ngModel)]="updateChannel" />
-      <label for="updateChannelNightly" translate>Nightly</label>
-      <div class="sublabel" translate>Regular builds for developers only</div>
-  </div>
-  -->
+      <div class="input checkbox">
+          <input type="radio" class="checkbox" id="updateChannelNightly" value="nightly" name="updateChannel" [(ngModel)]="updateChannel" />
+          <label for="updateChannelNightly" i18n>Nightly</label>
+          <div class="sublabel" i18n>Regular builds for developers only</div>
+      </div>
+      -->
 
-      <h2 *ngIf="systemInfo.DefaultUsageReportLevel != 'Disabled'" translate>Usage statistics</h2>
+      <h2 *ngIf="systemInfo.DefaultUsageReportLevel != 'Disabled'" i18n>Usage statistics</h2>
       <div *ngIf="systemInfo.DefaultUsageReportLevel != 'Disabled'" class="input mixed multiple">
-        <label for="usagereporterlevel" translate>Anonymous usage reports</label>
+        <label for="usagereporterlevel" i18n>Anonymous usage reports</label>
 
         <select id="usagereporterlevel" name="usagereporterlevel" [(ngModel)]="usageReporterLevel">
-          <option value="" translate translate-params-levelname="systemInfo.DefaultUsageReportLevel">System default ({{levelname}})</option>
-          <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
-          <option value="warning" translate>Warnings, errors and crashes</option>
-          <option value="error" translate>Errors and crashes</option>
-          <option value="crash" translate>Crashes only</option>
-          <option value="none" translate>None / disabled</option>
+          <option value="" i18n>System default ({{usageReporterLevel}})</option>
+          <option value="information" i18n>Usage statistics, warnings, errors, and crashes</option>
+          <option value="warning" i18n>Warnings, errors and crashes</option>
+          <option value="error" i18n>Errors and crashes</option>
+          <option value="crash" i18n>Crashes only</option>
+          <option value="none" i18n>None / disabled</option>
         </select>
         <div class="sublabel">
-          <p translate>Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <app-external-link link="https://usage-reporter.duplicati.com/">public usage statistics</app-external-link></p>
+          <p i18n>Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <app-external-link link="https://usage-reporter.duplicati.com/">public usage statistics</app-external-link></p>
 
-          <p translate>All usage reports are sent anonymously and do not contain any personal information. They contain information about hardware and operating system, the type of backend, backup duration, overall size of source data and similar data. They do not contain paths, filenames, usernames, passwords or similar sensitive information.</p>
+          <p i18n>All usage reports are sent anonymously and do not contain any personal information. They contain information about hardware and operating system, the type of backend, backup duration, overall size of source data and similar data. They do not contain paths, filenames, usernames, passwords or similar sensitive information.</p>
         </div>
       </div>
 
@@ -157,23 +157,23 @@ systemInfo.BrowserLocaleSupported ?
       </div>
     </ng-container>
 
-    <h2 translate>Default options</h2>
-    <div class="sublabel"><p translate>Options added here are applied to all backups, but can be overridden in each individual backup</p></div>
+    <h2 i18n>Default options</h2>
+    <div class="sublabel"><p i18n>Options added here are applied to all backups, but can be overridden in each individual backup</p></div>
     <div class="input textarea" *ngIf="showAdvancedTextArea">
-      <label for="backupOptions" translate>Options</label>
-      <a routerLink="." (click)="showAdvancedTextArea = false" class="advanced-toggle" translate>Edit as list</a>
+      <label for="backupOptions" i18n>Options</label>
+      <a routerLink="." (click)="showAdvancedTextArea = false" class="advanced-toggle" i18n>Edit as list</a>
       <textarea id="backupOptions" name="backupOptions" [(ngModel)]="advancedOptions" appStringArrayText placeholder="{{convert.format(parser.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
     </div>
 
     <div class="input" *ngIf="!showAdvancedTextArea && advancedOptionList">
-      <label translate>Options</label>
-      <a routerLink="." (click)="showAdvancedTextArea = true" class="advanced-toggle" translate>Edit as text</a>
+      <label i18n>Options</label>
+      <a routerLink="." (click)="showAdvancedTextArea = true" class="advanced-toggle" i18n>Edit as text</a>
       <app-advanced-options-editor [optionList]="advancedOptionList!" [(options)]="advancedOptions"></app-advanced-options-editor>
     </div>
 
     <div class="buttons">
-      <input type="button" id="cancel" class="submit" value="Cancel" translate (click)="cancel()" />
-      <input type="submit" id="save" name="save" class="submit" value="OK" />
+      <input type="button" id="cancel" class="submit" i18n-value value="Cancel" (click)="cancel()" />
+      <input type="submit" id="save" name="save" class="submit" i18n-value value="OK" />
     </div>
   </form>
 </div>

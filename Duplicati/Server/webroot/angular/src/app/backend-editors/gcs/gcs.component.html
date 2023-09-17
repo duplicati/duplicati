@@ -1,43 +1,43 @@
 <div class="input text">
-  <label for="gcs_path" translate>Bucket name</label>
+  <label for="gcs_path" i18n>Bucket name</label>
   <input type="text" name="gcs_path" id="gcs_path" [(ngModel)]="path" placeholder="bucket/folder/subfolder" />
 </div>
 
 <div class="input text">
   <label for="gcs_authid">
-    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" translate>AuthID</a>
-    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" translate>AuthID</a>
+    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" i18n>AuthID</a>
+    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" i18n>AuthID</a>
   </label>
-  <input type="text" name="gcs_authid" id="gcs_authid" [(ngModel)]="authID" placeholder="Click the AuthID link to create an AuthID" />
+  <input type="text" name="gcs_authid" id="gcs_authid" [(ngModel)]="authID" i18n-placeholder placeholder="Click the AuthID link to create an AuthID" />
 </div>
 
 <div class="input text">
-  <label for="gcs_location" translate>Bucket create location</label>
+  <label for="gcs_location" i18n>Bucket create location</label>
 
   <select name="gcs_location" id="gcs_location" [(ngModel)]="gcsLocation" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_locations | orderBy: k">
     <option [ngValue]="e.value" *ngFor="let e of gcsLocations | keyvalue:compareValue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
-    <option value="" translate translate-params-server="gcs_server_custom || ''">Custom location ({{gcsLocationCustom}})</option>
+    <option value="" i18n i18n-params-server="gcs_server_custom || ''">Custom location ({{gcsLocationCustom}})</option>
   </select>
 
-  <input *ngIf="isCustomLocation()" type="text" id="gcs_location_custom" [(ngModel)]="gcsLocationCustom" placeholder="Location where buckets are created" />
+  <input *ngIf="isCustomLocation()" type="text" id="gcs_location_custom" [(ngModel)]="gcsLocationCustom" i18n-placeholder placeholder="Location where buckets are created" />
 
 </div>
 
 <div class="input text">
-  <label for="gcs_storageclass" translate>Bucket storage class</label>
+  <label for="gcs_storageclass" i18n>Bucket storage class</label>
 
   <select name="gcs_storageclass" id="gcs_storageclass" [(ngModel)]="gcsStorageClass">
     <option [ngValue]="e.value" *ngFor="let e of gcsStorageClasses | keyvalue:compareValue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
-    <option value="" translate translate-params-class="gcs_storageclass_custom">Custom storage class ({{gcsStorageClassCustom}})</option>
+    <option value="" i18n i18n-params-class="gcs_storageclass_custom">Custom storage class ({{gcsStorageClassCustom}})</option>
   </select>
 
-  <input *ngIf="isCustomStorageClass()" type="text" id="gcs_storageclass_custom" [(ngModel)]="gcsStorageClassCustom" placeholder="Storage class for creating a bucket" />
+  <input *ngIf="isCustomStorageClass()" type="text" id="gcs_storageclass_custom" [(ngModel)]="gcsStorageClassCustom" i18n-placeholder placeholder="Storage class for creating a bucket" />
 
 </div>
 
 
 <div class="input text">
-  <label for="gcs_path" translate>GCS Project ID</label>
-  <input type="text" name="s3_path" id="s3_path" [(ngModel)]="gcsProjectId" placeholder="ProjectID is optional if the bucket exist" />
+  <label for="gcs_path" i18n>GCS Project ID</label>
+  <input type="text" name="s3_path" id="s3_path" [(ngModel)]="gcsProjectId" i18n-placeholder placeholder="ProjectID is optional if the bucket exist" />
 </div>
 

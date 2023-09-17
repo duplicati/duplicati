@@ -2,7 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
+import { defaultIfEmpty } from 'rxjs';
+import { of, take } from 'rxjs';
 import { map, Observable } from 'rxjs';
+import { SystemInfoService } from '../system-info/system-info.service';
 import { DialogService } from './dialog.service';
 import { ParserService } from './parser.service';
 
@@ -17,6 +20,7 @@ export class ServerSettingsService {
   constructor(private client: HttpClient,
     private parser: ParserService,
     private dialog: DialogService,
+    private systemInfo: SystemInfoService,
     private cookies: CookieService,
     private router: Router) { }
 
@@ -51,11 +55,12 @@ export class ServerSettingsService {
   getUILanguage(): string {
     return this.cookies.get('ui-locale') || '';
   }
+  getLocale(): string {
+    return this.getUILanguage() || navigator.language;
+  }
   setUILanguage(uiLanguage: string) {
     if (uiLanguage.trim().length == 0) {
       this.cookies.delete('ui-locale');
-      // TODO: Set language
-      // setLanguage(this.systemInfo.BrowserLocale.Code.replace('-','_'));
     } else {
       let now = new Date();
       let exp = new Date(now.getFullYear() + 10, now.getMonth(), now.getDate());

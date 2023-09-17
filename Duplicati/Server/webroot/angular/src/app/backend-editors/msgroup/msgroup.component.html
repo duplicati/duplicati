@@ -1,17 +1,17 @@
 <div class="input text">
-  <label for="msgroup_group_email" translate>Group email</label>
-  <input type="text" name="msgroup_group_email" id="msgroup_group_email" [(ngModel)]="groupEmail" placeholder="Enter the email address of the Office 365 group" />
+  <label for="msgroup_group_email" i18n>Group email</label>
+  <input type="text" name="msgroup_group_email" id="msgroup_group_email" [(ngModel)]="groupEmail" i18n-placeholder placeholder="Enter the email address of the Office 365 group" />
 </div>
 
 <div class="input text">
-  <label for="msgroup_path" translate>Path on server</label>
-  <input type="text" name="msgroup_path" id="msgroup_path" [(ngModel)]="path" placeholder="Enter the destination path" />
+  <label for="msgroup_path" i18n>Path on server</label>
+  <input type="text" name="msgroup_path" id="msgroup_path" [(ngModel)]="path" i18n-placeholder placeholder="Enter the destination path" />
 </div>
 
 <div class="input text">
   <label for="msgroup_authid">
-    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" translate>AuthID</a>
-    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" translate>AuthID</a>
+    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" i18n>AuthID</a>
+    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" i18n>AuthID</a>
   </label>
-  <input type="text" name="msgroup_authid" id="msgroup_authid" [(ngModel)]="authID" placeholder="Click the AuthID link to create an AuthID" />
+  <input type="text" name="msgroup_authid" id="msgroup_authid" [(ngModel)]="authID" i18n-placeholder placeholder="Click the AuthID link to create an AuthID" />
 </div>

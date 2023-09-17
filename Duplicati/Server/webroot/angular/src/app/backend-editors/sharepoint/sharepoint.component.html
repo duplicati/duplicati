@@ -1,12 +1,12 @@
 <div class="input text">
-  <label for="sharepoint_path" translate>Destination path</label>
-  <input type="text" name="sharepoint_path" id="sharepoint_path" [(ngModel)]="path" placeholder="Enter the full destination path, including the server name, but without https" />
+  <label for="sharepoint_path" i18n>Destination path</label>
+  <input type="text" name="sharepoint_path" id="sharepoint_path" [(ngModel)]="path" i18n-placeholder placeholder="Enter the full destination path, including the server name, but without https" />
 </div>
 
 <div class="input text">
   <label for="sharepoint_authid">
-    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" translate>AuthID</a>
-    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" translate>AuthID</a>
+    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" i18n>AuthID</a>
+    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" i18n>AuthID</a>
   </label>
-  <input type="text" name="sharepoint_authid" id="sharepoint_authid" [(ngModel)]="authID" placeholder="Click the AuthID link to create an AuthID" />
+  <input type="text" name="sharepoint_authid" id="sharepoint_authid" [(ngModel)]="authID" i18n-placeholder placeholder="Click the AuthID link to create an AuthID" />
 </div>

@@ -1,9 +1,9 @@
 <form class="styled">
-  <h2 translate>General options</h2>
+  <h2 i18n>General options</h2>
   <div class="input multiple text select maxSize">
-    <app-input-multiplier name="dblockSize" [multipliers]="fileSizeMultipliers" [(value)]="dblockSize" case="uppercase">Remote volume size</app-input-multiplier>
+    <app-input-multiplier name="dblockSize" [multipliers]="fileSizeMultipliers" [(value)]="dblockSize" case="uppercase" i18n>Remote volume size</app-input-multiplier>
 
-    <div class="hint" translate>
+    <div class="hint" i18n>
       The backups will be split up into multiple files called volumes. Here
       you can set the maximum size of the individual volume files.
       <app-external-link link="https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size">See this page for more information.</app-external-link>
@@ -12,40 +12,40 @@
   </div>
 
   <div class="input multiple text select keepBackups">
-    <label for="keepTimeType" translate>Backup retention</label>
+    <label for="keepTimeType" i18n>Backup retention</label>
     <select id="keepTimeType" name="keepTimeType" [(ngModel)]="keepType">
-      <option value="" translate>Keep all backups</option>
-      <option value="time" translate>Delete backups that are older than</option>
-      <option value="versions" translate>Keep a specific number of backups</option>
-      <option value="smart" translate>Smart backup retention</option>
-      <option value="custom" translate>Custom backup retention</option>
+      <option value="" i18n>Keep all backups</option>
+      <option value="time" i18n>Delete backups that are older than</option>
+      <option value="versions" i18n>Keep a specific number of backups</option>
+      <option value="smart" i18n>Smart backup retention</option>
+      <option value="custom" i18n>Custom backup retention</option>
     </select>
 
     <ng-container [ngSwitch]="keepType">
-      <div *ngSwitchCase="''" class="hint" translate>
+      <div *ngSwitchCase="''" class="hint" i18n>
         Nothing will be deleted. The backup size will grow with each change.
       </div>
 
-      <div *ngSwitchCase="'smart'" class="hint" translate>
+      <div *ngSwitchCase="'smart'" class="hint" i18n>
         Over time backups will be deleted automatically. There will remain one backup for each of the last 7 days, each of the last 4 weeks, each of the last 12 months. There will always be at least one remaining backup.
       </div>
 
       <div class="retention-options" *ngSwitchCase="'custom'">
         <input type="text" name="customPolicy" [(ngModel)]="retentionPolicy" [ngModelOptions]="{updateOn: 'blur'}" />
       </div>
-      <div class="hint" translate *ngSwitchCase="'custom'">
+      <div class="hint" i18n *ngSwitchCase="'custom'">
         Enter a retention strategy manually. Placeholders are D/W/Y for days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, and one for each of the next 36 months. This can also be written as 1W:1D,1M:1W,3Y:1M.
       </div>
 
       <div class="retention-options" *ngSwitchCase="'versions'">
         <input type="number" name="keepVersions" [(ngModel)]="keepVersions" min="1" [ngModelOptions]="{updateOn: 'blur'}" />
       </div>
-      <div class="hint" *ngSwitchCase="'versions'" translate>Once there are more backups than the specified number, the oldest backups are deleted.</div>
+      <div class="hint" *ngSwitchCase="'versions'" i18n>Once there are more backups than the specified number, the oldest backups are deleted.</div>
 
       <div class="retention-options" *ngSwitchCase="'time'">
         <app-input-multiplier name="keepTime" [(value)]="keepTime" [multipliers]="timeMultipliers" hasCustom="true"></app-input-multiplier>
       </div>
-      <div class="hint" *ngSwitchCase="'time'" translate>
+      <div class="hint" *ngSwitchCase="'time'" i18n>
         If at least one newer backup is found, all backups older than this date are deleted.
       </div>
     </ng-container>
@@ -61,10 +61,10 @@
   </div>
 
   <app-expand-box [expanded]="showAdvanced">
-    <h2 translate header>Advanced options</h2>
+    <h2 i18n header>Advanced options</h2>
     <ng-template appExpandMenu>
-      <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" translate>Edit as list</button>
-      <button mat-menu-item *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" translate>Edit as text</button>
+      <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" i18n>Edit as list</button>
+      <button mat-menu-item *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" i18n>Edit as text</button>
     </ng-template>
 
     <div class="input textarea" *ngIf="showAdvancedTextArea">
@@ -77,7 +77,7 @@
   </app-expand-box>
 
   <div class="buttons">
-    <input class="submit save" type="submit" id="save" (click)="save.emit()" value="Save" />
-    <input class="submit prev" type="button" id="prevStep5" (click)="prev.emit()" value="&lt; Previous" />
+    <input class="submit save" type="submit" id="save" (click)="save.emit()" i18n-value value="Save" />
+    <input class="submit prev" type="button" id="prevStep5" (click)="prev.emit()" i18n-value value="&lt; Previous" />
   </div>
 </form>

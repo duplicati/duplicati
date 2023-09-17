@@ -1,38 +1,38 @@
 <div class="localdb">
   <h1>
-    <span>Local database for </span>
+    <span i18n>Local database for </span>
     <b *ngIf="backup?.Name">{{backup!.Name}}</b>
-    <b *ngIf="backup?.Name == null" translate>…loading…</b>
+    <b *ngIf="backup?.Name == null" i18n>…loading…</b>
   </h1>
 
-  <div translate>
+  <div i18n>
     Each backup has a local database associated with it, which stores information about the remote backup on the local machine.  This makes it faster to perform many operations, and reduces the amount of data that needs to be downloaded for each operation.
   </div>
 
-  <h2 translate>Maintenance</h2>
-  <div translate>
+  <h2 i18n>Maintenance</h2>
+  <div i18n>
     If the backup and the remote storage is out of sync, Duplicati will require that you perform a repair operation to synchronize the database.  If the repair is unsuccesful, you can delete the local database and re-generate.
   </div>
   <div>&nbsp;</div>
 
   <ul class="tabs">
-    <li class="active" [class.disabled]="backup == null"><a routerLink="." (click)="doRepair()" translate>Repair</a></li>
-    <li class="active" [class.disabled]="noLocalDB"><a routerLink="." (click)="!noLocalDB && doDelete()" translate>Delete</a></li>
-    <li class="active" [class.disabled]="noLocalDB"><a routerLink="." (click)="!noLocalDB && doDeleteAndRepair()" translate>Recreate (delete and repair)</a></li>
+    <li class="active" [class.disabled]="backup == null"><a routerLink="." (click)="doRepair()" i18n>Repair</a></li>
+    <li class="active" [class.disabled]="noLocalDB"><a routerLink="." (click)="!noLocalDB && doDelete()" i18n>Delete</a></li>
+    <li class="active" [class.disabled]="noLocalDB"><a routerLink="." (click)="!noLocalDB && doDeleteAndRepair()" i18n>Recreate (delete and repair)</a></li>
   </ul>
 
-  <h2 translate>Location</h2>
+  <h2 i18n>Location</h2>
   <form class="styled">
     <div class="input text">
-      <label for="dbpath" translate>Local database path:</label>
+      <label for="dbpath" i18n>Local database path:</label>
       <input type="text" id="dbpath" name="dbpath" [(ngModel)]="dbPath" />
     </div>
 
     <ul class="tabs">
-      <li class="active" [class.disabled]="backup?.DBPath == dbPath"><a routerLink="." (click)="dbPath = backup?.DBPath" translate>Reset</a></li>
-      <li class="active" [class.disabled]="backup?.DBPath == dbPath"><a routerLink="." (click)="backup?.DBPath != dbPath && doSave()" translate>Save</a></li>
-      <li class="active" [class.disabled]="backup?.DBPath == dbPath"><a routerLink="." (click)="backup?.DBPath != dbPath && doSaveAndRepair()" translate>Save and repair</a></li>
-      <li class="active" [class.disabled]="backup?.DBPath == dbPath || noLocalDB"><a routerLink="." (click)="backup?.DBPath != dbPath && !noLocalDB && doMove()" translate>Move existing database</a></li>
+      <li class="active" [class.disabled]="backup?.DBPath == dbPath"><a routerLink="." (click)="dbPath = backup?.DBPath" i18n>Reset</a></li>
+      <li class="active" [class.disabled]="backup?.DBPath == dbPath"><a routerLink="." (click)="backup?.DBPath != dbPath && doSave()" i18n>Save</a></li>
+      <li class="active" [class.disabled]="backup?.DBPath == dbPath"><a routerLink="." (click)="backup?.DBPath != dbPath && doSaveAndRepair()" i18n>Save and repair</a></li>
+      <li class="active" [class.disabled]="backup?.DBPath == dbPath || noLocalDB"><a routerLink="." (click)="backup?.DBPath != dbPath && !noLocalDB && doMove()" i18n>Move existing database</a></li>
     </ul>
 
   </form>

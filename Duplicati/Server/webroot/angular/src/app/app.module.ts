@@ -28,7 +28,6 @@ import { EditBackupComponent } from './edit-backup/edit-backup.component';
 import { BackupGeneralSettingsComponent } from './edit-backup/backup-general-settings/backup-general-settings.component';
 import { BackupDestinationSettingsComponent } from './edit-backup/backup-destination-settings/backup-destination-settings.component';
 import { BackupEditUriComponent } from './edit-backup/backup-edit-uri/backup-edit-uri.component';
-import { ContextMenuComponent } from './context-menu/context-menu.component';
 import { DynamicHostDirective } from './directives/dynamic-host.directive';
 import { DestinationFolderPickerComponent } from './destination-folder-picker/destination-folder-picker.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -80,6 +79,8 @@ import { BACKEND_EDITORS } from './backend-editor';
 import { ServerSettingsService } from './services/server-settings.service';
 import { connectionErrorHandlerProviders } from './services/connection-error-handlers';
 
+import '@angular/common/locales/global/de';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -104,7 +105,6 @@ import { connectionErrorHandlerProviders } from './services/connection-error-han
     BackupGeneralSettingsComponent,
     BackupDestinationSettingsComponent,
     BackupEditUriComponent,
-    ContextMenuComponent,
     DynamicHostDirective,
     EditFileComponent,
     DestinationFolderPickerComponent,
@@ -170,7 +170,7 @@ import { connectionErrorHandlerProviders } from './services/connection-error-han
     { provide: BACKEND_EDITORS, useValue: { key: 'file', type: EditFileComponent }, multi: true },
     {
       provide: LOCALE_ID,
-      useFactory: (settings: ServerSettingsService) => settings.getUILanguage(),
+      useFactory: (settings: ServerSettingsService) => settings.getLocale(),
       deps: [ServerSettingsService]
     },
     backupCheckerProviders,

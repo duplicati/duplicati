@@ -25,6 +25,10 @@ export class HeaderComponent {
   }
   public throttle_active: boolean = false;
 
+  get pauseState(): string {
+    return this.state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume';
+  }
+
   private subscription?: Subscription;
 
   constructor(

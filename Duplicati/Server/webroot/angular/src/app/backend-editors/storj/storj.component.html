@@ -1,47 +1,47 @@
 <div class="input select">
-  <label for="storj_auth_method" translate>Authentication method</label>
+  <label for="storj_auth_method" i18n>Authentication method</label>
   <select name="storj_auth_method" id="storj_auth_method" [(ngModel)]="storjAuthMethod">
     <option [ngValue]="e.value" *ngFor="let e of storjAuthMethods | keyvalue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
-    <option value="" translate>
+    <option value="" i18n>
       Authentication method ()
     </option>
   </select>
 </div>
 <ng-container *ngIf="storjAuthMethod == 'API key'">
   <div class="input select">
-    <label for="storj_satellite" translate>Satellite</label>
+    <label for="storj_satellite" i18n>Satellite</label>
     <select name="storj_satellite" id="storj_satellite" [(ngModel)]="storjSatellite">
       <option [ngValue]="e.value" *ngFor="let e of storjSatellites | keyvalue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
-      <option value="" translate translate-params-satellite="storj_satellite_custom || ''">
+      <option value="" i18n>
         Custom Satellite ({{storjSatelliteCustom}})
       </option>
     </select>
 
     <input *ngIf="isCustomSatellite()" type="text" id="storj_satellite_custom"
-           [(ngModel)]="storjSatelliteCustom" placeholder="Custom Satellite" />
+           [(ngModel)]="storjSatelliteCustom" i18n-placeholder placeholder="Custom Satellite" />
   </div>
   <div class="input text">
-    <label for="storj_api_key" translate>API key</label>
-    <input type="text" name="storj_api_key" id="storj_api_key" [(ngModel)]="storjApiKey" placeholder="The API key" />
+    <label for="storj_api_key" i18n>API key</label>
+    <input type="text" name="storj_api_key" id="storj_api_key" [(ngModel)]="storjApiKey" i18n-placeholder placeholder="The API key" />
   </div>
   <div class="input password">
-    <label for="storj_secret" translate>Encryption passphrase</label>
-    <input autocomplete="new-password" type="password" name="storj_secret" id="storj_secret" [(ngModel)]="storjSecret" placeholder="The encryption passphrase" />
+    <label for="storj_secret" i18n>Encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="storj_secret" id="storj_secret" [(ngModel)]="storjSecret" i18n-placeholder placeholder="The encryption passphrase" />
   </div>
   <div class="input password">
-    <label for="storj_secret_verify" translate>Verify encryption passphrase</label>
-    <input autocomplete="new-password" type="password" name="storj_secret_verify" id="storj_secret_verify" [(ngModel)]="storjSecretVerify" placeholder="The encryption passphrase (for verification)" />
+    <label for="storj_secret_verify" i18n>Verify encryption passphrase</label>
+    <input autocomplete="new-password" type="password" name="storj_secret_verify" id="storj_secret_verify" [(ngModel)]="storjSecretVerify" i18n-placeholder placeholder="The encryption passphrase (for verification)" />
   </div>
 </ng-container>
 <div class="input text" *ngIf="storjAuthMethod == 'Access grant'">
-  <label for="storj_shared_access" translate>Access grant</label>
-  <input type="text" name="storj_shared_access" id="storj_shared_access" [(ngModel)]="storjSharedAccess" placeholder="The access grant instead of the info above" />
+  <label for="storj_shared_access" i18n>Access grant</label>
+  <input type="text" name="storj_shared_access" id="storj_shared_access" [(ngModel)]="storjSharedAccess" i18n-placeholder placeholder="The access grant instead of the info above" />
 </div>
 <div class="input text">
-  <label for="storj_bucket" translate>Bucket</label>
-  <input type="text" name="storj_bucket" id="storj_bucket" [(ngModel)]="storjBucket" placeholder="The bucket for storing the backup" />
+  <label for="storj_bucket" i18n>Bucket</label>
+  <input type="text" name="storj_bucket" id="storj_bucket" [(ngModel)]="storjBucket" i18n-placeholder placeholder="The bucket for storing the backup" />
 </div>
 <div class="input text">
-  <label for="storj_folder" translate>Folder path</label>
-  <input type="text" name="storj_folder" id="storj_folder" [(ngModel)]="storjFolder" placeholder="The folder within the bucket for storing the backup" />
+  <label for="storj_folder" i18n>Folder path</label>
+  <input type="text" name="storj_folder" id="storj_folder" [(ngModel)]="storjFolder" i18n-placeholder placeholder="The folder within the bucket for storing the backup" />
 </div>

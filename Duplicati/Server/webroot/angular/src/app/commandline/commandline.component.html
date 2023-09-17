@@ -50,22 +50,16 @@
   </form>
 
   <div *ngIf="mode == 'view' && serverstate != null">
-    <h2 translate>Running commandline entry</h2>
-    <p *ngIf="serverstate.programState == 'Paused' && started != true">
-      Server is currently paused, <a style="cursor: pointer" (click)="serverStatus.resume()" translate>resume now</a>
+    <h2 i18n>Running commandline entry</h2>
+    <p *ngIf="serverstate.programState == 'Paused' && started != true" i18n>
+      Server is currently paused, <a style="cursor: pointer" (click)="serverStatus.resume()">resume now</a>
     </p>
-    <p *ngIf="serverstate.programState != 'Paused' && started == null" translate>
-      Connecting to task ....
-    </p>
-    <p *ngIf="serverstate.programState != 'Paused' && started == false" translate>
-      Waiting for task to start ....
-    </p>
+    <p *ngIf="serverstate.programState != 'Paused' && started == null" i18n>Connecting to task ....</p>
+    <p *ngIf="serverstate.programState != 'Paused' && started == false" i18n>Waiting for task to start ....</p>
     <p *ngIf="started == true && finished == false">
-      <span translate>Running ....</span> <a routerLink="." (click)="abort()" *ngIf="!rawFinished">stop now</a>
+      <span i18n>Running ....</span> <a routerLink="." (click)="abort()" *ngIf="!rawFinished">stop now</a>
     </p>
-    <p *ngIf="started == true && finished == true" translate>
-      Finished!
-    </p>
+    <p *ngIf="started == true && finished == true" i18n>Finished!</p>
 
     <div *ngIf="started == true" class="prewrapped-text" style="overflow-x: auto;">
       <div class="fixed-width-font" style="white-space: pre" *ngFor="let line of viewLines">{{line}}</div>

@@ -1,42 +1,44 @@
 <div class="restorewizard">
 
-  <h1><div translate>Where do you want to restore from?</div></h1>
+  <h1 i18n>Where do you want to restore from?</h1>
 
   <form class="styled">
     <ul>
       <li class="input">
         <input type="radio" name="direct" id="direct" [(ngModel)]="selection" value="direct">
-        <label for="direct" translate>Direct restore from backup files ...</label>
-        <div class="subtext" translate>Point to your backup files and restore from there</div>
+        <label for="direct" i18n>Direct restore from backup files ...</label>
+        <div class="subtext" i18n>Point to your backup files and restore from there</div>
       </li>
 
       <li class="input">
         <input type="radio" name="import" id="import" [(ngModel)]="selection" value="import">
-        <label for="import" translate>Restore from configuration ...</label>
-        <div class="subtext" translate>Load destination from an exported job or a storage provider</div>
+        <label for="import" i18n>Restore from configuration ...</label>
+        <div class="subtext" i18n>Load destination from an exported job or a storage provider</div>
       </li>
 
       <li class="input" *ngFor="let item of backups">
         <input type="radio" name="direct" id="backup-{{item.Backup.ID}}" [(ngModel)]="selection" [value]="{backupId: item.Backup.ID}">
         <label for="backup-{{item.Backup.ID}}">{{item.Backup.Name}}</label>
 
-        <div *ngIf="item.Backup.Metadata != null && item.Backup.Metadata['TargetSizeString'] != null" class="subtext" translate [ngPlural]="parseInt(item.Backup.Metadata['BackupListCount'])">
-          <ng-template ngPluralCase="one">{{item.Backup.Metadata['TargetSizeString']}} / {{item.Backup.Metadata['BackupListCount']}} Version</ng-template>
-          <ng-template ngPluralCase="other">{{item.Backup.Metadata['TargetSizeString']}} / {{item.Backup.Metadata['BackupListCount']}} Versions</ng-template>
+        <div *ngIf="item.Backup.Metadata != null && item.Backup.Metadata['TargetSizeString'] != null" class="subtext">
+          { parseInt(item.Backup.Metadata['BackupListCount']), plural,
+          one { {{item.Backup.Metadata['TargetSizeString']}} / {{item.Backup.Metadata['BackupListCount']}} Version }
+          other { {{item.Backup.Metadata['TargetSizeString']}} / {{item.Backup.Metadata['BackupListCount']}} Versions }
+          }
         </div>
 
-        <div *ngIf="item.Backup.Metadata == null || item.Backup.Metadata['TargetSizeString'] == null" class="subtext" translate>Unknown backup size and versions</div>
+        <div *ngIf="item.Backup.Metadata == null || item.Backup.Metadata['TargetSizeString'] == null" class="subtext" i18n>Unknown backup size and versions</div>
 
         <div *ngIf="item.Backup.Metadata != null && item.Backup.Metadata['LastRestoreFinished'] != null"
              class="subtext"
-             translate>
-          Last successful restore: {{convert.formatDate(convert.parseDate(item.Backup.Metadata['LastRestoreFinished']))}} (took {{convert.formatDuration(item.Backup.Metadata['LastRestoreDuration']) || '0 seconds'}})
+             i18n>
+          Last successful restore: {{convert.formatDate(convert.parseDate(item.Backup.Metadata['LastRestoreFinished']))}} (took {{getLastDuration(item.Backup.Metadata)}})
         </div>
       </li>
     </ul>
 
     <div class="buttons">
-      <input class="submit next" type="button" (click)="nextPage()" value="Next &gt;" />
+      <input class="submit next" type="button" (click)="nextPage()" i18n-value value="Next &gt;" />
     </div>
   </form>
 </div>

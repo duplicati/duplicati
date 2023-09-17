@@ -1,6 +1,6 @@
 <div>
   <div class="input select">
-    <label for="type" translate>Storage Type</label>
+    <label for="type" i18n>Storage Type</label>
     <select name="type" id="type" [ngModel]="backend" (ngModelChange)="setBackend($event)" *ngIf="groupedBackendModules">
       <optgroup [label]="group.key" *ngFor="let group of groupedBackendModules; trackBy: trackGroup">
         <option [ngValue]="b" *ngFor="let b of group.value; trackBy: trackBackend">{{b.DisplayName}}</option>
@@ -12,30 +12,30 @@
   <ng-template appDynamicHost></ng-template>
 
   <div *ngIf="editorComponent == null && backend != null">
-    <h3 translate>No editor found for the &quot;{{backend.DisplayName}}&quot; storage type</h3>
+    <h3 i18n>No editor found for the &quot;{{backend.DisplayName}}&quot; storage type</h3>
   </div>
 
   <div *ngIf="backend == null">
-    <h3 translate>Chose a storage type to get started</h3>
+    <h3 i18n>Chose a storage type to get started</h3>
   </div>
 </div>
 
 <div class="buttons">
-  <a routerLink="." *ngIf="!testing" class="test-connection" (click)="testConnection()" translate>Test connection</a>
-  <a routerLink="." *ngIf="testing" class="test-connection" translate>Testing …</a>
+  <a routerLink="." *ngIf="!testing" class="test-connection" (click)="testConnection()" i18n>Test connection</a>
+  <a routerLink="." *ngIf="testing" class="test-connection" i18n>Testing …</a>
 </div>
 
 <app-expand-box class="input textarea">
-  <h2 translate header>Advanced options</h2>
+  <h2 i18n header>Advanced options</h2>
   <ng-template appExpandMenu>
-    <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" translate>Edit as list</button>
-    <button mat-menu-item *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" translate>Edit as text</button>
+    <button mat-menu-item *ngIf="showAdvancedTextArea" (click)="showAdvancedTextArea = false" i18n>Edit as list</button>
+    <button mat-menu-item *ngIf="!showAdvancedTextArea" (click)="showAdvancedTextArea = true" i18n>Edit as text</button>
   </ng-template>
 
   <div>
     <div *ngIf="showAdvancedTextArea">
-      <label for="targetOptions" translate>Options</label>
-      <textarea id="targetOptions" name="targetOptions" appStringArrayText placeholder="{{convert.format(parser.exampleOptionString, '--use-ssl=true')}}" [(ngModel)]="advancedOptions"></textarea>
+      <label for="targetOptions" i18n>Options</label>
+      <textarea id="targetOptions" name="targetOptions" appStringArrayText i18n-placeholder placeholder="{{convert.format(parser.exampleOptionString, '--use-ssl=true')}}" [(ngModel)]="advancedOptions"></textarea>
     </div>
 
     <app-advanced-options-editor *ngIf="!showAdvancedTextArea" [optionList]="advancedOptionList" [options]="advancedOptions"></app-advanced-options-editor>

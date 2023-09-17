@@ -1,41 +1,43 @@
 <form class="styled">
   <div class="box browser">
     <div class="headerthreedotmenu">
-      <h2 translate>Source data</h2>
+      <h2 i18n>Source data</h2>
 
       <div class="contextmenu_container">
         <a routerLink="." [matMenuTriggerFor]="sourceMenu" title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_source_folders" class="threedotmenubutton" /></a>
 
         <mat-menu class="contextmenu" id="threedotmenu_add_source_folders" #sourceMenu="matMenu">
-          <button mat-menu-item *ngIf="!editSourceAdvanced" (click)="editSourceAdvanced = true" translate>Show advanced editor</button>
-          <button mat-menu-item *ngIf="editSourceAdvanced" (click)="editSourceAdvanced = false" translate>Show treeview</button>
+          <button mat-menu-item *ngIf="!editSourceAdvanced" (click)="editSourceAdvanced = true" i18n>Show advanced editor</button>
+          <button mat-menu-item *ngIf="editSourceAdvanced" (click)="editSourceAdvanced = false" i18n>Show treeview</button>
         </mat-menu>
       </div>
     </div>
 
     <div class="input checklinks">
-      <a routerLink="." [class.inactive]="editSourceAdvanced" (click)="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> Show hidden folders</a>
+      <a routerLink="." [class.inactive]="editSourceAdvanced" (click)="showhiddenfolders = !showhiddenfolders">
+        <i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> <ng-container i18n>Show hidden folders</ng-container>
+      </a>
     </div>
     <div class="resizable" [hidden]="editSourceAdvanced">
       <app-source-folder-picker class="filepicker" [(sources)]="sources" [(filters)]="filters" [showHidden]="showhiddenfolders" [excludeAttributes]="excludeAttributes" [excludeSize]="excludeFileSize"></app-source-folder-picker>
     </div>
     <div class="input textarea" *ngIf="editSourceAdvanced">
-      <label for="SourcePathList" translate>Source folders</label>
+      <label for="SourcePathList" i18n>Source folders</label>
       <textarea id="SourcePathList" name="SourcePathList" appStringArrayText [(ngModel)]="sources" [ngModelOptions]="{updateOn: 'blur'}"></textarea>
     </div>
     <div class="input text overlayButton">
-      <input type="text" name="sourcePath" id="sourcePath" placeholder="Add a path directly" [(ngModel)]="manualSourcePath" [disabled]="validatingSourcePath" />
+      <input type="text" name="sourcePath" id="sourcePath" i18n-placeholder placeholder="Add a path directly" [(ngModel)]="manualSourcePath" [disabled]="validatingSourcePath" />
       <button id="sourceFolderPathAdd" class="button" [disabled]="validatingSourcePath || manualSourcePath == null || manualSourcePath == ''" (click)="addManualSourcePath()">
-        <span *ngIf="validatingSourcePath" translate>Validating …</span>
-        <span *ngIf="!validatingSourcePath" translate>Add path</span>
+        <span *ngIf="validatingSourcePath" i18n>Validating …</span>
+        <span *ngIf="!validatingSourcePath" i18n>Add path</span>
       </button>
     </div>
   </div>
   <app-expand-box class="box filters">
-    <h2 translate header>Filters</h2>
+    <h2 i18n header>Filters</h2>
     <ng-template appExpandMenu>
-      <button mat-menu-item *ngIf="editFilterAdvanced" (click)="editFilterAdvanced = false" translate>Edit as list</button>
-      <button mat-menu-item *ngIf="!editFilterAdvanced" (click)="editFilterAdvanced = true" translate>Edit as text</button>
+      <button mat-menu-item *ngIf="editFilterAdvanced" (click)="editFilterAdvanced = false" i18n>Edit as list</button>
+      <button mat-menu-item *ngIf="!editFilterAdvanced" (click)="editFilterAdvanced = true" i18n>Edit as text</button>
     </ng-template>
 
     <div class="input textarea" *ngIf="editFilterAdvanced">
@@ -48,7 +50,7 @@
     </div>
   </app-expand-box>
   <app-expand-box class="box excludes">
-    <h2 translate header>Exclude</h2>
+    <h2 i18n header>Exclude</h2>
 
     <div class="input checkbox multiple">
       <div *ngFor="let attr of fileAttributes">
@@ -64,7 +66,7 @@
 
     <div class="input text select multiple">
       <input name="exclude-large-files" id="exclude-large-files" type="checkbox" class="simple-checkbox" [(ngModel)]="excludeLargeFiles" />
-      <label for="exclude-large-files" translate>Files larger than:</label>
+      <label for="exclude-large-files" i18n>Files larger than:</label>
 
       <input type="number" [(ngModel)]="fileSizeInput" name="exclude-larger-than-number" id="exclude-larger-than-number" [disabled]="!excludeLargeFiles" />
       <select name="exclude-larger-than-multiplier" id="exclude-larger-than-multiplier" [(ngModel)]="fileSizeMultiplier" [disabled]="!excludeLargeFiles">
@@ -73,7 +75,7 @@
     </div>
   </app-expand-box>
   <div class="buttons">
-    <input class="submit next" type="button" id="nextStep3" (click)="next.emit()" value="Next &gt;" />
-    <input class="submit prev" type="button" id="prevStep3" (click)="prev.emit()" value="&lt; Previous" />
+    <input class="submit next" type="button" id="nextStep3" (click)="next.emit()" i18n-value value="Next &gt;" />
+    <input class="submit prev" type="button" id="prevStep3" (click)="prev.emit()" i18n-value value="&lt; Previous" />
   </div>
 </form>

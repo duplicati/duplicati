@@ -3,7 +3,7 @@
 </select>
 
 <div *ngIf="!isFilterGroup()">
-  <input type="text" [ngModel]="filterBody" (ngModelChange)="setFilterBody($event)" [ngModelOptions]="{updateOn: 'blur'}" placeholder="Enter expression here" />
+  <input type="text" [ngModel]="filterBody" (ngModelChange)="setFilterBody($event)" [ngModelOptions]="{updateOn: 'blur'}" i18n-placeholder placeholder="Enter expression here" />
 </div>
 <div *ngIf="isFilterGroup()">
   <select class="groups" [ngModel]="selectedGroups" (ngModelChange)="setFilterGroups($event)" multiple>
@@ -11,4 +11,4 @@
   </select>
 </div>
 
-<a class="button" routerLink="." title="Remove" (click)="remove.emit()">X</a>
+<a class="button" routerLink="." i18n-title title="Remove" (click)="remove.emit()">X</a>

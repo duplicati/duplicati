@@ -2,56 +2,56 @@
   <form class="styled">
 
     <h1>
-      <span translate>Delete backup </span>
+      <span i18n>Delete backup </span>
       <b>
-        <span translate *ngIf="!backup?.Name">...loading...</span>
+        <span i18n *ngIf="!backup?.Name">...loading...</span>
         <span *ngIf="backup?.Name">{{backup!.Name}}</span>
       </b>
     </h1>
 
     <div *ngIf="!noLocalDB">
-      <h2 translate>Delete local database</h2>
+      <h2 i18n>Delete local database</h2>
 
-      <div translate>
+      <div i18n>
         Each backup has a local database associated with it, which stores information about the remote backup on the local machine.
         When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.
         If you are using the local database for backups from the commandline, you should keep the database.
       </div>
 
-      <div class="warning" translate *ngIf="deleteLocalDatabase && dbUsedElsewhere">
+      <div class="warning" i18n *ngIf="deleteLocalDatabase && dbUsedElsewhere">
         WARNING: The remote database is found to be in use by the commandline library
       </div>
 
       <div class="input checkbox multiple">
-        <label for="deleteLocalDB" translate>Delete the local database</label>
+        <label for="deleteLocalDB" i18n>Delete the local database</label>
         <input type="checkbox" id="deleteLocalDB" name="deleteLocalDB" [(ngModel)]="deleteLocalDatabase" />
       </div>
     </div>
 
-    <h2 translate>Export configuration</h2>
-    <div translate>If you want to use the backup later, you can export the configuration before deleting it</div>
+    <h2 i18n>Export configuration</h2>
+    <div i18n>If you want to use the backup later, you can export the configuration before deleting it</div>
     <div class="buttons">
-      <input class="submit" type="button" (click)="doExport()" value="Export configuration &gt;" />
+      <input class="submit" type="button" (click)="doExport()" i18n-value value="Export configuration &gt;" />
     </div>
 
     <div *ngIf="!noLocalDB">
-      <h2 translate>Delete remote files</h2>
+      <h2 i18n>Delete remote files</h2>
 
-      <div *ngIf="filecount == null" translate>Loading remote storage usage ...</div>
-      <div *ngIf="filecount != null" translate>
+      <div *ngIf="filecount == null" i18n>Loading remote storage usage ...</div>
+      <div *ngIf="filecount != null" i18n>
         Delete {{filecount}} files ({{filesize}}) from the remote storage?
       </div>
-      <div class="warning" translate ng-show="DeleteRemoteFiles">WARNING: This will prevent you from restoring the data in the future.</div>
+      <div class="warning" i18n [hidden]="!deleteRemoteFiles">WARNING: This will prevent you from restoring the data in the future.</div>
 
       <div class="input checkbox multiple">
-        <label for="deleteRemoteFiles" translate>Delete remote files</label>
+        <label for="deleteRemoteFiles" i18n>Delete remote files</label>
         <input type="checkbox" id="deleteRemoteFiles" name="deleteRemoteFiles" [(ngModel)]="deleteRemoteFiles" />
       </div>
     </div>
 
     <div class="buttons">
-      <input class="submit" type="button" (click)="doDelete()" value="Delete backup &gt;" />
-      <input class="cancel" type="button" (click)="goBack()" value="Cancel" />
+      <input class="submit" type="button" (click)="doDelete()" i18n-value value="Delete backup &gt;" />
+      <input class="cancel" type="button" (click)="goBack()" i18n-value value="Cancel" />
     </div>
 
   </form>

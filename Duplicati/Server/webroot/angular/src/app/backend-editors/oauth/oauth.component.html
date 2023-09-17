@@ -1,12 +1,12 @@
 <div class="input text">
-  <label for="oauth_path" translate>Path on server</label>
-  <input type="text" name="oauth_path" id="oauth_path" [(ngModel)]="path" placeholder="Enter the destination path" />
+  <label for="oauth_path" i18n>Path on server</label>
+  <input type="text" name="oauth_path" id="oauth_path" [(ngModel)]="path" i18n-placeholder placeholder="Enter the destination path" />
 </div>
 
 <div class="input text">
   <label for="oauth_authid">
-    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" translate>AuthID</a>
-    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" translate>AuthID</a>
+    <a *ngIf="oauthInProgress" [href]="oauthStartLink" target="_blank" i18n>AuthID</a>
+    <a *ngIf="!oauthInProgress" routerLink="." (click)="oauthStartTokenCreation()" i18n>AuthID</a>
   </label>
-  <input type="text" name="oauth_authid" id="oauth_authid" [(ngModel)]="authID" placeholder="Click the AuthID link to create an AuthID" />
+  <input type="text" name="oauth_authid" id="oauth_authid" [(ngModel)]="authID" i18n-placeholder placeholder="Click the AuthID link to create an AuthID" />
 </div>

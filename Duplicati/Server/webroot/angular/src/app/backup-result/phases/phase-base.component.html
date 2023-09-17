@@ -1,19 +1,19 @@
 <span (click)="expanded = !expanded" style="cursor: pointer">
   <i class="{{icon.resultIcon(results.ParsedResult)}}"></i>
-  <span class="key" translate>{{title}}</span>
+  <span class="key">{{title}}</span>
   <span class="value"><i class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i></span>
 </span>
 <div *ngIf="expanded" class="expanded">
   <span class="item">
-    <span class="key" translate>Start </span>
+    <span class="key" i18n>Start </span>
     <span class="value">{{ parseTimestampToSeconds(results.BeginTime) }}</span>
   </span>
   <span class="item">
-    <span class="key" translate>End </span>
+    <span class="key" i18n>End </span>
     <span class="value">{{ parseTimestampToSeconds(results.EndTime) }}</span>
   </span>
   <span class="item">
-    <span class="key" translate>Duration </span>
+    <span class="key" i18n>Duration </span>
     <span class="value">{{ convert.formatDuration(results.Duration) }}</span>
   </span>
 
@@ -21,7 +21,7 @@
 
   <div class="horizontal-rule"></div>
 
-  <app-message-list class="item" [messages]="results.Warnings" [length]="results.WarningsActualLength" type="Warning" title="Warnings"></app-message-list>
-  <app-message-list class="item" [messages]="results.Errors" [length]="results.ErrorsActualLength" type="Error" title="Errors"></app-message-list>
+  <app-message-list class="item" [messages]="results.Warnings" [length]="results.WarningsActualLength" type="Warning" i18n-title title="Warnings"></app-message-list>
+  <app-message-list class="item" [messages]="results.Errors" [length]="results.ErrorsActualLength" type="Error" i18n-title title="Errors"></app-message-list>
   <ng-content select="app-message-list"></ng-content>
 </div>

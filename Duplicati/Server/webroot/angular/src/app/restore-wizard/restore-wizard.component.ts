@@ -33,4 +33,8 @@ export class RestoreWizardComponent {
       this.router.navigate(['/restore', this.selection.backupId]);
     }
   }
+
+  getLastDuration(metadata: Record<string, string>): string | undefined {
+    return this.convert.formatDuration(metadata['LastRestoreDuration']) || '0 seconds';
+  }
 }

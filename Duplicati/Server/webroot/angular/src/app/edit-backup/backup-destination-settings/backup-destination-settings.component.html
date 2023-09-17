@@ -1,13 +1,13 @@
 <form class="styled">
   <div class="headerthreedotmenu">
-    <h2 translate>Backup destination</h2>
+    <h2 i18n>Backup destination</h2>
 
     <div class="contextmenu_container">
-      <a routerLink="." [matMenuTriggerFor]="menu" title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton" /></a>
+      <a routerLink="." [matMenuTriggerFor]="menu" i18n-title title="Menu"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination" class="threedotmenubutton" /></a>
 
       <mat-menu class="contextmenu" id="threedotmenu_add_destination" #menu="matMenu">
-        <button mat-menu-item (click)="importUrl()" translate>Import Destination URL</button>
-        <button mat-menu-item (click)="copyUrlToClipboard()" translate>Copy Destination URL to Clipboard</button>
+        <button mat-menu-item (click)="importUrl()" i18n>Import Destination URL</button>
+        <button mat-menu-item (click)="copyUrlToClipboard()" i18n>Copy Destination URL to Clipboard</button>
       </mat-menu>
     </div>
   </div>
@@ -15,7 +15,7 @@
   <app-backup-edit-uri></app-backup-edit-uri>
 
   <div class="buttons">
-    <input class="submit next" type="button" id="nextStep2" (click)="next.emit()" value="Next &gt;" />
-    <input class="submit prev" type="button" id="prevStep2" (click)="prev.emit()" value="&lt; Previous" />
+    <input class="submit next" type="button" id="nextStep2" (click)="next.emit()" i18n-value value="Next &gt;" />
+    <input class="submit prev" type="button" id="prevStep2" (click)="prev.emit()" i18n-value value="&lt; Previous" />
   </div>
 </form>

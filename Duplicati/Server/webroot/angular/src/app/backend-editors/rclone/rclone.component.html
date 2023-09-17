@@ -1,13 +1,13 @@
 <div class="input text">
-  <label for="rclone_local_repository" translate>Local repository</label>
-  <input type="text" name="rclone_local_repository" id="rclone_local_repository" [(ngModel)]="localRepository" placeholder="local repository, eg local" />
+  <label for="rclone_local_repository" i18n>Local repository</label>
+  <input type="text" name="rclone_local_repository" id="rclone_local_repository" [(ngModel)]="localRepository" i18n-placeholder placeholder="local repository, eg local" />
 </div>
 <div class="input text">
-  <label for="rclone_remote_repository" translate>Remote repository</label>
-  <input type="text" name="rclone_remote_repository" id="rclone_remote-repository" [(ngModel)]="server" placeholder="remote repository, eg. remote" />
+  <label for="rclone_remote_repository" i18n>Remote repository</label>
+  <input type="text" name="rclone_remote_repository" id="rclone_remote-repository" [(ngModel)]="server" i18n-placeholder placeholder="remote repository, eg. remote" />
 </div>
 <div class="input text">
-  <label for="rclone_remote_path" translate>Remote path</label>
-  <input type="text" name="rclone_remote_path" id="rclone_remote_path" [(ngModel)]="path" placeholder="remote path, eg backup" />
+  <label for="rclone_remote_path" i18n>Remote path</label>
+  <input type="text" name="rclone_remote_path" id="rclone_remote_path" [(ngModel)]="path" i18n-placeholder placeholder="remote path, eg backup" />
 </div>
 <div>Make sure that rclone is in your path, or add the location to rclone via the advanced options.</div>

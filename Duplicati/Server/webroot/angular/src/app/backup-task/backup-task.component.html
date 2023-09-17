@@ -11,72 +11,71 @@
   </a>
 
   <dl class="taskmenu" *ngIf="expanded">
-    <dt *ngIf="description" translate>Description:</dt>
+    <dt *ngIf="description" i18n>Description:</dt>
     <dd *ngIf="description">
       {{description}}
     </dd>
 
-    <dt translate>Operations:</dt>
+    <dt i18n>Operations:</dt>
     <dd>
-      <p (click)="doRun()" translate>Run now</p>
-      <p (click)="doRestore()" translate>Restore files …</p>
+      <p (click)="doRun()" i18n>Run now</p>
+      <p (click)="doRestore()" i18n>Restore files …</p>
     </dd>
 
-    <dt translate>Configuration:</dt>
+    <dt i18n>Configuration:</dt>
     <dd>
-      <p (click)="doEdit()" translate>Edit …</p>
-      <p (click)="doExport()" translate>Export …</p>
-      <p (click)="doDelete()" translate>Delete …</p>
+      <p (click)="doEdit()" i18n>Edit …</p>
+      <p (click)="doExport()" i18n>Export …</p>
+      <p (click)="doDelete()" i18n>Delete …</p>
 
     </dd>
 
-    <dt translate>Advanced:</dt>
+    <dt i18n>Advanced:</dt>
     <dd>
-      <p (click)="doLocalDb()" translate>Database …</p>
-      <p (click)="doVerifyRemote()" translate>Verify files</p>
-      <p (click)="doCompact()" translate>Compact now</p>
-      <p (click)="doCommandLine()" translate>Commandline …</p>
+      <p (click)="doLocalDb()" i18n>Database …</p>
+      <p (click)="doVerifyRemote()" i18n>Verify files</p>
+      <p (click)="doCompact()" i18n>Compact now</p>
+      <p (click)="doCommandLine()" i18n>Commandline …</p>
     </dd>
 
-    <dt translate>Reporting:</dt>
+    <dt i18n>Reporting:</dt>
     <dd>
-      <p (click)="doShowLog()" translate>Show log …</p>
-      <p (click)="doCreateBugReport()" translate>Create bug report …</p>
+      <p (click)="doShowLog()" i18n>Show log …</p>
+      <p (click)="doCreateBugReport()" i18n>Create bug report …</p>
     </dd>
   </dl>
 
   <dl>
-    <dt translate>Last successful backup:</dt>
+    <dt i18n>Last successful backup:</dt>
     <dd *ngIf="lastBackupFinished != null"
-        title="{{lastBackupFinished}}">
+        title="{{lastBackupFinished}}" i18n>
       {{lastBackupFinishedTime}} (took {{lastBackupFinishedDuration}})
     </dd>
     <dd>
-      <span *ngIf="lastBackupFinished == null">Never - </span><a routerLink="." class="action-link" (click)="doRun()" translate>Run now</a>
+      <span *ngIf="lastBackupFinished == null"><ng-container i18n>Never</ng-container> - </span><a routerLink="." class="action-link" (click)="doRun()" i18n>Run now</a>
     </dd>
 
-    <dt *ngIf="nextScheduledRun" translate>Next scheduled run:</dt>
+    <dt *ngIf="nextScheduledRun" i18n>Next scheduled run:</dt>
     <dd *ngIf="nextScheduledRun" title="{{nextScheduledRun}}">{{nextScheduledRunDate}}</dd>
-    <dt *ngIf="sourceSizeString" translate>Source:</dt>
+    <dt *ngIf="sourceSizeString" i18n>Source:</dt>
     <dd *ngIf="sourceSizeString">{{sourceSizeString}}</dd>
-    <dt *ngIf="targetSizeString" translate>Backup:</dt>
-    <dd *ngIf="targetSizeString" translate>
-      <!--translate-n="backupListCount" translate-plural="{{targetSizeString}} / {{backupListCount}} Versions"-->
-      {{targetSizeString}} / {{backupListCount}} Version
+    <dt *ngIf="targetSizeString" i18n>Backup:</dt>
+    <dd *ngIf="targetSizeString">{backupListCount, plural,
+      one { {{targetSizeString}} / {{backupListCount}} Version}
+      other { {{targetSizeString}} / {{backupListCount}} Versions} }
     </dd>
-
     <ng-container *ngIf="isActive && progressCurrentFilename != null">
-      <dt translate>Current action:</dt>
+      <dt i18n>Current action:</dt>
       <dd>{{progressPhase}}</dd>
-      <dt translate>Progress:</dt>
+      <dt i18n>Progress:</dt>
       <dd>
         <div class="progress-small-bg">
-          <div class="progress-small" style="width: {{progressBarPercentage * 2}}px">
+          <div class="progress-small" [style.width.px]="progressBarPercentage * 2">
             {{progressBarPercentage | number:'1.0-2'}}%
           </div>
         </div>
       </dd>
-      <dt translate>Current file:</dt>
+      <dt i18n>Current file:</dt>
       <dd>{{progressCurrentFilename}}</dd>
     </ng-container>
   </dl>

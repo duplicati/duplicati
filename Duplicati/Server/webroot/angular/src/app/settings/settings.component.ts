@@ -44,7 +44,6 @@ export class SettingsComponent {
     this.themeService.previewTheme(t);
   }
   channelname: string = '';
-  levelname: string = '';
   serverModules: any[] = [];
   showAdvancedTextArea: boolean = false;
 

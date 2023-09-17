@@ -1,30 +1,30 @@
 <div *ngIf="hideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
-  <label for="file_path" translate>Folder path</label>
-  <input type="text" name="file_path" id="file_path" [(ngModel)]="path" placeholder="Enter the destination path" />
-  <a routerLink="." id="file_targetFolderPathAdd" class="button" (click)="hideFolderBrowser = false" translate>Browse</a>
+  <label for="file_path" i18n>Folder path</label>
+  <input type="text" name="file_path" id="file_path" [(ngModel)]="path" i18n-placeholder placeholder="Enter the destination path" />
+  <a routerLink="." id="file_targetFolderPathAdd" class="button" (click)="hideFolderBrowser = false" i18n>Browse</a>
 </div>
 
 <div class="input text" [hidden]="hideFolderBrowser">
 
   <div class="input" style="padding-bottom: 0px">
     <a routerLink="." (click)="showHiddenFolders = !showHiddenFolders" class="floating-link">
-      <span *ngIf="showHiddenFolders" translate>Hide hidden folders</span>
-      <span *ngIf="!showHiddenFolders" translate>Show hidden folders</span>
+      <span *ngIf="showHiddenFolders" i18n>Hide hidden folders</span>
+      <span *ngIf="!showHiddenFolders" i18n>Show hidden folders</span>
     </a>
 
-    <a routerLink="." (click)="hideFolderBrowser = true" class="floating-link" translate>Manually type path</a>
+    <a routerLink="." (click)="hideFolderBrowser = true" class="floating-link" i18n>Manually type path</a>
   </div>
 
-  <label for="folder_path_picker" translate>Folder path</label>
+  <label for="folder_path_picker" i18n>Folder path</label>
   <app-destination-folder-picker class="filepicker" id="folder_path_picker" [(path)]="path" [showHidden]="showHiddenFolders" [hideUserNode]="true"></app-destination-folder-picker>
 
 </div>
 
 <div class="input text">
-  <label for="file_username" translate>Username</label>
-  <input type="text" name="file_username" id="file_username" [(ngModel)]="username" placeholder="Optional authentication username" />
+  <label for="file_username" i18n>Username</label>
+  <input type="text" name="file_username" id="file_username" [(ngModel)]="username" i18n-placeholder placeholder="Optional authentication username" />
 </div>
 <div class="input password">
-  <label for="file_password" translate>Password</label>
-  <input autocomplete="new-password" type="password" name="file_password" id="file_password" [(ngModel)]="password" placeholder="Optional authentication password" />
+  <label for="file_password" i18n>Password</label>
+  <input autocomplete="new-password" type="password" name="file_password" id="file_password" [(ngModel)]="password" i18n-placeholder placeholder="Optional authentication password" />
 </div>

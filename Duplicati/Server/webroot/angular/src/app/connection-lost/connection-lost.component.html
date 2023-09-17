@@ -2,17 +2,16 @@
 
 <div id="connection-lost-dialog" *ngIf="connectionState !== 'connected'" class="connection-lost">
   <div class="info">
-    <div class="title" translate>Connection lost</div>
-    <div class="content" *ngIf="connectionState !=='connecting'" translate>
-      <!--translate-params-time="(state.connectionAttemptTimer + 1000) | timeremaining"-->
+    <div class="title" i18n>Connection lost</div>
+    <div class="content" *ngIf="connectionState !=='connecting'" i18n>
       The connection to the server is lost, attempting again in {{connectionTimer}} ...
     </div>
-    <div class="content" translate *ngIf="connectionState === 'connecting'">
+    <div class="content" i18n *ngIf="connectionState === 'connecting'">
       Connecting to server …
     </div>
     <div class="content buttons">
-      <a routerLink="." *ngIf="connectionState !== 'connecting'" (click)="doReconnect()" class="button" translate>Connect now</a>
-      <a routerLink="." *ngIf="connectionState === 'connecting'" class="button" style="cursor: default;" translate>Connecting...</a>
+      <a routerLink="." *ngIf="connectionState !== 'connecting'" (click)="doReconnect()" class="button" i18n>Connect now</a>
+      <a routerLink="." *ngIf="connectionState === 'connecting'" class="button" style="cursor: default;" i18n>Connecting...</a>
     </div>
   </div>
 </div>

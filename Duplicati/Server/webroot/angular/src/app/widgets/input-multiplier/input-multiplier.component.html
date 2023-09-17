@@ -1,7 +1,7 @@
-<label for="{{name}}Number" translate><ng-content></ng-content></label>
+<label for="{{name}}Number"><ng-content></ng-content></label>
 <input *ngIf="!showCustomInput()" type="number" class="number" id="{{name}}Number" [(ngModel)]="number" name="{{name}}Number" [disabled]="disabled" />
 <select id="{{name}}Multiplier" name="{{name}}Multiplier" [(ngModel)]="multiplier" [disabled]="disabled">
-  <option value="" translate *ngIf="hasCustom">custom</option>
+  <option value="" i18n *ngIf="hasCustom">custom</option>
   <option [value]="transformCase(item.value)" *ngFor="let item of multipliers">{{item.name}}</option>
 </select>
 
