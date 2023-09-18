@@ -2,7 +2,10 @@
 <span class="item" ng-if="item.Result.Interrupted">
     <span class="key" translate>Interrupted, no statistics collected</span>
 </span>
-<div ng-if="!item.Result.Interrupted">
+<span class="item" ng-if="item.Result.ParsedResult == 'Fatal'">
+    <span class="key" translate>Fatal error, no statistics collected</span>
+</span>
+<div ng-if="!item.Result.Interrupted &amp;&amp; item.Result.ParsedResult != 'Fatal'">
     <span class="item">
         <span class="key" translate>Examined </span>
         <span class="value">{{ item.Result.ExaminedFiles || '0' }} ({{ formatSize(item.Result.SizeOfExaminedFiles) }})</span>
