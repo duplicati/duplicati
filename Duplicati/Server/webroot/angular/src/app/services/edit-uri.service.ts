@@ -1,5 +1,9 @@
 import { Optional } from '@angular/core';
+import { BootstrapOptions } from '@angular/core';
 import { Inject, Injectable, Injector, Type } from '@angular/core';
+import { defaultIfEmpty } from 'rxjs';
+import { of } from 'rxjs';
+import { filter, map, Observable } from 'rxjs';
 import { BackendEditorComponent, BACKEND_EDITORS, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBackendData, DEFAULT_BACKEND_EDITOR } from '../backend-editor';
 import { GroupedModuleDescription, ModuleDescription } from '../system-info/system-info';
 import { DialogService } from './dialog.service';
@@ -139,21 +143,37 @@ export class EditUriService {
     return true;
   }
 
+  requireServer(data: CommonBackendData): boolean {
+    if ((data.server || '').trim().length == 0) {
+      this.dialog.dialog($localize`Error`, $localize`You must fill in the server name or address`);
+      return false;
+    }
+    return true;
+  }
+
   invalidCharacterError(fieldName: string, character: string, charCode: number, index: number) {
     this.dialog.dialog($localize`Error`, $localize`The '${fieldName}' field contains an invalid character: ${character} (value: ${charCode}, index: ${index})`);
   }
 
-  recommendField<Data>(data: Data, field: keyof (Data) & string, warning: string): boolean {
+  showWarningDialog(warning: string): Observable<boolean> {
+    return this.dialog.dialogObservable($localize`Confirmation required`, warning, [$localize`No`, $localize`Yes`]).pipe(
+      filter(v => v.event == 'button' && v.buttonIndex == 1),
+      map(() => true),
+      defaultIfEmpty(false)
+    );
+  }
+
+  recommendField<Data>(data: Data, field: keyof (Data) & string, warning: string): Observable<boolean> {
     if (((data[field] || '') as string).trim().length == 0) {
-      this.dialog.dialog($localize`Confirmation required`, warning, [$localize`No`, $localize`Yes`],
-        (ix) => {
-          if (ix == 1) {
-            //continuation()
-          }
-        });
-      return false;
+      return this.showWarningDialog(warning);
     }
-    return true;
+    return of(true);
+  }
+  recommendPath(data: CommonBackendData): Observable<boolean> {
+    if ((data.path || '').trim().length == 0) {
+      return this.showWarningDialog($localize`If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?`);
+    }
+    return of(true);
   }
 
   isSslSupported(backend: ModuleDescription | undefined): boolean {

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Inject, Input, Output } from '@angular/core';
-import { EmptyError } from 'rxjs';
+import { EmptyError, map } from 'rxjs';
 import { Subscription } from 'rxjs';
 import { DialogService } from '../../services/dialog.service';
 import { EditUriService } from '../../services/edit-uri.service';
@@ -9,6 +9,7 @@ import { BackendEditorComponent, BACKEND_KEY, BACKEND_SUPPORTS_SSL, CommonBacken
 import { Observable } from 'rxjs';
 import { EMPTY } from 'rxjs';
 import { of } from 'rxjs';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-editor-oauth',
@@ -64,12 +65,8 @@ export class OauthComponent implements BackendEditorComponent {
     };
     this.editUri.mergeAdvancedOptions(this.commonData, advancedOptions, opts);
 
-    const valid = this.validate();
-    if (!valid) {
-      return EMPTY;
-    }
-
-    return of(`${this.key}${this.supportsSSL && this.commonData.useSSL ? 's' : ''}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
+    return this.validate().pipe(filter(v => v),
+      map(() => `${this.key}${this.supportsSSL && this.commonData.useSSL ? 's' : ''}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`));
   }
 
   extraConnectionTests(): Observable<boolean> {
@@ -91,9 +88,10 @@ export class OauthComponent implements BackendEditorComponent {
     );
   }
 
-  protected validate(): boolean {
-    return this.editUri.requireField(this, 'authID', $localize`AuthID`)
-      && this.editUri.recommendField(this.commonData, 'path',
-        $localize`If you do not enter a path, all files will be stored in the login folder.\nAre you sure this is what you want?`);
+  protected validate(): Observable<boolean> {
+    if (this.editUri.requireField(this, 'authID', $localize`AuthID`)) {
+      return this.editUri.recommendPath(this.commonData);
+    }
+    return of(false);
   }
 }

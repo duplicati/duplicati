@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { of } from 'rxjs';
+import { switchMap } from 'rxjs';
 import { EMPTY, Observable } from 'rxjs';
 import { CommonBackendData } from '../../backend-editor';
 import { OauthComponent } from '../oauth/oauth.component';
@@ -37,11 +38,11 @@ export class MsgroupComponent extends OauthComponent {
     return of(`${this.key}://${this.commonData.path || ''}${this.parser.encodeDictAsUrl(opts)}`);
   }
 
-  override validate(): boolean {
+  override validate(): Observable<boolean> {
     const field = $localize`Group email`;
     const reason = $localize` unless you are explicitly specifying --group-id`;
-    return super.validate()
-      && this.editUri.recommendField(this, 'groupEmail',
-        $localize`You should fill in ${field}${reason}`);
+    return super.validate().pipe(
+      switchMap(v => v ? this.editUri.recommendField(this, 'groupEmail',
+        $localize`You should fill in ${field}${reason}`) : of(false)));
   }
 }

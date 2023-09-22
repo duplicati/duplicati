@@ -19,6 +19,7 @@ import { SiaComponent } from './sia/sia.component';
 import { StorjComponent } from './storj/storj.component';
 import { TardigradeComponent } from './tardigrade/tardigrade.component';
 import { backendEditorProviders, } from './index';
+import { genericValidatorProviders } from './generic/generic-validators';
 
 
 
@@ -40,14 +41,15 @@ import { backendEditorProviders, } from './index';
     SharepointComponent,
     SiaComponent,
     StorjComponent,
-    TardigradeComponent
+    TardigradeComponent,
   ],
   imports: [
     FormsModule,
     CommonModule
   ],
   providers: [
-    backendEditorProviders
+    backendEditorProviders,
+    genericValidatorProviders
   ]
 })
 export class BackendEditorsModule { }
