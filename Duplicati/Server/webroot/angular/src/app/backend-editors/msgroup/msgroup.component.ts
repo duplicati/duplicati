@@ -38,8 +38,10 @@ export class MsgroupComponent extends OauthComponent {
   }
 
   override validate(): boolean {
+    const field = $localize`Group email`;
+    const reason = $localize` unless you are explicitly specifying --group-id`;
     return super.validate()
       && this.editUri.recommendField(this, 'groupEmail',
-      $localize`You should fill in ` + $localize`Group email` + $localize` unless you are explicitly specifying --group-id`);
+        $localize`You should fill in ${field}${reason}`);
   }
 }

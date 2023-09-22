@@ -139,6 +139,10 @@ export class EditUriService {
     return true;
   }
 
+  invalidCharacterError(fieldName: string, character: string, charCode: number, index: number) {
+    this.dialog.dialog($localize`Error`, $localize`The '${fieldName}' field contains an invalid character: ${character} (value: ${charCode}, index: ${index})`);
+  }
+
   recommendField<Data>(data: Data, field: keyof (Data) & string, warning: string): boolean {
     if (((data[field] || '') as string).trim().length == 0) {
       this.dialog.dialog($localize`Confirmation required`, warning, [$localize`No`, $localize`Yes`],

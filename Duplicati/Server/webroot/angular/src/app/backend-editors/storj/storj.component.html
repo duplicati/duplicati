@@ -3,7 +3,7 @@
   <select name="storj_auth_method" id="storj_auth_method" [(ngModel)]="storjAuthMethod">
     <option [ngValue]="e.value" *ngFor="let e of storjAuthMethods | keyvalue">{{e.key + ' (' + (e.value || '') + ')'}}</option>
     <option value="" i18n>
-      Authentication method ()
+      Authentication method ({{''}})
     </option>
   </select>
 </div>

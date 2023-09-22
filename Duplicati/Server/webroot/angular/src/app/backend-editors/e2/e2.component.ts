@@ -86,7 +86,7 @@ export class E2Component implements BackendEditorComponent {
       let ix = bucketname.search(/[^A-Za-z0-9-]/g);
 
       if (ix >= 0) {
-        this.dialog.dialog($localize`Error`, $localize`The 'Bucket Name' contains an invalid character: ${bucketname[ix]} (value: ${bucketname.charCodeAt(ix)}, index: ${ix})`);
+        this.editUri.invalidCharacterError('Bucket Name', bucketname[ix], bucketname.charCodeAt(ix), ix);
         res = false;
       }
     }
@@ -96,7 +96,7 @@ export class E2Component implements BackendEditorComponent {
         var char = pathname.charCodeAt(i);
 
         if (char == '\\'.charCodeAt(0) || char == 127 || char < 32) {
-          this.dialog.dialog($localize`Error`, $localize`The 'Path' field contains an invalid character: ${pathname[i]} (value: ${char}, index: ${i})`);
+          this.editUri.invalidCharacterError('Path', pathname[i], pathname.charCodeAt(i), i);
           res = false;
           break;
         }

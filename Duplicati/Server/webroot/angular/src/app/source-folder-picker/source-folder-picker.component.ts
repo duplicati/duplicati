@@ -294,7 +294,7 @@ export class SourceFolderPickerComponent {
         filtersChanged = true;
       }
       if (this.filterService.isExcludedBySize(node.node, this.excludeSize)) {
-        this.dialog.dialog($localize`Cannot include "${node.node.text}`,
+        this.dialog.dialog($localize`Cannot include "${node.node.text}"`,
           $localize`The file size is ${this.convert.formatSizeString(node.node.fileSize || 0)}, larger than the maximum specified size. If the file size decreases, it will be included in future backups.`);
       }
     }

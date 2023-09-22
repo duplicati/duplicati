@@ -82,7 +82,7 @@ export class FileFilterService {
 
   // TODO: Inject this
   private filterClasses: FilterClass[] = [new FilterClass({
-    name: $localize`Exclude directories whose name contain`,
+    name: $localize`Exclude directories whose names contain`,
     key: '-dir*',
     prefix: '-*',
     suffix: '*!'

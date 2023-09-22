@@ -35,7 +35,7 @@
   <div>
     <div *ngIf="showAdvancedTextArea">
       <label for="targetOptions" i18n>Options</label>
-      <textarea id="targetOptions" name="targetOptions" appStringArrayText i18n-placeholder placeholder="{{convert.format(parser.exampleOptionString, '--use-ssl=true')}}" [(ngModel)]="advancedOptions"></textarea>
+      <textarea id="targetOptions" name="targetOptions" appStringArrayText placeholder="{{convert.format(parser.exampleOptionString, '--use-ssl=true')}}" [(ngModel)]="advancedOptions"></textarea>
     </div>
 
     <app-advanced-options-editor *ngIf="!showAdvancedTextArea" [optionList]="advancedOptionList" [options]="advancedOptions"></app-advanced-options-editor>
