@@ -604,7 +604,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         opts['s3-client']=scope.s3_client.name;
         
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         var url = AppUtils.format('{0}{1}://{2}/{3}{4}',
             scope.Backend.Key,
@@ -620,7 +620,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.builders['file'] = function (scope) {
         var opts = {}
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
         var url = AppUtils.format('file://{0}{1}',
             scope.Path,
             AppUtils.encodeDictAsUrl(opts)
@@ -633,7 +633,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         var opts = {
             'authid': scope.AuthID
         }
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}{1}://{2}{3}',
             scope.Backend.Key,
@@ -675,7 +675,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['openstack-version'] || '') == '')
             delete opts['openstack-version'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
@@ -689,7 +689,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['azure'] = function (scope) {
         var opts = {};
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         // Slightly better error message
         scope.Folder = scope.Path;
@@ -712,7 +712,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['group-email'] || '') == '')
             delete opts['group-email'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
@@ -738,7 +738,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['gcs-project'] || '') == '')
             delete opts['gcs-project'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
@@ -752,7 +752,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['b2'] = function (scope) {
         var opts = {};
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         // Slightly better error message
         scope.Folder = scope.Server;
@@ -770,7 +770,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['e2'] = function (scope) {
         var opts = {};
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         // Slightly better error message
         scope.Folder = scope.Server;
@@ -788,7 +788,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['mega'] = function (scope) {
         var opts = {};
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         // Slightly better error message
         scope.Folder = scope.Path;
@@ -809,7 +809,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'sia-redundancy': scope.sia_redundancy
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}/{2}{3}',
             scope.Backend.Key,
@@ -832,7 +832,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'storj-folder': scope.storj_folder
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://storj.io/config{1}',
             scope.Backend.Key,
@@ -853,7 +853,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'tardigrade-folder': scope.tardigrade_folder
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://tardigrade.io/config{1}',
             scope.Backend.Key,
@@ -877,7 +877,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete opts['rclone-option'];
 
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}/{2}{3}',
             scope.Backend.Key,
@@ -901,7 +901,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 			'cos-bucket': scope.cos_bucket
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
