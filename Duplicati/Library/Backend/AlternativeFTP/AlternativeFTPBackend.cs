@@ -52,6 +52,9 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         private const string CONFIG_KEY_AFTP_SSL_PROTOCOLS = "aftp-ssl-protocols";
         private const string CONFIG_KEY_AFTP_UPLOAD_DELAY = "aftp-upload-delay";
 
+        private const string CONFIG_KEY_AFTP_LOGTOCONSOLE = "aftp-log-to-console";
+        private const string CONFIG_KEY_AFTP_LOGPRIVATEINFOTOCONSOLE = "aftp-log-privateinfo-to-console";
+
         private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
         private const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
@@ -67,6 +70,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         private readonly FtpConfig _ftpConfig;
         private readonly TimeSpan _uploadWaitTime;
 
+        private readonly bool _logToConsole = false;
+        private readonly bool _logPrivateInfoToConsole = false;
         private readonly byte[] _copybuffer = new byte[CoreUtility.DEFAULT_BUFFER_SIZE];
         private readonly bool _accepAllCertificates;
         private readonly string[] _validHashes;
@@ -102,6 +107,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                           new CommandLineArgument(CONFIG_KEY_AFTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
                           new CommandLineArgument(CONFIG_KEY_AFTP_SSL_PROTOCOLS, CommandLineArgument.ArgumentType.Flags, Strings.DescriptionSslProtocolsShort, Strings.DescriptionSslProtocolsLong, DEFAULT_SSL_PROTOCOLS_STRING, null, Enum.GetNames(typeof(SslProtocols))),
                           new CommandLineArgument(CONFIG_KEY_AFTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
+                          new CommandLineArgument(CONFIG_KEY_AFTP_LOGTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogToConsoleShort, Strings.DescriptionLogToConsoleLong),
+                          new CommandLineArgument(CONFIG_KEY_AFTP_LOGPRIVATEINFOTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogPrivateInfoToConsoleShort, Strings.DescriptionLogPrivateInfoToConsoleLong, "false"),
                      });
             }
         }
@@ -203,12 +210,28 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 sslProtocols = DEFAULT_SSL_PROTOCOLS;
             }
 
+            if (Utility.Utility.ParseBoolOption(options, CONFIG_KEY_AFTP_LOGTOCONSOLE))
+            {
+                _logToConsole = true;
+            }
+
+            if (Utility.Utility.ParseBoolOption(options, CONFIG_KEY_AFTP_LOGPRIVATEINFOTOCONSOLE))
+            {
+                _logPrivateInfoToConsole = true;
+            }
+
             _ftpConfig = new FtpConfig
             {
                 DataConnectionType = dataConnectionType,
                 EncryptionMode = encryptionMode,
                 SslProtocols = sslProtocols,
+                LogToConsole = _logToConsole,
             };
+
+            if (_logPrivateInfoToConsole)
+            {
+                _ftpConfig.LogHost = _ftpConfig.LogPassword = _ftpConfig.LogUserName = true;
+            }
         }
 
         public IEnumerable<IFileEntry> List()
@@ -537,6 +560,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 ftpClient.ValidateCertificate += HandleValidateCertificate;
 
                 this.Client = ftpClient;
+
             } // else reuse existing connection
 
             if (setWorkingDirectory)
