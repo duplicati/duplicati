@@ -59,7 +59,8 @@ namespace Duplicati.Library.Main.Operation
                     {
                         while (true)
                         {
-                            var path = await self.source.ReadAsync();
+                            var fileEnumerationEntry = await self.source.ReadAsync();
+                            var path = fileEnumerationEntry.Path;
                             var fa = FileAttributes.Normal;
                             try { fa = snapshot.GetAttributes(path); }
                             catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }

@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -161,7 +162,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sources">Sources to enumerate</param>
         /// <param name="callback">The callback to invoke with each found path</param>
         /// <param name="errorCallback">The callback used to report errors</param>
-        public override IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
+        public override IEnumerable<FileEnumerationEntry> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
         {
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
             return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix), callback, errorCallback);

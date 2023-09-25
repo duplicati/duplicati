@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using CoCoL;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -51,7 +52,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <summary>
         /// When enumerating the source folders, all discovered paths are sent by the <see cref="FileEnumerationProcess"/> to the <see cref="MetadataPreProcess"/> 
         /// </summary>
-        public static readonly ChannelMarkerWrapper<string> SourcePaths = new ChannelMarkerWrapper<string>(new ChannelNameAttribute("SourcePaths"));
+        public static readonly ChannelMarkerWrapper<FileEnumerationEntry> SourcePaths = new ChannelMarkerWrapper<FileEnumerationEntry>(new ChannelNameAttribute("SourcePaths"));
         /// <summary>
         /// All progress events are communicated over this channel, to ensure that parallel progress is reported as a if it was sequential
         /// </summary>

@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // 
 #endregion
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,7 +35,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="sources">Sources to enumerate</param>
         /// <param name="callback">The callback to invoke with each found path</param>
         /// <param name="errorCallback">The callback used to report errors</param>
-        IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback);
+        IEnumerable<FileEnumerationEntry> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback);
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
