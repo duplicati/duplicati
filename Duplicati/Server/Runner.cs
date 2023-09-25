@@ -625,7 +625,7 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
-                Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
+                Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing {0} \"{1}\" (id: {2})", data.Operation, data.Backup.Name, data.Backup.ID), ex);
                 UpdateMetadataError(data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
 
