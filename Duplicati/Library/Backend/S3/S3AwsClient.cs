@@ -42,11 +42,12 @@ namespace Duplicati.Library.Backend
         private readonly string m_locationConstraint;
         private readonly string m_storageClass;
         private AmazonS3Client m_client;
+        private readonly bool m_useChunkEncoding;
 
         private readonly string m_dnsHost;
 
         public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
-            string storageClass, bool useSSL, Dictionary<string, string> options)
+            string storageClass, bool useSSL, bool disableChunkEncoding, Dictionary<string, string> options)
         {
             var cfg = new AmazonS3Config
             {
@@ -82,6 +83,7 @@ namespace Duplicati.Library.Backend
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
             m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
+            m_useChunkEncoding = !disableChunkEncoding;
         }
 
         public void AddBucket(string bucketName)
@@ -133,7 +135,8 @@ namespace Duplicati.Library.Backend
             {
                 BucketName = bucketName,
                 Key = keyName,
-                InputStream = source
+                InputStream = source,
+                UseChunkEncoding = m_useChunkEncoding
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
