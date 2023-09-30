@@ -1,0 +1,19 @@
+<i class="{{ResultIcon(item.Result ? item.Result.ParsedResult : 'None')}}"></i>
+{{item.Timestamp | parsetimestamp}} - {{"Operation" | translate}}: {{item.Result ? item.Result.MainOperation : item.Type | translate}}
+<!-- Different description based on result -->
+<span ng-if="item.Result && item.Result.ParsedResult == 'Fatal'" translate>failed</span>
+<span ng-if="item.Result && item.Result.ParsedResult == 'Error'" translate
+      translate-n="item.Result.ErrorsActualLength" 
+      translate-plural="({{$count}} errors{{item.Result.Interrupted? (', interrupted'|translate) : ''}})">
+    (1 error{{item.Result.Interrupted? (', interrupted'|translate) : ''}})
+</span>
+<span ng-if="item.Result && item.Result.ParsedResult == 'Warning'" translate
+      translate-n="item.Result.WarningsActualLength"
+      translate-plural="({{$count}} warnings{{item.Result.Interrupted? (', interrupted'|translate) : ''}})">
+    (1 warning{{item.Result.Interrupted? (', interrupted'|translate) : ''}})
+</span>
+<span ng-if="item.Result && item.Result.ParsedResult == 'Success' && item.Result.Interrupted" translate>
+    (interrupted)
+</span>
+<i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+<div style="clear: both;"></div>

@@ -37,21 +37,21 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AWSSDK.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.3.103.37\lib\net45\AWSSDK.Core.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.Core.3.3.103.71\lib\net45\AWSSDK.Core.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.IdentityManagement, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.103.26\lib\net45\AWSSDK.IdentityManagement.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.103.52\lib\net45\AWSSDK.IdentityManagement.dll</HintPath>
     </Reference>
     <Reference Include="AWSSDK.S3, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.104.25\lib\net45\AWSSDK.S3.dll</HintPath>
+      <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.104.43\lib\net45\AWSSDK.S3.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Minio, Version=3.1.7.0, Culture=neutral, PublicKeyToken=348239ebd7debb4c">
-      <HintPath>..\..\..\..\packages\Minio.3.1.7\lib\net46\Minio.dll</HintPath>
+    <Reference Include="Minio, Version=3.1.13.0, Culture=neutral, PublicKeyToken=348239ebd7debb4c">
+      <HintPath>..\..\..\..\packages\Minio.3.1.13\lib\net46\Minio.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="RestSharp, Version=106.3.1.0, Culture=neutral, PublicKeyToken=598062e77f915f75">
-      <HintPath>..\..\..\..\packages\RestSharp.106.3.1\lib\net452\RestSharp.dll</HintPath>
+    <Reference Include="RestSharp, Version=106.0.0.0, Culture=neutral, PublicKeyToken=598062e77f915f75">
+      <HintPath>..\..\..\..\packages\RestSharp.106.10.1\lib\net452\RestSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -106,11 +106,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Analyzer Include="..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.103.26\analyzers\dotnet\cs\AWSSDK.IdentityManagement.CodeAnalysis.dll" />
-    <Analyzer Include="..\..\..\..\packages\AWSSDK.S3.3.3.104.25\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
+    <Analyzer Include="..\..\..\..\packages\AWSSDK.IdentityManagement.3.3.103.52\analyzers\dotnet\cs\AWSSDK.IdentityManagement.CodeAnalysis.dll" />
+    <Analyzer Include="..\..\..\..\packages\AWSSDK.S3.3.3.104.43\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

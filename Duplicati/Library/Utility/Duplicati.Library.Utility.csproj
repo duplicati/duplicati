@@ -52,7 +52,6 @@
     <Compile Include="AsyncHttpRequest.cs" />
     <Compile Include="WinTools.cs" />
     <Compile Include="FilterGroups.cs" />
-    <Compile Include="KeyGenerator.cs" />
     <Compile Include="MD5HashHelper.cs" />
     <Compile Include="OverrideableStream.cs" />
     <Compile Include="ProgressReportingStream.cs" />

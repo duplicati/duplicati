@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
 EndProject
@@ -61,8 +61,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.OpenStack", "Duplicati\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj", "{D9E4E686-423C-48EC-A392-404E7C00860C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.HubiC", "Duplicati\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj", "{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
@@ -87,6 +85,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.J
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Rclone", "Duplicati\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj", "{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.IDrive", "Duplicati\Library\Backend\IDrive\Duplicati.Library.Backend.IDrive.csproj", "{C16639F6-DACC-4DD9-86CD-8B937516B340}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -109,10 +109,10 @@ Global
 		{19ECCE09-B5EB-406C-8C57-BAC66997D469}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19ECCE09-B5EB-406C-8C57-BAC66997D469}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19ECCE09-B5EB-406C-8C57-BAC66997D469}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94484FDB-2EFA-4CF0-9BE6-A561157B4F87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -261,6 +261,10 @@ Global
 		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C16639F6-DACC-4DD9-86CD-8B937516B340}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

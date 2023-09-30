@@ -453,7 +453,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             return false;
         }
 
-        if (!'IsUnencryptedOrPassphraseStored' in this.Backup) {
+        if (!('IsUnencryptedOrPassphraseStored' in this.Backup)) {
             return false;
         }
 

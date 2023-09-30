@@ -15,7 +15,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['file']        = 'templates/backends/file.html';
     EditUriBackendConfig.templates['s3']          = 'templates/backends/s3.html';
     EditUriBackendConfig.templates['googledrive'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['hubic']       = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['onedrive']    = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['onedrivev2']  = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sharepoint']  = 'templates/backends/sharepoint.html';
@@ -25,14 +24,16 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['gcs']         = 'templates/backends/gcs.html';
     EditUriBackendConfig.templates['b2']          = 'templates/backends/b2.html';
     EditUriBackendConfig.templates['mega']        = 'templates/backends/mega.html';
-    EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/jottacloud.html';
+    EditUriBackendConfig.templates['jottacloud']  = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['idrive']      = 'templates/backends/idrive.html';
     EditUriBackendConfig.templates['box']         = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['dropbox'] = 'templates/backends/oauth.html';
-    EditUriBackendConfig.templates['sia']       = 'templates/backends/sia.html';
-    EditUriBackendConfig.templates['storj']  = 'templates/backends/storj.html';
+    EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
+    EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
+    EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
 	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
 	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
+    EditUriBackendConfig.templates['e2'] = 'templates/backends/e2.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -262,11 +263,11 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
   
     EditUriBackendConfig.loaders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
-    EditUriBackendConfig.loaders['hubic']       = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['msgroup']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
@@ -417,10 +418,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     EditUriBackendConfig.parsers['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
-    EditUriBackendConfig.parsers['hubic']       = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.parsers['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
@@ -478,11 +479,18 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete options[nukeopts[x]];
     };
 
-    EditUriBackendConfig.parsers['mega'] = function (scope, module, server, port, path, options) {
-        EditUriBackendConfig.mergeServerAndPath(scope);
+    EditUriBackendConfig.parsers['e2'] = function (scope, module, server, port, path, options) {
+        if (options['--access-key-id'])
+            scope.Username = options['--access-key-id'];
+        if (options['--access-key-secret'])
+            scope.Password = options['--access-key-secret'];
+
+        var nukeopts = ['--access-key-id', '--access-key-secret'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
     };
 
-    EditUriBackendConfig.parsers['jottacloud'] = function (scope, module, server, port, path, options) {
+    EditUriBackendConfig.parsers['mega'] = function (scope, module, server, port, path, options) {
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
@@ -596,7 +604,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         opts['s3-client']=scope.s3_client.name;
         
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         var url = AppUtils.format('{0}{1}://{2}/{3}{4}',
             scope.Backend.Key,
@@ -612,7 +620,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.builders['file'] = function (scope) {
         var opts = {}
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
         var url = AppUtils.format('file://{0}{1}',
             scope.Path,
             AppUtils.encodeDictAsUrl(opts)
@@ -625,7 +633,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         var opts = {
             'authid': scope.AuthID
         }
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}{1}://{2}{3}',
             scope.Backend.Key,
@@ -638,11 +646,11 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
 
     EditUriBackendConfig.builders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
-    EditUriBackendConfig.builders['hubic']       = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['onedrivev2']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['sharepoint']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['msgroup']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.builders['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.builders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
 
@@ -667,7 +675,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['openstack-version'] || '') == '')
             delete opts['openstack-version'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
@@ -681,7 +689,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['azure'] = function (scope) {
         var opts = {};
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         // Slightly better error message
         scope.Folder = scope.Path;
@@ -704,7 +712,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['group-email'] || '') == '')
             delete opts['group-email'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
@@ -730,7 +738,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['gcs-project'] || '') == '')
             delete opts['gcs-project'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
@@ -744,7 +752,25 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['b2'] = function (scope) {
         var opts = {};
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
+
+        // Slightly better error message
+        scope.Folder = scope.Server;
+
+        var url = AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+            scope.Server || '',
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
+
+    EditUriBackendConfig.builders['e2'] = function (scope) {
+        var opts = {};
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         // Slightly better error message
         scope.Folder = scope.Server;
@@ -762,7 +788,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.builders['mega'] = function (scope) {
         var opts = {};
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         // Slightly better error message
         scope.Folder = scope.Path;
@@ -783,7 +809,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'sia-redundancy': scope.sia_redundancy
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}/{2}{3}',
             scope.Backend.Key,
@@ -806,7 +832,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'storj-folder': scope.storj_folder
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://storj.io/config{1}',
             scope.Backend.Key,
@@ -827,7 +853,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'tardigrade-folder': scope.tardigrade_folder
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://tardigrade.io/config{1}',
             scope.Backend.Key,
@@ -851,7 +877,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             delete opts['rclone-option'];
 
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}/{2}{3}',
             scope.Backend.Key,
@@ -865,23 +891,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     }
 
-    EditUriBackendConfig.builders['jottacloud'] = function (scope) {
-        var opts = {};
-
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
-
-        // Slightly better error message
-        scope.Folder = scope.Path;
-
-        var url = AppUtils.format('{0}://{1}{2}',
-            scope.Backend.Key,
-            scope.Path,
-            AppUtils.encodeDictAsUrl(opts)
-        );
-
-        return url;
-    };
-
 
     EditUriBackendConfig.builders['cos'] = function (scope) {
         var opts = {
@@ -892,7 +901,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 			'cos-bucket': scope.cos_bucket
         };
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
@@ -948,6 +957,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['gcs']         = EditUriBackendConfig.validaters['authid-base'];
+    EditUriBackendConfig.validaters['jottacloud']  = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['box']         = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['dropbox']     = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['onedrive']    = EditUriBackendConfig.validaters['authid-base'];
@@ -974,36 +984,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             if (res)
                 continuation();
         });
-    };
-
-    EditUriBackendConfig.validaters['hubic'] = function (scope, continuation) {
-
-        var prefix1 = 'HubiC-DeskBackup_Duplicati/';
-        var prefix2 = 'default/'
-
-        EditUriBackendConfig.validaters['authid-base'](scope, function () {
-
-            var p = (scope.Path || '').trim();
-
-            if (p.length > 0 && p.indexOf(prefix2) != 0 && p.indexOf(prefix1) != 0) {
-                DialogService.dialog(gettextCatalog.getString('Adjust path name?'), gettextCatalog.getString('The path should start with "{{prefix1}}" or "{{prefix2}}", otherwise you will not be able to see the files in the HubiC web interface.\n\nDo you want to add the prefix to the path automatically?', {
-                    prefix1: prefix1,
-                    prefix2: prefix2
-                }), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
-                    if (ix == 2) {
-                        while (p.indexOf('/') == 0)
-                            p = p.substr(1);
-
-                        scope.Path = prefix2 + p;
-                    }
-                    if (ix == 1 || ix == 2)
-                        continuation();
-                });
-            } else {
-                continuation();
-            }
-        });
-
     };
 
     EditUriBackendConfig.validaters['azure'] = function (scope, continuation) {
@@ -1157,16 +1137,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             continuation();
     };
 
-    EditUriBackendConfig.validaters['jottacloud'] = function (scope, continuation) {
-        scope.Path = scope.Path || '';
-        var res =
-            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
-
-        if (res)
-            continuation();
-    };
-
     EditUriBackendConfig.validaters['sia'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Server'));
@@ -1270,6 +1240,50 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'cos_bucket', gettextCatalog.getString('cos_bucket'));
 			
 		if (res)
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['e2'] = function (scope, continuation) {
+        var res =
+                EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Idrivee2 Access Key Id')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Idrivee2 Access Key Secret')) &&
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name'));
+
+        if (res) {
+            var re = new RegExp('[^A-Za-z0-9-]');
+            var bucketname = scope['Server'] || '';
+            var ix = bucketname.search(/[^A-Za-z0-9-]/g);
+
+            if (ix >= 0) {
+                EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The \'{{fieldname}}\' field contains an invalid character: {{character}} (value: {{value}}, index: {{pos}})', {
+                    value: bucketname[ix].charCodeAt(),
+                    pos: ix,
+                    character: bucketname[ix],
+                    fieldname: gettextCatalog.getString('Bucket Name')
+                }));
+                res = false;
+            }
+        }
+
+        if (res) {
+            var pathname = scope['Path'] || '';
+            for (var i = pathname.length - 1; i >= 0; i--) {
+                var char = pathname.charCodeAt(i);
+
+                if (char == '\\'.charCodeAt(0) || char == 127 || char < 32) {
+                    EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The \'{{fieldname}}\' field contains an invalid character: {{character}} (value: {{value}}, index: {{pos}})', {
+                        value: char,
+                        pos: i,
+                        character: pathname[i],
+                        fieldname: gettextCatalog.getString('Path')
+                    }));
+                    res = false;
+                    break;
+                }
+            }
+        }
+
+        if (res)
             continuation();
     };
 });

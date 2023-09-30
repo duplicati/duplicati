@@ -138,7 +138,7 @@
         <div class="header">
             <div class="logo">
                 <a href="#/">
-                    <img class="mainlogo" ng-src="{{brandingService.appLogoPath}}"/>
+                    <img class="mainlogo" ng-src="{{brandingService.appLogoPath}}" />
                 </a>
 
                 <div class="logotext">
@@ -167,13 +167,13 @@
                             <span ng-hide="activeBackup == null">
                                 <span ng-hide="StopReqId == activeTaskID">
                                     <div class="task-state-info">
-                                      <div class="task-name" title="{{activeBackup.Backup.Name}}">
-                                        <strong>{{activeBackup.Backup.Name}}</strong>
-                                      </div>
-                                      <strong>: </strong>
-                                      <div>
-                                        {{StateText}}
-                                      </div>
+                                        <div class="task-name" title="{{activeBackup.Backup.Name}}">
+                                            <strong>{{activeBackup.Backup.Name}}</strong>
+                                        </div>
+                                        <strong>: </strong>
+                                        <div>
+                                            {{StateText}}
+                                        </div>
                                     </div>
                                 </span>
                                 <span ng-show="StopReqId == activeTaskID">
@@ -229,7 +229,7 @@
                         <a href ng-click="resume()" id="resume" class="resume" translate>Resume</a>
                     </li>
                     <li>
-                        <a href="#/settings" class="settings"  ng-class="{active: current_page == 'settings'}" translate>Settings</a>
+                        <a href="#/settings" class="settings" ng-class="{active: current_page == 'settings'}" translate>Settings</a>
                     </li>
                     <li>
                         <a href="#/about" class="about" ng-class="{active: current_page == 'about'}" translate>About</a>
@@ -269,13 +269,13 @@
                     <li>
                         <a href="https://github.com/duplicati" target="_blank" rel="external"><img src="img/social/github.png" srcset="img/social/github.png 1x, img/social/github_2x.png 2x, img/social/github_3x.png 3x" alt="Github" title="Github" /></a>
                     </li>
-                    <li>
-                        <a href="https://www.facebook.com/pages/Duplicati/105118456272281" target="_blank" rel="external"><img src="img/social/facebook.png" srcset="img/social/facebook.png 1x, img/social/facebook_2x.png 2x, img/social/facebook_3x.png 3x" alt="Facebook" title="Facebook" /></a>
-                    </li>
                     <!-- <li>
                         <a href="http://www.duplicati.com" target="_blank" rel="external"><img src="img/social/duplicati.png" srcset="img/social/duplicati.png 1x, img/social/duplicati_2x.png 2x, img/social/duplicati_3x.png 3x" alt="{{'Duplicati Website' | translate}}" title="{{'Duplicati Website' | translate}}" /></a>
                     </li> -->
                 </ul>
+            </div>
+            <div class="themelink">
+                <a href="https://duplicati.readthedocs.io/en/latest/" target="_blank" rel="external">{{'Manual' | translate}}<div class="external-link-image"></div></a>
             </div>
         </div>
     </div>
@@ -283,9 +283,9 @@
     <notification-area></notification-area>
 
     <div ng-controller="DialogController">
-        <div ng-show="state.CurrentItem != null" class="blocker" ng-click=""></div>
+        <div ng-show="state.CurrentItem != null && state.CurrentItem.title != null" class="blocker" ng-click=""></div>
 
-        <div ng-show="state.CurrentItem != null" class="modal-dialog ng-cloak">
+        <div ng-show="state.CurrentItem != null && state.CurrentItem.title != null" class="modal-dialog ng-cloak">
             <div class="info">
                 <div class="title">{{state.CurrentItem.title}}</div>
                 <div class="content" ng-show="state.CurrentItem.message || state.CurrentItem.enableTextarea">
@@ -307,7 +307,7 @@
 
     <div id="connection-lost-blocker" ng-show="state.connectionState != 'connected'" class="blocker ng-cloak" ng-click=""></div>
 
-    <div id="connection-lost-dialog" ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak" >
+    <div id="connection-lost-dialog" ng-show="state.connectionState != 'connected'" class="connection-lost ng-cloak">
         <div class="info">
             <div class="title" translate>Connection lost</div>
             <div class="content" ng-show="state.connectionState !='connecting'" translate translate-params-time="(state.connectionAttemptTimer + 1000) | timeremaining">

@@ -302,7 +302,16 @@ namespace Duplicati.Library.Snapshots
                                        select ((string[])systemBaseObj["Connection"])[0]).ToList();
 
                         foreach (var vhd in tempvhd)
-                            result.Add(vhd);
+                        {
+                            if (File.Exists(vhd))
+                            {
+                                result.Add(vhd);
+                            }
+                            else
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVInvalidVhd", null, "Invalid VHD file detected, file does not exist: {0}", vhd);
+                            }
+                        }
                     }
             }
 
@@ -319,11 +328,16 @@ namespace Duplicati.Library.Snapshots
                         if (outParams != null)
                         {
                             var doc = new System.Xml.XmlDocument();
-                            doc.LoadXml((string)outParams[_wmiv2Namespace ? "SettingData" : "Info"]);
-                            var node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
+                            var propertyValue = (string)outParams[_wmiv2Namespace ? "SettingData" : "Info"];
 
-                            if (node != null && File.Exists(node.Value))
-                                ParentPaths.Add(node.Value);
+                            if (propertyValue != null)
+                            {
+                                doc.LoadXml(propertyValue);
+                                var node = doc.SelectSingleNode("//PROPERTY[@NAME = 'ParentPath']/VALUE/child::text()");
+
+                                if (node != null && File.Exists(node.Value))
+                                    ParentPaths.Add(node.Value);
+                            }
                         }
                     }
                 }

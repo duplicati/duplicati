@@ -2678,16 +2678,6 @@ msgid ""
 msgstr ""
 "La ruta ha de ser absoluta, és a dir, ha de començar amb una barra «/»"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-"La ruta ha de començar per «{{prefix1}}» o «{{prefix2}}»; si no, no podreu veure els fitxers des de la interfície web de hubiC.\n"
-"\n"
-"Voleu afegir el prefix a la ruta automàticament?"
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr "El paràmetre de regió només s'aplica quan es crea un contenidor"

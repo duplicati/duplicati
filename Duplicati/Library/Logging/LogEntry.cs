@@ -171,10 +171,15 @@ namespace Duplicati.Library.Logging
         /// <param name="withExceptionDetails">If set to <c>true</c> the result has expanded exception details.</param>
         public string AsString(bool withExceptionDetails)
         {
-            return this +
-                       ((withExceptionDetails && Exception != null)
-                        ? Environment.NewLine + Exception
-                        : string.Empty);
+            if (Exception == null)
+            {
+                return ToString();
+            }
+            else
+            {
+                return this + Environment.NewLine
+                    + (withExceptionDetails ? Exception.ToString() : (Exception.GetType().Name + ": " + Exception.Message));
+            }
         }
     }
 }
