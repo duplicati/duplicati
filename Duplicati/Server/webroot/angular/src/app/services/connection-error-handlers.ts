@@ -195,8 +195,8 @@ class IncorrectHostKeyHandler implements ConnectionErrorHandler {
       return EMPTY;
     } else {
       let message = prev.trim().length == 0 ?
-        `No certificate was specified previously, please verify with the server administrator that the key is correct: ${key} \n\nDo you want to approve the reported host key?`
-        : `The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n\nDo you want to REPLACE your CURRENT host key "${prev}" with the REPORTED host key: ${key}?`;
+        $localize`No certificate was specified previously, please verify with the server administrator that the key is correct: ${key} \n\nDo you want to approve the reported host key?`
+        : $localize`The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n\nDo you want to REPLACE your CURRENT host key "${prev}" with the REPORTED host key: ${key}?`;
 
       return this.dialog.dialogObservable($localize`Trust host certificate?`, message, [$localize`No`, $localize`Yes`]).pipe(
         filter(v => v.event == 'button' && v.buttonIndex == 1),
