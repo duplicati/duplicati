@@ -161,7 +161,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery();
                         }
                     
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {1} A WHERE ""A"".""FilesetID"" = ? AND ""A"".""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{2}"") ", tablename, combined, filenamestable), filesetId);
+                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {1} A WHERE ""A"".""FilesetID"" = ? AND ""A"".""Path"" IN (SELECT ""Path"" FROM ""{2}"") ", tablename, combined, filenamestable), filesetId);
                         cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", filenamestable));
                     }
                     else
