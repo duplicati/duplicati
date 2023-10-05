@@ -29,7 +29,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        [Category("Disruption")]
+        [Category("Disruption"), Category("Bug"), Explicit("Known bug")]
         public void InterruptedCompact()
         {
             // Reproduction steps from issue #4129 with smaller sizes

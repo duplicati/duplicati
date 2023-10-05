@@ -22,6 +22,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Interface;
+using System.Threading;
 
 namespace Duplicati.UnitTest
 {
@@ -36,10 +38,10 @@ namespace Duplicati.UnitTest
             get
             {
                 var rx = new System.Text.RegularExpressions.Regex("r(?<number>\\d+)");
-                return 
+                return
                     from n in Directory.EnumerateDirectories(SOURCE_FOLDERS)
                     let m = rx.Match(n)
-                        where m.Success
+                    where m.Success
                     orderby int.Parse(m.Groups["number"].Value)
                     select n;
             }
@@ -53,7 +55,7 @@ namespace Duplicati.UnitTest
             }
         }
 
-        protected string TestTarget 
+        protected string TestTarget
         {
             get
             {
@@ -74,40 +76,50 @@ namespace Duplicati.UnitTest
             {
                 Console.WriteLine("downloading test file to: {0}, length: {1}", destinationFilePath, wr.ContentLength);
                 var maxAttempts = 5;
-                while (maxAttempts-- > 0) {
-                    try {
+                while (maxAttempts-- > 0)
+                {
+                    try
+                    {
                         DateTime beginTime = DateTime.Now;
                         client.DownloadFile(url, destinationFilePath);
                         long length = new System.IO.FileInfo(destinationFilePath).Length;
                         Console.WriteLine("downloaded test file: {0}: length {1}, duration {2}", destinationFilePath, length, (DateTime.Now - beginTime).TotalSeconds);
-                        if (length == wr.ContentLength) {
+                        if (length == wr.ContentLength)
+                        {
                             maxAttempts = -1;
-                        } else {
+                        }
+                        else
+                        {
                             Console.WriteLine("invalid downloaded length {0}, should be {1}...", length, wr.ContentLength);
                             System.Threading.Thread.Sleep(120000);
                         }
                     }
                     catch (WebException ex)
                     {
-                        if (ex.Response == null){
+                        if (ex.Response == null)
+                        {
                             Console.WriteLine("ex.Response is null !");
-                        } else {
+                        }
+                        else
+                        {
                             Console.WriteLine("exception {0}", ex);
                             throw;
                         }
                     }
                 }
 
-                if (maxAttempts == 0) {
+                if (maxAttempts == 0)
+                {
                     throw new Exception(string.Format("Unable to download test file from {0}", url));
                 }
             }
-            
+
             System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
         }
 
         public override void OneTimeTearDown()
         {
+            base.OneTimeTearDown();
             if (Directory.Exists(SOURCE_FOLDERS))
             {
                 Directory.Delete(SOURCE_FOLDERS, true);
@@ -124,7 +136,7 @@ namespace Duplicati.UnitTest
         {
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, TestTarget);
         }
-        
+
         [Test]
         [Category("SVNDataLong")]
         public void TestWithSVNLong()
