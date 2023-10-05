@@ -11,14 +11,6 @@ namespace Duplicati.UnitTest
 {
     public class CompactDisruptionTests : BasicSetupHelper
     {
-
-        private void WriteTestFile(string name, long size)
-        {
-            var data = new byte[size];
-            new Random(name.GetHashCode()).NextBytes(data);
-            File.WriteAllBytes(name, data);
-        }
-
         private string VerificationToString(IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> verifications)
         {
             StringBuilder res = new StringBuilder();
@@ -63,42 +55,38 @@ namespace Duplicati.UnitTest
             string file5 = Path.Combine(DATAFOLDER, "f5");
             string file6 = Path.Combine(DATAFOLDER, "f6");
             // Add files 1,2
-            WriteTestFile(file1, filesize);
-            WriteTestFile(file2, filesize);
+            TestUtils.WriteTestFile(file1, filesize);
+            TestUtils.WriteTestFile(file2, filesize);
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
                 IBackupResults backupResults = c.Backup(new[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(backupResults);
 
                 // Add files 3,4
-                WriteTestFile(file3, filesize);
-                WriteTestFile(file4, filesize);
+                TestUtils.WriteTestFile(file3, filesize);
+                TestUtils.WriteTestFile(file4, filesize);
                 backupResults = c.Backup(new[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(backupResults);
 
                 // Add files 5,6
-                WriteTestFile(file5, filesize);
-                WriteTestFile(file6, filesize);
+                TestUtils.WriteTestFile(file5, filesize);
+                TestUtils.WriteTestFile(file6, filesize);
                 backupResults = c.Backup(new[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(backupResults);
 
                 // Delete 1,3,5
                 File.Delete(file1);
                 File.Delete(file3);
                 File.Delete(file5);
                 backupResults = c.Backup(new[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(backupResults);
             }
 
             // Deterministic error backend
             target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             // Fail the compact after the first dblock put is completed
             bool firstPutCompleted = false;
-            DeterministicErrorBackend.ErrorGenerator = (string action) =>
+            DeterministicErrorBackend.ErrorGenerator = (string action, string remotename) =>
             {
                 if (firstPutCompleted && (action == "get_0" || action == "get_1"))
                 {

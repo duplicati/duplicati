@@ -49,6 +49,7 @@
     <Compile Include="BackendToolTests.cs" />
     <Compile Include="CompactDisruptionTests.cs" />
     <Compile Include="DeterministicErrorBackend.cs" />
+    <Compile Include="IssueTests.cs" />
     <Compile Include="SymLinkTests.cs" />
     <Compile Include="ControllerTests.cs" />
     <Compile Include="DeleteHandlerTests.cs" />

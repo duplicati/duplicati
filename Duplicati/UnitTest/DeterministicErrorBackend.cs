@@ -29,7 +29,8 @@ namespace Duplicati.UnitTest
 
         private static readonly Random random = new Random(42);
 
-        public static Func<string, bool> ErrorGenerator = null;
+        // return true to throw exception, parameters: (action, remotename)
+        public static Func<string, string, bool> ErrorGenerator = null;
 
         public static string WrappedBackend { get; set; }
 
@@ -45,9 +46,9 @@ namespace Duplicati.UnitTest
             m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(u, options);
         }
 
-        private void ThrowError(string action)
+        private void ThrowError(string action, string remotename)
         {
-            if (ErrorGenerator != null && ErrorGenerator(action))
+            if (ErrorGenerator != null && ErrorGenerator(action, remotename))
             {
                 throw new Exception("Backend error");
             }
@@ -59,13 +60,13 @@ namespace Duplicati.UnitTest
 
             using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
                 await m_backend.PutAsync(remotename, f, cancelToken);
-            ThrowError("put_async");
+            ThrowError("put_async", remotename);
         }
         public void Get(string remotename, Stream stream)
         {
-            ThrowError("get_0");
+            ThrowError("get_0", remotename);
             m_backend.Get(remotename, stream);
-            ThrowError("get_1");
+            ThrowError("get_1", remotename);
         }
         #endregion
 
@@ -76,21 +77,21 @@ namespace Duplicati.UnitTest
         }
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            ThrowError("put_0");
+            ThrowError("put_0", remotename);
             await m_backend.PutAsync(remotename, filename, cancelToken);
-            ThrowError("put_1");
+            ThrowError("put_1", remotename);
         }
         public void Get(string remotename, string filename)
         {
-            ThrowError("get_0");
+            ThrowError("get_0", remotename);
             m_backend.Get(remotename, filename);
-            ThrowError("get_1");
+            ThrowError("get_1", remotename);
         }
         public void Delete(string remotename)
         {
-            ThrowError("delete_0");
+            ThrowError("delete_0", remotename);
             m_backend.Delete(remotename);
-            ThrowError("delete_1");
+            ThrowError("delete_1", remotename);
         }
         public void Test()
         {
