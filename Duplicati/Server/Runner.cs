@@ -842,17 +842,17 @@ namespace Duplicati.Server
             }
             else if (result.ParsedResult != ParsedResultType.Success)
             {
-                var type = result.ParsedResult != ParsedResultType.Warning
+                var type = result.ParsedResult == ParsedResultType.Warning
                             ? NotificationType.Warning
                             : NotificationType.Error;
 
-                var title = result.ParsedResult != ParsedResultType.Warning
+                var title = result.ParsedResult == ParsedResultType.Warning
                                 ? (backup.IsTemporary ?
                                 "Warning" : string.Format("Warning while running {0}", backup.Name))
                             : (backup.IsTemporary ?
                                 "Error" : string.Format("Error while running {0}", backup.Name));
 
-                var message = result.ParsedResult != ParsedResultType.Warning
+                var message = result.ParsedResult == ParsedResultType.Warning
                                     ? string.Format("Got {0} warning(s)", result.Warnings.Count())
                                     : string.Format("Got {0} error(s)", result.Errors.Count());
 
