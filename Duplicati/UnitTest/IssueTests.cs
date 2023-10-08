@@ -17,7 +17,7 @@ namespace Duplicati.UnitTest
     {
 
         [Test]
-        [Category("Targeted"), Category("Bug"), Explicit("Known bug")]
+        [Category("Targeted")]
         public void Issue5023ReferencedFileMissing([Values] bool compactBeforeRecreate)
         {
             // Reproduction for part of issue #5023

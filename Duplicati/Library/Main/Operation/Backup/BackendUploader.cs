@@ -278,11 +278,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // We must use the BlockEntry's RemoteFilename and not the BlockVolume's since the
                 // BlockEntry's' RemoteFilename reflects renamed files due to retries after errors.
                 IndexVolumeWriter indexVolumeWriter = await upload.IndexVolume.CreateVolume(upload.BlockEntry.RemoteFilename, upload.BlockEntry.Hash, upload.BlockEntry.Size, upload.Options, upload.Database);
+                // Create link before upload is started, it will be removed later if upload fails
+                await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
+
                 FileEntryItem indexEntry = indexVolumeWriter.CreateFileEntryForUpload(upload.Options);
-                if (await UploadFileAsync(indexEntry, worker, cancelToken).ConfigureAwait(false))
-                {
-                    await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
-                }
+                await UploadFileAsync(indexEntry, worker, cancelToken).ConfigureAwait(false);
             }
         }
 
