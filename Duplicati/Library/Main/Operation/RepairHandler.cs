@@ -227,17 +227,30 @@ namespace Duplicati.Library.Main.Operation
                                         }
 
                                         var blocksize = m_options.Blocksize;
-                                        foreach(var ixb in ifr.BlockLists)
+                                        foreach (var ixb in ifr.BlockLists)
                                             db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize);
 
-                                        var selfid = db.GetRemoteVolumeID(n.File.Name);
-                                        foreach(var rv in ifr.Volumes)
-                                            db.AddIndexBlockLink(selfid, db.GetRemoteVolumeID(rv.Filename), null);
+                                        // All checks fine, we accept the new index file
+                                        using (var tr = db.BeginTransaction())
+                                        {
+
+                                            db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0), tr);
+                                            var selfid = db.GetRemoteVolumeID(n.File.Name);
+                                            foreach (var rv in ifr.Volumes)
+                                            {
+                                                long id = db.GetRemoteVolumeID(rv.Filename);
+                                                if (id == -1)
+                                                {
+                                                    throw new FileMissingException($"Index file references unknown block file: {rv.Filename}");
+                                                }
+                                                db.AddIndexBlockLink(selfid, id, tr);
+                                            }
+                                            tr.Commit();
+                                        }
                                     }
                                     
                                     // All checks fine, we accept the new index file
                                     Logging.Log.WriteInformationMessage(LOGTAG, "AcceptNewIndexFile", "Accepting new index file {0}", n.File.Name);
-                                    db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, size, RemoteVolumeState.Uploading);
                                     db.UpdateRemoteVolume(n.File.Name, RemoteVolumeState.Verified, size, hash);
                                     continue;
                                 }
