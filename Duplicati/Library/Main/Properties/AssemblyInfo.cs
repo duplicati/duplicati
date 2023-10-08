@@ -52,3 +52,6 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 [assembly: AssemblyVersion("2.0.0.7")]
 [assembly: AssemblyFileVersion("2.0.0.7")]
+
+// Expose internal classes to UnitTests, so that Database classes can be tested
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
