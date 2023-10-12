@@ -201,7 +201,7 @@ namespace Duplicati.Library.Utility
 
             //Replace the globbing expressions with the corresponding regular expressions
             globexp = globexp.Replace('?', '.').Replace("*", ".*");
-            return globexp;
+            return "^" + globexp + "$";
         }
 
         /// <summary>

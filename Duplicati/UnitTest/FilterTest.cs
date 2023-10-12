@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
             // Create a fileset with all data present
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -87,7 +87,7 @@ namespace Duplicati.UnitTest
             testopts["ignore-filenames"] = "exclude.me";
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -112,7 +112,7 @@ namespace Duplicati.UnitTest
             testopts["exclude-empty-folders"] = "true";
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -137,7 +137,7 @@ namespace Duplicati.UnitTest
             var excludefilter = new Library.Utility.FilterExpression($"*{System.IO.Path.DirectorySeparatorChar}myfile.txt", false);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER}, excludefilter);
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER }, excludefilter);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -162,7 +162,7 @@ namespace Duplicati.UnitTest
             File.Delete(Path.Combine(source, "toplevel", "normal", "standard.txt"));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER}, excludefilter);
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER }, excludefilter);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -212,6 +212,40 @@ namespace Duplicati.UnitTest
             {
                 IFilter filter = new FilterExpression(entry.Key);
                 Assert.IsFalse(filter.Matches(entry.Value, out _, out _));
+            }
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void CombineRegexp()
+        {
+            FilterExpression f1 = new FilterExpression(@"[/(a|b)/]");
+            FilterExpression f2 = new FilterExpression(@"[/a/c/]");
+            FilterExpression f3 = new FilterExpression(@"/b/c/");
+            FilterExpression f4 = new FilterExpression(@"[/b/c/d/]");
+            FilterExpression combined = FilterExpression.Combine(f1, FilterExpression.Combine(f2, FilterExpression.Combine(f3, f4)));
+
+            List<string> shouldMatch = new List<string>()
+            {
+                "/a/",
+                "/b/",
+                "/a/c/",
+                "/b/c/",
+                "/b/c/d/"
+            };
+            List<string> shouldNotMatch = new List<string>()
+            {
+                "/b/d/",
+                "/b/d/e",
+                "/a/d/",
+            };
+            foreach (string s in shouldMatch)
+            {
+                Assert.IsTrue(combined.Matches(s, out _, out _));
+            }
+            foreach (string s in shouldNotMatch)
+            {
+                Assert.IsFalse(combined.Matches(s, out _, out _));
             }
         }
     }
