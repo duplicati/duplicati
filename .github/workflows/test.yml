@@ -1,0 +1,32 @@
+name: Build only Windows
+
+on:
+  push
+
+env:
+  build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
+
+jobs:
+  windowsbuild:
+    name: Windows installer
+    runs-on: windows-latest
+
+    steps:
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.3
+
+    - name: Install NuGet
+      uses: nuget/setup-nuget@v1.1.1
+
+    - uses: actions/checkout@v3
+
+    - name: Build installers (Windows)
+      run: |
+          .\\Installer\\Windows\\artifact_win.bat
+          
+    - name: Upload build results
+      uses: actions/upload-artifact@v3
+      with:
+        retention-days: 5
+        name: build-results-windows
+        path: ~/artifacts/**/*
