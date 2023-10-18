@@ -9,9 +9,9 @@ env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 jobs:
-  macbuild:
-    name: mac build and installers
-    runs-on: macos-latest
+  Installersbuild:
+    name: Installers (zip file)
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
 
@@ -41,7 +41,7 @@ jobs:
   windowsbuild:
     name: windows installer
     runs-on: windows-latest
-    needs: macbuild
+    needs: Installersbuild
     steps:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.3
