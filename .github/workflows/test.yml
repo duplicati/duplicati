@@ -1,21 +1,19 @@
-name: Only mac Build
+name: Build only Windows
 
-on: push
+on:
+  push
 
 env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 jobs:
-  macbuild:
-    name: mac build and installers
+  build_zip:
+    name: Files of Duplicati zipped
     runs-on: macos-latest
+    
     strategy:
       fail-fast: false
-
     steps:
-    - name: Install NuGet
-      uses: nuget/setup-nuget@v1.1.1
-
     - name: Checkout Source
       uses: actions/checkout@v3
 
@@ -23,14 +21,47 @@ jobs:
       run: |
           nuget restore Duplicati.sln
           nuget restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
-          
-    - name: Build installers (OSX)
+
+    - name: Build Duplicati (macOS)
       run: |
-          Installer/OSX/artifact_mac.sh
+          msbuild /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
+          RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
+          RELEASE_TYPE="canary"
+          RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
+          RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
+          RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
+          RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
+          echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+          echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+          mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+          msbuild -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" -p:Configuration=Release Duplicati.sln
 
     - name: Upload build results
       uses: actions/upload-artifact@v3
       with:
         retention-days: 5
         name: build-results-mac
+        path: ~/artifacts/**/*
+
+  windowsbuild:
+    name: Windows installer
+    runs-on: windows-latest
+
+    steps:
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.3
+
+    - name: Install NuGet
+      uses: nuget/setup-nuget@v1.1.1
+
+    - uses: actions/checkout@v3
+    - name: Build installers (Windows)
+      run: |
+          .\\Installer\\Windows\\artifact_win.bat
+          
+    - name: Upload build results
+      uses: actions/upload-artifact@v3
+      with:
+        retention-days: 5
+        name: build-results-windows
         path: ~/artifacts/**/*
