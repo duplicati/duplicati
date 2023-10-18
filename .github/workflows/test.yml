@@ -10,7 +10,7 @@ env:
 
 jobs:
   macbuild:
-    name: mac build and installers
+    name: Installers
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -55,7 +55,7 @@ jobs:
   windowsbuild:
     name: windows installer
     runs-on: windows-latest
-    needs: macbuild
+    needs: Installers
     steps:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.3
@@ -83,7 +83,7 @@ jobs:
   debianbuild:
     name: debian like installer          
     runs-on: ubuntu-latest
-    needs: macbuild
+    needs: Installers
     steps:
     - uses: actions/checkout@v3
     - name: Retrieve mac build
