@@ -69,7 +69,7 @@ jobs:
   debianbuild:
     name: debian like installer          
     runs-on: ubuntu-latest
-    needs: macbuild
+    needs: Installersbuild
     steps:
     - uses: actions/checkout@v3
     - name: Retrieve mac build
