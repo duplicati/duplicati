@@ -1,6 +1,10 @@
 name: Tests
 
-on: [push, pull_request]
+on:
+    push:
+        branches:
+            - main # Set to run only in the bransh main so that it wont run in master branch that I dont need to
+# [push, pull_request]
 
 env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
