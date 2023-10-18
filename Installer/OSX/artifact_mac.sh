@@ -19,8 +19,3 @@ export RUNTMP=$HOME
 bash Installer/bundleduplicati.sh $RELEASE_FILE_NAME
 mkdir -p $RUNTMP/artifacts
 cp $RUNTMP/$RELEASE_FILE_NAME $RUNTMP/artifacts/$RELEASE_FILE_NAME.zip
-cd Installer/OSX
-bash make-dmg.sh $RUNTMP/$RELEASE_FILE_NAME
-mv *.dmg $RUNTMP/artifacts
-mv *.pkg $RUNTMP/artifacts
-cd ../..
