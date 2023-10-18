@@ -9,7 +9,7 @@ env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 jobs:
-  macbuild:
+  Installers:
     name: Installers
     runs-on: macos-latest
     strategy:
