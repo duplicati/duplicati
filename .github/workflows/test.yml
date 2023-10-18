@@ -27,6 +27,20 @@ jobs:
           nuget restore Duplicati.sln
           nuget restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 
+    - name: Build Duplicati (macOS)
+      run: |
+          msbuild /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
+          RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
+          RELEASE_TYPE="canary"
+          RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
+          RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
+          RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
+          RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
+          echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+          echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+          mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+          msbuild -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" -p:Configuration=Release Duplicati.sln
+
     - name: Build installers (OSX)
       run: |
           Installer/OSX/artifact_mac.sh
