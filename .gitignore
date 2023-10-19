@@ -26,4 +26,3 @@ binfiles.wxs
 
 Installer/debian/*.buildinfo
 /Installer/Windows/duplicati-2.0.7.3_canary_2023-10-18.zip
-/script.bat
