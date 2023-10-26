@@ -38,12 +38,6 @@
     <UI>
       <UIRef Id="WixUI_FeatureTree"/>
       
-      <Publish Dialog="ExitDialog"
-          Control="Finish"
-          Event="DoAction"
-          Value="LaunchApplication">
-        <![CDATA[WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and FORSERVICE = "false" and NOT Installed]]>
-      </Publish>
     </UI>
 
     <Property Id="FORSERVICE" Value="false" />
@@ -78,11 +72,6 @@
       <Condition Level="0">FORSERVICE = "true"</Condition>
     </Feature>
 
-    <!-- Launch duplicati setup -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <CustomAction Id="LaunchApplication" FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
-    
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
 
