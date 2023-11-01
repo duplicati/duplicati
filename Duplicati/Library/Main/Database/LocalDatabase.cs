@@ -813,6 +813,7 @@ ON
 
                 if (verifyfilelists)
                 {
+                    var anyError = new List<string>();
                     using (var cmd2 = m_connection.CreateCommand(transaction))
                         foreach (var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
                         {
@@ -827,9 +828,13 @@ ON
                                 var fileset = FilesetTimes.Zip(Enumerable.Range(0, FilesetTimes.Count()), (a, b) => new Tuple<long, long, DateTime>(b, a.Key, a.Value)).FirstOrDefault(x => x.Item2 == filesetid);
                                 if (fileset != null)
                                     filesetname = string.Format("version {0}: {1} (database id: {2})", fileset.Item1, fileset.Item3, fileset.Item2);
-                                throw new Interface.UserInformationException(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist), "FilesetDifferences");
+                                anyError.Add(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist));
                             }
                         }
+		    if (anyError.Any())
+                    {
+                       throw new Interface.UserInformationException(string.Join("\n\r", anyError), "FilesetDifferences");
+                    }
                 }
             }
         }
