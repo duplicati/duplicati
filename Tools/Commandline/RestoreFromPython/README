@@ -9,14 +9,17 @@ uses streaming apis to restore a large number of files and use limited RAM.
 
 Usage:
 1) Confirm that your Duplicati data is on disk in .zip or .zip.aes format.
-if data uses GPG/other encryption, decrypt files to .zip before running this tool.
+if data uses GPG/other encryption than AES, decrypt files to .zip before running this tool.
 
 2) Install Python 3 if it is not already installed.
+ pip -m pip install pycryptodome ipython
+ optionally you can install aescrypt that will allow to cache the decrypted files
+ (at cost of higher disk space)
 
 3) Run restore_from_python.py,
 it will interactively ask for the necessary information.
-
-
+there is support for passing the necessary parameters in command line, use --help
+Tentative support for attributes restoration on Linux (needs sudo)
 
 Other notes:
 It's possible that an updated version of this script can be located in the repo at
