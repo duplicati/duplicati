@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation
                 db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
                 FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter, true, null);
 
                 DoRun(samples, db, backend);
