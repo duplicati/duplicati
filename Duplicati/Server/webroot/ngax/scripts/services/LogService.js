@@ -23,9 +23,7 @@ backupApp.service('LogService', function(AppService, DialogService, gettextCatal
                     //     $scope.Backup = BackupList.lookup[$scope.BackupID];	
                     resolve({ current: current, complete: resp.data.length < pageSize });
                 }, function(resp) {	
-                    var message = resp.statusText;	
-                    if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                    var message = AppService.responseErrorMessage(resp);
                     
                     loadingData = false;
                     DialogService.dialog('Error', gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));	
