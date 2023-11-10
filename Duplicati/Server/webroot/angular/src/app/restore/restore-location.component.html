@@ -1,0 +1,69 @@
+<h1 i18n>Restore options</h1>
+
+<h2 i18n>Where do you want to restore the files to?</h2>
+<div class="input checkbox multiple leftflush">
+  <input id="restoretooriginalpath" type="radio" name="restorelocation" [(ngModel)]="data.restoreLocation" value="direct" />
+  <label for="restoretooriginalpath" i18n>Original location</label>
+</div>
+<div class="input checkbox multiple leftflush">
+  <input id="restoretonewpath" type="radio" name="restorelocation" [(ngModel)]="data.restoreLocation" value="custom" />
+  <label for="restoretonewpath" i18n>Pick location</label>
+</div>
+
+<div *ngIf="hideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
+  <label for="restore_path" i18n>Folder path</label>
+  <input type="text" name="restore_path" id="restore_path" [(ngModel)]="restorePath" i18n-placeholder placeholder="Enter the destination path" />
+  <a routerLink="." id="file_targetFolderPathAdd" class="button" (click)="hideFolderBrowser = false" i18n>Browse</a>
+</div>
+
+<div class="input text" [hidden]="hideFolderBrowser">
+
+  <div class="input" style="padding-bottom: 0px">
+    <a routerLink="." (click)="showHiddenFolders = !showHiddenFolders" style="float: right; margin-right: 10px;">
+      <span *ngIf="showHiddenFolders" i18n>Hide hidden folders</span>
+      <span *ngIf="!showHiddenFolders" i18n>Show hidden folders</span>
+    </a>
+
+    <a routerLink="." (click)="hideFolderBrowser = true" style="float: right; margin-right: 10px;" i18n>Manually type path</a>
+  </div>
+
+  <label for="folder_path_picker" i18n>Folder path</label>
+  <div style="clear: both;">
+    <app-destination-folder-picker class="filepicker resizable" id="folder_path_picker" [(path)]="restorePath" [showHidden]="showHiddenFolders" [hideUserNode]="false"></app-destination-folder-picker>
+  </div>
+</div>
+
+<h2 i18n>How do you want to handle existing files?</h2>
+<div class="input checkbox multiple leftflush">
+  <input type="radio" id="restoreoverwrite" name="restoreoverwrite" [(ngModel)]="data.restoreMode" value="overwrite" />
+  <label for="restoreoverwrite" i18n>Overwrite</label>
+</div>
+<div class="input checkbox multiple leftflush">
+  <input type="radio" id="restorenewcopy" name="restoreoverwrite" [(ngModel)]="data.restoreMode" value="copy" />
+  <label for="restorenewcopy" i18n>Save different versions with timestamp in file name</label>
+</div>
+
+
+
+<h2 i18n>Permissions</h2>
+<div class="input checkbox leftflush">
+  <input type="checkbox" id="readwritepermissions" [(ngModel)]="data.restorePermissions" />
+  <label for="readwritepermissions" i18n>Restore read/write permissions</label>
+</div>
+
+<div class="input password" *ngIf="showInputPassphrase">
+  <h2 i18n>Passphrase</h2>
+  <p i18n>
+    Backup is encrypted but no passphrase is available.
+    Type a passphrase below to use for restoring your files,
+    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by
+    invoking your system's keychain.
+  </p>
+  <input type="password" name="passphrase" id="passphrase" [(ngModel)]="data.passphrase"
+         i18n-placeholder placeholder="Type passphrase here." />
+</div>
+
+<div class="buttons">
+  <a routerLink="." class="submit" (click)="restore.emit(data)" i18n>Restore</a>
+  <a routerLink="." class="submit" (click)="prev.emit()" i18n>Back</a>
+</div>

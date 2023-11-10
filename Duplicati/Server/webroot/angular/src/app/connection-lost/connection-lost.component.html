@@ -1,0 +1,17 @@
+<div id="connection-lost-blocker" *ngIf="connectionState !== 'connected'" class="blocker"></div>
+
+<div id="connection-lost-dialog" *ngIf="connectionState !== 'connected'" class="connection-lost">
+  <div class="info">
+    <div class="title" i18n>Connection lost</div>
+    <div class="content" *ngIf="connectionState !=='connecting'" i18n>
+      The connection to the server is lost, attempting again in {{connectionTimer}} ...
+    </div>
+    <div class="content" i18n *ngIf="connectionState === 'connecting'">
+      Connecting to server …
+    </div>
+    <div class="content buttons">
+      <a routerLink="." *ngIf="connectionState !== 'connecting'" (click)="doReconnect()" class="button" i18n>Connect now</a>
+      <a routerLink="." *ngIf="connectionState === 'connecting'" class="button" style="cursor: default;" i18n>Connecting...</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,140 @@
+// form.css for duplicati 2.0 | Alex Franzelin 2015
+
+form.styled {
+    div.leftflush input {
+        width: auto;
+        margin-top: 10px;
+    }
+
+    div.leftflush label {
+        width: auto;
+        min-width: 190px;
+    }
+
+    label {
+        display: block;
+        width: 190px;
+        float: left;
+        line-height: 37px;
+    }
+
+    input,
+    textarea,
+    select {
+        color: @tColor;
+        font-size: 16px;
+        font-weight: 300;
+        float: left;
+        display: block;
+        border: 1px @border solid;
+        border-radius: 2px;
+        width: 420px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        border: 1px darken(@border, 20%) solid;
+    }
+
+
+    .input {
+        padding-bottom: 18px;
+        overflow: hidden;
+    }
+
+    .input.text,
+    .input.password {
+        input {
+            height: 35px;
+            line-height: 35px;
+            padding: 0 12px;
+        }
+    }
+
+    .input.text.text-browse {
+        input {
+            width: 375px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: 0;
+        }
+
+        a.browse {
+            width: 45px;
+            display: block;
+            float: left;
+            height: 37px;
+            border-radius: 2px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            color: white;
+            background: @lColor;
+            line-height: 37px;
+        }
+
+        a.browse:hover {
+            background: darken(@lColor, 20%);
+        }
+    }
+
+    .input.textarea {
+        textarea {
+            height: 130px;
+            padding: 10px 12px;
+        }
+    }
+
+    .input.select {
+        select {
+            width: 446px;
+            padding: 0 12px;
+            -webkit-appearance: menulist-button;
+            background: white;
+            border-radius: 2px;
+            height: 38px;
+            line-height: 38px;
+        }
+    }
+
+    .buttons {
+        overflow: hidden;
+        float: right;
+
+        input,
+        a {
+            display: block;
+            background: @lColor;
+            color: white !important;
+            padding: 5px 15px;
+            float: right;
+            margin-left: 10px;
+            cursor: pointer;
+            width: auto;
+            border: none;
+            font-family: 'Clear Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 300;
+            border-radius: 0;
+        }
+
+        input {
+            padding: 4px 15px;
+        }
+
+        input:hover,
+        a:hover {
+            background: darken(@lColor, 25%);
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    form.styled {
+        input,
+        textarea,
+        select {
+            font-size: 15px;
+        }
+    }
+}

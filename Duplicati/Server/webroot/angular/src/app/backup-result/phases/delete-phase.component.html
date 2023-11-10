@@ -1,0 +1,21 @@
+<app-phase-base [results]="results" title="Delete Phase (Old Backup Versions)">
+  <div class="horizontal-rule"></div>
+
+  <span class="item">
+    <span (click)="setsExpanded = !setsExpanded" [style]="{ cursor: (results.DeletedSetsActualLength > 0) ? 'pointer' : '' }">
+      <span class="key" translate>Deleted Versions </span>
+      <span class="value">
+        {{ results.DeletedSetsActualLength }}
+        <i *ngIf="results.DeletedSetsActualLength > 0" class="fa fa-angle-{{setsExpanded ? 'up': 'down'}}"></i>
+      </span>
+    </span>
+    <div *ngIf="setsExpanded && results.DeletedSetsActualLength > 0" class="expanded" >
+      <ul>
+        <li *ngFor="let elem of results.DeletedSets">
+          Version ID: {{ elem.Item1 }} - Time: {{ convert.formatTimestampToSeconds(elem.Item2) }}
+        </li>
+      </ul>
+    </div>
+
+  </span>
+</app-phase-base>

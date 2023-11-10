@@ -59,12 +59,12 @@ namespace Duplicati.Server.WebServer
         /// The single webserver instance
         /// </summary>
         private readonly HttpServer.HttpServer m_server;
-        
+
         /// <summary>
         /// The webserver listening port
         /// </summary>
         public readonly int Port;
-        
+
         /// <summary>
         /// A string that is sent out instead of password values
         /// </summary>
@@ -80,10 +80,10 @@ namespace Duplicati.Server.WebServer
             IEnumerable<int> ports = null;
             options.TryGetValue(OPTION_PORT, out portstring);
             if (!string.IsNullOrEmpty(portstring))
-                ports = 
+                ports =
                     from n in portstring.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                where int.TryParse(n, out _)
-                                select int.Parse(n);
+                    where int.TryParse(n, out _)
+                    select int.Parse(n);
 
             if (ports == null || !ports.Any())
                 ports = new int[] { DEFAULT_OPTION_PORT };
@@ -156,7 +156,7 @@ namespace Duplicati.Server.WebServer
                     // Due to the way the server is initialized, 
                     // we cannot try to start it again on another port, 
                     // so we create a new server for each attempt
-                
+
                     var server = CreateServer(options);
 
                     if (!certValid)
@@ -166,7 +166,7 @@ namespace Duplicati.Server.WebServer
                         var secProtocols = System.Security.Authentication.SslProtocols.Tls12;
 
                         try
-                        { 
+                        {
                             //try TLS 1.3 (type not available on .NET < 4.8)
                             secProtocols = System.Security.Authentication.SslProtocols.Tls12 | (System.Security.Authentication.SslProtocols)12288;
                         }
@@ -180,20 +180,20 @@ namespace Duplicati.Server.WebServer
                     m_server.ServerName = string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
                     this.Port = p;
 
-                    if (interfacestring !=  Program.DataConnection.ApplicationSettings.ServerListenInterface)
+                    if (interfacestring != Program.DataConnection.ApplicationSettings.ServerListenInterface)
                         Program.DataConnection.ApplicationSettings.ServerListenInterface = interfacestring;
-                    
+
                     if (certValid && !cert.Equals(Program.DataConnection.ApplicationSettings.ServerSSLCertificate))
                         Program.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
 
                     Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Strings.Server.StartedServer(listenInterface.ToString(), p));
-                    
+
                     return;
                 }
                 catch (System.Net.Sockets.SocketException)
                 {
                 }
-                
+
             throw new Exception(Strings.Server.ServerStartFailure(ports));
         }
 
@@ -209,7 +209,7 @@ namespace Duplicati.Server.WebServer
             fm.MimeTypes["woff"] = "application/font-woff";
             fm.MimeTypes["woff2"] = "application/font-woff";
         }
-            
+
         private static HttpServer.HttpServer CreateServer(IDictionary<string, string> options)
         {
             HttpServer.HttpServer server = new HttpServer.HttpServer();
@@ -299,6 +299,7 @@ namespace Duplicati.Server.WebServer
             server.Add(fh);
 
             server.Add(new IndexHtmlHandler(webroot));
+            server.Add(new RouteRewriteHandler(webroot, "/ng/"));
 #if DEBUG
             //For debugging, it is nice to know when we get a 404
             server.Add(new DebugReportHandler());
@@ -333,6 +334,38 @@ namespace Duplicati.Server.WebServer
                 else
                     response.AddHeader("Cache-Control", "max-age=" + (60 * 60 * 24));
                 return base.Process(request, response, session);
+            }
+        }
+
+        private class RouteRewriteHandler : HttpModule
+        {
+            private readonly string m_webroot;
+            private readonly string m_prefix;
+            public RouteRewriteHandler(string webroot, string prefix)
+            {
+                m_webroot = webroot;
+                m_prefix = prefix;
+            }
+
+            public override bool Process(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
+            {
+                // Rewrite angular routes to index
+                if (request.Uri.PathAndQuery.StartsWith(m_prefix) && !request.Uri.PathAndQuery.Contains("."))
+                {
+                    response.Status = System.Net.HttpStatusCode.OK;
+                    response.Reason = "OK";
+                    response.ContentType = "text/html; charset=utf-8";
+                    response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+
+                    using (var fs = System.IO.File.OpenRead(m_webroot + m_prefix + "index.html"))
+                    {
+                        response.ContentLength = fs.Length;
+                        response.Body = fs;
+                        response.Send();
+                    }
+                    return true;
+                }
+                return false;
             }
         }
 

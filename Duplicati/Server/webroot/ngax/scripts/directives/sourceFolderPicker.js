@@ -1,21 +1,24 @@
 backupApp.directive('sourceFolderPicker', function() {
   return {
     restrict: 'E',
-    require: ['ngSources', 'ngFilters'],
+    require: ['ngSources', 'ngFilters', '$anchorScroll'],
     scope: {
         ngSources: '=',
         ngFilters: '=',
-        ngShowHidden: '='
+        ngShowHidden: '=',
+        ngExcludeAttributes: '=',
+        ngExcludeSize: '='
     },
     templateUrl: 'templates/sourcefolderpicker.html',
 
-    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils, gettextCatalog) {
+    controller: function($scope, $timeout, SystemInfo, AppService, AppUtils, DialogService, gettextCatalog, $anchorScroll) {
 
         var scope = $scope;
         scope.systeminfo = SystemInfo.watch($scope);
         var sourceNodeChildren = null;
 
-        $scope.treedata = { };
+        $scope.treedata = {};
+        $scope.expandedPath = null;
 
         var sourcemap = {};
         var excludemap = {};
@@ -24,11 +27,11 @@ backupApp.directive('sourceFolderPicker', function() {
         var filterList = null;
         var displayMap = {};
 
-        var dirsep = scope.systeminfo.DirectorySeparator || '/';
+        scope.dirsep = null;
 
         function compareablePath(path) {
             if (path.substr(0, 1) == '%' && path.substr(path.length - 1, 1) == '%')
-                path += dirsep;
+                path += scope.dirsep;
 
             return scope.systeminfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
         }
@@ -65,7 +68,7 @@ backupApp.directive('sourceFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-mssql';
             else if (defunctmap[cp])
                 n.iconCls = 'x-tree-icon-broken';
-            else if (cp.substr(cp.length - 1, 1) != dirsep)
+            else if (cp.substr(cp.length - 1, 1) != scope.dirsep)
                 n.iconCls = 'x-tree-icon-leaf';
 
             setEntryType(n);
@@ -117,25 +120,81 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         function buildidlookup(sources, map) {
-            var dirsep = scope.systeminfo.DirectorySeparator || '/';            
-
             map = map || {};
 
             for(var n in sources) {
-                var parts = compareablePath(n).split(dirsep);
+                var parts = compareablePath(n).split(scope.dirsep);
                 var p = [];
 
                 for(var pi in parts) {
                     p.push(parts[pi]);
-                    var r = p.join(dirsep);
+                    var r = p.join(scope.dirsep);
                     var l = r.substr(r.length - 1, 1);
-                    if (l != dirsep)
-                        r += dirsep;
+                    if (l != scope.dirsep)
+                        r += scope.dirsep;
                     map[r] = true;
                 }
             }
 
             return map;    
+        }
+
+        function nodeExcludedByAttributes(n) {
+            // Check ExcludeAttributes
+            if (scope.ngExcludeAttributes != null && scope.ngExcludeAttributes.length > 0) {
+                if (scope.ngExcludeAttributes.indexOf('hidden') != -1 && n.hidden) {
+                    return true;
+                }
+                if (scope.ngExcludeAttributes.indexOf('system') != -1 && n.systemFile) {
+                    return true;
+                }
+                if (scope.ngExcludeAttributes.indexOf('temporary') != -1 && n.temporary) {
+                    return true;
+                }
+            }
+            return false
+        }
+
+        function nodeExcludedBySize(n) {
+            if(scope.ngExcludeSize != null) {
+                return n.fileSize > scope.ngExcludeSize;
+            }
+        }
+
+        function shouldIncludeNode(n, checkSize) {
+            if (checkSize === undefined) {
+                checkSize = true;
+            }
+
+            // ExcludeSize overrides source paths
+            if (checkSize && nodeExcludedBySize(n)) {
+                return false;
+            }
+
+            // Check if explicitly included in sources
+            if (sourcemap[compareablePath(n.id)]) {
+                return true;
+            }
+
+            // Result is true if included, false if excluded, null if none match
+            var result = null;
+
+            // Check filter expression
+            if (filterList == null)
+                result = excludemap[compareablePath(n.id)] ? false : null;
+            else {
+                result = AppUtils.evalFilter(n.id, filterList, null);
+            }
+
+            if (result !== false && nodeExcludedByAttributes(n)) {
+                result = false;
+            }
+
+            if (result === null) {
+                // Include by default
+                result = true;
+            }
+            return result;
         }
 
         function updateIncludeFlags(root, parentFlag) {
@@ -146,13 +205,10 @@ backupApp.directive('sourceFolderPicker', function() {
                 if (n.root)
                     return null;
 
-                if (sourcemap[compareablePath(n.id)])
+                if (sourcemap[compareablePath(n.id)] && !nodeExcludedBySize(n))
                     n.include = '+';
                 else if (p != null && p.include == '+') {
-                    if (filterList == null) 
-                        n.include = excludemap[compareablePath(n.id)] ? '-' : '+';
-                    else
-                        n.include = AppUtils.evalFilter(n.id, filterList) ? '+' : '-';
+                    n.include = shouldIncludeNode(n) ? '+' : '-';
                 }
                 else if (p != null && p.include == '-')
                     n.include = '-';
@@ -163,25 +219,20 @@ backupApp.directive('sourceFolderPicker', function() {
             }, root);            
         }
 
-        function syncTreeWithLists() {
-            if (scope.ngSources == null || sourceNodeChildren == null)
-                return;
-
-            dirsep = scope.systeminfo.DirectorySeparator || '/';            
-
-            sourcemap = {};
+        function updateFilterList() {
             excludemap = {};
             filterList = null;
-
             var anySpecials = false;
 
-            for(var i = 0; i < (scope.ngFilters || []).length; i++) {
-                var f = AppUtils.splitFilterIntoTypeAndBody(scope.ngFilters[i], dirsep);
+            for (var i = 0; i < (scope.ngFilters || []).length; i++) {
+                var f = AppUtils.splitFilterIntoTypeAndBody(scope.ngFilters[i], scope.dirsep);
                 if (f != null) {
-                    if (f[0] == '-path')
+                    if (f[0].indexOf('+') == 0 || f[1].indexOf('?') != -1 || f[1].indexOf('*') != -1)
+                        anySpecials = true;
+                    else if (f[0] == '-path')
                         excludemap[compareablePath(f[1])] = true;
                     else if (f[0] == '-folder')
-                        excludemap[compareablePath(f[1] + dirsep)] = true;
+                        excludemap[compareablePath(f[1] + scope.dirsep)] = true;
                     else
                         anySpecials = true;
                 }
@@ -189,6 +240,14 @@ backupApp.directive('sourceFolderPicker', function() {
 
             if (anySpecials)
                 filterList = AppUtils.filterListToRegexps(scope.ngFilters, scope.systeminfo.CaseSensitiveFilesystem);
+        }
+
+        function syncTreeWithLists() {
+            if (scope.ngSources == null || sourceNodeChildren == null || scope.dirsep == null)
+                return;
+
+            sourcemap = {};
+            updateFilterList();
 
             sourceNodeChildren.length = 0;
 
@@ -233,7 +292,7 @@ backupApp.directive('sourceFolderPicker', function() {
 
                     var p = scope.ngSources[i];
                     if (p.substr(0, 1) == '%' && p.substr(p.length - 1, 1) == '%')
-                        p += dirsep;
+                        p += scope.dirsep;
 
                     AppService.post('/filesystem/validate', {path: p}).then(function(data) {
                         defunctmap[compareablePath(data.config.data.path)] = false;
@@ -256,6 +315,14 @@ backupApp.directive('sourceFolderPicker', function() {
 
         $scope.$watch('ngSources', syncTreeWithLists, true);
         $scope.$watch('ngFilters', syncTreeWithLists, true);
+        $scope.$watch('ngExcludeAttributes', syncTreeWithLists, true);
+        $scope.$watch('ngExcludeSize', syncTreeWithLists, true);
+        $scope.$watch('systeminfo.DirectorySeparator', function (val, oldVal) {
+            if (val != null) {
+                scope.dirsep = val;
+                syncTreeWithLists();
+            }
+        }, true);
 
         function findParent(id) {
             var r = {};
@@ -279,10 +346,8 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         $scope.toggleCheck = function(node) {
-            dirsep = scope.systeminfo.DirectorySeparator || '/';            
-
             var c = compareablePath(node.id);
-            var c_is_dir = c.substr(c.length - 1, 1) == dirsep;
+            var c_is_dir = c.substr(c.length - 1, 1) == scope.dirsep;
 
             if (node.include == null || node.include == ' ') {
 
@@ -293,7 +358,7 @@ backupApp.directive('sourceFolderPicker', function() {
                         if (s == c)
                             return;
 
-                        if (s.substr(s.length - 1, 1) == dirsep && c.indexOf(s) == 0) {
+                        if (s.substr(s.length - 1, 1) == scope.dirsep && c.indexOf(s) == 0) {
                                 return;
                         } else if (s.indexOf(c) == 0) {
                             scope.ngSources.splice(i, 1);
@@ -308,11 +373,11 @@ backupApp.directive('sourceFolderPicker', function() {
                     removePathFromArray(scope.ngSources, node.id);
 
                     for(var i = scope.ngFilters.length - 1; i >= 0; i--) {
-                        var n = AppUtils.splitFilterIntoTypeAndBody(scope.ngFilters[i], dirsep);
+                        var n = AppUtils.splitFilterIntoTypeAndBody(scope.ngFilters[i], scope.dirsep);
                         if (n != null) {
                             if (c_is_dir) {
                                 if (n[0] == '-path' || n[0] == '-folder') {
-                                    if (compareablePath(n[1] + (n[0] == '-folder' ? dirsep : '')).indexOf(c) == 0)
+                                    if (compareablePath(n[1] + (n[0] == '-folder' ? scope.dirsep : '')).indexOf(c) == 0)
                                         scope.ngFilters.splice(i, 1);
                                 }
                             } else {
@@ -322,17 +387,40 @@ backupApp.directive('sourceFolderPicker', function() {
                         }
                     }
                 } else {
-                    scope.ngFilters.push("-" + node.id);
+                    removePathFromArray(scope.ngFilters, '+' + node.id);
+                    updateFilterList();
+                    if (shouldIncludeNode(node, false)) {
+                        // No explicit include filter, add exclude filter to start of list
+                        scope.ngFilters.unshift("-" + node.id);
+                    }
                 }
             } else if (node.include == '-') {
                 removePathFromArray(scope.ngFilters, '-' + node.id);
+                updateFilterList();
+                if (nodeExcludedByAttributes(node)
+                        && indexOfPathInArray(scope.ngSources, node.id) == -1) {
+                    // Node is excluded by attributes, have to add as source to override
+                    scope.ngSources.push(node.id);
+                } else if (!shouldIncludeNode(node, false)) {
+                    // No explicit exclude filter, add include filter to start of list
+                    scope.ngFilters.unshift('+' + node.id);
+                }
+                if (nodeExcludedBySize(node)) {
+                    DialogService.dialog(gettextCatalog.getString('Cannot include "{{text}}"', node),
+                        gettextCatalog.getString('The file size is {{size}}, larger than the maximum specified size. If the file size decreases, it will be included in future backups.', { size: AppUtils.formatSizeString(node.fileSize) }));
+                }
             }
         };
 
+        function shouldExpand(path, expandedPath) {
+            return expandedPath.indexOf(path) == 0 && path.length < expandedPath.length;
+        }
+
         $scope.toggleExpanded = function(node) {
             node.expanded = !node.expanded;
+            self = this;
 
-            if (node.root || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked'
+            if (node.root || node.leaf || node.iconCls == 'x-tree-icon-leaf' || node.iconCls == 'x-tree-icon-locked'
                 || node.iconCls == 'x-tree-icon-hyperv' || node.iconCls == 'x-tree-icon-hypervmachine'
                 || node.iconCls == 'x-tree-icon-mssql' || node.iconCls == 'x-tree-icon-mssqldb')
                 return;
@@ -345,8 +433,19 @@ backupApp.directive('sourceFolderPicker', function() {
                     node.loading = false;
 
                     if (node.children != null)
-                        for(var i in node.children)
-                            setEntryType(node.children[i]);
+                        for (var i in node.children) {
+                            var child = node.children[i];
+                            setEntryType(child);
+                            if (self.expandedPath != null) {
+                                var childPath = compareablePath(child.id);
+                                if (shouldExpand(childPath, self.expandedPath)) {
+                                    self.toggleExpanded(child);
+                                } else if (childPath == self.expandedPath) {
+                                    self.expandedPath = null;
+                                    self.scrollId = child.id;
+                                }
+                            }
+                        }
                     
                     updateIncludeFlags(node, node.include);
 
@@ -358,6 +457,49 @@ backupApp.directive('sourceFolderPicker', function() {
             }
         };
 
+        $scope.expandPath = function(path) {
+            cPath = compareablePath(path);
+            this.expandedPath = cPath;
+            traversenodes(function (n, p) {
+                if (n.root) {
+                    return null;
+                }
+                var nodePath = compareablePath(n.id);
+                if (nodePath == cPath && !n.other) {
+                    // Scroll to node
+                    scope.scrollId = n.id;
+                    // Cancel traverse
+                    return false;
+                }
+
+                if (shouldExpand(nodePath, cPath)) {
+                    if (!p.expanded) {
+                        // Handle root nodes
+                        scope.toggleExpanded(p);
+                    }
+                    if (!n.expanded) {
+                        scope.toggleExpanded(n);
+                    }
+                    // Continue traverse
+                    return null;
+                } else {
+                    // Do not continue this subtree
+                    return true;
+                }
+            }, this.treedata);
+        }
+
+        $scope.$watch('scrollId', function (scrollId, oldVal, scope) {
+            // Scroll to node
+            if (scrollId != null) {
+                scope.scrollId = null;
+                // Need to wait until all nodes are processed
+                $timeout(function () {
+                    $anchorScroll('node-' + scrollId);
+                }, 100);
+            }
+        });
+
         $scope.toggleSelected = function(node) {
             if (scope.selectednode != null)
                 scope.selectednode.selected = false;
@@ -366,7 +508,17 @@ backupApp.directive('sourceFolderPicker', function() {
             scope.selectednode.selected = true;
         };
 
+        $scope.doubleClick = function (node) {
+            if (sourceNodeChildren.indexOf(node) != -1) {
+                // Open folder in file picker
+                scope.expandPath(node.id);
+            }
+        };
+
         scope.treedata.children = [];
+
+        // Load filter groups
+        AppUtils.loadFilterGroups();
 
         AppService.post('/filesystem?onlyfolders=false&showhidden=true', {path: '/'}).then(function(data) {
 

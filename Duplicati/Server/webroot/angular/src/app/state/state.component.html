@@ -1,0 +1,43 @@
+<div class="state">
+  <div class="content">
+    <div *ngIf="activeTaskID != null">
+      <span *ngIf="activeBackup != null">
+        <span *ngIf="stopReqId !== activeTaskID">
+          <div class="task-state-info">
+            <div class="task-name" title="{{activeBackup.Backup.Name}}">
+              <strong>{{activeBackup.Backup.Name}}</strong>
+            </div>
+            <strong>: </strong>
+            <div>
+              {{progressText}}
+            </div>
+          </div>
+        </span>
+        <span *ngIf="stopReqId === activeTaskID">
+          <strong i18n>Stopping after the current file:</strong> {{activeBackup.Backup.Name}}
+        </span>
+      </span>
+      <span *ngIf="activeBackup == null">
+        <strong *ngIf="stopReqId !== activeTaskID" i18n>Running task:</strong>
+        <strong *ngIf="stopReqId == activeTaskID" i18n>Stopping task:</strong>
+        {{progressText}}
+      </span>
+
+    </div>
+
+    <div *ngIf="activeTaskID == null && nextTask != null">
+      <strong i18n>Next task:</strong> {{nextTask.Backup.Name}}
+    </div>
+
+    <div *ngIf="activeTaskID == null && nextTask == null && nextScheduledTask != null"><strong i18n>Next scheduled task:</strong> {{nextScheduledTask.Backup.Name}} <span title="{{nextScheduledTime | date}}">{{nextScheduledTime | date:'mediumDate' }}</span></div>
+
+    <div *ngIf="activeTaskID == null && nextTask == null && nextScheduledTask == null" i18n>No scheduled tasks</div>
+  </div>
+
+  <div class="buttons">
+    <div *ngIf="activeTaskID != null" class="stop" (click)="stopDialog()" i18n></div>
+    <div *ngIf="activeTaskID == null && programState != 'Running'" class="resume" (click)="sendResume()" i18n></div>
+  </div>
+
+  <div class="progress-bar progress-bar-striped" [hidden]="progress < 0" role="progressbar" [attr.aria-valuenow]="progress * 100" aria-valuemin="0" aria-valuemax="100" [style.width]="progress * 100+'%'"></div>
+</div>

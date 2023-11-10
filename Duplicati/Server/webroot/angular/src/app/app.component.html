@@ -1,0 +1,13 @@
+<div class="container" (click)="closeMenus($event)" *ngIf="finishedLoading">
+  <app-header (toggleMenu)="menuExpanded = !menuExpanded"></app-header>
+  <div class="body">
+    <app-main-menu [openOnMobile]="menuExpanded"></app-main-menu>
+    <div class="content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+  <app-footer></app-footer>
+
+  <app-notification-area></app-notification-area>
+  <app-dialog></app-dialog>
+</div>

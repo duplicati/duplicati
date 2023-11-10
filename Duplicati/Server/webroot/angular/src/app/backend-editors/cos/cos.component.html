@@ -1,0 +1,35 @@
+<div class="input text">
+  <label for="cos_app_id" i18n>COS App Id</label>
+  <input type="text" name="cos_app_id" id="cos_app_id" [(ngModel)]="cosAppId"
+         i18n-placeholder placeholder="Tencent Cloud Account APPID" />
+</div>
+
+<div class="input text">
+  <label for="cos_secret_id" i18n>COS Secret Id</label>
+  <input type="text" name="cos_secret_id" id="cos_secret_id" [(ngModel)]="cosSecretId"
+         i18n-placeholder placeholder="Cloud API Secret Id" />
+</div>
+
+<div class="input password">
+  <label for="cos_secret_key" i18n>COS Secret Key</label>
+  <input autocomplete="new-password" type="password" name="cos_secret_key" id="cos_secret_key" [(ngModel)]="cosSecretKey"
+         i18n-placeholder placeholder="Cloud API Secret Key" />
+</div>
+
+<div class="input text">
+  <label for="cos_region" i18n>Region</label>
+  <input type="text" name="cos_region" id="cos_region" [(ngModel)]="cosRegion" i18n-placeholder placeholder="Bucket region ap-guangzhou" />
+</div>
+
+<div class="input text">
+  <label for="cos_bucket" i18n>Bucket name</label>
+  <input type="text" name="cos_bucket" id="cos_bucket" [(ngModel)]="cosBucket" i18n-placeholder placeholder="Bucket, format: BucketName-APPID" />
+</div>
+
+<div class="input text">
+  <label for="cos_path" i18n>Folder path</label>
+  <input type="text" name="cos_path" id="cos_path" [(ngModel)]="path"
+         i18n-placeholder placeholder="COS Path or subfolder in the bucket" />
+</div>
+
+<div><a target="_blank" href="https://cloud.tencent.com/product/cos/document">Tencent Cloud COS documents and resources</a></div>

@@ -1,0 +1,18 @@
+<div class="input text">
+  <label for="e2_access_key" i18n>Access Key Id</label>
+  <input type="text" name="e2_access_key" id="e2_access_key" [(ngModel)]="username" i18n-placeholder placeholder="Idrivee2 Access Id" />
+</div>
+<div class="input password">
+  <label for="e2_access_secret" i18n>Access Key Secret</label>
+  <input autocomplete="new-password" type="password" name="e2_access_secret" id="e2_access_secret" [(ngModel)]="password" i18n-placeholder placeholder="Idrivee2 Access Secret" />
+</div>
+
+<div class="input text">
+  <label for="e2_bucket" i18n>Bucket name</label>
+  <input type="text" id="b2_bucket" [(ngModel)]="server" i18n-placeholder placeholder="Bucket name" />
+</div>
+
+<div class="input text">
+  <label for="e2_path" i18n>Folder path</label>
+  <input type="text" name="e2_path" id="e2_path" [(ngModel)]="path" i18n-placeholder placeholder="Path or subfolder in the bucket" />
+</div>

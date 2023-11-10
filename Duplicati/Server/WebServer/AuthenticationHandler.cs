@@ -74,7 +74,8 @@ namespace Duplicati.Server.WebServer
             var buf = new byte[32];
             var expires = DateTime.UtcNow.AddMinutes(XSRF_TIMEOUT_MINUTES);
             m_prng.GetBytes(buf);
-            var token = Convert.ToBase64String(buf);
+
+            var token = Library.Utility.Utility.Base64UrlEncode(buf);
 
             m_activexsrf.AddOrUpdate(token, key => expires, (key, existingExpires) =>
             {
@@ -162,7 +163,7 @@ namespace Duplicati.Server.WebServer
             else if (LOGIN_SCRIPT_URI.Equals(request.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase))
             {
                 // Remove expired nonces
-                foreach(var k in (from n in m_activeNonces where DateTime.UtcNow > n.Value.Item1 select n.Key))
+                foreach (var k in (from n in m_activeNonces where DateTime.UtcNow > n.Value.Item1 select n.Key))
                     m_activeNonces.TryRemove(k, out _);
 
                 if (input["get-nonce"] != null && !string.IsNullOrWhiteSpace(input["get-nonce"].Value))
@@ -178,7 +179,7 @@ namespace Duplicati.Server.WebServer
 
                     if (request.Headers[TRAYICONPASSWORDSOURCE_HEADER] == "database")
                         password = Program.DataConnection.ApplicationSettings.WebserverPasswordTrayIconHash;
-                    
+
                     var buf = new byte[32];
                     var expires = DateTime.UtcNow.AddMinutes(AUTH_TIMEOUT_MINUTES);
                     m_prng.GetBytes(buf);
@@ -198,9 +199,10 @@ namespace Duplicati.Server.WebServer
                     });
 
                     response.Cookies.Add(new HttpServer.ResponseCookie(NONCE_COOKIE_NAME, nonce, expires));
-                    using(var bw = new BodyWriter(response, request))
+                    using (var bw = new BodyWriter(response, request))
                     {
-                        bw.OutputOK(new {
+                        bw.OutputOK(new
+                        {
                             Status = "OK",
                             Nonce = nonce,
                             Salt = Program.DataConnection.ApplicationSettings.WebserverPasswordSalt
@@ -253,9 +255,9 @@ namespace Duplicati.Server.WebServer
                             throw new ArgumentException("An element with the same key already exists in the dictionary.");
                         });
 
-                        response.Cookies.Add(new  HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
+                        response.Cookies.Add(new HttpServer.ResponseCookie(AUTH_COOKIE_NAME, token, expires));
 
-                        using(var bw = new BodyWriter(response, request))
+                        using (var bw = new BodyWriter(response, request))
                             bw.OutputOK();
 
                         return true;
@@ -271,9 +273,10 @@ namespace Duplicati.Server.WebServer
             if (request.Uri.AbsolutePath.StartsWith(CAPTCHA_IMAGE_URI, StringComparison.OrdinalIgnoreCase) && request.Method == "GET")
                 limitedAccess = false;
 
-            if (limitedAccess)
+            if (limitedAccess && MethodRequiresXsrfToken(request.Method))
             {
-                if (xsrf_token != null && m_activexsrf.ContainsKey(xsrf_token))
+                if (xsrf_token != null
+                    && (m_activexsrf.ContainsKey(xsrf_token) || m_activexsrf.ContainsKey(Library.Utility.Uri.UrlDecode(xsrf_token))))
                 {
                     var expires = DateTime.UtcNow.AddMinutes(XSRF_TIMEOUT_MINUTES);
                     m_activexsrf[xsrf_token] = expires;
@@ -291,7 +294,7 @@ namespace Duplicati.Server.WebServer
             if (string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.WebserverPassword))
                 return false;
 
-            foreach(var k in (from n in m_activeTokens where DateTime.UtcNow > n.Value select n.Key))
+            foreach (var k in (from n in m_activeTokens where DateTime.UtcNow > n.Value select n.Key))
                 m_activeTokens.TryRemove(k, out _);
 
 
@@ -321,7 +324,7 @@ namespace Duplicati.Server.WebServer
                 response.Redirect("/login.html");
                 return true;
             }
-                
+
             if (limitedAccess)
             {
                 response.Status = System.Net.HttpStatusCode.Unauthorized;
@@ -332,6 +335,12 @@ namespace Duplicati.Server.WebServer
             }
 
             return false;
+        }
+
+        private bool MethodRequiresXsrfToken(string method)
+        {
+            // These methods are read-only and are considered 'safe' by rfc7231, which is why they are not sent for these methods
+            return method != "GET" && method != "HEAD" && method != "OPTION" && method != "TRACE";
         }
     }
 }
