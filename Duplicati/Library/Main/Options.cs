@@ -1096,7 +1096,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+                else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
@@ -1145,7 +1148,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+		else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
