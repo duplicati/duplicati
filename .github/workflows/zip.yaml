@@ -11,10 +11,10 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Zip Frontend Files
-      run: zip -r Frontend_files.zip Installer/Windows/Frontend_files
+      run: zip -r Frontend_Files.zip Installer/Windows/Frontend_Files
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Frontend_files_artifact
-        path: Frontend_files.zip
+        name: Frontend_Files_artifact
+        path: Frontend_Files.zip
