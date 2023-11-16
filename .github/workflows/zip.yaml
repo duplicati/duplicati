@@ -3,27 +3,7 @@ name: Zip Frontend Files and Upload Artifacts
 on: [push]
 
 jobs:
-  zip_frontend:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Zip Frontend Files
-        run: |
-          cd Installer/Windows/Frontend_Files/
-          zip -r Frontend_Files.zip *
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: Frontend_Files
-          path: Installer/Windows/Frontend_Files/Frontend_Files.zip # Corrected path to the zip file
-          retention-days: 5
-
   windowsbuild:
-    needs: zip_frontend
     runs-on: windows-latest
 
     steps:
@@ -32,7 +12,9 @@ jobs:
 
       - name: Run artifact_win.bat with downloaded artifact
         run: |
-          .\\Installer\\Windows\\artifact_win.bat Installer/Windows/Frontend_Files/Frontend_Files.zip
+          cd Installer/Windows/Frontend_Files/
+          zip -r Frontend_Files.zip *
+          .\\Installer\\Windows\\artifact_win.bat Frontend_Files.zip
 
       - name: Upload build results
         uses: actions/upload-artifact@v2
