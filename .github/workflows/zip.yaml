@@ -9,11 +9,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      
+      - name: Download 7-Zip installer
+        run: |
+          # Download 7-Zip installer
+          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2101-x64.msi" -OutFile "$env:TEMP\7zinstaller.msi"
+
+      - name: Install 7-Zip
+        run: |
+          # Install 7-Zip silently
+          Start-Process -Wait -FilePath msiexec -ArgumentList "/i $env:TEMP\7zinstaller.msi /quiet /qn /norestart"
 
       - name: Run artifact_win.bat with downloaded artifact
         run: |
           pushd Installer/Windows/Frontend_Files/
-          7z -r Frontend_Files.zip *
+          7z a Frontend_Files.zip *
           popd
           .\\Installer\\Windows\\artifact_win.bat Frontend_Files/Frontend_Files.zip
 
