@@ -3,7 +3,7 @@ name: Zip Frontend Files and Upload Artifacts
 on: [push]
 
 jobs:
-  build:
+  zip_frontend:
     runs-on: ubuntu-latest
 
     steps:
@@ -11,7 +11,10 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Zip Frontend Files
-      run: zip -r Frontend_Files.zip Installer/Windows/Frontend_Files
+      run: |
+        cd Installer/Windows
+        zip -r Frontend_Files.zip Frontend_Files/*
+        cd ../..
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
