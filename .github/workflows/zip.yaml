@@ -1,0 +1,20 @@
+name: Zip Frontend Files and Upload Artifacts
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Zip Frontend Files
+      run: zip -r Frontend_files.zip /path/to/Frontend_files
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Frontend_files_artifact
+        path: Frontend_files.zip
