@@ -22,7 +22,7 @@ jobs:
           path: Installer/Windows/Frontend_Files/Frontend_Files.zip # Corrected path to the zip file
           retention-days: 5
         env:
-          ZIPFLE_PATH: Installer/Windows/Frontend_Files/Frontend_Files.zip
+          ZIPFILE_PATH: Installer/Windows/Frontend_Files/Frontend_Files.zip
 
   windowsbuild:
     needs: zip_frontend
@@ -34,8 +34,7 @@ jobs:
 
       - name: Use Artifact Path
         run: |
-          echo ${{ env.ZIPFILE_PATH }}
-          .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPFILE_PATH }}
+          .\\Installer\\Windows\\artifact_win.bat %ZIPFILE_PATH%
       - name: Upload build results
         uses: actions/upload-artifact@v2
         with:
