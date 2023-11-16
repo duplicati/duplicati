@@ -9,6 +9,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.3
+
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v1.1.1
 
       - name: Download 7-Zip installer
         run: |
