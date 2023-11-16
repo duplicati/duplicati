@@ -11,7 +11,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Zip Frontend Files
-      run: zip -r Frontend_files.zip /path/to/Frontend_files
+      run: zip -r Frontend_files.zip Installer/Windows/Frontend_files
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
