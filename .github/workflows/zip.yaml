@@ -35,6 +35,7 @@ jobs:
 
       - name: Run artifact_win.bat with downloaded artifact
         run: |
+          echo %GITHUB_WORKSPACE%
           $GITHUB_WORKSPACE/Installer/Windows/artifact_win.bat artifacts\Frontend_Files.zip
 
       - name: Upload build results
