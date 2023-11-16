@@ -29,7 +29,8 @@ jobs:
     steps:
       - name: Run artifact_win.bat with downloaded artifact
         run: |
-           .//Installer//Windows//artifact_win.bat Installer/Windows/Frontend_Files/Frontend_Files.zip
+            cd Installer/Windows
+            artifact_win.bat Frontend_Files/Frontend_Files.zip
 
       - name: Upload build results
         uses: actions/upload-artifact@v2
