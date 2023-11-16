@@ -35,8 +35,7 @@ jobs:
 
       - name: Run artifact_win.bat with downloaded artifact
         run: |
-          ls
-          artifact_win.bat artifacts\Frontend_Files.zip
+          $GITHUB_WORKSPACE/Installer/Windows/artifact_win.bat artifacts\Frontend_Files.zip
 
       - name: Upload build results
         uses: actions/upload-artifact@v2
