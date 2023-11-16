@@ -7,17 +7,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Zip Frontend Files
-      run: |
-        cd Installer/Windows
-        zip -r Frontend_Files.zip Frontend_Files/*
-        cd ../..
+      - name: Zip Frontend Files
+        run: |
+          cd Installer/Windows
+          zip -r ../Frontend_Files.zip Frontend_Files/*
+          cd ../
 
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: Frontend_Files_artifact
-        path: Frontend_Files.zip
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Frontend_Files_artifact
+          path: Frontend_Files.zip
