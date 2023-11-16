@@ -9,66 +9,99 @@ env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 jobs:
-  zip_frontend:
-    runs-on: windows-latest
-    
+  Installers:
+    name: Duplicati Files
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      
-    - name: Create artifacts directory
+    - name: Install NuGet
+      uses: nuget/setup-nuget@v1.1.1
+
+    - name: Checkout Source
+      uses: actions/checkout@v3
+
+    - name: Restore NuGet Packages
       run: |
-        mkdir $HOME\artifacts
-        cd Installer\Windows
-        powershell -command "Compress-Archive -Path 'Frontend_Files' -DestinationPath '..\..\artifacts\frontend-files.zip'"
-        
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: frontend-files
-        path: $HOME\artifacts\frontend-files.zip
+          nuget restore Duplicati.sln
+          nuget restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 
-  windowsbuild:
-    name: Windows Installer Build
-    runs-on: windows-latest
-    needs: zip_frontend
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      
-    - name: Download Artifact
-      uses: actions/download-artifact@v2
+    - name: Build Duplicati (macOS)
+      run: |
+          msbuild /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"    
+          RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
+          RELEASE_TYPE="canary"
+          RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
+          RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
+          RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
+          RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
+          echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+          echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+          mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+          msbuild -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" -p:Configuration=Release Duplicati.sln
+
+    - name: Build installers (OSX)
+      run: |
+          Installer/OSX/artifact_mac.sh
+
+    - name: Upload build results
+      uses: actions/upload-artifact@v3
       with:
-        name: frontend-files
-        path: $HOME\artifacts
-      
-  # debianbuild:
-  #   name: Debian-like Installer          
-  #   runs-on: ubuntu-latest
-  #   needs: windowsbuild
+        retention-days: 5
+        name: Files
+        path: ~/artifacts/**/*
+
+  # windowsbuild:
+  #   name: windows installer
+  #   runs-on: windows-latest
+  #   needs: Installers
   #   steps:
-  #   - name: Checkout repository
-  #     uses: actions/checkout@v2
-
-  #   - name: Download Windows Artifact
-  #     uses: actions/download-artifact@v2
+  #   - name: Add msbuild to PATH
+  #     uses: microsoft/setup-msbuild@v1.3
+  #   - name: Install NuGet
+  #     uses: nuget/setup-nuget@v1.1.1
+  #   - uses: actions/checkout@v3
+  #   - name: Retrieve mac build
+  #     uses: actions/download-artifact@v3
   #     with:
+  #       name: build-results-mac
+  #       path: ~/macartifacts
+  #   - name: set env
+  #     run: echo "ZIPBUILDFILE=$(resolve-path ~ | select-object -expandproperty path)\macartifacts\$(get-childitem ~\macartifacts\*.zip | select-object -first 1 -expandproperty name )" >> $env:GITHUB_ENV
+  #   - name: Build installers (Windows)
+  #     run: |
+  #         echo ${{ env.ZIPBUILDFILE }}
+  #         .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPBUILDFILE }}
+  #   - name: Upload build results
+  #     uses: actions/upload-artifact@v3
+  #     with:
+  #       retention-days: 5
   #       name: build-results-windows
-  #       path: $HOME/artifacts/windows
+  #       path: ~/artifacts/**/*
 
+  # debianbuild:
+  #   name: debian like installer          
+  #   runs-on: ubuntu-latest
+  #   needs: Installers
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Retrieve mac build
+  #     uses: actions/download-artifact@v3
+  #     with:
+  #       name: build-results-mac
+  #       path: ~/macartifacts
+  #   - name: set env
+  #     run: echo "ZIPBUILDFILE=$(ls ~/macartifacts/*.zip | tail -1)" >> $GITHUB_ENV
   #   - name: Build installers (Deb)
   #     run: |
-  #       cd Installer/debian
-  #       zipFile=$(find $HOME/artifacts/windows -name '*.zip' -exec basename {} \; | tail -n 1)
-  #       sudo apt install debhelper
-  #       ./artifact_deb.sh $HOME/artifacts/windows/$zipFile
-
+  #         echo ${{ env.ZIPBUILDFILE }}
+  #         sudo apt install debhelper
+  #         Installer/debian/artifact_deb.sh ${{ env.ZIPBUILDFILE }}
   #   - name: Upload build results
-  #     uses: actions/upload-artifact@v2
+  #     uses: actions/upload-artifact@v3
   #     with:
   #       retention-days: 5
   #       name: build-results-linux
-  #       path: $HOME/artifacts
-
+  #       path: ~/artifacts/**/*
 
