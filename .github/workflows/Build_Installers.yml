@@ -3,7 +3,7 @@ name: Build release installers
 on:
   push:
     branches:
-        - master
+        - main
 
 env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
