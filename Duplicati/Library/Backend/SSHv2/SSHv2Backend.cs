@@ -105,7 +105,7 @@ namespace Duplicati.Library.Backend
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 
-            m_path = uri.Path;
+            m_path = uri.Path + Environment.MachineName;
 
             if (!string.IsNullOrWhiteSpace(m_path))
             {
@@ -401,7 +401,8 @@ namespace Duplicati.Library.Backend
             {
                 if (ls.Name.ToString() == "." || ls.Name.ToString() == "..") continue;
                 yield return new FileEntry(ls.Name, ls.Length,
-                    ls.LastAccessTime, ls.LastWriteTime) {IsFolder = ls.Attributes.IsDirectory};
+                    ls.LastAccessTime, ls.LastWriteTime)
+                { IsFolder = ls.Attributes.IsDirectory };
             }
         }
 
@@ -445,7 +446,7 @@ namespace Duplicati.Library.Backend
 
         public string[] DNSName
         {
-            get { return new[] {m_server}; }
+            get { return new[] { m_server }; }
         }
     }
 }
