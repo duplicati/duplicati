@@ -33,8 +33,7 @@ jobs:
       - name: Run artifact_win.bat with downloaded artifact
         run: |
           cd Installer/Windows
-          dir
-        #   artifact_win.bat Frontend_Files/Frontend_Files.zip
+          artifact_win.bat Frontend_Files/Frontend_Files.zip
 
       - name: Upload build results
         uses: actions/upload-artifact@v2
