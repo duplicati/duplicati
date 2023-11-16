@@ -13,7 +13,7 @@ jobs:
       - name: Download 7-Zip installer
         run: |
           # Download 7-Zip installer
-          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2101-x64.msi" -OutFile "$env:TEMP\7zinstaller.msi"
+          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2301-src.7z" -OutFile "$env:TEMP\7zinstaller.msi"
 
       - name: Install 7-Zip
         run: |
