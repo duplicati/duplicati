@@ -35,7 +35,7 @@ jobs:
 
       - name: Run artifact_win.bat with downloaded artifact
         run: |
-          .\Installer\Windows\artifact_win.bat artifacts\Frontend_Files.zip
+            cmd /c "call Installer\Windows\artifact_win.bat artifacts\Frontend_Files.zip"
 
       - name: Upload build results
         uses: actions/upload-artifact@v2
