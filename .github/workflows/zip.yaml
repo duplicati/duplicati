@@ -13,7 +13,7 @@ jobs:
       - name: Run artifact_win.bat with downloaded artifact
         run: |
           cd Installer/Windows/Frontend_Files/
-          zip -r Frontend_Files.zip *
+          7z -r Frontend_Files.zip *
           .\\Installer\\Windows\\artifact_win.bat Frontend_Files.zip
 
       - name: Upload build results
