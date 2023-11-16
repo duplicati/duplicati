@@ -105,7 +105,7 @@ namespace Duplicati.Library.Backend
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 
-            m_path = uri.Path + Environment.MachineName;
+            m_path = uri.Path + "/" + Environment.MachineName;
 
             if (!string.IsNullOrWhiteSpace(m_path))
             {
