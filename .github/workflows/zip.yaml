@@ -12,8 +12,8 @@ jobs:
 
       - name: Zip Frontend Files
         run: |
-          cd Installer/Windows/
-          zip -r Frontend_Files.zip Frontend_Files/*
+          cd Installer/Windows/Frontend_Files/
+          zip -r Frontend_Files.zip *
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
