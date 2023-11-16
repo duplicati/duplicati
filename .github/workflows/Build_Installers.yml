@@ -20,7 +20,7 @@ jobs:
       run: |
         mkdir $HOME\artifacts
         cd Installer\Windows
-        powershell -command "Compress-Archive -Path 'Frontend_Files' -DestinationPath '$HOME\artifacts\frontend-files.zip'"
+        powershell -command "Compress-Archive -Path 'Frontend_Files' -DestinationPath '..\..\artifacts\frontend-files.zip'"
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
