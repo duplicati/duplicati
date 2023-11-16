@@ -25,6 +25,8 @@ jobs:
           pushd Installer/Windows/Frontend_Files/
           7z a Frontend_Files.zip *
           popd
+          cd Installer/Windows/Frontend_Files/
+          ls
           .\\Installer\\Windows\\artifact_win.bat Frontend_Files/Frontend_Files.zip
 
       - name: Upload build results
