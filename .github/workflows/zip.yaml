@@ -10,14 +10,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Zip Frontend Files
-        run: |
-          cd Installer/Windows
-          zip -r ../Frontend_Files.zip Frontend_Files/*
-          cd ../
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: Frontend_Files_artifact
-          path: Frontend_Files.zip
+          name: Frontend_Files
+          path: Installer/Windows/Frontend_Files/**
+          retention-days: 5
