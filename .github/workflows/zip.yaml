@@ -36,8 +36,8 @@ jobs:
       - name: Run artifact_win.bat with downloaded artifact
         run: |
             echo "ZIPBUILDFILE=$(resolve-path ~ | select-object -expandproperty path)\macartifacts\$(get-childitem ~\artifacts\*.zip | select-object -first 1 -expandproperty name )" >> $env:GITHUB_ENV
-            %GITHUB_WORKSPACE%/Installer/Windows/artifact_win.bat artifacts\Frontend_Files.zip
-
+#            %GITHUB_WORKSPACE%/Installer/Windows/artifact_win.bat artifacts\Frontend_Files.zip
+            
       - name: Upload build results
         uses: actions/upload-artifact@v2
         with:
