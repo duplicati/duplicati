@@ -34,7 +34,7 @@ jobs:
 
       - name: Use Artifact Path
         run: |
-          .\\Installer\\Windows\\artifact_win.bat %ZIPFILE_PATH%
+          .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPFILE_PATH }}
       - name: Upload build results
         uses: actions/upload-artifact@v2
         with:
