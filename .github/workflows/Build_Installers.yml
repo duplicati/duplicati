@@ -16,8 +16,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
       
-    - name: Zip Frontend Files
+    - name: Create artifacts directory
       run: |
+        mkdir $HOME\artifacts
         cd Installer\Windows
         powershell -command "Compress-Archive -Path 'Frontend_Files' -DestinationPath '$HOME\artifacts\frontend-files.zip'"
         
@@ -40,18 +41,6 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: frontend-files
-        path: $HOME\artifacts
-      
-    - name: Build installers (Windows)
-      run: |
-        $zipFile = Get-ChildItem $HOME\artifacts\*.zip | Select-Object -First 1
-        .\Installer\Windows\artifact_win.bat $zipFile.FullName
-        
-    - name: Upload build results
-      uses: actions/upload-artifact@v2
-      with:
-        retention-days: 5
-        name: build-results-windows
         path: $HOME\artifacts
       
   # debianbuild:
