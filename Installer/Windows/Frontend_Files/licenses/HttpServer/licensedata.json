@@ -1,0 +1,7 @@
+{
+    "name": "C# WebServer",
+    "description": "A HTTP Compliant WebServer in C#",
+    "link": "https://github.com/duplicati/httpserver",
+    "license": "Apache 2.0",
+    "notes": "Patched from http://webserver.codeplex.com/"
+}

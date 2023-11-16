@@ -1,0 +1,48 @@
+<ul class="notification">
+    <li ng-repeat="item in Notifications track by item.ID" ng-show="$index < 4" class="{{item.Type.toLowerCase()}}">
+        <div class="title">{{item.Title}}</div>
+        <div class="content">
+            <div ng-if="item.Action != 'update:new'" class="message">{{item.Message}}</div>
+            <div ng-show="item.DownloadLink != null">
+                <div translate>If the backup file was not downloaded automatically, <a href="{{item.DownloadLink}}" target="_blank">right click and choose &quot;Save as …&quot;</a></div>
+            </div>
+            <div ng-if="item.Action != 'update:new'" class="buttons">
+                <a href ng-click="doDismiss(item.ID)" class="button dismiss" translate>Dismiss</a>
+
+                <a href ng-show="item.Action == 'backup:show-log'" ng-click="doShowLog(item.BackupID)" class="button showlog" translate>Show</a>
+
+                <a href ng-show="item.Message.indexOf('please run repair') > 0" ng-click="doRepair(item.BackupID)" class="button repairdb" translate>Repair</a>
+
+                <a href ng-show="item.Action.indexOf('bug-report:created:') == 0 &amp;&amp; item.DownloadLink == null" ng-click="doDownloadBugreport(item)" class="button downloadbugreport" translate>Download</a>
+                <div class="clear"></div>
+            </div>
+
+
+            <div ng-if="item.Action == 'update:new'">
+                    <div class="message" translate translate-params-message="item.Message">New update found: {{message}}</div>
+
+                <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update…' | translate" ng-progress="state.updateDownloadProgress"></progress-bar>
+
+                <div class="buttons">
+                    <a href ng-click="doDismiss(item.ID)" class="button dismiss" translate>Dismiss</a>
+                    <a href ng-show="!state.updateReady &amp;&amp; state.updaterState == 'Waiting'" ng-click="doInstallUpdate(item.ID)" class="button installupdate" translate>Install</a>
+                    <a href ng-show="state.updateReady &amp;&amp; state.updaterState == 'Waiting'" ng-click="doActivateUpdate(item.ID)" class="button installupdate" translate>Activate</a>
+                    <a href ng-show="state.updaterState == 'Downloading'" class="button" ng-disabled="true" ng-click="" translate>Downloading …</a>
+                    <a href ng-show="state.updaterState == 'Checking'" class="button" ng-disabled="true" ng-click="" translate>Verifying …</a>
+                    <a href ng-click="doShowUpdate()" class="button showupdate" translate>Show</a>
+                    <div class="clear"></div>
+                </div>
+            </div>
+        </div>
+    </li>
+    <li class="error" ng-if="Notifications.length > 1">
+        <div class="content">
+            <div class="buttons">
+                <a href ng-click="doDismissAll()" class="button dismiss" translate>Dismiss all</a>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </li>
+</ul>
+
+<iframe style="display: none" ng-src="{{DownloadLink}}"></iframe>

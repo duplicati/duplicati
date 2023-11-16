@@ -1,0 +1,44 @@
+<div ng-controller="BackupLogController" class="logpage">
+
+    <h1 translate>Log data for <b>{{Backup.Backup.Name}}</b></h1>
+
+    <ul class="tabs">
+        <li ng-class="{active: Page=='general'}"><a href ng-click="Page='general'" translate>General</a></li>
+        <li ng-class="{active: Page=='remote'}"><a href ng-click="Page='remote'" translate>Remote</a></li>
+    </ul>
+
+    <div ng-show="Page == 'general'">
+        <ul class="entries backuplog">
+            <li ng-show="GeneralData == null" translate>Loading …</li>
+            <li ng-repeat="item in GeneralData" style="width: 100%">
+                <div ng-click="expanded = !expanded" class="entryline clickable">
+                    <div ng-include="'templates/backup-result/entryline.html'"></div>
+                </div>
+                <div ng-show="expanded && item.Result" ng-include="'templates/backup-result/box.html'"></div>
+                <div ng-show="expanded && !item.Result" class="prewrapped-text exceptiontext">{{item.Message}}</div>
+            </li>
+        </ul>
+        <div ng-show="GeneralData != null &amp;&amp; !GeneralDataComplete" class="button" ng-click="LoadMoreGeneralData()">
+            <span ng-show="LoadingData" translate>Loading …</span>
+            <span ng-hide="LoadingData" translate>Load older data</span>
+        </div>
+    </div>
+
+    <div ng-show="Page == 'remote'">
+        <ul class="entries">
+            <li ng-show="RemoteData == null" translate>Loading …</li>
+            <li ng-repeat="item in RemoteData">
+                <div ng-click="expanded = !expanded" class="entryline clickable">
+                    {{item.Timestamp | parsetimestamp}}: {{item.Operation}} {{item.Path}}
+                    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+                    <div style="clear: both;"></div>
+                </div>
+                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Data}}</div>
+            </li>
+        </ul>
+        <div ng-show="RemoteData != null &amp;&amp; !RemoteDataComplete" class="button" ng-click="LoadMoreRemoteData()">
+            <span ng-show="LoadingData" translate>Loading …</span>
+            <span ng-hide="LoadingData" translate>Load older data</span>
+        </div>
+    </div>
+</div>

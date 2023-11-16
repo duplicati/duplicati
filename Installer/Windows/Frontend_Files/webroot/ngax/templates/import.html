@@ -1,0 +1,41 @@
+<div ng-controller="ImportController" class="importpage">
+
+    <h1 ng-hide="restoremode" translate>Import backup configuration</h1>
+    <h1 ng-show="restoremode" translate>Restore from backup configuration</h1>
+
+    <form enctype="multipart/form-data" id="import-form" class="styled" method="POST" action="{{ImportURL}}" target="submit-target">
+
+        <div class="input text">
+            <label for="file" translate>Configuration file:</label>
+            <input type="file" name="config"  id="file" />
+        </div>
+
+        <div class="input text">
+            <label for="passphrase" translate>Passphrase (if encrypted)</label>
+            <input type="password" name="passphrase" id="passphrase" placeholder="{{'Enter encryption passphrase' | translate}}" />
+        </div>
+
+        <div class="input checkbox" ng-hide="restoremode">
+            <label for="import_metadata" translate>Import metadata</label>
+            <input type="checkbox" name="import_metadata" id="import_metadata" value="true" />
+        </div>
+
+        <div class="input checkbox" ng-hide="restoremode">
+            <label for="direct" translate>Save immediately</label>
+            <input type="checkbox" name="direct" id="direct" value="true" />
+        </div>
+
+        <input type="hidden" name="callback" value="{{CallbackMethod}}" />
+
+        <div class="buttons" ng-hide="Connecting">
+            <a href ng-click="doSubmit()" translate>Import</a>
+        </div>
+
+        <div class="buttons" ng-show="Connecting">
+            <a href translate>Importing …</a>
+        </div>
+    </form>
+
+    <iframe style="display:none" id="submit-target" name="submit-target"></iframe>
+
+</div>

@@ -1,0 +1,12 @@
+<div class="input text">
+    <label for="jottacloud_path" translate>Folder path</label>
+    <input type="text" name="jottacloud_path" id="jottacloud_path" ng-model="$parent.Path" placeholder="{{'Enter the destination path' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="jottacloud_authid">
+        <a ng-show="oauth_in_progress" href="{{oauth_start_link}}" target="_blank" translate>AuthID</a> 
+        <a ng-hide="oauth_in_progress" href ng-click="oauth_start_token_creation()" translate>AuthID</a>
+    </label>
+    <input type="text" name="jottacloud_authid" id="jottacloud_authid" ng-model="$parent.AuthID"  placeholder="{{'Click the AuthID link to create an AuthID' | translate}}" />
+</div>

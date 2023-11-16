@@ -1,0 +1,12 @@
+<ul dx-start-with="treedata" class="tree-view">
+  <li ng-repeat="node in $dxPrior.children" ng-class="{hidden: node.invisible || (node.hidden &amp;&amp; !ngShowHidden)}">
+      <div ng-class="{selected: node.selected}" alt="{{node.selected ? 'selected' : 'not selected'}}">
+          <a class="nav" ng-click="toggleExpanded(node)" ng-class="{expanded: node.expanded, leaf: node.leaf}" alt="{{node.expanded ? 'expanded' : 'contracted'}}"></a>
+        <a class="check" ng-click="toggleCheck(node)" ng-class="{include: node.include == '+', exclude: node.include == '-', partial: node.include == ' ', root: node.root}" alt="{{node.include == ' ' ? 'partially included' : (node.include == '-' ? 'excluded' : (node.include == '+' ? 'included' : 'not checked'))}}"></a>
+          <a class="type {{node.iconCls}}" alt="{{loading ? 'loading' : node.entrytype}}" ng-class="{invisible: node.hidden, loading: node.loading}"></a>
+
+          <span ng-click="toggleSelected(node)" ng-bind-html="node.text | highlight:ngSearchFilter"></span>
+    </div>
+    <ul ng-class="{expanded: node.expanded}" dx-connect="node" alt="{{node.expanded ? 'expanded' : 'contracted'}}"/>
+  </li>
+</ul>

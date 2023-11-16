@@ -1,0 +1,91 @@
+<div ng-show="SupportsSSL" class="input checkbox">
+    <label for="s3_ssl" translate>Use SSL</label>
+    <input type="checkbox" style="width: 15px; margin-right: 65%;" name="s3_ssl" id="s3_ssl" ng-model="$parent.UseSSL"/>
+</div>
+
+<div class="input select">
+
+    <label for="s3_server" translate>Server</label>
+
+    <select name="s3_server" id="s3_server" ng-model="$parent.s3_server"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in s3_providers | orderBy: k">
+        <option value="" translate translate-params-server="s3_server_custom || ''">Custom server url ({{server}})
+        </option>
+    </select>
+
+    <input ng-hide="contains_value(s3_providers, s3_server)" type="text" id="s3_server_custom"
+           ng-model="$parent.s3_server_custom" placeholder="{{'Custom S3 endpoint' | translate}}"/>
+
+</div>
+
+<div class="input text">
+    <label for="s3_bucket" translate>Bucket name</label>
+    <input type="text" id="s3_bucket" ng-model="$parent.Server" placeholder="{{'Bucket name' | translate}}"/>
+</div>
+
+
+<div class="input select">
+
+    <label for="s3_region" translate>Bucket create region</label>
+
+    <select name="s3_region" id="s3_region" ng-model="$parent.s3_region"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k"
+            title="{{'The region parameter is only applied when creating a new bucket' | translate}}">
+        <option value="" translate translate-params-region="s3_region_custom || ''">Custom region value ({{region}})
+        </option>
+    </select>
+
+    <input ng-hide="contains_value(s3_regions, s3_region)" type="text" id="s3_region_custom"
+           ng-model="$parent.s3_region_custom" placeholder="{{'Custom region for creating buckets' | translate}}"/>
+
+</div>
+
+<div class="input select">
+
+    <label for="s3_storageclass" translate>Storage class</label>
+
+    <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass"
+            ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k"
+            title="{{'The storage class affects the availability and price for a stored file' | translate}}">
+        <option value="" translate translate-params-class="s3_storageclass_custom || ''">Custom storage class
+            ({{class}})
+        </option>
+    </select>
+
+    <input ng-hide="contains_value(s3_storageclasses, s3_storageclass)" type="text" id="s3_storageclass_custom"
+           ng-model="$parent.s3_storageclass_custom" placeholder="Custom bucket storage class"/>
+
+</div>
+
+<div class="input text">
+    <label for="s3_path" translate>Folder path</label>
+    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.Path"
+           placeholder="{{'Path or subfolder in the bucket' | translate}}"/>
+</div>
+
+<div class="input text">
+    <label for="s3_username" translate>AWS Access ID</label>
+    <input type="text" name="s3_username" id="s3_username" ng-model="$parent.Username"
+           placeholder="{{'AWS Access ID' | translate}}"/>
+</div>
+<div class="input password">
+    <label for="s3_password" translate>AWS Access Key</label>
+    <input autocomplete="new-password" type="password" name="s3_password" id="s3_password" ng-model="$parent.Password"
+           placeholder="{{'AWS Access Key' | translate}}"/>
+</div>
+
+<div class="input select">
+
+    <label for="s3_client" translate>Client library to use</label>
+
+    <select name="s3_client" id="s3_client" ng-model="$parent.s3_client"
+            ng-options="item as item.label for item in s3_client_options track by item.name"
+            title="{{'Some S3 providers might only be compatible with a certain client library' | translate}}">
+    </select>
+
+</div>
+
+<div class="buttons">
+    <a href ng-click="s3_createIAMPolicy()" ng-show="$parent.s3_server == 's3.amazonaws.com'" translate>Generate IAM
+        access policy</a>
+</div>

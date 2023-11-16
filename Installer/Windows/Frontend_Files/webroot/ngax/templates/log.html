@@ -1,0 +1,47 @@
+<div ng-controller="LogController" class="logpage">
+
+    <h1 translate>Log data from the server</h1>
+
+    <ul class="tabs">
+        <li ng-class="{active: Page=='stored'}"><a href ng-click="Page='stored'" translate>Stored</a></li>
+        <li ng-class="{active: Page=='live'}"><a href ng-click="Page='live'" translate>Live</a></li>
+    </ul>
+
+    <div ng-show="Page=='stored'">
+        <ul class="entries">
+            <li ng-show="LogData == null" translate>Loading …</li>
+            <li ng-repeat="item in LogData">
+                <div ng-click="expanded = !expanded" class="entryline clickable">
+                    {{item.Timestamp | parsetimestamp}}: {{item.Message}}
+                    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+                    <div style="clear: both;"></div>
+                </div>
+                <div ng-show="expanded" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
+            </li>
+        </ul>
+        <div ng-show="LogData != null &amp;&amp; !LogDataComplete" class="button" ng-click="LoadMoreStoredData()">
+            <span ng-show="LoadingData" translate>Loading …</span>
+            <span ng-hide="LoadingData" translate>Load older data</span>
+        </div>
+    </div>
+
+    <div ng-show="Page=='live'">
+        <div>
+            <div translate>Select a log level and see messages as they happen:</div>
+            <select ng-model="LiveLogLevel" ng-options="x for x in SystemInfo.LogLevels">
+                <option value="" translate>Disabled</option>
+            </select>
+        </div>
+
+        <ul class="entries livedata">
+            <li ng-repeat="item in LiveData" ng-class="{expanded: expanded}">
+                <div ng-click="expanded = !expanded" class="entryline" ng-class="{noexception: item.Exception == null, clickable: item.Exception != null}">
+                    {{item.When | parsetimestamp}}: {{item.Message}}
+                    <i style="float: right" class="fa fa-angle-{{expanded ? 'up': 'down'}}"></i>
+                    <div style="clear: both;"></div>
+                </div>
+                <div ng-show="expanded &amp;&amp; item.Exception != null" class="prewrapped-text exceptiontext">{{item.Exception}}</div>
+            </li>
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Select theme</title>
+    <style type="text/css">
+    .button {
+        display: inline-block;
+        padding: 10px;
+        background-color: lightblue;
+        color: black;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .button.disabled {
+        background-color: lightgray;
+        color: white;
+        cursor: default;
+    }
+    </style>
+    
+    <script type="text/javascript">
+    function setDefault(theme) {
+
+        var d = new Date();
+        d.setTime(d.getTime() + (90*24*60*60*1000));
+
+        document.cookie = 'default-theme=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
+        updateToCurrentTheme();
+        return false;
+    };
+
+    function parseCookies(){
+
+        var cookiestrings = document.cookie.split('; ');
+        var cookies = {};
+
+        for(var i=cookiestrings.length-1; i>=0; i--){
+           var parts = cookiestrings[i].split('=');
+           cookies[parts[0]] = parts[1];
+        }
+
+        return cookies;
+    };
+
+    function updateToCurrentTheme() {
+        var theme = parseCookies()['default-theme'];
+
+        var themes = ['ngax'];
+        for(var k in themes) {
+            var el = document.getElementById(themes[k]);
+            el.className = "button" + (theme == themes[k] ? " disabled" : "");
+        }
+    };
+
+    function onLabelClick(e) {
+        document.forms[0]['theme'].value = e;
+    };
+
+    function setView(theme) {
+        window.location = theme;
+    };
+
+    // Lazy hack for DOM timing issues...
+    window.setTimeout(updateToCurrentTheme, 1000);
+
+    </script>
+
+    <script type="text/javascript" src="oem/root/theme/oem.js" ></script>
+    <link rel="stylesheet" type="text/css" href="oem/root/theme/oem.css" />
+
+</head>
+
+<body>
+    <h2>Duplicati theme</h2>
+    <ul>
+        <li class="theme-item">
+            <h3 class="title">NgAx - The responsive theme</h3>
+            <div class="buttons">
+                <div class="button" id="ngax" onclick="setDefault('ngax')">Use as default</div>
+                <div class="button" onclick="setView('ngax')">View now</div>
+            </div>
+        </li>
+        <!--<li class="theme-item">
+            <h3 class="title">Greeno - Your friendly green theme</h3>
+            <div class="buttons">
+                <div class="button" id="greeno" onclick="setDefault('greeno')">Use as default</div>
+                <div class="button" onclick="setView('greeno')">View now</div>
+            </div>
+        </li>-->
+    </ul>
+
+    <script type="text/javascript">updateToCurrentTheme();</script>
+</body>    
+</html>

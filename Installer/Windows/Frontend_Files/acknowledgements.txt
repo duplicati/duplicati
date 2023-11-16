@@ -1,0 +1,14 @@
+﻿We would like to thank all contributors who made Duplicati what it is today. 
+  These are the contributors to Duplicati 1.x that got it all started.
+  These are the people who help others to get their backups up and running. 
+  These are the testers and translators.
+  These are the people who give us hints how to improve Duplicati further.
+  These are the people who just say "thank you".
+  
+You are the reason why this project gets ahead. You do not only contribute to the software but also keep us involved and motivated. Thank you!
+
+Due to their recent contributions to Duplicati 2.0 we would like to thank some people in particular:
+  Stefan Lück (@footstark) for providing great performance optimizations to Duplicati 2.0
+  Tobias Käs (@weltkante) for his C# library that implements LZMA2 and 7z
+  Alexander Franzelin (@AlexFRAN) for the design of the Duplicati UI and the website
+  @agrajaghh for building localization support and improving the user interface

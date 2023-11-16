@@ -1,0 +1,22 @@
+<div class="waitarea">
+    <div ng-show="serverstate.activeTask == null || serverstate.activeTask.Item1 != taskid" translate>Waiting for task to begin</div>
+    <div ng-show="serverstate.activeTask != null &amp;&amp; serverstate.activeTask.Item1 == taskid">
+        <div ng-show="text">{{text}}</div>
+        <div ng-hide="text" translate>Task is running</div>
+        <div class="progress" style="border: 1px solid;">
+            <span>{{ServerStatus.progress_state_text[serverstate.lastPgEvent.Phase] || serverstate.lastPgEvent.Phase}}</span>
+
+            <div class="progress-bar progress-bar-striped" ng-class="{active: serverstate.lastPgEvent.OverallProgress <= 0}" role="progressbar" aria-valuenow="{{serverstate.lastPgEvent.OverallProgress * 100}}" aria-valuemin="0" aria-valuemax="100" style="width:{{serverstate.lastPgEvent.OverallProgress * 100}}%">
+            </div>
+        </div>
+    </div>
+
+    <div ng-show="serverstate.programState == 'Paused'" >
+        {{'Server is currently paused,' | translate}} <a style="cursor: pointer" ng-click="ServerStatus.resume()" translate>resume now</a>
+    </div>
+
+    <div ng-show="allowCancel">
+        <a href class="button" ng-click="cancelTask()" translate>Cancel</a>
+    </div>
+
+</div>

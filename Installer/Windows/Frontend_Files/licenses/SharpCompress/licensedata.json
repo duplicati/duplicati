@@ -1,0 +1,7 @@
+{
+    "name": "SharpCompress",
+    "description": "A C# Library for RAR, Zip, 7z, Tar and BZ2 compression",
+    "link": "https://github.com/adamhathcock/sharpcompress/",
+    "license": "Microsoft Public",
+    "notes": ""
+}

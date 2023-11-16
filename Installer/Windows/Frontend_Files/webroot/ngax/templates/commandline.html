@@ -1,0 +1,70 @@
+<div class="commandline form" ng-controller="CommandlineController">
+    <form class="styled" ng-hide="Mode == 'view'">
+        <backup-edit-uri uri="TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
+
+        <div ng-hide="EditUriState">
+
+            <div class="input mixed">
+                <label for="command">Command</label>
+                <select name="command" id="command" ng-model="Command" ng-options="item for item in SupportedCommands">
+                </select>
+                <div style="float: left">{{CommandHelp[Command]}}</div>
+            </div>
+
+
+            <div class="input textarea linklabel">
+                <label for="target"><a href class="target" ng-click="EditUriState = true">Target URL &gt;</a></label>
+                <textarea name="target" id="target" ng-model="TargetURL" placeholder="Enter a url, or click the 'Target URL &gt;' link"></textarea>
+            </div>
+
+            <div class="input textarea">
+                <label for="arguments">Commandline arguments</label>
+                <textarea id="arguments" ng-model="Arguments" string-array-as-text placeholder="Enter one argument per line without quotes, e.g. *.txt"></textarea>
+            </div>
+
+            <div class="input textarea" ng-show="ShowAdvancedTextArea">
+                <label for="backupOptions">Advanced options</label>
+                <div>
+                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> Edit as text</a>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+                </div>
+            </div>
+            
+            <div class="input" ng-hide="ShowAdvancedTextArea">
+                <label for="backupOptions">Advanced options</label>
+                <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> Edit as text</a>
+                <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
+            </div>
+
+            <div class="buttons">
+                <input class="submit run" type="submit" id="run" ng-click="run()" value="Run &quot;{{Command}}&quot; command now" />
+            </div>
+
+        </div>
+    </form>
+
+    <div ng-show="Mode == 'view'">
+        <h2 translate>Running commandline entry</h2>
+        <div ng-show="serverstate.programState == 'Paused' &amp;&amp; Started != true">
+            {{'Server is currently paused,' | translate}} <a style="cursor: pointer" ng-click="ServerStatus.resume()" translate>resume now</a>
+        </div>
+        <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == null" translate="">
+            Connecting to task ....
+        </div>
+        <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == false" translate="">
+            Waiting for task to start ....
+        </div>
+        <div ng-show="Started == true &amp;&amp; Finished == false">
+            <span translate>Running ....</span> <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
+        </div>
+        <div ng-show="Started == true &amp;&amp; Finished == true" translate>
+            Finished!
+        </div>
+
+        <div ng-show="Started == true" class="prewrapped-text" style="overflow-x: auto;">
+            <div class="fixed-width-font" style="white-space: pre" ng-repeat="line in ViewLines track by $index">{{line}}</div>
+        </div>
+
+    </div>
+
+</div>

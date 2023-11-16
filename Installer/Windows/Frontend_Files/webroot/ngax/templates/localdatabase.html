@@ -1,0 +1,40 @@
+<div ng-controller="LocalDatabaseController" class="localdb" >
+    <h1>{{'Local database for' | translate}} 
+        <b ng-show="Backup.Backup.Name">{{Backup.Backup.Name}}</b>
+        <b ng-hide="Backup.Backup.Name" translate>…loading…</b>
+    </h1>
+
+    <div>
+        {{'Each backup has a local database associated with it, which stores information about the remote backup on the local machine.  This makes it faster to perform many operations, and reduces the amount of data that needs to be downloaded for each operation.' | translate}}
+    </div>
+
+    <h2 translate>Maintenance</h2>
+    <div>
+        {{'If the backup and the remote storage is out of sync, Duplicati will require that you perform a repair operation to synchronize the database.  If the repair is unsuccesful, you can delete the local database and re-generate.' | translate}}
+    </div>
+    <div>&nbsp;</div>
+
+    <ul class="tabs">
+        <li class="active" ng-class="{disabled: Backup == null || Backup.Backup == null}"><a href ng-click="doRepair()" translate>Repair</a></li>
+        <li class="active" ng-class="{disabled: NoLocalDB}"><a href ng-click="!NoLocalDB &amp;&amp; doDelete()" translate>Delete</a></li>
+        <li class="active" ng-class="{disabled: NoLocalDB}"><a href ng-click="!NoLocalDB &amp;&amp; doDeleteAndRepair()" translate>Recreate (delete and repair)</a></li>
+    </ul>
+
+    <h2 translate>Location</h2>
+    <form class="styled">
+        <div class="input text">
+            <label for="dbpath" translate>Local database path:</label>
+            <input type="text" id="dbpath" ng-model="DBPath" />
+        </div>
+
+        <ul class="tabs">
+            <li class="active" ng-class="{disabled: Backup.Backup.DBPath == DBPath}"><a href ng-click="DBPath = Backup.Backup.DBPath" translate>Reset</a></li>
+            <li class="active" ng-class="{disabled: Backup.Backup.DBPath == DBPath}"><a href ng-click="Backup.Backup.DBPath != DBPath &amp;&amp; doSave()" translate>Save</a></li>
+            <li class="active" ng-class="{disabled: Backup.Backup.DBPath == DBPath}"><a href ng-click="Backup.Backup.DBPath != DBPath &amp;&amp; doSaveAndRepair()" translate>Save and repair</a></li>
+            <li class="active" ng-class="{disabled: Backup.Backup.DBPath == DBPath || NoLocalDB}"><a href ng-click="Backup.Backup.DBPath != DBPath &amp;&amp; !NoLocalDB &amp;&amp; doMove()" translate>Move existing database</a></li>
+        </ul>
+
+    </form>
+
+
+</div>

@@ -1,0 +1,7 @@
+{
+    "name": "Microsoft.SharePointOnline.CSOM",
+    "description": "Microsoft SharePoint Client Object Model libraries for SharePoint Online for .Net 4.5",
+    "link": "https://www.nuget.org/packages/Microsoft.SharePointOnline.CSOM/",
+    "license": "MicrosoftSharePointClientComponentsEULA.rtf",
+    "notes": ""
+}

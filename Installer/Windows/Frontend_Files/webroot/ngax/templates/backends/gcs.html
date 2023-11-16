@@ -1,0 +1,41 @@
+<div class="input text">
+    <label for="gcs_path" translate>Bucket name</label>
+    <input type="text" name="gcs_path" id="gcs_path" ng-model="$parent.Path" placeholder="{{'bucket/folder/subfolder' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="gcs_authid">
+        <a ng-show="oauth_in_progress" href="{{oauth_start_link}}" target="_blank" translate>AuthID</a> 
+        <a ng-hide="oauth_in_progress" href ng-click="oauth_start_token_creation()" translate>AuthID</a>
+    </label>
+    <input type="text" name="gcs_authid" id="gcs_authid" ng-model="$parent.AuthID"  placeholder="{{'Click the AuthID link to create an AuthID' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="gcs_location" translate>Bucket create location</label>
+
+    <select name="gcs_location" id="gcs_location" ng-model="$parent.gcs_location" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_locations | orderBy: k">
+        <option value="" translate translate-params-server="gcs_server_custom || ''">Custom location ({{server}})</option>
+    </select>
+
+    <input ng-hide="contains_value(gcs_locations, gcs_location)" type="text" id="gcs_location_custom" ng-model="$parent.gcs_location_custom" placeholder="{{'Location where buckets are created' | translate}}"/>
+
+</div>
+
+<div class="input text">
+    <label for="gcs_storageclass" translate>Bucket storage class</label>
+
+    <select name="gcs_storageclass" id="gcs_storageclass" ng-model="$parent.gcs_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_storageclasses | orderBy: k">
+        <option value="" translate translate-params-class="gcs_storageclass_custom">Custom storage class ({{class}})</option>
+    </select>
+
+    <input ng-hide="contains_value(gcs_storageclasses, gcs_storageclass)" type="text" id="gcs_storageclass_custom" ng-model="$parent.gcs_storageclass_custom" placeholder="{{'Storage class for creating a bucket' | translate}}"/>
+
+</div>
+
+
+<div class="input text">
+    <label for="gcs_path" translate>GCS Project ID</label>
+    <input type="text" name="s3_path" id="s3_path" ng-model="$parent.gcs_projectid" placeholder="{{'ProjectID is optional if the bucket exist' | translate}}" />
+</div>
+

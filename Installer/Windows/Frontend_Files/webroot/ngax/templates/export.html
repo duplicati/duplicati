@@ -1,0 +1,60 @@
+<div ng-controller="ExportController" class="exportpage">
+    <h1 translate>Export backup configuration</h1>
+    <form class="styled">
+        <div ng-hide="Completed">
+            <div class="input checkbox multiple">
+                <div style="display: inline-block">
+                    <input type="radio" name="export-type" value="commandline" id="type-commandline" ng-model="ExportType" />
+                    <label for="type-commandline" translate>As Command-line</label>
+                </div>
+            </div>
+
+            <div class="input checkbox multiple">
+                <input type="radio" name="export-type" value="file" id="type-file" ng-model="ExportType"/>
+                <label for="type-file" translate>To File</label>
+            </div>
+            <div class="input checkbox multiple">
+                <input type="checkbox" name="encrypt-passwords" id="encrypt-passwords" ng-model="ExportPasswords"  />
+                <label for="encrypt-passwords" translate>Export passwords</label>
+            </div>
+            <div class="input checkbox multiple" ng-show="ExportType == 'file'">
+                <input type="checkbox" name="use-encryption" id="use-encryption" ng-model="UseEncryption"  />
+                <label for="use-encryption" translate>Encrypt file</label>
+            </div>
+            <div class="input text" ng-show="UseEncryption && ExportType == 'file'">
+                <label for="encryption-passphrase" translate>Passphrase</label>
+                <input type="password" name="encryption-password" id="encryption-passphrase" ng-model="Passphrase" placeholder="{{'Enter encryption passphrase' | translate}}" >
+            </div>
+            <div class="input text" ng-show="UseEncryption && ExportType == 'file'">
+                <label for="encryption-passphrase" translate>Confirm passphrase</label>
+                <input type="password" name="confirm-encryption-password" id="confirm-encryption-passphrase" ng-model="ConfirmPassphrase" placeholder="{{'Confirm encryption passphrase' | translate}}" >
+            </div>
+
+            <div class="buttons" ng-hide="Connecting">
+                <a href="#" class="submit" translate>Cancel</a>
+                <a href ng-click="doExport()" translate>Export</a>
+            </div>
+
+            <div class="buttons" ng-show="Connecting">
+                <a href translate>Exporting …</a>
+            </div>
+        </div>
+
+        <div ng-show="Completed">
+            <div class="input textarea commandline" ng-show="CommandLine != null">
+                {{CommandLine}}
+            </div>
+
+            <div ng-show="DownloadURL != null">
+                <div translate>If the backup file was not downloaded automatically, <a href="{{DownloadURL}}" target="_blank">right click and choose &quot;Save as …&quot;</a></div>
+            </div>
+
+            <div class="buttons">
+                <a href="#" class="submit" translate>Done</a>
+            </div>
+        </div>
+
+    </form>
+
+    <iframe style="display:none" ng-src="{{DownloadURL}}"></iframe>
+</div>

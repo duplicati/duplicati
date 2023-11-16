@@ -1,0 +1,5 @@
+System.Data.SQLite Data Provider
+Version 1.0.105.2 June 11th, 2017
+Using SQLite 3.19.3
+Released to the public domain, use at your own risk!
+Official provider website: https://system.data.sqlite.org

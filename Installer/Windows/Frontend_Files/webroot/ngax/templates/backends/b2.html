@@ -1,0 +1,18 @@
+<div class="input text">
+    <label for="b2_bucket" translate>Bucket name</label>
+    <input type="text" id="b2_bucket" ng-model="$parent.Server" placeholder="{{'Bucket name' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="b2_path" translate>Folder path</label>
+    <input type="text" name="b2_path" id="b2_path" ng-model="$parent.Path" placeholder="{{'Path or subfolder in the bucket' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="b2_username" translate>B2 Application ID</label>
+    <input type="text" name="b2_username" id="b2_username" ng-model="$parent.Username" placeholder="{{'B2 Cloud Storage Application ID' | translate}}" />
+</div>
+<div class="input password">
+    <label for="b2_password" translate>B2 Application Key</label>
+    <input autocomplete="new-password" type="password" name="b2_password" id="b2_password" ng-model="$parent.Password" placeholder="{{'B2 Cloud Storage Application Key' | translate}}" />
+</div>

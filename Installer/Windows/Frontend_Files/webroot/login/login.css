@@ -1,0 +1,78 @@
+@charset "utf-8";
+
+* {
+    font-family: 'Clear Sans', sans-serif;
+}
+body {
+    background: #C0C0C0;
+    color: #000;
+    font: 100%/1.5em;
+    margin: 0;
+}
+
+input {
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    -webkit-appearance: none;
+}
+
+/* ---------- LOGIN ---------- */
+
+#login {
+    border: 0px solid black;
+    margin: 50px auto;
+    width: 400px;
+}
+
+#login h2 {
+    background: #65b1dd;
+    color: #d3d3d3;
+    font-size: 28px;
+    border-radius: 20px 20px 0 0;
+    padding: 18px 20px;
+    margin: 0px;
+}
+#login fieldset{
+    background-color: #fff;
+    border-radius: 0 0 20px 20px;
+    border: 0px;
+    padding: 15px 20px;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+#login fieldset p {
+    color: #777;
+    margin-bottom: 14px;
+}
+
+#login fieldset p:last-child {
+    margin-bottom: 0;
+}
+
+#login fieldset input {
+    border-radius: 3px;
+}
+
+#login fieldset input[type="email"], #login fieldset input[type="password"] {
+    background: #eee;
+    color: #777;
+    padding: 4px 10px;
+    width: 328px;
+}
+
+#login fieldset input[type="submit"] {
+    background: #65b1dd;
+    color: #fff;
+    width: 100px;
+    display: block;
+    margin: 0 auto;
+    padding: 4px 0;
+}
+
+#login fieldset input[type="submit"]:hover {
+    background: #65b1dd;
+}

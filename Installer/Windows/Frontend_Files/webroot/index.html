@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=9" />
+<title>Backup</title>
+
+<script type="text/javascript">
+    function parseCookies(){
+
+        var cookiestrings = document.cookie.split('; ');
+        var cookies = {};
+
+        for(var i=cookiestrings.length-1; i>=0; i--){
+           var parts = cookiestrings[i].split('=');
+           cookies[parts[0]] = parts[1];
+        }
+
+        return cookies;
+    }
+
+    function setCookieAndRun(theme) {
+        var d = new Date();
+        d.setTime(d.getTime() + (90*24*60*60*1000));
+
+        document.cookie = 'default-theme=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
+
+        // Make an absolute path redirect, as relative redirects break if the port is non-standard
+        var path = window.location.pathname;
+        
+        if (path.lastIndexOf('.html') == path.length - '.html'.length)
+            path = path.substr(0, path.lastIndexOf('/'));
+        
+        if (path.lastIndexOf('/') + 1 != path.length)
+            path = path + '/';
+
+        path += theme +'/index.html';
+        window.location.replace(path);
+    }
+
+    var theme = parseCookies()['default-theme'];
+    if ((theme || '').trim().length == 0)
+        theme = 'ngax';
+    if (theme == 'greeno') // Make sure users are redirected automatically
+        theme = 'ngax';
+    
+    setCookieAndRun(theme); // Refresh
+
+</script>
+
+    <script type="text/javascript" src="oem/root/index/oem.js?v=2.0.7.3" ></script>
+    <link rel="stylesheet" type="text/css" href="oem/root/index/oem.css?v=2.0.7.3" />
+
+</head>
+
+<body>
+<noscript>
+    <p>Duplicati web UI relies on JavaScript</p>
+    <p>Please enable scripting on this page or turn off script blockers in your browser.</p>
+</noscript>
+
+</body>
+</html>

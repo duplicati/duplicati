@@ -1,0 +1,24 @@
+<div ng-show="SupportsSSL" class="input checkbox">
+    <label for="generic_ssl" translate>Use SSL</label>
+    <input type="checkbox" style="width: 15px; margin-right: 65%;" name="generic_ssl" id="generic_ssl" ng-model="$parent.UseSSL" />
+</div >
+
+<div class="input text">
+    <label for="generic_server" translate>Server and port</label>
+    <input type="text" style="width: 345px" name="generic_server" id="generic_server" ng-model="$parent.Server" placeholder="{{'Server hostname or IP' | translate}}" />
+    <input type="text" style="width: 50px" name="generic_port" id="generic_port" ng-model="$parent.Port" placeholder="{{'Port' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="generic_path" translate>Path on server</label>
+    <input type="text" name="generic_path" id="generic_path" ng-model="$parent.Path" placeholder="{{'Enter the destination path' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="generic_username" translate>Username</label>
+    <input type="text" name="generic_username" id="generic_username" ng-model="$parent.Username" placeholder="{{'Authentication username' | translate}}"  />
+</div>
+<div class="input password">
+    <label for="generic_password" translate>Password</label>
+    <input autocomplete="new-password" type="password" name="generic_password" id="generic_password" ng-model="$parent.Password" placeholder="{{'Authentication password' | translate}}"  />
+</div>

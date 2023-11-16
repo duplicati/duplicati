@@ -1,0 +1,29 @@
+<span class="title" translate>Source Files</span>
+<span class="item" ng-if="item.Result.Interrupted">
+    <span class="key" translate>Interrupted, no statistics collected</span>
+</span>
+<span class="item" ng-if="item.Result.ParsedResult == 'Fatal'">
+    <span class="key" translate>Fatal error, no statistics collected</span>
+</span>
+<div ng-if="!item.Result.Interrupted &amp;&amp; item.Result.ParsedResult != 'Fatal'">
+    <span class="item">
+        <span class="key" translate>Examined </span>
+        <span class="value">{{ item.Result.ExaminedFiles || '0' }} ({{ formatSize(item.Result.SizeOfExaminedFiles) }})</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Opened </span>
+        <span class="value">{{ item.Result.OpenedFiles || '0' }} ({{ formatSize(item.Result.SizeOfOpenedFiles) }})</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Added </span>
+        <span class="value">{{ item.Result.AddedFiles || '0' }} ({{ formatSize(item.Result.SizeOfAddedFiles) }})</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Modified </span>
+        <span class="value">{{ item.Result.ModifiedFiles || '0' }} ({{ formatSize(item.Result.SizeOfModifiedFiles) }})</span>
+    </span>
+    <span class="item">
+        <span class="key" translate>Deleted</span>
+        <span class="value">{{ item.Result.DeletedFiles || '0' }}</span>
+    </span>
+</div>

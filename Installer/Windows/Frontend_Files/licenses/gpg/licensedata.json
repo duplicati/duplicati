@@ -1,0 +1,7 @@
+{
+    "name": "GNU Privacy Guard",
+    "description": "A complete and free implementation of the OpenPGP standard",
+    "link": "http://www.gnupg.org/",
+    "license": "GPL",
+    "notes": "Only Windows Binaries are included"
+}

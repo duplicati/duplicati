@@ -1,0 +1,168 @@
+<div class="settings" ng-controller="SystemSettingsController"  style="background-color:powderblue;">
+    <h1 translate>Settings</h1>
+
+    <form class="styled">
+        <h2 translate>Access to user interface-Minor Change</h2>
+        <div class="input mixed multiple">
+            <input type="checkbox" class="checkbox" id="hasPassword" name="hasPassword" ng-model="requireRemotePassword" />
+            <label for="password" translate>Password</label><br>
+            <input type="password" id="password" name="password" ng-model="remotePassword" />
+        </div>
+        <div class="input mixed multiple">
+            <label for="confirm-password" translate>Confirm password</label><br>
+            <input type="password" id="confirm-password" name="confirm-password" ng-model="confirmPassword" autocomplete="new-password" />
+        </div>
+        <div class="input checkbox">
+            <input type="checkbox" class="checkbox" id="remote" name="remote" ng-model="allowRemoteAccess" />
+            <label for="remote" translate>Allow remote access (requires restart)</label>
+            <div class="sublabel" translate>By allowing remote access, the server listens to requests from any machine on your network. If you enable this option, make sure you are always using the computer on a secure firewall protected network.</div>
+        </div>
+        <div class="input mixed multiple" ng-show="allowRemoteAccess">
+            <label for="hostnames" translate>Hostnames</label>
+            <input type="text" id="hostnames" name="hostnames" ng-model="remoteHostnames" />
+            <div class="sublabel" translate>To prevent various DNS based attacks, Duplicati limits the allowed hostnames to the ones listed here. Direct IP access and localhost is always allowed. Multiple hostnames can be supplied with a semicolon separator. If any of the allowed hostnames is an asterisk (*), all hostnames are allowed and this feature is disabled. If the field is empty, only IP address and localhost access is allowed.</div>
+        </div>
+
+        <div class="input checkbox">
+            <input type="checkbox" class="checkbox" id="trayiconlogin" name="trayiconlogin" ng-model="disableTrayIconLogin" />
+            <label for="trayiconlogin" translate>Prevent tray icon automatic log-in</label>
+            <div class="sublabel" translate>By default, the tray icon will open the user interface with a token that unlocks the user interface. This ensures that you can access the user interface from the tray icon, while requiring others to enter a password. If you prefer having to type in the password, even when accessing the user interface from the tray icon, enable this option.</div>
+        </div>
+
+
+        <h2>{{'Pause after startup or hibernation' | translate}}</h2>
+        <div class="input mixed multiple">
+            <label for="pauseTime" translate>Pause</label>
+            <select id="pauseTime" name="pauseTime" ng-model="startupDelayDurationValue">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+            </select>
+            <select id="pauseFormat" name="pauseFormat" ng-model="startupDelayDurationMultiplier">
+                <option value="s" translate>Seconds</option>
+                <option value="m" translate>Minutes</option>
+                <option value="h" translate>Hours</option>
+            </select>
+            <div class="sublabel" translate>Duplicati will run when started, but will remain in a paused state for the duration. Duplicati will occupy minimal system resources and no backups will be run.</div>
+        </div>
+
+        <h2 translate>User interface settings</h2>
+        <div class="input mixed multiple">
+            <label for="userinterfacelanguage" translate>Language in user interface</label>
+
+            <select id="userinterfacelanguage" ng-model="uiLanguage" ng-options="item.Code as item.DisplayName + ' (' + item.Code + ', ' + item.EnglishName + ')' for item in SystemInfo.SupportedLocales">
+                <option value="">{{ SystemInfo.BrowserLocaleSupported ?
+                                    lang_browser_default + " (" + SystemInfo.BrowserLocale.DisplayName + ", " + SystemInfo.BrowserLocale.Code + ")" :
+                                    lang_default + " (en, English)" }}</option>
+            </select>
+        </div>
+
+        <div class="input mixed multiple">
+            <label for="themedisplay" translate>Display and color theme</label>
+
+            <select id="themedisplay" ng-model="theme">
+                <option value="default" translate>The default blue on white theme (by Alex)</option>
+                <option value="dark" translate>The dark theme (by Michal)</option>
+            </select>
+        </div>
+
+        <h2 translate>Donation messages</h2>
+        <div class="input checkbox">
+            <label for="suppresDonationMessages" translate>Donation messages</label>
+            <a href ng-click="suppressDonationMessages()" ng-show="!SystemInfo.SuppressDonationMessages" translate>Donation messages are visible, click to hide</a>
+            <a href ng-click="displayDonationMessages()" ng-show="SystemInfo.SuppressDonationMessages" translate>Donation messages are hidden, click to show</a>
+        </div>
+
+        <h2 translate>Update channel</h2>
+        <div class="input checkbox">
+            <input type="radio" class="checkbox" id="updateChannelDefault" value="" name="updateChannel" ng-model="updateChannel" />
+            <label for="updateChannelDefault" translate translate-params-channelname="SystemInfo.DefaultUpdateChannel">Default ({{channelname}})</label>
+            <div class="sublabel" class="" translate translate-params-channelname="SystemInfo.BaseVersionName">Same as the base install version: {{channelname}}</div>
+        </div>
+
+        <!--
+        <div class="input checkbox">
+            <input type="radio" class="checkbox" id="updateChannelStable" value="stable" name="updateChannel" ng-model="updateChannel" />
+            <label for="updateChannelStable" translate>Stable</label>
+            <div class="sublabel" class="" translate>Official releases</div>
+        </div>
+        -->
+        <div class="input checkbox">
+            <input type="radio" class="checkbox" id="updateChannelBeta" value="beta" name="updateChannel" ng-model="updateChannel" />
+            <label for="updateChannelBeta" translate>Beta</label>
+            <div class="sublabel" translate>Try out the new features that we are working on. Currently the most stable version available. Test Restore data before using this in production environments.</div>
+        </div>
+        <div class="input checkbox">
+            <input type="radio" class="checkbox" id="updateChannelExperimental" value="experimental" name="updateChannel" ng-model="updateChannel" />
+            <label for="updateChannelExperimental" translate>Experimental</label>
+            <div class="sublabel" translate>Specific builds for developers only. Not for use with important data.</div>
+        </div>
+        <div class="input checkbox">
+            <input type="radio" class="checkbox" id="updateChannelCanary" value="canary" name="updateChannel" ng-model="updateChannel" />
+            <label for="updateChannelCanary" translate>Canary</label>
+            <div class="sublabel" translate>Individual builds for developers only. Not for use with important data.</div>
+        </div>
+        <!--
+        <div class="input checkbox">
+            <input type="radio" class="checkbox" id="updateChannelNightly" value="nightly" name="updateChannel" ng-model="updateChannel" />
+            <label for="updateChannelNightly" translate>Nightly</label>
+            <div class="sublabel" translate>Regular builds for developers only</div>
+        </div>
+        -->
+
+        <h2 ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" translate>Usage statistics</h2>
+        <div ng-if="SystemInfo.DefaultUsageReportLevel != 'Disabled'" class="input mixed multiple">
+            <label for="usagereporterlevel" translate>Anonymous usage reports</label>
+
+            <select id="usagereporterlevel" ng-model="$parent.usageReporterLevel">
+                <option value="" translate translate-params-levelname="SystemInfo.DefaultUsageReportLevel">System default ({{levelname}})</option>
+                <option value="information" translate>Usage statistics, warnings, errors, and crashes</option>
+                <option value="warning" translate>Warnings, errors and crashes</option>
+                <option value="error" translate>Errors and crashes</option>
+                <option value="crash" translate>Crashes only</option>
+                <option value="none" translate>None / disabled</option>
+            </select>
+            <div class="sublabel"><p translate>Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <external-link link="'https://usage-reporter.duplicati.com/'">{{'public usage statistics' | translate}}</external-link></p>
+
+            <p translate>All usage reports are sent anonymously and do not contain any personal information. They contain information about hardware and operating system, the type of backend, backup duration, overall size of source data and similar data. They do not contain paths, filenames, usernames, passwords or similar sensitive information.</p></div>
+        </div>
+
+        <div ng-repeat="module in ServerModules">
+            <h2>{{module.DisplayName}}</h2>
+
+            <p ng-show="(module.ServiceLink || '').length > 0"><external-link link="module.ServiceLink">{{module.Description}}</external-link></p>
+            <p ng-show="(module.ServiceLink || '').length == 0">{{module.Description}}</p>
+
+            <div class="input" ng-repeat="opt in module.SupportedGlobalCommands">
+                <label for="{{module.Key}}-{{opt.Name}}" title="{{opt.LongDescription}}">{{opt.ShortDescription}}</label>
+                <input type="text" title="{{opt.LongDescription}}" name="{{module.Key}}-{{opt.Name}}" id="{{module.Key}}-{{opt.Name}}" ng-model="servermodulesettings[opt.Name]" />
+            </div>
+        </div>
+
+        <h2 translate>Default options</h2>
+        <div class="sublabel"><p translate>Options added here are applied to all backups, but can be overridden in each individual backup</p></div>
+        <div class="input textarea" ng-show="ShowAdvancedTextArea">
+            <label for="backupOptions" translate>Options</label>
+            <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle" translate>Edit as list</a>
+            <textarea id="backupOptions" ng-model="advancedOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--dblock-size=100MB')}}"></textarea>
+        </div>
+
+        <div class="input" ng-hide="ShowAdvancedTextArea">
+            <label for="backupOptions" translate>Options</label>
+            <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle" translate>Edit as text</a>
+            <advanced-options-editor ng-option-list="advancedOptionList" ng-model="advancedOptions"></advanced-options-editor>
+        </div>
+
+        <div class="buttons">
+            <a href="#" id="cancel" class="submit" translate>Cancel</a>
+            <input type="button" id="save" class="submit" value="{{'OK' | translate}}" ng-click="save()" />
+        </div>
+    </form>
+</div>

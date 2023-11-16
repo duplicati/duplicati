@@ -1,0 +1,12 @@
+<div class="input text">
+    <label for="oauth_path" translate>Path on server</label>
+    <input type="text" name="oauth_path" id="oauth_path" ng-model="$parent.Path" placeholder="{{'Enter the destination path' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="oauth_authid">
+        <a ng-show="oauth_in_progress" href="{{oauth_start_link}}" target="_blank" translate>AuthID</a> 
+        <a ng-hide="oauth_in_progress" href ng-click="oauth_start_token_creation()" translate>AuthID</a>
+    </label>
+    <input type="text" name="oauth_authid" id="oauth_authid" ng-model="$parent.AuthID" placeholder="{{'Click the AuthID link to create an AuthID' | translate}}" />
+</div>

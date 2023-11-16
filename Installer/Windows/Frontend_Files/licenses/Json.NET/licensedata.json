@@ -1,0 +1,7 @@
+{
+    "name": "Json.NET",
+    "description": "A library for serializing and deserializing .Net and JSON objects",
+    "link": "https://github.com/JamesNK/Newtonsoft.Json/",
+    "license": "MIT",
+    "notes": ""
+}

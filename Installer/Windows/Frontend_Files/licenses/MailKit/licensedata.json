@@ -1,0 +1,7 @@
+{
+    "name": "MailKit",
+    "description": "A cross-platform .NET library for IMAP, POP3, and SMTP",
+    "link": "https://github.com/jstedfast/MailKit/",
+    "license": "MIT",
+    "notes": ""
+}

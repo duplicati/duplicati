@@ -1,0 +1,35 @@
+<script>$(function() { $( ".resizable" ).resizable(); });</script>
+
+<div ng-init="HideFolderBrowser = ($parent.Path || '') != ''"></div>
+
+<div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
+    <label for="file_path" translate>Folder path</label>
+    <input type="text" name="file_path" id="file_path" ng-model="$parent.Path" placeholder="{{'Enter the destination path' | translate}}" />
+    <a href id="file_targetFolderPathAdd" class="button" ng-click="HideFolderBrowser = false" translate>Browse</a>
+</div>
+
+<div class="input text" ng-hide="HideFolderBrowser">
+
+    <div class="input" style="padding-bottom: 0px">
+        <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">
+            <span ng-show="ShowHiddenFolders" translate>Hide hidden folders</span>
+            <span ng-hide="ShowHiddenFolders" translate>Show hidden folders</span>
+        </a>
+
+        <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;" translate>Manually type path</a>
+    </div>
+    
+    <label for="folder_path_picker" translate>Folder path</label>
+    <div class="resizable filepicker">
+       <destination-folder-picker style="float: left; width: 440px; max-height: " id="folder_path_picker" ng-model="$parent.Path" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="true"></destination-folder-picker>
+   </div>
+</div>
+
+<div class="input text">
+    <label for="file_username" translate>Username</label>
+    <input type="text" name="file_username" id="file_username" ng-model="$parent.Username" placeholder="{{'Optional authentication username' | translate}}" />
+</div>
+<div class="input password">
+    <label for="file_password" translate>Password</label>
+    <input autocomplete="new-password" type="password" name="file_password" id="file_password" ng-model="$parent.Password" placeholder="{{'Optional authentication password' | translate}}"  />
+</div>

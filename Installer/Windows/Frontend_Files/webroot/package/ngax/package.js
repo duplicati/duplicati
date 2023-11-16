@@ -1,0 +1,1 @@
+/* Placeholder for package setup support */

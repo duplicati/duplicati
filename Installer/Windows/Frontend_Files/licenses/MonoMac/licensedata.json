@@ -1,0 +1,7 @@
+{
+    "name": "MonoMac",
+    "description": "A C# Library for accessing OSX features",
+    "link": "http://www.monodevelop.com/",
+    "license": "Apache 2.0",
+    "notes": "Also released under MIT X11"
+}

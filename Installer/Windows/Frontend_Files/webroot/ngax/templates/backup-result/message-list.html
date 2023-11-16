@@ -1,0 +1,13 @@
+<span ng-click="child_expanded = !child_expanded" ng-style="{ cursor: (data.length > 0) ? 'pointer' : '' }">
+    <i class="{{ResultIcon(data.length > 0 ? data.type : 'Success')}}"></i>
+    <span class="key">{{data.title}}</span>
+    <span class="value">
+        {{ data.length }}
+        <i ng-if="data.length > 0" class="fa fa-angle-{{child_expanded ? 'up': 'down'}}"></i>
+    </span>
+</span>
+<div ng-show="child_expanded && data.length > 0" class="expanded">
+    <ul>
+        <li ng-repeat="elem in data.messages track by $index" class="prewrapped-text">{{elem}}</li>
+    </ul>
+</div>

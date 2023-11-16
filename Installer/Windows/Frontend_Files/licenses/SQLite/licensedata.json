@@ -1,0 +1,7 @@
+{
+    "name": "SQLite for .Net",
+    "description": "A .Net library for working with SQLite databases",
+    "link": "https://system.data.sqlite.org",
+    "license": "Public Domain",
+    "notes": ""
+}

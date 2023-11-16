@@ -1,0 +1,57 @@
+<div>
+    <div class="input select">
+        <label for="type" translate>Storage Type</label>
+        <select name="type" id="type" ng-model="Backend" ng-options="backend.DisplayName group by backend.GroupType for backend in SystemInfo.GroupedBackendModules | orderBy: ['OrderKey', 'GroupType', 'DisplayName'] track by backend.Key">
+        </select>
+    </div>
+
+    <div ng-include="TemplateUrl">
+    </div>
+
+    <div ng-show="TemplateUrl == null &amp;&amp; Backend != null">
+        <h3 translate translate-params-backend="Backend.DisplayName">No editor found for the &quot;{{backend}}&quot; storage type</h3>
+    </div>
+
+    <div ng-show="Backend == null">
+        <h3 translate>Chose a storage type to get started</h3>
+    </div>
+</div>
+
+<div class="buttons">
+    <a href ng-hide="Testing" class="test-connection" ng-click="testConnection()" translate>Test connection</a>
+    <a href ng-show="Testing" class="test-connection" translate>Testing …</a>
+</div>
+
+<div class="input textarea">
+    <div class="headerthreedotmenu">
+        <a href ng-click="showAdvanced = !showAdvanced" class="expandable">
+            <h2 translate>Advanced options</h2>
+            <img ng-show="showAdvanced" src="img/arrow_collapse_green.png" srcset="img/arrow_collapse_green.png 1x, img/arrow_collapse_green_2x.png 2x, img/arrow_collapse_green_3x.png 3x">
+            <img ng-hide="showAdvanced" src="img/arrow_expand_green.png" srcset="img/arrow_expand_green.png 1x, img/arrow_expand_green_2x.png 2x, img/arrow_expand_green_3x.png 3x">
+        </a>
+
+        <div class="contextmenu_container" ng-show="showAdvanced">
+            <a href title="{{'Menu' | translate}}"><img src="img/three_dots.png" srcset="img/three_dots.png 1x, img/three_dots_2x.png 2x, img/three_dots_3x.png 3x" id="threedotmenubutton_add_destination_adv" class="threedotmenubutton" title="{{'Menu' | translate}}"/></a>
+
+            <div class="contextmenu" id="threedotmenu_add_destination_adv">
+                <ul>
+                    <li>
+                        <a href ng-show="ShowAdvancedTextArea" ng-click="ShowAdvancedTextArea = false" translate>Edit as list</a>
+                    </li>
+                    <li>
+                        <a href ng-hide="ShowAdvancedTextArea" ng-click="ShowAdvancedTextArea = true" translate>Edit as text</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div ng-show="showAdvanced">
+        <div ng-show="ShowAdvancedTextArea">
+            <label for="targetOptions" translate>Options</label>
+            <textarea id="targetOptions" name="targetOptions" string-array-as-text placeholder="{{AppUtils.format(AppUtils.exampleOptionString, '--use-ssl=true')}}" ng-model="AdvancedOptions"></textarea>
+        </div>
+
+        <advanced-options-editor ng-hide="ShowAdvancedTextArea" ng-option-list="AdvanceOptionList" ng-model="AdvancedOptions"></advanced-options-editor>
+    </div>
+</div>

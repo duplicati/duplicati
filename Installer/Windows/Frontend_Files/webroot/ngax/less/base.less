@@ -1,0 +1,3109 @@
+// duplicati 2.0 less | Alex Franzelin 2015
+@import 'fonts.less';
+@import 'form.less';
+@import 'font-awesome/font-awesome.less';
+
+// https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+.flexbox() {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
+.flex(@grow: 0; @shrink: 1; @basis: auto) {
+    -webkit-box-flex: @grow @shrink @basis;
+    -moz-box-flex: @grow @shrink @basis;
+    -webkit-flex: @grow @shrink @basis;
+    -ms-flex: @grow @shrink @basis;
+    flex: @grow @shrink @basis;
+}
+
+* {
+    font-family: 'Clear Sans', sans-serif;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+h1,
+h2 {
+    font-weight: 300;
+    color: @hColor;
+}
+
+h1 {
+    margin: 10px 0;
+}
+
+h3 {
+    font-weight: 400;
+}
+
+a {
+    text-decoration: none;
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+hr {
+    border: none;
+    border-bottom: 1px #ddd solid;
+}
+
+textarea {
+    max-width: 94%;
+}
+
+.external-link-image {
+    display: inline-block;
+    margin-left: 8px;
+    margin-right: 8px;
+    height: 16px;
+    width: 16px;
+    background: url('../img/external-link-hover.png');
+    background-size: 16px;
+
+    @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+        background-image: url('../img/external-link-hover_2x.png');
+    }
+
+    @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+        background-image: url('../img/external-link-hover_3x.png');
+    }
+}
+
+a {
+    .external-link-image {
+        background: url('../img/external-link.png');
+        background-size: 16px;
+
+        @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+            background-image: url('../img/external-link_2x.png');
+        }
+
+        @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+            background-image: url('../img/external-link_3x.png');
+        }
+    }
+}
+
+.header {
+    a:hover {
+        .external-link-image {
+            background: url('../img/external-link-hover.png');
+            background-size: 16px;
+
+            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                background-image: url('../img/external-link-hover_2x.png');
+            }
+
+            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                background-image: url('../img/external-link-hover_3x.png');
+            }
+        }
+    }
+}
+
+.button {
+    display: block;
+    background: @lColor;
+    color: white !important;
+    padding: 5px 15px;
+    float: right;
+    margin-left: 10px;
+    cursor: pointer;
+    width: auto;
+    border: none;
+    font-family: 'Clear Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    border-radius: 0;
+}
+
+.button:hover {
+    background: darken(@lColor, 10%);
+}
+
+.step3 source-folder-picker, #folder_path_picker, #restore_file_picker {
+    display: block;
+    border: 1px solid lightgray;
+    padding: 2px;
+    height: 100%;
+    overflow: scroll;
+    box-sizing: border-box;
+}
+
+.not-clickable {
+    cursor: default !important;
+
+    > a, span, div {
+        cursor: default !important;
+    }
+}
+
+.ui-match {
+    font-weight: bold;
+    color: darkgreen;
+}
+
+wait-area {
+    min-width: 350px;
+    text-align: center;
+    display: block;
+}
+
+.prewrapped-text {
+    white-space: pre-wrap;
+}
+
+.exceptiontext {
+    background-color: lightgray;
+    color: black;
+}
+
+.backup-result {
+    width: 90%;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-auto-rows: minmax(50px, auto);
+    margin: 0 auto;
+
+    div .horizontal-rule {
+        width: 100%;
+        border-bottom: 1px solid @border;
+        margin: 5px 0 5px 0;
+    }
+
+    .box {
+        margin: 10px;
+        margin-bottom: 0px;
+    }
+
+    .title {
+        color: darken(@hColor, 10%);
+        font-weight: bold;
+        font-size: 30px;
+    }
+
+    .item {
+        display: block;
+
+        .key {
+            color: @hColor;
+            font-weight: bold;
+        }
+
+        .value {
+            color: @tColor;
+        }
+
+        .expanded {
+            padding: 0 10px 0 18px;
+            margin-bottom: 10px;
+        }
+    }
+
+    .one {
+        border-right: 1px solid @border;
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .two {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .wide {
+        grid-column: span 2;
+        border-top: 1px solid @border;
+        padding-top: 10px;
+    }
+
+    .three {
+        grid-row: 2;
+    }
+
+    .four {
+        grid-row: 3;
+        margin-bottom: 10px;
+
+        .log-expand-copy {
+            display: flex;
+            margin-bottom: 6px;
+
+            a {
+                margin-left: auto;
+            }
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 99%;
+            min-height: 420px;
+            padding: 8px 6px;
+            white-space: pre;
+        }
+    }
+}
+
+.success-color {
+    color: #339900;
+}
+
+.error-color {
+    color: #cc0000;
+}
+
+.warning-color {
+    color: #ffcc00;
+}
+
+.fatal-color {
+    color: #990000;
+}
+
+ul.tabs {
+    margin-bottom: 10px;
+
+    > li {
+        display: inline;
+        margin-right: 10px;
+        border: 1px solid @lColor;
+        padding: 5px;
+
+        &.active {
+            background-color: @lColor;
+            color: white;
+
+            > a {
+                background-color: @lColor;
+                color: white;
+            }
+
+            &.disabled {
+                border: 1px solid lightgray;
+                background-color: lightgray;
+                color: grey;
+                cursor: default;
+
+                > a {
+                    background-color: lightgray;
+                    color: grey;
+                    cursor: default;
+                }
+            }
+        }
+    }
+}
+
+.licenses {
+    > ul {
+        list-style: initial;
+        margin: 10px;
+        margin-left: 20px;
+    }
+
+    li {
+        margin-bottom: 10px;
+    }
+
+    a.itemlink {
+        font-weight: bold;
+    }
+}
+
+.logpage {
+    ul.entries {
+        list-style: initial;
+        margin: 10px;
+        margin-left: 20px;
+    }
+
+    .entries {
+        div.entryline.clickable {
+            cursor: pointer;
+        }
+    }
+
+    .entries.livedata {
+        li.expanded {
+            height: auto;
+        }
+    }
+
+    .button {
+        text-align: center;
+        margin-right: 10px;
+        border: 1px solid @lColor;
+        padding: 5px;
+        background-color: @lColor;
+        color: white;
+        cursor: pointer;
+    }
+}
+
+.exportpage {
+    .checkbox {
+        input {
+            width: auto;
+            margin-top: 10px;
+        }
+    }
+
+    .commandline {
+        div {
+            background-color: lightgray;
+            color: black;
+        }
+    }
+}
+
+.themelink {
+    margin-left: 20px;
+}
+
+ul.notification {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    margin: auto;
+    width: 480px;
+}
+
+.notification {
+    .title {
+        border: 1px solid @lColor;
+        background-color: @lColor;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
+        padding: 2px;
+        padding-left: 5px;
+        padding-right: 5px;
+        font-weight: bold;
+        color: lightgray;
+        width: 100%;
+        text-align: center;
+        clear: both;
+    }
+
+    .content {
+        background-color: white;
+        border: 1px solid @lColor;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+        padding: 2px;
+        padding-left: 5px;
+        padding-right: 5px;
+        width: 100%;
+    }
+
+    .message {
+        width: 100%;
+        color: black;
+    }
+
+    .button {
+        padding: 2px 10px;
+        margin-top: 6px;
+    }
+
+    .clear {
+        clear: right;
+        height: 1px;
+    }
+
+    .error {
+        .title {
+            border-color: red;
+            background-color: red;
+        }
+
+        .content {
+            border-color: red;
+        }
+
+        .button {
+            border-color: red;
+            background-color: red;
+        }
+    }
+
+    .warning {
+        .title {
+            background-color: orange;
+            border-color: orange;
+        }
+
+        .button {
+            background-color: orange;
+            border-color: orange;
+        }
+
+        .content {
+            border-color: orange;
+        }
+    }
+}
+
+.filepicker {
+    height: 200px;
+}
+
+.resizable {
+    margin-bottom: 6px;
+    max-width: 100%;
+}
+
+.advanced-toggle {
+    float: right;
+    margin-right: 25px;
+    line-height: 37px;
+}
+
+.advancedoptions {
+    li {
+        clear: both;
+        margin-bottom: 10px;
+        padding: 10px 0;
+        border-top: 1px lightgray solid;
+    }
+}
+
+.advancedentry {
+    .multiple {
+        display: inline;
+    }
+
+    .shortname {
+        font-weight: bold;
+    }
+
+    input[type="text"] {
+        width: 300px;
+    }
+
+    select {
+        width: 300px;
+    }
+
+    input[type="checkbox"] {
+        margin-top: 13px;
+        width: auto;
+    }
+
+    .longdescription {
+        margin-top: 10px;
+        margin-left: 190px;
+        clear: both;
+        font-style: italic;
+    }
+}
+
+.settings {
+    div.sublabel {
+        clear: both;
+        padding: 0 31px;
+        font-style: italic;
+    }
+}
+
+.logo {
+    img.mainlogo {
+        height: 64px;
+        width: 64px;
+        float: left;
+        padding-right: 8px;
+        padding-top: 2px;
+    }
+
+    div.logotext {
+        float: left;
+    }
+
+    a {
+        float: left;
+        display: block;
+        line-height: normal;
+    }
+
+    div.build-suffix {
+        clear: both;
+        display: inline;
+        float: left;
+        font-size: 16px;
+        line-height: 16px;
+    }
+
+    div.powered-by {
+        font-size: 16px;
+        margin: 0px;
+        line-height: 16px;
+        float: left;
+        padding: 0px;
+        margin-left: 5px;
+    }
+}
+
+.fixed-width-font {
+    font-family: monospace;
+}
+
+.warning {
+    margin: 10px;
+    font-style: italic;
+    color: #f49b42;
+}
+
+div.captcha {
+    .details {
+        padding-top: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 180px;
+    }
+}
+
+.centered-text {
+    text-align: center;
+}
+
+body {
+    color: @tColor;
+
+    .container {
+        min-height: 100%;
+        position: relative;
+
+        .header {
+            line-height: 70px;
+            background: @headerBg;
+            overflow: hidden;
+            height: 70px;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            z-index: 100;
+
+            a {
+                color: @lColor;
+            }
+
+            a:hover,
+            a.active {
+                color: darken(@tColor, 25%);
+            }
+
+            .logo {
+                font-size: 30px;
+                font-weight: 700;
+                float: left;
+                padding-left: 40px;
+            }
+
+            .statepadding {
+                padding-right: 90px;
+                margin-left: 320px;
+            }
+
+            .state {
+                float: left;
+                color: darken(@hColor, 10%);
+                width: 595px;
+                padding: 13px 15px;
+                margin: 10px 20px;
+                border: 1px darken(@hColor, 10%) solid;
+                font-weight: 300;
+                font-size: 18px;
+                overflow: hidden;
+                line-height: normal;
+                display: inline-block;
+                background-color: white;
+                text-overflow: ellipsis;
+                position: relative;
+                height: 25px;
+
+                strong {
+                    display: inline;
+                    margin-right: 10px;
+                }
+
+                span {
+                    display: inline;
+                }
+
+                .button {
+                    position: static;
+                    margin-top: 70px;
+                }
+
+                .content {
+                    position: relative;
+                    z-index: 10;
+                    margin-right: 40px;
+                    display: block;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                }
+
+                .buttons {
+                    position: absolute;
+                    right: 0px;
+                    top: 0px;
+                    bottom: 0px;
+                    width: 26px;
+                    margin: 13px 15px;
+
+                    .stop {
+                        display: block;
+                        width: 26px;
+                        height: 26px;
+                        background: url('../img/progress-stop.png');
+                        background-size: 26px;
+                        cursor: pointer;
+                        z-index: 10;
+                        position: relative;
+
+                        @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                            background-image: url('../img/progress-stop_2x.png');
+                        }
+
+                        @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                            background-image: url('../img/progress-stop_3x.png');
+                        }
+                    }
+
+                    .resume {
+                        display: block;
+                        width: 26px;
+                        height: 26px;
+                        background: url('../img/progress-resume.png');
+                        background-size: 26px;
+                        cursor: pointer;
+
+                        @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                            background-image: url('../img/progress-resume_2x.png');
+                        }
+
+                        @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                            background-image: url('../img/progress-resume_3x.png');
+                        }
+                    }
+                }
+
+                .progress-bar {
+                    position: absolute;
+                    top: 0px;
+                    bottom: 0px;
+                    left: 0px;
+                    background: fade(@hColor, 25%);
+                    z-index: 5;
+                }
+
+                .task-name {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    cursor: help;
+                }
+
+                .task-state-info {
+                    display: flex;
+                }
+            }
+
+            .action-icons {
+                display: inline-block;
+                line-height: normal;
+                margin: 10px 0px;
+                padding: 13px 0px;
+                float: left;
+            }
+
+            .action-icons-small {
+                display: none;
+                float: right;
+                margin-top: 21px;
+                line-height: normal;
+            }
+
+            .action-icons,
+            .action-icons-small {
+                > .pause {
+                    width: 26px;
+                    height: 26px;
+                    display: inline-block;
+                    cursor: pointer;
+                    background: url('../img/pause.png');
+                    background-size: 26px;
+
+                    @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/pause_2x.png');
+                    }
+
+                    @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                        background-image: url('../img/pause_3x.png');
+                    }
+                }
+
+                > .pause.active {
+                    background: url('../img/resume.png');
+                    background-size: 26px;
+
+                    @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/resume_2x.png');
+                    }
+
+                    @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                        background-image: url('../img/resume_3x.png');
+                    }
+                }
+
+                > .throttle {
+                    width: 26px;
+                    height: 26px;
+                    display: inline-block;
+                    cursor: pointer;
+                    background: url('../img/throttle.png');
+                    background-size: 26px;
+
+                    @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/throttle_2x.png');
+                    }
+
+                    @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                        background-image: url('../img/throttle_3x.png');
+                    }
+                }
+
+                > .throttle.inactive {
+                    opacity: 0.5;
+                }
+            }
+
+
+            .about-header {
+                float: right;
+                padding-right: 20px;
+                overflow: hidden;
+
+                ul {
+                    overflow: hidden;
+                    list-style: none;
+
+                    li {
+                        float: right;
+                        padding-right: 20px;
+                    }
+                }
+            }
+
+            .donate {
+                float: right;
+
+                ul {
+                    overflow: hidden;
+                    float: right;
+                    padding-left: 20px;
+                    padding-right: 10px;
+
+                    li {
+                        float: right;
+                        margin-right: 10px;
+                        padding-top: 5px;
+                    }
+                }
+
+                img {
+                    opacity: 0.6;
+                }
+
+                img:hover {
+                    opacity: 1;
+                }
+            }
+        }
+
+        .body {
+            width: 100%;
+            overflow: hidden;
+            min-height: 500px;
+            padding-top: 120px;
+            padding-bottom: 70px;
+
+            a {
+                color: @lColor;
+            }
+
+            .mainmenu {
+                width: 260px;
+                padding-left: 40px;
+                float: left;
+                position: fixed;
+
+                > ul {
+                    > li {
+                        position: relative;
+
+                        > a {
+                            font-size: 22px;
+                            font-weight: 300;
+                            padding: 5px 10px 5px 55px;
+                            display: block;
+                        }
+
+                        > a:hover {
+                            color: white;
+                        }
+
+                        > a.active {
+                            color: white;
+                        }
+
+                        > a.add {
+                            background: url('../img/mainmenu/add.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/add_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/add_3x.png');
+                            }
+                        }
+
+                        > a.restore {
+                            background: url('../img/mainmenu/restore.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/restore_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/restore_3x.png');
+                            }
+                        }
+
+                        > a.resume {
+                            background: url('../img/mainmenu/resume.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/resume_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/resume_3x.png');
+                            }
+                        }
+
+                        > a.settings {
+                            background: url('../img/mainmenu/settings.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/settings_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/settings_3x.png');
+                            }
+                        }
+
+                        > a.logout {
+                            background: url('../img/mainmenu/logout.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/logout_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/logout_3x.png');
+                            }
+                        }
+
+                        > a.home {
+                            background: url('../img/mainmenu/home.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/home_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/home_3x.png');
+                            }
+                        }
+
+                        > a.about {
+                            background: url('../img/mainmenu/about.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/about_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/about_3x.png');
+                            }
+                        }
+
+                        > a.home.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/home.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_3x.png');
+                            }
+                        }
+
+                        > a.add.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_3x.png');
+                            }
+                        }
+
+                        > a.restore.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_3x.png');
+                            }
+                        }
+
+                        > a.resume.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_3x.png');
+                            }
+                        }
+
+                        > a.settings.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_3x.png');
+                            }
+                        }
+
+                        > a.about.active {
+                            background: lighten(@lColor, 15%) url('../img/mainmenu/over/about.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_3x.png');
+                            }
+                        }
+
+                        > a.add:hover {
+                            background: @lColor url('../img/mainmenu/over/add.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/add_3x.png');
+                            }
+                        }
+
+                        > a.restore:hover {
+                            background: @lColor url('../img/mainmenu/over/restore.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/restore_3x.png');
+                            }
+                        }
+
+                        > a.resume:hover {
+                            background: @lColor url('../img/mainmenu/over/resume.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/resume_3x.png');
+                            }
+                        }
+
+                        > a.settings:hover {
+                            background: @lColor url('../img/mainmenu/over/settings.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/settings_3x.png');
+                            }
+                        }
+
+                        > a.logout:hover {
+                            background: @lColor url('../img/mainmenu/over/logout.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/logout_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/logout_3x.png');
+                            }
+                        }
+
+                        > a.home:hover {
+                            background: @lColor url('../img/mainmenu/over/home.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/home_3x.png');
+                            }
+                        }
+
+                        > a.about:hover {
+                            background: @lColor url('../img/mainmenu/over/about.png') no-repeat 8px 7px;
+                            background-size: 27px 26px;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/mainmenu/over/about_3x.png');
+                            }
+                        }
+                    }
+
+                    li.hr-top {
+                        padding-top: 25px;
+                        margin-top: 25px;
+                        border-top: 1px @headerBg solid;
+                    }
+                }
+            }
+
+            div.contextmenu_container {
+                position: relative;
+            }
+
+            .contextmenu {
+                display: none;
+                position: absolute;
+                background: white;
+                border: 1px @headerBg solid;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                z-index: 200;
+                padding: 5px;
+
+                li {
+
+                    a {
+                        color: @lColor;
+                        font-size: 15px;
+                        font-weight: 400;
+                        padding: 0;
+                        display: block;
+                        min-width: 200px;
+                        padding: 4px 10px;
+                        white-space: nowrap;
+                        padding-left: 45px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    a:hover {
+                        background: @lColor;
+                        color: white;
+                    }
+                }
+            }
+
+            .contextmenu.open {
+                display: block;
+            }
+
+            .content {
+                float: left;
+                padding-left: 350px;
+                padding-bottom: 50px;
+                max-width: 70%;
+
+                ul.tabs > li {
+                    display: inline-block;
+                }
+
+                .tasks {
+
+                    .tasklist {
+                        .task {
+                            border-top: 1px solid #eee;
+                            padding-top: 20px;
+                            margin-bottom: 25px;
+                        }
+
+                        .task:last-child {
+                            border-bottom: 1px solid #eee;
+                            padding-bottom: 20px;
+                        }
+
+                        .task:first-child {
+                            padding-top: 0px;
+                            border-top: 0px none;
+                        }
+
+                        .progress-small {
+                            text-align: center;
+                            height: 18px;
+                            background: rgba(164, 209,235, 0.50);
+                        }
+
+                        .progress-small-bg {
+                            border: 1px #65b1dd solid;
+                            width: 200px;
+                        }
+
+                        a {
+                            font-size: 30px;
+                            font-weight: 300;
+                            display: inline-block;
+
+                            &.action-link {
+                                font-size: 14px;
+                                background: none;
+                                padding-left: 0px;
+                            }
+                        }
+
+                        dl {
+                            padding-left: 55px;
+                            overflow: hidden;
+                            font-size: 14px;
+
+                            dt,
+                            dd {
+                                display: block;
+                                float: left;
+                            }
+
+                            dt {
+                                clear: both;
+                                font-weight: 500;
+                                margin-bottom: 5px;
+                            }
+
+                            dd {
+                                margin-left: 10px;
+                            }
+                        }
+
+                        dl.taskmenu {
+                            p {
+                                display: inline;
+                                margin-right: 10px;
+                                color: @lColor;
+                                cursor: pointer;
+                            }
+
+                            dt {
+                                float: left;
+                                margin-right: 10px;
+                                margin-bottom: 0;
+                                padding: 5px 8px;
+                                color: @tColor;
+                                cursor: pointer;
+                                clear: none;
+                            }
+
+                            dt.active,
+                            dt:hover {
+                                //background: @lColor;
+                                //color: white;
+                            }
+
+                            dd {
+                                clear: both;
+                                float: none;
+                                padding-bottom: 8px;
+                                border-bottom: 1px #ddd solid;
+                                margin-bottom: 5px;
+                            }
+                        }
+                    }
+                }
+
+                div.add,
+                div.restore {
+                    .steps {
+                        width: 100%;
+                        overflow: hidden;
+
+                        .step {
+                            float: left;
+                            background: url('../img/steps/line-out.png') no-repeat top left;
+                            background-size: 485px 24px;
+                            color: #c7e5f6;
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                                background-image: url('../img/steps/line-out_2x.png');
+                            }
+
+                            @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                                background-image: url('../img/steps/line-out_3x.png');
+                            }
+
+                            span {
+                                display: block;
+                                border: 4px #c7e5f6 solid;
+                                background: white;
+                                border-radius: 50%;
+                                width: 35px;
+                                height: 35px;
+                                text-align: center;
+                                font-size: 22px;
+                                line-height: 35px;
+                                cursor: pointer;
+                            }
+                        }
+
+                        .step.active {
+                            color: @lColor;
+
+                            span {
+                                border: 4px @lColor solid;
+                                background: @lColor;
+                                color: white;
+                            }
+
+                            h2 {
+                                color: @lColor;
+                            }
+                        }
+
+                        .step:first-child {
+                            padding-left: 0;
+                            background: transparent;
+                        }
+                    }
+
+                    .steps-legend {
+                        overflow: hidden;
+                        padding-bottom: 50px;
+                        list-style: none;
+                        margin: 0;
+
+                        li {
+                            color: #c7e5f6;
+                            font-size: 18px;
+                            text-align: center;
+                            float: left;
+                            padding-top: 10px;
+                            cursor: pointer;
+                        }
+
+                        li.active {
+                            color: @lColor;
+                        }
+                    }
+
+                    .steps-boxes {
+                        padding-left: 40px;
+
+                        .step {
+                            display: none;
+                        }
+
+                        .step.active {
+                            display: block;
+                        }
+
+                        .box.browser {
+                            .checklinks {
+                                a {
+                                    float: left;
+                                    margin-left: 20px;
+                                    color: @tColor;
+
+                                    i {
+                                        border: 2px solid;
+                                        border-color: @tColor;
+                                        border-radius: 2px;
+                                        font-size: 18px;
+                                        height: 18px;
+                                        vertical-align: top;
+                                        width: 18px;
+                                    }
+                                }
+
+                                a.inactive {
+                                    color: lighten(@tColor, 20%);
+                                    cursor: default;
+
+                                    i {
+                                        border-color: lighten(@tColor, 20%);
+                                    }
+                                }
+
+                                a:first-child {
+                                    margin-left: 0;
+                                }
+                            }
+
+                            .input.overlayButton {
+                                padding-top: 10px;
+                                max-width: 100%;
+
+                                input#sourcePath {
+                                    width: 100%;
+                                    box-sizing: border-box;
+                                    height: 37px;
+                                }
+
+                                a.button {
+                                    top: 10px;
+                                }
+                            }
+                        }
+
+                        .box.filters {
+                            .input.link {
+                                a {
+                                    color: @tColor;
+
+                                    i {
+                                        border: 2px solid;
+                                        border-color: @tColor;
+                                        border-radius: 2px;
+                                        font-size: 18px;
+                                        height: 18px;
+                                        vertical-align: top;
+                                        width: 18px;
+                                    }
+                                }
+                            }
+
+                            ul#simplefilterlist {
+                                overflow: hidden;
+                                padding-bottom: 15px;
+
+                                li {
+                                    overflow: hidden;
+                                    clear: both;
+                                    padding-bottom: 25px;
+
+                                    select {
+                                        width: 200px;
+                                        margin-right: 5px;
+                                        height: 36px;
+                                        line-height: 36px;
+                                    }
+
+                                    input {
+                                        width: calc(100% - 280px);
+                                        padding: 5px;
+                                    }
+                                }
+                            }
+                        }
+
+                        .step1 {
+                            li.strength.score-0 {
+                                color: #ff0000;
+                            }
+
+                            li.strength.score-1 {
+                                color: #ff7700;
+                            }
+
+                            li.strength.score-2 {
+                                color: #aaaa00;
+                            }
+
+                            li.strength.score-3 {
+                                color: #007700;
+                            }
+
+                            li.strength.score-4 {
+                                color: #427e27;
+                            }
+
+                            li.strength.score-x {
+                                color: #ff0000;
+                            }
+                        }
+
+                        .step5 {
+                            div.input.maxSize input.number,
+                            div.input.keepBackups input.number {
+                                width: 60px;
+                            }
+
+                            .hint, .retention-options {
+                                clear: both;
+                                margin-left: 190px;
+                                margin-top: 50px;
+                                font-style: italic;
+                            }
+
+                            .retention-options {
+                                input {
+                                    margin-bottom: 10px;
+                                }
+                            }
+
+                            .advancedoptions {
+                                padding-top: 15px;
+                                clear: both;
+
+                                li {
+                                    border-top: none;
+                                }
+
+                                li > a {
+                                    .button;
+                                }
+
+                                li.advancedentry {
+                                    border-bottom: 1px solid lightgray;
+                                }
+
+                                li:last-child {
+                                    padding-top: 0;
+
+                                    select {
+                                        max-width: 400px;
+                                    }
+                                }
+
+                                label {
+                                    line-height: normal;
+                                }
+
+                                input,
+                                select {
+                                    width: auto;
+                                    max-width: 100%;
+                                    box-sizing: border-box;
+                                }
+                            }
+
+                            .advanced-toggle {
+                                color: @tColor;
+                                line-height: normal;
+                                margin-top: 16px;
+                                clear: both;
+                                float: left;
+
+                                i.fa {
+                                    border: 2px solid;
+                                    border-color: @tColor;
+                                    border-radius: 2px;
+                                    font-size: 18px;
+                                    height: 18px;
+                                    vertical-align: top;
+                                    width: 18px;
+                                }
+                            }
+
+                            textarea {
+                                box-sizing: border-box;
+                                clear: both;
+                                margin-top: 15px;
+                                width: 100%;
+                            }
+                        }
+                    }
+
+                    form {
+                        padding-bottom: 50px;
+                        overflow: hidden;
+
+                        .input.password {
+                            .tools {
+                                clear: both;
+                                padding-left: 190px;
+                                padding-top: 10px;
+
+                                ul {
+                                    overflow: hidden;
+
+                                    li {
+                                        float: left;
+                                        padding-right: 7px;
+                                    }
+
+                                    li.strength.useless {
+                                        color: red;
+                                    }
+
+                                    li.strength.average {
+                                        color: yellow;
+                                    }
+
+                                    li.strength.good {
+                                        color: @lColor;
+                                    }
+                                }
+                            }
+                        }
+
+                        .input.multiple {
+                            input,
+                            select {
+                                width: auto;
+                                margin-right: 5px;
+                            }
+
+                            select {
+                                padding: 5px 12px;
+                            }
+                        }
+
+                        .input.overlayButton {
+                            overflow: hidden;
+                            position: relative;
+                            max-width: 446px;
+
+                            input {
+                                width: 347px;
+                            }
+
+                            a.button {
+                                position: absolute;
+                                top: 0;
+                                right: 0;
+                                padding: 7px 12px 8px;
+                            }
+                        }
+
+                        .input.checkbox.multiple {
+                            strong {
+                                display: block;
+                                padding-bottom: 5px;
+                            }
+
+                            label {
+                                display: inline-block;
+                                float: none;
+                                width: auto;
+                                padding-right: 10px;
+                            }
+
+                            input {
+                                width: auto;
+                                display: inline-block;
+                                float: none;
+                            }
+                        }
+
+                        .buttons {
+                            float: none;
+                            width: 635px;
+                            padding-top: 30px;
+                        }
+                    }
+                }
+
+                div.add {
+                    @legends-steps: 5;
+                    @legends-width: 700px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
+                        }
+                    }
+                }
+
+                div.restore {
+                    @legends-steps: 2;
+                    @legends-width: 700px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
+                        }
+                    }
+                }
+
+                div.restore.restore-direct {
+                    @legends-steps: 4;
+                    @legends-width: 700px;
+                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @circle-width: 43px;
+                    @step-width: @legends-width / @legends-steps;
+
+                    .steps {
+                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+
+                        .step {
+                            padding-left: @step-width - @circle-width;
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: @legends-padding-left;
+
+                        li {
+                            width: @step-width;
+                        }
+                    }
+
+                    .step:first-child {
+                        padding-left: 0;
+                        background: transparent;
+                    }
+
+                    .steps-legend {
+                        padding-left: 20px;
+                    }
+                }
+
+
+                div.headerthreedotmenu {
+                    margin: 20px 0 20px 0;
+
+                    h2 {
+                        display: inline;
+                    }
+
+                    .contextmenu_container {
+                        float: right;
+                    }
+
+                    .contextmenu {
+                        left: auto;
+                        right: 0;
+                        top: auto;
+                    }
+
+                    .threedotmenubutton {
+                        padding: 5px;
+                    }
+                }
+
+                .expandable {
+                    margin: 20px 0 20px 0;
+
+                    h2 {
+                        display: inline;
+                    }
+
+                    img {
+                        padding: 0 6px;
+                    }
+                }
+
+                div.settings {
+                    .input.mixed.multiple,
+                    .input.checkbox {
+                        input.checkbox {
+                            width: auto;
+                        }
+
+                        select {
+                            width: auto;
+                            margin-right: 5px;
+                        }
+
+                        label {
+                            line-height: normal;
+                            padding: 0 15px;
+                            width: auto;
+                        }
+                    }
+                }
+
+                .logpage {
+                    ul.tabs {
+                        padding: 15px 0;
+                    }
+
+                    ul.entries {
+                        li {
+                            padding: 10px 0 10px 0;
+                            border-bottom: 1px solid @border;
+                        }
+                    }
+
+                    ul.backuplog {
+                        list-style: none;
+                    }
+                }
+
+                .prewrapped-text {
+                    white-space: pre-wrap;
+                    overflow-x: auto;
+                }
+            }
+        }
+
+        .footer {
+            background: @headerBg;
+            min-height: 70px;
+            line-height: 70px;
+            overflow: hidden;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+
+            a {
+                color: @lColor;
+            }
+
+            .about-footer {
+                float: left;
+                overflow: hidden;
+                padding-right: 20px;
+                display: none;
+
+                span {
+                    display: block;
+                    float: left;
+                    padding-left: 20px;
+                }
+
+                ul {
+                    float: left;
+                }
+
+                li {
+                    float: left;
+                    padding-left: 20px;
+                }
+            }
+
+            .donate {
+                display: none;
+                float: right;
+                padding-right: 40px;
+                overflow: hidden;
+
+                ul {
+                    overflow: hidden;
+                    float: right;
+
+                    li {
+                        float: left;
+                        margin-left: 10px;
+
+                        a {
+                            img {
+                                margin-top: 24px;
+                                display: inline-block;
+                                opacity: 0.6;
+                            }
+
+                            img:hover {
+                                opacity: 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            .donate > a {
+                float: left;
+            }
+
+            .social {
+                float: right;
+
+                ul {
+                    overflow: hidden;
+                    float: right;
+                    padding-left: 20px;
+                    padding-right: 10px;
+
+                    li {
+                        float: right;
+                        margin-right: 10px;
+                        padding-top: 5px;
+
+                        img {
+                            opacity: 0.6;
+                        }
+
+                        img:hover {
+                            opacity: 1;
+                        }
+                    }
+                }
+            }
+
+            .themelink {
+                float: right;
+                padding-right: 20px;
+            }
+        }
+    }
+
+    #modal-menu {
+        max-width: 400px;
+
+        a {
+            color: @lColor;
+            font-size: 20px;
+            line-height: 40px;
+        }
+    }
+}
+
+// Modal windows
+.remodal {
+    padding: 30px;
+    box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
+    background: white;
+    display: none;
+
+    form {
+        .buttons {
+            float: none;
+        }
+    }
+}
+
+.remodal-wrapper .remodal {
+    display: block;
+}
+
+span.info {
+    font-size: 10px;
+    font-weight: 500;
+    display: inline-block;
+    background: @lColor;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    vertical-align: super;
+    color: white;
+    line-height: 15px;
+    margin-left: 5px;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+.clear {
+    clear: both;
+}
+
+.nofloat {
+    float: none !important;
+}
+
+div.blocker,
+div.connection-lost,
+div.modal-dialog {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    margin: auto;
+}
+
+div.blocker {
+    z-index: 5000;
+    background-color: #000000;
+    opacity: 0.65;
+}
+
+#connection-lost-blocker {
+    z-index: 5100;
+}
+
+#connection-lost-dialog {
+    z-index: 5200;
+}
+
+div.connection-lost,
+div.modal-dialog {
+    z-index: 5001;
+    .flexbox;
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    -ms-flex-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+
+    div.info {
+        min-width: 310px;
+        max-width: 650px;
+        margin: 5px;
+    }
+
+    div.title {
+        border: 1px solid #65b1dd;
+        background-color: #65b1dd;
+        border-radius: 5px 5px 0 0;
+        padding: 10px 20px;
+        font-weight: bold;
+        color: lightgray;
+        text-align: center;
+    }
+
+    div.content {
+        background-color: white;
+        border: 1px solid white;
+        padding: 20px;
+    }
+
+    .buttons {
+        border-radius: 0 0 5px 5px;
+        padding-top: 10px;
+        overflow: auto;
+    }
+
+    form {
+        margin-top: 15px;
+
+        textarea {
+            height: 130px;
+            width: 420px;
+            padding: 10px 12px;
+            border: 1px #d8d8d8 solid;
+            border-radius: 2px;
+            color: @tColor;
+            font-size: 16px;
+            font-weight: 300;
+        }
+
+        input {
+            height: 35px;
+            line-height: 35px;
+            padding: 0 12px;
+        }
+    }
+}
+
+div.modal-dialog {
+    .content.buttons {
+        ul {
+            float: right;
+        }
+        // tooltipped css taken from: https://github.com/primer/primer-tooltips and https://sachinchoolur.github.io/ngclipboard/
+        .tooltipped {
+            position: relative
+        }
+
+        .tooltipped:after {
+            position: absolute;
+            z-index: 1000000;
+            display: none;
+            padding: 5px 8px;
+            font: normal normal 11px/1.5 Helvetica, arial, nimbussansl, liberationsans, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            color: #fff;
+            text-align: center;
+            text-decoration: none;
+            text-shadow: none;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: break-word;
+            white-space: pre;
+            pointer-events: none;
+            content: attr(aria-label);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 3px;
+            -webkit-font-smoothing: subpixel-antialiased
+        }
+
+        .tooltipped:before {
+            position: absolute;
+            z-index: 1000001;
+            display: none;
+            width: 0;
+            height: 0;
+            color: rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            content: "";
+            border: 5px solid transparent
+        }
+
+        .tooltipped:hover:before, .tooltipped:hover:after, .tooltipped:active:before, .tooltipped:active:after, .tooltipped:focus:before, .tooltipped:focus:after {
+            display: inline-block;
+            text-decoration: none
+        }
+
+        .tooltipped-w:after {
+            right: 100%;
+            bottom: 50%;
+            margin-right: 5px;
+            -webkit-transform: translateY(50%);
+            -ms-transform: translateY(50%);
+            transform: translateY(50%)
+        }
+
+        .tooltipped-w:before {
+            top: 50%;
+            bottom: 50%;
+            left: -5px;
+            margin-top: -5px;
+            border-left-color: rgba(0, 0, 0, 0.8)
+        }
+    }
+}
+
+.importpage {
+    form.styled {
+        input {
+            margin-top: 11px;
+            margin-bottom: 11px;
+        }
+    }
+}
+
+.restorewizard,
+.addwizard {
+    form.styled {
+        ul {
+            margin: 20px;
+            margin-left: 0px;
+        }
+
+        input[type="radio"] {
+            width: 20px;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+
+        label {
+            width: auto;
+            line-height: normal;
+        }
+
+        div.subtext {
+            clear: both;
+            margin-left: 30px;
+            padding-top: 5px;
+            color: lighten(@tColor, 15%);
+        }
+    }
+}
+
+.pauseoptions {
+    form.styled {
+        li {
+            line-height: normal;
+            padding: 0px;
+
+            input {
+                height: auto;
+                margin-top: 8px;
+                margin-right: 8px;
+                width: auto;
+            }
+        }
+    }
+}
+
+/* Progress bar styles from Bootstrap */
+.progress-bar-striped {
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+    background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+    -webkit-background-size: 40px 40px;
+    background-size: 40px 40px;
+}
+
+.progress-striped {
+    .progress-bar {
+        background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+        background-image: -o-linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+        background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+        -webkit-background-size: 40px 40px;
+        background-size: 40px 40px;
+    }
+}
+
+.progress {
+    position: relative;
+    min-height: 25px;
+
+    > span {
+        vertical-align: middle;
+        display: block;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        z-index: 100;
+        padding-top: 2px;
+    }
+
+    &.active {
+        .progress-bar {
+            -webkit-animation: progress-bar-stripes 2s linear infinite;
+            -o-animation: progress-bar-stripes 2s linear infinite;
+            animation: progress-bar-stripes 2s linear infinite;
+        }
+    }
+
+    .progress-bar {
+        float: left;
+        width: 0;
+        height: 100%;
+        font-size: 12px;
+        line-height: 20px;
+        color: #fff;
+        text-align: center;
+        background-color: #337ab7;
+        -webkit-box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15);
+        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .15);
+        -webkit-transition: width .6s ease;
+        -o-transition: width .6s ease;
+        transition: width .6s ease;
+        height: 100%;
+        position: absolute;
+        top: 0;
+
+        &.active {
+            -webkit-animation: progress-bar-stripes 2s linear infinite;
+            -o-animation: progress-bar-stripes 2s linear infinite;
+            animation: progress-bar-stripes 2s linear infinite;
+        }
+    }
+}
+
+.tree-view {
+    list-style-type: none;
+    margin-left: 10px;
+    padding-bottom: 5px;
+
+    ul {
+        margin-left: 16px;
+    }
+
+    span {
+        &.nodeLabel {
+            cursor: pointer;
+
+            &.selected {
+                border: 1px solid #aaa;
+                background-color: #ddd;
+                padding: 1px 3px;
+            }
+        }
+    }
+
+    li {
+        .node {
+            padding-bottom: 5px;
+        }
+
+        div.selected {
+            border-color: lightblue;
+            background-color: lightblue;
+        }
+
+        > ul {
+            display: none;
+        }
+
+        > ul.expanded {
+            display: block;
+        }
+
+        a {
+            &.nav {
+                cursor: pointer;
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                vertical-align: middle;
+                background-image: url(../img/treeicons.png);
+                background-repeat: no-repeat;
+                background-position: -80px 0px;
+                background-size: 112px 64px;
+
+                @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                    background-image: url('../img/treeicons_2x.png');
+                }
+
+                @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                    background-image: url('../img/treeicons_3x.png');
+                }
+
+                &.leaf {
+                    background: none;
+                }
+
+                &.expanded {
+                    background-position: -80px -16px;
+                }
+            }
+
+            &.type {
+                cursor: auto;
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                vertical-align: middle;
+                background-image: url(../img/treeicons.png);
+                background-repeat: no-repeat;
+                background-position: 0px -16px;
+                background-size: 112px 64px;
+
+                @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                    background-image: url('../img/treeicons_2x.png');
+                }
+
+                @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                    background-image: url('../img/treeicons_3x.png');
+                }
+
+                &.invisible {
+                    background-position: 0px -32px;
+                }
+
+                &.loading {
+                    cursor: progress;
+                    background-image: url(../img/loader-16.gif);
+                    background-repeat: no-repeat;
+                    background-position: 0px 0px;
+                    background-size: 16px 16px;
+
+                    @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                        background-image: url('../img/loader-32.gif');
+                    }
+                }
+
+                &.x-tree-icon-drive {
+                    background-position: -16px -16px;
+                }
+
+                &.x-tree-icon-leaf {
+                    background-position: -32px -16px;
+                }
+
+                &.x-tree-icon-symlink {
+                    background-position: -48px -16px;
+                }
+
+                &.x-tree-icon-userdata {
+                    background-position: -16px -48px;
+                }
+
+                &.x-tree-icon-locked {
+                    background-position: -64px -16px;
+                }
+
+                &.x-tree-icon-broken {
+                    background-position: -64px -16px;
+                }
+
+                &.x-tree-icon-computer {
+                    background-position: 0px -48px;
+                }
+
+                &.x-tree-icon-hyperv {
+                    background-position: -96px -16px;
+                }
+
+                &.x-tree-icon-hypervmachine {
+                    background-position: -96px 0px;
+                }
+
+                &.x-tree-icon-mssql {
+                    background-position: -96px -32px;
+                }
+
+                &.x-tree-icon-mssqldb {
+                    background-position: -80px -32px;
+                }
+
+                &.x-tree-icon-mydocuments {
+                    background-position: -32px -48px;
+                }
+
+                &.x-tree-icon-mymusic {
+                    background-position: -48px -48px;
+                }
+
+                &.x-tree-icon-mypictures {
+                    background-position: -64px -48px;
+                }
+
+                &.x-tree-icon-desktop {
+                    background-position: -80px -48px;
+                }
+
+                &.x-tree-icon-home {
+                    background-position: -96px -48px;
+                }
+
+                &.x-tree-icon-drive.invisible {
+                    background-position: -16px -32px;
+                }
+
+                &.x-tree-icon-leaf.invisible {
+                    background-position: -32px -32px;
+                }
+
+                &.x-tree-icon-symlink.invisible {
+                    cursor: auto;
+                    background-position: -48px -32px;
+                }
+
+                &.x-tree-icon-locked.invisible {
+                    background-position: -64px -32px;
+                }
+            }
+
+            &.check {
+                height: 16px;
+                width: 16px;
+                display: inline-block;
+                cursor: pointer;
+                background-image: url(../img/treeicons.png);
+                background-repeat: no-repeat;
+                background-position: 0 0;
+                vertical-align: middle;
+                background-size: 112px 64px;
+
+                @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
+                    background-image: url('../img/treeicons_2x.png');
+                }
+
+                @media only screen and (-webkit-min-device-pixel-ratio: 2.25), only screen and (min-resolution: 288dpi), only screen and (min-resolution: 2.25dppx) {
+                    background-image: url('../img/treeicons_3x.png');
+                }
+            }
+
+            &.partial {
+                background-position: -32px 0px;
+            }
+
+            &.include {
+                background-position: -16px 0px;
+            }
+
+            &.exclude {
+                background-position: -48px 0px;
+            }
+
+            &.root {
+                background: none;
+                display: none;
+            }
+        }
+    }
+}
+
+.throttlesettings {
+    div.multiple {
+
+        select {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        input {
+            width: 100px;
+        }
+
+        input.checkbox {
+            width: auto;
+        }
+
+        label {
+            line-height: 35px;
+            padding: 0 15px;
+            width: auto;
+            min-width: 150px;
+        }
+    }
+
+    .disabled {
+        color: lighten(@tColor, 25%);
+
+        input, select {
+            color: lighten(@tColor, 25%);
+        }
+    }
+}
+
+// Smaller screen sizes
+@media (max-width: 1200px) {
+    body {
+        .container {
+            .header {
+                .donate {
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 1150px) {
+    body {
+        .container {
+            .header {
+                height: 140px;
+
+                .statepadding {
+                    padding-right: 90px;
+                    margin-left: 0px;
+                }
+
+                .state {
+                    width: 100%;
+                    margin: 10px 40px;
+                    clear: left;
+                    float: left;
+                }
+
+                .action-icons {
+                    display: none;
+                }
+
+                .action-icons-small {
+                    display: inline-block;
+                }
+
+
+                .menubutton {
+                    display: block;
+                    font-size: 18px;
+                    padding-right: 50px;
+                    margin-top: 5px;
+                    margin-right: 15px;
+                    background: url('../img/menu.png') no-repeat right top;
+                    background-size: 39px 39px;
+                    position: relative;
+                    height: 40px;
+                    line-height: 40px;
+                    color: @tColor;
+                    float: right;
+                    top: 10px;
+                    padding-left: 20px;
+                    text-transform: uppercase;
+                    text-align: right;
+
+                    @media (-webkit-min-device-pixel-ratio: 1.25), (min-resolution: 192dpi), (min-resolution: 1.25dppx) {
+                        background-image: url('../img/menu_2x.png');
+                    }
+
+                    @media (-webkit-min-device-pixel-ratio: 2.25), (min-resolution: 288dpi), (min-resolution: 2.25dppx) {
+                        background-image: url('../img/menu_3x.png');
+                    }
+                }
+
+                .menubutton.active {
+                    background-image: url('../img/menu_active.png');
+                    background-size: 39px 39px;
+                    color: @lColor;
+
+                    @media (-webkit-min-device-pixel-ratio: 1.25), (min-resolution: 192dpi), (min-resolution: 1.25dppx) {
+                        background-image: url('../img/menu_active_2x.png');
+                    }
+
+                    @media (-webkit-min-device-pixel-ratio: 2.25), (min-resolution: 288dpi), (min-resolution: 2.25dppx) {
+                        background-image: url('../img/menu_active_3x.png');
+                    }
+                }
+
+                .donate {
+                    display: none;
+                }
+            }
+
+            .body {
+                position: relative;
+                padding-top: 140px;
+
+                .mainmenu {
+                    display: none;
+                    position: fixed;
+                    background: none repeat scroll 0 0 white;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    left: 10px;
+                    padding: 20px;
+                    top: 60px;
+                }
+
+                .mainmenu.mobile-open {
+                    display: block;
+                    left: auto;
+                    right: 0;
+                    top: 0;
+                    z-index: 1000;
+                }
+
+                .contextmenu {
+                    left: 0;
+                    top: auto;
+                }
+
+                .content {
+                    float: none;
+                    padding: 20px 20px;
+                    margin: 0px auto 30px auto;
+
+                    .state {
+                        width: auto;
+                    }
+                }
+            }
+
+            .mobileOpen {
+                display: block !important;
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        .container {
+            .body {
+                .content {
+                    .tasks {
+                        .tasklist {
+                            a {
+                                font-size: 20px;
+                                background-size: 24px;
+                                background-position: 0 4px;
+                                padding-left: 35px;
+                            }
+
+                            dl {
+                                padding-left: 35px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    body {
+        .container {
+
+            .header {
+                .logo {
+                    padding-left: 10px;
+                }
+
+                .statepadding {
+                    padding-right: 50px;
+                }
+
+                .state {
+                    margin-left: 10px;
+                }
+
+                .menubutton {
+                    margin-right: 5px;
+                }
+            }
+
+            .body {
+                .content {
+                    div.add,
+                    div.restore,
+                    div.settings {
+                        .steps {
+                            display: none;
+                        }
+
+                        .steps-legend {
+                            list-style: decimal;
+                            padding-left: 20px;
+                            border-bottom: 1px solid #eee;
+                            margin-bottom: 30px;
+                            padding-bottom: 20px;
+
+                            li {
+                                float: none;
+                                font-weight: 500;
+                                width: auto !important;
+                                padding-right: 0 !important;
+                            }
+                        }
+
+                        .steps-boxes {
+                            padding-left: 0;
+                        }
+
+                        form.styled {
+                            .input {
+                                input,
+                                select,
+                                textarea {
+                                    max-width: 100%;
+                                    box-sizing: border-box;
+                                }
+                            }
+
+                            .input.select select {
+                                width: 420px;
+                            }
+
+                            .buttons {
+                                max-width: 100%;
+                                width: auto;
+                            }
+
+                            .tools {
+                                padding-left: 0 !important;
+                            }
+
+                            .input.checkbox.multiple {
+                                padding-bottom: 5px;
+
+                                input,
+                                label {
+                                    display: block !important;
+                                    float: left !important;
+                                    line-height: normal;
+                                }
+
+                                input {
+                                    clear: both;
+                                }
+                            }
+
+                            .input.text.multiple {
+                                input {
+                                    max-width: 48% !important;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    body {
+        h2 {
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .container {
+            .body {
+                padding-bottom: 10px;
+
+                .content {
+                    margin: 0px auto;
+
+                    div.add,
+                    div.restore {
+                        form {
+                            .input.overlayButton {
+                                padding-top: 8px;
+                                padding-bottom: 30px;
+                                //border-bottom: 1px #ddd solid;
+                                margin-bottom: 10px;
+
+                                a.button {
+                                    padding: 7px 10px;
+                                    right: 1px;
+                                    top: 9px;
+                                }
+                            }
+
+                            .input.checkbox.multiple {
+                                div {
+                                    display: block;
+                                }
+                            }
+
+                            .input.select.multiple {
+                                input#exclude-larger-than-number {
+                                    width: 75px;
+                                }
+
+                                select#exclude-larger-than-multiplier {
+                                    width: 140px;
+                                }
+                            }
+
+                            .filters {
+                                //border-bottom: 1px #ddd solid;
+
+                                .input.link {
+                                    //padding-bottom: 0;
+                                }
+
+                                .input.textarea {
+                                    padding-bottom: 10px;
+                                }
+
+                                h3 {
+                                    margin: 5px 0;
+                                }
+                            }
+
+                            .input.text.select.multiple.repeat {
+                                label {
+                                    float: none;
+                                }
+
+                                input#repeatRunNumber {
+                                    width: 70px;
+                                }
+
+                                select#repeatRunMultiplier {
+                                    width: 100px;
+                                }
+                            }
+
+                            .input.multiple.text.select.maxSize {
+                                input {
+                                    width: 70px;
+                                }
+
+                                select {
+                                    width: 100px;
+                                }
+                            }
+
+                            .input.multiple.text.select.keepBackups {
+                                select {
+                                    width: 85px;
+                                    padding: 4px 6px;
+                                }
+
+                                input {
+                                    width: 60px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            .footer {
+                position: static;
+                padding: 15px;
+                line-height: normal;
+                text-align: left;
+                box-sizing: border-box;
+
+                * {
+                    float: none !important;
+                    text-align: center;
+                    box-sizing: border-box;
+                }
+
+                .about-footer {
+                    padding-right: 0;
+                    display: block;
+
+                    span {
+                        padding-left: 0;
+                        padding-bottom: 5px;
+                    }
+
+                    li {
+                        padding-left: 0;
+                        float: none;
+                        display: inline-block;
+                        height: 32px;
+                        width: 32px;
+                        background-size: 28px !important;
+                        border-bottom: none;
+
+                        a {
+                            /*color: transparent;
+                            height: 32px;
+                            width: 32px;*/
+                        }
+                    }
+
+                    li:first-child {
+                        padding-bottom: 0;
+                    }
+
+                    li:last-child {
+                        padding-bottom: 20px;
+                    }
+                }
+
+                li,
+                .donate,
+                .social,
+                .about-footer {
+                    padding: 8px 0;
+                    border-bottom: 1px #ddd solid;
+                }
+
+                .donate {
+                    display: block;
+
+                    ul {
+                        li {
+                            display: inline-block;
+                            border: none;
+                            margin: 0 5px;
+
+                            a img {
+                                margin-top: 0;
+                            }
+                        }
+                    }
+                }
+
+                .social {
+                    li {
+                        display: inline-block;
+                        border: none;
+                    }
+                }
+
+                .themelink {
+                    padding: 8px 0;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 580px) {
+    .advancedentry .longdescription {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 492px) {
+    ul.notification {
+        width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 15px;
+
+        .container {
+            .header {
+                .logo {
+                    padding-left: 5px;
+                }
+
+                .menubutton {
+                    margin-right: 5px;
+                }
+
+                .state {
+                    margin-left: 5px;
+                }
+
+                .statepadding {
+                    padding-right: 40px;
+                }
+
+                .menubutton {
+                    padding-left: 10px;
+                }
+            }
+
+            .body {
+                .mainmenu {
+                    width: 280px;
+                    box-sizing: border-box;
+
+                    ul {
+                        li {
+                            a {
+                                font-size: 22px;
+                            }
+                        }
+                    }
+                }
+
+                .content {
+                    padding: 15px;
+
+                    div.add,
+                    div.restore {
+                        form {
+                            .input.password {
+                                .tools {
+                                    ul li {
+                                        font-size: 14px;
+                                    }
+                                }
+                            }
+
+                            .buttons {
+                                a {
+                                    float: none;
+                                    text-align: center;
+                                    margin-bottom: 5px;
+                                }
+                            }
+                        }
+
+                        .steps-boxes {
+                            .box.browser {
+                                .checklinks {
+                                    a {
+                                        float: none;
+                                        margin-bottom: 8px;
+                                        display: block;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 400px) {
+    body {
+        font-size: 15px;
+
+        .container {
+            .header {
+                .menubutton {
+                    margin-right: 0px;
+                    padding-left: 0px;
+                    padding-right: 40px;
+
+                    span {
+                        display: none;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 325px) {
+    body {
+        font-size: 15px;
+
+        .container {
+            .header {
+                .logo {
+                    div {
+                        display: none;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 200px) {
+    body {
+        font-size: 15px;
+
+        .container {
+            .header {
+                .menubutton {
+                    position: static;
+                    margin-top: 0px;
+                }
+
+                .action-icons-small {
+                    clear: right;
+                    margin-top: 0px;
+                }
+            }
+        }
+    }
+}

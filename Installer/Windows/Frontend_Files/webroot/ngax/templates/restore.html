@@ -1,0 +1,168 @@
+<script>$(function() { $( ".resizable" ).resizable(); });</script>
+
+<div class="restore" ng-class="{'restore-direct': IsBackupTemporary}" ng-controller="RestoreController">
+
+    <div class="steps" ng-show="IsBackupTemporary &amp;&amp; restore_step &lt; 2">
+        <div class="step step1 not-clickable">
+            <span>1</span>
+        </div>
+        <div class="step step2 not-clickable">
+            <span>2</span>
+        </div>
+        <div class="step step3" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
+            <span>3</span>
+        </div>
+        <div class="step step4" ng-class="{active: restore_step == 1}" ng-click="onClickNext()">
+            <span>4</span>
+        </div>
+    </div>
+
+    <ol class="steps-legend" ng-show="IsBackupTemporary &amp;&amp; restore_step &lt; 2">
+        <li class="step1 not-clickable" translate>Backup location</li>
+        <li class="step2 not-clickable" translate>Encryption</li>
+        <li ng-class="{active: restore_step == 0}" class="step3" ng-click="trySetStep(0)" translate>Select files</li>
+        <li ng-class="{active: restore_step == 1}" class="step4" ng-click="onClickNext()" translate>Restore options</li>
+    </ol>
+
+
+    <div class="steps" ng-hide="IsBackupTemporary || restore_step &gt; 1">
+        <div class="step step1" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
+            <span>1</span>
+        </div>
+        <div class="step step2" ng-class="{active: restore_step == 1}" ng-click="onClickNext()">
+            <span>2</span>
+        </div>
+    </div>
+
+    <ol class="steps-legend" ng-hide="IsBackupTemporary || restore_step &gt; 1">
+        <li ng-class="{active: restore_step == 0}" class="step1" ng-click="trySetStep(0)" translate>Select files</li>
+        <li ng-class="{active: restore_step == 1}" class="step2" ng-click="onClickNext()" translate>Restore options</li>
+    </ol>
+
+    <form id="restore" class="styled">
+
+        <div ng-show="restore_step == 0 &amp;&amp; connecting == false">
+            <h1 ng-show="IsBackupTemporary" translate>Restore files</h1>
+            <h1 ng-hide="IsBackupTemporary" translate translate-params-backupname="Backup.Backup.Name">Restore files from {{backupname}}</h1>
+            <div class="input timestamp">
+                <label for="restoreversion" translate>Restore from</label>
+
+                <select name="restoreversion" id="restoreversion" ng-model="RestoreVersion" ng-options="fs.Version as fs.DisplayLabel group by fs.GroupLabel for fs in Filesets | orderBy: ['Version']">
+
+                </select>
+            </div>
+
+            <div class="input text search overlayButton multiple" style="max-width: none">
+                <label for="searchfilter" translate>Search for files</label>
+                <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="{{'Type to highlight files' | translate}}" ng-on-enter-press="doSearch()" ng-on-escape-press="clearSearch()" />
+                <a href id="searchfiltersubmit" class="button" ng-click="doSearch()" ng-cancelsearch="clearSearch()" ng-enabled="!Searching">
+                    <span ng-show="Searching" translate>Busy ...</span>
+                    <span ng-hide="Searching" translate>Search</span>
+                </a>
+            </div>
+
+            <div class="resizable filepicker">
+                <restore-file-picker id="restore_file_picker" ng-sources="Paths" ng-backup-id="BackupID" ng-timestamp="filesetStamps[RestoreVersion + '']" treedata="treedata" ng-selected="Selected" ng-search-filter="SearchFilter" ng-search-mode="InSearchMode"></restore-file-picker>
+            </div>
+            <!-- <div ng-repeat="value in Selected" >{{value}}</div> -->
+            <div class="buttons">
+                <a href class="submit" ng-click="onClickNext()" translate>Continue</a>
+                <a href class="submit" ng-show="IsBackupTemporary" ng-click="onClickBack()" translate>Back</a>
+            </div>
+
+        </div>
+
+        <div ng-show="restore_step == 1 &amp;&amp; connecting == false" width="auto">
+            <h1 translate>Restore options</h1>
+
+            <h2 translate>Where do you want to restore the files to?</h2>
+            <div class="input checkbox multiple leftflush">
+                <input id="restoretooriginalpath" type="radio" name="restorelocation" ng-model="RestoreLocation" value="direct" />
+                <label for="restoretooriginalpath" translate>Original location</label>
+            </div>
+            <div class="input checkbox multiple leftflush">
+                <input id="restoretonewpath" type="radio" name="restorelocation" ng-model="RestoreLocation" value="custom" />
+                <label for="restoretonewpath" translate>Pick location</label>
+            </div>
+
+            <div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
+                <label for="restore_path" translate>Folder path</label>
+                <input type="text" name="restore_path" id="restore_path" ng-model="RestorePath" placeholder="{{'Enter the destination path' | translate}}" />
+                <a href id="file_targetFolderPathAdd" class="button" ng-click="HideFolderBrowser = false" translate>Browse</a>
+            </div>
+
+            <div class="input text" ng-hide="HideFolderBrowser">
+
+                <div class="input" style="padding-bottom: 0px">
+                    <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">
+                        <span ng-show="ShowHiddenFolders" translate>Hide hidden folders</span>
+                        <span ng-hide="ShowHiddenFolders" translate>Show hidden folders</span>
+                    </a>
+
+                    <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;" translate>Manually type path</a>
+                </div>
+
+                <label for="folder_path_picker" translate>Folder path</label>
+                <div class="resizable filepicker" style="clear: both;">
+                    <destination-folder-picker id="folder_path_picker" ng-model="RestorePath" ng-show-hidden="ShowHiddenFolders" ng-hide-user-node="false"></destination-folder-picker>
+                </div>
+            </div>
+
+            <h2 translate>How do you want to handle existing files?</h2>
+            <div class="input checkbox multiple leftflush">
+                <input type="radio" id="restoreoverwrite" name="restoreoverwrite" ng-model="RestoreMode" value="overwrite" />
+                <label for="restoreoverwrite" translate>Overwrite</label>
+            </div>
+            <div class="input checkbox multiple leftflush">
+                <input type="radio" id="restorenewcopy" name="restoreoverwrite" ng-model="RestoreMode" value="copy"  />
+                <label for="restorenewcopy" translate>Save different versions with timestamp in file name</label>
+            </div>
+
+
+
+            <h2 translate>Permissions</h2>
+            <div class="input checkbox leftflush">
+                <input type="checkbox" id="readwritepermissions" ng-model="RestorePermissions" />
+                <label for="readwritepermissions" translate>Restore read/write permissions</label>
+            </div>
+
+            <div  class="input password" ng-show="showInputPassphrase()">
+                <h2 translate>Passphrase</h2>
+                <p translate>
+                    Backup is encrypted but no passphrase is available.
+                    Type a passphrase below to use for restoring your files,
+                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by
+                    invoking your system's keychain.
+                </p>
+                <input autocomplete="new-password" type="password" name="restore_path" id="passphrase" ng-model="passphrase"
+                placeholder="{{'Type passphrase here.' | translate}}" />
+            </div>
+
+            <div class="buttons">
+                <a href class="submit" ng-click="onStartRestore()" translate>Restore</a>
+                <a href class="submit" ng-click="restore_step = 0" translate>Back</a>
+            </div>
+        </div>
+
+        <div ng-show="restore_step == 3 &amp;&amp; connecting == false">
+            <h3>
+                <div class="hint-text" translate>Your files and folders have been restored successfully.</div>
+                <!-- <div ng-hide="SystemInfo.SuppressDonationMessages">
+                    <div id="restore-hint-donate" class="hint-text" translate translate-params-smallamount="'10€'" translate-params-largeamount="'100€'">Did we help save your files? If so, please consider supporting Duplicati with a donation. We suggest {{smallamount}} for private use and {{largeamount}} for commercial use.</div>
+                    <div id="restore-hint-donate" class="hint-text"><a href="https://www.duplicati.com/donate" target="blank" translate>We accept donations via different services, such as OpenCollective, PayPal, BountySource and various crypto currencies.</a></div>
+                </div> -->
+            </h3>
+            <div class="buttons">
+                <a href class="submit" ng-click="onClickComplete()" translate>OK</a>
+            </div>
+        </div>
+
+        <div ng-show="connecting == true &amp;&amp; taskid != null">
+            <wait-area taskid="taskid" text="ConnectionProgress" allow-cancel="true"></wait-area>
+        </div>
+
+        <div ng-show="connecting == true &amp;&amp; taskid == null">
+            {{ConnectionProgress}}
+        </div>
+    </form>
+</div>

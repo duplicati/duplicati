@@ -1,0 +1,51 @@
+<div ng-controller="PauseController" class="pauseoptions">
+    <form class="styled">
+    	<ul>
+    		<li class="input" ng-click="selection.time = '5m'">
+	    		<input type="radio" name="fivemin" id="fivemin" ng-model="selection.time" value="5m">
+    			<label for="fivemin" class="pause-5" translate translate-params-number="5">{{number}} Minutes</label>
+    		</li>
+
+    		<li class="input" ng-click="selection.time = '10m'">
+	    		<input type="radio" name="tenmin" id="tenmin" ng-model="selection.time" value="10m">
+    			<label for="tenmin" class="pause-10" translate translate-params-number="10">{{number}} Minutes</label>
+    		</li>
+
+    		<li class="input" ng-click="selection.time = '15m'">
+	    		<input type="radio" name="fifteenmin" id="fifteenmin" ng-model="selection.time" value="15m">
+    			<label for="fifteenmin" class="pause-15" translate translate-params-number="15">{{number}} Minutes</label>
+    		</li>
+
+    		<li class="input" ng-click="selection.time = '30m'">
+	    		<input type="radio" name="thirtymin" id="thirtymin" ng-model="selection.time" value="30m">
+    			<label for="thirtymin" class="pause-30" translate translate-params-number="30">{{number}} Minutes</label>
+    		</li>
+
+    		<li class="input" ng-click="selection.time = '1h'">
+	    		<input type="radio" name="onehour" id="onehour" ng-model="selection.time" value="1h">
+    			<label for="onehour" class="pause-60" translate translate-params-number="1">{{number}} Hour</label>
+    		</li>
+
+        <li class="input" ng-click="selection.time = '4h'">
+	    		<input type="radio" name="fourhour" id="fourhour" ng-model="selection.time" value="4h">
+    			<label for="fourhour" class="pause-240" translate translate-params-number="4">{{number}} Hours</label>
+    		</li>
+
+        <li class="input" ng-click="selection.time = '8h'">
+	    		<input type="radio" name="eighthour" id="eighthour" ng-model="selection.time" value="8h">
+    			<label for="eighthour" class="pause-480" translate translate-params-number="8">{{number}} Hours</label>
+    		</li>
+
+        <li class="input" ng-click="selection.time = '24h'">
+	    		<input type="radio" name="twentyfourhour" id="twentyfourhour" ng-model="selection.time" value="24h">
+    			<label for="twentyfourhour" class="pause-1440" translate translate-params-number="24">{{number}} Hours</label>
+    		</li>
+
+    		<li class="input" ng-click="selection.time = 'infinite'">
+	    		<input type="radio" name="infinite" id="infinite" ng-model="selection.time" value="infinite">
+    			<label for="infinite" class="pause-x" translate>Until resumed</label>
+    		</li>
+    	</ul>
+	</form>
+
+</div>
