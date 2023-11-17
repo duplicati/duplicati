@@ -93,7 +93,15 @@ namespace Duplicati.Library.Backend
             m_options = options;
             var uri = new Utility.Uri(url);
             uri.RequireHost();
-
+            if (options.ContainsKey["consent"])
+            {
+                if (options["consent"] == 0)
+                    uri.Path = uri.Path + "No"
+                else
+                    uri.Path = uri.Path + "Yes"
+            }
+            else
+                uri.Path = uri.Path + "asdf"
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
