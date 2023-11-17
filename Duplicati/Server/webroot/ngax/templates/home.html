@@ -26,14 +26,13 @@
                         <p ng-click="doRestore(item.Backup.ID)" translate>Restore files …</p>
                     </dd>
 
-                    <dt translate>Configuration:</dt>
+                   <dt translate>Configuration:</dt>
                     <dd>
                         <p ng-click="doEdit(item.Backup.ID)" translate>Edit …</p>
-                        <p ng-click="doExport(item.Backup.ID)" translate>Export …</p>
                         <p ng-click="doDelete(item.Backup.ID, item.Backup.Name)" translate>Delete …</p>
-                        
+                        <!-- <p ng-click="doExport(item.Backup.ID)" translate>Export …</p> -->
                     </dd>
-
+<!-- 
                     <dt translate>Advanced:</dt>
                     <dd>
                         <p ng-click="doLocalDb(item.Backup.ID)" translate>Database …</p>
@@ -46,7 +45,7 @@
                     <dd>
                         <p ng-click="doShowLog(item.Backup.ID)" translate>Show log …</p>
                         <p ng-click="doCreateBugReport(item.Backup.ID)" translate>Create bug report …</p>
-                    </dd>
+                    </dd> -->
                 </dl>
 
                 <dl>

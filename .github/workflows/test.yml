@@ -1,44 +1,48 @@
 name: Build backend
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+
 jobs:
-    Installers:
-        name: Duplicati Files
-        runs-on: macos-latest
+  Installers:
+    name: Duplicati Files
+    runs-on: macos-latest
 
-        steps:
-            - name: Install NuGet
-              uses: nuget/setup-nuget@v1.1.1
+    steps:
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v1.1.1
 
-            - name: Checkout Source
-              uses: actions/checkout@v3
+      - name: Checkout Source
+        uses: actions/checkout@v3
 
-            - name: Restore NuGet Packages
-              run: |
-                    nuget restore Duplicati.sln
-                    nuget restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
+      - name: Restore NuGet Packages
+        run: |
+          nuget restore Duplicati.sln
+          nuget restore "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"
 
-            - name: Build Duplicati (macOS)
-              run: |
-                    msbuild /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"    
-                    RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
-                    RELEASE_TYPE="canary"
-                    RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
-                    RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
-                    RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
-                    RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
-                    echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
-                    echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
-                    mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
-                    msbuild -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" -p:Configuration=Release Duplicati.sln
+      - name: Build Duplicati (macOS)
+        run: |
+          msbuild /property:Configuration=Release "BuildTools/UpdateVersionStamp/UpdateVersionStamp.sln"    
+          RELEASE_TIMESTAMP=$(date +%Y-%m-%d)
+          RELEASE_TYPE="canary"
+          RELEASE_INC_VERSION=$(cat Updates/build_version.txt)
+          RELEASE_INC_VERSION=$((RELEASE_INC_VERSION+1))
+          RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
+          RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
+          echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
+          echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
+          mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
+          msbuild -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" -p:Configuration=Release Duplicati.sln
 
-            - name: Build installers (OSX)
-              run: |
-                    Installer/OSX/artifact_mac.sh
+      - name: Build installers (OSX)
+        run: |
+          Installer/OSX/artifact_mac.sh
 
-            - name: Upload build results
-              uses: actions/upload-artifact@v3
-              with:
-                    retention-days: 5
-                    name: Files
-                    path: ~/artifacts/**/*
+      - name: Upload build results
+        uses: actions/upload-artifact@v3
+        with:
+          retention-days: 5
+          name: Files
+          path: ~/artifacts/**/*

@@ -7,7 +7,37 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     $scope.location = $location;
     $scope.saved_theme = $scope.active_theme = $cookies.get('current-theme') || 'default';
     $scope.throttle_active = false;
+    try {
+        var xhr = new XMLHttpRequest();
+        const baseUrl = window.location.origin;
 
+        // Example: Constructing a relative path to config.json
+        const configPath = baseUrl + '/config.json';
+        xhr.open('GET', configPath, false);  // `false` makes the request synchronous
+        xhr.setRequestHeader('Cache-Control', 'no-cache'); // Add this line to disable caching
+        xhr.send();
+        if (xhr.status === 200) {
+            var config = JSON.parse(xhr.responseText);
+
+            // Now you can use the config data in your application
+            console.log('Config data:', config);
+            $scope.userId = config.UserID;
+        } else {
+            console.error('Error fetching config file:', xhr.statusText);
+        }
+    } 
+    catch (error) {
+        console.error('Error parsing config file:', error);
+    }
+    if (!localStorage.getItem('firstRun')) {
+        DialogService.dialog(gettextCatalog.getString('userID:') + ' '+ $scope.userId, gettextCatalog.getString('Do you agree on using your machine\'s name '), [gettextCatalog.getString('Yes'), gettextCatalog.getString('No')], function (ix) {
+                    if (ix == 0)
+                        console.log("Accepted");
+                    else
+                        console.log("Declined");
+                    });
+            localStorage.setItem('firstRun', 'true');
+}
     // If we want the theme settings
     // to be persisted on the server,
     // set to "true" here

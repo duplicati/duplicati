@@ -10,11 +10,11 @@
     			<div class="subtext" translate>Point to your backup files and restore from there</div>
     		</li>
 
-            <li class="input" ng-click="selection.backupid = 'import'">
+            <!-- <li class="input" ng-click="selection.backupid = 'import'">
                 <input type="radio" name="import" id="import" ng-model="selection.backupid" value="import">
                 <label for="import" translate>Restore from configuration ...</label>
                 <div class="subtext" translate>Load destination from an exported job or a storage provider</div>
-            </li>
+            </li> -->
 
     		<li class="input" ng-repeat="item in backups" ng-click="selection.backupid = item.Backup.ID" >
 	    		<input type="radio" name="direct" id="backup-{{item.Backup.ID}}" ng-model="selection.backupid" value="{{item.Backup.ID}}">

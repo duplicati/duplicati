@@ -2,7 +2,10 @@
 # Windows builds
 name: Zip Frontend Files and Upload Artifacts
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   windowsbuild:

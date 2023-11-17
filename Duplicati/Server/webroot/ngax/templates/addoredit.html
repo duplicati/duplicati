@@ -1,7 +1,7 @@
 <script>$(function() { $( ".resizable" ).resizable(); });</script>
 
 <div class="add" ng-controller="EditBackupController">
-    <div class="steps">
+    <!-- <div class="steps">
         <div class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0">
             <span>1</span>
         </div>
@@ -17,16 +17,16 @@
         <div class="step step5" ng-class="{active: CurrentStep == 4}" ng-click="CurrentStep = 4">
             <span>5</span>
         </div>
-    </div>
+    </div> -->
     <!-- .steps -->
 
-    <ol class="steps-legend">
+    <!-- <ol class="steps-legend">
         <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
         <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
         <li ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2" translate>Source Data</li>
         <li ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3" translate>Schedule</li>
         <li ng-class="{active: CurrentStep == 4}" class="step5" ng-click="CurrentStep = 4" translate>Options</li>
-    </ol>
+    </ol> -->
     <!-- .steps-legend -->
 
     <div class="steps-boxes">
@@ -157,7 +157,7 @@
                         </a>
                     </div>
                 </div>
-                <div class="box filters">
+                <!-- <div class="box filters">
                     <div class="headerthreedotmenu">
                         <a href ng-click="showFilter = !showFilter" class="expandable">
                             <h2 translate>Filters</h2>
@@ -183,7 +183,6 @@
 
                     <div ng-show="showFilter">
                         <div class="input textarea" ng-show="EditFilterAdvanced">
-                            <!--<label for="FilterList">Filters <span class="info">i</span></label>-->
                             <textarea id="FilterList" string-array-as-text ng-model="Backup.Filters" ng-model-options="{updateOn: 'blur'}"></textarea>
                         </div>
                         <div class="input textarea" ng-hide="EditFilterAdvanced">
@@ -241,10 +240,11 @@
                             </select>
                         </div>
                     </div>
-                </div>
+                </div>-->
                 <div class="buttons">
-                    <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
-                    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" />
+                    <input class="submit save" type="submit" id="save" ng-click="save()" value="{{'Save' | translate}}" />
+                    <!-- <input class="submit next" type="button" id="nextStep3" ng-click="nextPage()" value="{{'Next' | translate}} &gt;" />
+                    <input class="submit prev" type="button" id="prevStep3" ng-click="prevPage()" value="&lt; {{'Previous' | translate}}" /> -->
                 </div>
             </form>
         </div>
