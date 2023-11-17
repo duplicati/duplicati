@@ -356,7 +356,7 @@ namespace Duplicati.Library.Backend
             this.TryConnect(con);
             if (con.IsConnected)
             {
-                var remoteFileName = $"{m_path}/{Environment.MachineName}"; // Set the remote file path and name
+                var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
                 if (!m_con.Exists(remoteFileName))
                 {
 
