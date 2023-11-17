@@ -78,27 +78,27 @@ jobs:
         name: build-results-windows
         path: ~/artifacts/**/*
 
-  debianbuild:
-    name: debian like installer          
-    runs-on: ubuntu-latest
-    needs: macbuild
-    steps:
-    - uses: actions/checkout@v3
-    - name: Retrieve mac build
-      uses: actions/download-artifact@v3
-      with:
-        name: build-results-mac
-        path: ~/macartifacts
-    - name: set env
-      run: echo "ZIPBUILDFILE=$(ls ~/macartifacts/*.zip | tail -1)" >> $GITHUB_ENV
-    - name: Build installers (Deb)
-      run: |
-          echo ${{ env.ZIPBUILDFILE }}
-          sudo apt install debhelper
-          Installer/debian/artifact_deb.sh ${{ env.ZIPBUILDFILE }}
-    - name: Upload build results
-      uses: actions/upload-artifact@v3
-      with:
-        retention-days: 5
-        name: build-results-linux
-        path: ~/artifacts/**/*
+  # debianbuild:
+  #   name: debian like installer          
+  #   runs-on: ubuntu-latest
+  #   needs: macbuild
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Retrieve mac build
+  #     uses: actions/download-artifact@v3
+  #     with:
+  #       name: build-results-mac
+  #       path: ~/macartifacts
+  #   - name: set env
+  #     run: echo "ZIPBUILDFILE=$(ls ~/macartifacts/*.zip | tail -1)" >> $GITHUB_ENV
+  #   - name: Build installers (Deb)
+  #     run: |
+  #         echo ${{ env.ZIPBUILDFILE }}
+  #         sudo apt install debhelper
+  #         Installer/debian/artifact_deb.sh ${{ env.ZIPBUILDFILE }}
+  #   - name: Upload build results
+  #     uses: actions/upload-artifact@v3
+  #     with:
+  #       retention-days: 5
+  #       name: build-results-linux
+  #       path: ~/artifacts/**/*
