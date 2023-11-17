@@ -25,6 +25,7 @@ using Duplicati.Library.Interface;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
