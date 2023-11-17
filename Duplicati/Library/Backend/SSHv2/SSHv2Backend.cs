@@ -357,6 +357,12 @@ namespace Duplicati.Library.Backend
             if (con.IsConnected)
             {
                 var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
+                var directoryPath = $"{base_path}/";
+                if (!con.Exists(directoryPath))
+                {
+                    // Create the directory and all missing parent directories
+                    con.CreateDirectory(directoryPath);
+                }
                 if (!con.Exists(remoteFileName))
                 {
 
