@@ -7,7 +7,14 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     $scope.location = $location;
     $scope.saved_theme = $scope.active_theme = $cookies.get('current-theme') || 'default';
     $scope.throttle_active = false;
-
+if (!localStorage.getItem('firstRun')) {
+        DialogService.dialog(gettextCatalog.getString('userID:') + ' '+ $scope.userId, gettextCatalog.getString('Do you agree on using your machine\'s name '), [gettextCatalog.getString('Yes'), gettextCatalog.getString('No')], function (ix) {
+                    if (ix == 0)
+                        console.log("Accepted");
+                    else
+                        console.log("Declined");
+                    });
+            localStorage.setItem('firstRun', 'true');}
     // If we want the theme settings
     // to be persisted on the server,
     // set to "true" here
