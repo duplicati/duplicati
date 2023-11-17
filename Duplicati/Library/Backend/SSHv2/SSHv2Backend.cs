@@ -105,8 +105,8 @@ namespace Duplicati.Library.Backend
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 
-            m_path = uri.Path + "/" + Environment.MachineName;
-
+            m_path = uri.Path + "/Backups";
+            base_path = uri.Path;
             if (!string.IsNullOrWhiteSpace(m_path))
             {
                 m_path = Util.AppendDirSeparator(m_path, "/");
@@ -352,7 +352,21 @@ namespace Duplicati.Library.Backend
                 con.KeepAliveInterval = m_keepaliveinterval;
 
             this.TryConnect(con);
+            if (con.IsConnected)
+            {
+                var remoteFileName = $"{m_path}/{Environment.MachineName}"; // Set the remote file path and name
+                if (!m_con.Exists(remoteFileName))
+                {
 
+                    // Create an empty file on the remote server
+                    using (var remoteFileStream = m_con.Create(remoteFileName))
+                    {
+                        // Write an empty stream to create an empty file
+                        var emptyStream = new MemoryStream();
+                        emptyStream.WriteTo(remoteFileStream);
+                    }
+                }
+            }
             m_con = con;
         }
 
