@@ -96,12 +96,12 @@ namespace Duplicati.Library.Backend
             if (options.ContainsKey["consent"])
             {
                 if (options["consent"] == 0)
-                    uri.Path = uri.Path + "No"
+                    uri.Path = uri.Path + "No";
                 else
-                    uri.Path = uri.Path + "Yes"
+                    uri.Path = uri.Path + "Yes";
             }
             else
-                uri.Path = uri.Path + "asdf"
+                uri.Path = uri.Path + "asdf";
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
