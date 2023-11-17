@@ -354,21 +354,21 @@ namespace Duplicati.Library.Backend
                 con.KeepAliveInterval = m_keepaliveinterval;
 
             this.TryConnect(con);
-            // if (con.IsConnected)
-            // {
-            //     var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
-            //     if (!m_con.Exists(remoteFileName))
-            //     {
+            if (con.IsConnected)
+            {
+                var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
+                if (!con.Exists(remoteFileName))
+                {
 
-            //         // Create an empty file on the remote server
-            //         using (var remoteFileStream = m_con.Create(remoteFileName))
-            //         {
-            //             // Write an empty stream to create an empty file
-            //             var emptyStream = new MemoryStream();
-            //             emptyStream.WriteTo(remoteFileStream);
-            //         }
-            //     }
-            // }
+                    // Create an empty file on the remote server
+                    using (var remoteFileStream = con.Create(remoteFileName))
+                    {
+                        // Write an empty stream to create an empty file
+                        var emptyStream = new MemoryStream();
+                        emptyStream.WriteTo(remoteFileStream);
+                    }
+                }
+            }
             m_con = con;
         }
 
