@@ -32,6 +32,10 @@ jobs:
                     mono "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
                     msbuild -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" -p:Configuration=Release Duplicati.sln
 
+            - name: Build installers (OSX)
+              run: |
+                    Installer/OSX/artifact_mac.sh
+
             - name: Upload build results
               uses: actions/upload-artifact@v3
               with:
