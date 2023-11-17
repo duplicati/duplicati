@@ -1,3 +1,5 @@
+# Build the project with the frontend files located in folder /Installer/Windows/Frontend_Files
+# Windows builds
 name: Zip Frontend Files and Upload Artifacts
 
 on: [push]
