@@ -48,6 +48,7 @@ namespace Duplicati.Library.Backend
 
         private readonly string m_server;
         private readonly string m_path;
+        private readonly string base_path;
         private readonly string m_username;
         private readonly string m_password;
         private readonly string m_fingerprint;
