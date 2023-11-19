@@ -75,7 +75,7 @@ namespace Duplicati.Library.Common.IO
                 }
             }
         }
-        
+
         /// <summary>
         /// Returns true if prefixed with @"\\" or @"//".
         /// </summary>
@@ -361,7 +361,7 @@ namespace Duplicati.Library.Common.IO
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
         {
-            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern,  searchOption).Select(RemoveExtendedDevicePathPrefix);
+            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption).Select(RemoveExtendedDevicePathPrefix);
         }
 
         public string PathGetFileName(string path)
@@ -474,6 +474,30 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
+        {
+            // For consistency with previous implementation, enumerate files first and directories after
+            DirectoryInfo dir;
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
+            {
+                dir = new DirectoryInfo(path);
+            }
+            else
+            {
+                dir = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
+            }
+
+            foreach (FileInfo file in dir.EnumerateFiles())
+            {
+                yield return FileEntry(file);
+            }
+
+            foreach (DirectoryInfo d in dir.EnumerateDirectories())
+            {
+                yield return DirectoryEntry(d);
+            }
+        }
+
         public void FileCopy(string source, string target, bool overwrite)
         {
             File.Copy(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target), overwrite);
@@ -498,7 +522,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry DirectoryEntry(string path)
         {
-            var dInfo = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
+            return DirectoryEntry(new DirectoryInfo(AddExtendedDevicePathPrefix(path)));
+        }
+        public IFileEntry DirectoryEntry(DirectoryInfo dInfo)
+        {
             return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
             {
                 IsFolder = true
@@ -507,7 +534,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry FileEntry(string path)
         {
-            var fileInfo = new FileInfo(AddExtendedDevicePathPrefix(path));
+            return FileEntry(new FileInfo(AddExtendedDevicePathPrefix(path)));
+        }
+        public IFileEntry FileEntry(FileInfo fileInfo)
+        {
             var lastAccess = new DateTime();
             try
             {

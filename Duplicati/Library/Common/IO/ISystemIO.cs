@@ -28,6 +28,7 @@ namespace Duplicati.Library.Common.IO
     public interface ISystemIO
     {
         IFileEntry DirectoryEntry(string path);
+        IFileEntry DirectoryEntry(DirectoryInfo dirInfo);
         void DirectoryCreate(string path);
         void DirectoryDelete(string path, bool recursive);
         bool DirectoryExists(string path);
@@ -36,6 +37,7 @@ namespace Duplicati.Library.Common.IO
         void DirectorySetCreationTimeUtc(string path, DateTime time);
 
         IFileEntry FileEntry(string path);
+        IFileEntry FileEntry(FileInfo fileInfo);
         void FileMove(string source, string target);
         void FileDelete(string path);
         void FileCopy(string source, string target, bool overwrite);
@@ -68,6 +70,10 @@ namespace Duplicati.Library.Common.IO
         IEnumerable<string> EnumerateFiles(string path);
         IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption);
         IEnumerable<string> EnumerateDirectories(string path);
+
+        // Enumerate FileEntries of files and directories
+        // This is more efficient than enumerating file names when metadata is needed
+        IEnumerable<IFileEntry> EnumerateFileEntries(string path);
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
         Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink);

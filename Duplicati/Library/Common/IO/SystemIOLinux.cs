@@ -132,6 +132,22 @@ namespace Duplicati.Library.Common.IO
             return Directory.EnumerateFiles(path, searchPattern, searchOption);
         }
 
+        public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
+        {
+            // For consistency with previous implementation, enumerate files first and directories after
+            DirectoryInfo dir = new DirectoryInfo(path);
+
+            foreach (FileInfo file in dir.EnumerateFiles())
+            {
+                yield return FileEntry(file);
+            }
+
+            foreach (DirectoryInfo d in dir.EnumerateDirectories())
+            {
+                yield return DirectoryEntry(d);
+            }
+        }
+
         public string PathGetFileName(string path)
         {
             return Path.GetFileName(path);
@@ -293,7 +309,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry DirectoryEntry(string path)
         {
-            var dInfo = new DirectoryInfo(path);
+            return DirectoryEntry(new DirectoryInfo(path));
+        }
+        public IFileEntry DirectoryEntry(DirectoryInfo dInfo)
+        {
             return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
             {
                 IsFolder = true
@@ -302,7 +321,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry FileEntry(string path)
         {
-            var fileInfo = new FileInfo(path);
+            return FileEntry(new FileInfo(path));
+        }
+        public IFileEntry FileEntry(FileInfo fileInfo)
+        {
             return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
         }
     }
