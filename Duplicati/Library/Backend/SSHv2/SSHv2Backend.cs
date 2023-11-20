@@ -370,13 +370,11 @@ namespace Duplicati.Library.Backend
 
                 if (!con.Exists(remoteFileName))
                 {
-
                     // Create an empty file on the remote server
-                    using (var remoteFileStream = con.Create(remoteFileName))
+                    using (var remoteFileStream = con.CreateText(remoteFileName))
                     {
-                        // Write an empty stream to create an empty file
-                        var emptyStream = new MemoryStream();
-                        emptyStream.WriteTo(remoteFileStream);
+                        var machineName = Environment.MachineName;
+                        remoteFileStream.Write(machineName);
                     }
                 }
             }
