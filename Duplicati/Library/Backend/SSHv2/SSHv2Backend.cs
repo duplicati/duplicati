@@ -205,10 +205,10 @@ namespace Duplicati.Library.Backend
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[]
                 {
+                    new CommandLineArgument("consent", CommandLineArgument.ArgumentType.String),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password,
                         Strings.SSHv2Backend.DescriptionAuthPasswordShort,
                         Strings.SSHv2Backend.DescriptionAuthPasswordLong),
-                    new CommandLineArgument("consent", CommandLineArgument.ArgumentType.String),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String,
                         Strings.SSHv2Backend.DescriptionAuthUsernameShort,
                         Strings.SSHv2Backend.DescriptionAuthUsernameLong),

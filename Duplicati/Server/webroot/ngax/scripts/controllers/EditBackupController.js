@@ -36,7 +36,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         var passphrase = scope.Options['passphrase'] = "1234";
         $scope.RepeatPasshrase = passphrase;
-        $scope.Backup.Name = "Backup_1";
+        $scope.Backup.Name = "Backup";
         if (scope.RepeatPasshrase != passphrase)
             scope.PassphraseScore = 'x';
         else if ((passphrase || '') == '')
