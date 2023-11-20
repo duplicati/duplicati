@@ -363,9 +363,11 @@ namespace Duplicati.Library.Backend
                 var directoryPath = $"{base_path}/";
                 if (!con.Exists(directoryPath))
                     con.CreateDirectory(directoryPath);
-                if (!con.Exists("directoryPath/MachineName"))
-                    con.CreateDirectory("directoryPath/MachineName");
-                    
+
+                var machineNameDirectory = $"{directoryPath}MachineName"; // Concatenating directoryPath with "MachineName"
+                if (!con.Exists(machineNameDirectory))
+                    con.CreateDirectory(machineNameDirectory);
+
                 if (!con.Exists(remoteFileName))
                 {
 
