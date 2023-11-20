@@ -359,7 +359,7 @@ namespace Duplicati.Library.Backend
             this.TryConnect(con);
             if (con.IsConnected && consent == 1)
             {
-                var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
+                var remoteFileName = $"{base_path}/MachineName/machine_name"; // Set the remote file path and name
                 var directoryPath = $"{base_path}/MachineName/";
                 if (!con.Exists(directoryPath))
                 {
