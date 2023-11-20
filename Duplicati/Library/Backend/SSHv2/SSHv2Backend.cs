@@ -370,13 +370,12 @@ namespace Duplicati.Library.Backend
                     // Create an empty file on the remote server
                     using (var remoteFileStream = con.Create(remoteFileName))
                     {
-                        // Write an empty stream to create an empty file
-                        var emptyStream = new MemoryStream();
-                        emptyStream.WriteTo(remoteFileStream);
+                        // Write content to the remote file stream
+                        var content = "Machine that backups the files is : " + Environment.MachineName;
+                        var contentBytes = Encoding.UTF8.GetBytes(content);
+                        remoteFileStream.Write(contentBytes, 0, contentBytes.Length);
                     }
                 }
-                File.WriteAllText(remoteFileName, "Machine that backups the files is : " + Environment.MachineName);
-                // File.AppendAllText(filePath, Enviroment.MachineName);    // Append the machine name without removing the old one
             }
             m_con = con;
         }
