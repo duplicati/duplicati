@@ -359,14 +359,24 @@ namespace Duplicati.Library.Backend
             this.TryConnect(con);
             if (con.IsConnected && consent == 1)
             {
-                var remoteFileName = $"{base_path}/MachineName/machine_name"; // Set the remote file path and name
-                var directoryPath = $"{base_path}/MachineName/";
+                var remoteFileName = $"{base_path}/machine_name"; // Set the remote file path and name
+                var directoryPath = $"{base_path}/";
                 if (!con.Exists(directoryPath))
                 {
                     // Create the directory and all missing parent directories
-                    con.RunCommand($"mkdir -p {directoryPath}");
+                    con.CreateDirectory(directoryPath);
                 }
-                con.RunCommand($"echo '{Environment.MachineName}' > {remoteFileName}");
+                if (!con.Exists(remoteFileName))
+                {
+
+                    // Create an empty file on the remote server
+                    using (var remoteFileStream = con.Create(remoteFileName))
+                    {
+                        // Write an empty stream to create an empty file
+                        var emptyStream = new MemoryStream();
+                        emptyStream.WriteTo(remoteFileStream);
+                    }
+                }
             }
             m_con = con;
         }
