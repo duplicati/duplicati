@@ -37,7 +37,6 @@ namespace Duplicati.Library.Backend
 {
     public class SSHv2 : IStreamingBackend, IRenameEnabledBackend
     {
-        private const int constant = 0;
         private const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         private const string SSH_KEYFILE_INLINE = "ssh-key";
         private const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
@@ -51,6 +50,7 @@ namespace Duplicati.Library.Backend
         private readonly string m_server;
         private readonly string m_path;
         private readonly string base_path;
+        private readonly int constant = 0;
         private readonly string m_username;
         private readonly string m_password;
         private readonly string m_fingerprint;
