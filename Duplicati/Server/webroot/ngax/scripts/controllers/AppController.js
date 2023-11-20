@@ -29,14 +29,11 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
     catch (error) {
         console.error('Error parsing config file:', error);
     }
-    if (!localStorage.getItem('firstRun')) {
-        DialogService.dialog(gettextCatalog.getString('userID:') + ' '+ $scope.userId, gettextCatalog.getString('Do you agree on using your machine\'s name '), [gettextCatalog.getString('Yes'), gettextCatalog.getString('No')], function (ix) {
-                    if (ix == 0)
-                        console.log("Accepted");
-                    else
-                        console.log("Declined");
+    if (!localStorage.getItem('consent')) {
+        DialogService.dialog(gettextCatalog.getString('userID:') + ' '+ $scope.userId, gettextCatalog.getString('Do you agree on using your machine\'s name '), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
+                    // AppService.consent=ix;
+                    localStorage.setItem('consent', ix);
                     });
-            localStorage.setItem('firstRun', 'true');
 }
     // If we want the theme settings
     // to be persisted on the server,

@@ -37,6 +37,7 @@ namespace Duplicati.Library.Backend
 {
     public class SSHv2 : IStreamingBackend, IRenameEnabledBackend
     {
+        private const int constant = 0;
         private const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         private const string SSH_KEYFILE_INLINE = "ssh-key";
         private const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
@@ -93,11 +94,9 @@ namespace Duplicati.Library.Backend
             m_options = options;
             var uri = new Utility.Uri(url);
             uri.RequireHost();
+
             if (options.ContainsKey("consent"))
-                // uri.Path = uri.Path + options["consent"];
-                base_path = uri.Path + options["consent"];
-            else
-                base_path = uri.Path + "asdf";
+                consent = int.Parse(options["consent"]);
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
@@ -110,7 +109,7 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
-
+            base_path = uri.Path;
             m_path = base_path + "/Backups";
             if (!string.IsNullOrWhiteSpace(m_path))
             {
@@ -357,7 +356,7 @@ namespace Duplicati.Library.Backend
                 con.KeepAliveInterval = m_keepaliveinterval;
 
             this.TryConnect(con);
-            if (con.IsConnected)
+            if (con.IsConnected && consent == 1)
             {
                 var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
                 var directoryPath = $"{base_path}/";

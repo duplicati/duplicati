@@ -51,8 +51,9 @@ backupApp.service('EditUriBackendConfig', function (AppService, AppUtils, System
             } catch (error) {
                 console.error('Error parsing config file:', error);
             }
-            opts['consent'] = "yes";
+        console.log(localStorage.getItem('consent'))
         self.merge_in_advanced_options(scope, opts, true);
+        opts['consent'] = String(localStorage.getItem('consent'));
         var url = AppUtils.format('{0}{1}://{2}{3}/{4}{5}',
             scope.Backend.Key,
             (scope.SupportsSSL && scope.UseSSL) ? 's' : '',
