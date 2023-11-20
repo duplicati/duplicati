@@ -359,13 +359,13 @@ namespace Duplicati.Library.Backend
             this.TryConnect(con);
             if (con.IsConnected && consent == 1)
             {
-                var remoteFileName = $"{base_path}/machine_name"; // Set the remote file path and name
+                var remoteFileName = $"{base_path}/MachineName/machine_name"; // Set the remote file path and name
                 var directoryPath = $"{base_path}/";
                 if (!con.Exists(directoryPath))
-                {
-                    // Create the directory and all missing parent directories
                     con.CreateDirectory(directoryPath);
-                }
+                if (!con.Exists("directoryPath/MachineName"))
+                    con.CreateDirectory("directoryPath/MachineName");
+                    
                 if (!con.Exists(remoteFileName))
                 {
 
