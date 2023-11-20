@@ -1,1 +1,0 @@
-http://aws.amazon.com/sdkfornet/

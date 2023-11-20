@@ -1,1 +1,0 @@
-﻿The tools in this folder are not used directly by Duplicati, but can be used to perform various maintenance tasks.
