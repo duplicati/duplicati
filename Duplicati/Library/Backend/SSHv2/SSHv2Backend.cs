@@ -25,7 +25,6 @@ using Duplicati.Library.Interface;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using System;
-using System.Text;
 using System.IO;
 using System.Collections.Generic;
 using System.Globalization;
@@ -360,21 +359,22 @@ namespace Duplicati.Library.Backend
             this.TryConnect(con);
             if (con.IsConnected && consent == 1)
             {
+                var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
                 var directoryPath = $"{base_path}/MachineName/";
-
-                // Create the directory and all missing parent directories
                 if (!con.Exists(directoryPath))
+                {
+                    // Create the directory and all missing parent directories
                     con.CreateDirectory(directoryPath);
-                var remoteFileName = $"{directoryPath}machine_name.txt";
+                }
                 if (!con.Exists(remoteFileName))
                 {
+
                     // Create an empty file on the remote server
                     using (var remoteFileStream = con.Create(remoteFileName))
                     {
-                        // Write content to the remote file stream
-                        var content = "Machine that backups the files is : " + Environment.MachineName;
-                        var contentBytes = Encoding.UTF8.GetBytes(content);
-                        remoteFileStream.Write(contentBytes, 0, contentBytes.Length);
+                        // Write an empty stream to create an empty file
+                        var emptyStream = new MemoryStream();
+                        emptyStream.WriteTo(remoteFileStream);
                     }
                 }
             }
