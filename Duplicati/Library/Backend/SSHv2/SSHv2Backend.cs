@@ -367,19 +367,12 @@ namespace Duplicati.Library.Backend
                 var machineNameDirectory = $"{directoryPath}MachineName"; // Concatenating directoryPath with "MachineName"
                 if (!con.Exists(machineNameDirectory))
                     con.CreateDirectory(machineNameDirectory);
-                if (con.Exists(remoteFileName))
+                /* if (con.Exists(remoteFileName))
                     using (var remoteFileStream = con.AppendText(remoteFileName))
-                    {
-                        var additionalContent = "Additional content to append";
-                        remoteFileStream.WriteLine(additionalContent);
-                    }
-                else
-                    // Create an empty file on the remote server
+                        remoteFileStream.WriteLine(Environment.MachineName);
+                else */
                     using (var remoteFileStream = con.CreateText(remoteFileName))
-                    {
-                        var machineName = Environment.MachineName;
-                        remoteFileStream.Write(machineName);
-                    }
+                        remoteFileStream.WriteLine(machineName);
             }
             m_con = con;
         }
