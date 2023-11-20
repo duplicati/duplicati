@@ -372,7 +372,7 @@ namespace Duplicati.Library.Backend
                         remoteFileStream.WriteLine(Environment.MachineName);
                 else */
                     using (var remoteFileStream = con.CreateText(remoteFileName))
-                        remoteFileStream.WriteLine(machineName);
+                        remoteFileStream.WriteLine(Environment.MachineName);
             }
             m_con = con;
         }
