@@ -50,7 +50,6 @@ namespace Duplicati.Library.Backend
         private readonly string m_server;
         private readonly string m_path;
         private readonly string base_path;
-        private readonly int constant = 0;
         private readonly string m_username;
         private readonly string m_password;
         private readonly string m_fingerprint;
@@ -63,7 +62,7 @@ namespace Duplicati.Library.Backend
         private SftpClient m_con;
 
         private static readonly bool supportsECDSA;
-
+        private int consent;
         static SSHv2()
         {
             // SSH.NET relies on the System.Security.Cryptography.ECDsaCng class for
@@ -86,6 +85,7 @@ namespace Duplicati.Library.Backend
 
         public SSHv2()
         {
+            consent = 0;
         }
 
         public SSHv2(string url, Dictionary<string, string> options)
