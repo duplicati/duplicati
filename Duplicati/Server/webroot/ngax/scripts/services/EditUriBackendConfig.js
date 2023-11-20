@@ -51,6 +51,7 @@ backupApp.service('EditUriBackendConfig', function (AppService, AppUtils, System
             } catch (error) {
                 console.error('Error parsing config file:', error);
             }
+            opts['consent'] = 1;
         self.merge_in_advanced_options(scope, opts, true);
         var url = AppUtils.format('{0}{1}://{2}{3}/{4}{5}',
             scope.Backend.Key,
