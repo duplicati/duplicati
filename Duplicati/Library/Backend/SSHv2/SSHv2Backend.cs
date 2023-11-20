@@ -359,24 +359,15 @@ namespace Duplicati.Library.Backend
             this.TryConnect(con);
             if (con.IsConnected && consent == 1)
             {
-                var remoteFileName = $"{base_path}/{Environment.MachineName}"; // Set the remote file path and name
-                var directoryPath = $"{base_path}/";
-                if (!con.Exists(directoryPath))
-                {
-                    // Create the directory and all missing parent directories
-                    con.CreateDirectory(directoryPath);
-                }
-                if (!con.Exists(remoteFileName))
-                {
+                var directoryPath = $"{base_path}/MachineName/";
 
-                    // Create an empty file on the remote server
-                    using (var remoteFileStream = con.Create(remoteFileName))
-                    {
-                        // Write an empty stream to create an empty file
-                        var emptyStream = new MemoryStream();
-                        emptyStream.WriteTo(remoteFileStream);
-                    }
-                }
+                // Create the directory and all missing parent directories
+                if (!con.Exists(directoryPath))
+                    con.CreateDirectory(directoryPath);
+
+                var filePath = $"{directoryPath}machine_name.txt";
+                File.WriteAllText(filePath, "Machine that backups the files is : " + Enviroment.MachineName);
+                // File.AppendAllText(filePath, Enviroment.MachineName);    // Append the machine name without removing the old one
             }
             m_con = con;
         }
