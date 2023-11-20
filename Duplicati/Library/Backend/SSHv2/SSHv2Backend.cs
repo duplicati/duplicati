@@ -93,10 +93,11 @@ namespace Duplicati.Library.Backend
             m_options = options;
             var uri = new Utility.Uri(url);
             uri.RequireHost();
-            if (options.ContainsKey["consent"])
-                uri.Path = uri.Path + options["consent"];
+            if (options.ContainsKey("consent"))
+                // uri.Path = uri.Path + options["consent"];
+                test_path = uri.Path + options["consent"];
             else
-                uri.Path = uri.Path + "asdf";
+                test_path = uri.Path + "asdf";
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
@@ -110,8 +111,8 @@ namespace Duplicati.Library.Backend
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
 
-            m_path = uri.Path + "/Backups";
-            base_path = uri.Path;
+            m_path = test_path + "/Backups";
+            base_path = test_path;
             if (!string.IsNullOrWhiteSpace(m_path))
             {
                 m_path = Util.AppendDirSeparator(m_path, "/");
