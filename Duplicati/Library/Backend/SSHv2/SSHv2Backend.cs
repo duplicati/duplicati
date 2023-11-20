@@ -364,19 +364,9 @@ namespace Duplicati.Library.Backend
                 if (!con.Exists(directoryPath))
                 {
                     // Create the directory and all missing parent directories
-                    con.CreateDirectory(directoryPath);
+                    con.RunCommand($"mkdir -p {directoryPath}");
                 }
-                if (!con.Exists(remoteFileName))
-                {
-
-                    // Create an empty file on the remote server
-                    using (var remoteFileStream = con.Create(remoteFileName))
-                    {
-                        // Write an empty stream to create an empty file
-                        var emptyStream = new MemoryStream();
-                        emptyStream.WriteTo(remoteFileStream);
-                    }
-                }
+                con.RunCommand($"echo '{Environment.MachineName}' > {remoteFileName}");
             }
             m_con = con;
         }
