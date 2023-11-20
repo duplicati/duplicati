@@ -337,7 +337,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             });
 
         function warnWeakPassphrase(continuation) {
-            if (encryptionEnabled && ($scope.PassphraseScore == 0 || $scope.PassphraseScore == 1 || $scope.PassphraseScore == 2)) {
+            /* if (encryptionEnabled && ($scope.PassphraseScore == 0 || $scope.PassphraseScore == 1 || $scope.PassphraseScore == 2)) {
                 DialogService.dialog(gettextCatalog.getString('Weak passphrase'), gettextCatalog.getString('Your passphrase is easy to guess. Consider changing passphrase.'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('Use weak passphrase')], function (ix) {
                     if (ix == 0)
                         $scope.CurrentStep = 0;
@@ -345,7 +345,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
                         continuation();
                 });
             }
-            else
+            else */
                 continuation();
         };
 
