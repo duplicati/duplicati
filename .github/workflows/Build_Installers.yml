@@ -50,33 +50,33 @@ jobs:
         name: build-results-mac
         path: ~/artifacts/**/*
 
-  windowsbuild:
-    name: windows installer
-    runs-on: windows-latest
-    needs: macbuild
-    steps:
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.3
-    - name: Install NuGet
-      uses: nuget/setup-nuget@v1.1.1
-    - uses: actions/checkout@v3
-    - name: Retrieve mac build
-      uses: actions/download-artifact@v3
-      with:
-        name: build-results-mac
-        path: ~/macartifacts
-    - name: set env
-      run: echo "ZIPBUILDFILE=$(resolve-path ~ | select-object -expandproperty path)\macartifacts\$(get-childitem ~\macartifacts\*.zip | select-object -first 1 -expandproperty name )" >> $env:GITHUB_ENV
-    - name: Build installers (Windows)
-      run: |
-          echo ${{ env.ZIPBUILDFILE }}
-          .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPBUILDFILE }}
-    - name: Upload build results
-      uses: actions/upload-artifact@v3
-      with:
-        retention-days: 5
-        name: build-results-windows
-        path: ~/artifacts/**/*
+  # windowsbuild:
+  #   name: windows installer
+  #   runs-on: windows-latest
+  #   needs: macbuild
+  #   steps:
+  #   - name: Add msbuild to PATH
+  #     uses: microsoft/setup-msbuild@v1.3
+  #   - name: Install NuGet
+  #     uses: nuget/setup-nuget@v1.1.1
+  #   - uses: actions/checkout@v3
+  #   - name: Retrieve mac build
+  #     uses: actions/download-artifact@v3
+  #     with:
+  #       name: build-results-mac
+  #       path: ~/macartifacts
+  #   - name: set env
+  #     run: echo "ZIPBUILDFILE=$(resolve-path ~ | select-object -expandproperty path)\macartifacts\$(get-childitem ~\macartifacts\*.zip | select-object -first 1 -expandproperty name )" >> $env:GITHUB_ENV
+  #   - name: Build installers (Windows)
+  #     run: |
+  #         echo ${{ env.ZIPBUILDFILE }}
+  #         .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPBUILDFILE }}
+  #   - name: Upload build results
+  #     uses: actions/upload-artifact@v3
+  #     with:
+  #       retention-days: 5
+  #       name: build-results-windows
+  #       path: ~/artifacts/**/*
 
   # debianbuild:
   #   name: debian like installer          
