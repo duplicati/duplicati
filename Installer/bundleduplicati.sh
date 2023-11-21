@@ -52,4 +52,9 @@ find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf
 
 bash Installer/test.sh "${UPDATE_SOURCE}"
-rm -rf "${UPDATE_SOURCE}/Build*"
+# bundle everything info a zip file
+pushd "${UPDATE_SOURCE}"
+rm -rf Build*
+mv * "${ZIPRESULT}"
+popd
+rm -rf "${UPDATE_SOURCE}"
