@@ -20,7 +20,7 @@ bash Installer/bundleduplicati.sh $RELEASE_FILE_NAME
 mkdir -p $RUNTMP/artifacts
 # cp $RUNTMP/$RELEASE_FILE_NAME $RUNTMP/artifacts/$RELEASE_FILE_NAME.zip
 pushd $RUNTMP
-    mv * artifacts
+    mv *_build.zip artifacts
 popd
 # Build MAC OS INSTALLERS
 # cd Installer/OSX
