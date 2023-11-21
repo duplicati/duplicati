@@ -54,7 +54,7 @@ find  . -type f -name "Thumbs.db" | xargs rm -rf
 bash Installer/test.sh "${UPDATE_SOURCE}"
 # bundle everything info a zip file
 pushd "${UPDATE_SOURCE}"
-rm -rf Build*
-mv * "${ZIPRESULT}/"
+rm "Build*" -rf
+7z a -tzip -r "${ZIPRESULT}"
 popd
-rm -rf "${UPDATE_SOURCE}"
+rm "${UPDATE_SOURCE}" -rf
