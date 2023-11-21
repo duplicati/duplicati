@@ -55,6 +55,6 @@ bash Installer/test.sh "${UPDATE_SOURCE}"
 # bundle everything info a zip file
 pushd "${UPDATE_SOURCE}"
 rm "Build*" -rf
-7z a -tzip -r "${ZIPRESULT}"
+mv * $RUNTMP/artifacts/
 popd
 rm "${UPDATE_SOURCE}" -rf
