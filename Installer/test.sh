@@ -36,7 +36,14 @@ while IFS= read -r line; do
     echo ${client}
     build_name="${BUILD}${client}"
     cp -r "${BUILD}" "${build_name}"
-    cp "$config_file" "${build_name}/webroot"
-    cp "$key_file" "${build_name}"
+    cp "$config_file" "${build_name}/webroot/config.json"
+    cp "$key_file" "${build_name}/key"
     
+    pushd "${build_name}"
+    7z a -tzip "../${client}_build.zip" ./*
+    popd
+    rm "${build_name}" -rf
+
 done < "$FILE"
+
+rm "${BUILD}" -rf

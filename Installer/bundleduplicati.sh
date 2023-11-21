@@ -51,7 +51,7 @@ rm -rf "${UPDATE_SOURCE}/"*.xml;
 find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf
 
-bash Installer/test.sh $UPDATE_SOURCE
+bash Installer/test.sh "${UPDATE_SOURCE}"
 # bundle everything info a zip file
 pushd "${UPDATE_SOURCE}"
 7z a -tzip -r "${ZIPRESULT}"
