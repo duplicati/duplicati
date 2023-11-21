@@ -50,7 +50,7 @@ rm -rf "${UPDATE_SOURCE}/"*.xml;
 # Remove all .DS_Store and Thumbs.db files
 find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf
-
+if [ $2 -eq 1]; then
 bash Installer/test.sh "${UPDATE_SOURCE}"
 # bundle everything info a zip file
 pushd "${UPDATE_SOURCE}"
@@ -59,3 +59,10 @@ mkdir -p $RUNTMP/artifacts
 mv * $RUNTMP/artifacts/
 popd
 rm -rf "${UPDATE_SOURCE}"
+else
+# bundle everything info a zip file
+pushd "${UPDATE_SOURCE}"
+7z a -tzip -r "${ZIPRESULT}"
+popd
+rm "${UPDATE_SOURCE}" -rf
+fi

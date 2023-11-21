@@ -32,9 +32,9 @@ set ZIPBUILDFILE=%1
 if "%ZIPBUILDFILE%" == "" (
   where /q bash.exe
   if ERRORLEVEL 1 (
-    git-bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
+    git-bash -x Installer\bundleduplicati.sh %RELEASE_NAME% 1
   ) ELSE (
-    bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
+    bash -x Installer\bundleduplicati.sh %RELEASE_NAME% 1
   )
   set ZIPBUILDFILE=%RUNTMP%\%RELEASE_NAME%
 )
