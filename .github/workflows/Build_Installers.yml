@@ -68,12 +68,9 @@ jobs:
     - name: set env
       run: |
           $files = Get-ChildItem -Path ~\macartifacts\*.zip | Select-Object -ExpandProperty FullName
-          $fileList = ($files -join " ")
-          echo "ZIPBUILDFILE=$fileList" >> $env:GITHUB_ENV
     - name: Build installers (Windows)
       run: |
-        $filenames = $env:ZIPBUILDFILE -split " "
-        foreach ($filename in $filenames) {
+        foreach ($filename in $files) {
           .\Installer\Windows\artifact_win.bat $filename
         }
     - name: Upload build results
