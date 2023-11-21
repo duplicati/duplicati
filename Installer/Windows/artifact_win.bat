@@ -41,7 +41,7 @@ if "%ZIPBUILDFILE%" == "" (
 cd Installer\Windows
 call build-msi %ZIPBUILDFILE%
 mkdir %RUNTMP%\artifacts
-move duplicati.msi %RUNTMP%\artifacts\duplicati-%RELEASE_NAME%.msi
-move duplicati-32bit.msi %RUNTMP%\artifacts\duplicati-32bit-%RELEASE_NAME%.msi
+move duplicati.msi %RUNTMP%\artifacts\%ZIPBUILDFILE%.msi
+move duplicati-32bit.msi %RUNTMP%\artifacts\%ZIPBUILDFILE%.msi
 cd ..\..
 

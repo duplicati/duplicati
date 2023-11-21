@@ -66,11 +66,13 @@ jobs:
         name: build-results-mac
         path: ~/macartifacts
     - name: set env
-      run: echo "ZIPBUILDFILE=$(get-childitem ~\macartifacts\*.zip)" >> $env:GITHUB_ENV
+      run: echo "ZIPBUILDFILE=$(get-childitem ~\macartifacts\*.zip -Raw)" >> $env:GITHUB_ENV
     - name: Build installers (Windows)
       run: |
-          echo ${{ env.ZIPBUILDFILE }}
-          .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPBUILDFILE }}
+        $filenames = $env:ZIPBUILDFILE -split " "
+        foreach ($filename in $filenames) {
+          .\Installer\Windows\artifact_win.bat $filename
+        }
     - name: Upload build results
       uses: actions/upload-artifact@v3
       with:
