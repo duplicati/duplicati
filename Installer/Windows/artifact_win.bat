@@ -38,10 +38,12 @@ if "%ZIPBUILDFILE%" == "" (
   )
   set ZIPBUILDFILE=%RUNTMP%\%RELEASE_NAME%
 )
-cd Installer\Windows
+pushd Installer\Windows
 call build-msi %ZIPBUILDFILE%
-mkdir %RUNTMP%\artifacts
+if not exist "%RUNTMP%\artifacts" (
+  mkdir %RUNTMP%\artifacts
+)
 move duplicati.msi %RUNTMP%\artifacts\%ZIPBUILDFILE%.msi
 move duplicati-32bit.msi %RUNTMP%\artifacts\%ZIPBUILDFILE%.msi
-cd ..\..
+popd
 
