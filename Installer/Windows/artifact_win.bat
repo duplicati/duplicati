@@ -43,7 +43,7 @@ call build-msi %ZIPBUILDFILE%
 if not exist "%RUNTMP%\artifacts" (
   mkdir %RUNTMP%\artifacts
 )
-move duplicati.msi %RUNTMP%\artifacts\%ZIPBUILDFILE%.msi
-move duplicati-32bit.msi %RUNTMP%\artifacts\%ZIPBUILDFILE%.msi
+move duplicati.msi %RUNTMP%\artifacts\duplicati-%RELEASE_NAME%-%ZIPBUILDFILE%.msi
+move duplicati-32bit.msi %RUNTMP%\artifacts\duplicati-%RELEASE_NAME%-%ZIPBUILDFILE%.msi
 popd
 
