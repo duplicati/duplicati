@@ -52,4 +52,4 @@ find  . -type f -name ".DS_Store" | xargs rm -rf
 find  . -type f -name "Thumbs.db" | xargs rm -rf
 
 bash Installer/test.sh "${UPDATE_SOURCE}"
-rm -rf "${UPDATE_SOURCE}Build*"
+rm -rf "${UPDATE_SOURCE}/Build*"
