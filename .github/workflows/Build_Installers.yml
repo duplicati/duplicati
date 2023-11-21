@@ -69,8 +69,8 @@ jobs:
       run: echo "ZIPBUILDFILE=$(get-childitem ~\macartifacts\*.zip)" >> $env:GITHUB_ENV
     - name: Build installers (Windows)
       run: |
-          echo ${{ env.ZIPBUILDFILE[0] }}
-          .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPBUILDFILE[0] }}
+          echo ${{ env.ZIPBUILDFILE }}
+          .\\Installer\\Windows\\artifact_win.bat ${{ env.ZIPBUILDFILE }}
     - name: Upload build results
       uses: actions/upload-artifact@v3
       with:
