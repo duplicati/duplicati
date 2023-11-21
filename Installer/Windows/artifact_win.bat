@@ -28,20 +28,43 @@ set RELEASE_NAME=%RELEASE_VERSION%_%RELEASE_TYPE%_%RELEASE_TIMESTAMP%
 set RELEASE_FILE_NAME=duplicati-%RELEASE_NAME%
 
 set RUNTMP=%USERPROFILE%
-set ZIPBUILDFILE=%1
-if "%ZIPBUILDFILE%" == "" (
-  where /q bash.exe
-  if ERRORLEVEL 1 (
-    git-bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
-  ) ELSE (
-    bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
-  )
-  set ZIPBUILDFILE=%RUNTMP%\%RELEASE_NAME%
+set "counter=0"
+:iterate
+if defined ZIPBUILDFILE[%counter%] (
+    echo Processing: !ZIPBUILDFILE[%counter%]!
+    call :assignVar ZIPBUILDFILE[%counter%] ZIPBUILDFILE
+    if "%ZIPBUILDFILE%" == "" (
+      where /q bash.exe
+      if ERRORLEVEL 1 (
+        git-bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
+      ) ELSE (
+        bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
+      )
+      set ZIPBUILDFILE=%RUNTMP%\%RELEASE_NAME%
+    )
+    cd Installer\Windows
+    call build-msi %ZIPBUILDFILE%
+    set /A "counter+=1"
+    mkdir %RUNTMP%\artifacts\%counter%
+    move duplicati.msi %RUNTMP%\artifacts\%counter%\duplicati-%RELEASE_NAME%.msi
+    move duplicati-32bit.msi %RUNTMP%\artifacts\%counter%\duplicati-32bit-%RELEASE_NAME%.msi
+    cd ..\..
+    goto :iterate
 )
-cd Installer\Windows
-call build-msi %ZIPBUILDFILE%
-mkdir %RUNTMP%\artifacts
-move duplicati.msi %RUNTMP%\artifacts\duplicati-%RELEASE_NAME%.msi
-move duplicati-32bit.msi %RUNTMP%\artifacts\duplicati-32bit-%RELEASE_NAME%.msi
-cd ..\..
+@REM set ZIPBUILDFILE=%1
+@REM if "%ZIPBUILDFILE%" == "" (
+@REM   where /q bash.exe
+@REM   if ERRORLEVEL 1 (
+@REM     git-bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
+@REM   ) ELSE (
+@REM     bash -x Installer\bundleduplicati.sh %RELEASE_NAME%
+@REM   )
+@REM   set ZIPBUILDFILE=%RUNTMP%\%RELEASE_NAME%
+@REM )
+@REM cd Installer\Windows
+@REM call build-msi %ZIPBUILDFILE%
+@REM mkdir %RUNTMP%\artifacts
+@REM move duplicati.msi %RUNTMP%\artifacts\duplicati-%RELEASE_NAME%.msi
+@REM move duplicati-32bit.msi %RUNTMP%\artifacts\duplicati-32bit-%RELEASE_NAME%.msi
+@REM cd ..\..
 
