@@ -43,5 +43,3 @@ while IFS= read -r line; do
     7z a -tzip "../${client}_build.zip" ./*
     popd
 done < "$FILE"
-
-find "$UPDATE_SOURCE" -type d -not -name '*.zip' -exec rm -rf {} +
