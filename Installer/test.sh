@@ -33,17 +33,11 @@ while IFS= read -r line; do
         echo "Credentials for client with number: $client not found"
         continue
     fi
-    echo ${client}
+    echo "Building files for client: ${client}"
     build_name="${BUILD}${client}"
     cp -r "${BUILD}" "${build_name}"
     cp "$config_file" "${build_name}/webroot/config.json"
     cp "$key_file" "${build_name}/key"
-    
-    pushd "${build_name}"
-    7z a -tzip "../${client}_build.zip" ./*
-    popd
-    rm "${build_name}" -rf
-
 done < "$FILE"
 
-rm "${BUILD}" -rf
+find "$UPDATE_SOURCE" -type d -not -name '*.zip' -exec rm -rf {} +
