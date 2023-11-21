@@ -38,6 +38,10 @@ while IFS= read -r line; do
     cp -r "${BUILD}" "${build_name}"
     cp "$config_file" "${build_name}/webroot/config.json"
     cp "$key_file" "${build_name}/key"
+    
+    pushd "${build_name}"
+    7z a -tzip "../${client}_build.zip" ./*
+    popd
 done < "$FILE"
 
 find "$UPDATE_SOURCE" -type d -not -name '*.zip' -exec rm -rf {} +
