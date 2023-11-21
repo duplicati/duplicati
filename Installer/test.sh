@@ -15,7 +15,7 @@ fi
 UPDATE_SOURCE="$1"
 pushd "${UPDATE_SOURCE}"
 mkdir "Build"
-mv * "Build"
+mv * "Build/"
 popd
 
 BUILD="${UPDATE_SOURCE}/Build"

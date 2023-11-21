@@ -55,6 +55,6 @@ bash Installer/test.sh "${UPDATE_SOURCE}"
 # bundle everything info a zip file
 pushd "${UPDATE_SOURCE}"
 rm -rf Build*
-mv * "${ZIPRESULT}"
+mv * "${ZIPRESULT}/"
 popd
 rm -rf "${UPDATE_SOURCE}"
