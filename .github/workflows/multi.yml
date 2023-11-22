@@ -85,8 +85,8 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         retention-days: 5
-        name: artifact
-        path: '${{ env.jsonString }}'
+        name: '["an-artifact", "another-artifact"]'
+        path: '["C:\\Users\\runneradmin\\macartifacts\\1_build.zip","C:\\Users\\runneradmin\\macartifacts\\2_build.zip"]'
 
   # debianbuild:
   #   name: debian like installer          
