@@ -44,6 +44,6 @@ if not exist "%RUNTMP%\artifacts" (
   mkdir %RUNTMP%\artifacts
 )
 move duplicati.msi %RUNTMP%\artifacts\duplicati-%RELEASE_NAME%-%2.msi
-move duplicati-32bit.msi %RUNTMP%\artifacts\duplicati-%RELEASE_NAME%-%2.msi
+move duplicati-32bit.msi %RUNTMP%\artifacts\duplicati-32bit-%RELEASE_NAME%-%2.msi
 popd
 

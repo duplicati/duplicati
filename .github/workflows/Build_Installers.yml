@@ -69,14 +69,13 @@ jobs:
       run: |
           $files = Get-ChildItem -Path ~\macartifacts\*.zip | Select-Object -ExpandProperty FullName
           $fileList = ($files -join " ")
-          echo "ZIPBUILDFILE=$fileList" >> $env:GITHUB_ENV
+          echo "ZIPBUILDFILES=$fileList" >> $env:GITHUB_ENV
     - name: Build installers (Windows)
       run: |
-        $counter++
-        $filenames = $env:ZIPBUILDFILE -split " "
+        $filenames = $env:ZIPBUILDFILES -split " "
         foreach ($filename in $filenames) {
-          set /a counter+=1
-          Start-Process -FilePath ".\Installer\Windows\artifact_win.bat" -ArgumentList "$filename $counter" -Wait
+          $name = Split-Path -Path $filename -Leaf
+          Start-Process -FilePath ".\Installer\Windows\artifact_win.bat" -ArgumentList "$filename $name" -Wait
         }
     - name: Upload build results
       uses: actions/upload-artifact@v3
