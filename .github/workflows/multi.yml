@@ -79,8 +79,8 @@ jobs:
           $name = Split-Path -Path $filename -Leaf
           Start-Process -FilePath ".\Installer\Windows\artifact_win.bat" -ArgumentList "$filename $name" -Wait
         }
-        $jsonString = $artifactPaths | ConvertTo-Json
-        echo $jsonString >> $env:GITHUB_ENV
+        $string = $artifactPaths | ConvertTo-Json
+        echo "jsonString=$string" >> $env:GITHUB_ENV
     - name: Upload build results
       uses: actions/upload-artifact@v3
       with:
