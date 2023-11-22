@@ -72,9 +72,11 @@ jobs:
           echo "ZIPBUILDFILE=$fileList" >> $env:GITHUB_ENV
     - name: Build installers (Windows)
       run: |
+        $counter++
         $filenames = $env:ZIPBUILDFILE -split " "
         foreach ($filename in $filenames) {
-          .\Installer\Windows\artifact_win.bat $filename
+          set /a counter+=1
+          Start-Process -FilePath ".\Installer\Windows\artifact_win.bat" -ArgumentList "$filename $counter" -Wait
         }
     - name: Upload build results
       uses: actions/upload-artifact@v3
