@@ -1,11 +1,13 @@
-name: Echo Number
+name: Process Arguments
+
 on:
-  repository_dispatch:
-    types: [echo_number]
+  workflow_dispatch
 
 jobs:
-  echo_number_job:
+  process_arguments:
     runs-on: ubuntu-latest
     steps:
-      - name: Echo a Number
-        run: echo "123"
+      - name: Display Arguments
+        run: |
+          echo "Argument 1: ${{ github.event.inputs.argument1 }}"
+          echo "Argument 2: ${{ github.event.inputs.argument2 }}"
