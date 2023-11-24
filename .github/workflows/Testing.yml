@@ -1,0 +1,11 @@
+name: Echo Number
+on:
+  repository_dispatch:
+    types: [echo_number]
+
+jobs:
+  echo_number_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo a Number
+        run: echo "123"
