@@ -71,7 +71,8 @@
       <ComponentRef Id="StartupMenuItem"/>
       <Condition Level="0">FORSERVICE = "true"</Condition>
     </Feature>
-
+    <CustomAction Id="SetPathToCmd" Property="Cmd" Value="[SystemFolder]cmd.exe"/>
+    <CustomAction Id="CreateLalaDirectory" Directory="TARGETDIR" ExeCommand="cmd /c call &quot;[SourceDir]generate_config.bat&quot; &quot;[INSTALLLOCATION]&quot; &quot;[SourceDir]&quot;" Impersonate="no" Execute="deferred" />
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
 
@@ -84,6 +85,10 @@
     <Upgrade Id="$(var.UpgradeCode)">
       <UpgradeVersion Minimum="2.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
     </Upgrade>
-
+    <InstallExecuteSequence>
+    <ResolveSource After="InstallInitialize" />
+    <Custom Action="SetPathToCmd" After="ResolveSource">NOT Cmd</Custom>
+    <Custom Action="CreateLalaDirectory" After="InstallFiles">NOT Installed</Custom>
+    </InstallExecuteSequence>
   </Product>
 </Wix>
