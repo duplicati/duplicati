@@ -3,9 +3,7 @@
 name: Zip Frontend Files and Upload Artifacts
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch
 
 jobs:
   windowsbuild:
