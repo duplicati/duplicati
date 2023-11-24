@@ -1,7 +1,7 @@
-name: Build release installers
+name: Pre Defined config files
 
 on:
-  push
+  workflow_dispatch
 
 env:
   build_directory: "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
