@@ -47,6 +47,13 @@
                         <p ng-click="doShowLog(item.Backup.ID)" translate>Show log …</p>
                         <p ng-click="doCreateBugReport(item.Backup.ID)" translate>Create bug report …</p>
                     </dd>
+
+                    <dt ng-show="item.Backup.Sources != null" translate>Sources:</dt>
+                    <dd ng-show="item.Backup.Sources != null">
+                        <ul>
+                            <li ng-repeat="source in item.Backup.Sources">{{source}}</li>
+                        </ul>
+                    </dd>
                 </dl>
 
                 <dl>

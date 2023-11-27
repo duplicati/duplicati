@@ -36,6 +36,12 @@ namespace Duplicati.Server.WebServer.RESTMethods
             var schedules = Program.DataConnection.Schedules;
             var backups = Program.DataConnection.Backups;
 
+            // Read sources for each backup if configured
+            var showSources = Program.DataConnection.GetSettings(Database.Connection.SERVER_SETTINGS_ID).FirstOrDefault(s => s.Name == "show-sources");
+            if (showSources?.Value != null && bool.TrueString.Equals(showSources.Value, StringComparison.OrdinalIgnoreCase))
+                foreach (var backup in backups)
+                    backup.Sources = Program.DataConnection.GetSources(long.Parse(backup.ID));
+            
             var all = from n in backups
                 select new AddOrUpdateBackupData {
                 IsUnencryptedOrPassphraseStored = Program.DataConnection.IsUnencryptedOrPassphraseStored(long.Parse(n.ID)),

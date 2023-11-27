@@ -62,6 +62,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
         $scope.usageReporterLevel = data.data['usage-reporter-level'];
         $scope.disableTrayIconLogin =  AppUtils.parseBoolString(data.data['disable-tray-icon-login']);
         $scope.remoteHostnames = data.data['allowed-hostnames'];
+        $scope.showSources = AppUtils.parseBoolString(data.data['show-sources']);
         $scope.advancedOptions = AppUtils.serializeAdvancedOptionsToArray(data.data);
         $scope.servermodulesettings = {};
 
@@ -82,7 +83,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
             'startup-delay': $scope.startupDelayDurationValue + '' + $scope.startupDelayDurationMultiplier,
             'update-channel': $scope.updateChannel,
             'usage-reporter-level': $scope.usageReporterLevel,
-            'disable-tray-icon-login': $scope.disableTrayIconLogin
+            'disable-tray-icon-login': $scope.disableTrayIconLogin,
+            'show-sources': $scope.showSources
         };
 
         if ($scope.requireRemotePassword && $scope.rawdata['server-passphrase'] != $scope.remotePassword) {
