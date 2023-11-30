@@ -162,6 +162,37 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
+        /// <summary>
+        /// Read blocklist and check the hash. Throws InvalidDataException if not matching
+        /// </summary>
+        public static IList<string> ReadBlocklistVerified(ICompression compression, string filename, long hashsize, string hash, string blockHashAlgorithm)
+        {
+            List<string> blocks = new List<string>();
+            var buffer = new byte[hashsize];
+            var hashalg = HashAlgorithmHelper.Create(blockHashAlgorithm);
+            using (var fs = compression.OpenRead(filename))
+            {
+                int s;
+                var read = 0L;
+                while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
+                {
+                    if (s != buffer.Length)
+                        throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
+
+                    read++;
+                    hashalg.TransformBlock(buffer, 0, s, buffer, 0);
+                    blocks.Add(Convert.ToBase64String(buffer));
+                }
+            }
+            hashalg.TransformFinalBlock(buffer, 0, 0);
+            string calculatedHash = Convert.ToBase64String(hashalg.Hash);
+            if (hash != calculatedHash)
+            {
+                throw new InvalidDataException($"Blocklist hash does not match: expected {hash}, got {calculatedHash}");
+            }
+            return blocks;
+        }
+
         protected static object SkipJsonToken(JsonReader reader, JsonToken type)
         {
             if (!reader.Read() || reader.TokenType != type)

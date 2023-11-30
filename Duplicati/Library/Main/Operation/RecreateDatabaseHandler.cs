@@ -397,10 +397,28 @@ namespace Duplicati.Library.Main.Operation
                                             restoredb.UpdateRemoteVolume(filename, missing ? RemoteVolumeState.Temporary : RemoteVolumeState.Verified, a.Length, a.Hash, tr);
                                             restoredb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Name), volumeID, tr);
                                         }
-                                
+
                                         //If there are blocklists in the index file, add them to the temp blocklist hashes table
-                                        foreach(var b in svr.BlockLists)
-                                            restoredb.AddTempBlockListHash(b.Hash, b.Blocklist, tr);
+                                        int wrongHashes = 0;
+                                        foreach (var b in svr.BlockLists)
+                                        {
+                                            // Compact might have created undetected invalid blocklist entries in index files due to broken LocalDatabase.GetBlocklists
+                                            // If the hash is wrong, recreate will download the dblock volume with the correct file
+                                            try
+                                            {
+                                                IEnumerable<string> blocklist = b.Blocklist;
+                                                restoredb.AddTempBlockListHash(b.Hash, blocklist, tr);
+                                            }
+                                            catch (System.IO.InvalidDataException e)
+                                            {
+                                                Logging.Log.WriteVerboseMessage(LOGTAG, "InvalidDataBlocklist", e, "Exception while processing blocklists in {0}", sf.Name);
+                                                ++wrongHashes;
+                                            }
+                                        }
+                                        if (wrongHashes != 0)
+                                        {
+                                            Logging.Log.WriteWarningMessage(LOGTAG, "WrongBlocklistHashes", null, "{0} had invalid blocklists which could not be used. Consider deleting this index file and run repair to recreate it.", sf.Name);
+                                        }
                                     }
                                 }
                             }
