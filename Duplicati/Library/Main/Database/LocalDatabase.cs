@@ -1303,8 +1303,9 @@ ORDER BY
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
+                // Group subquery by hash to ensure that each blocklist hash appears only once in the result
                 var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " +
-                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ?) A, " +
+                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", ""BlocklistHash"".""Index"" FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ? GROUP BY ""Block"".""Hash"") A, " +
                     @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " +
                     @" ""B"".""Index"" >= (""A"".""Index"" * {0}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {0}) AND ""C"".""ID"" = ""B"".""BlockID"" " +
                     @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
