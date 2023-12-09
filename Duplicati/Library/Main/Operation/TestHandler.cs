@@ -189,6 +189,15 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_results.EndTime = DateTime.UtcNow;
+            var filtered = from n in m_results.Verifications where n.Value.Any() select n;
+            if (!filtered.Any())
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "Test results", "Successfully verified {0} remote files", m_results.VerificationsActualLength);
+            }
+            else
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "Test results", null,  "Verified {0} remote files with {1} problem(s)", m_results.VerificationsActualLength, filtered.Count());
+            }
         }
 
         /// <summary>
