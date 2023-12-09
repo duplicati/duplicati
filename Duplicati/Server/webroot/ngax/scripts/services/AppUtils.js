@@ -138,11 +138,13 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             key: '-folder',
             prefix: '-',
             suffix: '!',
+            stripSep: true,
             rx: '\\-(.*)\\!'
         }, {
             name: gettextCatalog.getString('Exclude file'),
             key: '-path',
             prefix: '-',
+            stripSep: true,
             exclude: ['*', '?', '{'],
             rx: '\\-([^\\[\\{\\*\\?]+)'
         }, {
@@ -257,12 +259,14 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             return new Date(dt);
     };
 
-    this.parseOptionStrings = function(val, dict, validateCallback) {
+    this.parseOptionStrings = function (val, dict, validateCallback) {
+        // Parse options and return a dict with dict['--key']=value options
+        // Include and exclude filters are returned as arrays in dict['include'], dict['exclude'] if present
         dict = dict || {};
 
         var lines = null;
 
-        if (val != null && typeof(val) == typeof([]))
+        if (val != null && Array.isArray(val))
             lines = val;
         else
             lines = this.replace_all(val || '', '\r', '\n').split('\n');
@@ -287,8 +291,18 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 if (validateCallback)
                     if (!validateCallback(dict, key, value))
                         return null;
-
-                dict['--' + key] = value;
+                // Special handing for --include and --exclude, which are the only options that can appear multiple times (compare FilterCollector.DoExtractOptions)
+                // In all other cases, the last value overrides the earlier values
+                var lower = key.toLowerCase();
+                if (lower == 'include' || lower == 'exclude') {
+                    if (!Array.isArray(dict[lower])) {
+                        dict[lower] = [value];
+                    } else {
+                        dict[lower].push(value);
+                    }
+                } else {
+                    dict['--' + key] = value;
+                }
             }
         }
 
@@ -299,6 +313,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         return this.parseOptionStrings(str, dict, function(d, k, v) {
             if (d['--' + k] !== undefined) {
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Duplicate option {{opt}}', { opt: k }));
+                return false;
+            } else if (k == 'include' || k == 'exclude') {
+                // Cannot specify filters in extra options
+                DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Cannot specify filter include or excludes in extra options'));
                 return false;
             }
 
@@ -420,6 +438,13 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
     this.replace_all = function(str, pattern, replacement) {
       return str.replace( new RegExp( "(" + this.preg_quote(pattern) + ")" , 'g' ), replacement );
+    };
+
+    this.globToRegexp = function (str) {
+        // Escape special chars, except ? and *
+        str = (str + '').replace(/([\\\.\+\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
+        // Replace ? and * with .? and .*
+        return str.replace(/(\?|\*)/g, ".$1");
     };
 
     this.format = function() {
@@ -568,13 +593,25 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             return [type, body];
         }
 
-        for(var i in this.filterClasses) {
+        var m = [];
+        for (var i in this.filterClasses) {
             var n = matches(src, this.filterClasses[i]);
             if (n != null)
-                return n;
+                m.push(n);
         }
-
-        return null;
+        if (m.length == 0) {
+            return null;
+        }
+        // Select match with shortest body, meaning longest prefix and suffix
+        var shortestIdx = 0;
+        var shortestLen = src.length;
+        for (i = 0; i < m.length; ++i) {
+            if (m[i][1].length < shortestLen) {
+                shortestIdx = i;
+                shortestLen = m[i][1].length;
+            }
+        }
+        return m[shortestIdx];
     };
 
     this.buildFilter = function(type, body, dirsep) {
@@ -590,7 +627,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         if (pre.length >= 2 && pre[1] == '[') {
             //Regexp encode body ....
         }
-
+        if (f.stripSep == true && body[body.length - 1] == dirsep) {
+            // Remove trailing dirsep
+            body = body.slice(0, -1);
+        }
         return pre + body + suf;
     };
 
@@ -609,7 +649,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             if (rx)
                 filter = filter.substr(1, filter.length - 2);
             else
-                filter = this.replace_all(this.replace_all(this.preg_quote(filter), '*', '.*'), '?', '.');
+                filter = this.globToRegexp(filter);
 
             try {
                 res.push([flag == '+', new RegExp(filter, caseSensitive ? 'g' : 'gi')]);
@@ -621,9 +661,11 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     };
 
     this.evalFilter = function(path, filters, include) {
-        for(var i = 0; i < filters.length; i++) {
+        for (var i = 0; i < filters.length; i++) {
             var m = path.match(filters[i][1]);
-            if (m && m.length == 1 && m[0].length == path.length)
+            // Regex such as .* might match empty string at the end which is unwanted
+            // Check that the first match covers the full string
+            if (m && m.length >= 1 && m[0].length == path.length)
                 return filters[i][0];
         }
 
