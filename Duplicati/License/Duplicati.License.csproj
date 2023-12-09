@@ -248,16 +248,28 @@
     <Content Include="acknowledgements.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\download.txt">
-      <Link>licenses\agsXMPP\download.txt</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\download.txt">
+      <Link>licenses\Sharp.Xmpp\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\license.txt">
-      <Link>licenses\agsXMPP\license.txt</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\license.txt">
+      <Link>licenses\Sharp.Xmpp\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\licensedata.json">
-      <Link>licenses\agsXMPP\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\licensedata.json">
+      <Link>licenses\Sharp.Xmpp\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\download.txt">
+      <Link>licenses\ARSoft.Tools.Net\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\license.txt">
+      <Link>licenses\ARSoft.Tools.Net\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\licensedata.json">
+      <Link>licenses\ARSoft.Tools.Net\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
