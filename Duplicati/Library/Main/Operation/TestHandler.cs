@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
             m_results.OperationProgressUpdater.UpdateProgress(0);
             var progress = 0L;
             
-            if (m_options.FullRemoteVerification)
+            if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
                 foreach(var vol in new AsyncDownloader(files, backend))
                 {
