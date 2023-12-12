@@ -360,21 +360,17 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     this.connectionError = function(txt, msg) {
         if (typeof(txt) == typeof('')) {
             if (msg == null)
-                return function(msg) {
-                    if (msg && msg.data && msg.data.Message)
-                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
-                    else
-                        DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
+                return function (msg) {
+                    var msgText = AppService.responseErrorMessage(msg);
+                    DialogService.dialog(gettextCatalog.getString('Error'), txt + msgText);
                 };
         } else {
             msg = txt;
             txt = '';
         }
 
-        if (msg && msg.data && msg.data.Message)
-            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.data.Message);
-        else
-            DialogService.dialog(gettextCatalog.getString('Error'), txt + msg.statusText);
+        var msgText = AppService.responseErrorMessage(msg);
+        DialogService.dialog(gettextCatalog.getString('Error'), txt + msgText);
     };
 
     this.generatePassphrase = function() {

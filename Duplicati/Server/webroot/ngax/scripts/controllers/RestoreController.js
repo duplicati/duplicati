@@ -83,9 +83,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             },
 
             function(resp) {
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                var message = AppService.responseErrorMessage(resp);
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
@@ -112,9 +110,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
 
-            var message = resp.statusText;
-            if (resp.data != null && resp.data.Message != null)
-                message = resp.data.Message;
+            var message = AppService.responseErrorMessage(resp);
             DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to fetch path information: {{message}}', { message: message }));
         };
 
@@ -291,9 +287,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             },
             function(resp) {
                 $scope.Searching = false;
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                var message = AppService.responseErrorMessage(resp);
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
@@ -330,9 +324,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         $scope.restore_step = 2;
 
         function handleError(resp) {
-            var message = resp.statusText;
-            if (resp.data != null && resp.data.Message != null)
-                message = resp.data.Message;
+            var message = AppService.responseErrorMessage(resp);
 
             $scope.restore_step = 1;
             $scope.connecting = false;
@@ -433,9 +425,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to restore files: {{message}}', { message: resp.data.ErrorMessage }));
             }
         }, function(resp) {
-            var message = resp.statusText;
-            if (resp.data != null && resp.data.Message != null)
-                message = resp.data.Message;
+            var message = AppService.responseErrorMessage(resp);
 
             $scope.restore_step = 1;
             $scope.connecting = false;
