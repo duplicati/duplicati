@@ -1294,16 +1294,38 @@ ORDER BY
             m_insertIndexBlockLink.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Creates a list of triplets (blocklist hash, block content, size)
+        /// for a given remote block volume
+        /// the block content is itself a concatenation of the hashes of blocks
+        /// the size is the number of hashes in the block content times the hash size
+        /// </summary>
+        /// <param name="volumeid">The ID of the block volume to use</param>
+        /// <param name="blocksize">The block size for the backup</param>
+        /// <param name="hashsize">The hash size for the backup</param>
+        /// <param name="transaction">An optional external transaction</param>
         public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, System.Data.IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " +
-                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ?) A, " +
-                    @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " +
-                    @" ""B"".""Index"" >= (""A"".""Index"" * {0}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {0}) AND ""C"".""ID"" = ""B"".""BlockID"" " +
-                    @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
-                    blocksize / hashsize
+                // DISTINCT is used to remove duplicates that can happen when several backup versions uses the same block
+                var sql = string.Format(
+                   @"SELECT DISTINCT A.Hash AS BlocklistHash, C.Hash AS BlockHash, B.""Index"" " +
+                   @"FROM  " +
+                   @"(" +
+                   @"    SELECT BlocklistHash.BlocksetID, Block.Hash, BlocklistHash.""Index"" FROM " +
+                   @"    BlocklistHash,Block WHERE   " +
+                   @"    BlocklistHash.Hash = Block.Hash AND Block.VolumeID = ? " +
+                   @") A," +
+                   @"BlocksetEntry B," +
+                   @"Block C " +
+                   @"WHERE " +
+                   @"B.BlocksetID = A.BlocksetID AND " +
+                   @"B.""Index"" >= (A.""Index"" * {0}) AND " +
+                   @"B.""Index"" < ((A.""Index"" + 1) * {0}) AND " +
+                   @"C.ID = B.BlockID " +
+                   @"ORDER BY A.BlocksetID, B.""Index""",
+                   blocksize / hashsize
                 );
 
                 string curHash = null;
@@ -1313,17 +1335,17 @@ ORDER BY
                 using (var rd = cmd.ExecuteReader(sql, volumeid))
                     while (rd.Read())
                     {
-                        var blockhash = rd.GetValue(0).ToString();
-                        if ((blockhash != curHash && curHash != null) || index + hashsize > buffer.Length)
+                        var blocklisthash = rd.GetValue(0).ToString();
+                        if ((blocklisthash != curHash && curHash != null) || index + hashsize > buffer.Length)
                         {
                             yield return new Tuple<string, byte[], int>(curHash, buffer, index);
                             buffer = new byte[blocksize];
                             index = 0;
                         }
 
-                        var hash = Convert.FromBase64String(rd.GetValue(1).ToString());
-                        Array.Copy(hash, 0, buffer, index, hashsize);
-                        curHash = blockhash;
+                        var blockhash = Convert.FromBase64String(rd.GetValue(1).ToString());
+                        Array.Copy(blockhash, 0, buffer, index, hashsize);
+                        curHash = blocklisthash;
                         index += hashsize;
                     }
 
