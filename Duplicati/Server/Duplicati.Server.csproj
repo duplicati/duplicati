@@ -48,8 +48,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.13.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -167,6 +167,10 @@
     <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj">
       <Project>{F61679A9-E5DE-468A-B5A4-05F92D0143D2}</Project>
       <Name>Duplicati.Library.Backend.FTP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj">
+      <Project>{6b594d23-b629-465c-b799-70ee9e56c218}</Project>
+      <Name>Duplicati.Library.Backend.Idrivee2</Name>
     </ProjectReference>
     <ProjectReference Include="..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
       <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
@@ -291,10 +295,6 @@
     <ProjectReference Include="..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
       <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
       <Name>Duplicati.Library.Backend.OpenStack</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
-      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
-      <Name>Duplicati.Library.Backend.HubiC</Name>
     </ProjectReference>
     <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
       <Project>{4A010589-76E6-4F05-A5C4-4598D5DF11F8}</Project>

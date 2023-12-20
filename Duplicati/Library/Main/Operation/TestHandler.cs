@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation
                 db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyParameters(db, m_options);
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
                 FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter, true, null);
 
                 DoRun(samples, db, backend);
@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
             m_results.OperationProgressUpdater.UpdateProgress(0);
             var progress = 0L;
             
-            if (m_options.FullRemoteVerification)
+            if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
                 foreach(var vol in new AsyncDownloader(files, backend))
                 {
@@ -189,6 +189,15 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_results.EndTime = DateTime.UtcNow;
+            var filtered = from n in m_results.Verifications where n.Value.Any() select n;
+            if (!filtered.Any())
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "Test results", "Successfully verified {0} remote files", m_results.VerificationsActualLength);
+            }
+            else
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "Test results", null,  "Verified {0} remote files with {1} problem(s)", m_results.VerificationsActualLength, filtered.Count());
+            }
         }
 
         /// <summary>

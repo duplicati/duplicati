@@ -318,7 +318,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             for (retryCount = 0; retryCount <= m_options.NumberOfRetries; retryCount++)
             {
                 if (m_options.RetryDelay.Ticks != 0 && retryCount != 0)
-                    await Task.Delay(m_options.RetryDelay).ConfigureAwait(false);
+                {
+                    var delay = Library.Utility.Utility.GetRetryDelay(m_options.RetryDelay, retryCount, m_options.RetryWithExponentialBackoff);
+                    await Task.Delay(delay).ConfigureAwait(false);
+                }
 
                 if (cancelToken.IsCancellationRequested)
                     return false;

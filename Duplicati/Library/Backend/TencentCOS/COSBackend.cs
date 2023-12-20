@@ -17,8 +17,8 @@ namespace Duplicati.Library.Backend.TencentCOS
 {
     /// <summary>
     /// Tencent COS
-    /// https://cloud.tencent.com/document/product/436
-    /// https://cloud.tencent.com/document/product/436/32869
+    /// en: https://intl.cloud.tencent.com/document/product/436
+    /// zh: https://cloud.tencent.com/document/product/436
     /// </summary>
     public class COS : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
@@ -29,6 +29,7 @@ namespace Duplicati.Library.Backend.TencentCOS
         private const string COS_SECRET_ID = "cos-secret-id";
         private const string COS_SECRET_KEY = "cos-secret-key";
         private const string COS_BUCKET = "cos-bucket";
+        private const string COS_STORAGE_CLASS = "cos-storage-class";
 
         /// <summary>
         /// Set default HTTPS request
@@ -70,7 +71,8 @@ namespace Duplicati.Library.Backend.TencentCOS
             public string SecretKey { get; set; }
             /// <summary>
             /// Bucket region ap-guangzhou ap-hongkong
-            /// https://cloud.tencent.com/document/product/436/6224
+            /// en: https://intl.cloud.tencent.com/document/product/436/6224
+            /// zh: https://cloud.tencent.com/document/product/436/6224
             /// </summary>
             public string Region { get; set; }
             /// <summary>
@@ -81,6 +83,12 @@ namespace Duplicati.Library.Backend.TencentCOS
             /// A path or subfolder in a bucket
             /// </summary>
             public string Path { get; set; }
+            /// <summary>
+            /// Storage class of the object
+            /// en: https://intl.cloud.tencent.com/document/product/436/30925
+            /// zh: https://cloud.tencent.com/document/product/436/33417
+            /// </summary>
+            public string StorageClass { get; set; }
         }
 
         public COS() { }
@@ -120,6 +128,11 @@ namespace Duplicati.Library.Backend.TencentCOS
             if (options.ContainsKey(COS_BUCKET))
             {
                 _cosOptions.Bucket = options[COS_BUCKET];
+            }
+
+            if (options.ContainsKey(COS_STORAGE_CLASS))
+            {
+                _cosOptions.StorageClass = options[COS_STORAGE_CLASS];
             }
         }
 
@@ -290,6 +303,10 @@ namespace Duplicati.Library.Backend.TencentCOS
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.Seconds), KEY_DURATION_SECOND);
                 request.SetRequestHeader("Content-Type", "application/octet-stream");
+                if (!string.IsNullOrEmpty(_cosOptions.StorageClass))
+                {
+                    request.SetRequestHeader("x-" + COS_STORAGE_CLASS, _cosOptions.StorageClass);
+                }
 
                 PutObjectResult result = cosXml.PutObject(request);
             }
@@ -348,8 +365,7 @@ namespace Duplicati.Library.Backend.TencentCOS
                 string sourceRegion = _cosOptions.Region;
                 string sourceKey = GetFullKey(oldname);
 
-                CopySourceStruct copySource = new CopySourceStruct(sourceAppid, sourceBucket,
-                  sourceRegion, sourceKey);
+                CopySourceStruct copySource = new CopySourceStruct(sourceAppid, sourceBucket, sourceRegion, sourceKey);
 
                 string bucket = _cosOptions.Bucket;
                 string key = GetFullKey(newname);
@@ -388,11 +404,12 @@ namespace Duplicati.Library.Backend.TencentCOS
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(COS_APP_ID, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSAccountDescriptionShort,Strings.COSBackend.COSAccountDescriptionLong),
-                    new CommandLineArgument(COS_REGION, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSLocationDescriptionShort,Strings.COSBackend.COSLocationDescriptionLong),
-                    new CommandLineArgument(COS_SECRET_ID, CommandLineArgument.ArgumentType.String,  Strings.COSBackend.COSAPISecretIdDescriptionShort,Strings.COSBackend.COSAPISecretIdDescriptionLong),
-                    new CommandLineArgument(COS_SECRET_KEY, CommandLineArgument.ArgumentType.Password,  Strings.COSBackend.COSAPISecretKeyDescriptionShort,Strings.COSBackend.COSAPISecretKeyDescriptionLong),
-                    new CommandLineArgument(COS_BUCKET, CommandLineArgument.ArgumentType.String,Strings.COSBackend.COSBucketDescriptionShort,Strings.COSBackend.COSBucketDescriptionLong),
+                    new CommandLineArgument(COS_APP_ID, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSAccountDescriptionShort, Strings.COSBackend.COSAccountDescriptionLong),
+                    new CommandLineArgument(COS_REGION, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSLocationDescriptionShort, Strings.COSBackend.COSLocationDescriptionLong),
+                    new CommandLineArgument(COS_SECRET_ID, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSAPISecretIdDescriptionShort, Strings.COSBackend.COSAPISecretIdDescriptionLong),
+                    new CommandLineArgument(COS_SECRET_KEY, CommandLineArgument.ArgumentType.Password, Strings.COSBackend.COSAPISecretKeyDescriptionShort, Strings.COSBackend.COSAPISecretKeyDescriptionLong),
+                    new CommandLineArgument(COS_BUCKET, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSBucketDescriptionShort, Strings.COSBackend.COSBucketDescriptionLong),
+                    new CommandLineArgument(COS_STORAGE_CLASS, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSStorageClassDescriptionShort, Strings.COSBackend.COSStorageClassDescriptionLong)
                 });
             }
         }

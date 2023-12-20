@@ -54,6 +54,4 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUt
 
     $rootScope.$on('serverstatechanged.lastDataUpdateId', reload);
     $rootScope.$on('serverstatechanged.proposedSchedule', updateNextRunStamp);
-
-    reload();
 });

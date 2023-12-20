@@ -70,6 +70,10 @@
       <Project>{b20a7cee-9c5b-47b9-8b76-bc85adfe8493}</Project>
       <Name>Duplicati.Library.Backend.Dropbox</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj">
+      <Project>{6b594d23-b629-465c-b799-70ee9e56c218}</Project>
+      <Name>Duplicati.Library.Backend.Idrivee2</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
       <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>
       <Name>Duplicati.Library.Backend.Jottacloud</Name>
@@ -133,10 +137,6 @@
     <ProjectReference Include="..\..\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj">
       <Project>{D9E4E686-423C-48EC-A392-404E7C00860C}</Project>
       <Name>Duplicati.Library.Backend.OpenStack</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
-      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
-      <Name>Duplicati.Library.Backend.HubiC</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>

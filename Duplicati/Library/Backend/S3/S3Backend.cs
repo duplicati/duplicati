@@ -41,20 +41,30 @@ namespace Duplicati.Library.Backend
         private const string LOCATION_OPTION = "s3-location-constraint";
         private const string SSL_OPTION = "use-ssl";
         private const string S3_CLIENT_OPTION = "s3-client";
+        private const string S3_DISABLE_CHUNK_ENCODING_OPTION = "s3-disable-chunk-encoding";
 
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
             { "MyCloudyPlace (EU)", "s3.mycloudyplace.com" },
+            { "Impossible Cloud (US)", "us-west-1.storage.impossibleapi.net" },
+            { "Scaleway (Amsterdam, The Netherlands)", "s3.nl-ams.scw.cloud" },
+            { "Scaleway (Paris, France)", "s3.fr-par.scw.cloud" },
+            { "Scaleway (Warsaw, Poland)", "s3.pl-waw.scw.cloud" },
             { "Hosteurope", "cs.hosteurope.de" },
             { "Dunkel", "dcs.dunkel.de" },
             { "DreamHost", "objects.dreamhost.com" },
             { "dinCloud - Chicago", "d3-ord.dincloud.com" },
             { "dinCloud - Los Angeles", "d3-lax.dincloud.com" },
+            { "Poli Systems (CH)", "s3.polisystems.ch" },
             { "IBM COS (S3) Public US", "s3-api.us-geo.objectstorage.softlayer.net" },
             { "Storadera", "eu-east-1.s3.storadera.com" },
             { "Wasabi Hot Storage", "s3.wasabisys.com" },
             { "Wasabi Hot Storage (US West)", "s3.us-west-1.wasabisys.com" },
             { "Wasabi Hot Storage (EU Central)", "s3.eu-central-1.wasabisys.com" },
+            { "Infomaniak Swiss Backup cluster 1", "s3.swiss-backup.infomaniak.com" },
+            { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" },
+            { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
+            { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -291,12 +301,13 @@ namespace Duplicati.Library.Backend
             if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
+            bool disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
 
             options.TryGetValue(S3_CLIENT_OPTION, out var s3ClientOptionValue);
 
             if (s3ClientOptionValue == "aws" || s3ClientOptionValue == null)
             {
-                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, disableChunkEncoding, options);
             }
             else
             {
@@ -406,6 +417,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.DescriptionS3ClientLong),
+                    new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };

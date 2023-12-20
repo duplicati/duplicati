@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Database
         /// Creates a new database instance and starts a new operation
         /// </summary>
         /// <param name="path">The path to the database</param>
-        /// <param name="operation">The name of the operation</param>
+        /// <param name="operation">The name of the operation. If null, continues last operation</param>
         public LocalDatabase(string path, string operation, bool shouldclose)
             : this(CreateConnection(path), operation)
         {
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
-        /// <param name="operation">The name of the operation</param>
+        /// <param name="operation">The name of the operation. If null, continues last operation</param>
         public LocalDatabase(System.Data.IDbConnection connection, string operation)
             : this(connection)
         {
@@ -97,8 +97,25 @@ namespace Duplicati.Library.Main.Database
             if (m_connection.State != System.Data.ConnectionState.Open)
                 m_connection.Open();
 
-            using (var cmd = m_connection.CreateCommand())
-                m_operationid = cmd.ExecuteScalarInt64( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", -1, operation, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(OperationTimestamp));
+            if (operation != null)
+            {
+                using (var cmd = m_connection.CreateCommand())
+                    m_operationid = cmd.ExecuteScalarInt64(@"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", -1, operation, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(OperationTimestamp));
+            }
+            else
+            {
+                // Get last operation
+                using (var cmd = m_connection.CreateCommand())
+                using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Operation"" ORDER BY ""Timestamp"" DESC LIMIT 1"))
+                {
+                    if(!rd.Read())
+                    {
+                        throw new Exception("LocalDatabase does not contain a previous operation.");
+                    }
+                    m_operationid = rd.GetInt64(0);
+                    OperationTimestamp = ParseFromEpochSeconds(rd.GetInt64(1));
+                }
+            }
         }
 
         private LocalDatabase(System.Data.IDbConnection connection)
@@ -796,6 +813,7 @@ ON
 
                 if (verifyfilelists)
                 {
+                    var anyError = new List<string>();
                     using (var cmd2 = m_connection.CreateCommand(transaction))
                         foreach (var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
                         {
@@ -810,9 +828,13 @@ ON
                                 var fileset = FilesetTimes.Zip(Enumerable.Range(0, FilesetTimes.Count()), (a, b) => new Tuple<long, long, DateTime>(b, a.Key, a.Value)).FirstOrDefault(x => x.Item2 == filesetid);
                                 if (fileset != null)
                                     filesetname = string.Format("version {0}: {1} (database id: {2})", fileset.Item1, fileset.Item3, fileset.Item2);
-                                throw new Interface.UserInformationException(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist), "FilesetDifferences");
+                                anyError.Add(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist));
                             }
                         }
+		    if (anyError.Any())
+                    {
+                       throw new Interface.UserInformationException(string.Join("\n\r", anyError), "FilesetDifferences");
+                    }
                 }
             }
         }

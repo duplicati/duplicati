@@ -27,12 +27,14 @@
 .sitx #StuffIt X Archive
 .sy_ #Windows Driver file, Packed
 .tgz #Gzipped Tar File
+.tzst #ztd Compressed Tar File
 .war #Java Web Archive
 .wim #Windows Imaging File Format
 .xar #eXtensible ARchiver file (or Xara Vector Image format, also compressed)
 .xz #Lzma-compressed file (linux)
 .zip #Zipped File
 .zipx #Extended Zip File
+.zst #zstd Compressed File
 
 
 # Compressed media files (audio)
@@ -50,7 +52,10 @@
 .mpa #MPEG-2 Audio File
 .mpc #Musepack (MPEGplus) Audio File
 .ra #Real Audio File
+.oga #Alternative extension for audio in an ogg container
 .ogg #a free, open source container format
+.opus #Opus from Xiph.org
+.spx #Speex from Xiph.org
 .wma #the popular Windows Media Audio format
 .wv #WavPack Audio File
 
@@ -68,10 +73,12 @@
 .flv #Flash Video File
 .hdmov #QuickTime HD Movie File
 .m2p #MPEG-2 Program Stream File
+.m2v #MPEG-2 Video File
 .m4v #iTunes Video File
 .mkv #Matroshka Video Stream Container
 .mov #Apple QuickTime Movie
 .mp4 #MPEG-4 Video File
+.mpeg #MPEG Video File
 .mpg #MPEG Video File
 .mts #AVCHD Video File
 .ogv #Ogg Video File
@@ -171,8 +178,12 @@
 # Other Compressed or High-Entropy Files
 .apk #Android Application Package
 .eftx #Microsoft Office Theme Effects
+.mrimg #Macrium Reflect disk image format
+.rvz #Dolphin compression storage format
 .sdg #OpenOffice.org Configuration File	
 .thmx #Microsoft Office Theme
+.tib #Acronis True Image disk image format
+.tibx #Acronis True Image disk image format
 .vsix #Microsoft Visual Studio Extension
 .vsv #Microsoft Virtual Machine Saved State	
 .wmz #Windows Media Player Skin Package	

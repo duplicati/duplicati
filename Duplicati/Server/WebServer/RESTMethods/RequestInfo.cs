@@ -92,6 +92,10 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             Response.Status = code;
             Response.Reason = reason ?? "Error";
+            if(item == null && reason != null)
+            {
+                item = new { Error = reason };
+            }
             BodyWriter.WriteJsonObject(item);
         }
 

@@ -625,7 +625,7 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
-                Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
+                Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing {0} \"{1}\" (id: {2})", data.Operation, data.Backup.Name, data.Backup.ID), ex);
                 UpdateMetadataError(data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
 
@@ -754,18 +754,18 @@ namespace Duplicati.Server
                 backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
             }
 
-            if (result is IParsedBackendStatistics r2)
+            if (result is IParsedBackendStatistics r2 && !result.Interrupted)
             {
                 UpdateMetadata(backup, r2);
             }
 
-            if (result is IBackendStatsticsReporter r3)
+            if (result is IBackendStatsticsReporter r3 && !result.Interrupted)
             {
                 if (r3.BackendStatistics is IParsedBackendStatistics statistics)
                     UpdateMetadata(backup, statistics);
             }
 
-            if (result is ICompactResults r4)
+            if (result is ICompactResults r4 && !result.Interrupted)
             {
                 UpdateMetadataLastCompact(backup, r4);
 
@@ -773,25 +773,28 @@ namespace Duplicati.Server
                     UpdateMetadataLastVacuum(backup, r4.VacuumResults);
             }
 
-            if (result is IVacuumResults r5)
+            if (result is IVacuumResults r5 && !result.Interrupted)
             {
                 UpdateMetadataLastVacuum(backup, r5);
             }
 
             if (result is IBackupResults r)
             {
-                backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
-                backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
-                backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
-                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
-                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
-                backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
+                if (!result.Interrupted)
+                {
+                    backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
+                    backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
+                    backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
+                    backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                    backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+                    backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
 
-                if (r.CompactResults != null)
-                    UpdateMetadataLastCompact(backup, r.CompactResults);
+                    if (r.CompactResults != null)
+                        UpdateMetadataLastCompact(backup, r.CompactResults);
 
-                if (r.VacuumResults != null)
-                    UpdateMetadataLastVacuum(backup, r.VacuumResults);
+                    if (r.VacuumResults != null)
+                        UpdateMetadataLastVacuum(backup, r.VacuumResults);
+                }
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
@@ -837,19 +840,19 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
+            else if (result.ParsedResult != ParsedResultType.Success)
             {
-                var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                var type = result.ParsedResult == ParsedResultType.Warning
                             ? NotificationType.Warning
                             : NotificationType.Error;
 
-                var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                var title = result.ParsedResult == ParsedResultType.Warning
                                 ? (backup.IsTemporary ?
                                 "Warning" : string.Format("Warning while running {0}", backup.Name))
                             : (backup.IsTemporary ?
                                 "Error" : string.Format("Error while running {0}", backup.Name));
 
-                var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                var message = result.ParsedResult == ParsedResultType.Warning
                                     ? string.Format("Got {0} warning(s)", result.Warnings.Count())
                                     : string.Format("Got {0} error(s)", result.Errors.Count());
 

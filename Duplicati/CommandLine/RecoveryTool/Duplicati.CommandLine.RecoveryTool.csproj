@@ -43,13 +43,13 @@
       <HintPath>..\..\..\packages\Microsoft.Azure.KeyVault.Core.3.0.4\lib\net461\Microsoft.Azure.KeyVault.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Rest.ClientRuntime, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Microsoft.Rest.ClientRuntime.2.3.20\lib\net461\Microsoft.Rest.ClientRuntime.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Rest.ClientRuntime.2.3.24\lib\net461\Microsoft.Rest.ClientRuntime.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Rest.ClientRuntime.Azure, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Microsoft.Rest.ClientRuntime.Azure.3.3.19\lib\net461\Microsoft.Rest.ClientRuntime.Azure.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.13.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Net" />
@@ -94,9 +94,9 @@
       <Project>{5489181D-950C-44AF-873C-45EB0A3B6BD2}</Project>
       <Name>Duplicati.Library.Backend.GoogleServices</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj">
-      <Project>{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}</Project>
-      <Name>Duplicati.Library.Backend.HubiC</Name>
+    <ProjectReference Include="..\..\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj">
+      <Project>{6b594d23-b629-465c-b799-70ee9e56c218}</Project>
+      <Name>Duplicati.Library.Backend.Idrivee2</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj">
       <Project>{2cd5dbc3-3da6-432d-ba97-f0b8d24501c2}</Project>

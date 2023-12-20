@@ -248,16 +248,28 @@
     <Content Include="acknowledgements.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\download.txt">
-      <Link>licenses\agsXMPP\download.txt</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\download.txt">
+      <Link>licenses\Sharp.Xmpp\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\license.txt">
-      <Link>licenses\agsXMPP\license.txt</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\license.txt">
+      <Link>licenses\Sharp.Xmpp\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\licensedata.json">
-      <Link>licenses\agsXMPP\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\licensedata.json">
+      <Link>licenses\Sharp.Xmpp\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\download.txt">
+      <Link>licenses\ARSoft.Tools.Net\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\license.txt">
+      <Link>licenses\ARSoft.Tools.Net\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\licensedata.json">
+      <Link>licenses\ARSoft.Tools.Net\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
@@ -356,6 +368,18 @@
       <Link>licenses\MimeKit\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\BouncyCastle\Homepage.txt">
+      <Link>licenses\BouncyCastle\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\BouncyCastle\license.txt">
+      <Link>licenses\BouncyCastle\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\BouncyCastle\licensedata.json">
+      <Link>licenses\BouncyCastle\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\angular-gettext\Homepage.txt">
       <Link>licenses\AngularGettext\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -378,18 +402,6 @@
     </Content>
     <Content Include="..\..\thirdparty\mozroots\licensedata.json">
       <Link>licenses\mozroots\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\TlsTest\Homepage.txt">
-      <Link>licenses\TlsTest\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\TlsTest\License.txt">
-      <Link>licenses\TlsTest\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\TlsTest\licensedata.json">
-      <Link>licenses\TlsTest\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\FasterHashing\download.txt">

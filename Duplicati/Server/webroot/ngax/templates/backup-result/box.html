@@ -30,14 +30,20 @@
             ng-include="'templates/backup-result/message-list.html'"></span>
     </div>
     <div class="box item wide four">
-        <span ng-click="log_expanded = !log_expanded" class="key" ng-style="{ cursor: 'pointer' }">
-            {{ 'Complete log' | translate }}
-            <i class="fa fa-angle-{{log_expanded ? 'up': 'down'}}"></i>
-        </span>
-        
-        <a href ng-show="log_expanded" ngclipboard data-clipboard-action="copy" data-clipboard-target="#result-log-{{$index}}">
-            <i class="fa fa-clipboard"></i> 
-        </a>
-        <div ng-show="log_expanded" id="result-log-{{$index}}" class="prewrapped-text exceptiontext">{{ item.Formatted }}</div>
+        <div class="log-expand-copy">
+            <span ng-click="log_expanded = !log_expanded" class="key" ng-style="{ cursor: 'pointer' }">
+                {{ 'Complete log' | translate }}
+                <i class="fa fa-angle-{{log_expanded ? 'up': 'down'}}"></i>
+            </span>
+            
+            <a href ng-show="log_expanded" ngclipboard data-clipboard-action="copy" data-clipboard-target="#result-log-{{$index}}">
+                <i class="fa fa-clipboard"></i> 
+                {{ 'Copy log' | translate }}
+            </a>
+        </div>
+
+        <textarea readonly ng-show="log_expanded" id="result-log-{{$index}}" class="exceptiontext" wrap="off">
+            {{ item.Formatted }}
+        </textarea>
     </div>
 </div>

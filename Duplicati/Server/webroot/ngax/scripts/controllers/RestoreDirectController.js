@@ -65,9 +65,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
                     $scope.BackupID = resp.data.ID;
                     $scope.fetchBackupTimes();
                 }, function(resp) {
-                    var message = resp.statusText;
-                    if (resp.data != null && resp.data.Message != null)
-                        message = resp.data.Message;
+                    var message = AppService.responseErrorMessage(resp);
 
                     $scope.connecting = false;
                     $scope.ConnectionProgress = '';
@@ -98,9 +96,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
             },
 
             function(resp) {
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                var message = AppService.responseErrorMessage(resp);
 
                 if (message == 'encrypted-storage')
                     message = gettextCatalog.getString('The target folder contains encrypted files, please supply the passphrase');

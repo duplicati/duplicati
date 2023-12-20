@@ -20,11 +20,13 @@ using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
-	/// <summary>
-	/// This class helps picking the fastest hash algorithm implementation,
+    /// <summary>
+    /// This class helps picking the fastest hash algorithm implementation,
     /// which is what <seealso cref="System.Security.Cryptography.HashAlgorithm.Create()"/> should do, but does not.
-	/// </summary>
-	public static class HashAlgorithmHelper
+    /// It falls back to the aforementioned System library when creation of
+    /// the faster hash function fails.
+    /// </summary>
+    public static class HashAlgorithmHelper
     {
         /// <summary>
         /// Create the hash algorithm with the specified name.
@@ -33,7 +35,15 @@ namespace Duplicati.Library.Utility
         /// <param name="name">The name of the algorithm to create.</param>
         public static HashAlgorithm Create(string name)
         {
-            return FasterHashing.FasterHash.Create(name);
+            try
+            {
+                return FasterHashing.FasterHash.Create(name);
+            }
+            // Only having OpenSSL 3 installed might trigger this exception.
+            catch (EntryPointNotFoundException)
+            {
+                return HashAlgorithm.Create(name);
+            }
         }
     }
 }

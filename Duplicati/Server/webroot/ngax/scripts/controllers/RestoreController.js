@@ -83,9 +83,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             },
 
             function(resp) {
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                var message = AppService.responseErrorMessage(resp);
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
@@ -112,9 +110,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
 
-            var message = resp.statusText;
-            if (resp.data != null && resp.data.Message != null)
-                message = resp.data.Message;
+            var message = AppService.responseErrorMessage(resp);
             DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to fetch path information: {{message}}', { message: message }));
         };
 
@@ -246,6 +242,10 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                         if (cp.indexOf(compareablePath(sn.Path)) == 0) {
                             var curpath = sn.Path;
                             var parts = p.substr(sn.Path.length).split(dirsep);
+                            // Remove empty part if path had dirsep at end
+                            if (parts[parts.length - 1].length == 0) {
+                                parts.pop();
+                            }
                             var col = sn;
 
                             for(var k in parts) {
@@ -261,6 +261,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                                     if (compareablePath(col.Children[m].Path) == compareablePath(curpath)) {
                                         found = true;
                                         col = col.Children[m];
+                                        break;
                                     }
                                 }
 
@@ -286,9 +287,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             },
             function(resp) {
                 $scope.Searching = false;
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                var message = AppService.responseErrorMessage(resp);
 
                 $scope.connecting = false;
                 $scope.ConnectionProgress = '';
@@ -325,9 +324,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         $scope.restore_step = 2;
 
         function handleError(resp) {
-            var message = resp.statusText;
-            if (resp.data != null && resp.data.Message != null)
-                message = resp.data.Message;
+            var message = AppService.responseErrorMessage(resp);
 
             $scope.restore_step = 1;
             $scope.connecting = false;
@@ -428,9 +425,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to restore files: {{message}}', { message: resp.data.ErrorMessage }));
             }
         }, function(resp) {
-            var message = resp.statusText;
-            if (resp.data != null && resp.data.Message != null)
-                message = resp.data.Message;
+            var message = AppService.responseErrorMessage(resp);
 
             $scope.restore_step = 1;
             $scope.connecting = false;
@@ -453,7 +448,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             return false;
         }
 
-        if (!'IsUnencryptedOrPassphraseStored' in this.Backup) {
+        if (!('IsUnencryptedOrPassphraseStored' in this.Backup)) {
             return false;
         }
 

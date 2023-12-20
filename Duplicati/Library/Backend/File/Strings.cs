@@ -17,5 +17,7 @@ namespace Duplicati.Library.Backend.Strings {
         public static string UseMoveForPutShort { get { return LC.L(@"Move the file instead of copying it"); } }
         public static string ForceReauthShort { get { return LC.L(@"Force authentication against remote share"); } }
         public static string ForceReauthLong { get { return LC.L(@"If this option is set, any existing authentication against the remote share is dropped before attempting to authenticate"); } }
+        public static string DisableLengthVerificationShort { get { return LC.L(@"Disable length verification"); } }
+        public static string DisableLengthVerificationLong { get { return LC.L(@"As an extra precaution the uploaded file length will be checked against the local source length."); } }
     }
 }
