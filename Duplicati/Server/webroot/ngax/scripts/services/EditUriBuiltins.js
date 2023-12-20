@@ -264,7 +264,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.loaders['baidunetdisk'] = function (scope) {
         scope.oauth_create_token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         scope.oauth_service_link = '';
-        scope.oauth_start_link = 'https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&client_id=N190qvLtVV5XcO2Vr0xVRWI24aURFTIe&redirect_uri=https://circle.ac.cn/duplicati&scope=basic,netdisk&display=mobile&qrcode=1&force_login=1' + '&state=' + scope.oauth_create_token;
+        scope.oauth_start_link = 'https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&client_id=N190qvLtVV5XcO2Vr0xVRWI24aURFTIe&redirect_uri=https://api.duplicati.net/api/open/baidunetdisk&scope=basic,netdisk&display=mobile&qrcode=1&force_login=1' + '&state=' + scope.oauth_create_token;
         scope.oauth_in_progress = false;
 
         scope.oauth_start_token_creation = function () {
@@ -285,7 +285,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             var recheck = function () {
                 countDown--;
                 if (countDown > 0 && ft == scope.oauth_create_token) {
-                    $http.jsonp('https://circle.ac.cn/duplicati/token' + '?callback=JSON_CALLBACK' , { params: { 'state': ft } }).then(
+                    $http.jsonp('https://api.duplicati.net/api/open/baidunetdisk/token' + '?callback=JSON_CALLBACK' , { params: { 'state': ft } }).then(
                         function (response) {
                             if (response.data) {
                                 scope.baidunetdisk_authorization_code = response.data;
