@@ -77,7 +77,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'jottacloud': null,
 				'rclone': null,
                 'cos': null,
-                'baidunetdisk': null
+                'baidunetdisk': null,
+				'aliyundrive': null
             }
         };
 

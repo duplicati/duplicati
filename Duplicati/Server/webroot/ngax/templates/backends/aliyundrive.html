@@ -1,0 +1,22 @@
+<div class="input text">
+    <label for="aliyundrive_authorization_code" translate>
+        授权码 (<a href ng-click="oauth_start_token_creation()" translate>点击授权</a>)
+    </label>
+    <input type="text" name="aliyundrive_authorization_code" id="aliyundrive_authorization_code" ng-model="$parent.aliyundrive_authorization_code"
+           placeholder="{{'Aliyun Drive Authorization Code' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="aliyundrive_path" translate>Folder path</label>
+    <input type="text" name="aliyundrive_path" id="aliyundrive_path" ng-model="$parent.Path"
+           placeholder="{{'Aliyun Drive Path or subfolder' | translate}}" />
+</div>
+
+<div>
+    <p>阿里云网盘说明：</p>
+    <p>1、获取授权码，授权码可多次使用，建议复制保存便于下次使用。</p>
+    <p>2、阿里云盘不限速，上传、下载不会限速</p>
+    <p>3、支持秒传</p>
+</div>
+
+<div><a target="_blank" href="https://www.alipan.com">Aliyun Drive documents and resources</a></div>

@@ -183,6 +183,10 @@
       <Project>{b93e3bf0-daa7-49b7-b07d-0559c5816735}</Project>
       <Name>Duplicati.CommandLine.ConfigurationImporter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AliyunDrive\Duplicati.Library.Backend.AliyunDrive.csproj">
+      <Project>{7270617a-4793-4560-b084-bba433cb5d9e}</Project>
+      <Name>Duplicati.Library.Backend.AliyunDrive</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\BaiduNetdisk\Duplicati.Library.Backend.BaiduNetdisk.csproj">
       <Project>{34f9ef08-e3de-427e-8a54-985f8a572032}</Project>
       <Name>Duplicati.Library.Backend.BaiduNetdisk</Name>

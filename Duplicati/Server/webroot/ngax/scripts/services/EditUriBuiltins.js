@@ -34,6 +34,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
     EditUriBackendConfig.templates['cos'] = 'templates/backends/cos.html';
     EditUriBackendConfig.templates['baidunetdisk'] = 'templates/backends/baidunetdisk.html';
+    EditUriBackendConfig.templates['aliyundrive'] = 'templates/backends/aliyundrive.html';
     EditUriBackendConfig.templates['e2'] = 'templates/backends/e2.html';
 
     EditUriBackendConfig.testers['s3'] = function (scope, callback) {
@@ -312,6 +313,58 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             return false;
         };
     };
+  
+    EditUriBackendConfig.loaders['aliyundrive'] = function (scope) {
+        scope.oauth_create_token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+        scope.oauth_service_link = '';
+        scope.oauth_start_link = 'https://openapi.alipan.com/oauth/authorize?client_id=12561ebaf6504bea8a611932684c86f6&redirect_uri=https://api.duplicati.net/api/open/aliyundrive&scope=user:base,file:all:read&relogin=true' + '&state=' + scope.oauth_create_token;
+        scope.oauth_in_progress = false;
+
+        scope.oauth_start_token_creation = function () {
+
+            scope.oauth_in_progress = true;
+
+            var w = 680;
+            var h = 680;
+
+            var url = scope.oauth_start_link;
+
+            var countDown = 300;
+            var ft = scope.oauth_create_token;
+            var left = (screen.width / 2) - (w / 2);
+            var top = (screen.height / 2) - (h / 2);
+            var wnd = window.open(url, '_blank', 'height=' + h + ',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
+
+            var recheck = function () {
+                countDown--;
+                if (countDown > 0 && ft == scope.oauth_create_token) {
+                    $http.jsonp('https://api.duplicati.net/api/open/aliyundrive/token' + '?callback=JSON_CALLBACK', { params: { 'state': ft } }).then(
+                        function (response) {
+                            if (response.data) {
+                                scope.aliyundrive_authorization_code = response.data;
+                                scope.oauth_in_progress = false;
+                                wnd.close();
+                            } else {
+                                setTimeout(recheck, 1000);
+                            }
+                        },
+                        function (response) {
+                            setTimeout(recheck, 1000);
+                        }
+                    );
+                } else {
+                    scope.oauth_in_progress = false;
+                    if (wnd != null)
+                        wnd.close();
+                }
+            };
+
+            setTimeout(recheck, 6000);
+
+            return false;
+        };
+    };
+  
   
     EditUriBackendConfig.loaders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['onedrive']    = function() { return this['oauth-base'].apply(this, arguments); };
@@ -645,6 +698,17 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.baidunetdisk_blocksize = options['--baidunetdisk-blocksize'];
 
         var nukeopts = ['--baidunetdisk-authorization-code', '--baidunetdisk-blocksize'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+
+        EditUriBackendConfig.mergeServerAndPath(scope);
+    }
+	
+    EditUriBackendConfig.parsers['aliyundrive'] = function (scope, module, server, port, path, options) {
+        if (options['--aliyundrive-authorization-code'])
+            scope.aliyundrive_authorization_code = options['--aliyundrive-authorization-code'];
+
+        var nukeopts = ['--aliyundrive-authorization-code'];
         for (var x in nukeopts)
             delete options[nukeopts[x]];
 
@@ -994,6 +1058,22 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         return url;
     }
 
+    EditUriBackendConfig.builders['aliyundrive'] = function (scope) {
+        var opts = {
+            'aliyundrive-authorization-code': scope.aliyundrive_authorization_code
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    }
+	
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))
             continuation();
@@ -1374,6 +1454,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'baidunetdisk_authorization_code', gettextCatalog.getString('baidunetdisk_authorization_code')) &&
             EditUriBackendConfig.require_field(scope, 'baidunetdisk_blocksize', gettextCatalog.getString('baidunetdisk_blocksize'));
 
+        if (res)
+            continuation();
+    };
+	
+    EditUriBackendConfig.validaters['aliyundrive'] = function (scope, continuation) {
+        var res = EditUriBackendConfig.require_field(scope, 'aliyundrive_authorization_code', gettextCatalog.getString('aliyundrive_authorization_code'));
         if (res)
             continuation();
     };
