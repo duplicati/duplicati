@@ -6,14 +6,14 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string DisplayName { get { return LC.L(@"Baidu Netdisk"); } }
 
-        public static string Description { get { return LC.L(@"百度网盘为您提供文件的网络备份、同步和分享服务。空间大、速度快、安全稳固，支持教育网加速，支持手机端。现在注册即有机会享受2TB的免费存储空间。至2021年，百度网盘8年来，市场份额超过85%，坐拥7亿注册用户。"); } }
+        public static string Description { get { return LC.L(@"Baidu Web disk provides you with network backup, synchronization and sharing of files. Large space, fast speed, safe and stable, support education network acceleration, support mobile terminal. Sign up now for a chance to enjoy 2TB of free storage. By 2021, Baidu online disk for eight years, the market share of more than 85%, with 700 million registered users."); } }
 
-        public static string BaiduNetdiskAccountDescriptionShort { get { return LC.L(@"授权码"); } }
+        public static string BaiduNetdiskAccountDescriptionShort { get { return LC.L(@"Authorization Code"); } }
 
-        public static string BaiduNetdiskAccountDescriptionLong { get { return LC.L(@"百度云授权码，请通过上方链接获取授权。"); } }
+        public static string BaiduNetdiskAccountDescriptionLong { get { return LC.L(@"Baidu Netdisk authorization code, please obtain authorization through the link above."); } }
 
-        public static string BaiduNetdiskBlockSizeDescriptionShort { get { return LC.L(@"单个分片大小"); } }
+        public static string BaiduNetdiskBlockSizeDescriptionShort { get { return LC.L(@"Block Size"); } }
 
-        public static string BaiduNetdiskBlockSizeDescriptionLong { get { return LC.L(@"普通用户单个分片大小固定为4MB，单文件总大小上限为4G；普通会员用户单个分片大小上限为16MB，单文件总大小上限为10G；超级会员用户单个分片大小上限为32MB，单文件总大小上限为20G。"); } }
+        public static string BaiduNetdiskBlockSizeDescriptionLong { get { return LC.L(@"For common users, the size of a single fragment is fixed at 4MB, and the maximum size of a single file is 4G. The maximum size of a single fragment for ordinary members is 16MB and the maximum size of a single file is 10G. The maximum size of a single fragment for Super Member users is 32MB and the maximum size of a single file is 20GB."); } }
     }
 }

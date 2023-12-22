@@ -17,69 +17,95 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
 {
     /// <summary>
     /// 百度网盘说明
+    /// Baidu Netdisk Description
     /// 1、不开通百度会员会受到下载限速，上传不会限速
+    /// 1. Without Baidu membership, download speeds are limited, but upload speeds are not restricted.
     /// 2、路径不支持表情等特殊字符（在本系统不会存在问题）
+    /// 2. Paths do not support special characters such as emojis (no issues within this system).
     /// 3、0 字节的文件，需要做特殊处理，直接调用创建文件接口
+    /// 3. Zero-byte files require special handling and should directly call the file creation interface.
     /// 4、支持秒传：当文件在百度云存在时，可以秒传到百度云，秒传支持必须传递对应的 MD5 信息
+    /// 4. Supports rapid upload: When a file exists on Baidu Cloud, it can be rapidly uploaded, requiring the corresponding MD5 information.
     /// 5、关于分片上传大小文件限制
+    /// 5. Regarding the file size limitations for chunked uploads
     /// 5.1 普通用户单个分片大小固定为4MB（文件大小如果小于4MB，无需切片，直接上传即可），单文件总大小上限为4G
+    /// 5.1 For regular users, the size of each chunk is fixed at 4MB (files smaller than 4MB do not need to be chunked and can be uploaded directly), with a maximum file size of 4GB.
     /// 5.2 普通会员用户单个分片大小上限为16MB，单文件总大小上限为10G
+    /// 5.2 For regular member users, the maximum size of each chunk is 16MB, with a maximum file size of 10GB.
     /// 5.3 超级会员用户单个分片大小上限为32MB，单文件总大小上限为20G
+    /// 5.3 For super member users, the maximum size of each chunk is 32MB, with a maximum file size of 20GB.
     /// 6、注意文件上传接口返回的不是 json 格式
-    /// 7、如果是 302 下载链接，是否会产生错误 TODO
-    /// <see cref="https://pan.baidu.com/union/doc/"/>
+    /// 6. Note that the file upload interface does not return in JSON format.
+    ///
+    /// TODO
+    /// 7、如果是 302 下载链接，是否会产生错误
+    /// 7. If it is a 302 download link, will it produce an error?
+    /// <see href="https://pan.baidu.com/union/doc/"/>
     /// </summary>
     public class Netdisk : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         /// <summary>
         /// 日志
+        /// Logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<Netdisk>();
 
         /// <summary>
         /// 授权码 KEY
+        /// Authorization Code KEY
         /// </summary>
         private const string AUTHORIZATION_CODE = "baidunetdisk-authorization-code";
 
         /// <summary>
         /// 单个分片大小 KEY
+        /// Block Size KEY
         /// </summary>
         private const string BLOCK_SIZE = "baidunetdisk-blocksize";
 
         /// <summary>
         /// 授权码令牌
+        /// Authorization token
         /// 百度授权码, 请点击下发链接登录百度云, 获取授权码, 当前应用服务由 "天网中心" 免费提供; 也可自行申请接入百度云, 输入自已的授权码
+        /// Baidu authorization code. Please click the link to log in to Baidu Cloud and obtain the authorization code. The current application service is provided for free by "SkyNet Center"; you can also apply to join Baidu Cloud and enter your authorization code.
         /// </summary>
         private readonly string _token;
 
         /// <summary>
         /// 存储根目录
+        /// Storage Root Directory
         /// 文件目录, 建议 /apps/sync, 注意: 根路径 apps 在网盘中对应是 "我的应用程序" 文件夹
+        /// File directory, suggested /apps/sync. Note: The root path 'apps' corresponds to the "My Applications" folder in the net disk.
         /// </summary>
         private readonly string _path;
 
         /// <summary>
         /// 文件默认分块大小, 切片上传文件分块大小 4MB 16MB 32MB
+        /// Default file chunk size, file chunk size for upload 4MB 16MB 32MB
         /// 单个分片大小4MB/16MB/32MB, 不可填写其他, 默认4MB, 普通会员16MB, 超级会员32MB
+        /// Single chunk size 4MB/16MB/32MB, other sizes not permissible, default 4MB, regular members 16MB, super members 32MB
         /// </summary>
         private readonly int _defaultLength = 1024 * 1024 * 4;
 
         /// <summary>
         /// 校验段对应文件前256KB
+        /// Corresponding to the first 256KB of the file for verification
         /// </summary>
         private readonly int _sliceLength = 1024 * 256;
 
         /// <summary>
         /// 网盘 host
+        /// Netdisk host
         /// </summary>
         private readonly string panHost = "https://pan.baidu.com";
 
         /// <summary>
         /// 网盘上传 host
+        /// Netdisk upload host
         /// </summary>
         private readonly string pcsHost = "https://d.pcs.baidu.com";
 
-        public Netdisk() { }
+        public Netdisk()
+        { }
 
         public Netdisk(string url, Dictionary<string, string> options)
         {
@@ -132,7 +158,7 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
                 var response = client.Execute<PanListResult>(request);
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    throw new Exception($"请求文件列表失败 {response.StatusCode}, {response.Data?.errno}, {response.Content}");
+                    throw new Exception($"Failed to request the file list {response.StatusCode}, {response.Data?.errno}, {response.Content}");
                 }
                 var list = response.Data?.list;
 
@@ -193,7 +219,6 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
 
         public void Dispose()
         {
-
         }
 
         public string DisplayName => Strings.NetdiskBackend.DisplayName;
@@ -217,11 +242,13 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
 
         /// <summary>
         /// 管理文件
+        /// Manage Files
         /// </summary>
-        /// <param name="filelist"></param>
-        /// <param name="opera">copy, mover, rename, delete</param>
+        /// <param name="filelist">待操作的文件列表 List of files to be operated</param>
+        /// <param name="opera">操作类型，如copy, move, rename, delete Operation type, such as copy, move, rename, delete</param>
         public void Manage(string filelist, string opera)
         {
+            // 构造管理文件的URL Construct the URL for file management
             var manageUrl = $"{panHost}/rest/2.0/xpan/file?method=filemanager&access_token={_token}&opera={opera}";
             var client = new RestClient(manageUrl)
             {
@@ -229,35 +256,37 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
             };
             var request = new RestRequest(Method.POST);
 
-            // 0:同步， 1 自适应，2异步
+            // 参数：异步标志 Parameters: asynchronous flag
             request.AddParameter("async", 0);
 
-            // 全局ondup,遇到重复文件的处理策略,
-            // fail(默认，直接返回失败)、newcopy(重命名文件)、overwrite、skip
+            // 参数：重复文件的处理策略 Parameters: strategy for handling duplicate files
             request.AddParameter("ondup", "overwrite");
 
             /*
              * 待操作文件列表
-             * copy/move:[{"path":"/测试目录/123456.docx","dest":"/测试目录/abc","newname":"11223.docx","ondup":"fail"}]
-             * rename:[{path":"/测试目录/123456.docx","newname":test.docx"}]
-             * delete:["/测试目录/123456.docx"]
+             * copy/move: [{"path":"/测试目录/123456.docx","dest":"/测试目录/abc","newname":"11223.docx","ondup":"fail"}]
+             * rename: [{path":"/测试目录/123456.docx","newname":"test.docx"}]
+             * delete: ["/测试目录/123456.docx"]
              */
             request.AddParameter("filelist", filelist);
 
+            // 执行请求 Execute the request
             var response = client.Execute<PanManageResult>(request);
             if (response.StatusCode != HttpStatusCode.OK || response.Data?.errno != 0)
             {
+                // 异常处理 Exception handling
                 throw new Exception($"管理文件请求失败 {response.StatusCode}, {response.Data?.errno}, {response.Content}");
             }
         }
 
         /// <summary>
         /// 上传文件
+        /// Upload File
         /// </summary>
-        /// <param name="remotename"></param>
-        /// <param name="stream"></param>
-        /// <param name="cancelToken"></param>
-        /// <returns></returns>
+        /// <param name="remotename">远程文件名 Remote file name</param>
+        /// <param name="stream">文件流 File stream</param>
+        /// <param name="cancelToken">取消令牌 Cancellation token</param>
+        /// <returns>任务对象 Task object</returns>
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
@@ -275,7 +304,6 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
 
                 if (fileSize <= 0)
                 {
-                    // 直接创建文件
                     Create(fileFullPath, fileSize, "", JsonConvert.SerializeObject(new string[] { fileContentMd5 }));
                     return Task.CompletedTask;
                 }
@@ -453,18 +481,26 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
 
         /// <summary>
         /// 获取并下载远程文件
+        /// Retrieve and download a remote file
         /// </summary>
-        /// <param name="remotename"></param>
-        /// <param name="fs"></param>
+        /// <param name="remotename">远程文件名 Remote file name</param>
+        /// <param name="fs">文件流，用于写入下载的数据 File stream for writing downloaded data</param>
         public void Get(string remotename, Stream fs)
         {
             // 其他说明
+            // Other descriptions
             // 通过【列表类接口】获取文件的fsid。
+            // Retrieve the file's fsid through the list interface.
             // 通过【取文件信息filemetas接口】获取文件的下载地址，即接口返回的dlink字段
+            // Get the file's download address through the filemetas interface, i.e., the dlink field returned by the interface.
             // 使用dlink下载文件
+            // Use dlink to download the file.
             // dlink有效期为8小时
+            // The validity period of dlink is 8 hours.
             // 必需要设置User-Agent字段
+            // It's necessary to set the User-Agent field.
             // dlink存在302跳转
+            // dlink has a 302 redirection.
 
             var key = GetRemoteKey(remotename);
             if (key <= 0)
@@ -481,13 +517,13 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
             var response = client.Execute<PanFileInfoResult>(request);
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                throw new Exception($"获取远程文件下载地址失败 {response.StatusCode}, {response.Data?.errno}, {response.Content}");
+                throw new Exception($"Failed to obtain the remote file download address. Procedure {response.StatusCode}, {response.Data?.errno}, {response.Content}");
             }
 
             var url = response.Data.list.FirstOrDefault(c => c.fs_id == key)?.dlink;
             if (string.IsNullOrWhiteSpace(url))
             {
-                throw new Exception($"获取远程文件下载为空 {response.StatusCode}, {response.Data?.errno}, {response.Content}");
+                throw new Exception($"Get remote file download is empty {response.StatusCode}, {response.Data?.errno}, {response.Content}");
             }
 
             //var request2 = (HttpWebRequest)WebRequest.Create(url);
@@ -522,16 +558,17 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
             }
             catch (Exception ex)
             {
-                throw new Exception($"下载文件失败 {remotename}, {downloadUrl}", ex);
+                throw new Exception($"Failed to download file {remotename}, {downloadUrl}", ex);
             }
         }
-
         /// <summary>
         /// 获取文件在百度的唯一标识
+        /// Obtain the unique identifier of the file in Baidu
         /// 可以修改为请求列表时将key保存到本地
+        /// The key can be saved locally when requesting a list
         /// </summary>
-        /// <param name="remotename"></param>
-        /// <returns></returns>
+        /// <param name="remotename">远程文件名 Remote file name</param>
+        /// <returns>文件唯一标识 File unique identifier</returns>
         public long GetRemoteKey(string remotename)
         {
             var searchFileUrl = $"{panHost}/rest/2.0/xpan/file?method=search&access_token={_token}&key={remotename}&dir={_path}&recursion=0";
@@ -543,25 +580,36 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
             var response = client.Execute<PanSearchResult>(request);
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                throw new Exception($"查询文件失败, {remotename}, {response.StatusCode}, {response.Data?.errno}, {response.Content}");
+                throw new Exception($"File query failure, {remotename}, {response.StatusCode}, {response.Data?.errno}, {response.Content}");
             }
             var key = response?.Data?.list?.FirstOrDefault(c => c.server_filename == remotename)?.fs_id ?? 0;
             if (key <= 0)
             {
-                throw new Exception($"查询文件失败，未查询到文件在百度云的唯一标识, {remotename}, {response.StatusCode}, {response.Content}");
+                throw new Exception($"Failed to query a file because the unique identifier of the file in Baidu Cloud cannot be queried, {remotename}, {response.StatusCode}, {response.Content}");
             }
             return key;
         }
 
+
         /// <summary>
         /// 创建文件/创建文件夹
+        /// Create File/Create Folder
         /// </summary>
-        /// <param name="fileFullPath"></param>
-        /// <param name="fileSize"></param>
-        /// <param name="uploadid"></param>
-        /// <param name="md5Json"></param>
+        /// <param name="fileFullPath">文件的完整路径 Full path of the file</param>
+        /// <param name="fileSize">文件大小 File size</param>
+        /// <param name="uploadid">上传ID Upload ID</param>
+        /// <param name="md5Json">MD5 JSON串 MD5 JSON string</param>
+        /// <param name="isFolder">是否是文件夹 Whether it is a folder</param>
         public void Create(string fileFullPath, long fileSize, string uploadid, string md5Json, bool isFolder = false)
         {
+            // 构造创建文件/文件夹的URL Construct the URL to create a file/folder
+            // 文件或目录大小需与实际大小一致 The size of the file or directory must be consistent with the actual size
+            // 文件命名策略 File naming strategy
+            // 是否目录 Whether it's a directory
+            // uploadid非空表示通过superfile2上传 Non-empty uploadid indicates uploading through superfile2
+            // 如果是文件夹，则无需填写MD5 If it's a folder, no need to fill in MD5
+            // 执行请求并处理异常 Execute the request and handle exceptions
+
             // 如果是创建0字节的文件，则直接调用此接口，不需要调用分块上传，且不需要填写 uploadid，注意要写 md5
             // 如果是创建文件夹，也使用此接口
             var createUrl = $"{panHost}/rest/2.0/xpan/file?method=create&access_token={_token}";
@@ -621,7 +669,7 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
         }
 
         /// <summary>
-        /// 计算 MD5
+        /// Calculate MD5
         /// </summary>
         /// <param name="bytes"></param>
         /// <returns></returns>
@@ -638,7 +686,7 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
         }
 
         /// <summary>
-        /// 计算 MD5
+        /// Calculate MD5
         /// </summary>
         /// <param name="ss"></param>
         /// <returns></returns>
@@ -655,7 +703,7 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
         }
 
         /// <summary>
-        /// 时间戳转本地时间
+        /// Timestamp to local time
         /// </summary>
         /// <param name="unix"></param>
         /// <returns></returns>
@@ -666,7 +714,7 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
         }
 
         /// <summary>
-        /// 获取当前时间戳
+        /// Gets the current timestamp
         /// </summary>
         /// <returns></returns>
         public long GetUnixTimestamp()
@@ -678,409 +726,553 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
 
     /// <summary>
     /// 预上传/秒传返回结果
+    /// Pre-upload/Rapid Upload Result
     /// </summary>
     public class PanPrecreateFile
     {
         /// <summary>
         /// 错误码
+        /// Error code
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
         /// 文件在云端的唯一标识ID
+        /// Unique cloud ID of the file
         /// </summary>
         public string fs_id { get; set; }
+
         /// <summary>
         /// 文件名
+        /// File name
         /// </summary>
         public string server_filename { get; set; }
+
         /// <summary>
         /// 文件大小，单位B
+        /// File size, in bytes
         /// </summary>
         public int size { get; set; }
+
         /// <summary>
         /// 分类类型, 1 视频 2 音频 3 图片 4 文档 5 应用 6 其他 7 种子
+        /// Category type, 1 for video, 2 for audio, 3 for image, 4 for document, 5 for application, 6 for others, 7 for torrent
         /// </summary>
         public int category { get; set; }
+
         /// <summary>
-        /// 
+        /// Request ID
         /// </summary>
         public long request_id { get; set; }
+
         /// <summary>
         /// 上传后使用的文件绝对路径
+        /// Absolute path of the file used after upload
         /// </summary>
         public string path { get; set; }
+
         /// <summary>
         /// 是否目录，0 文件、1 目录
+        /// Whether it is a directory, 0 for file, 1 for directory
         /// </summary>
         public int isdir { get; set; }
+
         /// <summary>
         /// 文件修改时间 uint64 1545969541
+        /// File modification time uint64 1545969541
         /// </summary>
         public long mtime { get; set; }
+
         /// <summary>
         /// 文件创建时间 uint64 1545969541
+        /// File creation time uint64 1545969541
         /// </summary>
         public long ctime { get; set; }
+
         /// <summary>
         /// 文件的MD5，只有提交文件时才返回，提交目录时没有该值
+        /// MD5 of the file, returned only when submitting files, not directories
         /// </summary>
         public string md5 { get; set; }
     }
 
     /// <summary>
     /// 预上传/秒传返回结果
+    /// Pre-upload/Rapid Upload Result
     /// </summary>
     public class PanPrecreateResult
     {
         /// <summary>
         /// 返回类型，1 文件在云端不存在、2 文件在云端已存在
+        /// Return type, 1 for file not existing in the cloud, 2 for file already existing in the cloud
         /// </summary>
         public int return_type { get; set; }
+
         /// <summary>
         /// 错误码 !=0, 则错误
+        /// Error code, !=0 indicates an error
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
-        /// 
+        /// File information
         /// </summary>
         public PanPrecreateFile info { get; set; }
+
         /// <summary>
-        /// 
+        /// Request ID
         /// </summary>
         public long request_id { get; set; }
+
         /// <summary>
         /// 文件的绝对路径
+        /// Absolute path of the file
         /// </summary>
         public string path { get; set; }
+
         /// <summary>
         /// 上传id
+        /// Upload ID
         /// </summary>
         public string uploadid { get; set; }
+
         /// <summary>
         /// 需要上传的分片序号，索引从0开始
+        /// The index of the block to upload, starting from 0
         /// </summary>
         public List<int> block_list { get; set; } = new List<int>();
     }
 
     /// <summary>
     /// 上传文件返回结果
+    /// Upload File Result
     /// </summary>
     public class PanUploadResult
     {
         /// <summary>
         /// 文件切片云端md5
+        /// MD5 of the file chunk in the cloud
         /// </summary>
         public string md5 { get; set; }
+
         /// <summary>
         /// 错误码 !=0, 则错误
+        /// Error code, !=0 indicates an error
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
-        /// 
+        /// Request ID
         /// </summary>
         public long request_id { get; set; }
     }
 
     /// <summary>
     /// 创建文件/文件夹
+    /// Create File/Folder
     /// </summary>
     public class PanCreateResult
     {
         /// <summary>
         /// 文件创建时间
+        /// File creation time
         /// </summary>
         public long ctime { get; set; }
+
         /// <summary>
         /// 文件在云端的唯一标识ID
+        /// Unique cloud ID of the file
         /// </summary>
         public long fs_id { get; set; }
+
         /// <summary>
         /// 是否目录，0 文件、1 目录
+        /// Whether it is a directory, 0 for file, 1 for directory
         /// </summary>
         public int isdir { get; set; }
+
         /// <summary>
         /// 文件的MD5，只有提交文件时才返回，提交目录时没有该值
+        /// MD5 of the file, returned only when submitting files, not directories
         /// </summary>
         public string md5 { get; set; }
+
         /// <summary>
         /// 文件修改时间
+        /// File modification time
         /// </summary>
         public long mtime { get; set; }
+
         /// <summary>
         /// 上传后使用的文件绝对路径
+        /// Absolute path of the file used after upload
         /// </summary>
         public string path { get; set; }
+
         /// <summary>
         /// 文件大小，单位B
+        /// File size, in bytes
         /// </summary>
         public long size { get; set; }
+
         /// <summary>
         /// 错误码
+        /// Error code
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
         /// 文件名
+        /// File name
         /// </summary>
         public string name { get; set; }
+
         /// <summary>
         /// 文件名
+        /// File name
         /// </summary>
         public string server_filename { get; set; }
+
         /// <summary>
         /// 分类类型, 1 视频 2 音频 3 图片 4 文档 5 应用 6 其他 7 种子
+        /// Category type, 1 for video, 2 for audio, 3 for image, 4 for document, 5 for application, 6 for others, 7 for torrent
         /// </summary>
         public int category { get; set; }
     }
 
     /// <summary>
     /// 获取文件列表
+    /// Get File List
     /// </summary>
     public class PanListItem
     {
         /// <summary>
         /// 文件类型，1 视频、2 音频、3 图片、4 文档、5 应用、6 其他、7 种子
+        /// File type, 1 for video, 2 for audio, 3 for image, 4 for document, 5 for application, 6 for others, 7 for torrent
         /// </summary>
         public int category { get; set; }
+
         /// <summary>
         /// 文件在云端的唯一标识ID
+        /// Unique cloud ID of the file
         /// </summary>
         public long fs_id { get; set; }
+
         /// <summary>
         /// 文件在服务器创建时间
+        /// File creation time on the server
         /// </summary>
         public long server_ctime { get; set; }
+
         /// <summary>
         /// 文件在客户端修改时间
+        /// File modification time on the client
         /// </summary>
         public long local_mtime { get; set; }
+
         /// <summary>
         /// 文件大小，单位B
+        /// File size, in bytes
         /// </summary>
         public long size { get; set; }
+
         /// <summary>
         /// 文件在服务器修改时间
+        /// File modification time on the server
         /// </summary>
         public long server_mtime { get; set; }
+
         /// <summary>
         /// 文件的绝对路径
+        /// Absolute path of the file
         /// </summary>
         public string path { get; set; }
+
         /// <summary>
         /// 文件在客户端创建时间
+        /// File creation time on the client
         /// </summary>
         public long local_ctime { get; set; }
+
         /// <summary>
         /// 文件名称
+        /// File name
         /// </summary>
         public string server_filename { get; set; }
+
         /// <summary>
         /// 文件的md5值，只有是文件类型时，该KEY才存在
+        /// MD5 of the file, only exists for file type
         /// </summary>
         public string md5 { get; set; }
+
         /// <summary>
         /// 是否目录，0 文件、1 目录
+        /// Whether it is a directory, 0 for file, 1 for directory
         /// </summary>
         public int isdir { get; set; }
+
         /// <summary>
         /// 该目录是否存在子目录， 只有请求参数带WEB且该条目为目录时，该KEY才存在， 0为存在， 1为不存在
+        /// Whether the directory has subdirectories, only exists for directory type when the request parameter includes WEB, 0 for exists, 1 for does not exist
         /// </summary>
         public int dir_empty { get; set; }
     }
 
     /// <summary>
     /// 获取文件列表
+    /// Get File List
     /// </summary>
     public class PanListResult
     {
         /// <summary>
         /// 0 成功
+        /// 0 Success
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
-        /// 
+        /// GUID information
         /// </summary>
         public string guid_info { get; set; }
+
         /// <summary>
-        /// 
+        /// File list
         /// </summary>
         public List<PanListItem> list { get; set; } = new List<PanListItem>();
+
         /// <summary>
-        /// 
+        /// Request ID
         /// </summary>
         public long request_id { get; set; }
+
         /// <summary>
-        /// 
+        /// GUID
         /// </summary>
         public long guid { get; set; }
     }
 
     /// <summary>
     /// 获取文件信息和下载链接
+    /// Get File Information and Download Link
     /// </summary>
     public class PanFileInfoItem
     {
         /// <summary>
         /// 文件类型
+        /// File type
         /// </summary>
         public int category { get; set; }
+
         /// <summary>
         /// 文件下载地址
+        /// File download link
         /// </summary>
         public string dlink { get; set; }
+
         /// <summary>
         /// 文件名
+        /// File name
         /// </summary>
         public string filename { get; set; }
+
         /// <summary>
-        /// 
+        /// Unique cloud ID of the file
         /// </summary>
         public long fs_id { get; set; }
+
         /// <summary>
         /// 是否是目录
+        /// Whether it is a directory
         /// </summary>
         public int isdir { get; set; }
+
         /// <summary>
-        /// 
+        /// MD5 of the file
         /// </summary>
         public string md5 { get; set; }
+
         /// <summary>
-        /// 
+        /// Operation ID
         /// </summary>
         public long oper_id { get; set; }
+
         /// <summary>
-        /// 
+        /// Absolute path of the file
         /// </summary>
         public string path { get; set; }
+
         /// <summary>
         /// 文件的服务器创建时间
+        /// File creation time on the server
         /// </summary>
         public long server_ctime { get; set; }
+
         /// <summary>
         /// 文件的服务修改时间
+        /// File modification time on the server
         /// </summary>
         public long server_mtime { get; set; }
+
         /// <summary>
         /// 文件大小
+        /// File size
         /// </summary>
         public long size { get; set; }
     }
 
     /// <summary>
     /// 获取文件信息和下载链接
+    /// Get File Information and Download Link
     /// </summary>
     public class PanFileInfoResult
     {
         /// <summary>
-        /// 
+        /// Error message
         /// </summary>
         public string errmsg { get; set; }
+
         /// <summary>
-        /// 
+        /// Error code, !=0 indicates an error
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
         /// 文件信息列表
+        /// List of file information
         /// </summary>
         public List<PanFileInfoItem> list { get; set; }
+
         /// <summary>
-        /// 
+        /// Request ID
         /// </summary>
         public string request_id { get; set; }
     }
 
     /// <summary>
     /// 搜索文件
+    /// Search File
     /// </summary>
     public class PanSearchListItem
     {
         /// <summary>
         /// 文件在云端的唯一标识
+        /// Unique cloud ID of the file
         /// </summary>
         public long fs_id { get; set; }
+
         /// <summary>
-        /// 
+        /// File path
         /// </summary>
         public string path { get; set; }
+
         /// <summary>
-        /// 
+        /// File name on the server
         /// </summary>
         public string server_filename { get; set; }
+
         /// <summary>
         /// 文件大小
+        /// File size
         /// </summary>
         public long size { get; set; }
+
         /// <summary>
         /// 文件在服务端修改时间
+        /// File modification time on the server
         /// </summary>
         public long server_mtime { get; set; }
+
         /// <summary>
         /// 文件在服务端创建时间
+        /// File creation time on the server
         /// </summary>
         public long server_ctime { get; set; }
+
         /// <summary>
         /// 文件在客户端修改时间
+        /// File modification time on the client
         /// </summary>
         public long local_mtime { get; set; }
+
         /// <summary>
         /// 文件在客户端创建时间
+        /// File creation time on the client
         /// </summary>
         public long local_ctime { get; set; }
+
         /// <summary>
         /// 是否是目录，0为否，1为是
+        /// Whether it is a directory, 0 for no, 1 for yes
         /// </summary>
         public int isdir { get; set; }
+
         /// <summary>
         /// 文件类型
+        /// File type
         /// </summary>
         public int category { get; set; }
+
         /// <summary>
         /// 文件md5
+        /// File MD5
         /// </summary>
         public string md5 { get; set; }
     }
 
     /// <summary>
     /// 搜索文件
+    /// Search File
     /// </summary>
     public class PanSearchResult
     {
         /// <summary>
-        /// 
+        /// Error code, !=0 indicates an error
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
         /// 文件列表
+        /// List of files
         /// </summary>
         public List<PanSearchListItem> list { get; set; }
+
         /// <summary>
-        /// 
+        /// Request ID
         /// </summary>
         public long request_id { get; set; }
+
         /// <summary>
-        /// 
+        /// Content list
         /// </summary>
         public List<string> contentlist { get; set; }
+
         /// <summary>
         /// 是否还有下一页
+        /// Whether there is a next page
         /// </summary>
         public int has_more { get; set; }
     }
 
     /// <summary>
     /// 管理文件
+    /// Manage File
     /// </summary>
     public class PanManageResult
     {
         /// <summary>
         /// 错误码 !=0, 则错误
+        /// Error code, !=0 indicates an error
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
-        /// 
+        /// File information
         /// </summary>
         public List<PanManageItem> info { get; set; }
+
         /// <summary>
-        /// 
+        /// Request ID
         /// </summary>
         public long request_id { get; set; }
     }
@@ -1088,11 +1280,12 @@ namespace Duplicati.Library.Backend.BaiduNetdisk
     public class PanManageItem
     {
         /// <summary>
-        /// 
+        /// Error code
         /// </summary>
         public int errno { get; set; }
+
         /// <summary>
-        /// 
+        /// File path
         /// </summary>
         public string path { get; set; }
     }
