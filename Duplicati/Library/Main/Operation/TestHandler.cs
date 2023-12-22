@@ -189,7 +189,9 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_results.EndTime = DateTime.UtcNow;
-            var filtered = from n in m_results.Verifications where n.Value.Any() select n;
+            // generate a backup error status when any test is failing - except for 'extra' status
+            // because these problems don't block database rebuilding.
+            var filtered = from n in m_results.Verifications where n.Value.Any(x => x.Key != TestEntryStatus.Extra) select n;
             if (!filtered.Any())
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "Test results", "Successfully verified {0} remote files", m_results.VerificationsActualLength);
