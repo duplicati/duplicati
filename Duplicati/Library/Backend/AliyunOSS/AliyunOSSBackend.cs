@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 namespace Duplicati.Library.Backend.AliyunOSS
 {
     /// <summary>
+    /// Aliyun Object Storage Service(OSS) is a massive, secure, low-cost, and highly reliable cloud storage service, offering up to 99.995% service availability.It offers a variety of storage types to choose from, comprehensively optimizing storage costs.
     /// 阿里云对象存储 OSS（Object Storage Service）是一款海量、安全、低成本、高可靠的云存储服务，提供最高可达 99.995 % 的服务可用性。多种存储类型供选择，全面优化存储成本。
     /// en: https://www.alibabacloud.com/zh/product/object-storage-service
     /// zh: https://www.aliyun.com/product/oss
@@ -91,23 +92,21 @@ namespace Duplicati.Library.Backend.AliyunOSS
             });
         }
 
-        private Client GetClienV2()
-        {
-            return new Client(new AlibabaCloud.OpenApiClient.Models.Config()
-            {
-                AccessKeyId = _ossOptions.AccessKeyId,
-                AccessKeySecret = _ossOptions.AccessKeySecret,
-                Endpoint = _ossOptions.Endpoint,
-                RegionId = _ossOptions.Region
-            });
-        }
+        //private Client GetClienV2()
+        //{
+        //    return new Client(new AlibabaCloud.OpenApiClient.Models.Config()
+        //    {
+        //        AccessKeyId = _ossOptions.AccessKeyId,
+        //        AccessKeySecret = _ossOptions.AccessKeySecret,
+        //        Endpoint = _ossOptions.Endpoint,
+        //        RegionId = _ossOptions.Region
+        //    });
+        //}
 
         public IEnumerable<IFileEntry> List()
         {
-            // 填写Bucket名称，例如examplebucket。
             var bucketName = _ossOptions.BucketName;
 
-            // 列举包含指定前缀的文件。
             var prefix = $"{_ossOptions.Path.TrimPath()}";
 
             var client = new Client(new AlibabaCloud.OpenApiClient.Models.Config()
@@ -224,11 +223,10 @@ namespace Duplicati.Library.Backend.AliyunOSS
             var client = GetClient();
             try
             {
-                // 上传文件。
                 var objectResult = client.PutObject(bucketName, objectName, stream);
                 if (objectResult?.HttpStatusCode != HttpStatusCode.OK)
                 {
-                    throw new Exception("文件上传保存失败");
+                    throw new Exception("Put object failed");
                 }
             }
             catch (Exception ex)
@@ -299,25 +297,23 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
             var targetBucket = bucketName;
 
-            // 填写源Object的完整路径，完整路径中不能包含Bucket名称，例如srcdir/scrobject.txt。
             var sourceObject = $"{_ossOptions.Path.TrimPath()}/{oldname}".TrimPath();
 
-            // 填写目标Object的完整路径，完整路径中不能包含Bucket名称，例如destdir/destobject.txt。
             var targetObject = $"{_ossOptions.Path.TrimPath()}/{newname}".TrimPath();
 
             var client = GetClient();
 
             try
             {
-                // 拷贝文件。
+                // copy file
                 var req = new CopyObjectRequest(sourceBucket, sourceObject, targetBucket, targetObject);
                 var res = client.CopyObject(req);
                 if (res?.HttpStatusCode != HttpStatusCode.OK)
                 {
-                    throw new Exception("文件重命名失败");
+                    throw new Exception("file rename failed");
                 }
 
-                // 删除旧的文件
+                // del old file
                 Delete(oldname);
             }
             catch (OssException ex)
