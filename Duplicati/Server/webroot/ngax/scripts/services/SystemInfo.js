@@ -78,7 +78,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
 				'rclone': null,
                 'cos': null,
                 'baidunetdisk': null,
-				'aliyundrive': null
+				'aliyundrive': null,
+				'aliyunoss': null
             }
         };
 

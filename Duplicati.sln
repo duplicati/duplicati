@@ -109,6 +109,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.BaiduNetdisk", "Duplicati\Library\Backend\BaiduNetdisk\Duplicati.Library.Backend.BaiduNetdisk.csproj", "{34F9EF08-E3DE-427E-8A54-985F8A572032}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AliyunDrive", "Duplicati\Library\Backend\AliyunDrive\Duplicati.Library.Backend.AliyunDrive.csproj", "{7270617A-4793-4560-B084-BBA433CB5D9E}"
 EndProject
 Global
@@ -329,6 +331,10 @@ Global
 		{34F9EF08-E3DE-427E-8A54-985F8A572032}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34F9EF08-E3DE-427E-8A54-985F8A572032}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34F9EF08-E3DE-427E-8A54-985F8A572032}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7270617A-4793-4560-B084-BBA433CB5D9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7270617A-4793-4560-B084-BBA433CB5D9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7270617A-4793-4560-B084-BBA433CB5D9E}.Release|Any CPU.ActiveCfg = Release|Any CPU

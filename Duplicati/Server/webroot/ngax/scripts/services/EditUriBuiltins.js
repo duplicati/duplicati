@@ -35,6 +35,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['cos'] = 'templates/backends/cos.html';
     EditUriBackendConfig.templates['baidunetdisk'] = 'templates/backends/baidunetdisk.html';
     EditUriBackendConfig.templates['aliyundrive'] = 'templates/backends/aliyundrive.html';
+	EditUriBackendConfig.templates['aliyunoss'] = 'templates/backends/aliyunoss.html';
     EditUriBackendConfig.templates['e2'] = 'templates/backends/e2.html';
 
     EditUriBackendConfig.testers['s3'] = function (scope, callback) {
@@ -691,6 +692,25 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         EditUriBackendConfig.mergeServerAndPath(scope);
     }
 
+    EditUriBackendConfig.parsers['aliyunoss'] = function (scope, module, server, port, path, options) {
+        if (options['--oss-endpoint'])
+            scope.oss_endpoint = options['--oss-endpoint'];
+        if (options['--oss-region'])
+            scope.oss_region = options['--oss-region'];
+        if (options['--oss-access-key-id'])
+            scope.oss_access_key_id = options['--oss-access-key-id'];
+        if (options['--oss-access-key-secret'])
+            scope.oss_access_key_secret = options['--oss-access-key-secret'];
+        if (options['--oss-bucket-name'])
+            scope.oss_bucket_name = options['--oss-bucket-name'];
+
+        var nukeopts = ['--oss-endpoint', '--oss-region', '--oss-access-key-id', '--oss-access-key-secret', '--oss-bucket-name'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+
+        EditUriBackendConfig.mergeServerAndPath(scope);
+    }
+	
     EditUriBackendConfig.parsers['baidunetdisk'] = function (scope, module, server, port, path, options) {
         if (options['--baidunetdisk-authorization-code'])
             scope.baidunetdisk_authorization_code = options['--baidunetdisk-authorization-code'];
@@ -1028,6 +1048,26 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             'cos-secret-id': scope.cos_secret_id,
             'cos-secret-key': scope.cos_secret_key,
             'cos-bucket': scope.cos_bucket
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    }
+	
+    EditUriBackendConfig.builders['aliyunoss'] = function (scope) {
+        var opts = {
+            'oss-endpoint': scope.oss_endpoint,
+            'oss-region': scope.oss_region,
+            'oss-access-key-id': scope.oss_access_key_id,
+            'oss-access-key-secret': scope.oss_access_key_secret,
+            'oss-bucket-name': scope.oss_bucket_name
         };
 
         EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
@@ -1400,6 +1440,18 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'cos_secret_key', gettextCatalog.getString('cos_secret_key')) &&
             EditUriBackendConfig.require_field(scope, 'cos_region', gettextCatalog.getString('cos_region')) &&
             EditUriBackendConfig.require_field(scope, 'cos_bucket', gettextCatalog.getString('cos_bucket'));
+
+        if (res)
+            continuation();
+    };
+	
+    EditUriBackendConfig.validaters['aliyunoss'] = function (scope, continuation) {
+        var res =
+            EditUriBackendConfig.require_field(scope, 'oss_endpoint', gettextCatalog.getString('oss_endpoint')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_access_key_id', gettextCatalog.getString('oss_access_key_id')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_access_key_secret', gettextCatalog.getString('oss_access_key_secret')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_region', gettextCatalog.getString('oss_region')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_bucket_name', gettextCatalog.getString('oss_bucket_name'));
 
         if (res)
             continuation();

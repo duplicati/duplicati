@@ -187,6 +187,10 @@
       <Project>{7270617a-4793-4560-b084-bba433cb5d9e}</Project>
       <Name>Duplicati.Library.Backend.AliyunDrive</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj">
+      <Project>{4eb3dabc-d412-4c12-8876-41a1427a389e}</Project>
+      <Name>Duplicati.Library.Backend.AliyunOSS</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\BaiduNetdisk\Duplicati.Library.Backend.BaiduNetdisk.csproj">
       <Project>{34f9ef08-e3de-427e-8a54-985f8a572032}</Project>
       <Name>Duplicati.Library.Backend.BaiduNetdisk</Name>
