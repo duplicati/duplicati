@@ -4,6 +4,7 @@ namespace Duplicati.Library.Backend.AliyunDrive
 {
     /// <summary>
     /// 文件删除
+    /// File Deletion
     /// /adrive/v1.0/openFile/delete
     /// https://www.yuque.com/aliyundrive/zpfszx/get3mkr677pf10ws
     /// </summary>
@@ -11,20 +12,24 @@ namespace Duplicati.Library.Backend.AliyunDrive
     {
         /// <summary>
         /// 云盘 ID
+        /// Cloud Drive ID
         /// </summary>
         [JsonProperty("drive_id")]
         public string DriveId { get; set; }
 
         /// <summary>
         /// 文件 ID
+        /// File ID
         /// </summary>
         [JsonProperty("file_id")]
         public string FileId { get; set; }
 
         /// <summary>
         /// 异步任务id，有的话表示需要经过异步处理。
+        /// Asynchronous task ID, if present, indicates the need for asynchronous processing.
         /// </summary>
         [JsonProperty("async_task_id")]
         public string AsyncTaskId { get; set; }
     }
+
 }

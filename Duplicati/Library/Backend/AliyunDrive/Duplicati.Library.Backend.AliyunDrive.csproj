@@ -96,13 +96,8 @@
     <Compile Include="Models\AliyunDriveOAuthAuthorizeQrCodeResponse.cs" />
     <Compile Include="Models\AliyunDriveOpenFileCreateResponse.cs" />
     <Compile Include="Models\AliyunDriveOpenFileDeleteResponse.cs" />
-    <Compile Include="Models\AliyunDriveSpaceInfo.cs" />
-    <Compile Include="Models\AliyunDriveVipInfo.cs" />
-    <Compile Include="Models\LocalFileInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AliyunDriveHelper.cs" />
-    <Compile Include="Services\FileHelper.cs" />
-    <Compile Include="Services\HashHelper.cs" />
     <Compile Include="Services\ProviderApiHelper.cs" />
     <Compile Include="Strings.cs" />
     <Compile Include="ViewModels\RefreshTokenRequest.cs" />

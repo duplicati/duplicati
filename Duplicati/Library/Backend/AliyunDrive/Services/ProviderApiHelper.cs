@@ -6,23 +6,27 @@ namespace Duplicati.Library.Backend.AliyunDrive
 {
     /// <summary>
     /// 服务商 API
+    /// Service Provider API
     /// </summary>
     public static class ProviderApiHelper
     {
         /// <summary>
         /// 阿里云盘 API
+        /// Aliyun Drive API
         /// </summary>
         public const string ALIYUNDRIVE_API_HOST = "https://openapi.alipan.com";
 
         /// <summary>
         /// DUPLICATI 服务商 API
+        /// DUPLICATI Service Provider API
         /// </summary>
         public const string DUPLICATI_SERVER_API_HOST = "https://api.duplicati.net";
 
         /// <summary>
         /// 获取登录授权二维码
+        /// Get Login Authorization QR Code
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The Aliyun Drive OAuth Authorize QR Code Response.</returns>
         public static AliyunDriveOAuthAuthorizeQrCodeResponse GetAuthQrcode()
         {
             var client = new RestClient(DUPLICATI_SERVER_API_HOST)
@@ -36,16 +40,16 @@ namespace Duplicati.Library.Backend.AliyunDrive
                 return response.Data;
             }
 
-            throw response?.ErrorException ?? new Exception("获取登录授权二维码失败，请重试");
+            throw response?.ErrorException ?? new Exception("Get Login Authorization QR Code Fail");
         }
 
         /// <summary>
         /// 刷新请求令牌
+        /// Refresh Request Token
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The Aliyun Drive OAuth Access Token.</returns>
         public static AliyunDriveOAuthAccessToken RefreshToken(string refreshToken)
         {
-            // 重新获取令牌
             var client = new RestClient(DUPLICATI_SERVER_API_HOST)
             {
                 Timeout = -1
@@ -63,15 +67,17 @@ namespace Duplicati.Library.Backend.AliyunDrive
                 return response.Data;
             }
 
-            throw response?.ErrorException ?? new Exception("刷新请求令牌失败，请重试");
+            throw response?.ErrorException ?? new Exception("Refresh Token Fail");
         }
 
         /// <summary>
         /// 文件删除
+        /// File Deletion
         /// https://www.yuque.com/aliyundrive/zpfszx/get3mkr677pf10ws
         /// </summary>
-        /// <param name="driveId"></param>
-        /// <param name="fileId"></param>
+        /// <param name="driveId">The drive ID.</param>
+        /// <param name="fileId">The file ID.</param>
+        /// <param name="accessToken">The access token.</param>
         public static AliyunDriveOpenFileDeleteResponse FileDelete(string driveId, string fileId, string accessToken)
         {
             var client = new RestClient(ALIYUNDRIVE_API_HOST)
@@ -93,18 +99,19 @@ namespace Duplicati.Library.Backend.AliyunDrive
                 return response.Data;
             }
 
-            throw response?.ErrorException ?? new Exception("文件删除失败，请重试");
+            throw response?.ErrorException ?? new Exception("File Deletion Fail");
         }
 
         /// <summary>
         /// 文件更新
+        /// File Update
         /// https://www.yuque.com/aliyundrive/zpfszx/dp9gn443hh8oksgd
         /// </summary>
-        /// <param name="driveId"></param>
-        /// <param name="fileId"></param>
-        /// <param name="name"></param>
-        /// <param name="accessToken"></param>
-        /// <returns></returns>
+        /// <param name="driveId">The drive ID.</param>
+        /// <param name="fileId">The file ID.</param>
+        /// <param name="name">The new name of the file.</param>
+        /// <param name="accessToken">The access token.</param>
+        /// <returns>The updated Aliyun Drive File Item.</returns>
         public static AliyunDriveFileItem FileUpdate(string driveId, string fileId, string name, string accessToken)
         {
             var client = new RestClient(ALIYUNDRIVE_API_HOST)
@@ -128,7 +135,7 @@ namespace Duplicati.Library.Backend.AliyunDrive
                 return response.Data;
             }
 
-            throw response?.ErrorException ?? new Exception("文件更新失败，请重试");
+            throw response?.ErrorException ?? new Exception("File Update Fail");
         }
     }
 }

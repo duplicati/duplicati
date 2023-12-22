@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.IO.Pipes;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -10,30 +9,10 @@ namespace Duplicati.Library.Backend.AliyunDrive
     {
         /// <summary>
         /// 计算开始的 1KB 的 sha1
+        /// Calculate SHA1 for the first 1KB
         /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        public static string GenerateStartSHA1(string path)
-        {
-            using (var inputStream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            {
-                byte[] buffer = new byte[1024];
-                var sha1 = SHA1.Create();
-                int numRead = inputStream.Read(buffer, 0, buffer.Length);
-                if (numRead > 0)
-                {
-                    sha1.TransformBlock(buffer, 0, numRead, null, 0);
-                }
-                sha1.TransformFinalBlock(buffer, 0, 0);
-                return BitConverter.ToString(sha1.Hash).Replace("-", string.Empty).ToUpper();
-            }
-        }
-
-        /// <summary>
-        /// 计算开始的 1KB 的 sha1
-        /// </summary>
-        /// <param name="inputStream"></param>
-        /// <returns></returns>
+        /// <param name="inputStream">Input stream.</param>
+        /// <returns>SHA1 hash as string.</returns>
         public static string GenerateStartSHA1(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
@@ -51,9 +30,10 @@ namespace Duplicati.Library.Backend.AliyunDrive
 
         /// <summary>
         /// 计算文件的完整的 sha1
+        /// Calculate the complete SHA1 of the file
         /// </summary>
-        /// <param name="inputStream"></param>
-        /// <returns></returns>
+        /// <param name="inputStream">Input stream.</param>
+        /// <returns>SHA1 hash as string.</returns>
         public static string GenerateSHA1(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
@@ -65,9 +45,10 @@ namespace Duplicati.Library.Backend.AliyunDrive
 
         /// <summary>
         /// 计算文件的 MD5
+        /// Compute file's MD5
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <param name="input">Input string.</param>
+        /// <returns>MD5 hash as string.</returns>
         public static string ComputeMD5(string input)
         {
             var md5 = MD5.Create();
@@ -83,32 +64,12 @@ namespace Duplicati.Library.Backend.AliyunDrive
 
         /// <summary>
         /// 秒传 proof code
+        /// Instant transmission proof code
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public static string GenerateProofCode(string path, long size, string token)
-        {
-            var proofRange = GetProofRange(token, size);
-            if (proofRange.Start == proofRange.End)
-            {
-                return string.Empty;
-            }
-            using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            {
-                fileStream.Seek(proofRange.Start, SeekOrigin.Begin);
-                byte[] buffer = new byte[proofRange.End - proofRange.Start];
-                fileStream.Read(buffer, 0, buffer.Length);
-                return Convert.ToBase64String(buffer);
-            }
-        }
-
-        /// <summary>
-        /// 秒传 proof code
-        /// </summary>
-        /// <param name="fileStream"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
+        /// <param name="fileStream">File stream.</param>
+        /// <param name="size">File size.</param>
+        /// <param name="token">Token string.</param>
+        /// <returns>Proof code.</returns>
         public static string GenerateProofCode(Stream fileStream, long size, string token)
         {
             var proofRange = GetProofRange(token, size);
@@ -125,10 +86,11 @@ namespace Duplicati.Library.Backend.AliyunDrive
 
         /// <summary>
         /// 读取本地文件的range值的byte，计算proof_code
+        /// Read local file's range of bytes to calculate proof_code
         /// </summary>
-        /// <param name="input"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
+        /// <param name="input">Input string.</param>
+        /// <param name="size">File size.</param>
+        /// <returns>Proof range (Start, End).</returns>
         private static (long Start, long End) GetProofRange(string input, long size)
         {
             if (size == 0)
@@ -151,10 +113,11 @@ namespace Duplicati.Library.Backend.AliyunDrive
 
         /// <summary>
         /// 文件/文件夹编码/验证
+        /// File/Folder Encoding/Validation
         /// </summary>
-        /// <param name="fileName"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="fileName">File name.</param>
+        /// <returns>Encoded file name.</returns>
+        /// <exception cref="ArgumentException">Thrown when file name is too long.</exception>
         public static string EncodeFileName(string fileName)
         {
             // 将文件名转换为 UTF-8 编码的字节

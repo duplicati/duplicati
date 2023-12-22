@@ -2,22 +2,27 @@
 {
     /// <summary>
     /// 刷新令牌请求参数
+    /// Refresh Token Request Parameters
     /// </summary>
     public class RefreshTokenRequest
     {
         /// <summary>
         /// 身份类型 authorization_code 或 refresh_token
+        /// Identity type, either 'authorization_code' or 'refresh_token'.
         /// </summary>
         public string GrantType { get; set; }
 
         /// <summary>
         /// 授权码
+        /// Authorization code.
         /// </summary>
         public string Code { get; set; }
 
         /// <summary>
         /// 刷新令牌
+        /// Refresh token.
         /// </summary>
         public string RefreshToken { get; set; }
     }
+
 }

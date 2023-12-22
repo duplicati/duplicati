@@ -6,24 +6,28 @@ namespace Duplicati.Library.Backend.AliyunDrive
 {
     /// <summary>
     /// 文件上传 - 文件创建
+    /// File Upload - File Creation
     /// https://www.yuque.com/aliyundrive/zpfszx/ezlzok
     /// </summary>
     public class AliyunDriveOpenFileCreateResponse
     {
         /// <summary>
         /// 文件是否被删除。
+        /// Whether the file has been deleted.
         /// </summary>
         [JsonProperty("trashed")]
         public bool? Trashed { get; set; }
 
         /// <summary>
         /// 文件名。
+        /// File name.
         /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// 文件缩略图。
+        /// File thumbnail.
         /// </summary>
         [JsonProperty("thumbnail")]
         public string Thumbnail { get; set; }
@@ -252,6 +256,7 @@ namespace Duplicati.Library.Backend.AliyunDrive
 
         /// <summary>
         /// 分片信息类。
+        /// Part Information Class.
         /// </summary>
         public class AliyunDriveOpenFileCreatePartInfo
         {
@@ -263,33 +268,39 @@ namespace Duplicati.Library.Backend.AliyunDrive
 
             /// <summary>
             /// 分片编号。
+            /// Part number.
             /// </summary>
             [JsonProperty("part_number")]
             public int? PartNumber { get; set; }
 
             /// <summary>
             /// 分片大小。
+            /// Part size.
             /// </summary>
             [JsonProperty("part_size")]
             public long? PartSize { get; set; }
 
             /// <summary>
             /// 上传URL。
+            /// Upload URL.
             /// </summary>
             [JsonProperty("upload_url")]
             public string UploadUrl { get; set; }
 
             /// <summary>
             /// 内容类型。
+            /// Content type.
             /// </summary>
             [JsonProperty("content_type")]
             public string ContentType { get; set; }
 
             /// <summary>
             /// 上传表单信息。
+            /// Upload form information.
             /// </summary>
             [JsonProperty("upload_form_info")]
             public string UploadFormInfo { get; set; }
         }
     }
+
 }

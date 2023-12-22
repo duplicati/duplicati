@@ -6,10 +6,10 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string DisplayName { get { return LC.L(@"Aliyun Drive"); } }
 
-        public static string Description { get { return LC.L(@"阿里云盘为您提供文件的网络备份、同步和分享服务，免费不限速。"); } }
+        public static string Description { get { return LC.L(@"Aliyun Drive to provide you with file network backup, synchronization and sharing services, free of charge without speed limit."); } }
 
-        public static string AliyunDriveAccountDescriptionShort { get { return LC.L(@"授权码"); } }
+        public static string AliyunDriveAccountDescriptionShort { get { return LC.L(@"Authorization Code"); } }
 
-        public static string AliyunDriveAccountDescriptionLong { get { return LC.L(@"阿里云盘授权码，请通过上方链接获取授权。"); } }
+        public static string AliyunDriveAccountDescriptionLong { get { return LC.L(@"Aliyun Drive Authorization Code, please obtain authorization through the above link."); } }
     }
 }
