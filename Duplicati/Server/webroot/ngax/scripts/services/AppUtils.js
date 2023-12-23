@@ -316,6 +316,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 return false;
             } else if (k == 'include' || k == 'exclude') {
                 // Cannot specify filters in extra options
+                // Not sure that this is really called.
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Cannot specify filter include or excludes in extra options'));
                 return false;
             }
@@ -659,7 +660,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     this.evalFilter = function(path, filters, include) {
         for (var i = 0; i < filters.length; i++) {
             var m = path.match(filters[i][1]);
-            // Regex such as .* might match empty string at the end which is unwanted
+            // Regex such as '.*' might match empty string at the end which is unwanted
             // Check that the first match covers the full string
             if (m && m.length >= 1 && m[0].length == path.length)
                 return filters[i][0];
