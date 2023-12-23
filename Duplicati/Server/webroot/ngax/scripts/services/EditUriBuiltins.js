@@ -318,7 +318,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.loaders['aliyundrive'] = function (scope) {
         scope.oauth_create_token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         scope.oauth_service_link = '';
-        scope.oauth_start_link = 'https://openapi.alipan.com/oauth/authorize?client_id=12561ebaf6504bea8a611932684c86f6&redirect_uri=https://api.duplicati.net/api/open/aliyundrive&scope=user:base,file:all:write&relogin=true' + '&state=' + scope.oauth_create_token;
+        scope.oauth_start_link = 'https://openapi.alipan.com/oauth/authorize?client_id=12561ebaf6504bea8a611932684c86f6&redirect_uri=https://api.duplicati.net/api/open/aliyundrive&scope=user:base,file:all:read,file:all:write&relogin=true' + '&state=' + scope.oauth_create_token;
         scope.oauth_in_progress = false;
 
         scope.oauth_start_token_creation = function () {
