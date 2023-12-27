@@ -11,6 +11,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
+        public static string DescriptionLogToConsoleLong { get { return LC.L(@"Log FTP dialog to terminal console for debugging purposes"); } }
+        public static string DescriptionLogToConsoleShort { get { return LC.L(@"Log FTP dialog to terminal console"); } }
+        public static string DescriptionLogPrivateInfoToConsoleLong { get { return LC.L(@"Log FTP PRIVATE info (username, password) to console for debugging purposes (DO NOT POST THIS TO THE INTERNET!)"); } }
+        public static string DescriptionLogPrivateInfoToConsoleShort { get { return LC.L(@"Log FTP PRIVATE info to console"); } }
         public static string DisplayName { get { return LC.L(@"Alternative FTP"); } }
         public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found. Message: {1}", foldername, message); }
         public static string ListVerifyFailure(string filename, IEnumerable<string> files) { return LC.L(@"The file {0} was uploaded but not found afterwards, the file listing returned {1}", filename, string.Join(Environment.NewLine, files)); }

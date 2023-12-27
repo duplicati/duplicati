@@ -76,7 +76,7 @@ namespace Duplicati.Library.Backend
             string host= GetRegionEndpoint("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId);
 
 
-            m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, options);
+            m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, options);
 
         }
 

@@ -41,6 +41,7 @@ namespace Duplicati.Library.Backend
         private const string LOCATION_OPTION = "s3-location-constraint";
         private const string SSL_OPTION = "use-ssl";
         private const string S3_CLIENT_OPTION = "s3-client";
+        private const string S3_DISABLE_CHUNK_ENCODING_OPTION = "s3-disable-chunk-encoding";
 
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -300,12 +301,13 @@ namespace Duplicati.Library.Backend
             if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
+            bool disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
 
             options.TryGetValue(S3_CLIENT_OPTION, out var s3ClientOptionValue);
 
             if (s3ClientOptionValue == "aws" || s3ClientOptionValue == null)
             {
-                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, disableChunkEncoding, options);
             }
             else
             {
@@ -415,6 +417,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.DescriptionS3ClientLong),
+                    new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };

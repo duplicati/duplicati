@@ -150,6 +150,9 @@ namespace Duplicati.Library.Main.Database
                 foreach(var f in FilterByVerificationCount(files, samples, max))
                     yield return f;
 
+                if (options.FullRemoteVerification == Options.RemoteTestStrategy.ListAndIndexes)
+	            yield break;
+
                 //And finally some block files
                 files.Clear();
                 

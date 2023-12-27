@@ -59,19 +59,19 @@ namespace Duplicati.CommandLine
                     switch (action)
                     {
                         case BackendActionType.Put:
-                            Output.WriteLine("  Uploading file ({0}) ...", Library.Utility.Utility.FormatSizeString(size));
+                            Output.WriteLine("  Uploading file {0} ({1}) ...", path, Library.Utility.Utility.FormatSizeString(size));
                             break;
                         case BackendActionType.Get:
-                            Output.WriteLine("  Downloading file ({0}) ...", size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
+                            Output.WriteLine("  Downloading file {0} ({1}) ...", path, size < 0 ? "unknown" : Library.Utility.Utility.FormatSizeString(size));
                             break;
                         case BackendActionType.List:
-                            Output.WriteLine("  Listing remote folder ...");
+                            Output.WriteLine("  Listing remote folder {0}...", path);
                             break;
                         case BackendActionType.CreateFolder:
-                            Output.WriteLine("  Creating remote folder ...");
+                            Output.WriteLine("  Creating remote folder {0} ...", path);
                             break;
                         case BackendActionType.Delete:
-                            Output.WriteLine("  Deleting file {0}{1} ...", path, size < 0 ? "" : (" (" + Library.Utility.Utility.FormatSizeString(size) + ")"));
+                            Output.WriteLine("  Deleting file {0} {1} ...", path, size < 0 ? "" : (" (" + Library.Utility.Utility.FormatSizeString(size) + ")"));
                             break;
                     }
                 }

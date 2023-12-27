@@ -434,6 +434,10 @@ namespace Duplicati.Library.Main
                     if (result.EndTime.Ticks == 0)
                         result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
+                    if(result is BasicResults r)
+                    {
+                        r.Interrupted = false;
+                    }
 
                     OnOperationComplete(result);
 
@@ -447,18 +451,50 @@ namespace Duplicati.Library.Main
 
                     if (ex is Library.Interface.OperationAbortException oae)
                     {
-                        // Perform the module shutdown
-                        OnOperationComplete(ex);
-
                         // Log this as a normal operation, as the script raising the exception,
                         // has already populated either warning or log messages as required
                         Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
+
+                        if (result is BasicResults basicResults)
+                        {
+                            basicResults.Interrupted = true;
+                            try
+                            {
+                                // No operation was started in database, so write logs to new operation
+                                using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                                {
+                                    basicResults.SetDatabase(db);
+                                    db.WriteResults();
+                                }
+
+                                OnOperationComplete(result);
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            // Perform the module shutdown
+                            OnOperationComplete(ex);
+                        }
 
                         return result;
                     }
                     else
                     {
-                        try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                        try
+                        {
+                            if (result is BasicResults basicResults)
+                            {
+                                basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
+                                basicResults.Fatal = true;
+                                // Write logs to previous operation
+                                using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                                {
+                                    basicResults.SetDatabase(db);
+                                    db.WriteResults();
+                                }
+                            }
+                        }
                         catch { }
 
                         OnOperationComplete(ex);

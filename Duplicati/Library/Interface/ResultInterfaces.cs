@@ -39,6 +39,7 @@ namespace Duplicati.Library.Interface
         IEnumerable<string> Warnings { get; }
         IEnumerable<string> Messages { get; }
         ParsedResultType ParsedResult { get; }
+        bool Interrupted { get; }
     }
 
     public interface IBackendStatstics

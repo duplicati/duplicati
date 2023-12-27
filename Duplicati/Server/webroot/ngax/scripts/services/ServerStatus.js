@@ -267,7 +267,8 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
                 var oldxsfrstate = state.xsfrerror;
                 state.failedConnectionAttempts++;
-                state.xsfrerror = response.statusText.toLowerCase().indexOf('xsrf') >= 0;
+                var errorMessage = AppService.responseErrorMessage(response);
+                state.xsfrerror = errorMessage.toLowerCase().indexOf('xsrf') >= 0;
 
                 // First failure, we ignore
                 if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
