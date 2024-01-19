@@ -129,13 +129,15 @@ namespace Duplicati.CommandLine
 
         public static int Examples(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            Duplicati.CommandLine.Help.PrintUsage(outwriter, "example", options);
+            using (new Duplicati.Library.Main.LocaleChange(options))
+                Duplicati.CommandLine.Help.PrintUsage(outwriter, "example", options);
             return 0;
         }
 
         public static int Help(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            Duplicati.CommandLine.Help.PrintUsage(outwriter, args.Count > 1? args[1]  : "help", options);
+            using (new Duplicati.Library.Main.LocaleChange(options))
+                Duplicati.CommandLine.Help.PrintUsage(outwriter, args.Count > 1 ? args[1] : "help", options);
             return 0;
         }
 
@@ -170,8 +172,8 @@ namespace Duplicati.CommandLine
                     options["no-encryption"] = "true";
             }
 
-            using(var console = new ConsoleOutput(outwriter, options))
-            using(var i = new Library.Main.Controller(backend, options, console))
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(backend, options, console))
             {
                 setup(i);
                 i.ListAffected(args, res =>
@@ -254,7 +256,7 @@ namespace Duplicati.CommandLine
             if (!containsSeparators && arg.StartsWith("@", StringComparison.Ordinal))
             {
                 // Convert to Regexp filter and prefix with ".*/"
-                return $"[.*{Utility.ConvertLiteralToRegExp(Util.DirectorySeparatorString + arg.Substring(1))}]";
+                return $"[.*{Library.Utility.Utility.ConvertLiteralToRegExp(Util.DirectorySeparatorString + arg.Substring(1))}]";
             }
             else if (!containsSeparators && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
             {
@@ -285,7 +287,7 @@ namespace Duplicati.CommandLine
             if (endsWithSeparator && arg.StartsWith("@", StringComparison.Ordinal))
             {
                 // Convert to Regexp filter and suffix with ".*"
-                return $"[{Utility.ConvertLiteralToRegExp(arg.Substring(1))}.*]";
+                return $"[{Library.Utility.Utility.ConvertLiteralToRegExp(arg.Substring(1))}.*]";
             }
             else if (endsWithSeparator && !containsWildcards && !arg.StartsWith("[", StringComparison.Ordinal))
             {
@@ -319,7 +321,7 @@ namespace Duplicati.CommandLine
                 filter = new Duplicati.Library.Utility.FilterExpression();
 
             using (var console = new ConsoleOutput(outwriter, options))
-            using(var i = new Library.Main.Controller(args[0], options, console))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 var backend = args[0];
@@ -407,7 +409,7 @@ namespace Duplicati.CommandLine
                 {
                     outwriter.WriteLine("Listing filesets:");
 
-                    foreach(var e in res.Filesets)
+                    foreach (var e in res.Filesets)
                     {
                         if (e.FileCount >= 0)
                             outwriter.WriteLine("{0}\t: {1} ({2} files, {3})", e.Version, e.Time, e.FileCount, Library.Utility.Utility.FormatSizeString(e.FileSizes));
@@ -439,10 +441,10 @@ namespace Duplicati.CommandLine
                     else
                     {
                         outwriter.WriteLine("Listing files and versions:");
-                        foreach(var e in res.Files)
+                        foreach (var e in res.Files)
                         {
                             outwriter.WriteLine(e.Path);
-                            foreach(var nx in res.Filesets.Zip(e.Sizes, (a, b) => new { Index = a.Version, Time = a.Time, Size = b } ))
+                            foreach (var nx in res.Filesets.Zip(e.Sizes, (a, b) => new { Index = a.Version, Time = a.Time, Size = b }))
                                 outwriter.WriteLine("{0}\t: {1} {2}", nx.Index, nx.Time, nx.Size < 0 ? " - " : Library.Utility.Utility.FormatSizeString(nx.Size));
 
                             outwriter.WriteLine();
@@ -466,7 +468,7 @@ namespace Duplicati.CommandLine
             }
 
             using (var console = new ConsoleOutput(outwriter, options))
-            using(var i = new Library.Main.Controller(args[0], options, console))
+            using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
                 args.RemoveAt(0);
@@ -483,7 +485,7 @@ namespace Duplicati.CommandLine
                     else
                         outwriter.WriteLine(Strings.Program.DeletedBackups);
 
-                    foreach(var f in res.DeletedSets)
+                    foreach (var f in res.DeletedSets)
                         outwriter.WriteLine("{0}: {1}", f.Item1, f.Item2);
                 }
             }
@@ -520,7 +522,7 @@ namespace Duplicati.CommandLine
 
             args = SuffixArgsWithAsterisk(PrefixArgsWithAsterisk(args)).ToList();
 
-            using(var output = new ConsoleOutput(outwriter, options))
+            using (var output = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(backend, options, output))
             {
                 output.MessageEvent(string.Format("Restore started at {0}", DateTime.Now));
@@ -721,7 +723,7 @@ namespace Duplicati.CommandLine
             if (args.Count != 1)
                 return PrintWrongNumberOfArguments(outwriter, args, 1);
 
-            using(var console = new ConsoleOutput(outwriter, options))
+            using (var console = new ConsoleOutput(outwriter, options))
             using (var i = new Library.Main.Controller(args[0], options, console))
             {
                 setup(i);
@@ -770,7 +772,7 @@ namespace Duplicati.CommandLine
                 }
                 else
                 {
-                    foreach(var n in result.Verifications)
+                    foreach (var n in result.Verifications)
                     {
                         var changecount = n.Value.Count();
                         if (changecount == 0)
@@ -1005,7 +1007,7 @@ namespace Duplicati.CommandLine
             }
 
             using (var console = new ConsoleOutput(outwriter, options))
-            using(var i = new Library.Main.Controller("dummy://", options, console))
+            using (var i = new Library.Main.Controller("dummy://", options, console))
             {
                 setup(i);
                 var result = i.TestFilter(args.ToArray(), filter);
