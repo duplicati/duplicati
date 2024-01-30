@@ -32,7 +32,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
 	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
-	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
+
+    EditUriBackendConfig.templates['cos'] = 'templates/backends/cos.html';
+    EditUriBackendConfig.templates['storx'] = 'templates/backends/storx.html';
     EditUriBackendConfig.templates['e2'] = 'templates/backends/e2.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
@@ -494,6 +496,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
+    EditUriBackendConfig.parsers['storx'] = function (scope, module, server, port, path, options) {
+        EditUriBackendConfig.mergeServerAndPath(scope);
+    };
+
     EditUriBackendConfig.parsers['rclone'] = function (scope, module, server, port, path, options) {
         if (options['--rclone-local-repository'])
             scope.rclone_local_repository = options['--rclone-local-repository'];
@@ -892,6 +898,41 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     }
 
 
+    EditUriBackendConfig.builders['jottacloud'] = function (scope) {
+        var opts = {};
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        // Slightly better error message
+        scope.Folder = scope.Path;
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
+
+    EditUriBackendConfig.builders['storx'] = function (scope) {
+        var opts = {};
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts);
+
+        // Slightly better error message
+        scope.Folder = scope.Path;
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    };
+
+
     EditUriBackendConfig.builders['cos'] = function (scope) {
         var opts = {
             'cos-app-id': scope.cos_app_id,
@@ -1136,6 +1177,28 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if (res)
             continuation();
     };
+
+
+    EditUriBackendConfig.validaters['jottacloud'] = function (scope, continuation) {
+        scope.Path = scope.Path || '';
+        var res =
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Password'));
+
+        if (res)
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['storx'] = function (scope, continuation) {
+        scope.Path = scope.Path || '';
+        var res =
+            EditUriBackendConfig.require_field(scope, 'SecretKey', gettextCatalog.getString('SecretKey')) &&
+            EditUriBackendConfig.require_field(scope, 'SecretMnemonic', gettextCatalog.getString('SecretMnemonic'));
+
+        if (res)
+            continuation();
+    };
+
 
     EditUriBackendConfig.validaters['sia'] = function (scope, continuation) {
         var res =

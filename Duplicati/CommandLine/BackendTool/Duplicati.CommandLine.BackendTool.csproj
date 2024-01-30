@@ -40,6 +40,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Duplicati.Library.Backend.Storx">
+      <HintPath>..\..\..\Duplicati.Library.Backend.Storx\bin\Debug\Duplicati.Library.Backend.Storx.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
