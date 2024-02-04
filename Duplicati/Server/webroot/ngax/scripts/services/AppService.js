@@ -53,7 +53,6 @@ backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogSe
                 DialogService.accept('Not logged in', function () {
                     window.location = appConfig.login_url;
                 });
-                return;
             }
             deferred.reject(response);
         });
