@@ -487,11 +487,14 @@ namespace Duplicati.Library.Main
                             {
                                 basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
                                 basicResults.Fatal = true;
-                                // Write logs to previous operation
-                                using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                                // Write logs to previous operation if database exists
+                                if (LocalDatabase.Exists(m_options.Dbpath))
                                 {
-                                    basicResults.SetDatabase(db);
-                                    db.WriteResults();
+                                    using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                                    {
+                                        basicResults.SetDatabase(db);
+                                        db.WriteResults();
+                                    }
                                 }
                             }
                         }
