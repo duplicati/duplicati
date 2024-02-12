@@ -216,7 +216,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         scope.oauth_in_progress = false;
         scope.oauth_global_server = 'https://duplicati-oauth-handler.appspot.com/';
         AppService.get('/serversettings').then(function(data) {
-           var oauthurl;
+           var oauthurl = scope.oauth_global_server;
            if (data.data['--oauth-url'] != null && data.data['--oauth-url'] != '') {
                oauthurl = data.data['--oauth-url'];
                if (oauthurl.endsWith("/refresh"))
