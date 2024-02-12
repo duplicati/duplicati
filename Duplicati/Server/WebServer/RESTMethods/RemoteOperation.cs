@@ -36,7 +36,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             using(var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
                 b.CreateFolder();
-
             info.OutputOK();
         }
 
@@ -66,7 +65,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         private void TestConnection(string url, RequestInfo info)
         {
-            
+            bool autoCreate = false;
             var modules = (from n in Library.DynamicLoader.GenericLoader.Modules
                 where n is Library.Interface.IConnectionModule
                 select n).ToArray();
@@ -84,13 +83,23 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     n.Configure(opts);
 
                 using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>()))
+                {
+                    if (opts.ContainsKey("autocreate"))
+                    {
+                        autoCreate = true;
+                        b.CreateFolder();
+                    }
                     b.Test();
-
-                info.OutputOK();
+                    info.OutputOK();
+                }
             }
             catch (Duplicati.Library.Interface.FolderMissingException)
             {
-                info.ReportServerError("missing-folder");
+                if (!autoCreate) {
+                    info.ReportServerError("missing-folder");
+                } else {
+                    info.ReportServerError("error-creating-folder");
+                }
             }
             catch (Duplicati.Library.Utility.SslCertificateValidator.InvalidCertificateException icex)
             {

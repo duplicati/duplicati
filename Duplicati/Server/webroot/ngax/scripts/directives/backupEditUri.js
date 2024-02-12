@@ -6,11 +6,12 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
         setBuilduriFn: '&'
     },
     templateUrl: 'templates/edituri.html',
-    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins) {
+    controller: function($scope, AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, EditUriBuiltins, $http) {
 
         var scope = $scope;
         scope.AppUtils = AppUtils;
 
+        // called before a user action (callback=test or oauth) needs the backend uri to be up-to-date
         var builduri = function(callback) {
 
             function validationCompleted() {
@@ -35,6 +36,13 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
             var hasTriedMozroots = false;
             var hasTriedHostkey = false;
             var dlg = null;
+            const ur = new URL(uri)
+            var oauthUrl = ur.searchParams.get("oauth-url");
+            if (oauthUrl == null || oauthUrl.length == 0) {
+                // no oauth server set, add the global one.
+                ur.searchParams.append('oauth-url', scope.oauth_global_server + 'refresh');
+                uri = ur.toString();
+            }
 
             var testConnection = function() {
                 scope.Testing = true;
@@ -61,7 +69,8 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
             var createFolder = function() {
                 hasTriedCreate = true;
                 scope.Testing = true;
-                AppService.post('/remoteoperation/create', uri).then(testConnection, handleError);
+                uri += '&autocreate=true';
+                AppService.post('/remoteoperation/test', uri).then(testConnection, handleError);
             };
 
             var appendApprovedCert = function(hash)
@@ -243,6 +252,79 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
 
         $scope.testConnection = function() {
             builduri(performConnectionTest);
+        };
+
+        function perform_oauth_start_token_creation (uri) {
+            const ur = new URL(uri)
+            // check for the oAuth server in the backend specific parameters
+            var oauthUrl = ur.searchParams.get("oauth-url");
+            if (oauthUrl != null && oauthUrl.length > 0) {
+                if (oauthUrl.endsWith("/refresh"))
+                    oauthUrl = oauthUrl.substr(0, oauthUrl.length - 7);
+                $scope.oauth_service_link = oauthUrl;
+            }
+            const token = ur.searchParams.get("authid");
+            if (token != null) $scope.oauth_create_token = token;
+            scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+
+            $scope.oauth_in_progress = true;
+
+            var w = 450;
+            var h = 600;
+
+            var url = $scope.oauth_start_link;
+
+            var countDown = 100;
+            var ft = $scope.oauth_create_token;
+            var left = (screen.width / 2) - (w / 2);
+            var top = (screen.height / 2) - (h / 2);
+            var wnd = window.open(url, '_blank', 'height=' + h + ',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
+
+            // check the OAuth server
+            var recheck = function () {
+                countDown--;
+                if (countDown > 0 && ft == $scope.oauth_create_token) {
+                    $http.jsonp($scope.oauth_service_link + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
+                        function (response) {
+                            if (response.data.authid) {
+                                $scope.AuthID = response.data.authid;
+                                $scope.oauth_in_progress = false;
+                                if (wnd != null) {
+                                   wnd.close();
+                                   wnd = null;
+                                }
+                                countDown = 0;
+                            } else {
+                                setTimeout(recheck, 3000);
+                            }
+                        },
+                        function (response) {
+                            if (response.status == 404) {
+                                $scope.oauth_in_progress = false;
+                                if (wnd != null) {
+                                   wnd.close();
+                                   wnd = null;
+                                }
+                               countDown = 0;
+                            } else
+                                setTimeout(recheck, 3000);
+                        }
+                    );
+                } else {
+                    $scope.oauth_in_progress = false;
+                    if (wnd != null) {
+                        wnd.close();
+                        wnd = null;
+                    }
+                }
+            };
+            if (wnd != null)
+                setTimeout(recheck, 6000);
+            return false;
+        };
+
+        $scope.oauth_start_token_creation = function () {
+            builduri(perform_oauth_start_token_creation);
         };
 
         $scope.contains_value = AppUtils.contains_value;

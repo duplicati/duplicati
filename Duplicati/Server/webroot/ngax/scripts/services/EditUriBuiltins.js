@@ -1,4 +1,4 @@
-backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $http, gettextCatalog) {
+backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, gettextCatalog) {
 
     EditUriBackendConfig.mergeServerAndPath = function (scope) {
         if ((scope.Server || '') != '') {
@@ -213,53 +213,29 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.loaders['oauth-base'] = function (scope) {
         scope.oauth_create_token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-        scope.oauth_service_link = 'https://duplicati-oauth-handler.appspot.com/';
-        scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
         scope.oauth_in_progress = false;
-
-        scope.oauth_start_token_creation = function () {
-
-            scope.oauth_in_progress = true;
-
-            var w = 450;
-            var h = 600;
-
-            var url = scope.oauth_start_link;
-
-            var countDown = 100;
-            var ft = scope.oauth_create_token;
-            var left = (screen.width / 2) - (w / 2);
-            var top = (screen.height / 2) - (h / 2);
-            var wnd = window.open(url, '_blank', 'height=' + h + ',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
-
-            var recheck = function () {
-                countDown--;
-                if (countDown > 0 && ft == scope.oauth_create_token) {
-                    $http.jsonp(scope.oauth_service_link + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
-                        function (response) {
-                            if (response.data.authid) {
-                                scope.AuthID = response.data.authid;
-                                scope.oauth_in_progress = false;
-                                wnd.close();
-                            } else {
-                                setTimeout(recheck, 3000);
-                            }
-                        },
-                        function (response) {
-                            setTimeout(recheck, 3000);
-                        }
-                    );
-                } else {
-                    scope.oauth_in_progress = false;
-                    if (wnd != null)
-                        wnd.close();
+        scope.oauth_global_server = 'https://duplicati-oauth-handler.appspot.com/';
+        AppService.get('/serversettings').then(function(data) {
+           var oauthurl;
+           if (data.data['--oauth-url'] != null && data.data['--oauth-url'] != '') {
+               oauthurl = data.data['--oauth-url'];
+               if (oauthurl.endsWith("/refresh"))
+                   oauthurl = oauthurl.substr(0, oauthurl.length - 7);
+               if (!oauthurl.endsWith("/")) oauthurl += "/";
+               scope.oauth_global_server = oauthurl;
+           }
+           for (var n in scope.AdvancedOptions) {
+                if (scope.AdvancedOptions[n].indexOf('--oauth-url=') == 0) {
+                     oauthurl = scope.AdvancedOptions[n].substr('--oauth-url='.length);
+                     if (oauthurl.endsWith("/refresh"))
+                         oauthurl = oauthurl.substr(0, oauthurl.length - 7);
                 }
-            };
+           }
+           if (!oauthurl.endsWith("/")) oauthurl += "/";
+           scope.oauth_service_link = oauthurl;
+           scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+        }, AppUtils.connectionError);
 
-            setTimeout(recheck, 6000);
-
-            return false;
-        };
     };
   
     EditUriBackendConfig.loaders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
