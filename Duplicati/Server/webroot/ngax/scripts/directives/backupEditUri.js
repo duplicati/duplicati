@@ -283,7 +283,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
             // check the OAuth server
             var recheck = function () {
                 countDown--;
-                if (countDown > 0 && ft == $scope.oauth_create_token) {
+                if ((countDown > 0) && ft == $scope.oauth_create_token) {
                     $http.jsonp($scope.oauth_service_link + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
                         function (response) {
                             if (response.data.authid) {
@@ -295,7 +295,10 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                                 }
                                 countDown = 0;
                             } else {
-                                setTimeout(recheck, 3000);
+                                if (wnd != null && wnd.closed)
+                                    wnd = null;
+                                else
+                                    setTimeout(recheck, 3000);
                             }
                         },
                         function (response) {
