@@ -69,8 +69,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
             var createFolder = function() {
                 hasTriedCreate = true;
                 scope.Testing = true;
-                uri += '&autocreate=true';
-                AppService.post('/remoteoperation/test', uri).then(testConnection, handleError);
+                AppService.post('/remoteoperation/test', uri + '&autocreate=true').then(testConnection, handleError);
             };
 
             var appendApprovedCert = function(hash)
