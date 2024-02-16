@@ -129,6 +129,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>licenses\SSH.NET\License.txt</Link>
     </Content>
+    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\Homepage.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SshNet.Security.Cryptography\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SshNet.Security.Cryptography\License.txt</Link>
+    </Content>
     <Content Include="..\..\thirdparty\Json.NET\Homepage.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>licenses\Json.NET\Homepage.txt</Link>
@@ -211,6 +219,10 @@
     </Content>
     <Content Include="..\..\thirdparty\SSH.NET\licensedata.json">
       <Link>licenses\SSH.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\licensedata.json">
+      <Link>licenses\SshNet.Security.Cryptography\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\changelog.txt">
