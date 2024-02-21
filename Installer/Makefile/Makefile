@@ -79,6 +79,9 @@ package: build
 clean:
 	(find "$(SOURCE_DIR)" -type d -name bin -exec rm -rf "{}" \; &> /dev/null) || echo "bin cleaned"
 	(find "$(SOURCE_DIR)" -type d -name obj -exec rm -rf "{}" \; &> /dev/null) || echo "obj cleaned"
+	(find "$(SOURCE_DIR)/Duplicati/Library/Backend" -name libstorj_uplink.so -exec rm -rf "{}" \;) || echo "storj linux lib cleaned"
+	(find "$(SOURCE_DIR)/Duplicati/Library/Backend" -name libstorj_uplink.dylib -exec rm -rf "{}" \;) || echo "storj mac lib cleaned"
+	(find "$(SOURCE_DIR)/Duplicati" -type d -name win-x* -exec rm -rf "{}" \;) || echo "storj win lib cleaned"
 	rm -rf "$(PACKAGE_DIR)"
 
 
