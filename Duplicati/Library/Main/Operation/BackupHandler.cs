@@ -378,19 +378,23 @@ namespace Duplicati.Library.Main.Operation
             // Wait for upload completion
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
 
-            if (await uploadtarget.IsRetiredAsync)
+            if (!await uploadtarget.IsRetiredAsync)
             {
-                await uploader.ConfigureAwait(false);
-                return -1;
+                try
+                {
+                    var flushReq = new Backup.FlushRequest();
+                    await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
+                    await uploader.ConfigureAwait(false);
+                    // Grab the size of the last uploaded volume
+                    return await flushReq.LastWriteSizeAsync;
+                }
+                catch (RetiredException)
+                {
+                    // Retired check is not atomic, so this exception can still happen
+                }
             }
-
-            var flushReq = new Backup.FlushRequest();
-
-            await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
             await uploader.ConfigureAwait(false);
-
-            // Grab the size of the last uploaded volume
-            return await flushReq.LastWriteSizeAsync;
+            return -1;
         }
 
         private async Task RunAsync(string[] sources, Library.Utility.IFilter filter, CancellationToken token)
