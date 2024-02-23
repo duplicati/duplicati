@@ -183,6 +183,10 @@
       <Project>{b93e3bf0-daa7-49b7-b07d-0559c5816735}</Project>
       <Name>Duplicati.CommandLine.ConfigurationImporter</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj">
+      <Project>{4eb3dabc-d412-4c12-8876-41a1427a389e}</Project>
+      <Name>Duplicati.Library.Backend.AliyunOSS</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj">
       <Project>{1BFAE226-8364-4086-825C-BB83F6F3EE4C}</Project>
       <Name>Duplicati.Library.Backend.CloudFiles</Name>
