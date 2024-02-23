@@ -36,7 +36,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
             _ossOptions = new AliyunOSSOptions();
 
             var uri = new Utility.Uri(url?.Trim());
-            var prefix = uri.HostAndPath?.Trim()?.Trim('/')?.Trim('\\');
+            var prefix = uri.HostAndPath?.TrimPath();
 
             if (!string.IsNullOrEmpty(prefix))
             {
@@ -69,36 +69,20 @@ namespace Duplicati.Library.Backend.AliyunOSS
             }
         }
 
-        private OssClient GetClient()
+        private OssClient GetClient(bool isUseNewServiceClient = true)
         {
             var endpoint = _ossOptions.Endpoint;
             var accessKeyId = _ossOptions.AccessKeyId;
             var accessKeySecret = _ossOptions.AccessKeySecret;
-            return new OssClient(endpoint, accessKeyId, accessKeySecret);
-        }
-
-        private OssClient GetClientV3()
-        {
-            var endpoint = _ossOptions.Endpoint;
-
-            var accessKeyId = _ossOptions.AccessKeyId;
-            var accessKeySecret = _ossOptions.AccessKeySecret;
+            if (isUseNewServiceClient)
+            {
+                return new OssClient(endpoint, accessKeyId, accessKeySecret);
+            }
             return new OssClient(endpoint, accessKeyId, accessKeySecret, new ClientConfiguration()
             {
                 UseNewServiceClient = false
             });
         }
-
-        //private Client GetClienV2()
-        //{
-        //    return new Client(new AlibabaCloud.OpenApiClient.Models.Config()
-        //    {
-        //        AccessKeyId = _ossOptions.AccessKeyId,
-        //        AccessKeySecret = _ossOptions.AccessKeySecret,
-        //        Endpoint = _ossOptions.Endpoint,
-        //        RegionId = _ossOptions.Region
-        //    });
-        //}
 
         public IEnumerable<IFileEntry> List()
         {
@@ -106,15 +90,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
             var prefix = $"{_ossOptions.Path.TrimPath()}";
 
-            //var client = new Client(new AlibabaCloud.OpenApiClient.Models.Config()
-            //{
-            //    AccessKeyId = _ossOptions.AccessKeyId,
-            //    AccessKeySecret = _ossOptions.AccessKeySecret,
-            //    Endpoint = _ossOptions.Endpoint,
-            //    RegionId = _ossOptions.Region
-            //});
-
-            var client = GetClientV3();
+            var client = GetClient(false);
 
             var list = new List<OssObjectSummary>();
             try
@@ -130,7 +106,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
                         Prefix = prefix,
                     };
                     var result = client.ListObjects(listObjectsRequest);
-                    if (result.HttpStatusCode !=  HttpStatusCode.OK)
+                    if (result.HttpStatusCode != HttpStatusCode.OK)
                     {
                         throw new Exception(result.HttpStatusCode.ToString());
                     }
@@ -142,21 +118,6 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
                     nextMarker = result.NextMarker;
                     isTruncated = result.IsTruncated;
-
-                    //var result = client.ListObjects(bucketName, new AlibabaCloud.SDK.Oss20190517.Models.ListObjectsRequest()
-                    //{
-                    //    MaxKeys = 1000,
-                    //    Prefix = prefix,
-                    //    Marker = nextMarker,
-                    //});
-                    //foreach (var summary in result.Body.Contents)
-                    //{
-                    //    list.Add(summary);
-                    //}
-
-                    //nextMarker = result.Body.NextMarker;
-                    //isTruncated = result.Body.IsTruncated ?? false;
-
                 } while (isTruncated);
             }
             catch (OssException ex)
@@ -203,7 +164,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 var res = client.DeleteObject(bucketName, objectName);
                 if (res?.HttpStatusCode != HttpStatusCode.OK)
                 {
-                    //throw new Exception("Delete object failed");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "Delete", "Delete object failed. it may have been deleted");
                 }
             }
             catch (Exception ex)
@@ -225,7 +186,6 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
         public void Dispose()
         {
-
         }
 
         public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
@@ -257,7 +217,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
             var objectName = $"{_ossOptions.Path.TrimPath()}/{remotename}".TrimPath();
 
-            var client = GetClientV3();
+            var client = GetClient(false);
 
             try
             {
@@ -275,29 +235,6 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Get", ex, "Get failed: {0}", ex.Message);
                 throw;
             }
-
-            // Due to the presence of a bug in GetClientV2 version,
-            // this method cannot be used, hence the V3 version is being utilized.
-
-            //var clientV2 = GetClienV2();
-            //try
-            //{
-            //    var res = clientV2.GetObject(bucketName, objectName,
-            //        new AlibabaCloud.SDK.Oss20190517.Models.GetObjectRequest()
-            //        {
-            //        });
-            //    if (res.StatusCode != 200)
-            //        throw new Exception(res.StatusCode?.ToString() ?? "Get failed");
-            //    using (var requestStream = res.Body)
-            //    {
-            //        requestStream.CopyTo(stream);
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Logging.Log.WriteErrorMessage(LOGTAG, "Get", ex, "Get failed: {0}", ex.Message);
-            //    throw;
-            //}
         }
 
         public void Rename(string oldname, string newname)

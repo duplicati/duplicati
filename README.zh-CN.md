@@ -78,33 +78,33 @@ Duplicati 由一个[活跃的社区支持，您可以通过我们的论坛与他
 贡献
 ==================
 
-## 贡献 Bug 报告
-我们使用 GitHub 进行 bug 跟踪。请搜索您的 bug 的现有问题，并在尚未跟踪问题时创建一个新问题：
+## 贡献错误报告
+我们使用 GitHub 进行错误跟踪。请在创建新问题前先搜索已有的问题，看看您的错误是否已被记录：
 https://github.com/duplicati/duplicati/issues
 
 ## 贡献翻译
-有兴趣帮助翻译 duplicati 吗？在 transifex 上的帮助总是受欢迎的：
+对帮助翻译 duplicati 感兴趣吗？欢迎在 transifex 提供帮助：
 https://www.transifex.com/duplicati/duplicati/dashboard/
 
 ## 贡献代码
-关于如何设置您的开发环境和构建 Duplicati 的说明可以在 [wiki](https://github.com/duplicati/duplicati/wiki/How-to-build-from-source) 中找到。欢迎提交修复错误或以其他方式改进 Duplicati 的拉取请求。
+关于如何设置您的开发环境以及如何构建 duplicati 的说明可以在 [wiki](https://github.com/duplicati/duplicati/wiki/How-to-build-from-source) 中找到。我们欣赏任何修复错误或以其他方式改进 duplicati 的拉取请求。
 
-如果您正在寻找一个问题来修复，尝试查看其中一个 [小改动](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) 问题。如果您最熟悉的是 Web 开发，可以看看 [标记为 UI 的问题](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22)。
+如果您正在寻找一个问题来解决，请尝试查看其中一个标记为 [小改动](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) 的问题。如果您最熟悉的是 Web 开发，请查看标记为 [UI](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22) 的问题。
 
-感谢我们所有现有的贡献者：
+感谢我们所有的现有贡献者：
 <a href="https://github.com/duplicati/duplicati/graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
 
 
 ## 赞助者
 
-感谢我们所有的赞助者！🙏 [[成为赞助者](https://opencollective.com/duplicati#backer)]
+感谢所有的赞助者！🙏 [[成为赞助者](https://opencollective.com/duplicati#backer)]
 
 <a href="https://opencollective.com/duplicati#backers" target="_blank"><img src="https://opencollective.com/duplicati/backers.svg?width=890"></a>
 
 
 ## 赞助商
 
-通过成为赞助商支持这个项目。您的徽标将出现在这里，并带有链接到您的网站。[[成为赞助商](https://opencollective.com/duplicati#sponsor)]
+通过成为赞助商来支持这个项目。您的标志将会出现在这里，附带链接到您的网站。[[成为赞助商](https://opencollective.com/duplicati#sponsor)]
 
 <a href="https://opencollective.com/duplicati/sponsor/0/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/1/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/1/avatar.svg"></a>
@@ -116,3 +116,4 @@ https://www.transifex.com/duplicati/duplicati/dashboard/
 <a href="https://opencollective.com/duplicati/sponsor/7/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/7/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/8/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/8/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/9/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/9/avatar.svg"></a>
+
