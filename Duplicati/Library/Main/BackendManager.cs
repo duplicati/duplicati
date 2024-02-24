@@ -401,7 +401,7 @@ namespace Duplicati.Library.Main
             if (m_taskControl != null)
                 m_taskControl.StateChangedEvent += (state) => {
                     if (state == TaskControlState.Abort)
-                        m_thread.Abort();
+                        m_thread.Interrupt();
                 };
             m_queue = new BlockingQueue<FileEntryItem>(options.SynchronousUpload ? 1 : (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit));
             m_thread = new System.Threading.Thread(this.ThreadRun);
@@ -1462,7 +1462,7 @@ namespace Duplicati.Library.Main
             {
                 if (!m_thread.Join(TimeSpan.FromSeconds(10)))
                 {
-                    m_thread.Abort();
+                    m_thread.Interrupt();
                     m_thread.Join(TimeSpan.FromSeconds(10));
                 }
 
