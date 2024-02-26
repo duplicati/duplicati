@@ -20,6 +20,7 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -58,7 +59,7 @@ namespace Duplicati.Library.Backend
         private readonly int m_threads;
         private readonly long m_chunksize;
 
-        private readonly JottacloudAuthHelper m_oauth;
+        private readonly OAuthHelper m_oauth;
 
         /// <summary>
         /// The default maximum number of concurrent connections allowed by a ServicePoint object is 2.
@@ -136,7 +137,18 @@ namespace Duplicati.Library.Backend
             string authid = null;
             if (options.ContainsKey(AUTHID_OPTION))
                 authid = options[AUTHID_OPTION];
-            m_oauth = new JottacloudAuthHelper(authid);
+
+            m_oauth = new OAuthHelper(authid, "jottacloud")
+            {
+                AutoAuthHeader = true,
+                AutoV2 = false // Jottacloud is not v2 compatible because it generates a new refresh token with every access token refresh and invalidates the old.
+            };
+
+            var username = GetUsernameFromToken(m_oauth.AccessToken);
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new UserInformationException(Strings.Jottacloud.NoUsernameError, "JottaNoUsername");
+            }
 
             // Build URL
             var u = new Utility.Uri(url);
@@ -145,9 +157,9 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
             m_path = Util.AppendDirSeparator(m_path, "/");
 
-            m_url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
+            m_url_device = JFS_ROOT + "/" + username + "/" + m_device;
             m_url        = m_url_device + "/" + m_mountPoint + "/" + m_path;
-            m_url_upload = JFS_ROOT_UPLOAD + "/" + m_oauth.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
+            m_url_upload = JFS_ROOT_UPLOAD + "/" + username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
 
             m_threads = int.Parse(options.ContainsKey(JFS_THREADS) ? options[JFS_THREADS] : JFS_DEFAULT_THREADS);
 
@@ -168,7 +180,22 @@ namespace Duplicati.Library.Backend
             m_chunksize = chunksize;
         }
 
-#region IBackend Members
+        private string GetUsernameFromToken(string token)
+        {
+            // Assuming the token is a JWT, decode the payload, parse it as json,
+            // and retrieve the value of property username.
+            var parts = token.Split('.');
+            if (parts.Length != 3) // A valid JWT should have 3 parts separated by "." (header, payload, signature)
+            {
+                return null;
+            }
+            var payloadBytes = Duplicati.Library.Utility.Utility.Base64RawUrlDecode(parts[1]);
+            var payloadJson = System.Text.Encoding.UTF8.GetString(payloadBytes);
+            var payload = JObject.Parse(payloadJson);
+            return payload.GetValue("username").Value<string>();
+        }
+
+        #region IBackend Members
 
         public string DisplayName
         {
