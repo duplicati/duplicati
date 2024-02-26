@@ -155,13 +155,13 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 "${XBUILD}" /p:Configuration=Debug "BuildTools/GnupgSigningTool/GnupgSigningTool.sln"
 
-"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
+"${XBUILD}" /p:Configuration=Release /p:Version=${RELEASE_VERSION} /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
 if [ ! -d "$XAMARIN" ]; then
     read -p"Warning, this build will not enable tray icon on Mac, hit any key to continue."
-    "${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
+    "${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release /p:Version=${RELEASE_VERSION} "Duplicati.sln"
 else
-    "${XBUILD}" -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" /p:Configuration=Release "Duplicati.sln"
+    "${XBUILD}" -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" /p:Configuration=Release /p:Version=${RELEASE_VERSION} "Duplicati.sln"
 fi
 BUILD_STATUS=$?
 
