@@ -82,38 +82,9 @@
     <PackageReference Include="System.Spatial" Version="5.8.4" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="BackendTester\NonSeekableStream.cs" />
-    <Compile Remove="BackendTester\obj\Debug\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="BackendTester\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
-    <Compile Remove="BackendTester\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
-    <Compile Remove="BackendTester\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
-    <Compile Remove="BackendTester\obj\Release\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="BackendTester\Program.cs" />
-    <Compile Remove="BackendTester\Properties\AssemblyInfo.cs" />
-    <Compile Remove="BackendTool\obj\Debug\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="BackendTool\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
-    <Compile Remove="BackendTool\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
-    <Compile Remove="BackendTool\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
-    <Compile Remove="BackendTool\obj\Release\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="BackendTool\Program.cs" />
-    <Compile Remove="BackendTool\Properties\AssemblyInfo.cs" />
-    <Compile Remove="ConfigurationImporter\obj\Debug\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="ConfigurationImporter\obj\Release\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="ConfigurationImporter\Program.cs" />
-    <Compile Remove="ConfigurationImporter\Properties\AssemblyInfo.cs" />
-    <Compile Remove="RecoveryTool\Download.cs" />
-    <Compile Remove="RecoveryTool\FileIndex.cs" />
-    <Compile Remove="RecoveryTool\Help.cs" />
-    <Compile Remove="RecoveryTool\Index.cs" />
-    <Compile Remove="RecoveryTool\List.cs" />
-    <Compile Remove="RecoveryTool\obj\Debug\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="RecoveryTool\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
-    <Compile Remove="RecoveryTool\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
-    <Compile Remove="RecoveryTool\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
-    <Compile Remove="RecoveryTool\obj\Release\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="RecoveryTool\Program.cs" />
-    <Compile Remove="RecoveryTool\Properties\AssemblyInfo.cs" />
-    <Compile Remove="RecoveryTool\Recompress.cs" />
-    <Compile Remove="RecoveryTool\Restore.cs" />
+    <Compile Remove="BackendTester\**" />
+    <Compile Remove="BackendTool\**" />
+    <Compile Remove="ConfigurationImporter\**" />
+    <Compile Remove="RecoveryTool\**" />
   </ItemGroup>
 </Project>

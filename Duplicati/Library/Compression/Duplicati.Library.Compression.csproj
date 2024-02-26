@@ -19,6 +19,6 @@
     <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="SharpCompress" Version="0.24.0" />
+    <PackageReference Include="SharpCompress" Version="0.36.0" />
   </ItemGroup>
 </Project>

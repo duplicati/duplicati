@@ -9,7 +9,6 @@
   <ItemGroup>
     <Reference Include="System.Runtime" />
     <Reference Include="System.Net" />
-    <Reference Include="Mono.Security" />
     <Reference Include="System.Security" />
   </ItemGroup>
   <ItemGroup>

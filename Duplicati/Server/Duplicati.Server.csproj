@@ -96,28 +96,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Duplicati.Server.Serialization\Enums.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Implementations\Filter.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Implementations\Notification.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Implementations\ServerStatus.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Implementations\Setting.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\IBackup.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\IDynamicModule.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\IFilter.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\INotification.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\IProgressEventData.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\IQueuedTask.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\ISchedule.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\IServerSettings.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\IServerStatus.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Interface\ISetting.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\InterfaceResolver.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\obj\Debug\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\obj\Release\.NETFramework,Version=v4.7.1.AssemblyAttributes.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Properties\AssemblyInfo.cs" />
-    <Compile Remove="Duplicati.Server.Serialization\Serializer.cs" />
+    <Compile Remove="Duplicati.Server.Serialization\**" />
   </ItemGroup>
 </Project>
