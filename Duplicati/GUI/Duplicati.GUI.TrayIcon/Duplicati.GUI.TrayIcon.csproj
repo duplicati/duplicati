@@ -87,9 +87,6 @@
     <EmbeddedResource Include="Resources\TrayNormalError.ico" />
     <EmbeddedResource Include="Resources\TrayNormalPause.ico" />
     <EmbeddedResource Include="Resources\TrayWorking.ico" />
-    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
-      <DependentUpon>CocoaRunner.cs</DependentUpon>
-    </Compile>
     <EmbeddedResource Include="OSX Icons\normal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
@@ -260,7 +257,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="CocoaRunner.cs" />
+    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
+      <DependentUpon>CocoaRunner.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
+
   <PropertyGroup />
   <PropertyGroup>
     <PostBuildEvent Condition="' $(OS)'=='Windows_NT' AND $(ConfigurationName) == Debug ">copy /Y  '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\build\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'
