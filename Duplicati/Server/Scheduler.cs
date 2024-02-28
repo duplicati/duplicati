@@ -25,6 +25,7 @@ using System.Text;
 using System.Linq;
 using System.Threading;
 using Duplicati.Library.Utility;
+using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.Server
 {
