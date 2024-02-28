@@ -29,7 +29,7 @@ BuildArch:  noarch
 AutoReqProv: no
 
 Summary:	Backup client for encrypted online backups
-License:	LGPLv2+
+License:	MIT
 URL:	http://www.duplicati.com
 #Source0:	http://duplicati.googlecode.com/files/Duplicati%20% {_buildversion}.tgz
 Source0:	duplicati-%{_builddate}.tar.bz2
