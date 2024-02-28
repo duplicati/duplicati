@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
