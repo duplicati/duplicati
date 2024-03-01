@@ -237,22 +237,22 @@ namespace Duplicati.Library.Common.IO
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
-            return System.IO.Directory.GetAccessControl(AddExtendedDevicePathPrefix(path));
+            return new DirectoryInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
-            return System.IO.File.GetAccessControl(AddExtendedDevicePathPrefix(path));
+            return new FileInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
-            System.IO.File.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
+            new FileInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
         }
 
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
-            System.IO.Directory.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
+            new DirectoryInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
         }
 
         #region ISystemIO implementation

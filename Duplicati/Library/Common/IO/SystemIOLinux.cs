@@ -108,12 +108,12 @@ namespace Duplicati.Library.Common.IO
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)
         {
-            UnixSupport.File.CreateSymlink(symlinkfile, target);
+            PosixFile.CreateSymlink(symlinkfile, target);
         }
 
         public string GetSymlinkTarget(string path)
         {
-            return UnixSupport.File.GetSymlinkTarget(NormalizePath(path));
+            return PosixFile.GetSymlinkTarget(NormalizePath(path));
         }
         
         public string PathGetDirectoryName(string path)
@@ -181,12 +181,12 @@ namespace Duplicati.Library.Common.IO
             var f = NormalizePath(file);
             var dict = new Dictionary<string, string>();
 
-            var n = UnixSupport.File.GetExtendedAttributes(f, isSymlink, followSymlink);
+            var n = PosixFile.GetExtendedAttributes(f, isSymlink, followSymlink);
             if (n != null)
                 foreach(var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
-            var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
+            var fse = PosixFile.GetUserGroupAndPermissions(f);
             dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
             if (fse.OwnerName != null)
             {
@@ -208,7 +208,7 @@ namespace Duplicati.Library.Common.IO
             var f = NormalizePath(file);
 
             foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
-                UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);
+                PosixFile.SetExtendedAttribute(f, x.Key, x.Value);
 
             if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))
             {
@@ -222,14 +222,14 @@ namespace Duplicati.Library.Common.IO
                     if (long.TryParse(parts[0], out uid) && long.TryParse(parts[1], out gid) && long.TryParse(parts[2], out perm))
                     {
                         if (data.ContainsKey("unix:owner-name"))
-                            try { uid = UnixSupport.File.GetUserID(data["unix:owner-name"]); }
+                            try { uid = PosixFile.GetUserID(data["unix:owner-name"]); }
                             catch { }
 
                         if (data.ContainsKey("unix:group-name"))
-                            try { gid = UnixSupport.File.GetGroupID(data["unix:group-name"]); }
+                            try { gid = PosixFile.GetGroupID(data["unix:group-name"]); }
                             catch { }
 
-                        UnixSupport.File.SetUserGroupAndPermissions(f, uid, gid, perm);
+                        PosixFile.SetUserGroupAndPermissions(f, uid, gid, perm);
                     }
                 }
             }

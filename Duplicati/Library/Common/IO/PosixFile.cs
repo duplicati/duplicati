@@ -22,14 +22,14 @@ using System;
 using System.Collections.Generic;
 using Mono.Unix.Native;
 
-namespace UnixSupport
+namespace Duplicati.Library.Common.IO
 {
-    public static class File
+    public static class PosixFile
     {
     
         private static readonly bool SUPPORTS_LLISTXATTR;
         
-        static File ()
+        static PosixFile ()
         {
             bool works = false;
             try
