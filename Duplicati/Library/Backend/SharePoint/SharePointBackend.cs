@@ -427,8 +427,8 @@ namespace Duplicati.Library.Backend
             public override WebRequestExecutor CreateWebRequestExecutor(ClientRuntimeContext context, string requestUrl)
             {
                 var req = m_parent.CreateWebRequestExecutor(context, requestUrl);
-                if (string.IsNullOrWhiteSpace(req.WebRequest.Headers["User-Agent"].ToString()))
-                    req.WebRequest.Headers["User-Agent"].ToString() = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                if (string.IsNullOrWhiteSpace(req.WebRequest.Headers["User-Agent"]))
+                    req.WebRequest.Headers["User-Agent"] = "Duplicati OD4B v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 return req;
             }
         }
