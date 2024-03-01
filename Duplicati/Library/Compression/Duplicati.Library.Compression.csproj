@@ -13,4 +13,9 @@
   <ItemGroup>
     <PackageReference Include="SharpCompress" Version="0.36.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="managed-lzma.dll">
+      <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>
