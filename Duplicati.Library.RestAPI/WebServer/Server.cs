@@ -264,7 +264,7 @@ namespace Duplicati.Server.WebServer
                     (
                         userroot.StartsWith(Util.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
                         ||
-                        userroot.StartsWith(Util.AppendDirSeparator(Program.StartupPath), Library.Utility.Utility.ClientFilenameStringComparison)
+                        userroot.StartsWith(Util.AppendDirSeparator(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir), Library.Utility.Utility.ClientFilenameStringComparison)
                     )
                 )
 #endif
