@@ -8,7 +8,6 @@
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj" />
     <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj" />
-    <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
     <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
     <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj" />

@@ -10,4 +10,7 @@
     <PackageReference Include="NGettext" Version="0.6.4" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+  </ItemGroup>  
 </Project>
