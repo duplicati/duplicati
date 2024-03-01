@@ -31,6 +31,7 @@ using Duplicati.Library.Main.Volumes;
 using NUnit.Framework;
 using IFileEntry = Duplicati.Library.Interface.IFileEntry;
 using Utility = Duplicati.Library.Utility.Utility;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {

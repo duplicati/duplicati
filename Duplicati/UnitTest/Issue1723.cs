@@ -23,6 +23,7 @@ using System;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {

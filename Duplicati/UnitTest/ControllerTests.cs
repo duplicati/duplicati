@@ -24,6 +24,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {

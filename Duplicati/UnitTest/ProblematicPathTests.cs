@@ -29,6 +29,7 @@ using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Utility = Duplicati.Library.Utility.Utility;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {

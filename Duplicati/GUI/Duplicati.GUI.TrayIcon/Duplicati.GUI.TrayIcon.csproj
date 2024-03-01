@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -18,10 +17,9 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <ApplicationIcon>Duplicati.ico</ApplicationIcon>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug</OutputPath>
@@ -49,16 +47,9 @@
     <StartupObject>Duplicati.GUI.TrayIcon.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="appindicator-sharp">
-      <HintPath>..\..\..\thirdparty\appindicator-sharp\appindicator-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <HintPath>..\..\..\thirdparty\appindicator-sharp\gdk-sharp.dll</HintPath>
       <Package>gtk-sharp-2.0</Package>
@@ -72,13 +63,6 @@
     </Reference>
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <Package>gtk-sharp-2.0</Package>
-    </Reference>
-    <Reference Include="Xamarin.Mac" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
-      <HintPath>\Library\Frameworks\Xamarin.Mac.framework\Versions\Current\lib\64bits\full\Xamarin.Mac.dll</HintPath>
-    </Reference>
-    <Reference Include="notify-sharp">
-      <HintPath>..\..\..\thirdparty\notify-sharp\notify-sharp.dll</HintPath>
-      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -185,10 +169,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="SVGIcons\dark\normal-warning.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -253,7 +233,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.7.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="CocoaRunner.cs" />
@@ -261,7 +242,6 @@
       <DependentUpon>CocoaRunner.cs</DependentUpon>
     </Compile>
   </ItemGroup>
-
   <PropertyGroup />
   <PropertyGroup>
     <PostBuildEvent Condition="' $(OS)'=='Windows_NT' AND $(ConfigurationName) == Debug ">copy /Y  '%USERPROFILE%\.nuget\packages\alphavss\1.4.0\build\net45\AlphaVSS.*.dll' '$(TargetDir)\alphavss\'

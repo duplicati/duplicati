@@ -28,6 +28,7 @@ using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {

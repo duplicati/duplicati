@@ -1,18 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <Commandlineparameters>~/.config/dupl-unittest.txt</Commandlineparameters>
-    <EnvironmentVariables>
-      <EnvironmentVariables>
-        <Variable name="AUTOUPDATER_Duplicati_SKIP_UPDATE" value="1" />
-      </EnvironmentVariables>
-    </EnvironmentVariables>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />

@@ -1,11 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AssemblyOriginatorKeyFile>..\..\GUI\Duplicati.GUI.TrayIcon\Duplicati.snk</AssemblyOriginatorKeyFile>
-    <StartupObject>Duplicati.Library.AutoUpdater.Program</StartupObject>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug</OutputPath>
@@ -32,6 +28,6 @@
     <EmbeddedResource Include="AutoUpdateBuildChannel.txt" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 </Project>

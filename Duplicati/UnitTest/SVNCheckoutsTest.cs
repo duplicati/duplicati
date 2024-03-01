@@ -27,6 +27,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Common.IO;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {

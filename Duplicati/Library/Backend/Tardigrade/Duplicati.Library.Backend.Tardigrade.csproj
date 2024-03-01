@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -18,15 +17,12 @@
     <ProjectReference Include="..\Storj\Duplicati.Library.Backend.Storj.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="sqlite-net-pcl" Version="1.7.335" />
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.0.3" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.0.3" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.0.3" />
     <PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.0.3" />
     <PackageReference Include="uplink.NET" Version="2.7.1604" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
   </ItemGroup>
 </Project>

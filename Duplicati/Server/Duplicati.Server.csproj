@@ -1,33 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
-    <Commandlineparameters>--webservice-port=8200,8201,8202</Commandlineparameters>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="UnixSupport">
-      <HintPath>..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
-    </Reference>
-    <Reference Include="HttpServer">
-      <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="newbackup.json" />
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
@@ -93,9 +71,9 @@
     <EmbeddedResource Include="Database\Database schema\6. Add Description to Backup.sql" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <Compile Remove="Duplicati.Server.Serialization\**" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Duplicati.Server.Serialization\**" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 </Project>

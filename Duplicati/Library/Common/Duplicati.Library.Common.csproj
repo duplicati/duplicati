@@ -1,29 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.IO</RootNamespace>
-    <AssemblyName>Duplicati.Library.IO</AssemblyName>
-    <AssemblyOriginatorKeyFile>Duplicati.snk</AssemblyOriginatorKeyFile>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="UnixSupport">
-      <HintPath>..\..\..\thirdparty\UnixSupport\UnixSupport.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Management" Version="8.0.0" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AlphaFS" Version="2.2.6" />
-    <PackageReference Include="AlphaVSS" Version="1.4.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="AlphaVSS" Version="2.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 </Project>
