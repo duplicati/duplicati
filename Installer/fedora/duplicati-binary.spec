@@ -30,7 +30,7 @@ BuildArch:  noarch
 AutoReqProv: no
 
 Summary:	Backup client for encrypted online backups
-License:	LGPLv2+
+License:	MIT
 URL:	http://www.duplicati.com
 Source0:	duplicati-%{_buildversion}.tar.bz2
 Source1:	%{namer}-make-binary-package.sh

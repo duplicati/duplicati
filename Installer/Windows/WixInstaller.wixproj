@@ -52,7 +52,7 @@
   <ItemGroup>
     <Content Include="Resources\InstallerLarge.bmp" />
     <Content Include="Resources\InstallerSmall.bmp" />
-    <Content Include="Resources\LGPL21.rtf" />
+    <Content Include="Resources\MITLicense.rtf" />
     <Content Include="UpgradeData.wxi" />
   </ItemGroup>
   <ItemGroup>
