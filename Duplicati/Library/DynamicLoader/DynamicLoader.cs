@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace Duplicati.Library.DynamicLoader
@@ -135,12 +136,14 @@ namespace Duplicati.Library.DynamicLoader
                             }
                             catch (Exception ex)
                             {
+                                ex = GetActualException(ex);
                                 Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "SoftError", ex, Strings.DynamicLoader.DynamicTypeLoadError(t.FullName, s, ex.Message));
                             }
                     }
                 }
                 catch(Exception ex)
                 {   
+                    ex = GetActualException(ex);
                     // Since this is locating the assemblies that have the proper interface, it isn't an error to not.
                     // This was loading the log with errors about additional DLL's that are not plugins and do not have manifests.
                     Duplicati.Library.Logging.Log.WriteExplicitMessage(LOGTAG, "HardError", ex, Strings.DynamicLoader.DynamicAssemblyLoadError(s, ex.Message));
@@ -148,6 +151,13 @@ namespace Duplicati.Library.DynamicLoader
             }
 
             return interfaces;
+        }
+
+        private Exception GetActualException(Exception ex)
+        {
+            if (ex is TargetInvocationException)
+                ex = (ex as TargetInvocationException).InnerException;
+            return ex;
         }
 
         /// <summary>

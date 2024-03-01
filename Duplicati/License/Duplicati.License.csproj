@@ -11,6 +11,18 @@
       <Link>licenses\alphavss\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\alphavss\License.txt">
+      <Link>licenses\alphavss\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
+      <Link>licenses\FluentFTP\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\FluentFTP\License.txt">
+      <Link>licenses\FluentFTP\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\gpg\Homepage.txt">
       <Link>licenses\gpg\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -190,16 +202,28 @@
     <Content Include="acknowledgements.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\download.txt">
-      <Link>licenses\agsXMPP\download.txt</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\download.txt">
+      <Link>licenses\Sharp.Xmpp\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\license.txt">
-      <Link>licenses\agsXMPP\license.txt</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\license.txt">
+      <Link>licenses\Sharp.Xmpp\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\agsXMPP\licensedata.json">
-      <Link>licenses\agsXMPP\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\Sharp.Xmpp\licensedata.json">
+      <Link>licenses\Sharp.Xmpp\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\download.txt">
+      <Link>licenses\ARSoft.Tools.Net\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\license.txt">
+      <Link>licenses\ARSoft.Tools.Net\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\licensedata.json">
+      <Link>licenses\ARSoft.Tools.Net\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
@@ -310,6 +334,18 @@
       <Link>licenses\MimeKit\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\BouncyCastle\Homepage.txt">
+      <Link>licenses\BouncyCastle\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\BouncyCastle\license.txt">
+      <Link>licenses\BouncyCastle\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\BouncyCastle\licensedata.json">
+      <Link>licenses\BouncyCastle\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\angular-gettext\Homepage.txt">
       <Link>licenses\AngularGettext\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -331,17 +367,8 @@
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
-    
   <ItemGroup>
     <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
 </Project>

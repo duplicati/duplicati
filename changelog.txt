@@ -1,3 +1,107 @@
+2023-12-27 - 2.0.7.100_canary_2023-12-27
+==========
+This canary is a bugfix release with error reporting improvements, no database format change.
+Options changes:
+     `--s3-disable-chunk-encoding` added to the AWS backend (only useful for some providers)
+     `--full-remote-verification` changes from a boolean option to a tri-valued one. Existing configurations should not be impacted.
+     `--aftp-log-to-console` and `--aftp-log-privateinfo-to-console` added to the Alternative Ftp backend (for debugging purposes only)
+     `--repair-force-block-use` added to the database rebuild process (only for very damaged databases)
+
+Changes:
+  - Fix various bugs with backup filters, thanks @jojo-1000
+  - Fix highlighting in restore file picker, thanks @jojo-1000
+  - Update mail libraries, thanks gpatel-fr
+  - Remove dead facebook link and add doc link, thanks @jojo-1000
+  - Remove obsolete hubic backend, thanks @gpatel-fr
+  - Remove obsolete tool TlsTest, thanks @gpatel-fr
+  - Update Serbian translation, thanks @sagitarion
+  - Improve result reporting for interrupted/failed backups, thanks @jojo-1000
+  - Add return code 3 to help.txt, thanks @gpatel-fr
+  - Fix missing file error caused by interrupted compact, thanks @jojo-1000 and @warwickmm
+  - Include exception type and message in job log, thanks @jojo-1000
+  - Update thirdparty info to remove obsolete references, thanks @gpatel-fr
+  - Remove JS error in negated 'IN' expressions, fixing bad restore prompt (thanks @gorosgobe and Bloomberg)
+  - Update restsharp, thanks @gpatel-fr
+  - Update FluentFTP (Alternative FTP) to 46.0.2 and fixes for initial directory creation, thanks @taz-il
+  - Add console log to the Alternative FTP backend, thanks @gpatel-fr
+  - Fix hidden username and password options when changing backends, thanks @jojo-1000
+  - Add option to disable chunked encoding for AWS S3, thanks @jojo-1000
+  - Specify the name of the backup when reporting failures, thanks @taz-il
+  - Allow to perform tests without checking file list, thanks @gpatel-fr
+  - Enhance database rebuilding of very damaged databases, thanks @gpatel-fr
+  - Set the job state to error when post backup verification fails, thanks @gpatel-fr
+  - Allow full-remote-verification to target only list and index files, thanks @gpatel-fr
+  - Fix restore search error in RestoreController, thanks @jojo-1000
+  - Replace agsXmpp with Sharp.Xmpp, thanks @gpatel-fr
+  - Set default log level to Dryrun if dryrun option is set, thanks @gpatel-fr
+  - Enhance Python restore tool, thanks @gpatel-fr
+  - Report all filesets in error in VerifyConsistency, thanks @gpatel-fr
+  - Remove reliance on statusText for error messages (http2 proxy support), thanks @jojo-1000
+  - Keep user-defined whitespace in description field (allow multiline support), thanks @jojo-1000
+  - Force a vacuum of bug report database for privacy reasons, thanks @gpatel-fr
+
+2023-05-25 - 2.0.7.2_canary_2023-05-25
+==========
+- update Github tests versions, thanks @taz-il
+- Add Catalyst Cloud as an OpenStack target, thanks @Andrew Ruthven
+
+2023-05-25 - 2.0.7.1_beta_2023-05-25
+==========
+After almost 2 years, a new Beta has taken its time, but it’s finally 
+there. It’s a roll-up of all the fixes since the last beta build and is 
+expected to cause very few issues when upgrading. This release is almost 
+identical to Canary 106.
+
+It involves a better UI for dark mode, better support for Dropbox, 
+Jottacloud, S3, Tencent backends, add IDrive backend, TLS modernization, 
+bug fixes, upgrades to libraries.
+
+Points of attention:
+
+- database upgrade from 11 to 12: Downgrade from this version requires 
+manually adjusting the version 
+number in the database. The additions can be re-applied if the database is 
+upgraded again later.
+
+2023-05-25 - 2.0.7.0_experimental_2023-05-25
+==========
+After almost 2 years, a new Beta has taken its time, but it’s finally 
+there. It’s a roll-up of all the fixes since the last beta build and is 
+expected to cause very few issues when upgrading. This release is almost 
+identical to Canary 106.
+
+It involves a better UI for dark mode, better support for Dropbox, 
+Jottacloud, S3, Tencent backends, add IDrive backend, TLS modernization, 
+bug fixes, upgrades to libraries.
+
+Points of attention:
+
+- database upgrade from 11 to 12: Downgrade from this version requires 
+manually adjusting the version 
+number in the database. The additions can be re-applied if the database is 
+upgraded again later.
+
+2023-05-03 - 2.0.6.106_canary_2023-05-03
+==========
+- Added endpoints for S3 compatible storage from Scaleway, thanks 
+@adithajay
+- updates rumps to python3, add icon normal-warning, set rumps as default, 
+thanks @gpatel-fr
+
+2023-04-09 - 2.0.6.105_canary_2023-04-09
+==========
+- Disable automatic use of v2 authid for Jottacloud, thanks @albertony
+- Fix gui tests, thanks @gpatel-fr
+- Make Xamarin-based CocoaRunner the default on Mac, thanks @dgileadi
+- Fix #4716 by falling back to System hasher, thanks @vilaureu
+- Allow install on Debian bookworm by using libayatana-appindicator1, thanks @gpatel-fr
+- Build Debs with gzip compression for old debian releases, thanks @gpatel-fr
+- Add Impossible Cloud provider for S3 backend, thanks @daniel0m0baker
+- Add possibility to set custom SQlite pragmas, thanks @gpatel-fr
+- Updates Newtonsoft, Mega and SSH.NET libraries, thanks @gpatel-fr
+- Raise the file time shift to 2s for Mac unittests, thanks @gpatel-fr
+- Remove obsolete Letsencrypt cert in Docker builds, thanks @Bubblesaway (forum)
+
 2022-06-15 - 2.0.6.104_canary_2022-06-15
 ==========
 * Updated compressed files exclusion list, thanks @martengooz

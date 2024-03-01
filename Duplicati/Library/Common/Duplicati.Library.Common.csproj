@@ -19,7 +19,7 @@
     <!-- TODO: Include the native files -->
     <!-- <Import Project="..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets" Condition="Exists('..\..\..\packages\AlphaVSS.1.4.0\build\net45\AlphaVSS.targets')" /> -->
 
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
   </ItemGroup>
 

@@ -35,13 +35,17 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="MonoMac">
       <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
     </Reference>
+    <Compile Remove="CocoaRunner.cs" />
+    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework')">
+      <DependentUpon>CocoaRunner.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 	<ItemGroup>

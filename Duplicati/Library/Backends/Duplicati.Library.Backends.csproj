@@ -16,7 +16,6 @@
 	<ProjectReference Include="..\Backend\File\Duplicati.Library.Backend.File.csproj" />
 	<ProjectReference Include="..\Backend\FTP\Duplicati.Library.Backend.FTP.csproj" />
 	<ProjectReference Include="..\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj" />
-	<ProjectReference Include="..\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj" />
 	<ProjectReference Include="..\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj" />
 	<ProjectReference Include="..\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj" />
 	<ProjectReference Include="..\Backend\Mega\Duplicati.Library.Backend.Mega.csproj" />

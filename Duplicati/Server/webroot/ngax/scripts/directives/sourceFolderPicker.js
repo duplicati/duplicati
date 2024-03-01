@@ -178,7 +178,9 @@ backupApp.directive('sourceFolderPicker', function() {
             for(var i = 0; i < (scope.ngFilters || []).length; i++) {
                 var f = AppUtils.splitFilterIntoTypeAndBody(scope.ngFilters[i], dirsep);
                 if (f != null) {
-                    if (f[0] == '-path')
+                    if (f[1].indexOf('?') != -1 || f[1].indexOf('*') != -1)
+                        anySpecials = true;
+                    else if (f[0] == '-path')
                         excludemap[compareablePath(f[1])] = true;
                     else if (f[0] == '-folder')
                         excludemap[compareablePath(f[1] + dirsep)] = true;

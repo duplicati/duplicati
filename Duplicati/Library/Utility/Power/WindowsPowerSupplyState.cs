@@ -43,9 +43,10 @@ namespace Duplicati.Library.Utility.Power
                 return PowerSupply.Source.Unknown;
             }
             catch
-            {
-                return PowerSupply.Source.Unknown;
-            }
+            { }
+
+            return PowerSupply.Source.Unknown;
+
         }
     }
 }

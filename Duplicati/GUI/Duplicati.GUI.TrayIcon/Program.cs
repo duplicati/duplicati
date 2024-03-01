@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using Duplicati.Library.Common;
@@ -334,7 +334,13 @@ namespace Duplicati.GUI.TrayIcon
         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
 #endif
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static TrayIconBase GetCocoaRunnerInstance() { return new CocoaRunner(); } 
+        private static TrayIconBase GetCocoaRunnerInstance() { 
+#if XAMARIN_MAC
+            return new CocoaRunner();
+#else
+            throw new UserInformationException("Xamarin.Mac framework not found", "TrayIconMissingXamarinMac");
+#endif
+         } 
 
         private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); }
         private static TrayIconBase GetAvaloniaRunnerInstance() { return new AvaloniaRunner(); }
@@ -363,11 +369,15 @@ namespace Duplicati.GUI.TrayIcon
         }
         
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static bool TryGetMonoMac()
+        private static bool TryGetXamarinMac()
         {
-            return !Environment.Is64BitProcess && typeof(MonoMac.AppKit.NSApplication) != null;
+#if XAMARIN_MAC
+            return typeof(AppKit.NSApplication) != null;
+#else
+            return false;
+#endif
         }
-  
+
         //The functions below here, simply wrap the call to the above functions,
         // converting the exception to a simple boolean value, so the calling
         // code can be kept free of error handling
@@ -386,7 +396,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             get 
             {
-                try { return TryGetMonoMac(); }
+                try { return TryGetXamarinMac(); }
                 catch {}
                 
                 return false;

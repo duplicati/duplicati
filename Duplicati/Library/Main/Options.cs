@@ -126,6 +126,27 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// The possible settings for the remote test strategy
+        /// </summary>
+        public enum RemoteTestStrategy
+        {
+            /// <summary>
+            /// test the remote volumes
+            /// </summary>
+            True,
+
+            /// <summary>
+            /// do not test the remote volumes
+            /// </summary>
+            False,
+
+            /// <summary>
+            /// test only the list and index volumes
+            /// </summary>
+            ListAndIndexes
+        }
+
+        /// <summary>
         /// The possible settings for the hardlink strategy
         /// </summary>
         public enum HardlinkStrategy
@@ -338,7 +359,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
                     new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
-                    new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), "false"),
+                    new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
+
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
                     new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, HashFactory.GetSupportedHashes()),
@@ -364,6 +386,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("log-retention", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LogretentionShort, Strings.Options.LogretentionLong, DEFAULT_LOG_RETENTION),
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
+                    new CommandLineArgument("repair-force-block-use", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
                     new CommandLineArgument("force-actual-date", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ForceActualDateShort, Strings.Options.ForceActualDateLong, "false"),
 
@@ -1077,7 +1100,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+                else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
@@ -1126,7 +1152,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+		else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
@@ -1602,11 +1631,22 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if the remote verification is deep
+        /// Gets a value indicating if the remote verification is deep
         /// </summary>
-        public bool FullRemoteVerification
+        public RemoteTestStrategy FullRemoteVerification
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-remote-verification"); }
+            get
+            {
+                string policy;
+                if (!m_options.TryGetValue("full-remote-verification", out policy))
+                    policy = "False";
+
+                RemoteTestStrategy r;
+                if (!Enum.TryParse(policy, true, out r))
+                    r = RemoteTestStrategy.True;
+
+                return r;
+            }
         }
         
         /// <summary>
@@ -1692,6 +1732,15 @@ namespace Duplicati.Library.Main
         public bool RepairOnlyPaths
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-only-paths"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the repair process will always use blocks
+        /// </summary>
+        /// <value><c>true</c> if repair process always use blocks; otherwise, <c>false</c>.</value>
+        public bool RepairForceBlockUse
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-force-block-use"); }
         }
 
         /// <summary>

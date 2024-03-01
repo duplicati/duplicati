@@ -11,7 +11,10 @@ RUN apt-get update && \
         libmono-system-web4.0-cil \
         referenceassemblies-pcl && \
     rm -rf /var/lib/apt/lists && \
-    cert-sync /etc/ssl/certs/ca-certificates.crt
+    cert-sync /etc/ssl/certs/ca-certificates.crt && \
+    # this obsolete cert can mess the certificate chain because of a Mono bug
+    rm -f /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt && \
+    update-ca-certificates
 
 ENV TINI_VERSION v0.16.1
 RUN curl -L -o /usr/sbin/tini https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-$(dpkg --print-architecture) && \

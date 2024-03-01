@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import shutil
@@ -8,7 +9,20 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.firefox.options import Options
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--headless", action='store_true'
+)
+parser.add_argument(
+    "--no-headless", dest='headless', action='store_false'
+)
+parser.add_argument(
+    "--use-chrome", action='store_true'
+)
+
+parser.set_defaults(headless=True)
+cmdopt = parser.parse_args()
 
 # local
 print("Using LOCAL webdriver")

@@ -64,7 +64,6 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'cloudfiles': null,
                 'gcs': null,
                 'openstack': null,
-                'hubic': null,
                 'b2': null,
                 'mega': null,
                 'idrive': null,

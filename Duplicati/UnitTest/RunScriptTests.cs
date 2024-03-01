@@ -68,6 +68,8 @@ namespace Duplicati.UnitTest
                         Assert.AreEqual(0, backupResults.Warnings.Count());
                         break;
                 }
+                // run script after does not set interrupted flag
+                Assert.IsFalse(backupResults.Interrupted);
 
                 string[] targetEntries = Directory.EnumerateFileSystemEntries(this.RESTOREFOLDER).ToArray();
                 Assert.AreEqual(1, targetEntries.Length);
@@ -244,30 +246,35 @@ namespace Duplicati.UnitTest
                     case 1: // OK, don't run operation
                         Assert.AreEqual(0, backupResults.Errors.Count());
                         Assert.AreEqual(0, backupResults.Warnings.Count());
+                        Assert.IsTrue(backupResults.Interrupted);
                         expectBackup = false;
                         expectedParsedResult = ParsedResultType.Success.ToString();
                         break;
                     case 2: // Warning, run operation
                         Assert.AreEqual(0, backupResults.Errors.Count());
                         Assert.AreEqual(1, backupResults.Warnings.Count());
+                        Assert.IsFalse(backupResults.Interrupted);
                         expectBackup = true;
                         expectedParsedResult = ParsedResultType.Warning.ToString();
                         break;
                     case 3: // Warning, don't run operation
                         Assert.AreEqual(0, backupResults.Errors.Count());
                         Assert.AreEqual(1, backupResults.Warnings.Count());
+                        Assert.IsTrue(backupResults.Interrupted);
                         expectBackup = false;
                         expectedParsedResult = ParsedResultType.Warning.ToString();
                         break;
                     case 4: // Error, run operation
                         Assert.AreEqual(1, backupResults.Errors.Count());
                         Assert.AreEqual(0, backupResults.Warnings.Count());
+                        Assert.IsFalse(backupResults.Interrupted);
                         expectBackup = true;
                         expectedParsedResult = ParsedResultType.Error.ToString();
                         break;
                     default: // Error don't run operation
                         Assert.AreEqual(1, backupResults.Errors.Count());
                         Assert.AreEqual(0, backupResults.Warnings.Count());
+                        Assert.IsTrue(backupResults.Interrupted);
                         expectBackup = false;
                         expectedParsedResult = ParsedResultType.Error.ToString();
                         break;

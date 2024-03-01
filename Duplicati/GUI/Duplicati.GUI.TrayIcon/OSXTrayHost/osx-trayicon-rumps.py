@@ -41,7 +41,7 @@ def transform_app_type(toForeground):
 def item_clicked(sender):
     for k in lookup:
         if lookup[k].title == sender.title:
-            print "click:%s" % k
+            print("click:%s" % k)
             sys.stdout.flush()
 
 
@@ -49,7 +49,7 @@ def parsemenus(cfg):
     menuitems = []
     for n in cfg["Menus"]:
         mn = rumps.MenuItem(n["Text"])
-        if n.has_key("Enabled") and not n["Enabled"]:
+        if "Enabled" in n and not n["Enabled"]:
             mn.set_callback(None)
         else:
             mn.set_callback(item_clicked)
@@ -69,7 +69,7 @@ def get_input():
             if line == '':
                 continue
 
-            print "info:Read %s" % line
+            print("info:Read %s" % line)
             sys.stdout.flush()
             cfg = None
             try:
@@ -78,27 +78,27 @@ def get_input():
                 pass
 
             if cfg == None:
-                print "info:Unable to parse line"
+                print("info:Unable to parse line")
                 sys.stdout.flush()
                 continue
 
-            if cfg.has_key("Action"):
-                print "info:Running %s" % cfg["Action"]
+            if "Action" in cfg:
+                print("info:Running %s" % cfg["Action"])
                 sys.stdout.flush()
 
                 if cfg["Action"] == "setmenu":
                     menu = cfg["Menu"]
 
-                    if lookup.has_key(menu["Key"]):
+                    if menu["Key"] in lookup:
                         lookup[menu["Key"]].title = menu["Text"]
 
-                        if menu.has_key("Enabled") and not menu["Enabled"]:
+                        if "Enabled" in menu and not menu["Enabled"]:
                             lookup[menu["Key"]].set_callback(None)
                         else:
                             lookup[menu["Key"]].set_callback(item_clicked)
                         app.menu.update([])
                     else:
-                        print "warn:Key not found %s" % cfg["Action"]
+                        print("warn:Key not found %s" % cfg["Action"])
                         sys.stdout.flush()
 
 
@@ -106,7 +106,7 @@ def get_input():
                 elif cfg["Action"] == "setmenus":
                     app.menu.clear()
                     app.menu = parsemenus(cfg)
-                    print "info:Updated menus"
+                    print("info:Updated menus")
                     sys.stdout.flush()
                 elif cfg["Action"] == "seticon":
 
@@ -119,11 +119,11 @@ def get_input():
                         img.setTemplate_(True)
                         app.icon = img
 
-                        print "info:Image updated"
+                        print("info:Image updated")
                         sys.stdout.flush()
 
                     except:
-                        print "warn:Failed to set image"
+                        print("warn:Failed to set image")
                         sys.stdout.flush()
 
                 elif cfg["Action"] == "setappicon":
@@ -136,11 +136,11 @@ def get_input():
                         #img.setSize_((21, 21))
                         NSApplication.sharedApplication().setApplicationIconImage_(img)
 
-                        print "info:AppImage updated"
+                        print("info:AppImage updated")
                         sys.stdout.flush()
 
                     except:
-                        print "warn:Failed to set image"
+                        print("warn:Failed to set image")
                         sys.stdout.flush()
 
                 elif cfg["Action"] == "shutdown":
@@ -159,18 +159,18 @@ def get_input():
                         playSound = True
                         image = None
 
-                        if cfg.has_key("SubTitle"):
+                        if "SubTitle" in cfg:
                             subtitle = cfg["SubTitle"]
 
-                        if cfg.has_key("PlaySound"):
+                        if "PlaySound" in cfg:
                             playSound = cfg["PlaySound"]
-                        if cfg.has_key("Image"):
+                        if "Image" in cfg:
                             try:
                                 raw = base64.b64decode(cfg["Image"])
                                 data = NSData.dataWithBytes_length_(raw, len(raw))
                                 image = NSImage.alloc().initWithData_(data)
                             except:
-                                print "warn:Failed to decode image"
+                                print("warn:Failed to decode image")
                                 sys.stdout.flush()
 
                         rumps.notification(cfg["Title"], subtitle, cfg["Message"], sound=playSound, image=image)
@@ -182,10 +182,10 @@ def get_input():
             pass
 
         rumps.quit_application()     
-        print "info:Shutdown"
+        print("info:Shutdown")
         sys.stdout.flush()
 
-    print "info:Stdin close"
+    print("info:Stdin close")
     sys.stdout.flush()
     sys.stdin.close()
 

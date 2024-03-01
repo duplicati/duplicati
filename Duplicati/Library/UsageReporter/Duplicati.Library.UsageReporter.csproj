@@ -8,7 +8,7 @@
   
   <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.7.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>

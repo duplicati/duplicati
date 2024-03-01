@@ -10,7 +10,7 @@ else
 	RELEASE_TYPE=$1
 fi
 
-RELEASE_VERSION="2.0.6.${RELEASE_INC_VERSION}"
+RELEASE_VERSION="2.0.7.${RELEASE_INC_VERSION}"
 RELEASE_NAME="${RELEASE_VERSION}_${RELEASE_TYPE}_${RELEASE_TIMESTAMP}"
 
 RELEASE_CHANGELOG_FILE="changelog.txt"
@@ -32,6 +32,7 @@ DISCOURSE_TOKEN_FILE="${HOME}/.config/discourse-api-token"
 XBUILD=/Library/Frameworks/Mono.framework/Commands/msbuild
 NUGET=/Library/Frameworks/Mono.framework/Commands/nuget
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
+XAMARIN=/Library/Frameworks/Xamarin.Mac.framework
 GPG=/usr/local/bin/gpg2
 AWS=/usr/local/bin/aws
 GITHUB_RELEASE=/usr/local/bin/github-release
@@ -154,9 +155,14 @@ rm -rf "Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Release"
 
 "${XBUILD}" /p:Configuration=Debug "BuildTools/GnupgSigningTool/GnupgSigningTool.sln"
 
-"${XBUILD}" /p:Configuration=Release /target:Clean "Duplicati.sln"
+"${XBUILD}" /p:Configuration=Release /p:Version=${RELEASE_VERSION} /target:Clean "Duplicati.sln"
 find "Duplicati" -type d -name "Release" | xargs rm -rf
-"${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release "Duplicati.sln"
+if [ ! -d "$XAMARIN" ]; then
+    read -p"Warning, this build will not enable tray icon on Mac, hit any key to continue."
+    "${XBUILD}" /p:DefineConstants=ENABLE_GTK /p:Configuration=Release /p:Version=${RELEASE_VERSION} "Duplicati.sln"
+else
+    "${XBUILD}" -p:DefineConstants=\"ENABLE_GTK\;XAMARIN_MAC\" /p:Configuration=Release /p:Version=${RELEASE_VERSION} "Duplicati.sln"
+fi
 BUILD_STATUS=$?
 
 if [ "${BUILD_STATUS}" -ne 0 ]; then
@@ -263,7 +269,7 @@ echo "Building signed package ..."
 --version="${RELEASE_VERSION}" --keyfile-password="${KEYFILE_PASSWORD}"
 
 if [ ! -f "${UPDATE_TARGET}/package.zip" ]; then
-	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+	"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
 	echo "Something went wrong while building the package, no output found"
 	exit 5
@@ -292,7 +298,7 @@ cp "${UPDATE_TARGET}/latest.manifest" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.man
 cp "${UPDATE_TARGET}/latest.zip.sig" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig"
 cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc"
 
-"${MONO}" "BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe" --version="2.0.0.7"
+"${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
 echo "Uploading binaries"
 "${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
