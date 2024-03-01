@@ -151,13 +151,15 @@ namespace Duplicati.Library
             // Set the read/write timeout
             if (HttpContextSettings.ReadWriteTimeout > TimeSpan.Zero)
             {
-                handler.ReadWriteTimeout = (int)HttpContextSettings.ReadWriteTimeout.TotalMilliseconds;
+                // TODO: This is no longer supported, OAuthHelper should be rewritten
+                // handler.ReadWriteTimeout = (int)HttpContextSettings.ReadWriteTimeout.TotalMilliseconds;
             }
 
             // Set the certificate validator
             if (HttpContextSettings.CertificateValidator != null)
             {
-                handler.ServerCertificateValidationCallback = HttpContextSettings.CertificateValidator.ValidateServerCertficate;
+                // TODO: This is no longer supported, the validation can now be done pr. connection as it should always have been
+                // handler.ServerCertificateValidationCallback = HttpContextSettings.CertificateValidator.ValidateServerCertficate;
             }
 
             return handler;
