@@ -487,12 +487,12 @@ namespace Duplicati.Library.Snapshots
         {
             try
             {
-                var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
+                var n = PosixFile.GetFileType(SystemIOLinux.NormalizePath(localPath));
                 switch (n)
                 {
-                    case UnixSupport.File.FileType.Directory:
-                    case UnixSupport.File.FileType.Symlink:
-                    case UnixSupport.File.FileType.File:
+                    case PosixFile.FileType.Directory:
+                    case PosixFile.FileType.Symlink:
+                    case PosixFile.FileType.File:
                         return false;
                     default:
                         return true;
@@ -516,10 +516,10 @@ namespace Duplicati.Library.Snapshots
         {
             var snapshotPath = ConvertToSnapshotPath(localPath);
             
-            if (UnixSupport.File.GetHardlinkCount(snapshotPath) <= 1)
+            if (PosixFile.GetHardlinkCount(snapshotPath) <= 1)
                 return null;
             
-            return UnixSupport.File.GetInodeTargetID(snapshotPath);
+            return PosixFile.GetInodeTargetID(snapshotPath);
         }
 
         /// <inheritdoc />

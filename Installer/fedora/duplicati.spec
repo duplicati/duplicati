@@ -124,9 +124,6 @@ nuget restore Duplicati.sln
 msbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=%{_buildversion}
 
-msbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
-cp thirdparty/UnixSupport/bin/Release/UnixSupport.dll thirdparty/UnixSupport/UnixSupport.dll
-
 msbuild /property:Configuration=Release Duplicati.sln
 
 # msbuild BuildTools/LocalizationTool/LocalizationTool.sln

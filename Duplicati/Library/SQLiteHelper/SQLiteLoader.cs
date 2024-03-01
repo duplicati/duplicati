@@ -22,6 +22,7 @@
 using System;
 using System.IO;
 using Duplicati.Library.Common;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.SQLiteHelper
 {
@@ -309,8 +310,8 @@ namespace Duplicati.Library.SQLiteHelper
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void SetUnixPermissionUserRWOnly(string path)
         {
-            var fi = UnixSupport.File.GetUserGroupAndPermissions(path);
-            UnixSupport.File.SetUserGroupAndPermissions(
+            var fi = PosixFile.GetUserGroupAndPermissions(path);
+            PosixFile.SetUserGroupAndPermissions(
                     path, 
                     fi.UID, 
                     fi.GID, 
