@@ -335,7 +335,7 @@ namespace Duplicati.GUI.TrayIcon
 #endif
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetCocoaRunnerInstance() { 
-#if XAMARIN_MAC && !__LEGACY_TOOLKITS__
+#if XAMARIN_MAC && __LEGACY_TOOLKITS__
             return new CocoaRunner();
 #else
             throw new UserInformationException("Xamarin.Mac framework not found", "TrayIconMissingXamarinMac");

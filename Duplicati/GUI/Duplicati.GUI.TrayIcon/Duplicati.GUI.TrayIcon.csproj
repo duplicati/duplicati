@@ -43,7 +43,7 @@
       <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
     </Reference>
     <Compile Remove="CocoaRunner.cs" />
-    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework') And !$(DefineConstants.Contains(__LEGACY_TOOLKITS__))">
+    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework') And $(DefineConstants.Contains(__LEGACY_TOOLKITS__))">
       <DependentUpon>CocoaRunner.cs</DependentUpon>
     </Compile>
   </ItemGroup>
