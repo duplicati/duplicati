@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#if XAMARIN_MAC_ENABLE
 using System;
 using AppKit;
 using CoreGraphics;
@@ -255,3 +256,4 @@ namespace Duplicati.GUI.TrayIcon
         #endregion
     }
 }
+#endif
