@@ -1,7 +1,7 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLiteTool", "SQLiteTool.csproj", "{3B546BD0-7549-4CE3-9B68-5C149B8AA2E7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLiteTool", "SQLiteTool.csproj", "{3B546BD0-7549-4CE3-9B68-5C149B8AA2E7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject

@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipFileDebugger", "ZipFileDebugger.csproj", "{669E137C-1DD4-4134-81E8-D94C467392A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZipFileDebugger", "ZipFileDebugger.csproj", "{669E137C-1DD4-4134-81E8-D94C467392A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compression", "..\..\Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
 EndProject

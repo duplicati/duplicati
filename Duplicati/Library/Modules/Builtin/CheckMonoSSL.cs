@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -175,21 +175,7 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 case ConfigType.Install:
 
-                    try
-                    {
-                        var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "mozroots.exe");
-                        var pi = new System.Diagnostics.ProcessStartInfo(path, "--import --sync --quiet")
-                        {
-                            UseShellExecute = false
-                        };
-                        var p = System.Diagnostics.Process.Start(pi);
-                        p.WaitForExit((int)TimeSpan.FromMinutes(5).TotalMilliseconds);
-                    }
-                    catch(Exception ex)
-                    {
-                        d["error"] = ex.ToString();
-                    }
-
+                    d["error"] = "mozroots.exe install is deprecated";
                     d["count"] = CheckForInstalledCerts().ToString();
                     break;
 

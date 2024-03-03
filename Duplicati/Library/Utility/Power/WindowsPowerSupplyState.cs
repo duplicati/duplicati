@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,8 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-
-using System.Windows.Forms;
+using System.Reflection;
 
 namespace Duplicati.Library.Utility.Power
 {
@@ -29,22 +28,32 @@ namespace Duplicati.Library.Utility.Power
         {
             try
             {
-                PowerLineStatus status = System.Windows.Forms.SystemInformation.PowerStatus.PowerLineStatus;
-                if (status == PowerLineStatus.Online)
+                // Using reflection to allow building on non-Windows
+                // PowerLineStatus status = System.Windows.Forms.SystemInformation.PowerStatus.PowerLineStatus;
+                var powerstatus = System.Type.GetType("System.Windows.Forms.SystemInformation, System.Windows.Forms")
+                    .GetProperty("PowerStatus", BindingFlags.Public | BindingFlags.Static)
+                    .GetValue(null);
+
+                var status = powerstatus.GetType()
+                    .GetProperty("PowerLineStatus", BindingFlags.Public | BindingFlags.Instance)
+                    .GetValue(powerstatus)
+                    .ToString();
+
+                    
+                if (string.Equals(status, "Online", System.StringComparison.OrdinalIgnoreCase))
                 {
                     return PowerSupply.Source.AC;
                 }
-                if (status == PowerLineStatus.Offline)
+                if (string.Equals(status == "Offline", System.StringComparison.OrdinalIgnoreCase))
                 {
                     return PowerSupply.Source.Battery;
                 }
-
-                return PowerSupply.Source.Unknown;
             }
             catch
-            {
-                return PowerSupply.Source.Unknown;
-            }
+            { }
+
+            return PowerSupply.Source.Unknown;
+
         }
     }
 }

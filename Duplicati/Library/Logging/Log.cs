@@ -445,7 +445,7 @@ namespace Duplicati.Library.Logging
             {
                 lock (m_lock)
                 {
-                    var cur = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LOGICAL_CONTEXT_KEY) as string;
+                    var cur = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
                     if (cur == null || cur == m_root.InstanceID)
                         return m_root;
                     
@@ -463,11 +463,11 @@ namespace Duplicati.Library.Logging
                     if (value != null)
                     {
                         m_log_instances[value.InstanceID] = value;
-                        System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LOGICAL_CONTEXT_KEY, value.InstanceID);
+                        CallContext.SetData(LOGICAL_CONTEXT_KEY, value.InstanceID);
                     }
                     else
                     {
-                        System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LOGICAL_CONTEXT_KEY, null);
+                        CallContext.SetData(LOGICAL_CONTEXT_KEY, null);
                     }
                 }
             }

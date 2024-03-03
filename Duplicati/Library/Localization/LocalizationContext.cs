@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,7 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.Logging;
 using System;
+
 namespace Duplicati.Library.Localization
 {
     /// <summary>
@@ -43,9 +45,8 @@ namespace Duplicati.Library.Localization
         /// <param name="ci">The localization to use.</param>
         public LocalizationContext(System.Globalization.CultureInfo ci)
         {
-            m_prev = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LocalizationService.LOGICAL_CONTEXT_KEY);
-            System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);
-            m_isDisposed = false;
+            m_prev = CallContext.GetData(LocalizationService.LOGICAL_CONTEXT_KEY) as string;
+            CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);            m_isDisposed = false;
         }
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace Duplicati.Library.Localization
         {
             if (!m_isDisposed)
             {
-                System.Runtime.Remoting.Messaging.CallContext.LogicalSetData(LocalizationService.LOGICAL_CONTEXT_KEY, m_prev);
+                CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, m_prev);
                 m_isDisposed = true;
             }
         }

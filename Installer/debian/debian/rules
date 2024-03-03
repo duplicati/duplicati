@@ -35,9 +35,6 @@ override_dh_auto_build:
 	xbuild /property:Configuration=Release BuildTools/UpdateVersionStamp/UpdateVersionStamp.csproj
 	mono BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe --version=$(VERSION)
 
-	xbuild /property:Configuration=Release thirdparty/UnixSupport/UnixSupport.csproj
-	cp thirdparty/UnixSupport/bin/Release/UnixSupport.dll thirdparty/UnixSupport/UnixSupport.dll
-
 	xbuild /property:Configuration=Release Duplicati.sln
 
 override_dh_auto_install:
