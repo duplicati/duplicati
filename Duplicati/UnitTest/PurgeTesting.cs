@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -28,7 +28,6 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {

@@ -27,7 +27,6 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.UnitTest
 {
@@ -93,9 +92,9 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(filePath, new byte[] {0});
 
             // Protect access rules on the file.
-            FileSecurity fileSecurity = File.GetAccessControl(filePath);
+            FileSecurity fileSecurity = new FileInfo(filePath).GetAccessControl();
             fileSecurity.SetAccessRuleProtection(true, true);
-            File.SetAccessControl(filePath, fileSecurity);
+            new FileInfo(filePath).SetAccessControl(fileSecurity);
 
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
@@ -116,7 +115,7 @@ namespace Duplicati.UnitTest
                 string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
 
-                FileSecurity restoredFileSecurity = File.GetAccessControl(restoredFilePath);
+                FileSecurity restoredFileSecurity = new FileInfo(restoredFilePath).GetAccessControl();
                 Assert.IsFalse(restoredFileSecurity.AreAccessRulesProtected);
 
                 // Remove the restored file so that the later restore avoids the "Restore completed
@@ -136,7 +135,7 @@ namespace Duplicati.UnitTest
                 string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
 
-                FileSecurity restoredFileSecurity = File.GetAccessControl(restoredFilePath);
+                FileSecurity restoredFileSecurity = new FileInfo(restoredFilePath).GetAccessControl();
                 Assert.IsTrue(restoredFileSecurity.AreAccessRulesProtected);
             }
         }
