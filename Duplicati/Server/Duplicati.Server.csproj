@@ -61,12 +61,6 @@
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj">
     </ProjectReference>
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="HttpServer">
-      <HintPath>..\..\thirdparty\HttpServer\HttpServer.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   
   <ItemGroup>
     <Content Include="webroot\**">
