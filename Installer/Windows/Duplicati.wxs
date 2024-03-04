@@ -31,7 +31,7 @@
       <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED]]>
     </Condition>
 
-    <WixVariable Id="WixUILicenseRtf" Value="Resources/LGPL21.rtf" />
+    <WixVariable Id="WixUILicenseRtf" Value="Resources/MITLicense.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value="Resources/InstallerSmall.bmp" />
     <WixVariable Id="WixUIDialogBmp" Value="Resources/InstallerLarge.bmp" />
 

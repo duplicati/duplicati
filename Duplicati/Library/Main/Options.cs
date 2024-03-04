@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -122,6 +124,27 @@ namespace Duplicati.Library.Main
             /// Ignore all symlinks
             /// </summary>
             Ignore
+        }
+
+        /// <summary>
+        /// The possible settings for the remote test strategy
+        /// </summary>
+        public enum RemoteTestStrategy
+        {
+            /// <summary>
+            /// test the remote volumes
+            /// </summary>
+            True,
+
+            /// <summary>
+            /// do not test the remote volumes
+            /// </summary>
+            False,
+
+            /// <summary>
+            /// test only the list and index volumes
+            /// </summary>
+            ListAndIndexes
         }
 
         /// <summary>
@@ -356,7 +379,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
                     new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
-                    new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), "false"),
+                    new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
+
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
                     new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, GetSupportedHashes()),
@@ -1096,7 +1120,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+                else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
@@ -1145,7 +1172,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+		else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
@@ -1621,11 +1651,22 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if the remote verification is deep
+        /// Gets a value indicating if the remote verification is deep
         /// </summary>
-        public bool FullRemoteVerification
+        public RemoteTestStrategy FullRemoteVerification
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-remote-verification"); }
+            get
+            {
+                string policy;
+                if (!m_options.TryGetValue("full-remote-verification", out policy))
+                    policy = "False";
+
+                RemoteTestStrategy r;
+                if (!Enum.TryParse(policy, true, out r))
+                    r = RemoteTestStrategy.True;
+
+                return r;
+            }
         }
         
         /// <summary>
