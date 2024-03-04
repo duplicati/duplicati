@@ -6,9 +6,9 @@
     <AssemblyName>Duplicati.GUI.TrayIcon.Implementation</AssemblyName>
     <RootNamespace>Duplicati.GUI.TrayIcon</RootNamespace>
     <ApplicationIcon>Duplicati.ico</ApplicationIcon>
-	<!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
-	<TrimMode>copyused</TrimMode>
-	<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+  	<!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
+    <TrimMode>copyused</TrimMode>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,10 +18,6 @@
     <Content Include="TrayResources\WinIcons\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\..\thirdparty\rumps\rumps.py">
-      <Link>OSXTrayHost\rumps.py</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -29,22 +25,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GtkSharp" Version="3.24.24.4" />
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="MonoMac">
-      <HintPath>..\..\..\thirdparty\MonoMac\MonoMac.dll</HintPath>
-    </Reference>
-    <Compile Remove="CocoaRunner.cs" />
-    <Compile Include="CocoaRunner.cs" Condition="Exists('\Library\Frameworks\Xamarin.Mac.framework') And $(DefineConstants.Contains(__LEGACY_TOOLKITS__))">
-      <DependentUpon>CocoaRunner.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
 
 	<ItemGroup>
