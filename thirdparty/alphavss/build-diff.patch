@@ -1,0 +1,87 @@
+diff --git a/src/AlphaVSS.Common/AlphaVSS.Common.csproj b/src/AlphaVSS.Common/AlphaVSS.Common.csproj
+index 4ad0e8f..4039061 100644
+--- a/src/AlphaVSS.Common/AlphaVSS.Common.csproj
++++ b/src/AlphaVSS.Common/AlphaVSS.Common.csproj
+@@ -1,7 +1,7 @@
+ ﻿<Project Sdk="Microsoft.NET.Sdk">
+ 
+    <PropertyGroup>
+-    <TargetFrameworks>net45;netcoreapp3.1</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+     <IsPackable>false</IsPackable>
+   </PropertyGroup>
+ 
+@@ -34,6 +34,7 @@
+       <PrivateAssets>all</PrivateAssets>
+       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+     </PackageReference>
++    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+   </ItemGroup>
+   <ItemGroup>
+     <Compile Update="Resources\LocalizedStrings.Designer.cs">
+diff --git a/src/AlphaVSS.Common/Classes/VssFactoryProvider.cs b/src/AlphaVSS.Common/Classes/VssFactoryProvider.cs
+index be2438a..8aae1f9 100644
+--- a/src/AlphaVSS.Common/Classes/VssFactoryProvider.cs
++++ b/src/AlphaVSS.Common/Classes/VssFactoryProvider.cs
+@@ -79,7 +79,7 @@ namespace Alphaleonis.Win32.Vss
+             if (assemblyName == null)
+                throw new ArgumentNullException(nameof(assemblyName), $"{nameof(assemblyName)} is null.");
+ 
+-#if NETCOREAPP
++// #if NETCOREAPP || NETSTANDARD
+             Log($"Attempting to locate \"{assemblyName.FullName}\"");
+             // In .NET Core the native binaries are placed under a runtimes\{rid}\native folder, which is where the platform 
+             // specific binaries are placed in AlphaVSS nuget packages. However the location after building is different if
+@@ -99,7 +99,7 @@ namespace Alphaleonis.Win32.Vss
+             {
+                // On non-windows systems, the ':' separator is used, but since we only run on windows we don't need to 
+                // take that into consideration.
+-               searchDirectories = nativeSearchDirectories.Split(';', StringSplitOptions.RemoveEmptyEntries);
++               searchDirectories = nativeSearchDirectories.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                Log($"Using native search directories: {String.Join(", ", searchDirectories.Select(s => $"\"{s}\""))}");
+             }
+ 
+@@ -116,7 +116,7 @@ namespace Alphaleonis.Win32.Vss
+                   try
+                   {
+                      Log($"Loading \"{fullAssemblyFileName}\".");
+-                     var result = AssemblyLoadContext.Default.LoadFromAssemblyPath(fullAssemblyFileName);
++                     var result = System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(fullAssemblyFileName);
+                      Log($"Loaded \"{result.FullName}\" from \"{result.Location}\".");
+                      return result;
+                   }
+@@ -133,20 +133,20 @@ namespace Alphaleonis.Win32.Vss
+             }
+ 
+             throw new FileNotFoundException($"Failed to find assembly \"{assemblyName.FullName}\"");
+-#elif NETFRAMEWORK
+-            Log($"Attempting to load assembly \"{assemblyName.FullName}\"");
+-            try
+-            {
+-               var result = Assembly.Load(assemblyName);
+-               Log($"Loaded \"{result.FullName}\" from \"{result.Location}\".");
+-               return result;
+-            }
+-            catch (Exception ex)
+-            {
+-               Log($"Error loading \"{assemblyName.FullName}\"; {ex}");
+-               throw;
+-            }
+-#endif
++// #elif NETFRAMEWORK
++//             Log($"Attempting to load assembly \"{assemblyName.FullName}\"");
++//             try
++//             {
++//                var result = Assembly.Load(assemblyName);
++//                Log($"Loaded \"{result.FullName}\" from \"{result.Location}\".");
++//                return result;
++//             }
++//             catch (Exception ex)
++//             {
++//                Log($"Error loading \"{assemblyName.FullName}\"; {ex}");
++//                throw;
++//             }
++// #endif
+          }
+       }
+    }

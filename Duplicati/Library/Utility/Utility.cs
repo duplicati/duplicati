@@ -30,7 +30,7 @@ using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
-using Duplicati.Library.Interface;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
@@ -45,11 +45,6 @@ namespace Duplicati.Library.Utility
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
         /// </summary>
         private static bool? CachedIsFSCaseSensitive;
-
-        /// <summary>
-        /// Gets the hash algorithm used for calculating a hash
-        /// </summary>
-        public static string HashAlgorithm => "SHA256";
 
         /// <summary>
         /// The EPOCH offset (unix style)
@@ -639,16 +634,6 @@ namespace Duplicati.Library.Utility
             }
 
             return a1 == a2;
-        }
-
-        /// <summary>
-        /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
-        /// </summary>
-        /// <param name="stream">The stream to calculate the hash for</param>
-        /// <returns>The base64 encoded hash</returns>
-        public static string CalculateHash(Stream stream)
-        {
-            return Convert.ToBase64String(HashAlgorithmHelper.Create(HashAlgorithm).ComputeHash(stream));
         }
 
         /// <summary>

@@ -80,16 +80,17 @@ namespace Duplicati.GUI.TrayIcon
             return ICONS[cachename];
         }
 
-        public const string NormalIcon = "Resources.TrayNormal.ico";
-        public const string WarningIcon = "Resources.TrayNormalWarning.ico";
-        public const string ErrorIcon = "Resources.TrayNormalError.ico";
-        public const string PauseIcon = "Resources.TrayNormalPause.ico";
-        public const string WorkingIcon = "Resources.TrayWorking.ico";
 
-        public static Bitmap Pause { get { return LoadImage("Resources.context_menu_pause.ico"); } }
-        public static Bitmap Play { get { return LoadImage("Resources.context_menu_play.ico"); } }
-        public static Bitmap CloseMenuIcon { get { return LoadImage("Resources.context_menu_quit.ico"); } }
-        public static Bitmap StatusMenuIcon { get { return LoadImage("Resources.context_menu_open.ico"); } }
+        public const string WarningIcon = "TrayResources.WinIcons.TrayNormalWarning.ico";
+        public const string NormalIcon = "TrayResources.WinIcons.TrayNormal.ico";
+        public const string ErrorIcon = "TrayResources.WinIcons.TrayNormalError.ico";
+        public const string PauseIcon = "TrayResources.WinIcons.TrayNormalPause.ico";
+        public const string WorkingIcon = "TrayResources.WinIcons.TrayWorking.ico";
+
+        public static Bitmap Pause { get { return LoadImage("TrayResources.WinIcons.context_menu_pause.ico"); } }
+        public static Bitmap Play { get { return LoadImage("TrayResources.WinIcons.context_menu_play.ico"); } }
+        public static Bitmap CloseMenuIcon { get { return LoadImage("TrayResources.WinIcons.context_menu_quit.ico"); } }
+        public static Bitmap StatusMenuIcon { get { return LoadImage("TrayResources.WinIcons.context_menu_open.ico"); } }
         
     }
 }

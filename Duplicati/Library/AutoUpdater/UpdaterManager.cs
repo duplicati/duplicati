@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -28,7 +28,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
-using System.Diagnostics;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -61,7 +61,8 @@ namespace Duplicati.Library.AutoUpdater
             ? System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location)
             : Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(BASEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
 
-        private static readonly bool DISABLE_UPDATE_DOMAIN = Debugger.IsAttached || Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
+        //FIXME: Auto Update doesn't work with the .net5 version
+        private static readonly bool DISABLE_UPDATE_DOMAIN = true;//Debugger.IsAttached || Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
 
         public static bool RequiresRespawn { get; set; }
 
@@ -78,10 +79,10 @@ namespace Duplicati.Library.AutoUpdater
         private const string DATETIME_FORMAT = "yyyymmddhhMMss";
         private const string BASEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_INSTALL_ROOT";
         private const string UPDATEINSTALLDIR_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_UPDATE_ROOT";
-        internal const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
+        public const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
         private const string RUN_UPDATED_FOLDER_PATH = "AUTOUPDATER_LOAD_UPDATE";
         private const string SLEEP_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SLEEP";
-        internal const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
+        public const string UPDATE_STRATEGY_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_POLICY";
         private const string UPDATE_MANIFEST_FILENAME = "autoupdate.manifest";
         private const string README_FILE = "README.txt";
         private const string INSTALL_FILE = "installation.txt";
@@ -1047,7 +1048,8 @@ namespace Duplicati.Library.AutoUpdater
                 m_hasUpdateInstalled = null;
 
             // Check if there are updates installed, otherwise use current
-            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, SelfVersion);
+            KeyValuePair<string, UpdateInfo> best = new KeyValuePair<string, UpdateInfo>(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), SelfVersion);
+
             if (HasUpdateInstalled)
                 best = m_hasUpdateInstalled.Value;
 
@@ -1078,7 +1080,9 @@ namespace Duplicati.Library.AutoUpdater
 
         public static int RunFromMostRecent(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
         {
-            return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
+            // TODO: Disabled auto-updater as it does not currently work
+            return RunMethod(method, cmdargs);
+            //return RunFromMostRecentSpawn(method, cmdargs, defaultstrategy);
         }
 
         public static int RunFromMostRecentSpawn(System.Reflection.MethodInfo method, string[] cmdargs, AutoUpdateStrategy defaultstrategy = AutoUpdateStrategy.CheckDuring)
@@ -1102,7 +1106,7 @@ namespace Duplicati.Library.AutoUpdater
                 return r;
             }
 
-            var app = Environment.GetCommandLineArgs().First();
+            var app = Environment.GetCommandLineArgs().First().Substring(0, Environment.GetCommandLineArgs().First().Length - 3) + "exe";
             var args = Library.Utility.Utility.WrapAsCommandLine(Environment.GetCommandLineArgs().Skip(1), false);
 
             if (!Path.IsPathRooted(app))

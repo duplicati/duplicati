@@ -615,11 +615,11 @@ namespace Duplicati.Library.Common.IO
 
             if (asDir)
             {
-                Alphaleonis.Win32.Filesystem.Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                AlphaFS.Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
             }
             else
             {
-                Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                AlphaFS.File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
             }
 
             //Sadly we do not get a notification if the creation fails :(

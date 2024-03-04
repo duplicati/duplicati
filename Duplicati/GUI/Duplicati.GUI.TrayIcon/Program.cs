@@ -40,9 +40,9 @@ namespace Duplicati.GUI.TrayIcon
         private const string TOOLKIT_OPTION = "toolkit";
         private const string TOOLKIT_WINDOWS_FORMS = "winforms";
         private const string TOOLKIT_GTK = "gtk";
-        private const string TOOLKIT_GTK_APP_INDICATOR = "gtk-appindicator";
         private const string TOOLKIT_COCOA = "cocoa";
         private const string TOOLKIT_RUMPS = "rumps";
+        private const string TOOLKIT_AVALONIA = "avalonia";
 
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
@@ -64,15 +64,16 @@ namespace Duplicati.GUI.TrayIcon
 
         private static string GetDefaultToolKit()
         {
+#if !__LEGACY_TOOLKITS__
+            return TOOLKIT_AVALONIA;
+#endif
+            // No longer using Cocoa directly as it fails on 32bit as well            
             if (Platform.IsClientOSX)
                 return TOOLKIT_RUMPS;
 
 #if __WindowsGTK__ || ENABLE_GTK
             if (Platform.IsClientPosix)
             {
-                if (SupportsAppIndicator)
-                    return TOOLKIT_GTK_APP_INDICATOR;
-                else
                     return TOOLKIT_GTK;
             }
             else
@@ -148,8 +149,6 @@ namespace Duplicati.GUI.TrayIcon
 #if __WindowsGTK__ || ENABLE_GTK
                 else if (TOOLKIT_GTK.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_GTK;
-                else if (TOOLKIT_GTK_APP_INDICATOR.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
-                    toolkit = TOOLKIT_GTK_APP_INDICATOR;
 #endif
                 else if (TOOLKIT_COCOA.Equals(toolkit, StringComparison.OrdinalIgnoreCase))
                     toolkit = TOOLKIT_COCOA;
@@ -323,19 +322,22 @@ namespace Duplicati.GUI.TrayIcon
 
         private static TrayIconBase RunTrayIcon(string toolkit)
         {
+            //https://medium.com/@k.l.mueller/cross-platform-tray-bar-applications-with-xamarin-forms-bbd6c1b7f17a
+            //https://docs.microsoft.com/en-us/xamarin/xamarin-forms/platform/other/gtk?tabs=windows
+
             if (toolkit == TOOLKIT_WINDOWS_FORMS)
                 return GetWinformsInstance();
 #if __WindowsGTK__ || ENABLE_GTK
             else if (toolkit == TOOLKIT_GTK)
                 return GetGtkInstance();
-            else if (toolkit == TOOLKIT_GTK_APP_INDICATOR)
-                return GetAppIndicatorInstance();
 #endif
             else if (toolkit == TOOLKIT_COCOA)
                 return GetCocoaRunnerInstance();
             else if (toolkit == TOOLKIT_RUMPS)
                 return GetRumpsRunnerInstance();
-            else 
+            else if (toolkit == TOOLKIT_AVALONIA)
+                return GetAvaloniaRunnerInstance();
+            else
                 throw new UserInformationException(string.Format("The selected toolkit '{0}' is invalid", toolkit), "TrayIconInvalidToolKit");
         }
         
@@ -347,24 +349,23 @@ namespace Duplicati.GUI.TrayIcon
         // attempt to load non-existing assemblies
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static TrayIconBase GetWinformsInstance() { return new Windows.WinFormsRunner(); }
-#if __WindowsGTK__ || ENABLE_GTK
+        private static TrayIconBase GetWinformsInstance() { return new Win32Runner(); }
+#if __MonoCS__ || __WindowsGTK__ || ENABLE_GTK
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static TrayIconBase GetGtkInstance() { return new GtkRunner(); }
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static TrayIconBase GetAppIndicatorInstance() { return new AppIndicatorRunner(); }
 #endif
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static TrayIconBase GetCocoaRunnerInstance()
-        {
-#if XAMARIN_MAC_ENABLE
+        private static TrayIconBase GetCocoaRunnerInstance() { 
+#if XAMARIN_MAC_ENABLE && __LEGACY_TOOLKITS__
             return new CocoaRunner();
 #else
             throw new UserInformationException("Xamarin.Mac framework not found", "TrayIconMissingXamarinMac");
 #endif
-        }
+         } 
 
-        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); } 
+        private static TrayIconBase GetRumpsRunnerInstance() { return new RumpsRunner(); }
+        private static TrayIconBase GetAvaloniaRunnerInstance() { return new AvaloniaRunner(); }
+
 
         //The functions below simply load the requested type,
         // and if the type is not present, calling the function will result in an exception.
@@ -376,7 +377,7 @@ namespace Duplicati.GUI.TrayIcon
         private static bool TryGetGtk()
         {
 #if __WindowsGTK__ || ENABLE_GTK
-            return typeof(Gtk.StatusIcon) != null && typeof(Gdk.Image) != null;
+            return typeof(Gtk.StatusIcon) != null;
 #else
             return false;
 #endif
@@ -385,17 +386,7 @@ namespace Duplicati.GUI.TrayIcon
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static bool TryGetWinforms()
         {
-            return typeof(System.Windows.Forms.NotifyIcon) != null;
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static bool TryGetAppIndicator()
-        {
-#if __WindowsGTK__ || ENABLE_GTK
-            return typeof(AppIndicator.ApplicationIndicator) != null;
-#else
-            return false;
-#endif
+            return Platform.IsClientWindows;
         }
         
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -416,17 +407,6 @@ namespace Duplicati.GUI.TrayIcon
             get 
             {
                 try { return TryGetGtk(); }
-                catch {}
-                
-                return false;
-            }
-        }
-
-        private static bool SupportsAppIndicator
-        {
-            get 
-            {
-                try { return TryGetAppIndicator(); }
                 catch {}
                 
                 return false;
@@ -476,8 +456,6 @@ namespace Duplicati.GUI.TrayIcon
                     toolkits.Add(TOOLKIT_WINDOWS_FORMS);
                 if (SupportsGtk)
                     toolkits.Add(TOOLKIT_GTK);
-                if (SupportsAppIndicator)
-                    toolkits.Add(TOOLKIT_GTK_APP_INDICATOR);
                 if (SupportsCocoa)
                     toolkits.Add(TOOLKIT_COCOA);
                 if (SupportsRumps)

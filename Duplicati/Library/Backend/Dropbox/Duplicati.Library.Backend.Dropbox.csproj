@@ -1,20 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <UseMSBuildEngine>false</UseMSBuildEngine>
+    <TargetFramework>net8.0</TargetFramework>    
+    <Description>Dropbox backend for Duplicati</Description>
   </PropertyGroup>
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
-    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SystemWebAdapters" Version="1.3.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

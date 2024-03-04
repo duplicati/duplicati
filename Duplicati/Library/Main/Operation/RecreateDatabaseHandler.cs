@@ -21,9 +21,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -350,14 +352,14 @@ namespace Duplicati.Library.Main.Operation
 		// (if yes, we never will be able to do a backup !)
                 if (!m_options.RepairOnlyPaths)
                 {
-                    var hashalg = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-                    if (hashalg == null)
-                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                    var hashsize = hashalg.HashSize / 8;
-
+                    var hashsize = 0;
                     //Grab all index files, and update the block table
+
+                    using(var hashalg = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
                     using(var tr = restoredb.BeginTransaction())
                     {
+                        hashsize = hashalg.HashSize / 8;
+
                         var indexfiles = (
                                          from n in remotefiles
                                           where n.FileType == RemoteVolumeType.Index

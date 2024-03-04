@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -37,7 +37,7 @@ namespace Duplicati.GUI.TrayIcon
         /// </summary>
         static GtkRunner()
         {
-            m_svgfolder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "SVGIcons");
+            m_svgfolder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "TrayResources", "SVGIcons");
             m_svgfolder = System.IO.Path.Combine(m_svgfolder, "dark");
 
             Gtk.Application.Init();
@@ -348,8 +348,11 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
+            /*
+            FIXME: Someone would need to port notify-sharp to use Tmds.DBus
             var notification = new Notifications.Notification(title, message, icon);
             notification.Show();
+            */
         }
 
         protected void StatusUpdateEvent(object sender, EventArgs a)

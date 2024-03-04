@@ -49,12 +49,9 @@ namespace Duplicati.Library.Backend
         public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
             string storageClass, bool useSSL, bool disableChunkEncoding, Dictionary<string, string> options)
         {
-            var cfg = new AmazonS3Config
-            {
-                UseHttp = !useSSL,
-                ServiceURL = (useSSL ? "https://" : "http://") + servername,
-                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
-            };
+            var cfg = S3AwsClient.GetDefaultAmazonS3Config();
+            cfg.UseHttp = !useSSL;
+            cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
 
             foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
@@ -99,6 +96,20 @@ namespace Duplicati.Library.Backend
             m_client.PutBucketAsync(request).GetAwaiter().GetResult();
         }
 
+        internal static AmazonS3Config GetDefaultAmazonS3Config()
+        {
+            return new AmazonS3Config()
+            {
+                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
+
+                // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
+                // to get the region endpoint.  The use of ARNs (Amazon Resource Names) doesn't appear to be
+                // critical for our usages.
+                // See: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
+                UseArnRegion = false,
+            };
+        }
+
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
         {
             var objectGetRequest = new GetObjectRequest
@@ -110,14 +121,8 @@ namespace Duplicati.Library.Backend
             using (GetObjectResponse objectGetResponse = m_client.GetObjectAsync(objectGetRequest).GetAwaiter().GetResult())
             using (System.IO.Stream s = objectGetResponse.ResponseStream)
             {
-                try
-                {
-                    s.ReadTimeout = (int) TimeSpan.FromMinutes(1).TotalMilliseconds;
-                }
-                catch
-                {
-                    // We don't care about this timeout
-                }
+                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
+                catch { }
 
                 Utility.Utility.CopyStream(s, target);
             }

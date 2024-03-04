@@ -1,0 +1,1 @@
+The build here is taken from 38970857fecc00501431197832fee257f30496f7, and only the netstandard2.0 library is used.

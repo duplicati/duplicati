@@ -1,0 +1,33 @@
+{
+  "product": "Duplicati",
+  "company": "duplicati",
+  "license": "LICENSE.txt",
+  "upgrade-code": "69163125-be0b-407e-b65d-80f7023524db",
+  "files": {
+    "guid": "95dd9d6c-89e7-4fc7-bfdc-708ffa99c68d",
+    "items": [
+    ]
+  },
+  "directories": [
+    "bin"
+  ],
+  "shortcuts": {
+    "guid": "19455e18-67ec-4ace-9c70-0aa48be5b815",
+    "items": [
+      {
+        "name": "Duplicati",
+        "description": "Launch Duplicati",
+        "target": "[INSTALLDIR]\\bin\\Duplicati.GUI.TrayIcon.exe",
+        "wdir": "INSTALLDIR",
+        "arguments": "",
+        "icon": "Assets/application icon/application_icon.ico"
+      }
+    ]
+  },
+  "choco": {
+    "description": "Free backup software to store encrypted backups online",
+    "project-url": "https://www.duplicati.com/",
+    "tags": "backup",
+    "license-url": "https://github.com/duplicati/duplicati/blob/master/LICENSE.txt"
+  }
+}
