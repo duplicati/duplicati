@@ -81,6 +81,11 @@ namespace Duplicati.Library.Main.Database
             return c;
         }
 
+        public static bool Exists(string path)
+        {
+            return File.Exists(path);
+        }
+
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
