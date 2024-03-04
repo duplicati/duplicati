@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="FluentFTP" Version="46.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.SystemWebAdapters" Version="1.3.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
   </ItemGroup>
