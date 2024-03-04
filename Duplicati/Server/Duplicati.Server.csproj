@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <OutputType>Exe</OutputType>
+    <AssemblyName>Duplicati.Server.Implementation</AssemblyName>
   </PropertyGroup>
   
   <ItemGroup>
@@ -10,9 +10,9 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="4.7.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="6.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
     <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
   </ItemGroup>
 
@@ -43,7 +43,6 @@
     </ProjectReference>
     <ProjectReference Include="..\License\Duplicati.License.csproj">
     </ProjectReference>
-    <ProjectReference Include="..\UnixSupport\UnixSupport.csproj" />
     <ProjectReference Include="..\WebserverCore\Duplicati.WebserverCore.csproj" />
     <ProjectReference Include="Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
     </ProjectReference>
