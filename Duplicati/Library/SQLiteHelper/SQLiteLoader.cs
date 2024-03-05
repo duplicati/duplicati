@@ -23,7 +23,6 @@ using System;
 using System.IO;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
-using System.Data.SQLite;
 
 namespace Duplicati.Library.SQLiteHelper
 {
@@ -179,7 +178,26 @@ namespace Duplicati.Library.SQLiteHelper
         {
             get
             {
-                return typeof(SQLiteConnection);
+                return typeof(System.Data.SQLite.SQLiteConnection);
+            }
+        }
+
+        /// <summary>
+        /// Returns the version string from the SQLite type
+        /// </summary>
+        public static string SQLiteVersion
+        {
+            get
+            {
+                var versionString = SQLiteConnectionType.GetProperty("SQLiteVersion")?.GetValue(null, null) as string;
+                if (string.IsNullOrWhiteSpace(versionString))
+                {
+                    // Support for Microsoft.Data.SQLite
+                    // NOTE: Has an issue with ? as position parameters
+                    var inst = Activator.CreateInstance(SQLiteConnectionType);
+                    versionString = SQLiteConnectionType.GetProperty("ServerVersion")?.GetValue(inst, null) as string;
+                }
+                return versionString;
             }
         }
 

@@ -672,8 +672,7 @@ namespace Duplicati.Server
             else
                 DataFolder = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
 
-            var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
-
+            var sqliteVersion = new Version(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteVersion);
             if (sqliteVersion < new Version(3, 6, 3))
             {
                 //The official Mono SQLite provider is also broken with less than 3.6.3
