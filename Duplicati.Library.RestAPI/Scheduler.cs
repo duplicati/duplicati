@@ -134,7 +134,10 @@ namespace Duplicati.Server
             m_event.Set();
 
             if (wait)
-                m_thread.Join();
+            {
+                try { m_thread.Join(); }
+                catch { }
+            }
         }
 
         /// <summary>

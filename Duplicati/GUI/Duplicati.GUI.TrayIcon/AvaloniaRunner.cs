@@ -1,19 +1,24 @@
-//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//  
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,18 +41,11 @@ namespace Duplicati.GUI.TrayIcon
 
         public override void Init(string[] args)
         {
-            //Init
-
-            //Initialize and Run is called next
             base.Init(args);
         }
 
-  
-
         protected override void UpdateUIState(Action action)
-        {
-            action.Invoke();
-        }
+            => RunOnUIThread(action);
 
         protected override void RegisterStatusUpdateCallback()
         {
@@ -58,7 +56,7 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         #region implemented abstract members of Duplicati.GUI.TrayIcon.TrayIconBase
-        protected override void Run(string[] args)
+        protected void Run(string[] args)
         {
             var lifetime = new ClassicDesktopStyleApplicationLifetime()
             {
@@ -66,9 +64,12 @@ namespace Duplicati.GUI.TrayIcon
                 ShutdownMode = ShutdownMode.OnExplicitShutdown
             };
 
-            var builder = Avalonia.Controls.AppBuilderBase<Avalonia.AppBuilder>.Configure<AvaloniaApp>()
+            var builder = AppBuilderBase<Avalonia.AppBuilder>
+                .Configure<AvaloniaApp>()
                 .UsePlatformDetect()
-                .LogToTrace().SetupWithLifetime(lifetime);
+                .LogToTrace()
+                .With(new MacOSPlatformOptions() { ShowInDock = false })
+                .SetupWithLifetime(lifetime);
 
             application = builder.Instance as AvaloniaApp;
             application.SetMenu(menuItems);
@@ -103,24 +104,45 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void Exit()
         {
-            this.application?.Shutdown();
+            UpdateUIState(() => this.application?.Shutdown() );
         }
 
         protected override void SetIcon(TrayIcons icon)
         {
-            this.application?.SetIcon(icon);
+            UpdateUIState(() => this.application?.SetIcon(icon));
         }
 
         protected override void SetMenu(IEnumerable<IMenuItem> items)
         {
             this.menuItems = items.Select(i => (AvaloniaMenuItem)i);
-            this.application?.SetMenu(menuItems);
+            if (this.application != null)
+                UpdateUIState(() => this.application?.SetMenu(menuItems));
         }
 
-        public override void Dispose()
+        public override void Dispose() 
         {
+            GC.SuppressFinalize(this);
         }
         #endregion
+
+        internal static void RunOnUIThread(Action action)
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+                action();
+            else
+                Dispatcher.UIThread.Post(action);
+        }
+
+        internal static IBitmap LoadBitmap(string iconName)
+        {
+            var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+            return new Bitmap(assets.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/" + iconName)));
+        }
+
+        internal static WindowIcon LoadIcon(string iconName)
+        {
+            return new WindowIcon(LoadBitmap(iconName));
+        }
     }
 
     public class AvaloniaMenuItem : IMenuItem
@@ -130,6 +152,9 @@ namespace Duplicati.GUI.TrayIcon
         public Action Callback { get; private set; }
         public IList<IMenuItem> SubItems { get; private set; }
         public bool Enabled { get; private set; }
+        public MenuIcons Icon { get; private set; }
+        public bool IsDefault { get; private set; }
+        private NativeMenuItem? nativeMenuItem;
 
         public AvaloniaMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
         {
@@ -140,64 +165,80 @@ namespace Duplicati.GUI.TrayIcon
             this.Callback = callback;
             this.SubItems = subitems;
             this.Enabled = true;
-            SetIcon(icon);
+            this.Icon = icon;
         }
 
         #region IMenuItem implementation
         public void SetText(string text)
         {
             this.Text = text;
+            if (nativeMenuItem != null)
+                AvaloniaRunner.RunOnUIThread(() => nativeMenuItem.Header = text);
+
         }
 
         public void SetIcon(MenuIcons icon)
         {
-            switch (icon)
-            {
-                case MenuIcons.Pause:
-                    //this.Icon = Win32IconLoader.MenuPauseIcon;
-                    break;
-                case MenuIcons.Quit:
-                    //this.Icon = Win32IconLoader.MenuQuitIcon;
-                    break;
-                case MenuIcons.Resume:
-                    //this.Icon = Win32IconLoader.MenuPlayIcon;
-                    break;
-                case MenuIcons.Status:
-                    //this.Icon = Win32IconLoader.MenuOpenIcon;
-                    break;
-                case MenuIcons.None:
-                default:
-                    //this.Icon = new SafeIconHandle(IntPtr.Zero);
-                    break;
-            }
+            this.Icon = icon;
+            if (nativeMenuItem != null)
+                AvaloniaRunner.RunOnUIThread(() => this.UpdateIcon());
+        }
+
+        /// <summary>
+        /// Performs unguarded update of the icon, ensure calling thread is UI 
+        /// and the nativeMenuItem has been set
+        /// </summary>
+        private void UpdateIcon()
+        {
+            nativeMenuItem.Icon = this.Icon switch {
+                MenuIcons.Status => AvaloniaRunner.LoadBitmap("context-menu-open.png"),
+                MenuIcons.Quit => AvaloniaRunner.LoadBitmap("context-menu-quit.png"),
+                MenuIcons.Pause => AvaloniaRunner.LoadBitmap("context-menu-pause.png"),
+                MenuIcons.Resume => AvaloniaRunner.LoadBitmap("context-menu-resume.png"),
+                _ => null
+            };
+
         }
 
         public void SetEnabled(bool isEnabled)
         {
             this.Enabled = isEnabled;
+            if (nativeMenuItem != null)
+                AvaloniaRunner.RunOnUIThread(() => nativeMenuItem.IsEnabled = this.Enabled);
         }
 
         public void SetDefault(bool value)
         {
-            //TODO-DNC Cosmetic, not needed
+            this.IsDefault = value;
+            // Not currently supported by Avalonia, 
+            // used to set the menu bold on Windows to indicate the default entry
         }
         #endregion
 
         public NativeMenuItem GetNativeItem()
         {
-            var item = new NativeMenuItem(Text);
-            item.IsEnabled = Enabled;
-            item.Click += (_sender, _args) =>
+            if (this.nativeMenuItem == null)
             {
-                Callback();
-            };
-            return item;
+                this.nativeMenuItem = new NativeMenuItem(Text)
+                {
+                    IsEnabled = Enabled
+                };
+
+                this.UpdateIcon();
+                this.nativeMenuItem.Click += (_, _) =>
+                {
+                    Callback();
+                };
+            }
+            return this.nativeMenuItem;
         }
     }
 
     public class AvaloniaApp : Application
     {
         private Avalonia.Controls.TrayIcon trayIcon;
+
+        private List<AvaloniaMenuItem> menuItems;
 
         public override void Initialize()
         {
@@ -213,81 +254,60 @@ namespace Duplicati.GUI.TrayIcon
             switch (icon)
             {
                 case TrayIcons.IdleError:
-                    this.trayIcon.Icon = LoadIcon("normal-error.png");
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-error.png");
                     break;
                 case TrayIcons.Paused:
                 case TrayIcons.PausedError:
-                     this.trayIcon.Icon = LoadIcon("normal-pause.png");
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-pause.png");
                     break;
                 case TrayIcons.Running:
                 case TrayIcons.RunningError:
-                    this.trayIcon.Icon = LoadIcon("normal-running.png");
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-running.png");
                     break;
                 case TrayIcons.Idle:
                 default:
-                    this.trayIcon.Icon = LoadIcon("normal.png");
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal.png");
                     break;
             }
         }
 
         public void SetMenu(IEnumerable<AvaloniaMenuItem> menuItems)
         {
-            // Reuse the menu on Mac
-            var menu = trayIcon.Menu ?? new NativeMenu();
-            menu.Items.Clear();
-            foreach (var item in menuItems)
+            this.menuItems = menuItems.ToList();
+            if (trayIcon != null)
             {
-                menu.Add(item.GetNativeItem());
+                // Reuse the menu on Mac
+                var menu = trayIcon.Menu ?? new NativeMenu();
+                menu.Items.Clear();
+                foreach (var item in this.menuItems)
+                {
+                    menu.Add(item.GetNativeItem());
+                }
+                trayIcon.Menu = menu;
             }
-            trayIcon.Menu = menu;
         }
 
         public void Shutdown()
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                desktop.Shutdown();
-            }
-            else
-            {
-                throw new Exception("Unsupported Lifetime");
-            }
+                desktop.Shutdown();      
         }
-
-        private WindowIcon LoadIcon(string iconName)
-        {
-         var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-        var bitmap = new Bitmap(assets.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/" + iconName)));
-        return  new WindowIcon(bitmap);
-    }
 
         public override void OnFrameworkInitializationCompleted()
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                var light = new FluentTheme(new Uri($"avares://{Assembly.GetExecutingAssembly().GetName()}")) { Mode = FluentThemeMode.Light };
-                Styles.Add(light);
+            var light = new FluentTheme(new Uri($"avares://{Assembly.GetExecutingAssembly().GetName()}")) { Mode = FluentThemeMode.Light };
+            Styles.Add(light);
 
-                var icon = LoadIcon("normal.png");
-                var trayIcon = new Avalonia.Controls.TrayIcon();
-                this.trayIcon = trayIcon;
-                trayIcon.Icon = icon;
-                trayIcon.ToolTipText = "Test";
-                //The menu already exists on Mac but is nullable...
-                var menu = trayIcon.Menu ?? new NativeMenu();
-                var item = new NativeMenuItem("Quit");
-                item.Click += (_sender, _args) =>
-                {
-                    desktop.Shutdown();
-                };
-                menu.Add(item);
-                trayIcon.Menu = menu;
-
-                // Register tray icons to be removed on application shutdown
-                var icons = new Avalonia.Controls.TrayIcons();
-                icons.Add(trayIcon);
-                Avalonia.Controls.TrayIcon.SetIcons(Application.Current, icons);
-            }
+            var icon = AvaloniaRunner.LoadIcon("normal.png");
+            this.trayIcon = new Avalonia.Controls.TrayIcon() { Icon = icon};
+            
+            // Handle being loaded with menu items
+            if (menuItems != null)
+                this.SetMenu(menuItems);
+            
+            // Register tray icons to be removed on application shutdown
+            var icons = new Avalonia.Controls.TrayIcons { trayIcon };
+            Avalonia.Controls.TrayIcon.SetIcons(Application.Current, icons);
 
             base.OnFrameworkInitializationCompleted();
         }
