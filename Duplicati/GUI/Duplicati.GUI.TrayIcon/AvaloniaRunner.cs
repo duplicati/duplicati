@@ -26,10 +26,10 @@ using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Themes.Fluent;
+using Avalonia.Threading;
 using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.GUI.TrayIcon
@@ -56,7 +56,7 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         #region implemented abstract members of Duplicati.GUI.TrayIcon.TrayIconBase
-        protected void Run(string[] args)
+        protected override void Run(string[] args)
         {
             var lifetime = new ClassicDesktopStyleApplicationLifetime()
             {
