@@ -73,6 +73,7 @@ namespace Duplicati.GUI.TrayIcon
 
             application = builder.Instance as AvaloniaApp;
             application.SetMenu(menuItems);
+            application.Configure();
 
             lifetime.Start(args);
         }
@@ -121,7 +122,6 @@ namespace Duplicati.GUI.TrayIcon
 
         public override void Dispose() 
         {
-            GC.SuppressFinalize(this);
         }
         #endregion
 
@@ -154,7 +154,7 @@ namespace Duplicati.GUI.TrayIcon
         public bool Enabled { get; private set; }
         public MenuIcons Icon { get; private set; }
         public bool IsDefault { get; private set; }
-        private NativeMenuItem? nativeMenuItem;
+        private NativeMenuItem nativeMenuItem;
 
         public AvaloniaMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
         {
@@ -242,7 +242,6 @@ namespace Duplicati.GUI.TrayIcon
 
         public override void Initialize()
         {
-            //AvaloniaXamlLoader.Load(this);
         }
 
         public void SetIcon(TrayIcons icon)
@@ -269,6 +268,12 @@ namespace Duplicati.GUI.TrayIcon
                     this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal.png");
                     break;
             }
+        }
+
+        public void Configure()
+        {
+            this.Name = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName;
+            this.trayIcon.ToolTipText = this.Name;
         }
 
         public void SetMenu(IEnumerable<AvaloniaMenuItem> menuItems)
