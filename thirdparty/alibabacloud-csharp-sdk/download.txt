@@ -1,0 +1,1 @@
+https://github.com/aliyun/alibabacloud-csharp-sdk/tree/master/oss-20190517

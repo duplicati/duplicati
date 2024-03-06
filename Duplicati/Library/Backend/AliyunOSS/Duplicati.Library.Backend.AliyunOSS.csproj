@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4EB3DABC-D412-4C12-8876-41A1427A389E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Duplicati.Library.Backend.AliyunOSS</RootNamespace>
+    <AssemblyName>Duplicati.Library.Backend.AliyunOSS</AssemblyName>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AlibabaCloud.DarabonbaArray, Version=0.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.DarabonbaArray.0.1.0\lib\net45\AlibabaCloud.DarabonbaArray.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.DarabonbaEncodeUtil, Version=0.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.DarabonbaEncodeUtil.0.0.2\lib\net45\AlibabaCloud.DarabonbaEncodeUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.DarabonbaMap, Version=0.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.DarabonbaMap.0.0.2\lib\net45\AlibabaCloud.DarabonbaMap.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.DarabonbaSignatureUtil, Version=0.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.DarabonbaSignatureUtil.0.0.4\lib\net45\AlibabaCloud.DarabonbaSignatureUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.DarabonbaString, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.DarabonbaString.1.0.3\lib\net45\AlibabaCloud.DarabonbaString.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.EndpointUtil, Version=0.1.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.EndpointUtil.0.1.1\lib\net45\AlibabaCloud.EndpointUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.GatewayOss, Version=0.0.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.GatewayOss.0.0.10\lib\net45\AlibabaCloud.GatewayOss.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.GatewaySpi, Version=0.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.GatewaySpi.0.0.2\lib\net45\AlibabaCloud.GatewaySpi.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.OpenApiClient, Version=0.1.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.OpenApiClient.0.1.6\lib\net45\AlibabaCloud.OpenApiClient.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.OpenApiUtil, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.OpenApiUtil.1.1.1\lib\net45\AlibabaCloud.OpenApiUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.OSSUtil, Version=0.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.OSSUtil.0.0.3\lib\net45\AlibabaCloud.OSSUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.SDK.Oss20190517, Version=1.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.SDK.Oss20190517.1.0.7\lib\net45\AlibabaCloud.SDK.Oss20190517.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.TeaUtil, Version=0.1.14.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.TeaUtil.0.1.17\lib\net45\AlibabaCloud.TeaUtil.dll</HintPath>
+    </Reference>
+    <Reference Include="AlibabaCloud.TeaXML, Version=0.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\AlibabaCloud.TeaXML.0.0.5\lib\net45\AlibabaCloud.TeaXML.dll</HintPath>
+    </Reference>
+    <Reference Include="Aliyun.Credentials, Version=1.3.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Aliyun.Credentials.1.3.2\lib\net45\Aliyun.Credentials.dll</HintPath>
+    </Reference>
+    <Reference Include="Aliyun.OSS.Core, Version=2.12.0.0, Culture=neutral, PublicKeyToken=0ad4175f0dac0b9b, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Aliyun.OSS.SDK.NetCore.2.12.0\lib\netstandard2.0\Aliyun.OSS.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Crypto, Version=1.9.0.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Portable.BouncyCastle.1.9.0\lib\net40\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http.Extensions, Version=2.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Microsoft.Net.Http.2.2.29\lib\net45\System.Net.Http.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Primitives, Version=4.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Microsoft.Net.Http.2.2.29\lib\net45\System.Net.Http.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.WebRequest" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Tea, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\Tea.1.1.2\lib\net45\Tea.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AliyunOSSBackend.cs" />
+    <Compile Include="AliyunOSSOptions.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Strings.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj">
+      <Project>{d63e53e4-a458-4c2f-914d-92f715f58acf}</Project>
+      <Name>Duplicati.Library.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj">
+      <Project>{c5899f45-b0ff-483c-9d38-24a9fcaab237}</Project>
+      <Name>Duplicati.Library.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj">
+      <Project>{b68f2214-951f-4f78-8488-66e1ed3f50bf}</Project>
+      <Name>Duplicati.Library.Localization</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj">
+      <Project>{d10a5fc0-11b4-4e70-86aa-8aea52bd9798}</Project>
+      <Name>Duplicati.Library.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj">
+      <Project>{de3e5d4c-51ab-4e5e-bee8-e636cebfba65}</Project>
+      <Name>Duplicati.Library.Utility</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\..\..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\..\..\..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />
+  <Target Name="EnsureBclBuildImported" BeforeTargets="BeforeBuild" Condition="'$(BclBuildImported)' == ''">
+    <Error Condition="!Exists('..\..\..\..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" Text="This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=317567." HelpKeyword="BCLBUILD2001" />
+    <Error Condition="Exists('..\..\..\..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" Text="The build restored NuGet packages. Build the project again to include these packages in the build. For more information, see http://go.microsoft.com/fwlink/?LinkID=317568." HelpKeyword="BCLBUILD2002" />
+  </Target>
+</Project>

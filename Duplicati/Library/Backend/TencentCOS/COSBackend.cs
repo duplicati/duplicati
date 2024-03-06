@@ -190,7 +190,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
                 GetBucketRequest request = new GetBucketRequest(bucket);
 
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
+                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.Seconds), 600);
 
                 if (!string.IsNullOrEmpty(filename))
                 {
@@ -251,7 +251,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
                 DeleteObjectRequest request = new DeleteObjectRequest(bucket, key);
 
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
+                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.Seconds), 600);
 
                 DeleteObjectResult result = cosXml.DeleteObject(request);
             }
@@ -275,7 +275,7 @@ namespace Duplicati.Library.Backend.TencentCOS
                 cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
                 HeadBucketRequest request = new HeadBucketRequest(bucket);
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
+                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.Seconds), 600);
                 HeadBucketResult result = cosXml.HeadBucket(request);
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "Test", "Request complete {0}: {1}, {2}", result.httpCode, json, result.GetResultInfo());
@@ -321,7 +321,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
                 PutObjectRequest request = new PutObjectRequest(bucket, key, buffer);
 
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.Seconds), KEY_DURATION_SECOND);
                 request.SetRequestHeader("Content-Type", "application/octet-stream");
                 if (!string.IsNullOrEmpty(_cosOptions.StorageClass))
                 {
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
                 GetObjectBytesRequest request = new GetObjectBytesRequest(bucket, key);
 
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.Seconds), KEY_DURATION_SECOND);
 
                 GetObjectBytesResult result = cosXml.GetObject(request);
 
@@ -391,9 +391,9 @@ namespace Duplicati.Library.Backend.TencentCOS
                 string key = GetFullKey(newname);
                 CopyObjectRequest request = new CopyObjectRequest(bucket, key);
 
-                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.Seconds), KEY_DURATION_SECOND);
                 request.SetCopySource(copySource);
-                request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.COPY);
+                request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.Copy);
 
                 CopyObjectResult result = cosXml.CopyObject(request);
 
