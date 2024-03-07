@@ -40,6 +40,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<ReportHelper>();
 
+        /// <summary>
+        /// The salt used for calculating a backup Id from the remote URL
+        /// </summary>
+        private const string SALT = "DUPL";
 
         /// <summary>
         /// Name of the option used to specify subject
@@ -310,11 +314,24 @@ namespace Duplicati.Library.Modules.Builtin
                 if (input.IndexOf("%PARSEDRESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                     extra["ParsedResult"] = m_parsedresultlevel;
 
+                // If the options contains the key, it is captured by the loop over m_options
+                // so we only patch it in case it is missing
+
+                if (input.IndexOf("%machine-id%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("machine-id"))
+                        extra["machine-id"] = "";
+                }
+
+                if (input.IndexOf("%backup-id%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("backup-id"))
+                        extra["backup-id"] = Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
+                }
+
                 if (input.IndexOf("%backup-name%", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    if (m_options.ContainsKey("backup-name"))
-                        extra["backup-name"] = m_options["backup-name"];
-                    else
+                    if (!m_options.ContainsKey("backup-name"))
                         extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
                 }
 
@@ -346,6 +363,12 @@ namespace Duplicati.Library.Modules.Builtin
 
                 if (!m_options.ContainsKey("backup-name"))
                     input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("backup-id"))
+                    input = Regex.Replace(input, "\\%backup-id\\%", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT)), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("machine-id"))
+                    input = Regex.Replace(input, "\\%machine-id\\%", "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
                 return input;
