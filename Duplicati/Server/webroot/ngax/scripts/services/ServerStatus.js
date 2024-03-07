@@ -275,6 +275,9 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
                     // Try again
                     longpoll(true);
+                } else if (response.status == 401) {
+                    // Change state to connected to hide the connecting message, which is on top of the login message from the AppService
+                    state.connectionState = 'connected';
                 } else {
 
                     state.connectionState = 'disconnected';
