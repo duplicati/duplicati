@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
@@ -118,6 +119,14 @@ namespace Duplicati.GUI.TrayIcon.Windows
             };
             m_handleProvider.Show();
             m_handleProvider.Hide();
+
+            // Attempt to hide the form later, as it appears there is an issue with show/hide
+            m_handleProvider.Shown += async (sender, arg) =>
+            {
+                m_handleProvider.Hide();
+                await Task.Delay(100);
+                m_handleProvider.Hide();
+            };
 
             m_trayIcon = new NotifyIcon();
             m_trayIcon.DoubleClick += new EventHandler(m_trayIcon_DoubleClick);
