@@ -31,10 +31,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
-	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
-    EditUriBackendConfig.templates['cos'] = 'templates/backends/cos.html';
-	EditUriBackendConfig.templates['aliyunoss'] = 'templates/backends/aliyunoss.html';
-    EditUriBackendConfig.templates['e2'] = 'templates/backends/e2.html';
+	  EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
+    EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
+	  EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
+    EditUriBackendConfig.templates['e2']          = 'templates/backends/e2.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -217,6 +217,24 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         scope.oauth_service_link = 'https://duplicati-oauth-handler.appspot.com/';
         scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
         scope.oauth_in_progress = false;
+        
+        // Handle a global override for OAuth or a local from advanced options
+        // This is needed to start the token creation on the non-default OAuth server
+        AppService.get('/serversettings').then(function(data) {
+            var oauthurl = scope.oauth_global_server;
+            if (data.data['--oauth-url'] != null && data.data['--oauth-url'] != '') {
+                oauthurl = data.data['--oauth-url'];
+                if (oauthurl.endsWith("/refresh"))
+                    oauthurl = oauthurl.substr(0, oauthurl.length - 7);
+                if (!oauthurl.endsWith("/")) oauthurl += "/";
+                scope.oauth_global_server = oauthurl;
+            }
+
+            if (!oauthurl.endsWith("/")) 
+                oauthurl += "/";
+            scope.oauth_service_link = oauthurl;
+            scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+        }, AppUtils.connectionError);
 
         scope.oauth_start_token_creation = function () {
 
@@ -225,18 +243,32 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             var w = 450;
             var h = 600;
 
-            var url = scope.oauth_start_link;
+            var servicelink = scope.oauth_service_link;
+
+            // Handle local override
+            for (var n in scope.AdvancedOptions) {
+                if (scope.AdvancedOptions[n].indexOf('--oauth-url=') == 0) {
+                    servicelink = scope.AdvancedOptions[n].substr('--oauth-url='.length);
+                    if (servicelink.endsWith("/refresh"))
+                        servicelink = servicelink.substr(0, servicelink.length - 7);
+                }
+            }
+
+            if (!servicelink.endsWith("/")) 
+                servicelink += "/";
+
+            scope.oauth_start_link = servicelink + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token
 
             var countDown = 100;
             var ft = scope.oauth_create_token;
             var left = (screen.width / 2) - (w / 2);
             var top = (screen.height / 2) - (h / 2);
-            var wnd = window.open(url, '_blank', 'height=' + h + ',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
+            var wnd = window.open(scope.oauth_start_link, '_blank', 'height=' + h + ',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
 
             var recheck = function () {
                 countDown--;
                 if (countDown > 0 && ft == scope.oauth_create_token) {
-                    $http.jsonp(scope.oauth_service_link + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
+                    $http.jsonp(servicelink + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
                         function (response) {
                             if (response.data.authid) {
                                 scope.AuthID = response.data.authid;
@@ -994,7 +1026,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'AuthID', gettextCatalog.getString('AuthID'));
 
         if (res)
-            EditUriBackendConfig.recommend_path(scope, continuation);
+            EditUriBackendConfig.recommend_path(scope, function() {
+                
+                continuation();
+            });
     };
 
     EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['authid-base'];
