@@ -157,6 +157,10 @@ namespace Duplicati.Library.Main.Strings
         public static string VssusemappingShort { get { return LC.L(@"Map snapshots to a drive (Windows only)"); } }
         public static string BackupnameLong { get { return LC.L(@"A display name that is attached to this backup. Can be used to identify the backup when sending mail or running scripts."); } }
         public static string BackupnameShort { get { return LC.L(@"Name of the backup"); } }
+        public static string BackupidLong { get { return LC.L(@"A unique identification for this backup. Can be used to identify the backup when sending mail or running scripts."); } }
+        public static string BackupidShort { get { return LC.L(@"Backup ID"); } }
+        public static string MachineidLong { get { return LC.L(@"A unique identification of the machine running the backup. Can be used to identify the machine when sending mail or running scripts."); } }
+        public static string MachineidShort { get { return LC.L(@"Machine ID"); } }
         public static string CompressionextensionfileLong(string path) { return LC.L(@"This property can be used to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}.", path); }
         public static string CompressionextensionfileShort { get { return LC.L(@"Manage non-compressible file extensions"); } }
         public static string BlocksizeLong { get { return LC.L(@"The block size determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created."); } }

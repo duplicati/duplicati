@@ -905,6 +905,7 @@ namespace Duplicati.Server
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
+            options["backup-id"] = $"DB-{backup.ID}";
 
             // Apply normal options
             foreach(var o in backup.Settings)
@@ -915,7 +916,6 @@ namespace Duplicati.Server
             foreach(var o in backup.Settings)
                 if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name.Substring(2)] = o.Value;
-
 
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);
