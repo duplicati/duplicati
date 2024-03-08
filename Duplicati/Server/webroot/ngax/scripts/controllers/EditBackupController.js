@@ -14,6 +14,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
     $scope.ExcludeAttributes = [];
     $scope.ExcludeLargeFiles = false;
+    $scope.ExcludeFileSize = null;
 
     $scope.fileAttributes = [
         {'name': gettextCatalog.getString('Hidden files'), 'value': 'hidden'},
@@ -676,10 +677,19 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     $scope.$watch("Options['--compression-module']", reloadOptionsList);
     $scope.$watch("Backup.TargetURL", reloadOptionsList);
     $scope.$on('systeminfochanged', reloadOptionsList);
-    $scope.$watch('ExcludeLargeFiles', function() {
-        if ($scope.Options != null && $scope.Options['--skip-files-larger-than'] == null)
-            $scope.Options['--skip-files-larger-than'] = '100MB';
-    });
+    $scope.$watch('ExcludeLargeFiles', function(enabled) {
+        if ($scope.Options != null) {
+            if ($scope.Options['--skip-files-larger-than'] == null) {
+                $scope.Options['--skip-files-larger-than'] = '100MB';
+            }
+            $scope.ExcludeFileSize = enabled ? AppUtils.parseSizeString($scope.Options['--skip-files-larger-than']) : null;
+        }
+    }, true);
+    $scope.$watch("Options['--skip-files-larger-than']", function (value) {
+        if ($scope.ExcludeLargeFiles) {
+            $scope.ExcludeFileSize =  AppUtils.parseSizeString(value);
+        }
+    }, true);
     $scope.$watch("Schedule.AllowedDays", checkAllowedDaysConfig, true);
 
     if ($routeParams.backupid == null) {

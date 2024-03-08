@@ -143,7 +143,7 @@
                         <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
                     </div>
                     <div class="resizable filepicker" ng-hide="EditSourceAdvanced">
-                        <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders"></source-folder-picker>
+                        <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders" ng-exclude-attributes="ExcludeAttributes" ng-exclude-size="ExcludeFileSize"></source-folder-picker>
                     </div>
                     <div class="input textarea" ng-show="EditSourceAdvanced">
                         <label for="SourcePathList" translate>Source folders</label>
@@ -237,7 +237,7 @@
                             <label for="exclude-large-files" translate>Files larger than:</label>
 
                             <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
-                            <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
+                            <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value.toUpperCase() as item.name for item in AppUtils.fileSizeMultipliers">
                             </select>
                         </div>
                     </div>
