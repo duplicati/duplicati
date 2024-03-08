@@ -36,8 +36,8 @@ BUILDTYPE=$(echo "${ZIPFILE}" | cut -d "-" -f 2 | cut -d "_" -f 2)
 BUILDTAG_RAW=$(echo "${ZIPFILE}" | cut -d "." -f 1-4 | cut -d "-" -f 2-4)
 BUILDTAG="${BUILDTAG_RAW//-}"
 
-RPMNAME="duplicati-${VERSION}-${BUILDTAG}.noarch.rpm"
-DEBNAME="duplicati_${VERSION}-1_all.deb"
+RPMNAME="duplicati-${BUILDTAG_RAW}.noarch.rpm"
+DEBNAME="duplicati-${BUILDTAG_RAW}-all.deb"
 MSI64NAME="duplicati-${BUILDTAG_RAW}-x64.msi"
 MSI32NAME="duplicati-${BUILDTAG_RAW}-x86.msi"
 DMGNAME="duplicati-${BUILDTAG_RAW}.dmg"
