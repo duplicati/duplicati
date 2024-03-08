@@ -71,8 +71,8 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="uplink.NET, Version=2.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\packages\uplink.NET.2.7.1604\lib\netstandard2.0\uplink.NET.dll</HintPath>
+    <Reference Include="uplink.NET, Version=2.12.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\packages\uplink.NET.2.12.3328\lib\netstandard2.0\uplink.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -111,6 +111,34 @@
       <ErrorText>Dieses Projekt verweist auf mindestens ein NuGet-Paket, das auf diesem Computer fehlt. Verwenden Sie die Wiederherstellung von NuGet-Paketen, um die fehlenden Dateien herunterzuladen. Weitere Informationen finden Sie unter "http://go.microsoft.com/fwlink/?LinkID=322105". Die fehlende Datei ist "{0}".</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets'))" />
+  </Target>
+  <Target Name="CopyTardigradeLinuxLibrary" BeforeTargets="PrepareForBuild">
+    <Message Text="Executing Tardigrade Linux native library copy task" Importance="High" />
+    <Copy
+      SourceFiles="..\..\..\..\packages/uplink.NET.Linux.2.12.3328/runtimes/linux-x64/native/storj_uplink.so"
+      DestinationFiles="$(ProjectDir)libstorj_uplink.so" />
+    <Message Text="Copied Linux uplink native library" Importance="High" />
+  </Target>
+  <Target Name="CopyTardigradeMacLibrary" BeforeTargets="PrepareForBuild">
+    <Message Text="Executing Tardigrade Linux native library copy task" Importance="High" />
+    <Copy
+      SourceFiles="..\..\..\..\packages/uplink.NET.Mac.2.12.3328/runtimes/osx-x64/native/libstorj_uplink.dylib"
+      DestinationFiles="$(ProjectDir)libstorj_uplink.dylib" />
+      <Message Text="Copied Mac uplink native library" Importance="High" />
+  </Target>
+  <Target Name="CopyTardigradeWinLibrary64" BeforeTargets="PrepareForBuild">
+     <Message Text="Executing Tardigrade Windows native 64 library copy task" Importance="High" />
+    <Copy
+      SourceFiles="..\..\..\..\packages/uplink.NET.Win.2.12.3328/runtimes/win-x64/native/storj_uplink.dll"
+      DestinationFolder="$(ProjectDir)win-x64" />
+      <Message Text="Copied Windows uplink native 64 library" Importance="High" />
+  </Target>
+  <Target Name="CopyTardigradeWinLibrary32" BeforeTargets="PrepareForBuild">
+     <Message Text="Executing Tardigrade Windows native 32 library copy task" Importance="High" />
+    <Copy
+      SourceFiles="..\..\..\..\packages/uplink.NET.Win.2.12.3328/runtimes/win-x86/native/storj_uplink.dll"
+      DestinationFolder="$(ProjectDir)win-x86" />
+      <Message Text="Copied Windows uplink native 32 library" Importance="High" />
   </Target>
   <Import Project="..\..\..\..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('..\..\..\..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.3\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" />
 </Project>
