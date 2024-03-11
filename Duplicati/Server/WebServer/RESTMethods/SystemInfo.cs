@@ -27,7 +27,7 @@ using Duplicati.Library.Common;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public class SystemInfo : IRESTMethodGET, IRESTMethodPOST, IRESTMethodDocumented
+    public class SystemInfo : IRESTMethodGET, IRESTMethodDocumented
     {
         public string Description { get { return "Gets various system properties"; } }
         public IEnumerable<KeyValuePair<string, Type>> Types
@@ -43,26 +43,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
         public void GET(string key, RequestInfo info)
         {
             info.BodyWriter.OutputOK(SystemData(info));            
-        }
-
-        public void POST(string key, RequestInfo info)
-        {
-            switch ((key ?? "").ToLowerInvariant())
-            {
-                case "suppressdonationmessages":
-                    Library.Main.Utility.SuppressDonationMessages = true;
-                    info.OutputOK();
-                    return;
-
-                case "showdonationmessages":
-                    Library.Main.Utility.SuppressDonationMessages = false;
-                    info.OutputOK();
-                    return;
-
-                default:
-                    info.ReportClientError("No such action", System.Net.HttpStatusCode.NotFound);
-                    return;
-            }
         }
 
         private static object SystemData(RequestInfo info)
@@ -107,7 +87,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 ServerModules = Serializable.ServerSettings.ServerModules,
                 UsingAlternateUpdateURLs = Duplicati.Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
                 LogLevels = Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)),
-                SuppressDonationMessages = Duplicati.Library.Main.Utility.SuppressDonationMessages,
                 SpecialFolders = from n in SpecialFolders.Nodes select new { ID = n.id, Path = n.resolvedpath },
                 BrowserLocale = new
                 {
