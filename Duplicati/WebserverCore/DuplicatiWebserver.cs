@@ -18,8 +18,8 @@ namespace Duplicati.WebserverCore
             app.UseAuthMiddleware();
 
 
-            string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "webroot");
+            string webroot = System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "webroot");
             webroot = System.IO.Path.Combine(webroot, "webroot");
             var webroot_fileprovider = new PhysicalFileProvider(webroot);
 

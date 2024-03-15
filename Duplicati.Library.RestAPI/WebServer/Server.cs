@@ -225,11 +225,11 @@ namespace Duplicati.Server.WebServer
             server.Add(new RESTHandler());
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "webroot");
+            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "webroot");
 
 #if DEBUG
             // Easy test for extensions while debugging
-            install_webroot = Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
+            install_webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
             if (!System.IO.Directory.Exists(System.IO.Path.Combine(webroot, "webroot")))
             {

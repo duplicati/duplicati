@@ -19,14 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Security.Principal;
 using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Duplicati.WindowsService
 {
@@ -34,11 +29,6 @@ namespace Duplicati.WindowsService
     {
         [STAThread]
         public static int Main(string[] args)
-        {
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
-        }
-
-        public static void RealMain(string[] args)
         {
             var install = args != null && args.Any(x => string.Equals("install", x, StringComparison.OrdinalIgnoreCase));
             var uninstall = args != null && args.Any(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase));
@@ -79,6 +69,7 @@ namespace Duplicati.WindowsService
                     catch (Exception ex)
                     {
                         Console.WriteLine("Duplicati service delete failed. Exception: {0}", ex.Message);
+                        return 1;
                     }
                 }
                 if (install)
@@ -93,6 +84,7 @@ namespace Duplicati.WindowsService
                     catch (Exception ex)
                     {
                         Console.WriteLine("Duplicati service installation failed. Exception: {0}", ex.Message);
+                        return 1;
                     }
                 }
             }
@@ -100,6 +92,8 @@ namespace Duplicati.WindowsService
             {
                 ServiceBase.Run(new ServiceBase[] { new ServiceControl(args) });
             }
+
+            return 0;
         }
     }
 }

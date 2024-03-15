@@ -55,9 +55,9 @@ namespace Duplicati.Server.Serializable
             }
         }
 
-        public UpdatePollerStates UpdaterState { get { return FIXMEGlobal.UpdatePoller.ThreadState; } }
+        public string UpdateDownloadLink => FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion.GetUpdateUrls()?.FirstOrDefault();
 
-        public bool UpdateReady { get { return Duplicati.Library.AutoUpdater.UpdaterManager.HasUpdateInstalled; } }
+        public UpdatePollerStates UpdaterState { get { return FIXMEGlobal.UpdatePoller.ThreadState; } }
 
         public double UpdateDownloadProgress { get { return FIXMEGlobal.UpdatePoller.DownloadProgess; } }
 

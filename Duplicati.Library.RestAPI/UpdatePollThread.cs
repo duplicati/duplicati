@@ -30,7 +30,6 @@ namespace Duplicati.Server
     {
         private readonly Thread m_thread;
         private volatile bool m_terminated = false;
-        private volatile bool m_download = false;
         private volatile bool m_forceCheck = false;
         private readonly object m_lock = new object();
         private readonly AutoResetEvent m_waitSignal;
@@ -68,25 +67,6 @@ namespace Duplicati.Server
             {
                 m_forceCheck = true;
                 m_waitSignal.Set();
-            }
-        }
-
-        public void InstallUpdate()
-        {
-            lock(m_lock)
-            {
-                m_forceCheck = true;
-                m_download = true;
-                m_waitSignal.Set();
-            }
-        }
-
-        public void ActivateUpdate()
-        {
-            if (Duplicati.Library.AutoUpdater.UpdaterManager.SetRunUpdate())
-            {
-                IsUpdateRequested = true;
-                FIXMEGlobal.ApplicationExitEvent.Set();
             }
         }
 
@@ -175,12 +155,15 @@ namespace Duplicati.Server
                             FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion = null;
                     }
 
-                    if (FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
+                    var updatedinfo = FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion;
+                    if (updatedinfo != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(updatedinfo.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
+                        var package = updatedinfo.FindPackage();
+
                         FIXMEGlobal.DataConnection.RegisterNotification(
                                     NotificationType.Information,
                                     "Found update",
-                                    FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion.Displayname,
+                                    updatedinfo.Displayname,
                                     null,
                                     null,
                                     "update:new",
@@ -191,22 +174,6 @@ namespace Duplicati.Server
                                         return all.FirstOrDefault(x => x.Action == "update:new") ?? self;
                                     }
                                 );
-                    }
-                }
-
-                if (m_download)
-                {
-                    lock(m_lock)
-                        m_download = false;
-
-                    var v = FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion;
-                    if (v != null)
-                    {
-                        ThreadState = UpdatePollerStates.Downloading;
-                        FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
-
-                        if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; }))
-                            FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                     }
                 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -142,10 +142,6 @@ namespace Duplicati.Library.AutoUpdater
 
                 if (string.IsNullOrWhiteSpace(channelstring))
                     channelstring = BuildUpdateChannel;
-
-                if (string.IsNullOrWhiteSpace(channelstring))
-                    channelstring = UpdaterManager.BaseVersion.ReleaseType;
-
 
                 // Update from older builds
                 if (string.Equals(channelstring, "preview", StringComparison.OrdinalIgnoreCase))

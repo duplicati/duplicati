@@ -77,7 +77,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 ServerVersionName = Duplicati.License.VersionNumbers.Version,
                 ServerVersionType = Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
                 StartedBy = FIXMEGlobal.Origin,
-                BaseVersionName = Duplicati.Library.AutoUpdater.UpdaterManager.BaseVersion.Displayname,
                 DefaultUpdateChannel = Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel,
                 DefaultUsageReportLevel = Duplicati.Library.UsageReporter.Reporter.DefaultReportLevel,
                 ServerTime = DateTime.Now,
