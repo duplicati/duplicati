@@ -182,54 +182,6 @@ namespace Duplicati.Library.Main
                 db.SetDbOptions(newDict, transaction);               
             }
         }
-
-        /// <summary>
-        /// The filename for the marker file that the user can add to suppress donation messages
-        /// </summary>
-        private const string SUPPRESS_DONATIONS_FILENAME = "suppress_donation_messages.txt";
-
-
-        /// <summary>
-        /// Gets or sets donation message suppression
-        /// </summary>
-        public static bool SuppressDonationMessages
-        {
-            get
-            {
-                try
-                {
-                    var folder = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AutoUpdater.AutoUpdateSettings.AppName);
-                    return File.Exists(Path.Combine(folder, SUPPRESS_DONATIONS_FILENAME));
-                }
-                catch
-                {
-                }
-
-                return true;
-            }
-            set
-            {
-                try
-                {
-                    var folder = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AutoUpdater.AutoUpdateSettings.AppName);
-                    if (!Directory.Exists(folder))
-                        Directory.CreateDirectory(folder);
-
-                    var path = Path.Combine(folder, SUPPRESS_DONATIONS_FILENAME);
-
-                    if (value)
-                        using(File.OpenWrite(path))
-                        {
-                        }
-                    else
-                        File.Delete(path);
-                        
-                }
-                catch
-                {
-                }
-            }
-        }
     }
 }
 
