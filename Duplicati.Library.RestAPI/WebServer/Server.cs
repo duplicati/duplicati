@@ -260,13 +260,7 @@ namespace Duplicati.Server.WebServer
                 // in the same folders as the running application, to avoid users
                 // that inadvertently expose top level folders
                 if (!string.IsNullOrWhiteSpace(userroot)
-                    &&
-                    (
-                        userroot.StartsWith(Util.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
-                        ||
-                        userroot.StartsWith(Util.AppendDirSeparator(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir), Library.Utility.Utility.ClientFilenameStringComparison)
-                    )
-                )
+                    && userroot.StartsWith(Util.AppendDirSeparator(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison))
 #endif
                 {
                     webroot = userroot;
