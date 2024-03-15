@@ -1,91 +1,104 @@
-﻿using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.Extensions.FileProviders;
+﻿using System.Net.WebSockets;
+using Duplicati.WebserverCore.Database;
+using Duplicati.WebserverCore.Extensions;
+using Duplicati.WebserverCore.Middlewares;
+using Microsoft.EntityFrameworkCore;
 
-namespace Duplicati.WebserverCore
+namespace Duplicati.WebserverCore;
+
+public class DuplicatiWebserver
 {
-    public class DuplicatiWebserver
+    public IConfiguration Configuration { get; private set; }
+
+    public WebApplication App { get; private set; }
+
+    public IServiceProvider Provider { get; private set; }
+
+    public void InitWebServer()
     {
-        public Action Foo()
-        {
-            var builder = WebApplication.CreateBuilder();
-            builder.Host.UseRESTHandlers();
-            builder.Services.AddControllers()
-                // This app gets launched by a different assembly, so we need to tell it to look in this one
-                .AddApplicationPart(this.GetType().Assembly);
-            builder.Services.AddHostedService<ApplicationPartsLogger>();
-            var app = builder.Build();
-            app.UseAuthMiddleware();
+        var builder = WebApplication.CreateBuilder();
+        builder.Host.UseRESTHandlers();
+        builder.Services.AddControllers()
+            // This app gets launched by a different assembly, so we need to tell it to look in this one
+            .AddApplicationPart(GetType().Assembly);
+        builder.Services.AddHostedService<ApplicationPartsLogger>();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+        var connectionString = builder.Configuration.GetConnectionString("Sqlite");
+        builder.Services.AddDbContext<MainDbContext>(o => { o.UseSqlite(connectionString); });
 
+        builder.Services.AddDuplicati();
 
-            string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "webroot");
-            webroot = System.IO.Path.Combine(webroot, "webroot");
-            var webroot_fileprovider = new PhysicalFileProvider(webroot);
-
-            // index.html
-            DefaultFilesOptions defaultFilesOptions = new DefaultFilesOptions();
-            defaultFilesOptions.DefaultFileNames.Clear();
-            defaultFilesOptions.DefaultFileNames.Add("index.html");
-            defaultFilesOptions.FileProvider = webroot_fileprovider;
-            app.UseDefaultFiles(defaultFilesOptions);
-
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = webroot_fileprovider,
-                RequestPath = ""
-            });
-
-            app.MapControllers();
-
-            // Test http://127.0.0.1:3001/api/v1/Licenses
-            app.RunAsync("http://localhost:3001");
-            return () => { app.StopAsync(); };
-        }
-
-        public Action Bar()
-        {
-            var builder = Host.CreateDefaultBuilder();
-            builder.UseRESTHandlers();
-            var app = builder.Build();
-
-            app.RunAsync();
-            return () => { app.StopAsync(); };
-        }
+        Configuration = builder.Configuration;
+        App = builder.Build();
+        Provider = App.Services;
     }
 
-    //Useful for debugging ASP.net magically loading controllers
-    public class ApplicationPartsLogger : IHostedService
+    public async Task Start()
     {
-        private readonly ILogger<ApplicationPartsLogger> _logger;
-        private readonly ApplicationPartManager _partManager;
+        App.UseAuthMiddleware();
+        App.UseDefaultStaticFiles();
 
-        public ApplicationPartsLogger(ILogger<ApplicationPartsLogger> logger, ApplicationPartManager partManager)
+        //TODO: remove
+        App.MapControllers();
+
+        App.AddEndpoints();
+        App.UseWebSockets(new WebSocketOptions
         {
-            _logger = logger;
-            _partManager = partManager;
+            //TODO: read it from configuration Kestrel:Endpoints:MyHttpEndpoint:Url 
+            AllowedOrigins = { "localhost:8201" }
+        });
+        
+        App.Use(async (context, next) =>
+        {
+            //TODO: add configuration with this path
+            if (context.Request.Path != "/ws")
+            {
+                await next(context);
+            }
+            else
+            {
+                if (context.WebSockets.IsWebSocketRequest)
+                {
+                    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                    await Echo(webSocket);
+                }
+                else
+                {
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                }
+            }
+        });
+
+        await App.RunAsync();
+    }
+
+    public async Task Stop()
+    {
+        await App.StopAsync();
+    }
+    
+    private static async Task Echo(WebSocket webSocket)
+    {
+        var buffer = new byte[1024 * 4];
+        var receiveResult = await webSocket.ReceiveAsync(
+            new ArraySegment<byte>(buffer), CancellationToken.None);
+
+        while (!receiveResult.CloseStatus.HasValue)
+        {
+            await webSocket.SendAsync(
+                new ArraySegment<byte>(buffer, 0, receiveResult.Count),
+                receiveResult.MessageType,
+                receiveResult.EndOfMessage,
+                CancellationToken.None);
+
+            receiveResult = await webSocket.ReceiveAsync(
+                new ArraySegment<byte>(buffer), CancellationToken.None);
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            // Get the names of all the application parts. This is the short assembly name for AssemblyParts
-            var applicationParts = _partManager.ApplicationParts.Select(x => x.Name);
-
-            // Create a controller feature, and populate it from the application parts
-            var controllerFeature = new ControllerFeature();
-            _partManager.PopulateFeature(controllerFeature);
-
-            // Get the names of all of the controllers
-            var controllers = controllerFeature.Controllers.Select(x => x.Name);
-
-            // Log the application parts and controllers
-            _logger.LogInformation("Found the following application parts: '{ApplicationParts}' with the following controllers: '{Controllers}'",
-                string.Join(", ", applicationParts), string.Join(", ", controllers));
-
-            return Task.CompletedTask;
-        }
-
-        // Required by the interface
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        await webSocket.CloseAsync(
+            receiveResult.CloseStatus.Value,
+            receiveResult.CloseStatusDescription,
+            CancellationToken.None);
     }
 }

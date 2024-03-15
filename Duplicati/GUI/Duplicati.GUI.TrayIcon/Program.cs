@@ -140,7 +140,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
-                databaseConnection = Server.Program.GetDatabaseConnection(options);
+                databaseConnection = Server.Program.GetDatabaseConnection(null, options);
 
                 if (databaseConnection != null)
                 {

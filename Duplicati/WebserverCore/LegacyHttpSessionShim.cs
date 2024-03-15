@@ -1,10 +1,6 @@
-
-using HttpServer;
-using HttpServer.FormDecoders;
 using HttpServer.Sessions;
-using System.Collections.Specialized;
-using System.Net;
-using System.Text;
+
+namespace Duplicati.WebserverCore;
 
 class LegacyHttpSessionShim : HttpServer.Sessions.IHttpSession
 {

@@ -105,7 +105,7 @@ namespace Duplicati.UnitTest
             }
 
             byte[] jsonByteArray;
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
+            using (Program.DataConnection = Program.GetDatabaseConnection(null, advancedOptions))
             {
                 jsonByteArray = Server.WebServer.RESTMethods.Backup.ExportToJSON(backup, null);
             }
@@ -127,7 +127,7 @@ namespace Duplicati.UnitTest
         {
             Dictionary<string, string> metadata = new Dictionary<string, string> {{"SourceFilesCount", "1"}};
             Dictionary<string, string> advancedOptions = new Dictionary<string, string> {{"server-datafolder", this.serverDatafolder}};
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
+            using (Program.DataConnection = Program.GetDatabaseConnection(null, advancedOptions))
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());

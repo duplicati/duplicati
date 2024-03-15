@@ -24,8 +24,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
 {
     public class RequestInfo : IDisposable
     {
-        public HttpServer.IHttpRequest Request { get; private set; }
-        public HttpServer.IHttpResponse Response { get; private set; }
+        public HttpServer.IHttpRequest Request { get; }
+        public HttpServer.IHttpResponse Response { get; }
         public HttpServer.Sessions.IHttpSession Session { get; private set; }
         public BodyWriter BodyWriter { get; private set; }
         public RequestInfo(HttpServer.IHttpRequest request, HttpServer.IHttpResponse response, HttpServer.Sessions.IHttpSession session)
