@@ -694,7 +694,7 @@ namespace Duplicati.Server
             if (ex is UserInformationException exception)
                 messageid = exception.HelpID;
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.DataConnection.RegisterNotification(
                 NotificationType.Error,
                 backup.IsTemporary ?
@@ -876,7 +876,7 @@ namespace Duplicati.Server
             if (!backup.IsTemporary)
                 FIXMEGlobal.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 

@@ -27,7 +27,7 @@ namespace Duplicati.Server.Database
 {
     public class ServerSettings
     {
-        private static class CONST
+        public static class CONST
         {
             public const string STARTUP_DELAY = "startup-delay";
             public const string DOWNLOAD_SPEED_LIMIT = "max-download-speed";
@@ -113,13 +113,13 @@ namespace Duplicati.Server.Database
                     Value = n.Value
             }, Database.Connection.SERVER_SETTINGS_ID);
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
 
 			// In case the usage reporter is enabled or disabled, refresh now
 			FIXMEGlobal.StartOrStopUsageReporter();
             // If throttle options were changed, update now
-            FIXMEGlobal.UpdateThrottleSpeeds();
+            FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds();
         }
         
         public string StartupDelayDuration

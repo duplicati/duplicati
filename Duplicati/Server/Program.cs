@@ -24,8 +24,13 @@ using System.Globalization;
 using System.Linq;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.WebserverCore;
+using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Database;
+using Microsoft.Extensions.DependencyInjection;
+using Sharp.Xmpp.Extensions.Dataforms;
 
 namespace Duplicati.Server
 {
@@ -78,12 +83,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the scheduling thread
         /// </summary>
-        public static Scheduler Scheduler { get => FIXMEGlobal.Scheduler; set => FIXMEGlobal.Scheduler = value; }
-
-        /// <summary>
-        /// This is the working thread
-        /// </summary>
-        public static Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData> WorkThread { get => FIXMEGlobal.WorkThread; set => FIXMEGlobal.WorkThread = value; }
+        public static IScheduler Scheduler { get => FIXMEGlobal.Scheduler; }
 
         /// <summary>
         /// List of completed task results
@@ -108,7 +108,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The controller interface for pause/resume and throttle options
         /// </summary>
-        public static LiveControls LiveControl { get => FIXMEGlobal.LiveControl; set => FIXMEGlobal.LiveControl = value; }
+        public static LiveControls LiveControl { get => DuplicatiWebserver.Provider.GetRequiredService<LiveControls>() ; }
 
         /// <summary>
         /// The application exit event
@@ -121,14 +121,22 @@ namespace Duplicati.Server
         private static WebServer.Server WebServer;
 
         /// <summary>
+        /// Duplicati webserver instance
+        /// </summary>
+        public static DuplicatiWebserver DuplicatiWebserver { get; set; }
+
+        /// <summary>
         /// Callback to shutdown the modern webserver
         /// </summary>
-        private static Action ShutdownModernWebserver;
+        private static void ShutdownModernWebserver()
+        {
+            DuplicatiWebserver.Stop().GetAwaiter().GetResult();
+        }
 
         /// <summary>
         /// The update poll thread.
         /// </summary>
-        public static UpdatePollThread UpdatePoller { get => FIXMEGlobal.UpdatePoller; set => FIXMEGlobal.UpdatePoller = value; }
+        public static UpdatePollThread UpdatePoller => FIXMEGlobal.UpdatePoller;
 
         /// <summary>
         /// An event that is set once the server is ready to respond to requests
@@ -138,22 +146,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The status event signaler, used to control long polling of status updates
         /// </summary>
-        public static EventPollNotify StatusEventNotifyer { get => FIXMEGlobal.StatusEventNotifyer; }
+        public static EventPollNotify StatusEventNotifyer => FIXMEGlobal.Provider.GetRequiredService<EventPollNotify>();
 
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
         /// </summary>
         public static Func<Duplicati.Server.Serialization.Interface.IProgressEventData> GenerateProgressState { get => FIXMEGlobal.GenerateProgressState; set => FIXMEGlobal.GenerateProgressState = value; }
-
-        /// <summary>
-        /// An event ID that increases whenever the database is updated
-        /// </summary>
-        public static long LastDataUpdateID = 0;
-
-        /// <summary>
-        /// An event ID that increases whenever a notification is updated
-        /// </summary>
-        public static long LastNotificationUpdateID = 0;
 
         /// <summary>
         /// The log redirect handler
@@ -193,25 +191,10 @@ namespace Duplicati.Server
             set { DataConnection.ApplicationSettings.ServerPortChanged = value; }
         }
 
-        public static void IncrementLastDataUpdateID()
-        {
-            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
-        }
-
-        public static void IncrementLastNotificationUpdateID()
-        {
-            System.Threading.Interlocked.Increment(ref Program.LastNotificationUpdateID);
-        }
-
         static Program()
         {
-            FIXMEGlobal.IncrementLastDataUpdateID = Program.IncrementLastDataUpdateID;
-            FIXMEGlobal.PeekLastDataUpdateID = () => Program.LastDataUpdateID;
-            FIXMEGlobal.IncrementLastNotificationUpdateID = Program.IncrementLastNotificationUpdateID;
-            FIXMEGlobal.PeekLastNotificationUpdateID = () => Program.LastNotificationUpdateID;
             FIXMEGlobal.GetDatabaseConnection = Program.GetDatabaseConnection;
             FIXMEGlobal.StartOrStopUsageReporter = Program.StartOrStopUsageReporter;
-            FIXMEGlobal.UpdateThrottleSpeeds = Program.UpdateThrottleSpeeds;
         }
 
         /// <summary>
@@ -220,6 +203,9 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(string[] args)
         {
+            // var methodInfo = typeof(TemporaryIoCAccessor).Assembly.EntryPoint;
+            // var program = Activator.CreateInstance(methodInfo!.DeclaringType!);
+            // methodInfo.Invoke(program, [Array.Empty<string>()]);
             return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
         }
 
@@ -278,8 +264,10 @@ namespace Duplicati.Server
 
             try
             {
-
-                DataConnection = GetDatabaseConnection(commandlineOptions);
+                DuplicatiWebserver = new DuplicatiWebserver();
+                DuplicatiWebserver.InitWebServer();
+                FIXMEGlobal.Provider = DuplicatiWebserver.Provider;
+                DataConnection = GetDatabaseConnection(DuplicatiWebserver, commandlineOptions);
 
                 if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
                     DataConnection.FixInvalidBackupId();
@@ -292,12 +280,12 @@ namespace Duplicati.Server
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
-                Library.AutoUpdater.UpdaterManager.OnError += (Exception obj) =>
+                Library.AutoUpdater.UpdaterManager.OnError += obj =>
                 {
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
                 
-                UpdatePoller = new UpdatePollThread();
+                UpdatePoller.Init();
 
                 SetPurgeTempFilesTimer(commandlineOptions);
 
@@ -305,7 +293,7 @@ namespace Duplicati.Server
 
                 SetWorkerThread();
 
-                StartWebServer(commandlineOptions);
+                StartWebServer(DuplicatiWebserver, commandlineOptions);
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, "ping-pong-keepalive"))
                 {
@@ -342,7 +330,7 @@ namespace Duplicati.Server
                 ShutdownModernWebserver();
                 UpdatePoller?.Terminate();
                 Scheduler?.Terminate(true);
-                WorkThread?.Terminate(true);
+                FIXMEGlobal.WorkThread?.Terminate(true);
                 ApplicationInstance?.Dispose();
                 PurgeTempFilesTimer?.Dispose();
 
@@ -360,37 +348,33 @@ namespace Duplicati.Server
             return 0;
         }
 
-        private static void StartWebServer(Dictionary<string, string> commandlineOptions)
+        private static void StartWebServer(DuplicatiWebserver webserver, Dictionary<string, string> commandlineOptions)
         {
             WebServer = new WebServer.Server(commandlineOptions);
 
             ServerPortChanged |= WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
             DataConnection.ApplicationSettings.LastWebserverPort = WebServer.Port;
-
-            var server = new DuplicatiWebserver();
-            ShutdownModernWebserver = server.Foo();
+            
+            webserver.Start().GetAwaiter().GetResult();
         }
 
         private static void SetWorkerThread()
         {
-            WorkThread = new Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData>((x) => { Runner.Run(x, true); },
-                LiveControl.State == LiveControls.LiveControlState.Paused);
-            Scheduler = new Scheduler(WorkThread);
-
-            WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
-            WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
-            WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
-            Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
-            WorkThread.OnError += (worker, task, exception) =>
+            FIXMEGlobal.WorkerThreadsManager.Spawn(x => { Runner.Run(x, true); });
+            FIXMEGlobal.WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
+            FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
+            FIXMEGlobal.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
+           FIXMEGlobal.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
+            FIXMEGlobal.WorkThread.OnError += (worker, task, exception) =>
             {
                 Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception);
             };
 
-            var lastScheduleId = LastDataUpdateID;
+            var lastScheduleId = FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
             Program.StatusEventNotifyer.NewEvent += (sender, e) =>
             {
-                if (lastScheduleId == LastDataUpdateID) return;
-                lastScheduleId = LastDataUpdateID;
+                if (lastScheduleId == FIXMEGlobal.NotificationUpdateService.LastDataUpdateId) return;
+                lastScheduleId = FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
                 Program.Scheduler.Reschedule();
             };
 
@@ -413,13 +397,13 @@ namespace Duplicati.Server
                 }
             }
 
-            Program.WorkThread.CompletedWork += (worker, task) => { RegisterTaskResult(task.TaskID, null); };
-            Program.WorkThread.OnError += (worker, task, exception) => { RegisterTaskResult(task.TaskID, exception); };
+           FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { RegisterTaskResult(task.TaskID, null); };
+           FIXMEGlobal.WorkThread.OnError += (worker, task, exception) => { RegisterTaskResult(task.TaskID, exception); };
         }
 
         private static void SetLiveControls()
         {
-            LiveControl = new LiveControls(DataConnection.ApplicationSettings);
+            LiveControl.Init(DataConnection.ApplicationSettings);
             LiveControl.StateChanged += LiveControl_StateChanged;
             LiveControl.ThreadPriorityChanged += LiveControl_ThreadPriorityChanged;
             LiveControl.ThrottleSpeedChanged += LiveControl_ThrottleSpeedChanged;
@@ -589,7 +573,7 @@ namespace Duplicati.Server
             throw new Exception("Server invoked with --help");
         }
 
-        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
+        public static Database.Connection GetDatabaseConnection(object webserver, Dictionary<string, string> commandlineOptions)
         {
             var dbPassword = Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME);
 
@@ -726,21 +710,10 @@ namespace Duplicati.Server
                 Library.UsageReporter.Reporter.SetReportLevel(reportLevel, disableUsageReporter);
         }
 
-        public static void UpdateThrottleSpeeds()
-        {
-            if (Program.WorkThread == null)
-                return;
-
-            var cur = Program.WorkThread.CurrentTask;
-            if (cur != null)
-                cur.UpdateThrottleSpeed();
-        }
-
         private static void SignalNewEvent(object sender, EventArgs e)
         {
             StatusEventNotifyer.SignalNewEvent();
         }
-
 
         /// <summary>
         /// Handles a change in the LiveControl and updates the Runner
@@ -765,29 +738,33 @@ namespace Duplicati.Server
         /// <summary>
         /// This event handler updates the trayicon menu with the current state of the runner.
         /// </summary>
-        static void LiveControl_StateChanged(object sender, EventArgs e)
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        private static void LiveControl_StateChanged(object sender, EventArgs e)
         {
+            var worker = FIXMEGlobal.WorkThread;
             switch (LiveControl.State)
             {
                 case LiveControls.LiveControlState.Paused:
                     {
-                        WorkThread.Pause();
-                        var t = WorkThread.CurrentTask;
+                       worker.Pause();
+                        var t = worker.CurrentTask;
                         t?.Pause();
                         break;
                     }
                 case LiveControls.LiveControlState.Running:
                     {
-                        WorkThread.Resume();
-                        var t = WorkThread.CurrentTask;
+                        worker.Resume();
+                        var t = worker.CurrentTask;
                         t?.Resume();
                         break;
                     }
+                default:
+                    throw new InvalidOperationException($"State of {nameof(LiveControl)} was not recognized!");
             }
 
             StatusEventNotifyer.SignalNewEvent();
         }
-               
+
         /// <summary>
         /// Simple method for tracking if the server has crashed
         /// </summary>

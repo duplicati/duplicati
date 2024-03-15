@@ -139,10 +139,9 @@ namespace Duplicati.Server.Serializable
             set { m_lastEventID = value; }
         }
 
-        public long LastDataUpdateID { get { return FIXMEGlobal.PeekLastDataUpdateID(); } }
+        public long LastDataUpdateID => FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
 
-        public long LastNotificationUpdateID { get { return FIXMEGlobal.PeekLastNotificationUpdateID(); } }
-
+        public long LastNotificationUpdateID => FIXMEGlobal.NotificationUpdateService.LastNotificationUpdateId;
     }
 }
 

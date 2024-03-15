@@ -1,6 +1,6 @@
 backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
 
-    var longpolltime = 5 * 60 * 1000;
+    var longpolltime = 5 * 60 * 10000;
 
     var waitingfortask = {};
 
@@ -112,7 +112,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
     var progressPollTimer = null;
     var progressPollInProgress = false;
-    var progressPollWait = 2000;
+    var progressPollWait = 20000;
 
     function startUpdateProgressPoll() {
         if (progressPollInProgress)
@@ -147,12 +147,13 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
     var longPollRetryTimer = null;
     var countdownForForReLongPoll = function(m) {
+        console.log(arguments)
         if (longPollRetryTimer != null) {
             window.clearInterval(longPollRetryTimer);
             longPollRetryTimer = null;
         }
 
-        var retryAt = new Date(new Date().getTime() + (state.xsfrerror ? 5000 : 15000));
+        var retryAt = new Date(new Date().getTime() + (state.xsfrerror ? 50000 : 150000));
         state.connectionAttemptTimer = new Date() - retryAt;
         $rootScope.$broadcast('serverstatechanged');
 
@@ -173,7 +174,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
         state.pauseTimeRemain = Math.max(0, AppUtils.parseDate(state.estimatedPauseEnd) - new Date());
         if (state.pauseTimeRemain > 0 && updatepausetimer == null) {
-            updatepausetimer = setInterval(pauseTimerUpdater, 500);
+            updatepausetimer = setInterval(pauseTimerUpdater, 50000);
         } else if (state.pauseTimeRemain <= 0 && updatepausetimer != null) {
             clearInterval(updatepausetimer);
             updatepausetimer = null;
@@ -207,20 +208,20 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         }
 
         var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (((!fastcall) && (state.lastEventId > 0)) ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
-        AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
+        AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 50000}).then(
             function (response) {
                 var oldEventId = state.lastEventId;
                 var anychanged =
-                    notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
-                    notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
-                    notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
-                    notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
-                    notifyIfChanged(response.data, 'ProgramState', 'programState') |
-                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
-                    notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
-                    notifyIfChanged(response.data, 'UpdateReady', 'updateReady') |
-                    notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion')|
-                    notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
+                    notifyIfChanged(response.data, 'lastEventID', 'lastEventId') |
+                    notifyIfChanged(response.data, 'lastDataUpdateID', 'lastDataUpdateId') |
+                    notifyIfChanged(response.data, 'lastNotificationUpdateID', 'lastNotificationUpdateId') |
+                    notifyIfChanged(response.data, 'activeTask', 'activeTask') |
+                    notifyIfChanged(response.data, 'programState', 'programState') |
+                    notifyIfChanged(response.data, 'estimatedPauseEnd', 'estimatedPauseEnd') |
+                    notifyIfChanged(response.data, 'updaterState', 'updaterState') |
+                    notifyIfChanged(response.data, 'updateReady', 'updateReady') |
+                    notifyIfChanged(response.data, 'updatedVersion', 'updatedVersion')|
+                    notifyIfChanged(response.data, 'updateDownloadProgress', 'updateDownloadProgress');
 
 
                 if (!angular.equals(state.proposedSchedule, response.data.ProposedSchedule)) {
@@ -258,9 +259,6 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
                 if (state.activeTask != null)
                     startUpdateProgressPoll();
-
-
-                longpoll(false);
             },
 
             function(response) {
@@ -285,9 +283,6 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                     //If we got a new XSRF token this time, quickly retry
                     if (state.xsfrerror && !oldxsfrstate) {
                         longpoll(true);
-                    } else {
-                        // Otherwise, start countdown to next try
-                        countdownForForReLongPoll(function() { longpoll(true); });
                     }
                 }
 
@@ -297,8 +292,6 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             }
         );
     };
-
-    this.reconnect = function() { longpoll(true); };
 
     longpoll(true);
 });

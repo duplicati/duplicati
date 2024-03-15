@@ -496,7 +496,7 @@ namespace Duplicati.Server.Database
                 }
             }
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -598,7 +598,7 @@ namespace Duplicati.Server.Database
                     }
                     
                     tr.Commit();
-                    FIXMEGlobal.IncrementLastDataUpdateID();
+                    FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
                     FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                 }
             }
@@ -611,7 +611,7 @@ namespace Duplicati.Server.Database
                 {
                     AddOrUpdateSchedule(item, tr);
                     tr.Commit();
-                    FIXMEGlobal.IncrementLastDataUpdateID();
+                    FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
                     FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                 }
         }
@@ -674,7 +674,7 @@ namespace Duplicati.Server.Database
                 }
             }
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
         
@@ -694,7 +694,7 @@ namespace Duplicati.Server.Database
             lock(m_lock)
                 DeleteFromDb("Schedule", ID);
             
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
         
@@ -782,7 +782,7 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
             }
 
-            FIXMEGlobal.IncrementLastNotificationUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
 
             return true;
@@ -822,7 +822,7 @@ namespace Duplicati.Server.Database
                     FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = true;
             }
 
-            FIXMEGlobal.IncrementLastNotificationUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 

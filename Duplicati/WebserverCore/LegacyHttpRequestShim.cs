@@ -1,14 +1,12 @@
-
-using Duplicati.Library.Utility;
-using HttpServer;
-using HttpServer.FormDecoders;
-using Microsoft.AspNetCore.Http.Extensions;
-using System;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Net;
-using System.Xml.Linq;
+using HttpServer;
+using HttpServer.FormDecoders;
+using Microsoft.AspNetCore.Http.Extensions;
 using HttpRequest = Microsoft.AspNetCore.Http.HttpRequest;
+
+namespace Duplicati.WebserverCore;
 
 class LegacyHttpRequestShim : HttpServer.IHttpRequest
 {

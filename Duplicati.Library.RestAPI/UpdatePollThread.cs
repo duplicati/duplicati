@@ -28,12 +28,12 @@ namespace Duplicati.Server
     /// </summary>
     public class UpdatePollThread
     {
-        private readonly Thread m_thread;
+        private Thread m_thread;
         private volatile bool m_terminated = false;
         private volatile bool m_download = false;
         private volatile bool m_forceCheck = false;
         private readonly object m_lock = new object();
-        private readonly AutoResetEvent m_waitSignal;
+        private AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
 
         public bool IsUpdateRequested { get; private set; } = false;
@@ -51,14 +51,16 @@ namespace Duplicati.Server
                     FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
             }
         }
-        
-        public UpdatePollThread()
+
+        public void Init()
         {
             m_waitSignal = new AutoResetEvent(false);
             ThreadState = UpdatePollerStates.Waiting;
-            m_thread = new Thread(Run);
-            m_thread.IsBackground = true;
-            m_thread.Name = "UpdatePollThread";
+            m_thread = new Thread(Run)
+            {
+                IsBackground = true,
+                Name = "UpdatePollThread"
+            };
             m_thread.Start();
         }
 

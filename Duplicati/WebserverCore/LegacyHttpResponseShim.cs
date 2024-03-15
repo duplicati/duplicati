@@ -1,10 +1,9 @@
-
-using HttpServer;
-using HttpServer.FormDecoders;
-using System.Collections.Specialized;
 using System.Net;
 using System.Text;
+using HttpServer;
 using HttpResponse = Microsoft.AspNetCore.Http.HttpResponse;
+
+namespace Duplicati.WebserverCore;
 
 class LegacyHttpResponseShim : HttpServer.IHttpResponse
 {
