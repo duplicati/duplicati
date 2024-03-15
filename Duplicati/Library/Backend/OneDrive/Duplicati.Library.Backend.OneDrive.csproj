@@ -1,21 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Backend</RootNamespace>
   </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
-    <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj" />
-    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="OneDrive.cs" />
-  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
   </ItemGroup>
 </Project>

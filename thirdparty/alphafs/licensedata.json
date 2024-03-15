@@ -1,0 +1,7 @@
+{
+    "name": "AlphaFS",
+    "description": "AlphaFS is a .NET library providing more complete Win32 file system functionality to the .NET platform than the standard System.IO classes.",
+    "link": "https://github.com/alphaleonis/AlphaFS",
+    "license": "MIT",
+    "notes": ""
+}

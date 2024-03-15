@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (sqlite != null)
             {
-                try { sqliteversion = (string)sqlite.GetProperty("SQLiteVersion").GetValue(null, null); }
+                try { sqliteversion = Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteVersion; }
                 catch { }
 
                 yield return string.Format("SQLite: {0} - {1}", sqliteversion, sqlite.FullName);

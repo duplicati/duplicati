@@ -1,13 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
   </PropertyGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
-    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

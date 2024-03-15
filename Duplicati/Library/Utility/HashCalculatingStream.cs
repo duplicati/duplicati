@@ -21,21 +21,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Duplicati.Library.Utility
 {
-    /// <summary>
-    /// A special stream that does on-the-fly MD5 calculations
-    /// </summary>
-    public class MD5CalculatingStream : HashCalculatingStream
-    {
-        public MD5CalculatingStream(System.IO.Stream basestream)
-            : base(basestream, "MD5")
-        {
-        }
-    }
-
     /// <summary>
     /// A special stream that does on-the-fly hash calculations
     /// </summary>
@@ -49,11 +39,6 @@ namespace Duplicati.Library.Utility
 
         private byte[] m_hashbuffer = null;
         private int m_hashbufferLength = 0;
-
-        public HashCalculatingStream(System.IO.Stream basestream, string hashalgorithm)
-            : this(basestream, HashAlgorithmHelper.Create(hashalgorithm))
-        {
-        }
 
         public HashCalculatingStream(System.IO.Stream basestream, System.Security.Cryptography.HashAlgorithm algorithm)
             : base(basestream)

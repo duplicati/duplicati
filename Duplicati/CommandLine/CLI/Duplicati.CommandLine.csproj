@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Description>A commandline version of Duplicati</Description>
+    <AssemblyName>Duplicati.CommandLine.Implementation</AssemblyName>
+    <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\Backends\Duplicati.Library.Backends.csproj" />
+    <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\..\Tools\Duplicati.Tools.csproj">
+    </ProjectReference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="help.txt" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

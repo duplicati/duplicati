@@ -59,10 +59,9 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public override void SetUp()
+        [SetUp]
+        public void SetUp()
         {
-            base.SetUp();
-
             if (!systemIO.FileExists(zipAlternativeFilepath))
             {
                 var url = $"{S3_URL}{this.zipFilename}";
@@ -127,7 +126,8 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public override void OneTimeTearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             if (systemIO.DirectoryExists(this.SOURCEFOLDER))
             {

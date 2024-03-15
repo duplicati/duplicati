@@ -26,6 +26,9 @@ using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 
+using System.Security.Cryptography;
+using Duplicati.Library.Utility;
+
 namespace Duplicati.CommandLine.RecoveryTool
 {
     public static class Restore
@@ -96,18 +99,19 @@ namespace Duplicati.CommandLine.RecoveryTool
                 return 100;
             }
 
-            var blockhasher = string.IsNullOrWhiteSpace(blockhash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(blockhash_str);
-            var filehasher = string.IsNullOrWhiteSpace(filehash_str) ? null : Library.Utility.HashAlgorithmHelper.Create(filehash_str);
-
-            if (blockhasher == null)
+            
+            if (string.IsNullOrWhiteSpace(blockhash_str))
                 throw new Duplicati.Library.Interface.UserInformationException(string.Format("Block hash algorithm not valid: {0}", blockhash_str), "BlockHashAlgorithmNotSupported");
-            if (filehasher == null)
+            if (string.IsNullOrWhiteSpace(filehash_str))
                 throw new Duplicati.Library.Interface.UserInformationException(string.Format("File hash algorithm not valid: {0}", filehash_str), "FileHashAlgorithmNotSupported");
 
-            var hashesprblock = blocksize / (blockhasher.HashSize / 8);
 
+            using (var blockhasher = HashFactory.CreateHasher(blockhash_str))
+            using (var filehasher = HashFactory.CreateHasher(filehash_str))
             using (var mru = new CompressedFileMRUCache(options))
             {
+                var hashesprblock = blocksize / (blockhasher.HashSize / 8);
+
                 Console.WriteLine("Building lookup table for file hashes");
                 using (HashLookupHelper lookup = new HashLookupHelper(ixfile, mru, (int) blocksize, blockhasher.HashSize / 8))
                 {

@@ -95,7 +95,7 @@ namespace Duplicati.Library.Modules.Builtin {
         /// <summary>
         /// The default message body
         /// </summary>
-        protected override string DEFAULT_BODY => string.Format("Duplicati %OPERATIONNAME% report for %backup-name%{0}{0}%RESULT%", Environment.NewLine);
+        protected override string DEFAULT_BODY => string.Format("Duplicati %OPERATIONNAME% report for %backup-name% (%machine-id%, %backup-id%){0}{0}%RESULT%", Environment.NewLine);
         /// <summary>
         /// Don't use the subject for HTTP
         /// </summary>

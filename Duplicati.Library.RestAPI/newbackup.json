@@ -1,0 +1,15 @@
+{
+    Backup: {
+        Settings: [
+            {Name: "encryption-module", Value: "aes"},
+            {Name: "compression-module", Value: "zip"},
+            {Name: "dblock-size", Value: "50mb"},
+            {Name: "keep-time", Value: ""}
+        ]
+    },
+    Schedule: {
+        Repeat: "1D",
+        Time: "13:00:00",
+        AllowedDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    }
+}

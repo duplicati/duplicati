@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,7 +24,7 @@ using System.Collections.Specialized;
 
 namespace Duplicati.UnitTest
 {
-    public class UriUtilityTests
+    public class UriUtilityTests : BasicSetupHelper
     {
         [Test]
         [Category("UriUtility")]
@@ -68,6 +68,49 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("/a/b/", Library.Utility.UrlPath.Create(path1).Append(path2).ToString());
             Assert.AreEqual("/a", Library.Utility.UrlPath.Create(path1).Append(null).ToString());
             Assert.AreEqual("/b/", Library.Utility.UrlPath.Create(string.Empty).Append(path2).ToString());
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestUriParse(
+            [Values("[1:2:3::4]", "127.0.0.1", "hostname")] string host,
+            [Values("", "user@", "user:pw@")] string user,
+            [Values("", ":80")] string port,
+            [Values("", "/path")] string path,
+            [Values("", "?query")] string query)
+        {
+            string uriStr = $"http://{user}{host}{port}{path}{query}";
+
+            var uri = new Library.Utility.Uri(uriStr);
+            Assert.AreEqual("http", uri.Scheme);
+            Assert.AreEqual(host, uri.Host);
+            if (port.Length != 0)
+            {
+                Assert.AreEqual(80, uri.Port);
+            }
+            else
+            {
+                Assert.AreEqual(-1, uri.Port);
+            }
+            Assert.AreEqual(path.TrimStart('/'), uri.Path);
+            Assert.AreEqual(query.Length == 0 ? null : query.TrimStart('?'), uri.Query);
+            if (user.Length == 0)
+            {
+                Assert.IsNull(uri.Username);
+                Assert.IsNull(uri.Password);
+            }
+            else
+            {
+                Assert.AreEqual("user", uri.Username);
+                if (user.Contains(":"))
+                {
+                    Assert.AreEqual("pw", uri.Password);
+                }
+                else
+                {
+                    Assert.IsNull(uri.Password);
+                }
+            }
         }
     }
 }

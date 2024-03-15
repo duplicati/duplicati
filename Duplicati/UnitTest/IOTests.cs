@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -30,7 +30,7 @@ using System.Collections.Generic;
 namespace Duplicati.UnitTest
 {
     [Category("IO")]
-    public class IOTests
+    public class IOTests : BasicSetupHelper
     {
 
         public static string LongPath(string pathRoot)
@@ -281,7 +281,7 @@ namespace Duplicati.UnitTest
                 };
             foreach (var path in testCasesWherePathGetFullGivesSameResultsAsDotNet)
             {
-                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
+                var actual = SystemIO.IO_WIN.PathGetFullPath(path); 
                 var expected = System.IO.Path.GetFullPath(path);
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }

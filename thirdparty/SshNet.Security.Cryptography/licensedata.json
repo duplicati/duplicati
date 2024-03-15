@@ -1,0 +1,7 @@
+{
+    "name": "SshNet.Security.Cryptography",
+    "description": "Crypto classes for SSH.NET",
+    "link": "https://github.com/sshnet/Cryptography",
+    "license": "MIT",
+    "notes": ""
+}

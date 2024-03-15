@@ -23,6 +23,7 @@ using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace Duplicati.CommandLine.BackendTool
@@ -92,6 +93,26 @@ namespace Duplicati.CommandLine.BackendTool
 
                     return 200;
                 }
+
+                var modules = (from n in Library.DynamicLoader.GenericLoader.Modules
+                     where n is Library.Interface.IConnectionModule
+                     select n).ToArray();
+
+                 var uri = new Library.Utility.Uri(args[1]);
+                 var qp = uri.QueryParameters;
+
+                 var backendOpts = new Dictionary<string, string>();
+                 foreach (var k in qp.Keys.Cast<string>())
+                     backendOpts[k] = qp[k];
+
+                 foreach (var k in backendOpts.Keys) {
+                     options.Remove(k);
+                 }
+
+                 foreach (var n in modules) {
+                     n.Configure(options);
+                     n.Configure(backendOpts);
+                 }                
                 
                 using(var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[1], options))
                 {
@@ -154,7 +175,6 @@ namespace Duplicati.CommandLine.BackendTool
                     
                     throw new Exception("Internal error");
                 }
-                
             }
             catch (Exception ex)
             {

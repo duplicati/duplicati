@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -159,7 +159,6 @@ namespace Duplicati.Library.Backend
                                         .GetAwaiter().GetResult()
                                         .EvaluationResults.First()
                                         .EvalDecision == PolicyEvaluationDecisionType.Allowed;
-
         }
 
         private static IDictionary<string, string> GetCreateUserDict(User user, AmazonIdentityManagementServiceClient cl)

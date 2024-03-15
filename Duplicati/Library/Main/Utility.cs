@@ -22,9 +22,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using Newtonsoft.Json;
 using System.Text;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
 {
@@ -54,7 +56,7 @@ namespace Duplicati.Library.Main
                     
                 using (var ms = new System.IO.MemoryStream())
                 using (var w = new StreamWriter(ms, Encoding.UTF8))
-                using(var filehasher = Library.Utility.HashAlgorithmHelper.Create(options.FileHashAlgorithm))
+                using(var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
                 {
                     if (filehasher == null)
                         throw new Duplicati.Library.Interface.UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
@@ -178,54 +180,6 @@ namespace Duplicati.Library.Main
                         newDict[k.Key] = k.Value;
                 
                 db.SetDbOptions(newDict, transaction);               
-            }
-        }
-
-        /// <summary>
-        /// The filename for the marker file that the user can add to suppress donation messages
-        /// </summary>
-        private const string SUPPRESS_DONATIONS_FILENAME = "suppress_donation_messages.txt";
-
-
-        /// <summary>
-        /// Gets or sets donation message suppression
-        /// </summary>
-        public static bool SuppressDonationMessages
-        {
-            get
-            {
-                try
-                {
-                    var folder = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AutoUpdater.AutoUpdateSettings.AppName);
-                    return File.Exists(Path.Combine(folder, SUPPRESS_DONATIONS_FILENAME));
-                }
-                catch
-                {
-                }
-
-                return true;
-            }
-            set
-            {
-                try
-                {
-                    var folder = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AutoUpdater.AutoUpdateSettings.AppName);
-                    if (!Directory.Exists(folder))
-                        Directory.CreateDirectory(folder);
-
-                    var path = Path.Combine(folder, SUPPRESS_DONATIONS_FILENAME);
-
-                    if (value)
-                        using(File.OpenWrite(path))
-                        {
-                        }
-                    else
-                        File.Delete(path);
-                        
-                }
-                catch
-                {
-                }
             }
         }
     }

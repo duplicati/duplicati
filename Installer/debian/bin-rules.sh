@@ -61,7 +61,6 @@ override_dh_auto_install:
 	rm -rf build/lib/duplicati/licenses/gpg
 	rm -rf build/lib/duplicati/win-x64/storj_uplink.dll
 	rm -rf build/lib/duplicati/win-x86/storj_uplink.dll
-	rm -rf build/lib/duplicati/storj_uplink.dll
 	rm -rf build/lib/duplicati/libstorj_uplink.dylib
 	find build/lib/duplicati/* -type f | xargs chmod 644
 	find build/lib/duplicati/* -type d | xargs chmod 755

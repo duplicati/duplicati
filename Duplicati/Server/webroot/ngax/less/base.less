@@ -813,31 +813,6 @@ body {
                     }
                 }
             }
-
-            .donate {
-                float: right;
-
-                ul {
-                    overflow: hidden;
-                    float: right;
-                    padding-left: 20px;
-                    padding-right: 10px;
-
-                    li {
-                        float: right;
-                        margin-right: 10px;
-                        padding-top: 5px;
-                    }
-                }
-
-                img {
-                    opacity: 0.6;
-                }
-
-                img:hover {
-                    opacity: 1;
-                }
-            }
         }
 
         .body {
@@ -1861,39 +1836,6 @@ body {
                 }
             }
 
-            .donate {
-                display: none;
-                float: right;
-                padding-right: 40px;
-                overflow: hidden;
-
-                ul {
-                    overflow: hidden;
-                    float: right;
-
-                    li {
-                        float: left;
-                        margin-left: 10px;
-
-                        a {
-                            img {
-                                margin-top: 24px;
-                                display: inline-block;
-                                opacity: 0.6;
-                            }
-
-                            img:hover {
-                                opacity: 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            .donate > a {
-                float: left;
-            }
-
             .social {
                 float: right;
 
@@ -2517,18 +2459,6 @@ div.modal-dialog {
     }
 }
 
-// Smaller screen sizes
-@media (max-width: 1200px) {
-    body {
-        .container {
-            .header {
-                .donate {
-                }
-            }
-        }
-    }
-}
-
 @media (max-width: 1150px) {
     body {
         .container {
@@ -2595,10 +2525,6 @@ div.modal-dialog {
                     @media (-webkit-min-device-pixel-ratio: 2.25), (min-resolution: 288dpi), (min-resolution: 2.25dppx) {
                         background-image: url('../img/menu_active_3x.png');
                     }
-                }
-
-                .donate {
-                    display: none;
                 }
             }
 
@@ -2920,27 +2846,10 @@ div.modal-dialog {
                 }
 
                 li,
-                .donate,
                 .social,
                 .about-footer {
                     padding: 8px 0;
                     border-bottom: 1px #ddd solid;
-                }
-
-                .donate {
-                    display: block;
-
-                    ul {
-                        li {
-                            display: inline-block;
-                            border: none;
-                            margin: 0 5px;
-
-                            a img {
-                                margin-top: 0;
-                            }
-                        }
-                    }
                 }
 
                 .social {

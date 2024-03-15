@@ -67,9 +67,11 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public override void OneTimeSetUp()
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
-            base.OneTimeSetUp();
+            this.OneTimeTearDown();
             var url = $"https://testfiles.duplicati.com/{this.zipFilename}";
             var destinationFilePath = this.zipFilepath;
             var webRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -111,7 +113,8 @@ namespace Duplicati.UnitTest
             System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
         }
 
-        public override void OneTimeTearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             if (Directory.Exists(SOURCE_FOLDERS))
             {

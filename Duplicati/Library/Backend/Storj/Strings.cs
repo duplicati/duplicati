@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Strings
 {
-    internal static class Storj
+    public static class Storj
     {
         public static string DisplayName { get { return LC.L(@"Storj DCS (Decentralized Cloud Storage)"); } }
         public static string Description { get { return LC.L(@"This backend can read and write data to the Storj DCS."); } }

@@ -1,43 +1,71 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
   </PropertyGroup>
+  
   <ItemGroup>
-    <ProjectReference Include="..\CommandLine\Duplicati.CommandLine.csproj" />
-    <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
-    <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj" />
-    <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj" />
-    <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
-    <ProjectReference Include="..\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
-    <ProjectReference Include="..\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj" />
-    <ProjectReference Include="..\Library\Backend\File\Duplicati.Library.Backend.File.csproj" />
-    <ProjectReference Include="..\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj" />
-    <ProjectReference Include="..\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj" />
-    <ProjectReference Include="..\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj" />
-    <ProjectReference Include="..\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj" />
-    <ProjectReference Include="..\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj" />
-    <ProjectReference Include="..\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj" />
-    <ProjectReference Include="..\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj" />
-    <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj" />
-    <ProjectReference Include="..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
-    <ProjectReference Include="..\Library\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\Library\Logging\Duplicati.Library.Logging.csproj" />
-    <ProjectReference Include="..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
-    <ProjectReference Include="..\Library\Main\Duplicati.Library.Main.csproj" />
-    <ProjectReference Include="..\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
-    <ProjectReference Include="..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
-    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\License\Duplicati.License.csproj" />
-    <ProjectReference Include="..\Server\Duplicati.Server.csproj" />
-    <ProjectReference Include="..\Service\Duplicati.Service.csproj" />
-    <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
-    <ProjectReference Include="..\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj" />
-    <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj" />
+    <PackageReference Include="nunit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SystemWebAdapters" Version="1.3.0" />
+    <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\CLI\Duplicati.CommandLine.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Backends\Duplicati.Library.Backends.csproj" />
+    <ProjectReference Include="..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Compression\Duplicati.Library.Compression.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Encryption\Duplicati.Library.Encryption.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Interface\Duplicati.Library.Interface.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Logging\Duplicati.Library.Logging.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Main\Duplicati.Library.Main.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\License\Duplicati.License.csproj">
+    </ProjectReference>
+	  <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Server\Duplicati.Server.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Snapshots\Duplicati.Library.Snapshots.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\Localization\Duplicati.Library.Localization.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\Tools\Duplicati.Tools.csproj">
+    </ProjectReference>
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+ 
 </Project>

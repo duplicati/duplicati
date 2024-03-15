@@ -116,26 +116,4 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
             AppUtils.connectionError(gettextCatalog.getString('Failed to save:') + ' ')
         );
     };
-
-    $scope.suppressDonationMessages = function() {
-        AppService.post('/systeminfo/suppressdonationmessages').then(
-            function() 
-            { 
-                $scope.SystemInfo.SuppressDonationMessages = true; 
-                SystemInfo.notifyChanged();
-            }, 
-            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
-        );
-    };
-
-    $scope.displayDonationMessages = function() {
-        AppService.post('/systeminfo/showdonationmessages').then(
-            function() 
-            { 
-                $scope.SystemInfo.SuppressDonationMessages = false; 
-                SystemInfo.notifyChanged();
-            }, 
-            AppUtils.connectionError(gettextCatalog.getString('Operation failed:') + ' ')
-        );
-    };
 });
