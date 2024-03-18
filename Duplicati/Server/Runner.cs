@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -625,7 +627,7 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
-                Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing \"{0}\" with id: {1}", data.Operation, data.Backup.ID), ex);
+                Program.DataConnection.LogError(data.Backup.ID, string.Format("Failed while executing {0} \"{1}\" (id: {2})", data.Operation, data.Backup.Name, data.Backup.ID), ex);
                 UpdateMetadataError(data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
 
@@ -754,18 +756,18 @@ namespace Duplicati.Server
                 backup.Metadata["LastRestoreFinished"] = Library.Utility.Utility.SerializeDateTime(result.EndTime.ToUniversalTime());
             }
 
-            if (result is IParsedBackendStatistics r2)
+            if (result is IParsedBackendStatistics r2 && !result.Interrupted)
             {
                 UpdateMetadata(backup, r2);
             }
 
-            if (result is IBackendStatsticsReporter r3)
+            if (result is IBackendStatsticsReporter r3 && !result.Interrupted)
             {
                 if (r3.BackendStatistics is IParsedBackendStatistics statistics)
                     UpdateMetadata(backup, statistics);
             }
 
-            if (result is ICompactResults r4)
+            if (result is ICompactResults r4 && !result.Interrupted)
             {
                 UpdateMetadataLastCompact(backup, r4);
 
@@ -773,25 +775,28 @@ namespace Duplicati.Server
                     UpdateMetadataLastVacuum(backup, r4.VacuumResults);
             }
 
-            if (result is IVacuumResults r5)
+            if (result is IVacuumResults r5 && !result.Interrupted)
             {
                 UpdateMetadataLastVacuum(backup, r5);
             }
 
             if (result is IBackupResults r)
             {
-                backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
-                backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
-                backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
-                backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
-                backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
-                backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
+                if (!result.Interrupted)
+                {
+                    backup.Metadata["SourceFilesSize"] = r.SizeOfExaminedFiles.ToString();
+                    backup.Metadata["SourceFilesCount"] = r.ExaminedFiles.ToString();
+                    backup.Metadata["SourceSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.SizeOfExaminedFiles);
+                    backup.Metadata["LastBackupStarted"] = Library.Utility.Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                    backup.Metadata["LastBackupFinished"] = Library.Utility.Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+                    backup.Metadata["LastBackupDuration"] = r.Duration.ToString();
 
-                if (r.CompactResults != null)
-                    UpdateMetadataLastCompact(backup, r.CompactResults);
+                    if (r.CompactResults != null)
+                        UpdateMetadataLastCompact(backup, r.CompactResults);
 
-                if (r.VacuumResults != null)
-                    UpdateMetadataLastVacuum(backup, r.VacuumResults);
+                    if (r.VacuumResults != null)
+                        UpdateMetadataLastVacuum(backup, r.VacuumResults);
+                }
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
@@ -837,19 +842,19 @@ namespace Duplicati.Server
                     );
                 }
             }
-            else if (result.ParsedResult != Library.Interface.ParsedResultType.Success)
+            else if (result.ParsedResult != ParsedResultType.Success)
             {
-                var type = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                var type = result.ParsedResult == ParsedResultType.Warning
                             ? NotificationType.Warning
                             : NotificationType.Error;
 
-                var title = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                var title = result.ParsedResult == ParsedResultType.Warning
                                 ? (backup.IsTemporary ?
                                 "Warning" : string.Format("Warning while running {0}", backup.Name))
                             : (backup.IsTemporary ?
                                 "Error" : string.Format("Error while running {0}", backup.Name));
 
-                var message = result.ParsedResult == Library.Interface.ParsedResultType.Warning
+                var message = result.ParsedResult == ParsedResultType.Warning
                                     ? string.Format("Got {0} warning(s)", result.Warnings.Count())
                                     : string.Format("Got {0} error(s)", result.Errors.Count());
 
@@ -900,6 +905,7 @@ namespace Duplicati.Server
         {
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
+            options["backup-id"] = $"DB-{backup.ID}";
 
             // Apply normal options
             foreach(var o in backup.Settings)
@@ -910,7 +916,6 @@ namespace Duplicati.Server
             foreach(var o in backup.Settings)
                 if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name.Substring(2)] = o.Value;
-
 
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);

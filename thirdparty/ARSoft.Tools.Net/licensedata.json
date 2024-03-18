@@ -1,0 +1,7 @@
+{
+    "name": " ARSoft.Tools.Net",
+    "description": "Complete managed .Net SPF validation, SenderID validation and a dns client and dns server implementation",
+    "link": "https://github.com/pgstath/Sharp.Xmpp",
+    "license": "Apache 2.0",
+    "notes": ""
+}

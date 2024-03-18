@@ -30,7 +30,7 @@ BuildArch:  noarch
 AutoReqProv: no
 
 Summary:	Backup client for encrypted online backups
-License:	LGPLv2+
+License:	MIT
 URL:	http://www.duplicati.com
 Source0:	duplicati-%{_buildversion}.tar.bz2
 Source1:	%{namer}-make-binary-package.sh
@@ -102,7 +102,6 @@ rm -rf licenses/MonoMac
 rm -rf licenses/gpg
 rm -rf win-x64\storj_uplink.dll
 rm -rf win-x86\storj_uplink.dll
-rm -rf storj_uplink.dll
 rm -rf libstorj_uplink.dylib
 
 

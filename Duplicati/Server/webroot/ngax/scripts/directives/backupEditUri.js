@@ -118,7 +118,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                 if (dlg != null)
                     dlg.dismiss();
 
-                var message = data.statusText;
+                var message = AppService.responseErrorMessage(data);
 
                 if (!hasTriedCreate && message == 'missing-folder')
                 {
@@ -163,9 +163,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                                     }, function(resp) {
 
                                         scope.Testing = false;
-                                        message = resp.statusText;
-                                        if (data.data != null && data.data.Message != null)
-                                            message = data.data.Message;
+                                        message = AppService.responseErrorMessage(resp);
                                         
                                         DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to import: ') + message);
 

@@ -67,8 +67,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.OpenStack", "Duplicati\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj", "{D9E4E686-423C-48EC-A392-404E7C00860C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.HubiC", "Duplicati\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj", "{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Backblaze", "Duplicati\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj", "{61C43D61-4368-4942-84A3-1EB623F4EF2A}"
@@ -108,6 +106,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{9A04CB37-DA72-4008-9703-3AC5191974E9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Idrivee2", "Duplicati\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj", "{6B594D23-B629-465C-B799-70EE9E56C218}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -243,10 +243,6 @@ Global
 		{D9E4E686-423C-48EC-A392-404E7C00860C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9E4E686-423C-48EC-A392-404E7C00860C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9E4E686-423C-48EC-A392-404E7C00860C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -327,6 +323,10 @@ Global
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -337,7 +337,7 @@ Global
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
 		$0.StandardHeader = $1
-		$1.Text = @ Copyright (C) ${Year}, The Duplicati Team\n http://www.duplicati.com, info@duplicati.com\n \n This library is free software; you can redistribute it and/or modify\n it under the terms of the GNU Lesser General Public License as\n published by the Free Software Foundation; either version 2.1 of the\n License, or (at your option) any later version.\n\n This library is distributed in the hope that it will be useful, but\n WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n Lesser General Public License for more details.\n\n You should have received a copy of the GNU Lesser General Public\n License along with this library; if not, write to the Free Software\n Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+		$1.Text = @ Copyright (C) ${Year}, The Duplicati Team\nhttps://duplicati.com, hello@duplicati.com\n\nPermission is hereby granted, free of charge, to any person obtaining a \ncopy of this software and associated documentation files (the "Software"), \nto deal in the Software without restriction, including without limitation \nthe rights to use, copy, modify, merge, publish, distribute, sublicense, \nand/or sell copies of the Software, and to permit persons to whom the \nSoftware is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in \nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS \nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING \nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER \nDEALINGS IN THE SOFTWARE.\n
 		$0.DotNetNamingPolicy = $2
 		$2.DirectoryNamespaceAssociation = PrefixedHierarchical
 		$0.TextStylePolicy = $5

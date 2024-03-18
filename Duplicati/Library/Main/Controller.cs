@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -434,6 +436,10 @@ namespace Duplicati.Library.Main
                     if (result.EndTime.Ticks == 0)
                         result.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
+                    if(result is BasicResults r)
+                    {
+                        r.Interrupted = false;
+                    }
 
                     OnOperationComplete(result);
 
@@ -447,18 +453,53 @@ namespace Duplicati.Library.Main
 
                     if (ex is Library.Interface.OperationAbortException oae)
                     {
-                        // Perform the module shutdown
-                        OnOperationComplete(ex);
-
                         // Log this as a normal operation, as the script raising the exception,
                         // has already populated either warning or log messages as required
                         Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
+
+                        if (result is BasicResults basicResults)
+                        {
+                            basicResults.Interrupted = true;
+                            try
+                            {
+                                // No operation was started in database, so write logs to new operation
+                                using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                                {
+                                    basicResults.SetDatabase(db);
+                                    db.WriteResults();
+                                }
+
+                                OnOperationComplete(result);
+                            }
+                            catch { }
+                        }
+                        else
+                        {
+                            // Perform the module shutdown
+                            OnOperationComplete(ex);
+                        }
 
                         return result;
                     }
                     else
                     {
-                        try { (result as BasicResults).OperationProgressUpdater.UpdatePhase(OperationPhase.Error); }
+                        try
+                        {
+                            if (result is BasicResults basicResults)
+                            {
+                                basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
+                                basicResults.Fatal = true;
+                                // Write logs to previous operation if database exists
+                                if (LocalDatabase.Exists(m_options.Dbpath))
+                                {
+                                    using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                                    {
+                                        basicResults.SetDatabase(db);
+                                        db.WriteResults();
+                                    }
+                                }
+                            }
+                        }
                         catch { }
 
                         OnOperationComplete(ex);

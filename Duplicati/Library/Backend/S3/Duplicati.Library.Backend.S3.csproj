@@ -46,12 +46,12 @@
       <HintPath>..\..\..\..\packages\AWSSDK.S3.3.3.104.43\lib\net45\AWSSDK.S3.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Minio, Version=3.1.7.0, Culture=neutral, PublicKeyToken=348239ebd7debb4c">
-      <HintPath>..\..\..\..\packages\Minio.3.1.7\lib\net46\Minio.dll</HintPath>
+    <Reference Include="Minio, Version=3.1.13.0, Culture=neutral, PublicKeyToken=348239ebd7debb4c">
+      <HintPath>..\..\..\..\packages\Minio.3.1.13\lib\net46\Minio.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="RestSharp, Version=106.3.1.0, Culture=neutral, PublicKeyToken=598062e77f915f75">
-      <HintPath>..\..\..\..\packages\RestSharp.106.3.1\lib\net452\RestSharp.dll</HintPath>
+    <Reference Include="RestSharp, Version=106.0.0.0, Culture=neutral, PublicKeyToken=598062e77f915f75">
+      <HintPath>..\..\..\..\packages\RestSharp.106.10.1\lib\net452\RestSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

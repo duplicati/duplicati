@@ -25,6 +25,8 @@ AUTHENTICODE_PASSWORD="${HOME}/.config/signkeys/Duplicati/authenticode.key"
 MONO=/Library/Frameworks/Mono.framework/Commands/mono
 VBOX_USER=IEUser@192.168.56.102
 
+S3_BUCKET_NAME="updates.duplicati.com"
+
 GPG=/usr/local/bin/gpg2
 
 # Newer GPG needs this to allow input from a non-terminal
@@ -256,7 +258,7 @@ echo "{" > "./tmp/latest-installers.json"
 
 process_installer() {
 	if [ "$2" != "zip" ]; then
-		aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/$1" "s3://updates.duplicati.com/${BUILDTYPE}/$1"
+		aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/$1" "s3://${S3_BUCKET_NAME}/${BUILDTYPE}/$1"
 	fi
 
 	local MD5=$(md5 ${UPDATE_TARGET}/$1 | awk -F ' ' '{print $NF}')
@@ -293,8 +295,8 @@ echo "duplicati_installers =" > "./tmp/latest-installers.js"
 cat "./tmp/latest-installers.json" >> "./tmp/latest-installers.js"
 echo ";" >> "./tmp/latest-installers.js"
 
-aws --profile=duplicati-upload s3 cp "./tmp/latest-installers.json" "s3://updates.duplicati.com/${BUILDTYPE}/latest-installers.json"
-aws --profile=duplicati-upload s3 cp "./tmp/latest-installers.js" "s3://updates.duplicati.com/${BUILDTYPE}/latest-installers.js"
+aws --profile=duplicati-upload s3 cp "./tmp/latest-installers.json" "s3://${S3_BUCKET_NAME}/${BUILDTYPE}/latest-installers.json"
+aws --profile=duplicati-upload s3 cp "./tmp/latest-installers.js" "s3://${S3_BUCKET_NAME}/${BUILDTYPE}/latest-installers.js"
 
 if [ -d "./tmp" ]; then
 	rm -rf "./tmp"
@@ -324,7 +326,7 @@ cd ..
 mv "./tmp/${SIGNAME}" "${UPDATE_TARGET}/${SIGNAME}"
 rm -rf "./tmp/${SIG_FOLDER}"
 
-aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${SIGNAME}" "s3://updates.duplicati.com/${BUILDTYPE}/${SIGNAME}"
+aws --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${SIGNAME}" "s3://${S3_BUCKET_NAME}/${BUILDTYPE}/${SIGNAME}"
 
 GITHUB_TOKEN=$(cat "${GITHUB_TOKEN_FILE}")
 
@@ -332,7 +334,7 @@ if [ "x${GITHUB_TOKEN}" == "x" ]; then
 	echo "No GITHUB_TOKEN found in environment, you can manually upload the binaries"
 else
 	echo "Uploading files to Github release"
-	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${SIGNAME}"; do
+	for FILE in "${SPKNAME}" "${RPMNAME}" "${DEBNAME}" "${DMGNAME}" "${PKGNAME}" "${MSI32NAME}" "${MSI64NAME}" "${SIGNAME}" "${ZIPFILE}"; do
 		github-release upload \
 		    --tag "v${VERSION}-${BUILDTAG_RAW}"  \
 		    --name "${FILE}" \

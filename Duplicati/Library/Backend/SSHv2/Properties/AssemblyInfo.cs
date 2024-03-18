@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Duplicati Team")]
 [assembly: AssemblyProduct("Duplicati.Library.Backend.SSHv2")]
-[assembly: AssemblyCopyright("LGPL, Copyright © Duplicati Team 2015")]
+[assembly: AssemblyCopyright("MIT license, Copyright © Duplicati Team 2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
