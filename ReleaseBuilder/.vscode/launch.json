@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "dotnet: build",
+            "program": "${workspaceFolder}/bin/Debug/net8.0/ReleaseBuilder.dll",
+            "args": [ 
+                "build", 
+                "--git-stash", "false", 
+                "--targets", "osx-x64.pkg", 
+                "--targets", "osx-x64.dmg",
+                "--targets", "osx-arm64.dmg",
+                "--targets", "win-x64.zip",                
+                "--targets", "linux-x64.zip",
+                "--keep-build", "true" 
+            ],
+            "env": {                
+            },
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}

@@ -10,7 +10,9 @@
 	<string>Duplicati.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.duplicati.app</string>
-	<key>CFBundleInfoDictionaryVersion</key>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>Duplicati</string>
