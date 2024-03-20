@@ -33,23 +33,6 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     FIXMEGlobal.UpdatePoller.CheckNow();
                     info.OutputOK();
                     return;
-
-                case "install":
-                    FIXMEGlobal.UpdatePoller.InstallUpdate();
-                    info.OutputOK();
-                    return;
-
-                case "activate":
-                    if (FIXMEGlobal.WorkThread.CurrentTask != null || FIXMEGlobal.WorkThread.CurrentTasks.Count != 0)
-                    {
-                        info.ReportServerError("Cannot activate update while task is running or scheduled");
-                    }
-                    else
-                    {
-                        FIXMEGlobal.UpdatePoller.ActivateUpdate();
-                        info.OutputOK();
-                    }
-                    return;
                 
                 default:
                     info.ReportClientError("No such action", System.Net.HttpStatusCode.NotFound);

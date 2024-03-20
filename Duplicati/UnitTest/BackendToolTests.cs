@@ -66,7 +66,7 @@ namespace Duplicati.UnitTest
             {
                 // Absolute path
                 var downloadFileName = Path.Combine(absoluteDownloadFolder, Path.GetFileName(targetFile));
-                var status = CommandLine.BackendTool.Program.RealMain(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
+                var status = CommandLine.BackendTool.Program.Main(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
                 Assert.AreEqual(0, status);
                 Assert.IsTrue(File.Exists(downloadFileName));
                 TestUtils.AssertFilesAreEqual(targetFile, downloadFileName, false, downloadFileName);
@@ -83,7 +83,7 @@ namespace Duplicati.UnitTest
                 {
                     // Relative path
                     var downloadFileName = Path.GetFileName(targetFile);
-                    var status = CommandLine.BackendTool.Program.RealMain(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
+                    var status = CommandLine.BackendTool.Program.Main(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
                     Assert.AreEqual(0, status);
                     Assert.IsTrue(File.Exists(downloadFileName));
                     TestUtils.AssertFilesAreEqual(targetFile, downloadFileName, false, downloadFileName);

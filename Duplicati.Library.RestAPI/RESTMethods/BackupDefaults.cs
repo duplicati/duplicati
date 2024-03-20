@@ -59,7 +59,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             try
             {
                 // Add install defaults/overrides, if present
-                var path = SystemIO.IO_OS.PathCombine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "newbackup.json");
+                var path = SystemIO.IO_OS.PathCombine(Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "newbackup.json");
                 if (System.IO.File.Exists(path))
                 {
                     Newtonsoft.Json.Linq.JObject n;

@@ -59,18 +59,12 @@ namespace Duplicati.GUI.TrayIcon
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
-            Duplicati.Library.AutoUpdater.UpdaterManager.RequiresRespawn = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
-        }
-        
-        public static void RealMain(string[] _args)
+        public static int Main(string[] _args)
         {
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
-            if (Platform.IsClientWindows && (Duplicati.Library.AutoUpdater.UpdaterManager.IsRunningInUpdateEnvironment || !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS)))
+            if (Platform.IsClientWindows && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
 
             foreach (string s in args)
@@ -97,7 +91,7 @@ namespace Duplicati.GUI.TrayIcon
                 foreach (Library.Interface.ICommandLineArgument arg in Duplicati.Server.Program.SupportedCommands)
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
 
-                return;
+                return 0;
             }
 
             options.TryGetValue(BROWSER_COMMAND_OPTION, out _browser_command);
@@ -115,7 +109,7 @@ namespace Duplicati.GUI.TrayIcon
                 }
                 catch (Server.SingleInstance.MultipleInstanceException)
                 {
-                    return;
+                    return 1;
                 }
 
                 // We have a hosted server, if this is the first run, 
@@ -176,6 +170,8 @@ namespace Duplicati.GUI.TrayIcon
                 serverURL = new Uri(url);
 
             StartTray(_args, options, hosted, password, saltedpassword);
+
+            return 0;
         }
 
         private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, string password, bool saltedpassword)

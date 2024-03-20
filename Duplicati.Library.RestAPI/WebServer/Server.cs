@@ -225,11 +225,11 @@ namespace Duplicati.Server.WebServer
             server.Add(new RESTHandler());
 
             string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "webroot");
+            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "webroot");
 
 #if DEBUG
             // Easy test for extensions while debugging
-            install_webroot = Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
+            install_webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
             if (!System.IO.Directory.Exists(System.IO.Path.Combine(webroot, "webroot")))
             {
@@ -260,13 +260,7 @@ namespace Duplicati.Server.WebServer
                 // in the same folders as the running application, to avoid users
                 // that inadvertently expose top level folders
                 if (!string.IsNullOrWhiteSpace(userroot)
-                    &&
-                    (
-                        userroot.StartsWith(Util.AppendDirSeparator(System.Reflection.Assembly.GetExecutingAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison)
-                        ||
-                        userroot.StartsWith(Util.AppendDirSeparator(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir), Library.Utility.Utility.ClientFilenameStringComparison)
-                    )
-                )
+                    && userroot.StartsWith(Util.AppendDirSeparator(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison))
 #endif
                 {
                     webroot = userroot;

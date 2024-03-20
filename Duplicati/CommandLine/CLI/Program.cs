@@ -40,12 +40,6 @@ namespace Duplicati.CommandLine
         /// </summary>
         public static int Main(string[] args)
         {
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
-        }
-
-        public static int RealMain(string[] args)
-        {
             Library.UsageReporter.Reporter.Initialize();
             FROM_COMMANDLINE = true;
             try
@@ -113,18 +107,28 @@ namespace Duplicati.CommandLine
 
             if (update != null && update.Version != Library.AutoUpdater.UpdaterManager.SelfVersion.Version)
             {
-                outwriter.WriteLine("Found update \"{0}\", downloading ...", update.Displayname);
-                long lastpg = 0;
-                Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(update, f =>
+                var package = update.FindPackage();
+                if (package == null)
                 {
-                    var npg = (long)(f * 100);
-                    if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
+                    outwriter.WriteLine($"Failed to locate a matching package for this machine, please visit this link and select the correct package: {update.GetGenericUpdatePageUrl()}");
+                }
+                else
+                {
+                    var filename = Path.GetFullPath(package.GetFilename());
+                    outwriter.WriteLine("Downloading update \"{0}\" to {1} ...", update.Displayname, filename);
+
+                    long lastpg = 0;
+                    Library.AutoUpdater.UpdaterManager.DownloadUpdate(update, package, filename, f =>
                     {
-                        lastpg = npg;
-                        outwriter.WriteLine("Downloading {0}% ...", npg);
-                    }
-                });
-                outwriter.WriteLine("Update \"{0}\" ({1}) installed, using on next launch", update.Displayname, update.Version);
+                        var npg = (long)(f * 100);
+                        if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
+                        {
+                            lastpg = npg;
+                            outwriter.WriteLine("Downloading {0}% ...", npg);
+                        }
+                    });
+                    outwriter.WriteLine("Update \"{0}\" ({1}) downloaded", update.Displayname, update.Version);
+                }
             }
         }
 

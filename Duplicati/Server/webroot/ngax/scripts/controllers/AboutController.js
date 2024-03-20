@@ -46,14 +46,6 @@ backupApp.controller('AboutController', function($scope, $location, BrandingServ
         $location.path('/updatechangelog');
     };
 
-    $scope.doStartUpdateDownload = function() {
-        AppService.post('/updates/install');
-    };
-
-    $scope.doStartUpdateActivate = function() {
-        AppService.post('/updates/activate').then(function() {}, AppUtils.connectionError(gettextCatalog.getString('Activate failed:') + ' '));
-    };
-
     $scope.doCheckForUpdates = function() {
         AppService.post('/updates/check');
 

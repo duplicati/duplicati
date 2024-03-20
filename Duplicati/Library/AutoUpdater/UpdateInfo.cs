@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Linq;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -48,23 +49,86 @@ namespace Duplicati.Library.AutoUpdater
 
     public class UpdateInfo
     {
+        public string UpdateFromV1Url;
+        public string UpdateFromV2Url;
         public string Displayname;
         public string Version;
         public DateTime ReleaseTime;
         public string ReleaseType;
         public string UpdateSeverity;
         public string ChangeInfo;
-        public long CompressedSize;
-        public long UncompressedSize;
-        public string SHA256;
-        public string MD5;
-        public string[] RemoteURLS;
-        public FileEntry[] Files;
+        public int PackageUpdaterVersion;
+        /// <summary>
+        /// List of installer packages
+        /// </summary>
+        public PackageEntry[] Packages;
+        /// <summary>
+        /// Link to a generic download page
+        /// </summary>
+        public string GenericUpdatePageUrl;
 
-        public UpdateInfo Clone()
+        /// <summary>
+        /// Finds a package that matches the <paramref name="packageTypeId"/>
+        /// </summary>
+        /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+        /// <returns>The matching package or <c>null</c></returns>
+        public PackageEntry? FindPackage(string packageTypeId = null)
         {
-            return (UpdateInfo)this.MemberwiseClone();
+            if (!string.IsNullOrWhiteSpace(UpdateFromV2Url) || PackageUpdaterVersion != UpdaterManager.SUPPORTED_PACKAGE_UPDATER_VERSION)
+                return null;
+
+            packageTypeId ??= UpdaterManager.PackageTypeId;
+            if (string.IsNullOrWhiteSpace(packageTypeId) || Packages == null)
+                return null;
+
+            return Packages.FirstOrDefault(x => string.Equals(x.PackageTypeId, packageTypeId, StringComparison.OrdinalIgnoreCase));
         }
+
+        /// <summary>
+        /// Gets the generic update page url for the <paramref name="packageTypeId"/>
+        /// </summary>
+        /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+        /// <returns>The generic update page url</returns>
+        public string GetGenericUpdatePageUrl(string packageTypeId = null)
+        {
+            var baseurl = string.IsNullOrWhiteSpace(UpdateFromV2Url)
+                ? GenericUpdatePageUrl
+                : UpdateFromV2Url;
+
+            packageTypeId ??= UpdaterManager.PackageTypeId;
+            if (string.IsNullOrWhiteSpace(packageTypeId))
+                return GenericUpdatePageUrl;
+
+            return GenericUpdatePageUrl + $"{(GenericUpdatePageUrl.IndexOf('?') > 0 ? "&" : "?")}packagetypeid={Uri.EscapeDataString(packageTypeId ?? "")}";
+        }
+
+        /// <summary>
+        /// Gets the updated package urls for the <paramref name="packageTypeId"/>
+        /// </summary>
+        /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+        /// <returns>The matching update urls</returns>
+        public string[] GetUpdateUrls(string packageTypeId = null)
+        {
+            packageTypeId ??= UpdaterManager.PackageTypeId;
+            var package = FindPackage(packageTypeId);
+            if (package != null)
+                return package.RemoteUrls;
+
+            var generic = GetGenericUpdatePageUrl(packageTypeId);
+            if (!string.IsNullOrWhiteSpace(generic))
+                return [generic];
+
+            return Array.Empty<string>();
+        }
+
+        /// <summary>
+        /// Creates a copy of the instance by serializing and deseriaizing the data
+        /// </summary>
+        /// <returns>A cloned copy</returns>
+        public UpdateInfo Clone()
+            => System.Text.Json.JsonSerializer.Deserialize<UpdateInfo>(
+                System.Text.Json.JsonSerializer.Serialize(this)
+            );
     }
 }
 

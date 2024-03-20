@@ -358,7 +358,7 @@ namespace Duplicati.Server
 
             var exe =
                 System.IO.Path.Combine(
-                    Library.AutoUpdater.UpdaterManager.InstalledBaseDir,
+                    Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR,
                         System.IO.Path.GetFileName(
                             typeof(Duplicati.CommandLine.Commands).Assembly.Location
                         )

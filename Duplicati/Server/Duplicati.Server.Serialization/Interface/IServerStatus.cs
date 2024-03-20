@@ -27,7 +27,7 @@ namespace Duplicati.Server.Serialization.Interface
     {
         Tuple<long, string> ActiveTask { get; }
         LiveControlState ProgramState { get; }
-        System.Collections.Generic.IList<Tuple<long,string>> SchedulerQueueIds { get; }
+        IList<Tuple<long,string>> SchedulerQueueIds { get; }
         bool HasWarning { get; }
         bool HasError { get; }
         SuggestedStatusIcon SuggestedStatusIcon { get; }
@@ -37,8 +37,8 @@ namespace Duplicati.Server.Serialization.Interface
         long LastNotificationUpdateID { get; }
 
         string UpdatedVersion { get; }
+        string UpdateDownloadLink { get; }
         UpdatePollerStates UpdaterState { get; }
-        bool UpdateReady { get; }
         double UpdateDownloadProgress { get; }
 
     }

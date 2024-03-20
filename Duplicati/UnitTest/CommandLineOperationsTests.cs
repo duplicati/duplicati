@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -174,17 +174,17 @@ namespace Duplicati.UnitTest
 
                 ProgressWriteLine("Running backup with {0} data added ...", Duplicati.Library.Utility.Utility.FormatSizeString(size));
                 using (new Library.Logging.Timer(LOGTAG, "BackupWithDataAdded", string.Format("Backup with {0} data added", Duplicati.Library.Utility.Utility.FormatSizeString(size))))
-                    Duplicati.CommandLine.Program.RealMain(backupargs);
+                    Duplicati.CommandLine.Program.Main(backupargs);
 
                 ProgressWriteLine("Testing data ...");
                 using (new Library.Logging.Timer(LOGTAG, "TestRemoteData", "Test remote data"))
-                    if (Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
+                    if (Duplicati.CommandLine.Program.Main((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
                         throw new Exception("Failed during remote verification");
             }
 
             ProgressWriteLine("Running unchanged backup ...");
             using (new Library.Logging.Timer(LOGTAG, "UnchangedBackup", "Unchanged backup"))
-                Duplicati.CommandLine.Program.RealMain(backupargs);
+                Duplicati.CommandLine.Program.Main(backupargs);
 
             var datafolders = systemIO.EnumerateDirectories(DATAFOLDER);
 
@@ -195,7 +195,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Running backup with renamed folder...");
             using (new Library.Logging.Timer(LOGTAG, "BackupWithRenamedFolder", "Backup with renamed folder"))
-                Duplicati.CommandLine.Program.RealMain(backupargs);
+                Duplicati.CommandLine.Program.Main(backupargs);
 
             datafolders = systemIO.EnumerateDirectories(DATAFOLDER);
 
@@ -212,11 +212,11 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Running backup with deleted data...");
             using (new Library.Logging.Timer(LOGTAG, "BackupWithDeletedData", "Backup with deleted data"))
-                Duplicati.CommandLine.Program.RealMain(backupargs);
+                Duplicati.CommandLine.Program.Main(backupargs);
 
             ProgressWriteLine("Testing the compare method ...");
             using (new Library.Logging.Timer(LOGTAG, "CompareMethod", "Compare method"))
-                Duplicati.CommandLine.Program.RealMain((new string[] { "compare", target, "0", "1" }.Union(opts)).ToArray());
+                Duplicati.CommandLine.Program.Main((new string[] { "compare", target, "0", "1" }.Union(opts)).ToArray());
 
             for (var i = 0; i < 5; i++)
             {
@@ -224,12 +224,12 @@ namespace Duplicati.UnitTest
                 systemIO.FileCopy(LOGFILE, Path.Combine(SOURCEFOLDER, Path.GetFileName(LOGFILE)), true);
 
                 using (new Library.Logging.Timer(LOGTAG, "BackupWithLogfileChange", string.Format("Backup with logfilechange {0}", i + 1)))
-                    Duplicati.CommandLine.Program.RealMain(backupargs);
+                    Duplicati.CommandLine.Program.Main(backupargs);
             }
 
             ProgressWriteLine("Compacting data ...");
             using (new Library.Logging.Timer(LOGTAG, "Compacting", "Compacting"))
-                Duplicati.CommandLine.Program.RealMain((new string[] { "compact", target, "--small-file-max-count=2" }.Union(opts)).ToArray());
+                Duplicati.CommandLine.Program.Main((new string[] { "compact", target, "--small-file-max-count=2" }.Union(opts)).ToArray());
 
 
             datafolders = systemIO.EnumerateDirectories(DATAFOLDER);
@@ -237,7 +237,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Partial restore of {0} ...", Path.GetFileName(rf));
             using (new Library.Logging.Timer(LOGTAG, "PartialRestore", "Partial restore"))
-                Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
+                Duplicati.CommandLine.Program.Main((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
 
             ProgressWriteLine("Verifying partial restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfPartialRestore", "Verification of partial restored files"))
@@ -247,7 +247,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Partial restore of {0} without local db...", Path.GetFileName(rf));
             using (new Library.Logging.Timer(LOGTAG, "PartialRestoreWithoutLocalDb", "Partial restore without local db"))
-                Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"", "--no-local-db" }.Union(opts)).ToArray());
+                Duplicati.CommandLine.Program.Main((new string[] { "restore", target, rf + "*", "--restore-path=\"" + RESTOREFOLDER + "\"", "--no-local-db" }.Union(opts)).ToArray());
 
             ProgressWriteLine("Verifying partial restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfPartialRestore", "Verification of partial restored files"))
@@ -257,7 +257,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "FullRestore", "Full restore"))
-                Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
+                Duplicati.CommandLine.Program.Main((new string[] { "restore", target, "*", "--restore-path=\"" + RESTOREFOLDER + "\"" }.Union(opts)).ToArray());
 
             ProgressWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfFullRestore", "Verification of restored files"))
@@ -268,7 +268,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Full restore without local db...");
             using (new Library.Logging.Timer(LOGTAG, "FullRestoreWithoutDb", "Full restore without local db"))
-                Duplicati.CommandLine.Program.RealMain((new string[] { "restore", target, "*", "--restore-path=\"" + RESTOREFOLDER + "\"", "--no-local-db" }.Union(opts)).ToArray());
+                Duplicati.CommandLine.Program.Main((new string[] { "restore", target, "*", "--restore-path=\"" + RESTOREFOLDER + "\"", "--no-local-db" }.Union(opts)).ToArray());
 
             ProgressWriteLine("Verifying full restore ...");
             using (new Library.Logging.Timer(LOGTAG, "VerificationOfFullRestoreWithoutDb", "Verification of restored files"))
@@ -277,7 +277,7 @@ namespace Duplicati.UnitTest
 
             ProgressWriteLine("Testing data ...");
             using (new Library.Logging.Timer(LOGTAG, "TestRemoteData", "Test remote data"))
-                if (Duplicati.CommandLine.Program.RealMain((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
+                if (Duplicati.CommandLine.Program.Main((new string[] { "test", target, "all" }.Union(opts)).ToArray()) != 0)
                     throw new Exception("Failed during final remote verification");
         }
     }
