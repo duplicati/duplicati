@@ -3,9 +3,9 @@ namespace ReleaseBuilder;
 using static EnvHelper;
 
 /// <summary>
-/// The release types
+/// The release channels
 /// </summary>
-public enum ReleaseType
+public enum ReleaseChannel
 {
     /// <summary>
     /// The primary release form
@@ -104,6 +104,18 @@ public record Configuration(
     }
 
     /// <summary>
+    /// Checks if building Docker images is possible given the current configuration
+    /// </summary>
+    /// <returns>A boolean indicating if Docker image building is possible</returns>
+    public bool IsDockerBuildPossible()
+    {
+        if (string.IsNullOrWhiteSpace(Commands.Docker))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
     /// Determines if creating a Synology package is possible.
     /// </summary>
     /// <returns><c>true</c> if creating a Synology package is possible; otherwise, <c>false</c>.</returns>
@@ -179,6 +191,7 @@ public record ConfigFiles(
 /// <param name="Codesign">The &quot;codesign&quot; command</param>
 /// <param name="Productsign">The &quot;productsign&quot; command</param>
 /// <param name="Wix">The &quot;wix&quot; command</param>
+/// <param name="Docker">The &quot;docker&quot; command</param>
 public record Commands(
     string Dotnet,
     string? Gpg,
@@ -187,7 +200,8 @@ public record Commands(
     string? OsslSignCode,
     string? Codesign,
     string? Productsign,
-    string? Wix
+    string? Wix,
+    string? Docker
 )
 {
     /// <summary>
@@ -203,7 +217,8 @@ public record Commands(
             FindCommand(OperatingSystem.IsWindows() ? "signtool.exe" : "osslsigncode", "SIGNTOOL"),
             OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null,
             OperatingSystem.IsMacOS() ? FindCommand("productsign", "PRODUCTSIGN") : null,
-            FindCommand(OperatingSystem.IsWindows() ? "wix" : "wixl", "WIX")
+            FindCommand(OperatingSystem.IsWindows() ? "wix" : "wixl", "WIX"),
+            FindCommand("docker", "DOCKER")
         );
 }
 

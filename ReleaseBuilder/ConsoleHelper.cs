@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace ReleaseBuilder;
 
 public static class ConsoleHelper

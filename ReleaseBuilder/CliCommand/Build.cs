@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.NamingConventionBinder;
 
 namespace ReleaseBuilder.CliCommand;
 
@@ -101,10 +102,17 @@ public static partial class Build
         /// <summary>
         /// Checks if Authenticode signing should be enabled
         /// </summary>
-        public void ToggleAuthenticodeSigning()
+        /// <param name="disabled">If signing should be disabled</param>
+        public void ToggleAuthenticodeSigning(bool disabled)
         {
             if (!_useAuthenticodeSigning.HasValue)
             {
+                if (disabled)
+                {
+                    _useAuthenticodeSigning = false;
+                    return;
+                }
+
                 if (Program.Configuration.IsAuthenticodePossible())
                     _useAuthenticodeSigning = true;
                 else
@@ -128,10 +136,17 @@ public static partial class Build
         /// <summary>
         /// Checks if codesign is enabled
         /// </summary>
-        public void ToggleSignCodeSigning()
+        /// <param name="disabled">If signing should be disabled</param>
+        public void ToggleSignCodeSigning(bool disabled)
         {
             if (!_useCodeSignSigning.HasValue)
             {
+                if (disabled)
+                {
+                    _useCodeSignSigning = false;
+                    return;
+                }
+
                 if (!OperatingSystem.IsMacOS())
                     _useCodeSignSigning = false;
                 else if (Program.Configuration.IsCodeSignPossible())
@@ -150,6 +165,37 @@ public static partial class Build
         }
 
         /// <summary>
+        /// Cache value for checking if docker build is enabled
+        /// </summary>
+        private bool? _dockerBuild;
+
+        /// <summary>
+        /// Checks if docker build is enabled
+        /// </summary>
+        public async Task ToggleDockerBuild()
+        {
+            if (!_dockerBuild.HasValue)
+            {
+                try
+                {
+                    var res = await ProcessHelper.ExecuteWithOutput([Program.Configuration.Commands.Docker!, "ps"], suppressStdErr: true);
+                    _dockerBuild = true;
+                }
+                catch
+                {
+
+                    if (ConsoleHelper.ReadInput("Docker does not seem to be running, continue without docker builds?", "Y", "n") == "Y")
+                    {
+                        _dockerBuild = false;
+                        return;
+                    }
+
+                    throw new Exception("Docker is not running, and is required for building Docker images");
+                }
+            }
+        }
+
+        /// <summary>
         /// Returns a value indicating if signcode is enabled
         /// </summary>
         public bool UseCodeSignSigning => _useCodeSignSigning!.Value;
@@ -158,6 +204,11 @@ public static partial class Build
         /// Returns a value indicating if authenticode signing is enabled
         /// </summary>
         public bool UseAuthenticodeSigning => _useAuthenticodeSigning!.Value;
+
+        /// <summary>
+        /// Returns a value indicating if docker build is enabled
+        /// </summary>
+        public bool UseDockerBuild => _dockerBuild!.Value;
 
         /// <summary>
         /// Decrypts the password file and returns the PFX password
@@ -219,7 +270,7 @@ public static partial class Build
     /// <param name="Version">The version to use</param>
     /// <param name="Type">The release type</param>
     /// <param name="Timestamp">The release timestamp</param>
-    private record ReleaseInfo(Version Version, ReleaseType Type, DateTime Timestamp)
+    private record ReleaseInfo(Version Version, ReleaseChannel Type, DateTime Timestamp)
     {
         /// <summary>
         /// Gets the string name for the release
@@ -233,7 +284,7 @@ public static partial class Build
         /// <param name="type">The release type</param>
         /// <param name="incVersion">The incremental version</param>
         /// <returns>The release info</returns>
-        public static ReleaseInfo Create(ReleaseType type, int incVersion)
+        public static ReleaseInfo Create(ReleaseChannel type, int incVersion)
             => new ReleaseInfo(new Version(2, 0, 0, incVersion), type, DateTime.Today);
     }
 
@@ -259,20 +310,20 @@ public static partial class Build
                 return requested;
             });
 
-        var releaseTypeOption = new Argument<ReleaseType>(
-            name: "type",
-            description: "The release type",
-            getDefaultValue: () => ReleaseType.Canary
+        var releaseChannelOption = new Argument<ReleaseChannel>(
+            name: "channel",
+            description: "The release channel",
+            getDefaultValue: () => ReleaseChannel.Canary
         );
 
         var gitStashPushOption = new Option<bool>(
-            name: "--git-stash",
+            name: "--git-stash-push",
             description: "Performs a git stash command before running the build, and a git commit after updating files",
             getDefaultValue: () => true
         );
 
         var keepBuildsOption = new Option<bool>(
-            name: "--keep-build",
+            name: "--keep-builds",
             description: "Do not delete the build folders if they already exist (re-use build)",
             getDefaultValue: () => false
         );
@@ -284,7 +335,7 @@ public static partial class Build
         );
 
         var solutionFileOption = new Option<FileInfo>(
-            name: "--solution-path",
+            name: "--solution-file",
             description: "Path to the Duplicati.sln file",
             getDefaultValue: () => new FileInfo(Path.GetFullPath(Path.Combine("..", "Duplicati.sln")))
         );
@@ -295,106 +346,169 @@ public static partial class Build
             getDefaultValue: () => "https://updates.duplicati.com/${RELEASE_TYPE}/latest-v2.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest-v2.manifest"
         );
 
+        var disableAuthenticodeOption = new Option<bool>(
+            name: "--disable-authenticode",
+            description: "Disables authenticode signing",
+            getDefaultValue: () => false
+        );
+
+        var disableCodeSignOption = new Option<bool>(
+            name: "--disable-signcode",
+            description: "Disables Apple signcode signing",
+            getDefaultValue: () => false
+        );
+
+        var passwordOption = new Option<string>(
+            name: "--password",
+            description: "The password to use for the keyfile",
+            getDefaultValue: () => string.Empty
+        );
+
         var command = new Command("build", "Builds the packages for a release") {
             gitStashPushOption,
-            releaseTypeOption,
+            releaseChannelOption,
             buildTempOption,
             buildTargetOption,
             solutionFileOption,
             updateUrlsOption,
-            keepBuildsOption
+            keepBuildsOption,
+            disableAuthenticodeOption,
+            disableCodeSignOption,
+            passwordOption
         };
 
-        command.SetHandler(async (buildTargets, buildTemp, solutionFile, gitStashPush, releaseType, updateUrls, keepBuilds) =>
+        command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
+        return command;
+    }
+
+    /// <summary>
+    /// The input for the build command
+    /// </summary>
+    /// <param name="Targets">The build targets</param>
+    /// <param name="BuildPath">The build path</param>
+    /// <param name="SolutionFile">The solution path</param>
+    /// <param name="GitStash">If the git stash should be performed</param>
+    /// <param name="TyChannelpe">The release channel</param>
+    /// <param name="UpdateUrls">The update urls</param>
+    /// <param name="KeepBuilds">If the builds should be kept</param>
+    /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
+    /// <param name="DisableSignCode">If signcode should be disabled</param>
+    /// <param name="Password">The password to use for the keyfile</param>
+    record CommandInput(
+        PackageTarget[] Targets,
+        DirectoryInfo BuildPath,
+        FileInfo SolutionFile,
+        bool GitStashPush,
+        ReleaseChannel Channel,
+        string UpdateUrls,
+        bool KeepBuilds,
+        bool DisableAuthenticode,
+        bool DisableSignCode,
+        string Password
+    );
+
+    static async Task DoBuild(CommandInput input)
+    {
+        Console.WriteLine($"Building {input.Channel} release ...");
+
+        var buildTargets = input.Targets;
+
+        if (!buildTargets.Any())
+            buildTargets = Program.SupportedPackageTargets.ToArray();
+
+        if (!input.SolutionFile.Exists)
+            throw new FileNotFoundException($"Solution file not found: {input.SolutionFile.FullName}");
+
+        // This could be fixed, so we will throw an exception if the build is not possible
+        if (buildTargets.Any(x => x.Package == PackageType.MSI) && !Program.Configuration.IsMSIBuildPossible())
+            throw new Exception("WiX toolset not configured, cannot build MSI files");
+
+        // This will be fixed in the future, but requires a new http-interface for Synology DSM
+        if (buildTargets.Any(x => x.Package == PackageType.SynologySpk) && !Program.Configuration.IsSynologyPkgPossible())
+            throw new Exception("Synology SPK files are currently not supported");
+
+        // This will not work, so to make it easier for non-MacOS developers, we will remove the MacOS packages
+        if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !Program.Configuration.IsMacPkgBuildPossible())
         {
-            Console.WriteLine($"Building {releaseType} release ...");
+            Console.WriteLine("MacOS packages requested but not running on MacOS, removing from build targets");
+            buildTargets = buildTargets.Where(x => x.Package != PackageType.MacPkg && x.Package != PackageType.DMG).ToArray();
+        }
 
-            if (!buildTargets.Any())
-                buildTargets = Program.SupportedPackageTargets.ToArray();
+        var baseDir = Path.GetDirectoryName(input.SolutionFile.FullName) ?? throw new Exception("Path to solution file was invalid");
+        var versionFilePath = Path.Combine(baseDir, "Updates", "build_version.txt");
+        if (!File.Exists(versionFilePath))
+            throw new FileNotFoundException($"Version file not found: {versionFilePath}");
 
-            if (!solutionFile.Exists)
-                throw new FileNotFoundException($"Solution file not found: {solutionFile.FullName}");
+        var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables", "net8"), "*", SearchOption.TopDirectoryOnly)
+            .SelectMany(x => Directory.EnumerateFiles(x, "*.csproj", SearchOption.TopDirectoryOnly))
+            .ToList();
 
-            // This could be fixed, so we will throw an exception if the build is not possible
-            if (buildTargets.Any(x => x.Package == PackageType.MSI) && !Program.Configuration.IsMSIBuildPossible())
-                throw new Exception("WiX toolset not configured, cannot build MSI files");
+        var primaryGUI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryGUIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find tray icon executable");
+        var primaryCLI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryCLIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find cli executable");
+        var windowsOnly = sourceProjects.Where(x => WindowsOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // This will be fixed in the future, but requires a new http-interface for Synology DSM
-            if (buildTargets.Any(x => x.Package == PackageType.SynologySpk) && !Program.Configuration.IsSynologyPkgPossible())
-                throw new Exception("Synology SPK files are currently not supported");
+        // Put primary at the end
+        sourceProjects.Remove(primaryGUI);
+        sourceProjects.Remove(primaryCLI);
+        sourceProjects.Add(primaryCLI);
+        sourceProjects.Add(primaryGUI);
 
-            // This will not work, so to make it easier for non-MacOS developers, we will remove the MacOS packages
-            if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !Program.Configuration.IsMacPkgBuildPossible())
-            {
-                Console.WriteLine("MacOS packages requested but not running on MacOS, removing from build targets");
-                buildTargets = buildTargets.Where(x => x.Package != PackageType.MacPkg && x.Package != PackageType.DMG).ToArray();
-            }
+        if (!File.Exists(primaryGUI))
+            throw new Exception($"Failed to locate project file: {primaryGUI}");
+        if (!File.Exists(primaryCLI))
+            throw new Exception($"Failed to locate project file: {primaryCLI}");
 
-            var baseDir = Path.GetDirectoryName(solutionFile.FullName) ?? throw new Exception("Path to solution file was invalid");
-            var versionFilePath = Path.Combine(baseDir, "Updates", "build_version.txt");
-            if (!File.Exists(versionFilePath))
-                throw new FileNotFoundException($"Version file not found: {versionFilePath}");
+        var releaseInfo = ReleaseInfo.Create(input.Channel, int.Parse(File.ReadAllText(versionFilePath)) + 1);
+        Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
 
-            var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables", "net8"), "*", SearchOption.TopDirectoryOnly)
-                .SelectMany(x => Directory.EnumerateFiles(x, "*.csproj", SearchOption.TopDirectoryOnly))
-                .ToList();
+        var keyfilePassword = string.IsNullOrEmpty(input.Password)
+            ? ConsoleHelper.ReadPassword("Enter keyfile password")
+            : input.Password;
 
-            var primaryGUI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryGUIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find tray icon executable");
-            var primaryCLI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryCLIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find cli executable");
-            var windowsOnly = sourceProjects.Where(x => WindowsOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Configure runtime environment
+        var rtcfg = new RuntimeConfig(releaseInfo, keyfilePassword, sourceProjects.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
+        rtcfg.ToggleAuthenticodeSigning(input.DisableAuthenticode);
+        rtcfg.ToggleSignCodeSigning(input.DisableSignCode);
+        await rtcfg.ToggleDockerBuild();
 
-            // Put primary at the end
-            sourceProjects.Remove(primaryGUI);
-            sourceProjects.Remove(primaryCLI);
-            sourceProjects.Add(primaryCLI);
-            sourceProjects.Add(primaryGUI);
+        if (!rtcfg.UseDockerBuild)
+        {
+            var unsupportedBuilds = buildTargets.Where(x => x.Package == PackageType.Docker || x.Package == PackageType.Deb || x.Package == PackageType.RPM).ToList();
+            if (unsupportedBuilds.Any())
+                throw new Exception($"Docker build requested but not enabled, and the following packages are not supported: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
+        }
 
-            if (!File.Exists(primaryGUI))
-                throw new Exception($"Failed to locate project file: {primaryGUI}");
-            if (!File.Exists(primaryCLI))
-                throw new Exception($"Failed to locate project file: {primaryCLI}");
+        if (!input.KeepBuilds && Directory.Exists(input.BuildPath.FullName))
+        {
+            Console.WriteLine($"Deleting build folder: {input.BuildPath.FullName}");
+            Directory.Delete(input.BuildPath.FullName, true);
+        }
 
-            var releaseInfo = ReleaseInfo.Create(releaseType, int.Parse(File.ReadAllText(versionFilePath)) + 1);
-            Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
+        if (!Directory.Exists(input.BuildPath.FullName))
+            Directory.CreateDirectory(input.BuildPath.FullName);
 
-            var keyfilePassword = ConsoleHelper.ReadPassword("Enter keyfile password");
+        // Generally, the builds should happen with a clean source tree, 
+        // but this can be disabled for debugging
+        if (input.GitStashPush)
+            await ProcessHelper.Execute(new[] { "git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}" }, workingDirectory: baseDir);
 
-            // Configure runtime environment
-            var rtcfg = new RuntimeConfig(releaseInfo, keyfilePassword, sourceProjects.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
-            rtcfg.ToggleAuthenticodeSigning();
-            rtcfg.ToggleSignCodeSigning();
+        // Inject various files that will be embedded into the build artifacts
+        await PrepareSourceDirectory(baseDir, releaseInfo, input.UpdateUrls);
 
-            if (!keepBuilds && Directory.Exists(buildTemp.FullName))
-            {
-                Console.WriteLine($"Deleting build folder: {buildTemp.FullName}");
-                Directory.Delete(buildTemp.FullName, true);
-            }
+        // Perform the main compilations
+        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, GUIProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg);
 
-            if (!Directory.Exists(buildTemp.FullName))
-                Directory.CreateDirectory(buildTemp.FullName);
+        // Create the packages
+        await CreatePackage.BuildPackages(baseDir, input.BuildPath.FullName, buildTargets, input.KeepBuilds, rtcfg);
 
-            // Generally, the builds should happen with a clean source tree, 
-            // but this can be disabled for debugging
-            if (gitStashPush)
-                await ProcessHelper.Execute(new[] { "git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}" }, workingDirectory: baseDir);
+        Console.WriteLine("Build completed, uploading packages ...");
 
-            // Inject various files that will be embedded into the build artifacts
-            await PrepareSourceDirectory(baseDir, releaseInfo, updateUrls);
+        Console.WriteLine("Upload completed, releasing packages ...");
 
-            // Perform the main compilations
-            await Compile.BuildProjects(baseDir, buildTemp.FullName, sourceProjects, windowsOnly, GUIProjects, buildTargets, releaseInfo, keepBuilds, rtcfg);
+        Console.WriteLine("Release completed, posting release notes ...");
 
-            // Create the packages
-            await CreatePackage.BuildPackages(baseDir, buildTemp.FullName, buildTargets, keepBuilds, rtcfg);
-
-            Console.WriteLine("Build completed, uploading packages ...");
-
-            Console.WriteLine("Upload completed, releasing packages ...");
-
-            Console.WriteLine("Release completed, posting release notes ...");
-
-            // Clean up the source tree
-            await ProcessHelper.Execute(new[] {
+        // Clean up the source tree
+        await ProcessHelper.Execute(new[] {
                     "git", "checkout",
                     "Duplicati/License/VersionTag.txt",
                     "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt",
@@ -402,14 +516,10 @@ public static partial class Build
                     "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
                 }, workingDirectory: baseDir);
 
-            if (gitStashPush)
-                await GitPush.TagAndPush(baseDir, releaseInfo);
+        if (input.GitStashPush)
+            await GitPush.TagAndPush(baseDir, releaseInfo);
 
-            Console.WriteLine("All done");
-
-        }, buildTargetOption, buildTempOption, solutionFileOption, gitStashPushOption, releaseTypeOption, updateUrlsOption, keepBuildsOption);
-
-        return command;
+        Console.WriteLine("All done");
     }
 
     /// <summary>

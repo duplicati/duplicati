@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/bin/Debug/net8.0/ReleaseBuilder.dll",
             "args": [ 
                 "build", 
-                "--git-stash", "false", 
+                "--git-stash-push", "false", 
                 "--targets", "win-x64-gui.msi",
                 "--targets", "win-x64-gui.zip",                
                 "--targets", "linux-x64-gui.zip",
@@ -22,7 +22,10 @@
                 "--targets", "osx-arm64-gui.pkg",
                 "--targets", "linux-x64-gui.deb", 
                 "--targets", "linux-x64-cli.deb", 
-                "--keep-build", "true" 
+                "--keep-builds", "true",
+                "--disable-authenticode", "true",
+                "--disable-signcode", "true",
+                "--password", "unused",
             ],
             "env": {                
             },

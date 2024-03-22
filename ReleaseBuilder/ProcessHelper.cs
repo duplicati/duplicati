@@ -15,8 +15,9 @@ public static class ProcessHelper
     /// <param name="cancellationToken">The cancellation token</param>
     /// <param name="codeIsError">Callback method that is invoked with the error code from the process; the result indicates if the status code should be interpreted as an error.
     /// Default value is <c>null</c> which will treat anything non-zero as an error</param>
+    /// <param name="suppressStdErr">If <c>true</c>, stderr is not forwarded to the console</param>
     /// <returns>An awaitable task</returns>
-    public static async Task Execute(IEnumerable<string> command, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null)
+    public static async Task Execute(IEnumerable<string> command, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null, bool suppressStdErr = false)
     {
         if (!command.Any())
             throw new ArgumentException("Needs at least one command", nameof(command));
@@ -31,14 +32,16 @@ public static class ProcessHelper
         {
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = workingDirectory,
-            RedirectStandardError = true,
+            RedirectStandardError = !suppressStdErr,
             RedirectStandardOutput = false,
             RedirectStandardInput = false,
             UseShellExecute = false,
         }) ?? throw new Exception($"Failed to launch process {command.First()}, null returned");
 
         // Forward error messages to stderr
-        var t = p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
+        var t = suppressStdErr
+            ? Task.CompletedTask
+            : p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
 
         await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         if (codeIsError(p.ExitCode))
@@ -55,11 +58,12 @@ public static class ProcessHelper
     /// <param name="cancellationToken">The cancellation token</param>
     /// <param name="codeIsError">Callback method that is invoked with the error code from the process; the result indicates if the status code should be interpreted as an error.
     /// Default value is <c>null</c> which will treat anything non-zero as an error</param>
+    /// <param name="suppressStdErr">If <c>true</c>, stderr is not forwarded to the console</param>
     /// <returns>An awaitable task</returns>
-    public static async Task ExecuteAll(IEnumerable<IEnumerable<string>> commands, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null)
+    public static async Task ExecuteAll(IEnumerable<IEnumerable<string>> commands, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null, bool suppressStdErr = false)
     {
         foreach (var c in commands)
-            await Execute(c, workingDirectory, cancellationToken, codeIsError).ConfigureAwait(false);
+            await Execute(c, workingDirectory, cancellationToken, codeIsError, suppressStdErr).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -70,8 +74,9 @@ public static class ProcessHelper
     /// <param name="cancellationToken">The cancellation token</param>
     /// <param name="codeIsError">Callback method that is invoked with the error code from the process; the result indicates if the status code should be interpreted as an error.
     /// Default value is <c>null</c> which will treat anything non-zero as an error</param>
+    /// <param name="suppressStdErr">If <c>true</c>, stderr is not forwarded to the console</param>
     /// <returns>The output from stdout</returns>
-    public static async Task<string> ExecuteWithOutput(IEnumerable<string> command, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null)
+    public static async Task<string> ExecuteWithOutput(IEnumerable<string> command, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null, bool suppressStdErr = false)
     {
         if (!command.Any())
             throw new ArgumentException("Needs at least one command", nameof(command));
@@ -86,14 +91,16 @@ public static class ProcessHelper
         {
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = workingDirectory,
-            RedirectStandardError = true,
+            RedirectStandardError = !suppressStdErr,
             RedirectStandardOutput = true,
             RedirectStandardInput = false,
             UseShellExecute = false,
         }) ?? throw new Exception($"Failed to launch process {command.First()}, null returned");
 
         var tstdout = p.StandardOutput.ReadToEndAsync(cancellationToken);
-        var tstderr = p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
+        var tstderr = suppressStdErr
+            ? Task.CompletedTask
+            : p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
 
         await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         if (codeIsError(p.ExitCode))
@@ -113,8 +120,9 @@ public static class ProcessHelper
     /// <param name="cancellationToken">The cancellation token</param>
     /// <param name="codeIsError">Callback method that is invoked with the error code from the process; the result indicates if the status code should be interpreted as an error.
     /// Default value is <c>null</c> which will treat anything non-zero as an error</param>
+    /// <param name="suppressStdErr">If <c>true</c>, stderr is not forwarded to the console</param>
     /// <returns>The output from stdout</returns>
-    public static async Task ExecuteWithOutput(IEnumerable<string> command, Stream stdout, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null)
+    public static async Task ExecuteWithOutput(IEnumerable<string> command, Stream stdout, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null, bool suppressStdErr = false)
     {
         if (!command.Any())
             throw new ArgumentException("Needs at least one command", nameof(command));
@@ -129,14 +137,16 @@ public static class ProcessHelper
         {
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = workingDirectory,
-            RedirectStandardError = true,
+            RedirectStandardError = !suppressStdErr,
             RedirectStandardOutput = true,
             RedirectStandardInput = false,
             UseShellExecute = false,
         }) ?? throw new Exception($"Failed to launch process {command.First()}, null returned");
 
         var tstdout = p.StandardOutput.BaseStream.CopyToAsync(stdout, cancellationToken);
-        var tstderr = p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
+        var tstderr = suppressStdErr
+            ? Task.CompletedTask
+            : p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
 
         await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         if (codeIsError(p.ExitCode))
