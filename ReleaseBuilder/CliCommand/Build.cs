@@ -105,10 +105,6 @@ public static class Build
         /// </summary>
         public void ToggleAuthenticodeSigning()
         {
-#if DEBUG
-            _useAuthenticodeSigning = false;
-            return;
-#endif            
             if (!_useAuthenticodeSigning.HasValue)
             {
                 if (Program.Configuration.IsAuthenticodePossible())
@@ -136,10 +132,6 @@ public static class Build
         /// </summary>
         public void ToggleSignCodeSigning()
         {
-#if DEBUG
-            _useCodeSignSigning = false;
-            return;
-#endif
             if (!_useCodeSignSigning.HasValue)
             {
                 if (!OperatingSystem.IsMacOS())
