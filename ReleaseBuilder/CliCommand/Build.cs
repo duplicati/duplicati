@@ -759,14 +759,20 @@ public static class Build
         if (File.Exists(pkgDaemonFile))
             File.Delete(pkgDaemonFile);
 
+        var distributionFile = Path.Combine(tmpFolder, "Distribution.xml");
+
+        File.WriteAllText(distributionFile,
+            File.ReadAllText(Path.Combine(installerDir, "Distribution.xml"))
+                .Replace("DuplicatiApp.pkg", Path.GetFileName(pkgAppFile))
+                .Replace("DuplicatiDaemon.pkg", Path.GetFileName(pkgDaemonFile))
+        );
+
         // Make the pkg files
         await ProcessHelper.ExecuteAll([
             ["pkgbuild", "--analyze", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "InstallerComponent.plist"],
             ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "app-scripts"), "--identifier", "com.duplicati.app", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "--component-plist", "InstallerComponent.plist", pkgAppFile],
             ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "daemon-scripts"), "--identifier", "com.duplicati.app.daemon", "--root", Path.Combine(tmpFolder, "daemon"), "--install-location", "/Library/LaunchAgents", pkgDaemonFile],
-            ["productbuild", "--synthesize", "--package", pkgAppFile, "DistributionApp.xml"],
-            ["productbuild", "--synthesize", "--package", pkgDaemonFile, "DistributionDaemon.xml"],
-            ["productbuild", "--distribution", "DistributionApp.xml", "--package-path", ".", "--resources", ".", pkgFile]
+            ["productbuild", "--distribution", distributionFile, "--package-path", ".", "--resources", ".", pkgFile]
         ], workingDirectory: tmpFolder);
 
         // Clean up
