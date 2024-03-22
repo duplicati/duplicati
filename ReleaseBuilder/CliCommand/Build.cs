@@ -105,6 +105,10 @@ public static class Build
         /// </summary>
         public void ToggleAuthenticodeSigning()
         {
+#if DEBUG
+            _useAuthenticodeSigning = false;
+            return;
+#endif            
             if (!_useAuthenticodeSigning.HasValue)
             {
                 if (Program.Configuration.IsAuthenticodePossible())
@@ -132,6 +136,10 @@ public static class Build
         /// </summary>
         public void ToggleSignCodeSigning()
         {
+#if DEBUG
+            _useCodeSignSigning = false;
+            return;
+#endif
             if (!_useCodeSignSigning.HasValue)
             {
                 if (!OperatingSystem.IsMacOS())
@@ -317,12 +325,15 @@ public static class Build
             if (!solutionFile.Exists)
                 throw new FileNotFoundException($"Solution file not found: {solutionFile.FullName}");
 
+            // This could be fixed, so we will throw an exception if the build is not possible
             if (buildTargets.Any(x => x.Package == PackageType.MSI) && !Program.Configuration.IsMSIBuildPossible())
                 throw new Exception("WiX toolset not configured, cannot build MSI files");
 
+            // This will be fixed in the future, but requires a new http-interface for Synology DSM
             if (buildTargets.Any(x => x.Package == PackageType.SynologySpk) && !Program.Configuration.IsSynologyPkgPossible())
                 throw new Exception("Synology SPK files are currently not supported");
 
+            // This will not work, so to make it easier for non-MacOS developers, we will remove the MacOS packages
             if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !Program.Configuration.IsMacPkgBuildPossible())
             {
                 Console.WriteLine("MacOS packages requested but not running on MacOS, removing from build targets");
