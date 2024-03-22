@@ -101,29 +101,59 @@ public static class EnvHelper
         if (!Directory.Exists(sourceDir))
             throw new Exception($"Directory is missing: {sourceDir}");
 
-        var sourceStr = sourceDir;
-        var targetStr = targetPath;
-
-        if (!sourceStr.EndsWith(Path.DirectorySeparatorChar))
-            sourceStr += Path.DirectorySeparatorChar;
-
-        if (!targetStr.EndsWith(Path.DirectorySeparatorChar))
-            targetStr += Path.DirectorySeparatorChar;
-
         if (!Directory.Exists(targetPath))
             Directory.CreateDirectory(targetPath);
 
         foreach (var f in Directory.EnumerateFileSystemEntries(sourceDir, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
         {
             if (File.Exists(f))
-                File.Copy(f, targetStr + f.Substring(sourceStr.Length), true);
-            if (recursive && Directory.Exists(f))
+                File.Copy(f, Path.Combine(targetPath, Path.GetRelativePath(sourceDir, f)), true);
+            else if (recursive && Directory.Exists(f))
             {
-                var tg = targetStr + f.Substring(sourceStr.Length);
+                var tg = Path.Combine(Path.Combine(targetPath, Path.GetRelativePath(sourceDir, f)));
                 if (!Directory.Exists(tg))
                     Directory.CreateDirectory(tg);
             }
         }
+    }
+
+    /// <summary>
+    /// Changes ownership of the path to the user and group
+    /// </summary>
+    /// <param name="path">The path to operate on</param>
+    /// <param name="user">The user to change to</param>
+    /// <param name="group">The group to change to</param>
+    /// <param name="recursive">If the operation should be recursive</param>
+    /// <returns>An awaitable task</returns>
+    [UnsupportedOSPlatform("windows")]
+    public static Task Chown(string path, string user, string group, bool recursive)
+        // TODO: Requires sudo, and the Docker workaround does not work on MacOS
+        => Task.CompletedTask;
+
+    /// <summary>
+    /// Changes ownership of the path to the user and group
+    /// </summary>
+    /// <param name="path">The path to operate on</param>
+    /// <param name="user">The user to change to</param>
+    /// <param name="group">The group to change to</param>
+    /// <param name="recursive">If the operation should be recursive</param>
+    /// <returns>An awaitable task</returns>
+    [UnsupportedOSPlatform("windows")]
+    private static async Task ChownWitDocker(string path, string user, string group, bool recursive)
+    {
+        // Get the numeric UID and GID for use in Docker
+        var uid = int.Parse(await ProcessHelper.ExecuteWithOutput(new[] { "id", "-u", user }));
+        var gid = int.Parse(
+            OperatingSystem.IsMacOS()
+                ? (await ProcessHelper.ExecuteWithOutput(["dscl", ".", "-read", $"/Groups/{group}", "PrimaryGroupID"])).Trim().Split(":", 2)[1].Trim()
+                : (await ProcessHelper.ExecuteWithOutput(new[] { "getent", "group", group })).Trim().Split(":", 3)[2]
+        );
+
+        var baseFolder = Path.GetDirectoryName(path);
+        var targetEntry = Path.GetFileName(path);
+
+        // Use docker to set the ownership
+        await ProcessHelper.Execute(new[] { "docker", "run", "--mount", $"type=bind,source={baseFolder},target=/opt/mount", "alpine:latest", "chown", recursive ? "-R" : "", $"{uid}:{gid}", Path.Combine("/opt/mount", targetEntry) });
     }
 
     /// <summary>

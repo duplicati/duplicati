@@ -70,4 +70,26 @@ public static class ProcessRunner
             "--sign", codesignIdentity,
             file
         ]);
+
+    /// <summary>
+    /// Runs MacOS codesign on a single file
+    /// </summary>
+    /// <param name="productsign">The path to the productsign binary</param>
+    /// <param name="codesignIdentity">The identity used for codesign</param>
+    /// <param name="entitlementFile">The entitlements to activate for the file</param>
+    /// <param name="file">The file to sign</param>
+    /// <returns>An awaitable task</returns>
+    public static async Task MacOSProductSign(string productsign, string codesignIdentity, string file)
+    {
+        var outputfile = file + ".signed";
+
+        await ProcessHelper.Execute([
+            productsign,
+            "--sign", codesignIdentity,
+            file,
+            outputfile
+        ]);
+
+        File.Move(outputfile, file, true);
+    }
 }

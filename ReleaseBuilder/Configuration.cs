@@ -73,11 +73,41 @@ public record Configuration(
         if (!OperatingSystem.IsMacOS())
             return false;
 
-        if (string.IsNullOrWhiteSpace(ConfigFiles.CodesignIdentity) || string.IsNullOrWhiteSpace(Commands.Codesign))
+        if (string.IsNullOrWhiteSpace(ConfigFiles.CodesignIdentity) || string.IsNullOrWhiteSpace(Commands.Codesign) || string.IsNullOrWhiteSpace(Commands.Productsign))
             return false;
 
         return true;
     }
+
+    /// <summary>
+    /// Checks if building MSI files is possible given the current configuration
+    /// </summary>
+    /// <returns>A boolean indicating if MSI building is possible</returns>
+    public bool IsMSIBuildPossible()
+    {
+        if (string.IsNullOrWhiteSpace(Commands.Wix))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if building MacOS packages is possible given the current configuration
+    /// </summary>
+    /// <returns>A boolean indicating if MacOS package building is possible</returns>
+    public bool IsMacPkgBuildPossible()
+    {
+        if (!OperatingSystem.IsMacOS())
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Determines if creating a Synology package is possible.
+    /// </summary>
+    /// <returns><c>true</c> if creating a Synology package is possible; otherwise, <c>false</c>.</returns>
+    public bool IsSynologyPkgPossible() => false;
 }
 
 /// <summary>
@@ -147,13 +177,17 @@ public record ConfigFiles(
 /// <param name="GithubRelease">The &quot;github-release&quot; command</param>
 /// <param name="OsslSignCode">The &quot;osslsigncode&quot; command</param>
 /// <param name="Codesign">The &quot;codesign&quot; command</param>
+/// <param name="Productsign">The &quot;productsign&quot; command</param>
+/// <param name="Wix">The &quot;wix&quot; command</param>
 public record Commands(
     string Dotnet,
     string? Gpg,
     string? AwsCli,
     string? GithubRelease,
     string? OsslSignCode,
-    string? Codesign
+    string? Codesign,
+    string? Productsign,
+    string? Wix
 )
 {
     /// <summary>
@@ -167,7 +201,9 @@ public record Commands(
             FindCommand("aws", "AWSCLI"),
             FindCommand("github-release", "GITHUB_RELEASE"),
             FindCommand(OperatingSystem.IsWindows() ? "signtool.exe" : "osslsigncode", "SIGNTOOL"),
-            OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null
+            OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null,
+            OperatingSystem.IsMacOS() ? FindCommand("productsign", "PRODUCTSIGN") : null,
+            FindCommand(OperatingSystem.IsWindows() ? "wix" : "wixl", "WIX")
         );
 }
 

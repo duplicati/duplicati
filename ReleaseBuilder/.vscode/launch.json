@@ -13,11 +13,13 @@
             "args": [ 
                 "build", 
                 "--git-stash", "false", 
-                "--targets", "osx-x64.pkg", 
-                "--targets", "osx-x64.dmg",
-                "--targets", "osx-arm64.dmg",
-                "--targets", "win-x64.zip",                
-                "--targets", "linux-x64.zip",
+                "--targets", "win-x64-gui.msi",
+                "--targets", "win-x64-gui.zip",                
+                "--targets", "linux-x64-gui.zip",
+                "--targets", "osx-x64-gui.dmg",
+                "--targets", "osx-arm64-gui.dmg",
+                "--targets", "osx-x64-gui.pkg", 
+                "--targets", "osx-arm64-gui.pkg", 
                 "--keep-build", "true" 
             ],
             "env": {                

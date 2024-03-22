@@ -31,15 +31,35 @@ public static class ProcessHelper
         {
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = workingDirectory,
-            RedirectStandardError = false,
+            RedirectStandardError = true,
             RedirectStandardOutput = false,
             RedirectStandardInput = false,
             UseShellExecute = false,
         }) ?? throw new Exception($"Failed to launch process {command.First()}, null returned");
 
+        // Forward error messages to stderr
+        var t = p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
+
         await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         if (codeIsError(p.ExitCode))
             throw new Exception($"Execution of {command.First()} gave error code {p.ExitCode}");
+
+        await t.ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Runs all commandline tasks in sequence
+    /// </summary>
+    /// <param name="commands">The commands to run</param>
+    /// <param name="workingDirectory">The working directory to run in; <c>null</c> means current directory</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <param name="codeIsError">Callback method that is invoked with the error code from the process; the result indicates if the status code should be interpreted as an error.
+    /// Default value is <c>null</c> which will treat anything non-zero as an error</param>
+    /// <returns>An awaitable task</returns>
+    public static async Task ExecuteAll(IEnumerable<IEnumerable<string>> commands, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null)
+    {
+        foreach (var c in commands)
+            await Execute(c, workingDirectory, cancellationToken, codeIsError).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -66,19 +86,64 @@ public static class ProcessHelper
         {
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = workingDirectory,
-            RedirectStandardError = false,
+            RedirectStandardError = true,
             RedirectStandardOutput = true,
             RedirectStandardInput = false,
             UseShellExecute = false,
         }) ?? throw new Exception($"Failed to launch process {command.First()}, null returned");
 
-        var t = p.StandardOutput.ReadToEndAsync(cancellationToken);
+        var tstdout = p.StandardOutput.ReadToEndAsync(cancellationToken);
+        var tstderr = p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
 
         await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         if (codeIsError(p.ExitCode))
             throw new Exception($"Execution of {command.First()} gave error code {p.ExitCode}");
 
-        return await t;
+        await tstderr.ConfigureAwait(false);
+        return await tstdout.ConfigureAwait(false);
+    }
+
+
+    /// <summary>
+    /// Starts a commandline program and returns the contents of stdout
+    /// </summary>
+    /// <param name="command"></param>
+    /// <param name="stdout">The stream to write the output to</param>
+    /// <param name="workingDirectory">The working directory to run in; <c>null</c> means current directory</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <param name="codeIsError">Callback method that is invoked with the error code from the process; the result indicates if the status code should be interpreted as an error.
+    /// Default value is <c>null</c> which will treat anything non-zero as an error</param>
+    /// <returns>The output from stdout</returns>
+    public static async Task ExecuteWithOutput(IEnumerable<string> command, Stream stdout, string? workingDirectory = null, CancellationToken cancellationToken = default, Func<int, bool>? codeIsError = null)
+    {
+        if (!command.Any())
+            throw new ArgumentException("Needs at least one command", nameof(command));
+        workingDirectory ??= Environment.CurrentDirectory;
+
+        if (!Directory.Exists(workingDirectory))
+            Directory.CreateDirectory(workingDirectory);
+
+        codeIsError ??= (x) => x != 0;
+
+        var p = Process.Start(new ProcessStartInfo(command.First(), command.Skip(1))
+        {
+            WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            RedirectStandardInput = false,
+            UseShellExecute = false,
+        }) ?? throw new Exception($"Failed to launch process {command.First()}, null returned");
+
+        var tstdout = p.StandardOutput.BaseStream.CopyToAsync(stdout, cancellationToken);
+        var tstderr = p.StandardError.BaseStream.CopyToAsync(Console.OpenStandardError(), cancellationToken);
+
+        await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        if (codeIsError(p.ExitCode))
+            throw new Exception($"Execution of {command.First()} gave error code {p.ExitCode}");
+
+        await tstderr.ConfigureAwait(false);
+        await tstdout.ConfigureAwait(false);
     }
 
     /// <summary>
@@ -127,7 +192,7 @@ public static class ProcessHelper
         if (codeIsError(p.ExitCode))
             throw new Exception($"Execution of {command.First()} gave error code {p.ExitCode}");
 
-        await t1;
-        await t2;
+        await t1.ConfigureAwait(false);
+        await t2.ConfigureAwait(false);
     }
 }

@@ -78,9 +78,24 @@ public enum PackageType
     /// </summary>
     MacPkg,
     /// <summary>
-    /// The synology zip format
+    /// The synology Spk format
     /// </summary>
-    Synologyzip
+    SynologySpk
+}
+
+/// <summary>
+/// The interface type
+/// </summary>
+public enum InterfaceType
+{
+    /// <summary>
+    /// The GUI interface
+    /// </summary>
+    GUI,
+    /// <summary>
+    /// The commandline interface
+    /// </summary>
+    Cli
 }
 
 /// <summary>
@@ -88,8 +103,9 @@ public enum PackageType
 /// </summary>
 /// <param name="OS">The operating system</param>
 /// <param name="Arch">The CPU architecture</param>
+/// <param name="Interface">The interface type</param>
 /// <param name="Package">The installer package</param>
-public record PackageTarget(OSType OS, ArchType Arch, PackageType Package)
+public record PackageTarget(OSType OS, ArchType Arch, InterfaceType Interface, PackageType Package)
 {
     /// <summary>
     /// Returns a string representation of the OS.
@@ -136,9 +152,22 @@ public record PackageTarget(OSType OS, ArchType Arch, PackageType Package)
             PackageType.RPM => "rpm",
             PackageType.DMG => "dmg",
             PackageType.MacPkg => "pkg",
-            PackageType.Synologyzip => "syno",
+            PackageType.SynologySpk => "spk",
             PackageType.Docker => "docker",
             _ => throw new Exception("Not supported package type")
+        };
+
+    /// <summary>
+    /// Returns a string representation of the interface type
+    /// </summary>
+    /// <param name="interfaceType">The interface type</param>
+    /// <returns>The interface type id-string</returns>
+    private static string InterfaceToString(InterfaceType interfaceType)
+        => interfaceType switch
+        {
+            InterfaceType.GUI => "gui",
+            InterfaceType.Cli => "cli",
+            _ => throw new Exception("Not supported interface type")
         };
 
 
@@ -151,6 +180,11 @@ public record PackageTarget(OSType OS, ArchType Arch, PackageType Package)
     /// Gets the RID string for the CPU architecture
     /// </summary>
     public string ArchString => ArchToString(Arch);
+
+    /// <summary>
+    /// Gets the id string for the interface
+    /// </summary>
+    public string InterfaceString => InterfaceToString(Interface);
 
     /// <summary>
     /// Gets the id string for the package
@@ -169,6 +203,10 @@ public record PackageTarget(OSType OS, ArchType Arch, PackageType Package)
     /// String map of package type ids
     /// </summary>
     private static Dictionary<string, PackageType> PackageTypeParse = Enum.GetValues<PackageType>().ToDictionary(PackageToString, x => x, StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// String map of interface type ids
+    /// </summary>
+    private static Dictionary<string, InterfaceType> InterfaceTypeParse = Enum.GetValues<InterfaceType>().ToDictionary(InterfaceToString, x => x, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The RID string for .Net build commands
@@ -176,9 +214,14 @@ public record PackageTarget(OSType OS, ArchType Arch, PackageType Package)
     public string BuildArchString => $"{OSString}-{ArchString}";
 
     /// <summary>
+    /// The target string for the builds
+    /// </summary>
+    public string BuildTargetString => $"{BuildArchString}-{InterfaceString}";
+
+    /// <summary>
     /// The package string for the updater
     /// </summary>
-    public string PackageTargetString => $"{BuildArchString}.{PackageString}";
+    public string PackageTargetString => $"{BuildTargetString}.{PackageString}";
 
     /// <summary>
     /// Parses a string representation of a package target
@@ -187,7 +230,7 @@ public record PackageTarget(OSType OS, ArchType Arch, PackageType Package)
     /// <returns>The <see cref="PackageTarget"/> matching the string</returns>
     public static PackageTarget ParsePackageId(string id)
     {
-        var re = Regex.Match(id, @"(?<os>\w+)-(?<arch>\w+)\.(?<package>\w+)");
+        var re = Regex.Match(id, @"(?<os>\w+)-(?<arch>\w+)-(?<int>\w+)\.(?<package>\w+)");
         if (!re.Success)
             throw new Exception($"Invalid package id: {id}");
 
@@ -195,9 +238,11 @@ public record PackageTarget(OSType OS, ArchType Arch, PackageType Package)
             throw new Exception($"Not supported OS type: {re.Groups["os"].Value}");
         if (!ArchTypeParse.TryGetValue(re.Groups["arch"].Value, out var arch))
             throw new Exception($"Not supported Arch type: {re.Groups["arch"].Value}");
+        if (!InterfaceTypeParse.TryGetValue(re.Groups["int"].Value, out var interfaceType))
+            throw new Exception($"Not supported Interface type: {re.Groups["int"].Value}");
         if (!PackageTypeParse.TryGetValue(re.Groups["package"].Value, out var package))
             throw new Exception($"Not supported Package type: {re.Groups["package"].Value}");
 
-        return new PackageTarget(os, arch, package);
+        return new PackageTarget(os, arch, interfaceType, package);
     }
 }

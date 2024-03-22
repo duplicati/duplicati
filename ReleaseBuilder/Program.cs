@@ -12,25 +12,26 @@ class Program
     /// The supported build packages
     /// </summary>
     public static readonly IReadOnlyList<PackageTarget> SupportedPackageTargets = new[] {
-        "win-x64.zip",
-        "win-x64.msi",
-        "win-x86.zip",
-        "win-x86.msi",
-        "win-arm64.zip",
-        "win-arm64.msi",
-        "linux-x64.zip",
-        "linux-x64.deb",
-        "linux-x64.rpm",
-        "linux-x64.docker",
-        "linux-arm64.docker",
-        "linux-arm64.zip",
-        "linux-arm64.deb",
-        "linux-arm64.rpm",
-        "linux-arm64.syno",
-        "osx-x64.dmg",
-        "osx-x64.pkg",
-        "osx-arm64.dmg",
-        "osx-arm64.pkg",
+        "win-x64-gui.zip",
+        "win-x64-gui.msi",
+        "win-x86-gui.zip",
+        "win-x86-gui.msi",
+        "win-arm64-gui.zip",
+        "win-arm64-gui.msi",
+        "linux-x64-gui.zip",
+        "linux-x64-gui.deb",
+        "linux-x64-gui.rpm",
+        "linux-x64-cli.docker",
+        // "linux-x64-cli.spk",
+        "linux-arm64-cli.docker",
+        "linux-arm64-gui.zip",
+        "linux-arm64-gui.deb",
+        "linux-arm64-gui.rpm",
+        // "linux-arm64-cli.spk",
+        "osx-x64-gui.dmg",
+        "osx-x64-gui.pkg",
+        "osx-arm64-gui.dmg",
+        "osx-arm64-gui.pkg",
     }
     .Select(x => PackageTarget.ParsePackageId(x))
     .Distinct()
@@ -51,6 +52,4 @@ class Program
         {
             CliCommand.Build.Create()
         }.InvokeAsync(args);
-
-
 }
