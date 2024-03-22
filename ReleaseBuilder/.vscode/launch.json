@@ -19,7 +19,9 @@
                 "--targets", "osx-x64-gui.dmg",
                 "--targets", "osx-arm64-gui.dmg",
                 "--targets", "osx-x64-gui.pkg", 
-                "--targets", "osx-arm64-gui.pkg", 
+                "--targets", "osx-arm64-gui.pkg",
+                "--targets", "linux-x64-gui.deb", 
+                "--targets", "linux-x64-cli.deb", 
                 "--keep-build", "true" 
             ],
             "env": {                
