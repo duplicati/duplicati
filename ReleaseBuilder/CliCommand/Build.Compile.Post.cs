@@ -30,14 +30,10 @@ public static partial class Build
                     break;
 
                 case OSType.MacOS:
-                    await SetExecutableFlags(buildDir, rtcfg);
-                    await MakeSymlinks(buildDir);
                     await BundleMacOSApplication(baseDir, buildDir, rtcfg, keepBuilds);
                     break;
 
                 case OSType.Linux:
-                    await SetExecutableFlags(buildDir, rtcfg);
-                    await MakeSymlinks(buildDir);
                     break;
 
                 default:
@@ -120,42 +116,6 @@ public static partial class Build
                 if (File.Exists(f))
                     File.Delete(f);
 
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Introduces symbolic links for executables that have a different name
-        /// </summary>
-        /// <param name="buildDir">The build path to use</param>
-        /// <returns>An awaitable task</returns>
-        static Task MakeSymlinks(string buildDir)
-        {
-            foreach (var k in ExecutableRenames)
-                if (File.Exists(Path.Combine(buildDir, k.Key)) && !File.Exists(Path.Combine(buildDir, k.Value)))
-                    File.CreateSymbolicLink(Path.Combine(buildDir, k.Value), Path.Combine(".", k.Key));
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Sets the executable flags for the build output
-        /// </summary>
-        /// <param name="buildDir">The build directory</param>
-        /// <param name="rtcfg">The runtime configuration</param>
-        /// <returns>An awaitable task</returns>
-        static Task SetExecutableFlags(string buildDir, RuntimeConfig rtcfg)
-        {
-            if (!OperatingSystem.IsWindows())
-            {
-                // Mark executables with the execute flag
-                var executables = rtcfg.ExecutableBinaries.Select(x => Path.Combine(buildDir, x))
-                    .Concat(Directory.EnumerateFiles(buildDir, "*.sh", SearchOption.AllDirectories));
-                var filemode = EnvHelper.GetUnixFileMode("+x");
-                foreach (var x in executables)
-                    if (File.Exists(x))
-                        EnvHelper.AddFilemode(x, filemode);
-            }
 
             return Task.CompletedTask;
         }

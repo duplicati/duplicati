@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Compression;
 
 namespace ReleaseBuilder.CliCommand;
@@ -49,6 +50,9 @@ public static partial class Build
                 Directory.CreateDirectory(packageFolder);
 
             var packageFile = Path.Combine(packageFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}");
+            if (target.Package == PackageType.Deb)
+                packageFile = $"duplicati-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.deb";
+
             if (File.Exists(packageFile))
             {
                 if (keepBuilds)
@@ -67,7 +71,7 @@ public static partial class Build
             switch (target.Package)
             {
                 case PackageType.Zip:
-                    await BuildZipPackage(buildRoot, tempFile, target, rtcfg);
+                    await BuildZipPackage(Path.Combine(buildRoot, $"{target.BuildTargetString}"), rtcfg.ReleaseInfo.ReleaseName, tempFile, target, rtcfg);
                     break;
 
                 case PackageType.MSI:
@@ -102,24 +106,44 @@ public static partial class Build
         /// Builds a zip package asynchronously.
         /// </summary>
         /// <param name="buildRoot">The output folder where the zip package will be created.</param>
+        /// <param name="dirName">The directory name to use as the root zip name.</param>
         /// <param name="zipFile">The zip file to generate.</param>
         /// <param name="target">The package target.</param>
         /// <param name="rtcfg">The runtime configuration.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        static async Task BuildZipPackage(string buildRoot, string zipFile, PackageTarget target, RuntimeConfig rtcfg)
+        static async Task BuildZipPackage(string buildRoot, string dirName, string zipFile, PackageTarget target, RuntimeConfig rtcfg)
         {
             if (File.Exists(zipFile))
                 File.Delete(zipFile);
 
             using (ZipArchive zip = ZipFile.Open(zipFile, ZipArchiveMode.Create))
             {
-                foreach (var f in Directory.EnumerateFiles(Path.Combine(buildRoot, target.BuildTargetString), "*", SearchOption.AllDirectories))
+                foreach (var f in Directory.EnumerateFiles(buildRoot, "*", SearchOption.AllDirectories))
                 {
-                    var entry = zip.CreateEntry(Path.GetRelativePath(buildRoot, f), CompressionLevel.Optimal);
+                    var relpath = Path.GetRelativePath(buildRoot, f);
+
+                    // Use more friendly names for executables on non-Windows platforms
+                    if (target.OS != OSType.Windows && ExecutableRenames.ContainsKey(relpath))
+                        relpath = ExecutableRenames[relpath];
+
+                    var entry = zip.CreateEntry(Path.Combine(dirName, relpath), CompressionLevel.Optimal);
                     using (var stream = entry.Open())
                     using (var file = File.OpenRead(f))
                         await file.CopyToAsync(stream);
                 }
+                if (target.OS != OSType.Windows)
+                {
+                    using (var stream = zip.CreateEntry(Path.Combine(dirName, "set-permissions.sh"), CompressionLevel.Optimal).Open())
+                    using (var writer = new StreamWriter(stream))
+                    {
+                        writer.WriteLine("#!/bin/sh");
+                        writer.WriteLine("# This script sets the executable flags for the Duplicati binaries");
+                        writer.WriteLine("set -e");
+                        foreach (var x in ExecutableRenames.Values)
+                            writer.WriteLine($"chmod +x {x}");
+                    }
+                }
+
             }
         }
 
@@ -200,7 +224,7 @@ public static partial class Build
 
             await ProcessHelper.ExecuteAll([
                 ["hdiutil", "resize", "-size", "300M", templateDmg],
-            ["hdiutil", "attach", templateDmg, "-noautoopen", "-quiet", "-mountpoint", mountDir]
+                ["hdiutil", "attach", templateDmg, "-noautoopen", "-quiet", "-mountpoint", mountDir]
             ], workingDirectory: buildRoot);
 
             // Change the dmg name
@@ -217,6 +241,8 @@ public static partial class Build
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{MacOSAppName}"), appFolder, recursive: true);
+            await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
+            await PackageSupport.MakeSymlinks(appFolder);
 
             // Set permissions inside DMG file
             if (!OperatingSystem.IsWindows())
@@ -260,6 +286,8 @@ public static partial class Build
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{MacOSAppName}"), appFolder, recursive: true);
+            await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
+            await PackageSupport.MakeSymlinks(appFolder);
 
             // Copy the source script files
             var scripts = new[] { "daemon", "daemon-scripts", "app-scripts" };
@@ -322,9 +350,133 @@ public static partial class Build
         /// <param name="target">The package target.</param>
         /// <param name="rtcfg">The runtime configuration.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        static Task BuildDebPackage(string baseDir, string buildRoot, string debFile, PackageTarget target, RuntimeConfig rtcfg)
+        static async Task BuildDebPackage(string baseDir, string buildRoot, string debFile, PackageTarget target, RuntimeConfig rtcfg)
         {
-            throw new NotImplementedException();
+            // The approach here is based on:
+            // https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
+            // 
+            // It is not the recommended way to build a package,
+            // but since the build is from a pre-build binary,
+            // it is easier than trying to hack debhelper.
+
+            var debroot = Path.Combine(buildRoot, "deb");
+            if (Path.Exists(debroot))
+                Directory.Delete(debroot, true);
+            Directory.CreateDirectory(debroot);
+
+            // Make the package structure
+            var debpkgdir = $"duplicati-{rtcfg.ReleaseInfo.Version}_{target.ArchString}";
+            var pkgroot = Path.Combine(debroot, debpkgdir);
+
+            Directory.CreateDirectory(pkgroot);
+            Directory.CreateDirectory(Path.Combine(pkgroot, "DEBIAN"));
+            Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "lib"));
+            Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "bin"));
+            Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "share", "applications"));
+            Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "share", "pixmaps"));
+
+            // Copy main files
+            EnvHelper.CopyDirectory(
+                Path.Combine(buildRoot, target.BuildTargetString),
+                Path.Combine(pkgroot, "usr", "lib", "duplicati"),
+                recursive: true);
+
+            // TODO: For improved Windows support, this can be done in Docker
+            if (!OperatingSystem.IsWindows())
+            {
+                var roflags = UnixFileMode.OtherRead | UnixFileMode.GroupRead | UnixFileMode.UserRead | UnixFileMode.UserWrite;
+                var exflags = roflags | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+
+                // Set permissions
+                foreach (var f in Directory.EnumerateFileSystemEntries(Path.Combine(pkgroot, "usr", "lib", "duplicati"), "*", SearchOption.AllDirectories))
+                {
+                    if (File.Exists(f))
+                        File.SetUnixFileMode(f,
+                            ExecutableRenames.ContainsKey(Path.GetFileName(f))
+                                ? exflags
+                                : roflags);
+                    else if (Directory.Exists(f))
+                        File.SetUnixFileMode(f, exflags);
+                }
+
+                foreach (var e in ExecutableRenames)
+                {
+                    var exefile = Path.Combine(pkgroot, "usr", "lib", "duplicati", e.Key);
+                    if (File.Exists(exefile))
+                        await ProcessHelper.Execute([
+                            "ln", "-s",
+                            exefile,
+                            Path.Combine(pkgroot, "usr", "bin", e.Value)
+                        ]);
+                }
+            }
+
+            // Copy debian files
+            var installerDir = Path.Combine(baseDir, "Installer", "debian");
+
+            // Write in the release notes
+            // File.WriteAllText(Path.Combine(debroot, "releasenotes.txt"), rtcfg.ReleaseNotes); 
+            // touch "${DIRNAME}/releasenotes.txt"
+
+            // Write a custom changelog file
+            File.WriteAllText(
+                Path.Combine(pkgroot, "DEBIAN", "changelog"),
+                File.ReadAllText(Path.Combine(installerDir, "changelog.template.txt"))
+                    .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
+                    .Replace("%DATE%", DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss +0000", CultureInfo.InvariantCulture))
+            );
+
+            // Write a custom control file
+            File.WriteAllText(
+                Path.Combine(pkgroot, "DEBIAN", "control"),
+                File.ReadAllText(Path.Combine(installerDir, "control.template.txt"))
+                    .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
+                    .Replace("%ARCH%", target.ArchString)
+                    .Replace("%DEPENDS%", string.Join(", ", target.Interface == InterfaceType.GUI
+                        ? DebianGUIDepends
+                        : DebianCLIDepends))
+            );
+
+            // Install various helper files
+            File.Copy(
+                Path.Combine(installerDir, "duplicati.desktop"),
+                Path.Combine(pkgroot, "usr", "share", "applications", "duplicati.desktop"),
+                true
+            );
+
+            foreach (var f in new[] { "duplicati.png", "duplicati.svg", "duplicati.xpm" })
+                File.Copy(
+                    Path.Combine(installerDir, f),
+                    Path.Combine(pkgroot, "usr", "share", "pixmaps", f),
+                    true
+                );
+
+            // Install the Docker build file
+            File.Copy(
+                Path.Combine(installerDir, "Dockerfile.build"),
+                Path.Combine(debroot, "Dockerfile"),
+                true
+            );
+
+            // Build a Docker image to build with
+            await ProcessHelper.Execute([
+                "docker", "build",
+                "-t", "duplicati/debian-build:latest",
+                debroot
+            ], workingDirectory: debroot);
+
+            var debpkgname = $"{debpkgdir}.deb";
+
+            // Build in Docker
+            await ProcessHelper.Execute([
+                    "docker", "run",
+                    "--workdir", $"/build",
+                    "--volume", $"{debroot}:/build:rw", "duplicati/debian-build:latest",
+                    "dpkg-deb", "--build", "--root-owner-group", debpkgdir
+            ]);
+
+            File.Move(Path.Combine(debroot, debpkgname), debFile);
+            Directory.Delete(debroot, true);
         }
     }
 }
