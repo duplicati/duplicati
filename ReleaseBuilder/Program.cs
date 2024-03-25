@@ -34,6 +34,7 @@ class Program
         "linux-arm64-cli.deb",
         "linux-arm64-cli.rpm",
         // "linux-arm64-cli.spk",
+        "linux-arm7-cli.docker",
         "osx-x64-gui.dmg",
         "osx-x64-gui.pkg",
         "osx-arm64-gui.dmg",

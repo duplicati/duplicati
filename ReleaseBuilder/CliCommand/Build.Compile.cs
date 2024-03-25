@@ -56,21 +56,23 @@ public static partial class Build
                         if (target.Interface == InterfaceType.Cli && guiProjects.Contains(proj))
                             continue;
 
-                        // TODO: Creating multiple self-contained binaries really bloats the build size.
-                        //
-                        // One workaround could be to have a single commandline entry project that
-                        // uses the invoked command name to determine the actual command to run
-                        // Similar to how busy-box bundles multiple commands into a single binary
-                        //
+                        // TODO: Self contained builds are bloating the build size
                         // Alternative is to require the .NET runtime to be installed
+
+                        // Fix any RIDs that differ from .NET SDK
+                        var archstring = target.Arch switch
+                        {
+                            ArchType.Arm7 => $"{target.OSString}-arm",
+                            _ => target.BuildArchString
+                        };
 
                         var command = new string[] {
                             "dotnet", "publish", proj,
                             "-c", "Release",
                             "-o", tmpfolder,
-                            "-r", target.BuildArchString,
+                            "-r", archstring,
                             $"/p:AssemblyVersion={releaseInfo.Version}",
-                            $"/p:Version={releaseInfo.Version}-{releaseInfo.Type}-{releaseInfo.Timestamp:yyyyMMdd}",
+                            $"/p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
                             "--self-contained", "true"
                         };
                         await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");

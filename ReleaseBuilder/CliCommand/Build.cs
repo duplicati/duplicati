@@ -42,11 +42,6 @@ public static partial class Build
     };
 
     /// <summary>
-    /// Name of the app bundle for MacOS
-    /// </summary>
-    private const string MacOSAppName = "Duplicati.app";
-
-    /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
     private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1"];
@@ -68,17 +63,24 @@ public static partial class Build
         /// <param name="releaseInfo">The release info to use</param>
         /// <param name="keyfilePassword">The keyfile password to use</param>
         /// <param name="executables">The executables</param>
-        public RuntimeConfig(ReleaseInfo releaseInfo, string keyfilePassword, IEnumerable<string> executables)
+        /// <param name="input">The command input</param>
+        public RuntimeConfig(ReleaseInfo releaseInfo, string keyfilePassword, IEnumerable<string> executables, CommandInput input)
         {
             ReleaseInfo = releaseInfo;
             KeyfilePassword = keyfilePassword;
             ExecutableBinaries = executables;
+            Input = input;
         }
 
         /// <summary>
         /// The cached password for the pfx file
         /// </summary>
         private string? _pfxPassword = null;
+
+        /// <summary>
+        /// The commandline input
+        /// </summary>
+        private CommandInput Input { get; }
 
         /// <summary>
         /// The release info for this run
@@ -93,6 +95,8 @@ public static partial class Build
         /// <summary>
         /// The executables that should exist in the build folder
         /// </summary>
+        /// 
+        // TODO: Remove this?
         public IEnumerable<string> ExecutableBinaries { get; }
 
         /// <summary>
@@ -111,12 +115,11 @@ public static partial class Build
         /// <summary>
         /// Checks if Authenticode signing should be enabled
         /// </summary>
-        /// <param name="disabled">If signing should be disabled</param>
-        public void ToggleAuthenticodeSigning(bool disabled)
+        public void ToggleAuthenticodeSigning()
         {
             if (!_useAuthenticodeSigning.HasValue)
             {
-                if (disabled)
+                if (Input.DisableAuthenticode)
                 {
                     _useAuthenticodeSigning = false;
                     return;
@@ -145,12 +148,11 @@ public static partial class Build
         /// <summary>
         /// Checks if codesign is enabled
         /// </summary>
-        /// <param name="disabled">If signing should be disabled</param>
-        public void ToggleSignCodeSigning(bool disabled)
+        public void ToggleSignCodeSigning()
         {
             if (!_useCodeSignSigning.HasValue)
             {
-                if (disabled)
+                if (Input.DisableSignCode)
                 {
                     _useCodeSignSigning = false;
                     return;
@@ -220,6 +222,21 @@ public static partial class Build
         public bool UseDockerBuild => _dockerBuild!.Value;
 
         /// <summary>
+        /// Gets the MacOS app bundle name
+        /// </summary>
+        public string MacOSAppName => Input.MacOSAppName;
+
+        /// <summary>
+        /// The docker repository to use
+        /// </summary>
+        public string DockerRepo => Input.DockerRepo;
+
+        /// <summary>
+        /// Gets a value indicating if pushing should be enabled
+        /// </summary>
+        public bool PushToDocker => !Input.DisableDockerPush;
+
+        /// <summary>
         /// Decrypts the password file and returns the PFX password
         /// </summary>
         /// <param name="keyfilepassword">Password for the password file</param>
@@ -277,14 +294,14 @@ public static partial class Build
     /// Structure for keeping all variables for a single release
     /// </summary>
     /// <param name="Version">The version to use</param>
-    /// <param name="Type">The release type</param>
+    /// <param name="Channel">The release channel</param>
     /// <param name="Timestamp">The release timestamp</param>
-    private record ReleaseInfo(Version Version, ReleaseChannel Type, DateTime Timestamp)
+    private record ReleaseInfo(Version Version, ReleaseChannel Channel, DateTime Timestamp)
     {
         /// <summary>
         /// Gets the string name for the release
         /// </summary>
-        public string ReleaseName => $"{Version}_{Type.ToString().ToLowerInvariant()}_{Timestamp:yyy-MM-dd}";
+        public string ReleaseName => $"{Version}_{Channel.ToString().ToLowerInvariant()}_{Timestamp:yyy-MM-dd}";
 
 
         /// <summary>
@@ -373,6 +390,24 @@ public static partial class Build
             getDefaultValue: () => string.Empty
         );
 
+        var disableDockerPushOption = new Option<bool>(
+            name: "--disable-docker-push",
+            description: "Disables pushing the docker image to the repository",
+            getDefaultValue: () => false
+        );
+
+        var macOsAppNameOption = new Option<string>(
+            name: "--macos-app-name",
+            description: "The name of the MacOS app bundle",
+            getDefaultValue: () => "Duplicati.app"
+        );
+
+        var dockerRepoOption = new Option<string>(
+            name: "--docker-repo",
+            description: "The docker repository to push to",
+            getDefaultValue: () => "duplicati/duplicati"
+        );
+
         var command = new Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelOption,
@@ -383,7 +418,10 @@ public static partial class Build
             keepBuildsOption,
             disableAuthenticodeOption,
             disableCodeSignOption,
-            passwordOption
+            passwordOption,
+            macOsAppNameOption,
+            disableDockerPushOption,
+            dockerRepoOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -396,13 +434,16 @@ public static partial class Build
     /// <param name="Targets">The build targets</param>
     /// <param name="BuildPath">The build path</param>
     /// <param name="SolutionFile">The solution path</param>
-    /// <param name="GitStash">If the git stash should be performed</param>
-    /// <param name="TyChannelpe">The release channel</param>
+    /// <param name="GitStashPush">If the git stash should be performed</param>
+    /// <param name="Channel">The release channel</param>
     /// <param name="UpdateUrls">The update urls</param>
     /// <param name="KeepBuilds">If the builds should be kept</param>
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
     /// <param name="DisableSignCode">If signcode should be disabled</param>
     /// <param name="Password">The password to use for the keyfile</param>
+    /// <param name="DisableDockerPush">If the docker push should be disabled</param>
+    /// <param name="MacOSAppName">The name of the MacOS app bundle</param>
+    /// <param name="DockerRepo">The docker repository to push to</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -413,7 +454,10 @@ public static partial class Build
         bool KeepBuilds,
         bool DisableAuthenticode,
         bool DisableSignCode,
-        string Password
+        string Password,
+        bool DisableDockerPush,
+        string MacOSAppName,
+        string DockerRepo
     );
 
     static async Task DoBuild(CommandInput input)
@@ -475,9 +519,14 @@ public static partial class Build
             : input.Password;
 
         // Configure runtime environment
-        var rtcfg = new RuntimeConfig(releaseInfo, keyfilePassword, sourceProjects.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
-        rtcfg.ToggleAuthenticodeSigning(input.DisableAuthenticode);
-        rtcfg.ToggleSignCodeSigning(input.DisableSignCode);
+        var rtcfg = new RuntimeConfig(
+            releaseInfo,
+            keyfilePassword,
+            sourceProjects.Select(x => Path.GetFileNameWithoutExtension(x)).ToList(),
+            input);
+
+        rtcfg.ToggleAuthenticodeSigning();
+        rtcfg.ToggleSignCodeSigning();
         await rtcfg.ToggleDockerBuild();
 
         if (!rtcfg.UseDockerBuild)
@@ -541,12 +590,12 @@ public static partial class Build
     static Task PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, string updateUrls)
     {
         updateUrls = updateUrls
-            .Replace("${RELEASE_TYPE}", releaseInfo.Type.ToString().ToLowerInvariant())
+            .Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
             .Replace("${RELEASE_VERSION}", releaseInfo.Version.ToString())
             .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"));
 
         File.WriteAllText(Path.Combine(baseDir, "Duplicati", "License", "VersionTag.txt"), releaseInfo.Version.ToString());
-        File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateBuildChannel.txt"), releaseInfo.Type.ToString().ToLowerInvariant());
+        File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateBuildChannel.txt"), releaseInfo.Channel.ToString().ToLowerInvariant());
         File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateURL.txt"), updateUrls);
         File.Copy(
             Path.Combine(baseDir, "Updates", "release_key.txt"),

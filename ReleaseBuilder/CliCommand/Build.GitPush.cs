@@ -23,13 +23,15 @@ public static partial class Build
                 }, workingDirectory: baseDir);
 
             // Make a commit
+
+            // TODO: Since there is no longer a single binary, use github releases?
             await ProcessHelper.Execute(new[] {
                     "git", "commit",
                     "-m", $"Version bump to v{releaseInfo.Version}-{releaseInfo.ReleaseName}",
                     "-m", "You can download this build from: ",
-                    "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Type}/{releaseInfo.ReleaseName}.zip",
-                    "-m", $"Signature file: https://updates.duplicati.com/{releaseInfo.Type}/{releaseInfo.ReleaseName}.zip.sig",
-                    "-m", $"ASCII signature file: https://updates.duplicati.com/{releaseInfo.Type}/{releaseInfo.ReleaseName}.zip.sig.asc",
+                    "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Channel}/{releaseInfo.ReleaseName}.zip",
+                    "-m", $"Signature file: https://updates.duplicati.com/{releaseInfo.Channel}/{releaseInfo.ReleaseName}.zip.sig",
+                    "-m", $"ASCII signature file: https://updates.duplicati.com/{releaseInfo.Channel}/{releaseInfo.ReleaseName}.zip.sig.asc",
                     "-m", $"MD5: {releaseInfo.ReleaseName}.zip.md5",
                     "-m", $"SHA1: {releaseInfo.ReleaseName}.zip.sha1",
                     "-m", $"SHA256: {releaseInfo.ReleaseName}.zip.sha256"
@@ -39,9 +41,9 @@ public static partial class Build
             await ProcessHelper.Execute(new[] {
                     "git", "tag", $"v{releaseInfo.Version}-{releaseInfo.ReleaseName}",
                     "-m", "You can download this build from: ",
-                    "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Type}/{releaseInfo.ReleaseName}.zip",
-                    "-m", $"Signature file: https://updates.duplicati.com/{releaseInfo.Type}/{releaseInfo.ReleaseName}.zip.sig",
-                    "-m", $"ASCII signature file: https://updates.duplicati.com/{releaseInfo.Type}/{releaseInfo.ReleaseName}.zip.sig.asc",
+                    "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Channel}/{releaseInfo.ReleaseName}.zip",
+                    "-m", $"Signature file: https://updates.duplicati.com/{releaseInfo.Channel}/{releaseInfo.ReleaseName}.zip.sig",
+                    "-m", $"ASCII signature file: https://updates.duplicati.com/{releaseInfo.Channel}/{releaseInfo.ReleaseName}.zip.sig.asc",
                     "-m", $"MD5: {releaseInfo.ReleaseName}.zip.md5",
                     "-m", $"SHA1: {releaseInfo.ReleaseName}.zip.sha1",
                     "-m", $"SHA256: {releaseInfo.ReleaseName}.zip.sha256"

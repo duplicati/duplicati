@@ -134,7 +134,7 @@ public static partial class Build
             // Create target .app folder
             var appDir = Path.Combine(
                 buildroot,
-                $"{Path.GetFileName(buildDir)}-{MacOSAppName}"
+                $"{Path.GetFileName(buildDir)}-{rtcfg.MacOSAppName}"
             );
 
             if (Directory.Exists(appDir))
@@ -149,7 +149,7 @@ public static partial class Build
             }
 
             // Prepare the .app folder structure
-            var tmpApp = Path.Combine(buildroot, "tmpapp", MacOSAppName);
+            var tmpApp = Path.Combine(buildroot, "tmpapp", rtcfg.MacOSAppName);
 
             var folders = new[] {
             Path.Combine("Contents"),

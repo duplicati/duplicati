@@ -27,11 +27,39 @@ public static partial class Build
             else
                 Console.WriteLine($"Building {packagesToBuild.Count} packages");
 
-            foreach (var target in packagesToBuild)
+            // Build the packages, but skip Docker builds as they are bundled
+            foreach (var target in packagesToBuild.Where(x => x.Package != PackageType.Docker))
             {
                 Console.WriteLine($"Building {target.PackageTargetString} ...");
                 await BuildPackage(baseDir, buildRoot, target, rtcfg, keepBuilds);
                 Console.WriteLine("Completed!");
+            }
+
+            // Build the Docker images with buildx for multi-arch support
+            var dockerTargets = packagesToBuild.Where(x => x.Package == PackageType.Docker).ToList();
+            if (dockerTargets.Count > 0)
+            {
+                var packageFolder = Path.Combine(buildRoot, "packages");
+                if (!Directory.Exists(packageFolder))
+                    Directory.CreateDirectory(packageFolder);
+
+
+                var packageFiles = dockerTargets.Select(x => Path.Combine(packageFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{x.PackageTargetString}"))
+                    .ToList();
+
+                if (packageFiles.All(File.Exists))
+                {
+                    Console.WriteLine("All docker images already exist, skipping Docker build");
+                }
+                else
+                {
+                    Console.WriteLine($"Building {dockerTargets.Count} Docker images ...");
+                    await BuildDockerImages(baseDir, buildRoot, dockerTargets, rtcfg);
+
+                    // Create the files
+                    foreach (var f in packageFiles)
+                        File.WriteAllText(f, "");
+                }
             }
         }
 
@@ -51,7 +79,7 @@ public static partial class Build
 
             var packageFile = Path.Combine(packageFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}");
             if (target.Package == PackageType.Deb)
-                packageFile = $"duplicati-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.deb";
+                packageFile = Path.Combine(packageFolder, $"duplicati-{target.InterfaceString}-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.deb");
 
             if (File.Exists(packageFile))
             {
@@ -131,6 +159,12 @@ public static partial class Build
                     using (var file = File.OpenRead(f))
                         await file.CopyToAsync(stream);
                 }
+
+                // Write the package type identifier
+                using (var stream = zip.CreateEntry(Path.Combine(dirName, "package_type_id.txt"), CompressionLevel.Optimal).Open())
+                using (var writer = new StreamWriter(stream))
+                    writer.WriteLine(target.PackageTargetString);
+
                 if (target.OS != OSType.Windows)
                 {
                     using (var stream = zip.CreateEntry(Path.Combine(dirName, "set-permissions.sh"), CompressionLevel.Optimal).Open())
@@ -143,7 +177,6 @@ public static partial class Build
                             writer.WriteLine($"chmod +x {x}");
                     }
                 }
-
             }
         }
 
@@ -161,21 +194,28 @@ public static partial class Build
             var installerDir = Path.Combine(baseDir, "Installer", "Windows");
             var binFiles = Path.Combine(installerDir, "binfiles.wxs");
 
-            var sourceFiles = Path.Combine(buildRoot, target.BuildTargetString);
+            var buildTmp = Path.Combine(buildRoot, "tmp-msi");
+            if (Directory.Exists(buildTmp))
+                Directory.Delete(buildTmp, true);
+
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), buildTmp, recursive: true);
+            await PackageSupport.InstallPackageIdentifier(buildTmp, target);
+
+            var sourceFiles = buildTmp;
             if (!sourceFiles.EndsWith(Path.DirectorySeparatorChar))
                 sourceFiles += Path.DirectorySeparatorChar;
 
             File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles));
 
-            await ProcessHelper.Execute(new[] {
-            Program.Configuration.Commands.Wix!,
-            "--define", $"HarvestPath={sourceFiles}",
-            "--arch", target.ArchString,
-            "--output", msiFile,
-            Path.Combine(installerDir, "Shortcuts.wxs"),
-            binFiles,
-            Path.Combine(installerDir, "Duplicati.wxs")
-        }, workingDirectory: buildRoot);
+            await ProcessHelper.Execute([
+                Program.Configuration.Commands.Wix!,
+                "--define", $"HarvestPath={sourceFiles}",
+                "--arch", target.ArchString,
+                "--output", msiFile,
+                Path.Combine(installerDir, "Shortcuts.wxs"),
+                binFiles,
+                Path.Combine(installerDir, "Duplicati.wxs")
+            ], workingDirectory: buildRoot);
 
             if (rtcfg.UseAuthenticodeSigning)
                 await rtcfg.AuthenticodeSign(msiFile);
@@ -235,12 +275,13 @@ public static partial class Build
             ], workingDirectory: mountDir);
 
             // Make the Duplicati.app structure, root folder should exist
-            var appFolder = Path.Combine(mountDir, MacOSAppName);
+            var appFolder = Path.Combine(mountDir, rtcfg.MacOSAppName);
             if (Directory.Exists(appFolder))
                 Directory.Delete(appFolder, true);
 
             // Place the prepared folder
-            EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{MacOSAppName}"), appFolder, recursive: true);
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
+            await PackageSupport.InstallPackageIdentifier(appFolder, target);
             await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
             await PackageSupport.MakeSymlinks(appFolder);
 
@@ -280,12 +321,13 @@ public static partial class Build
 
             var installerDir = Path.Combine(baseDir, "Installer", "MacOS");
 
-            var appFolder = Path.Combine(tmpFolder, MacOSAppName);
+            var appFolder = Path.Combine(tmpFolder, rtcfg.MacOSAppName);
             if (Directory.Exists(appFolder))
                 Directory.Delete(appFolder, true);
 
             // Place the prepared folder
-            EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{MacOSAppName}"), appFolder, recursive: true);
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
+            await PackageSupport.InstallPackageIdentifier(appFolder, target);
             await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
             await PackageSupport.MakeSymlinks(appFolder);
 
@@ -381,6 +423,8 @@ public static partial class Build
                 Path.Combine(pkgroot, "usr", "lib", "duplicati"),
                 recursive: true);
 
+            await PackageSupport.InstallPackageIdentifier(Path.Combine(pkgroot, "usr", "lib", "duplicati"), target);
+
             // TODO: For improved Windows support, this can be done in Docker
             if (!OperatingSystem.IsWindows())
             {
@@ -467,6 +511,9 @@ public static partial class Build
 
             var debpkgname = $"{debpkgdir}.deb";
 
+            // Docker desktop has some sync issues
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
             // Build in Docker
             await ProcessHelper.Execute([
                     "docker", "run",
@@ -478,5 +525,80 @@ public static partial class Build
             File.Move(Path.Combine(debroot, debpkgname), debFile);
             Directory.Delete(debroot, true);
         }
+    }
+
+    /// <summary>
+    /// Builds the Docker images for the specified targets with buildx
+    /// </summary>
+    /// <param name="baseDir">The base directory.</param>
+    /// <param name="buildRoot">The build root directory.</param>
+    /// <param name="targets">The package target.</param>
+    /// <param name="rtcfg">The runtime configuration.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private static async Task BuildDockerImages(string baseDir, string buildRoot, IEnumerable<PackageTarget> targets, RuntimeConfig rtcfg)
+    {
+        var installerDir = Path.Combine(baseDir, "Installer", "Docker");
+        var dockerArchs = targets.Select(target => target switch
+        {
+            PackageTarget { Arch: ArchType.x64, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/amd64",
+            PackageTarget { Arch: ArchType.Arm64, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/arm64",
+            PackageTarget { Arch: ArchType.Arm7, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/arm/v7",
+            _ => throw new Exception($"Unsupported Docker target: {target.OS}/{target.Arch} ({target.Interface})")
+        });
+
+        var tmpbuild = Path.Combine(buildRoot, "tmp-docker");
+        if (Directory.Exists(tmpbuild))
+            Directory.Delete(tmpbuild, true);
+        Directory.CreateDirectory(tmpbuild);
+
+        // Copy in the source data
+        foreach (var target in targets)
+        {
+            // Mapping to the Docker TARGETARCH value
+            var dockerShortArch = target.Arch switch
+            {
+                ArchType.x64 => "amd64",
+                ArchType.Arm64 => "arm64",
+                ArchType.Arm7 => "arm",
+                _ => throw new Exception($"Unsupported Docker target: {target.Arch}")
+            };
+
+            var tgfolder = Path.Combine(tmpbuild, dockerShortArch);
+
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), tgfolder, recursive: true);
+            await PackageSupport.InstallPackageIdentifier(tgfolder, target);
+            await PackageSupport.SetExecutableFlags(tgfolder, rtcfg);
+            await PackageSupport.MakeSymlinks(tgfolder);
+        }
+
+        var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString() };
+        if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)
+            tags.Add("latest");
+
+        // Make sure any dangling buildx instances are removed
+        try { await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false); }
+        catch { }
+
+        // Prepare multi-build
+        await ProcessHelper.Execute(new[] { Program.Configuration.Commands.Docker!, "buildx", "create", "--use", "--name", "duplicati-builder" });
+
+        // Build the images
+        var args = new List<string> { Program.Configuration.Commands.Docker!, "buildx", "build" };
+        args.AddRange(tags.SelectMany(x => new[] { "-t", $"{rtcfg.DockerRepo}:{x}" }));
+        args.AddRange([
+            "--platform", string.Join(",", dockerArchs),
+            "--build-arg", $"VERSION={rtcfg.ReleaseInfo.Version}",
+            "--build-arg", $"CHANNEL={rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}",
+            "--file", Path.Combine(installerDir, "Dockerfile"),
+            "--output", $"type=image,push={rtcfg.PushToDocker.ToString().ToLowerInvariant()}",
+            "."
+        ]);
+
+        // Run the build
+        await ProcessHelper.Execute(args, workingDirectory: tmpbuild);
+
+        // Clean up
+        await ProcessHelper.Execute(new[] { Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder" });
+        Directory.Delete(tmpbuild, true);
     }
 }
