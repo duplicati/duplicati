@@ -205,11 +205,32 @@ namespace Duplicati.Server
                     var v = Program.DataConnection.ApplicationSettings.UpdatedVersion;
                     if (v != null)
                     {
-                        ThreadState = UpdatePollerStates.Downloading;
-                        Program.StatusEventNotifyer.SignalNewEvent();
-
-                        if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; }))
+                        if (string.IsNullOrWhiteSpace(v.UpdateFromV1Url))
+                        {
+                            ThreadState = UpdatePollerStates.Downloading;
                             Program.StatusEventNotifyer.SignalNewEvent();
+
+                            if (Duplicati.Library.AutoUpdater.UpdaterManager.DownloadAndUnpackUpdate(v, (pg) => { DownloadProgess = pg; }))
+                                Program.StatusEventNotifyer.SignalNewEvent();
+                        }
+                        else
+                        {
+                            Program.DataConnection.RegisterNotification(
+                                    NotificationType.Error,
+                                    "Manual update required",
+                                    $"{v.UpdateFromV1Url}",
+                                    null,
+                                    null,
+                                    "update:new",
+                                    null,
+                                    "NewUpdateFound",
+                                    null,
+                                    (self, all) =>
+                                    {
+                                        return all.FirstOrDefault(x => x.Action == "update:new") ?? self;
+                                    }
+                                );
+                        }
                     }
                 }
 
