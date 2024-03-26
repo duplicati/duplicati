@@ -51,6 +51,15 @@ public static partial class Build
     private static readonly IReadOnlyList<string> DebianCLIDepends = [];
 
     /// <summary>
+    /// The packages that are required for GUI builds
+    /// </summary>
+    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libice6", "libsm6", "libfontconfig1"];
+    /// <summary>
+    /// The packages that are required for CLI builds
+    /// </summary>
+    private static readonly IReadOnlyList<string> FedoraCLIDepends = [];
+
+    /// <summary>
     /// Setup of the current runtime information
     /// </summary>
     /// <param name="ReleaseInfo">The release info for the current build</param>

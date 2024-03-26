@@ -118,6 +118,10 @@ public static partial class Build
                     await BuildDebPackage(baseDir, buildRoot, tempFile, target, rtcfg);
                     break;
 
+                case PackageType.RPM:
+                    await BuildRpmPackage(baseDir, buildRoot, tempFile, target, rtcfg);
+                    break;
+
                 // case PackageType.SynologySpk:
                 //     await BuildZipPackage(buildRoot, tempFile, target, rtcfg);
                 //     await SignSynologyPackage(Path.Combine(outputFolder, target.PackageTargetString), rtcfg);
@@ -219,6 +223,8 @@ public static partial class Build
 
             if (rtcfg.UseAuthenticodeSigning)
                 await rtcfg.AuthenticodeSign(msiFile);
+
+            Directory.Delete(buildTmp, true);
         }
 
         /// <summary>
@@ -526,6 +532,125 @@ public static partial class Build
             Directory.Delete(debroot, true);
         }
     }
+
+    /// <summary>
+    /// Builds the RPM package using Docker
+    /// </summary>
+    /// <param name="baseDir">The base directory.</param>
+    /// <param name="buildRoot">The build root directory.</param>
+    /// <param name="rpmFile">The RPM file to generate.</param>
+    /// <param name="target">The package target.</param>
+    /// <param name="rtcfg">The runtime configuration.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    static async Task BuildRpmPackage(string baseDir, string buildRoot, string rpmFile, PackageTarget target, RuntimeConfig rtcfg)
+    {
+        var installerDir = Path.Combine(baseDir, "Installer", "fedora");
+        var tmpbuild = Path.Combine(buildRoot, "tmp-fedora");
+        if (Directory.Exists(tmpbuild))
+            Directory.Delete(tmpbuild, true);
+        Directory.CreateDirectory(tmpbuild);
+
+        var tarsrc = Path.Combine(tmpbuild, $"duplicati-{rtcfg.ReleaseInfo.Version}");
+        EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), tarsrc, recursive: true);
+        await PackageSupport.InstallPackageIdentifier(tarsrc, target);
+        await PackageSupport.SetExecutableFlags(tarsrc, rtcfg);
+
+        // Create the tarball
+        var tarfile = Path.Combine(tmpbuild, $"duplicati-{rtcfg.ReleaseInfo.Version}.tar.bz2");
+        await ProcessHelper.Execute(
+            ["tar", "-cjf", tarfile, Path.GetFileName(tarsrc)],
+            workingDirectory: Path.GetDirectoryName(tarsrc)
+        );
+        Directory.Delete(tarsrc, true);
+
+        // Create rpmbuild structure
+        var sources = Path.Combine(tmpbuild, "SOURCES");
+        Directory.CreateDirectory(sources);
+
+        File.Move(tarfile, Path.Combine(sources, Path.GetFileName(tarfile)));
+        foreach (var f in new[] { "duplicati-install-recursive.sh", "duplicati.service", "duplicati.default", "duplicati.xpm", "duplicati.png", "duplicati.desktop" })
+            File.Copy(Path.Combine(installerDir, f), Path.Combine(sources, f));
+
+        var executables = ExecutableRenames.AsEnumerable();
+        if (target.Interface == InterfaceType.Cli)
+            executables = executables.Where(x => !GUIProjects.Contains(x.Key));
+
+        // Build custom script to install files
+        File.WriteAllLines(
+            Path.Combine(sources, "duplicati-install-binaries.sh"),
+            File.ReadAllLines(Path.Combine(installerDir, "duplicati-install-binaries.sh"))
+                .SelectMany(line =>
+                {
+                    if (line.StartsWith("REPL: "))
+                        return executables.Select(str => line.Substring("REPL: ".Length).Replace("%SOURCE%", str.Key).Replace("%TARGET%", str.Value));
+                    return [line];
+                })
+        );
+
+        var rpmarch = target.Arch switch
+        {
+            ArchType.x64 => "x86_64",
+            ArchType.Arm64 => "aarch64",
+            ArchType.Arm7 => "armv7hl",
+            _ => throw new Exception($"Unsupported arch: {target.Arch}")
+        };
+
+        File.WriteAllText(
+            Path.Combine(sources, "duplicati.spec"),
+            File.ReadAllText(Path.Combine(installerDir, "duplicati-binary.spec"))
+                .Replace("%BUILDDATE%", DateTime.UtcNow.ToString("yyyyMMdd"))
+                .Replace("%BUILDVERSION%", rtcfg.ReleaseInfo.Version.ToString())
+                .Replace("%BUILDTAG%", rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant())
+                .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
+                .Replace("%PROVIDES%", string.Join("\n", executables.Select(x => $"Provides:\t{x.Value}")))
+                .Replace("%DEPENDS%", string.Join("\n",
+                    (target.Interface == InterfaceType.GUI
+                        ? FedoraGUIDepends
+                        : FedoraCLIDepends).Select(x => $"Requires:\t{x}")))
+        );
+
+        // Install the Docker build file
+        File.Copy(
+            Path.Combine(installerDir, "Dockerfile.build"),
+            Path.Combine(tmpbuild, "Dockerfile"),
+            true
+        );
+
+        // Install the build script
+        File.Copy(
+            Path.Combine(installerDir, "inside-docker.sh"),
+            Path.Combine(tmpbuild, "inside-docker.sh"),
+            true
+        );
+
+        // Build a Docker image to build with
+        await ProcessHelper.Execute([
+            "docker", "build",
+                "-t", "duplicati/fedora-build:latest",
+                tmpbuild
+        ], workingDirectory: tmpbuild);
+
+        // Then build the package itself
+        await ProcessHelper.Execute([
+            "docker", "run",
+                "--workdir", "/build",
+                "--volume", $"{tmpbuild}:/build:rw",
+                "duplicati/fedora-build:latest",
+
+                "/bin/bash", "/build/inside-docker.sh", "/build", rpmarch
+
+                // Sadly, Docker desktop has some issues with permissions that causes wrong exe bits
+                // which breaks the build checks, and produces incorrect packages
+                // "rpmbuild", "-bb", "--target", rpmarch,
+                // "--define", $"_topdir /build", "SOURCES/duplicati.spec"
+        ]);
+
+        File.Move(Path.Combine(tmpbuild, "build.rpm"), rpmFile);
+
+        // Clean up
+        Directory.Delete(tmpbuild, true);
+    }
+
 
     /// <summary>
     /// Builds the Docker images for the specified targets with buildx
