@@ -180,26 +180,43 @@ namespace Duplicati.Server
 
                     if (Program.DataConnection.ApplicationSettings.UpdatedVersion != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(Program.DataConnection.ApplicationSettings.UpdatedVersion.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
-                        Program.DataConnection.RegisterNotification(
-                                    NotificationType.Information,
-                                    "Found update",
-                                    Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname,
-                                    null,
-                                    null,
-                                    "update:new",
-                                    null,
-                                    "NewUpdateFound",
-                                    null,
-                                    (self, all) => {
-                                        return all.FirstOrDefault(x => x.Action == "update:new") ?? self;
-                                    }
-                                );
+                        if (string.IsNullOrWhiteSpace(Program.DataConnection.ApplicationSettings.UpdatedVersion.UpdateFromV1Url))
+                        {
+                            Program.DataConnection.RegisterNotification(
+                                NotificationType.Information,
+                                "Found update",
+                                Program.DataConnection.ApplicationSettings.UpdatedVersion.Displayname,
+                                null,
+                                null,
+                                "update:new",
+                                null,
+                                "NewUpdateFound",
+                                null,
+                                (self, all) => all.FirstOrDefault(x => x.Action == "update:new") ?? self
+                            );
+                        }
+                        else
+                        {
+                            Program.DataConnection.RegisterNotification(
+                                NotificationType.Information,
+                                "Manual update required",
+                                Program.DataConnection.ApplicationSettings.UpdatedVersion.UpdateFromV1Url,
+                                null,
+                                null,
+                                "update:manual",
+                                null,
+                                "NewUpdateFound",
+                                null,
+                                (self, all) => all.FirstOrDefault(x => x.Action == "update:manual") ?? self
+                            );
+
+                        }
                     }
                 }
 
                 if (m_download)
                 {
-                    lock(m_lock)
+                    lock (m_lock)
                         m_download = false;
 
                     var v = Program.DataConnection.ApplicationSettings.UpdatedVersion;
@@ -218,17 +235,14 @@ namespace Duplicati.Server
                             Program.DataConnection.RegisterNotification(
                                     NotificationType.Error,
                                     "Manual update required",
-                                    $"{v.UpdateFromV1Url}",
+                                    v.UpdateFromV1Url,
                                     null,
                                     null,
-                                    "update:new",
+                                    "update:manual",
                                     null,
                                     "NewUpdateFound",
                                     null,
-                                    (self, all) =>
-                                    {
-                                        return all.FirstOrDefault(x => x.Action == "update:new") ?? self;
-                                    }
+                                    (self, all) => all.FirstOrDefault(x => x.Action == "update:manual") ?? self
                                 );
                         }
                     }
