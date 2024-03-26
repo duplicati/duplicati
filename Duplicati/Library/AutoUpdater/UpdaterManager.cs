@@ -425,7 +425,7 @@ namespace Duplicati.Library.AutoUpdater
 
         public static bool DownloadAndUnpackUpdate(UpdateInfo version, Action<double> progress = null)
         {
-            if (INSTALLDIR == null)
+            if (INSTALLDIR == null || version == null || version.RemoteURLS == null)
                 return false;
 
 
