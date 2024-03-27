@@ -59,6 +59,11 @@ namespace Duplicati.Library.AutoUpdater
         public string ChangeInfo;
         public int PackageUpdaterVersion;
         /// <summary>
+        /// Legacy entry, do not use
+        /// </summary>
+        [Obsolete("Only kept to avoid v2.0.7.x and earlier releases from crashing on nulls")]
+        public string[] RemoteURLS = Array.Empty<string>();
+        /// <summary>
         /// List of installer packages
         /// </summary>
         public PackageEntry[] Packages;
