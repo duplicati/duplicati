@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -34,7 +34,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// The RSA key used to sign the manifest
         /// </summary>
-        private static readonly System.Security.Cryptography.RSACryptoServiceProvider SIGN_KEY = AutoUpdateSettings.SignKey;
+        private static readonly System.Security.Cryptography.RSACryptoServiceProvider[] SIGN_KEYS = AutoUpdateSettings.SignKeys;
         /// <summary>
         /// Urls to check for updated packages
         /// </summary>
@@ -273,7 +273,7 @@ namespace Duplicati.Library.AutoUpdater
                         wc.DownloadFile(url, tmpfile);
 
                         using (var fs = System.IO.File.OpenRead(tmpfile))
-                        using (var ss = new SignatureReadingStream(fs, SIGN_KEY))
+                        using (var ss = new SignatureReadingStream(fs, SIGN_KEYS))
                         using (var tr = new System.IO.StreamReader(ss))
                         using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         {
@@ -318,7 +318,7 @@ namespace Duplicati.Library.AutoUpdater
                 try
                 {
                     using (var fs = System.IO.File.OpenRead(manifest))
-                    using (var ss = new SignatureReadingStream(fs, SIGN_KEY))
+                    using (var ss = new SignatureReadingStream(fs, SIGN_KEYS))
                     using (var tr = new System.IO.StreamReader(ss))
                     using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         return new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
