@@ -48,7 +48,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// The package type id
         /// </summary>
-        public string PackageTypeId;    
+        public string PackageTypeId;
 
         /// <summary>
         /// Gets the name of the package file

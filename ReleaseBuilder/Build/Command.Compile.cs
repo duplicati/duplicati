@@ -1,6 +1,6 @@
-namespace ReleaseBuilder.CliCommand;
+namespace ReleaseBuilder.Build;
 
-public static partial class Build
+public static partial class Command
 {
     /// <summary>
     /// Main compilation of projects

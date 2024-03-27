@@ -1,12 +1,16 @@
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
+using Duplicati.Library.AutoUpdater;
 
-namespace ReleaseBuilder.CliCommand;
+namespace ReleaseBuilder.Build;
 
 /// <summary>
 /// The build command implementation
 /// </summary>
-public static partial class Build
+public static partial class Command
 {
     /// <summary>
     /// The primary project to build for GUI builds
@@ -71,13 +75,15 @@ public static partial class Build
         /// </summary>
         /// <param name="releaseInfo">The release info to use</param>
         /// <param name="keyfilePassword">The keyfile password to use</param>
-        /// <param name="executables">The executables</param>
+        /// <param name="signKeys">The sign keys</param>
+        /// <param name="changelogNews">The changelog news</param>
         /// <param name="input">The command input</param>
-        public RuntimeConfig(ReleaseInfo releaseInfo, string keyfilePassword, IEnumerable<string> executables, CommandInput input)
+        public RuntimeConfig(ReleaseInfo releaseInfo, IEnumerable<RSA> signKeys, string keyfilePassword, string changelogNews, CommandInput input)
         {
             ReleaseInfo = releaseInfo;
+            SignKeys = signKeys;
             KeyfilePassword = keyfilePassword;
-            ExecutableBinaries = executables;
+            ChangelogNews = changelogNews;
             Input = input;
         }
 
@@ -99,14 +105,17 @@ public static partial class Build
         /// <summary>
         /// The keyfile password for this run
         /// </summary>
+        public IEnumerable<RSA> SignKeys { get; }
+
+        /// <summary>
+        /// The primary password
+        /// </summary>
         public string KeyfilePassword { get; }
 
         /// <summary>
-        /// The executables that should exist in the build folder
+        /// The changelog news
         /// </summary>
-        /// 
-        // TODO: Remove this?
-        public IEnumerable<string> ExecutableBinaries { get; }
+        public string ChangelogNews { get; }
 
         /// <summary>
         /// Gets the PFX password and throws if not possible
@@ -216,7 +225,42 @@ public static partial class Build
         }
 
         /// <summary>
-        /// Returns a value indicating if signcode is enabled
+        /// Cache value for checking if notarize is enabled
+        /// </summary>
+        private bool? _useNotarizeSigning;
+
+        /// <summary>
+        /// Checks if notarize signing is enabled
+        /// </summary>
+        public void ToggleNotarizeSigning()
+        {
+            if (!_useNotarizeSigning.HasValue)
+            {
+                if (Input.DisableNotarizeSigning)
+                {
+                    _useNotarizeSigning = false;
+                    return;
+                }
+
+                if (!OperatingSystem.IsMacOS())
+                    _useNotarizeSigning = false;
+                else if (Program.Configuration.IsNotarizePossible())
+                    _useNotarizeSigning = true;
+                else
+                {
+                    if (ConsoleHelper.ReadInput("Configuration missing for notarize, continue without notarizing executables?", "Y", "n") == "Y")
+                    {
+                        _useNotarizeSigning = false;
+                        return;
+                    }
+
+                    throw new Exception("Configuration is not set up for notarize");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns a value indicating if codesign is enabled
         /// </summary>
         public bool UseCodeSignSigning => _useCodeSignSigning!.Value;
 
@@ -224,6 +268,11 @@ public static partial class Build
         /// Returns a value indicating if authenticode signing is enabled
         /// </summary>
         public bool UseAuthenticodeSigning => _useAuthenticodeSigning!.Value;
+
+        /// <summary>
+        /// Returns a value indicating if notarize is enabled
+        /// </summary>
+        public bool UseNotarizeSigning => _useNotarizeSigning!.Value;
 
         /// <summary>
         /// Returns a value indicating if docker build is enabled
@@ -327,7 +376,7 @@ public static partial class Build
     /// Creates the build command
     /// </summary>
     /// <returns>The command</returns>
-    public static Command Create()
+    public static System.CommandLine.Command Create()
     {
         var buildTargetOption = new Option<PackageTarget[]>(
             name: "--targets",
@@ -375,12 +424,6 @@ public static partial class Build
             getDefaultValue: () => new FileInfo(Path.GetFullPath(Path.Combine("..", "Duplicati.sln")))
         );
 
-        var updateUrlsOption = new Option<string>(
-            name: "--update-urls",
-            description: "The updater urls where the client will check for updates",
-            getDefaultValue: () => "https://updates.duplicati.com/${RELEASE_TYPE}/latest-v2.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest-v2.manifest"
-        );
-
         var disableAuthenticodeOption = new Option<bool>(
             name: "--disable-authenticode",
             description: "Disables authenticode signing",
@@ -393,11 +436,7 @@ public static partial class Build
             getDefaultValue: () => false
         );
 
-        var passwordOption = new Option<string>(
-            name: "--password",
-            description: "The password to use for the keyfile",
-            getDefaultValue: () => string.Empty
-        );
+        var passwordOption = SharedOptions.passwordOption;
 
         var disableDockerPushOption = new Option<bool>(
             name: "--disable-docker-push",
@@ -417,20 +456,33 @@ public static partial class Build
             getDefaultValue: () => "duplicati/duplicati"
         );
 
-        var command = new Command("build", "Builds the packages for a release") {
+        var changelogFileOption = new Option<FileInfo>(
+            name: "--changelog-file",
+            description: "The path to the changelog news file. Contents from this file are prepended to the changelog.",
+            getDefaultValue: () => new FileInfo(Path.GetFullPath("changelog-news.txt"))
+        );
+
+        var disableNotarizeSigningOption = new Option<bool>(
+            name: "--disable-notarize-signing",
+            description: "Disables notarize signing for MacOS packages",
+            getDefaultValue: () => false
+        );
+
+        var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelOption,
             buildTempOption,
             buildTargetOption,
             solutionFileOption,
-            updateUrlsOption,
             keepBuildsOption,
             disableAuthenticodeOption,
             disableCodeSignOption,
             passwordOption,
             macOsAppNameOption,
             disableDockerPushOption,
-            dockerRepoOption
+            dockerRepoOption,
+            changelogFileOption,
+            disableNotarizeSigningOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -445,7 +497,6 @@ public static partial class Build
     /// <param name="SolutionFile">The solution path</param>
     /// <param name="GitStashPush">If the git stash should be performed</param>
     /// <param name="Channel">The release channel</param>
-    /// <param name="UpdateUrls">The update urls</param>
     /// <param name="KeepBuilds">If the builds should be kept</param>
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
     /// <param name="DisableSignCode">If signcode should be disabled</param>
@@ -453,20 +504,23 @@ public static partial class Build
     /// <param name="DisableDockerPush">If the docker push should be disabled</param>
     /// <param name="MacOSAppName">The name of the MacOS app bundle</param>
     /// <param name="DockerRepo">The docker repository to push to</param>
+    /// <param name="ChangelogFile">The path to the changelog file</param>
+    /// <param name="DisableNotarizeSigning">If notarize signing should be disabled</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
         FileInfo SolutionFile,
         bool GitStashPush,
         ReleaseChannel Channel,
-        string UpdateUrls,
         bool KeepBuilds,
         bool DisableAuthenticode,
         bool DisableSignCode,
         string Password,
         bool DisableDockerPush,
         string MacOSAppName,
-        string DockerRepo
+        string DockerRepo,
+        FileInfo ChangelogFile,
+        bool DisableNotarizeSigning
     );
 
     static async Task DoBuild(CommandInput input)
@@ -520,6 +574,21 @@ public static partial class Build
         if (!File.Exists(primaryCLI))
             throw new Exception($"Failed to locate project file: {primaryCLI}");
 
+        if (!input.ChangelogFile.Exists)
+        {
+            Console.WriteLine($"Changelog news file not found: {input.ChangelogFile.FullName}");
+            Console.WriteLine($"Create an empty file if you want a release without changes");
+            if (OperatingSystem.IsWindows())
+                Console.WriteLine($"> type nul > {input.ChangelogFile.FullName}");
+            else
+                Console.WriteLine($"> touch {input.ChangelogFile.FullName}");
+
+            Program.ReturnCode = 1;
+            return;
+        }
+
+        var changelogNews = File.ReadAllText(input.ChangelogFile.FullName);
+
         var releaseInfo = ReleaseInfo.Create(input.Channel, int.Parse(File.ReadAllText(versionFilePath)) + 1);
         Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
 
@@ -527,15 +596,22 @@ public static partial class Build
             ? ConsoleHelper.ReadPassword("Enter keyfile password")
             : input.Password;
 
+        var primarySignKey = LoadKeyFile(Program.Configuration.ConfigFiles.UpdaterKeyfile.FirstOrDefault(), keyfilePassword, false);
+        var additionalKeys = Program.Configuration.ConfigFiles.UpdaterKeyfile
+            .Skip(1)
+            .Select(x => LoadKeyFile(x, keyfilePassword, true));
+
         // Configure runtime environment
         var rtcfg = new RuntimeConfig(
             releaseInfo,
+            additionalKeys.Prepend(primarySignKey).ToList(),
             keyfilePassword,
-            sourceProjects.Select(x => Path.GetFileNameWithoutExtension(x)).ToList(),
+            changelogNews,
             input);
 
         rtcfg.ToggleAuthenticodeSigning();
         rtcfg.ToggleSignCodeSigning();
+        rtcfg.ToggleNotarizeSigning();
         await rtcfg.ToggleDockerBuild();
 
         if (!rtcfg.UseDockerBuild)
@@ -557,18 +633,65 @@ public static partial class Build
         // Generally, the builds should happen with a clean source tree, 
         // but this can be disabled for debugging
         if (input.GitStashPush)
-            await ProcessHelper.Execute(new[] { "git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}" }, workingDirectory: baseDir);
+            await ProcessHelper.Execute(["git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}"], workingDirectory: baseDir);
 
         // Inject various files that will be embedded into the build artifacts
-        await PrepareSourceDirectory(baseDir, releaseInfo, input.UpdateUrls);
+        await PrepareSourceDirectory(baseDir, releaseInfo, rtcfg);
+
+        // Inject a version tag into the html files
+        var revertableFiles = InjectVersionIntoFiles(baseDir, releaseInfo);
 
         // Perform the main compilations
         await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, GUIProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg);
 
         // Create the packages
-        await CreatePackage.BuildPackages(baseDir, input.BuildPath.FullName, buildTargets, input.KeepBuilds, rtcfg);
+        var builtPackages = await CreatePackage.BuildPackages(baseDir, input.BuildPath.FullName, buildTargets, input.KeepBuilds, rtcfg);
+
+        if (rtcfg.UseNotarizeSigning && builtPackages.Any(x => x.Target.Package == PackageType.DMG || x.Target.Package == PackageType.MacPkg))
+        {
+            // # Notarize and staple takes a while...
+            Console.WriteLine("Performing notarize and staple ...");
+            foreach (var p in builtPackages.Where(x => x.Target.Package == PackageType.DMG || x.Target.Package == PackageType.MacPkg))
+            {
+                await ProcessHelper.Execute(["xcrun", "notarytool", "submit", p.CreatedFile, "--keychain-profile", Program.Configuration.ConfigFiles.NotarizeProfile, "--wait"]);
+                await ProcessHelper.Execute(["xcrun", "stapler", "staple", p.CreatedFile]);
+            }
+        }
+
+        // Build the signed manifest to be uploaded to remote storage
+        Console.WriteLine("Build completed, creating signed manifest ...");
+        var manifestfile = Path.Combine(input.BuildPath.FullName, "packages", "autoupdate.manifest");
+        if (File.Exists(manifestfile))
+            File.Delete(manifestfile);
+
+        UpdaterManager.CreateSignedManifest(
+            rtcfg.SignKeys.First(),
+            null,
+            Path.Combine(input.BuildPath.FullName, "packages"),
+            version: releaseInfo.Version.ToString(),
+            updateFromV1Url: Program.Configuration.ExtraSettings.UpdateFromV1Url,
+            genericUpdatePageUrl: Program.Configuration.ExtraSettings.GenericUpdatePageUrl,
+            releaseType: releaseInfo.Channel.ToString().ToLowerInvariant(),
+            packages: builtPackages.Select(x => new PackageEntry()
+            {
+                RemoteUrls = Program.Configuration.ExtraSettings.PackageUrls
+                    .Select(u =>
+                        u.Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
+                        .Replace("${RELEASE_VERSION}", releaseInfo.Version.ToString())
+                        .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"))
+                        .Replace("${FILENAME}", x.CreatedFile)
+                    ).ToArray(),
+                PackageTypeId = x.Target.PackageTargetString,
+                Length = new FileInfo(Path.Combine(input.BuildPath.FullName, x.CreatedFile)).Length,
+                MD5 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "md5"),
+                SHA256 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "sha256")
+            })
+        );
+
+        File.Move(Path.Combine(input.BuildPath.FullName, "packages", "autoupdate.manifest"), Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.manifest"), true);
 
         Console.WriteLine("Build completed, uploading packages ...");
+        var files = builtPackages.Select(x => x.CreatedFile).Append("latest-v2.manifest").ToArray();
 
         Console.WriteLine("Upload completed, releasing packages ...");
 
@@ -576,12 +699,13 @@ public static partial class Build
 
         // Clean up the source tree
         await ProcessHelper.Execute(new[] {
-                    "git", "checkout",
-                    "Duplicati/License/VersionTag.txt",
-                    "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt",
-                    "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt",
-                    "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
-                }, workingDirectory: baseDir);
+                "git", "checkout",
+                "Duplicati/License/VersionTag.txt",
+                "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt",
+                "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt",
+                "Duplicati/Library/AutoUpdater/AutoUpdateSignKeys.txt",
+            }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
+         , workingDirectory: baseDir);
 
         if (input.GitStashPush)
             await GitPush.TagAndPush(baseDir, releaseInfo);
@@ -590,28 +714,137 @@ public static partial class Build
     }
 
     /// <summary>
-    /// Updates the source directory prior to building
+    /// Injects the version number into some html files
+    /// </summary>
+    /// <param name="baseDir">The base directory</param>
+    /// <param name="releaseInfo">The release info</param>
+    /// <returns>The paths that were modified</returns>
+    private static string[] InjectVersionIntoFiles(string baseDir, ReleaseInfo releaseInfo)
+    {
+        var targetfiles = Directory.EnumerateFiles(Path.Combine(baseDir, "Duplicati", "Server", "webroot"), "*", SearchOption.AllDirectories)
+            .Where(x => x.EndsWith(".html") || x.EndsWith(".js"))
+            .ToArray();
+
+        var versionre = @"(?<version>\d+\.\d+\.(\*|(\d+(\.(\*|\d+)))?))";
+        var regex = new Regex(@"\?v\=" + versionre);
+        foreach (var file in targetfiles)
+            File.WriteAllText(
+                file,
+                regex.Replace(File.ReadAllText(file), $"?v={releaseInfo.Version}")
+            );
+
+        //FILEMAP.Add("AssemblyRedirects.xml", new Regex(@"newVersion\=\""" + versionre + @"\"""));
+
+        return targetfiles;
+    }
+
+    /// <summary>
+    /// Updates the source directory prior to building.
+    /// This writes a stub package manifest inside the source folder,
+    /// which will be embedded in the excutable to indicate which version it was built from.
     /// </summary>
     /// <param name="baseDir">The source folder base</param>
     /// <param name="releaseInfo">The release info to use</param>
-    /// <param name="updateUrls">The urls to check for updates<param>
+    /// <param name="rtcfg">The runtime configuration</param>
     /// <returns>An awaitable task</returns>
-    static Task PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, string updateUrls)
+    static Task PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
     {
-        updateUrls = updateUrls
-            .Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
+        var urlstring = string.Join(";", Program.Configuration.ExtraSettings.UpdaterUrls.Select(x =>
+            x.Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
             .Replace("${RELEASE_VERSION}", releaseInfo.Version.ToString())
-            .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"));
+            .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"))
+            .Replace("${FILENAME}", "latest-v2.manifest")
+        ));
 
         File.WriteAllText(Path.Combine(baseDir, "Duplicati", "License", "VersionTag.txt"), releaseInfo.Version.ToString());
         File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateBuildChannel.txt"), releaseInfo.Channel.ToString().ToLowerInvariant());
-        File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateURL.txt"), updateUrls);
-        File.Copy(
-            Path.Combine(baseDir, "Updates", "release_key.txt"),
-            Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateSignKey.txt"),
-            true
+        File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateURL.txt"), urlstring);
+        File.WriteAllLines(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateSignKeys.txt"), rtcfg.SignKeys.Select(x => x.ToXmlString(false)));
+
+        if (!string.IsNullOrWhiteSpace(rtcfg.ChangelogNews))
+            File.WriteAllText(
+                Path.Combine(baseDir, "changelog.txt"),
+
+                rtcfg.ChangelogNews + Environment.NewLine +
+                File.ReadAllText(Path.Combine(baseDir, "changelog.txt"))
+            );
+
+        // Previous versions used to install the assembly redirects after the build
+        // but it looks like .Net now handles this automatically
+        // If not, we need to adjust the .csproj files before building
+        // find "${UPDATE_SOURCE}" - type f - name Duplicati.*.exe - maxdepth 1 - exec cp Installer/ AssemblyRedirects.xml { }.config \;
+
+        var manifestFile = Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "autoupdate.manifest");
+        if (File.Exists(manifestFile))
+            File.Delete(manifestFile);
+
+        UpdaterManager.CreateSignedManifest(
+            rtcfg.SignKeys.First(),
+            null,
+            Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater"),
+            version: releaseInfo.Version.ToString(),
+            updateFromV1Url: Program.Configuration.ExtraSettings.UpdateFromV1Url,
+            genericUpdatePageUrl: Program.Configuration.ExtraSettings.GenericUpdatePageUrl,
+            releaseType: releaseInfo.Channel.ToString().ToLowerInvariant()
         );
 
+
+
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Loads a keyfile and decrypts the RSA key inside
+    /// </summary>
+    /// <param name="keyfile">The keyfile to decrypt</param>
+    /// <param name="password">The keyfile password</param>
+    /// <param name="askForNewPassword">Allow asking for a new password if the password did not match</param>
+    /// <returns>The matching key</returns>
+    static RSA LoadKeyFile(string? keyfile, string password, bool askForNewPassword)
+    {
+        if (string.IsNullOrWhiteSpace(keyfile))
+            throw new Exception("Unable to load keyfile, no keyfile specified");
+
+        if (!File.Exists(keyfile))
+            throw new FileNotFoundException($"Keyfile not found: {keyfile}");
+
+        try
+        {
+            using var ms = new MemoryStream();
+            using var fs = File.OpenRead(keyfile);
+            SharpAESCrypt.SharpAESCrypt.Decrypt(password, fs, ms);
+
+            var rsa = RSA.Create();
+            rsa.FromXmlString(System.Text.Encoding.UTF8.GetString(ms.ToArray()));
+
+            return rsa;
+        }
+        catch (SharpAESCrypt.SharpAESCrypt.WrongPasswordException)
+        {
+            if (!askForNewPassword)
+                throw;
+        }
+
+        password = ConsoleHelper.ReadPassword($"Enter password for {keyfile}");
+        return LoadKeyFile(keyfile, password, false);
+    }
+
+    /// <summary>
+    /// Calculates the hash of a file and returns the hash as a base64 string
+    /// </summary>
+    /// <param name="file">The file to calculate the has for</param>
+    /// <param name="algorithm">The hash algorithm</param>
+    /// <returns>The base64 encoded hash</returns>
+    static string CalculateHash(string file, string algorithm)
+    {
+        using var fs = File.OpenRead(file);
+        using var hash = algorithm.ToLowerInvariant() switch
+        {
+            "md5" => (HashAlgorithm)MD5.Create(),
+            "sha256" => SHA256.Create(),
+            _ => throw new Exception($"Unknown hash algorithm: {algorithm}")
+        };
+
+        return Convert.ToBase64String(hash.ComputeHash(fs));
     }
 }

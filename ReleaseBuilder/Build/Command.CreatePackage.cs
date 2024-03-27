@@ -1,15 +1,22 @@
 using System.Globalization;
 using System.IO.Compression;
 
-namespace ReleaseBuilder.CliCommand;
+namespace ReleaseBuilder.Build;
 
-public static partial class Build
+public static partial class Command
 {
     /// <summary>
     /// Implementations for the package builds
     /// </summary>
     private static class CreatePackage
     {
+        /// <summary>
+        /// Representation of a build package
+        /// </summary>
+        /// <param name="Target">The target package</param>
+        /// <param name="CreatedFile">The created package file path</param>
+        public record BuiltPackage(PackageTarget Target, string CreatedFile);
+
         /// <summary>
         /// Builds the packages for the specified build targets.
         /// </summary>
@@ -19,8 +26,10 @@ public static partial class Build
         /// <param name="keepBuilds">A flag indicating whether to keep the build files.</param>
         /// <param name="rtcfg">The runtime configuration.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public static async Task BuildPackages(string baseDir, string buildRoot, IEnumerable<PackageTarget> buildTargets, bool keepBuilds, RuntimeConfig rtcfg)
+        public static async Task<List<BuiltPackage>> BuildPackages(string baseDir, string buildRoot, IEnumerable<PackageTarget> buildTargets, bool keepBuilds, RuntimeConfig rtcfg)
         {
+            var builtPackages = new List<BuiltPackage>();
+
             var packagesToBuild = buildTargets.Distinct().ToList();
             if (packagesToBuild.Count == 1)
                 Console.WriteLine($"Building single package: {packagesToBuild.First().PackageTargetString}");
@@ -31,7 +40,7 @@ public static partial class Build
             foreach (var target in packagesToBuild.Where(x => x.Package != PackageType.Docker))
             {
                 Console.WriteLine($"Building {target.PackageTargetString} ...");
-                await BuildPackage(baseDir, buildRoot, target, rtcfg, keepBuilds);
+                builtPackages.Add(new BuiltPackage(target, await BuildPackage(baseDir, buildRoot, target, rtcfg, keepBuilds)));
                 Console.WriteLine("Completed!");
             }
 
@@ -61,6 +70,8 @@ public static partial class Build
                         File.WriteAllText(f, "");
                 }
             }
+
+            return builtPackages;
         }
 
         /// <summary>
@@ -71,22 +82,26 @@ public static partial class Build
         /// <param name="rtcfg">The runtime configuration</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        static async Task BuildPackage(string baseDir, string buildRoot, PackageTarget target, RuntimeConfig rtcfg, bool keepBuilds)
+        static async Task<string> BuildPackage(string baseDir, string buildRoot, PackageTarget target, RuntimeConfig rtcfg, bool keepBuilds)
         {
             var packageFolder = Path.Combine(buildRoot, "packages");
             if (!Directory.Exists(packageFolder))
                 Directory.CreateDirectory(packageFolder);
 
             var packageFile = Path.Combine(packageFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}");
+
+            // Fix up non-conforming package names
             if (target.Package == PackageType.Deb)
                 packageFile = Path.Combine(packageFolder, $"duplicati-{target.InterfaceString}-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.deb");
+            if (target.Package == PackageType.RPM)
+                packageFile = Path.Combine(packageFolder, $"duplicati-{target.InterfaceString}-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.rpm");
 
             if (File.Exists(packageFile))
             {
                 if (keepBuilds)
                 {
                     Console.WriteLine($"Package file already exists, skipping package build for {target.PackageTargetString}");
-                    return;
+                    return packageFile;
                 }
 
                 File.Delete(packageFile);
@@ -132,6 +147,8 @@ public static partial class Build
             }
 
             File.Move(tempFile, packageFile);
+
+            return packageFile;
         }
 
         /// <summary>
@@ -465,8 +482,8 @@ public static partial class Build
             var installerDir = Path.Combine(baseDir, "Installer", "debian");
 
             // Write in the release notes
-            // File.WriteAllText(Path.Combine(debroot, "releasenotes.txt"), rtcfg.ReleaseNotes); 
-            // touch "${DIRNAME}/releasenotes.txt"
+            if (!string.IsNullOrEmpty(rtcfg.ChangelogNews))
+                File.WriteAllText(Path.Combine(debroot, "releasenotes.txt"), rtcfg.ChangelogNews);
 
             // Write a custom changelog file
             File.WriteAllText(

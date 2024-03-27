@@ -10,6 +10,7 @@
             "request": "launch",
             "preLaunchTask": "dotnet: build",
             "program": "${workspaceFolder}/bin/Debug/net8.0/ReleaseBuilder.dll",
+            // "args": ["create-key", "testfile.key", "--password", "test1234"],
             "args": [ 
                 "build", 
                 "--disable-docker-push", "true",
@@ -35,9 +36,11 @@
                 "--keep-builds", "true",
                 "--disable-authenticode", "true",
                 "--disable-signcode", "true",
-                "--password", "unused",
+                "--disable-notarize-signing", "true",
+                "--password", "test1234",
             ],
-            "env": {                
+            "env": {
+                "UPDATER_KEYFILE": "${workspaceFolder}/testfile.key:${workspaceFolder}/testfile.key2",
             },
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,

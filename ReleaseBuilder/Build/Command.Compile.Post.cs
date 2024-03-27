@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 
-namespace ReleaseBuilder.CliCommand;
+namespace ReleaseBuilder.Build;
 
-public static partial class Build
+public static partial class Command
 {
     /// <summary>
     /// Helper methods cleaning and signing build outputs

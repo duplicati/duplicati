@@ -28,6 +28,22 @@ public static class EnvHelper
     }
 
     /// <summary>
+    /// Reads the environment key, and expands environment variables inside.
+    /// If no key is found, the default value is returned
+    /// </summary>
+    /// <param name="key">The key to use</param>
+    /// <param name="defaultValue">The default value if the key is not set</param>
+    /// <returns>The value</returns>
+    public static string GetEnvKey(string key, string defaultValue)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        if (string.IsNullOrWhiteSpace(value))
+            value = defaultValue ?? string.Empty;
+
+        return value;
+    }
+
+    /// <summary>
     /// Returns an executable path
     /// </summary>
     /// <param name="path">The path to expand</param>

@@ -50,13 +50,23 @@ class Program
     public static readonly Configuration Configuration = Configuration.Create();
 
     /// <summary>
+    /// The return code of the application; shared state
+    /// </summary>
+    public static int? ReturnCode = 0;
+
+    /// <summary>
     /// Invokes the builder
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    static Task<int> Main(string[] args)
-        => new RootCommand("Build tool for Duplicati")
+    static async Task<int> Main(string[] args)
+    {
+        var r = await new RootCommand("Build tool for Duplicati")
         {
-            CliCommand.Build.Create()
+            Build.Command.Create(),
+            CreateKey.Command.Create(),
         }.InvokeAsync(args);
+
+        return ReturnCode ?? r;
+    }
 }

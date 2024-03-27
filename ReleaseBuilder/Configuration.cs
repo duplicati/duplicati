@@ -34,9 +34,11 @@ public enum ReleaseChannel
 /// </summary>
 /// <param name="ConfigFiles">The configuration files</param>
 /// <param name="Commands">The commands</param>
+/// <param name="ExtraSettings">Extra settings</param>
 public record Configuration(
     ConfigFiles ConfigFiles,
-    Commands Commands
+    Commands Commands,
+    ExtraSettings ExtraSettings
 )
 {
     /// <summary>
@@ -46,7 +48,8 @@ public record Configuration(
     public static Configuration Create()
         => new(
             ConfigFiles.Create(),
-            Commands.Create()
+            Commands.Create(),
+            ExtraSettings.Create()
         );
 
     /// <summary>
@@ -74,6 +77,21 @@ public record Configuration(
             return false;
 
         if (string.IsNullOrWhiteSpace(ConfigFiles.CodesignIdentity) || string.IsNullOrWhiteSpace(Commands.Codesign) || string.IsNullOrWhiteSpace(Commands.Productsign))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if signing with notarize is possible given the current configuration
+    /// </summary>
+    /// <returns></returns>
+    public bool IsNotarizePossible()
+    {
+        if (!OperatingSystem.IsMacOS())
+            return false;
+
+        if (string.IsNullOrWhiteSpace(ConfigFiles.NotarizeProfile))
             return false;
 
         return true;
@@ -132,18 +150,16 @@ public record Configuration(
 /// <param name="GithubTokenFile">The token used for Github uploads</param>
 /// <param name="DiscourseTokenFile">The token used for Discourse forum announce</param>
 /// <param name="CodesignIdentity">The identity to use for MacOS signing</param>
-/// <param name="NotarizeUsername">The username for MacOS notarization</param>
-/// <param name="NotarizePassword">The password for MacOS notarization</param>
+/// <param name="NotarizeProfile">The profile to use for MacOS notarization</param>
 public record ConfigFiles(
-    string UpdaterKeyfile,
+    string[] UpdaterKeyfile,
     string GpgKeyfile,
     string AuthenticodePfxFile,
     string AuthenticodePasswordFile,
     string GithubTokenFile,
     string DiscourseTokenFile,
     string CodesignIdentity,
-    string NotarizeUsername,
-    string NotarizePassword
+    string NotarizeProfile
 )
 {
     /// <summary>
@@ -167,15 +183,14 @@ public record ConfigFiles(
         }
 
         return new(
-            ExpandEnv("UPDATER_KEYFILE", "${HOME}/.config/signkeys/Duplicati/updater-release.key"),
+            ExpandEnv("UPDATER_KEYFILE", "${HOME}/.config/signkeys/Duplicati/updater-release.key").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
             ExpandEnv("GPG_KEYFILE", "${HOME}/.config/signkeys/Duplicati/updater-gpgkey.key"),
             ExpandEnv("AUTHENTICODE_PFXFILE", "${HOME}/.config/signkeys/Duplicati/authenticode.pfx"),
             ExpandEnv("AUTHENTICODE_PASSWORD", "${HOME}/.config/signkeys/Duplicati/authenticode.key"),
             ExpandEnv("GITHUB_TOKEN_FILE", "${HOME}/.config/github-api-token"),
             ExpandEnv("DISCOURSE_TOKEN_FILE", "${HOME}/.config/discourse-api-token"),
             ExpandEnv("CODESIGN_IDENTITY", ""),
-            ExpandEnv("NOTARIZE_USERNAME", ""),
-            ExpandEnv("NOTARIZE_PASSWORD", "@keychain:NOTARIZE_CMDLINE")
+            ExpandEnv("NOTARIZE_PROFILE", "")
         );
     }
 }
@@ -222,3 +237,29 @@ public record Commands(
         );
 }
 
+/// <summary>
+/// Extra settings used by the build script, that are not expected to be changed often
+/// </summary>
+/// <param name="UpdateFromV1Url">The URL to use for clients upgrading from earlier versions</param>
+/// <param name="GenericUpdatePageUrl">The URL to redirect to when the update has no specific package</param>
+/// <param name="PackageUrls">The urls where packages are stored</param>
+/// <param name="UpdaterUrls">The urls where manifest files are stored</param>
+public record ExtraSettings(
+    string UpdateFromV1Url,
+    string GenericUpdatePageUrl,
+    string[] PackageUrls,
+    string[] UpdaterUrls
+)
+{
+    /// <summary>
+    /// Generates a new extra settings instance
+    /// </summary>
+    /// <returns>The extra settings instance</returns>
+    public static ExtraSettings Create()
+        => new(
+            GetEnvKey("UPDATE_FROM_V1_URL", "https://duplicati.com/update-from-v1"),
+            GetEnvKey("GENERIC_UPDATE_PAGE_URL", "https://duplicati.com/download"),
+            GetEnvKey("PACKAGE_URLS", "https://updates.duplicati.com/${RELEASE_TYPE}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_TYPE}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+            GetEnvKey("UPDATER_URLS", "https://updates.duplicati.com/${RELEASE_TYPE}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_TYPE}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        );
+}
