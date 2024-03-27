@@ -22,7 +22,7 @@ echo
 
 echo "${RELEASE_NAME}" > Duplicati/License/VersionTag.txt
 echo "${UPDATE_MANIFEST_URLS}" > Duplicati/Library/AutoUpdater/AutoUpdateURL.txt
-cp "Updates/debug_key.txt"  Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt
+cp "Updates/debug_key.txt"  Duplicati/Library/AutoUpdater/AutoUpdateSignKeys.txt
 
 rm -rf Duplicati/GUI/Duplicati.GUI.TrayIcon/bin/Debug
 

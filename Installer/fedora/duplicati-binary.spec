@@ -1,24 +1,19 @@
 # TODO:
 # - check where Tools/* scripts should really be
-# - try to fix every mono compiler warning
 # - fix rpmlint warnings
 
 # Set up some defaults
 %global namer duplicati
 %global debug_package %{nil}
 %global alphatag .git
-
-# Then load overrides
-%include %{_topdir}/SOURCES/%{namer}-buildinfo.spec
-
-# Make sure it does not break because we have som arch-dependant libraries bundled
-%define _binaries_in_noarch_packages_terminate_build 0
+%global _builddate %BUILDDATE%
+%global _buildversion %BUILDVERSION%
+%global _buildtag %BUILDTAG%
 
 Name:	%{namer}
 Version:	%{_buildversion}
 Release:	%{_buildtag}
 Icon: duplicati.xpm
-BuildArch:  noarch
 
 # Disable auto dependencies as it picks up .Net 2.0 profile
 #   and does not support supplying them with 4.5
@@ -28,25 +23,23 @@ AutoReqProv: no
 
 Summary:	Backup client for encrypted online backups
 License:	MIT
-URL:	http://www.duplicati.com
+URL:	https://duplicati.com
 Source0:	duplicati-%{_buildversion}.tar.bz2
-Source1:	%{namer}-make-binary-package.sh
-Source2: 	%{namer}-install-recursive.sh
+Source1: 	%{namer}-install-recursive.sh
+Source2:  %{namer}-install-binaries.sh
 Source3: 	%{namer}.service
 Source4: 	%{namer}.default
+Source5: 	%{namer}.png
+Source6: 	%{namer}.desktop
 
 BuildRequires:  desktop-file-utils
-BuildRequires:  dos2unix
 BuildRequires:  systemd
-BuildRequires:  dotnet
 
 Requires:	desktop-file-utils
 Requires:	bash
-Requires:	libappindicator
+%DEPENDS%
 
-Provides:	duplicati
-Provides:	duplicati-cli
-Provides:	duplicati-server
+%PROVIDES%
 
 %description 
 Duplicati is a free backup client that securely stores encrypted,
@@ -65,52 +58,31 @@ backups for specific purposes.
 
 %build
 
-# removing non-platform thirdparty binaries:
-rm -rf win-tools
-rm -rf SQLite/win64
-rm -rf SQLite/win32
-rm -rf MonoMac.dll
-rm -rf OSX\ Icons
-rm -rf OSXTrayHost
-rm -rf licenses/MonoMac
-rm -rf licenses/gpg
-rm -rf win-x64\storj_uplink.dll
-rm -rf win-x86\storj_uplink.dll
-rm -rf libstorj_uplink.dylib
-
+# Build is expected to be complete
+# so no build action is performed
 
 %install
 
 install -d %{buildroot}%{_datadir}/pixmaps/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/dark/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/SVGIcons/light/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
+install -d %{buildroot}%{_exec_prefix}/bin/
 
+# Remove packaging artifacts
+find . -type f -name ._\* | xargs rm -rf
+
+# Install all files, but the list is too long to be in the script itself :/
 /bin/bash %{_topdir}/SOURCES/%{namer}-install-recursive.sh "." "%{buildroot}%{_exec_prefix}/lib/%{namer}/"
 
-# We do not want these files in the lib folder
-rm "%{buildroot}%{_exec_prefix}/lib/%{namer}/%{namer}-launcher.sh"
-rm "%{buildroot}%{_exec_prefix}/lib/%{namer}/%{namer}-commandline-launcher.sh"
-rm "%{buildroot}%{_exec_prefix}/lib/%{namer}/%{namer}-server-launcher.sh"
-rm "%{buildroot}%{_exec_prefix}/lib/%{namer}/%{namer}.png"
-rm "%{buildroot}%{_exec_prefix}/lib/%{namer}/%{namer}.desktop"
+# Move the icon in to place
+install -p  %{_topdir}/SOURCES/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 
-# Then we install them in the correct spots
-install -p -D -m 755 %{namer}-launcher.sh %{buildroot}%{_bindir}/%{namer}
-install -p -D -m 755 %{namer}-commandline-launcher.sh %{buildroot}%{_bindir}/%{namer}-cli
-install -p -D -m 755 %{namer}-server-launcher.sh %{buildroot}%{_bindir}/%{namer}-server
-install -p  %{namer}.png %{buildroot}%{_datadir}/pixmaps/
+# Fix executable permissions and install symlinks
+/bin/bash %{_topdir}/SOURCES/%{namer}-install-binaries.sh "%{buildroot}%{_exec_prefix}/lib/%{namer}/" "%{_exec_prefix}/bin/"
 
-# And fix permissions
-find "%{buildroot}%{_exec_prefix}/lib/%{namer}"/* -type f -name \*.exe | xargs chmod 755
-find "%{buildroot}%{_exec_prefix}/lib/%{namer}"/* -type f -name \*.sh | xargs chmod 755
-#find "%{buildroot}%{_exec_prefix}/lib/%{namer}"/* -type f -name \*.py | xargs chmod 755
-
-desktop-file-install %{namer}.desktop
+desktop-file-install %{_topdir}/SOURCES/%{namer}.desktop
 
 # Install the service:
 install -p -D -m 755 %{_topdir}/SOURCES/%{namer}.service %{_unitdir}
@@ -137,12 +109,14 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.default %{_sysconfdir}/sysconfi
 
 %files
 %doc changelog.txt licenses/license.txt
-%{_bindir}/*
 %{_datadir}/*/*
 %{_exec_prefix}/lib/*
 
 
 %changelog
+* Mon Mar 25 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240325.git
+- Updated to build from arch-specific .Net8 binaries
+
 * Wed Jun 21 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170621.git
 - Added the service file to the install
 

@@ -65,7 +65,6 @@
       </Directory>
     </DirectoryRef>
 
-    <Icon Id="DuplicatiIcon.exe" SourceFile="Duplicati\Duplicati.GUI.TrayIcon.exe" />
 
   </Fragment>
 </Wix>

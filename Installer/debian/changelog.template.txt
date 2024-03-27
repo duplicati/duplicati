@@ -1,0 +1,6 @@
+duplicati (%VERSION%) unstable; urgency=low
+
+  * New upstream release
+  * See changelog.txt for changes
+
+ -- Duplicati Team <hello@duplicati.com>  %DATE%

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Categories=System;Archiving;FileTools;Filesystem;
+Type=Application
+Name=Duplicati
+GenericName= Backup tool
+GenericName[es]= Copias de respaldo
+Comment= Create and maintain local and remote backup copies of your data
+Comment[es]= Cree y mantenga copias de seguridad locales y remotas
+Exec=duplicati
+Icon=duplicati
+Terminal=false
+StartupNotify=true

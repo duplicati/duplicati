@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <OutputType>Exe</OutputType>
     <Description>A backend debugging tool for Duplicati</Description>
     <AssemblyName>Duplicati.CommandLine.BackendTester.Implementation</AssemblyName>
   </PropertyGroup>
