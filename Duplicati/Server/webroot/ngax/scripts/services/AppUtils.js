@@ -1,4 +1,4 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogService, gettextCatalog) {
+backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppService, DialogService, gettextCatalog) {
 
     var apputils = this;
 

@@ -1,4 +1,6 @@
 using System.Net.WebSockets;
+using System.Text;
+using Duplicati.WebserverCore.Abstractions.Notifications;
 using Duplicati.WebserverCore.Options;
 
 namespace Duplicati.WebserverCore.Middlewares;
@@ -8,7 +10,15 @@ public static class WebsocketExtensions
     public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IConfiguration configuration)
     {
         var kestrelUrl = configuration["Kestrel:Endpoints:MyHttpEndpoint:Url"];
-        kestrelUrl = kestrelUrl != null ? new Uri(kestrelUrl).Authority : "localhost:8201";
+        if (kestrelUrl != null)
+        {
+            var uri = new Uri(kestrelUrl);
+            kestrelUrl = uri.Scheme + "://" + uri.Authority;
+        }
+        else
+        {
+            kestrelUrl = "http://localhost:8201";
+        }
 
         var options = configuration.GetRequiredSection(NotificationsOptions.SectionName).Get<NotificationsOptions>()!;
 
@@ -19,6 +29,7 @@ public static class WebsocketExtensions
 
         return app.Use(async (context, next) =>
         {
+            var websocketAccessor = context.RequestServices.GetRequiredService<IWebsocketAccessor>();
             if (context.Request.Path != options.WebsocketPath)
             {
                 await next(context);
@@ -28,7 +39,8 @@ public static class WebsocketExtensions
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    await Echo(webSocket);
+                    websocketAccessor.AddConnection(webSocket);
+                    await HandleClientData(webSocket, websocketAccessor);
                 }
                 else
                 {
@@ -38,27 +50,32 @@ public static class WebsocketExtensions
         });
     }
 
-    private static async Task Echo(WebSocket webSocket)
+    private static async Task HandleClientData(WebSocket webSocket, IWebsocketAccessor websocketAccessor, CancellationToken cancellationToken = default)
     {
         var buffer = new byte[1024 * 4];
-        var receiveResult = await webSocket.ReceiveAsync(
-            new ArraySegment<byte>(buffer), CancellationToken.None);
 
-        while (!receiveResult.CloseStatus.HasValue)
+        var result = await ReceiveAsync();
+
+        while (!result.CloseStatus.HasValue)
         {
-            await webSocket.SendAsync(
-                new ArraySegment<byte>(buffer, 0, receiveResult.Count),
-                receiveResult.MessageType,
-                receiveResult.EndOfMessage,
-                CancellationToken.None);
-
-            receiveResult = await webSocket.ReceiveAsync(
-                new ArraySegment<byte>(buffer), CancellationToken.None);
+            result = await ReceiveAsync();
         }
 
         await webSocket.CloseAsync(
-            receiveResult.CloseStatus.Value,
-            receiveResult.CloseStatusDescription,
+            result.CloseStatus.Value,
+            result.CloseStatusDescription,
             CancellationToken.None);
+
+        return;
+
+        async Task<WebSocketReceiveResult> ReceiveAsync()
+        {
+            var receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
+
+            var message = Encoding.Default.GetString(buffer[..receiveResult.Count]);
+            await websocketAccessor.HandleClientMessage(message);
+
+            return receiveResult;
+        }
     }
 }

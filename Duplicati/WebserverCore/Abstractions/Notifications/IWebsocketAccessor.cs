@@ -6,4 +6,6 @@ public interface IWebsocketAccessor
 {
     void AddConnection(WebSocket newConnection);
     WebSocket[] OpenConnections { get; }
+    Task Send<T>(T data);
+    Task HandleClientMessage(string message);
 }
