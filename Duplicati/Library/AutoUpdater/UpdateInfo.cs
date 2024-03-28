@@ -48,6 +48,7 @@ namespace Duplicati.Library.AutoUpdater
 
     public class UpdateInfo
     {
+        public string UpdateFromV1Url;
         public string Displayname;
         public string Version;
         public DateTime ReleaseTime;

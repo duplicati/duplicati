@@ -425,7 +425,7 @@ namespace Duplicati.Library.AutoUpdater
 
         public static bool DownloadAndUnpackUpdate(UpdateInfo version, Action<double> progress = null)
         {
-            if (INSTALLDIR == null)
+            if (INSTALLDIR == null || version == null || version.RemoteURLS == null)
                 return false;
 
 
@@ -932,9 +932,16 @@ namespace Duplicati.Library.AutoUpdater
                     updateDetected = CheckForUpdate();
                     if (updateDetected != null && downloadUpdate)
                     {
-                        if (!runDuring)
-                            Console.WriteLine("Update to {0} detected, installing...", updateDetected.Displayname);
-                        updateInstalled = DownloadAndUnpackUpdate(updateDetected);
+                        if (!string.IsNullOrWhiteSpace(updateDetected.UpdateFromV1Url))
+                        {
+                            Console.WriteLine("Update to {0} detected, manual install required: {1}", updateDetected.Displayname, updateDetected.UpdateFromV1Url);
+                        }
+                        else
+                        {
+                            if (!runDuring)
+                                Console.WriteLine("Update to {0} detected, installing...", updateDetected.Displayname);
+                            updateInstalled = DownloadAndUnpackUpdate(updateDetected);
+                        }
                     }
                 });
 
@@ -958,7 +965,10 @@ namespace Duplicati.Library.AutoUpdater
                     }
                     else if (updateDetected != null)
                     {
-                        Console.WriteLine("Update \"{0}\" detected", updateDetected.Displayname);
+                        if (!string.IsNullOrWhiteSpace(updateDetected.UpdateFromV1Url))
+                            Console.WriteLine("Update to {0} detected, manual install required: {1}", updateDetected.Displayname, updateDetected.UpdateFromV1Url);
+                        else
+                            Console.WriteLine("Update \"{0}\" detected", updateDetected.Displayname);
                     }
 
                     backgroundChecker = null;
@@ -992,7 +1002,10 @@ namespace Duplicati.Library.AutoUpdater
                 }
                 else
                 {
-                    Console.WriteLine("Update \"{0}\" detected", updateDetected.Displayname);
+                    if (!string.IsNullOrWhiteSpace(updateDetected.UpdateFromV1Url))
+                        Console.WriteLine("Update to {0} detected, manual install required: {1}", updateDetected.Displayname, updateDetected.UpdateFromV1Url);
+                    else
+                        Console.WriteLine("Update \"{0}\" detected", updateDetected.Displayname);
                 }
             }
         }
