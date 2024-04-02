@@ -297,8 +297,9 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>The expanded template.</returns>
         /// <param name="input">The input template.</param>
         /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
         /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
-        protected virtual string ReplaceTemplate(string input, object result, bool subjectline)
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
         {
             // For JSON, ignore the template and just use the contents
             if (ExportFormat == ResultExportFormat.Json && !subjectline)
@@ -339,7 +340,7 @@ namespace Duplicati.Library.Modules.Builtin
                     if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
 
-                return m_resultFormatSerializer.Serialize(result, LogLines, extra);
+                return m_resultFormatSerializer.Serialize(result, exception, LogLines, extra);
             }
             else
             {
@@ -355,7 +356,7 @@ namespace Duplicati.Library.Modules.Builtin
                 else
                 {
                     if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, exception, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
@@ -394,7 +395,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
         }
 
-        public void OnFinish(object result)
+        public void OnFinish(object result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -412,7 +413,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is Exception)
+            if (result is Exception || exception != null)
                 level = ParsedResultType.Fatal;
             else if (result != null && result is IBasicResults results)
                 level = results.ParsedResult;
@@ -438,8 +439,8 @@ namespace Duplicati.Library.Modules.Builtin
                 if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && System.IO.File.Exists(body))
                     body = System.IO.File.ReadAllText(body);
 
-                body = ReplaceTemplate(body, result, false);
-                subject = ReplaceTemplate(subject, result, true);
+                body = ReplaceTemplate(body, result, exception, false);
+                subject = ReplaceTemplate(subject, result, exception, true);
 
                 SendMessage(subject, body);
             }

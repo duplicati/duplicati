@@ -441,7 +441,7 @@ namespace Duplicati.Library.Main
                         r.Interrupted = false;
                     }
 
-                    OnOperationComplete(result);
+                    OnOperationComplete(result, null);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
@@ -469,23 +469,26 @@ namespace Duplicati.Library.Main
                                     db.WriteResults();
                                 }
 
-                                OnOperationComplete(result);
+                                // Do not propagate the cancel exception
+                                OnOperationComplete(result, null);
                             }
                             catch { }
                         }
                         else
                         {
                             // Perform the module shutdown
-                            OnOperationComplete(ex);
+                            OnOperationComplete(ex, ex);
                         }
 
                         return result;
                     }
                     else
                     {
-                        try
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+
+                        if (result is BasicResults basicResults)
                         {
-                            if (result is BasicResults basicResults)
+                            try
                             {
                                 basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
                                 basicResults.Fatal = true;
@@ -498,13 +501,18 @@ namespace Duplicati.Library.Main
                                         db.WriteResults();
                                     }
                                 }
+
+                                // Report the result, and the failure
+                                OnOperationComplete(result, ex);
+
                             }
+                            catch { }
                         }
-                        catch { }
-
-                        OnOperationComplete(ex);
-
-                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+                        else
+                        {
+                            // Perform the module shutdown
+                            OnOperationComplete(ex, ex);
+                        }
 
                         throw;
                     }
@@ -538,13 +546,13 @@ namespace Duplicati.Library.Main
             System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = uiLocale;
         }
 
-        private void OnOperationComplete(object result)
+        private void OnOperationComplete(object result, Exception exception)
         {
             if (m_options != null && m_options.LoadedModules != null)
             {
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
                     if (mx.Key && mx.Value is IGenericCallbackModule module)
-                        try { module.OnFinish(result); }
+                        try { module.OnFinish(result, exception); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
 
                 foreach (KeyValuePair<bool, Library.Interface.IGenericModule> mx in m_options.LoadedModules)
