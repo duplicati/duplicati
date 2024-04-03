@@ -1,3 +1,17 @@
+2024-04-03 - 2.0.7.102_canary_2024-04-03
+==========
+This build is intended to be the last build that uses .Net4 (aka .Net Desktop).
+Future builds are expected to use .Net8 and will require a manual update,
+because the .Net builds are no longer operating system independent.
+
+The upside is that there are fewer dependencies (no more Mono),
+and execution times are greatly improved.
+
+* Removed donation messages
+* Updated MacOS Installer license text
+* Updated installer to support future manual upgrade
+* Added information to reports when encountering an exception
+
 2024-03-08 - 2.0.7.101_canary_2024-03-08
 ==========
 * Updated license to MIT, thanks @kenkendk
