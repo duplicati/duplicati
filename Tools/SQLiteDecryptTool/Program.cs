@@ -74,7 +74,19 @@ namespace SQLiteDecryptTool
                 return;
             }
 
-            // TODO: Can we detect if the DB is encryped or not, just by looking at the file?
+            // Check if the file is actually already decrypted
+            using (var probefs = File.OpenRead(database))
+            {
+                var magic = System.Text.Encoding.ASCII.GetBytes("SQLite format");
+                var probebuf = new byte[magic.Length];
+                probefs.Read(probebuf, 0, probebuf.Length);
+                if (magic.Zip(probebuf, (a, b) => a == b).All(x => x))
+                {
+                    Console.WriteLine("The database was not encrypted, skipping");
+                    WriteExitMessage();
+                    return;
+                }
+            }
 
             string backup = Path.Combine(Path.GetDirectoryName(database), Path.GetFileNameWithoutExtension(database) + "_backup_enc" + Path.GetExtension(database));
             Console.WriteLine($"Creating a copy of the database in {backup}...");
@@ -87,12 +99,14 @@ namespace SQLiteDecryptTool
             if (setPwdMethod == null)
             {
                 Console.WriteLine("The SQLite native library does not support encryption, cannot decrypt.");
+                WriteExitMessage();
                 return;
             }
 
             if (changePwdMethod == null)
             {
                 Console.WriteLine("The SQLite native library does not support changing the password, cannot decrypt.");
+                WriteExitMessage();
                 return;
             }
 
@@ -104,11 +118,18 @@ namespace SQLiteDecryptTool
             catch (Exception ex)
             {
                 Console.WriteLine($"Error decrypting database: {ex.Message}");
-                return;
             }
 
+            WriteExitMessage();
+        }
+
+        static void WriteExitMessage()
+        {
             if (Platform.IsClientWindows)
+            {
                 Console.WriteLine("Press enter to close the program");
+                Console.ReadLine();
+            }
         }
 
         static string DefaultDataFolder()
@@ -158,7 +179,7 @@ namespace SQLiteDecryptTool
                 if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
 
-                throw new Exception($"{ex.Message}");
+                 throw new Exception($"{ex.Message}");
             }
         }
     }

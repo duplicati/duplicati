@@ -109,6 +109,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLiteDecryptTool", "Tools\SQLiteDecryptTool\SQLiteDecryptTool.csproj", "{91711AD6-A3E1-4EF9-908A-2CAAF761B055}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -327,6 +329,10 @@ Global
 		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91711AD6-A3E1-4EF9-908A-2CAAF761B055}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91711AD6-A3E1-4EF9-908A-2CAAF761B055}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91711AD6-A3E1-4EF9-908A-2CAAF761B055}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91711AD6-A3E1-4EF9-908A-2CAAF761B055}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
