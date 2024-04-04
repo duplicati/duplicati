@@ -26,7 +26,11 @@ public enum ReleaseChannel
     /// <summary>
     /// Nightly, unmonitored builds
     /// </summary>
-    Nightly
+    Nightly,
+    /// <summary>
+    /// Debug builds
+    /// </summary>
+    Debug
 }
 
 /// <summary>

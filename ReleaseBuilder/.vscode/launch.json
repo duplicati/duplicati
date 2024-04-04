@@ -13,6 +13,7 @@
             // "args": ["create-key", "testfile.key", "--password", "test1234"],
             "args": [ 
                 "build", 
+                "debug",
                 "--disable-docker-push", "true",
                 "--git-stash-push", "false", 
                 "--targets", "win-x64-gui.msi",
@@ -37,7 +38,9 @@
                 "--disable-authenticode", "true",
                 "--disable-signcode", "true",
                 "--disable-notarize-signing", "true",
+                "--disable-gpg-signing", "true",
                 "--password", "test1234",
+                "--version", "2.0.8.100"                
             ],
             "env": {
                 "UPDATER_KEYFILE": "${workspaceFolder}/testfile.key:${workspaceFolder}/testfile.key2",

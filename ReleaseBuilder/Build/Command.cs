@@ -86,6 +86,15 @@ public static partial class Command
         /// <returns>The release info</returns>
         public static ReleaseInfo Create(ReleaseChannel type, int incVersion)
             => new ReleaseInfo(new Version(2, 0, 0, incVersion), type, DateTime.Today);
+
+        /// <summary>
+        /// Create a new release info
+        /// </summary>
+        /// <param name="type">The release type</param>
+        /// <param name="version">The version</param>
+        /// <returns>The release info</returns>
+        public static ReleaseInfo Create(ReleaseChannel type, Version version)
+            => new ReleaseInfo(version, type, DateTime.Today);
     }
 
     /// <summary>
@@ -94,6 +103,12 @@ public static partial class Command
     /// <returns>The command</returns>
     public static System.CommandLine.Command Create()
     {
+        var releaseChannelArgument = new Argument<ReleaseChannel>(
+            name: "channel",
+            description: "The release channel",
+            getDefaultValue: () => ReleaseChannel.Canary
+        );
+
         var buildTargetOption = new Option<PackageTarget[]>(
             name: "--targets",
             description: "The possible build targets, multiple arguments supported. Use the format os-arch.package, example: x64-win.msi.",
@@ -109,12 +124,6 @@ public static partial class Command
 
                 return requested;
             });
-
-        var releaseChannelOption = new Argument<ReleaseChannel>(
-            name: "channel",
-            description: "The release channel",
-            getDefaultValue: () => ReleaseChannel.Canary
-        );
 
         var gitStashPushOption = new Option<bool>(
             name: "--git-stash-push",
@@ -190,9 +199,16 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var versionOverrideOption = new Option<string?>(
+            name: "--version",
+            description: "Sets a custom version to use",
+            getDefaultValue: () => null
+        );
+
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
-            releaseChannelOption,
+            releaseChannelArgument,
             buildTempOption,
             buildTargetOption,
             solutionFileOption,
@@ -205,7 +221,8 @@ public static partial class Command
             dockerRepoOption,
             changelogFileOption,
             disableNotarizeSigningOption,
-            disableGpgSigningOption
+            disableGpgSigningOption,
+            versionOverrideOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -220,6 +237,7 @@ public static partial class Command
     /// <param name="SolutionFile">The solution path</param>
     /// <param name="GitStashPush">If the git stash should be performed</param>
     /// <param name="Channel">The release channel</param>
+    /// <param name="Version">The version override to use</param>
     /// <param name="KeepBuilds">If the builds should be kept</param>
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
     /// <param name="DisableSignCode">If signcode should be disabled</param>
@@ -236,6 +254,7 @@ public static partial class Command
         FileInfo SolutionFile,
         bool GitStashPush,
         ReleaseChannel Channel,
+        string? Version,
         bool KeepBuilds,
         bool DisableAuthenticode,
         bool DisableSignCode,
@@ -314,7 +333,9 @@ public static partial class Command
 
         var changelogNews = File.ReadAllText(input.ChangelogFile.FullName);
 
-        var releaseInfo = ReleaseInfo.Create(input.Channel, int.Parse(File.ReadAllText(versionFilePath)) + 1);
+        var releaseInfo = string.IsNullOrWhiteSpace(input.Version)
+            ? ReleaseInfo.Create(input.Channel, int.Parse(File.ReadAllText(versionFilePath)) + 1)
+            : ReleaseInfo.Create(input.Channel, Version.Parse(input.Version));
         Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
 
         var keyfilePassword = string.IsNullOrEmpty(input.Password)
@@ -344,7 +365,7 @@ public static partial class Command
         {
             var unsupportedBuilds = buildTargets.Where(x => x.Package == PackageType.Docker || x.Package == PackageType.Deb || x.Package == PackageType.RPM).ToList();
             if (unsupportedBuilds.Any())
-                throw new Exception($"Docker build requested but not enabled, and the following packages are not supported: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
+                throw new Exception($"The following packages cannot be built without Docker: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
         }
 
         if (!input.KeepBuilds && Directory.Exists(input.BuildPath.FullName))
