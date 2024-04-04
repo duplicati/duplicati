@@ -40,7 +40,7 @@
                 "--disable-notarize-signing", "true",
                 "--disable-gpg-signing", "true",
                 "--password", "test1234",
-                "--version", "2.0.8.100"                
+                "--version", "2.0.8.101"                
             ],
             "env": {
                 "UPDATER_KEYFILE": "${workspaceFolder}/testfile.key:${workspaceFolder}/testfile.key2",

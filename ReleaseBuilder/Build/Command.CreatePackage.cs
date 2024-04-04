@@ -493,12 +493,22 @@ public static partial class Command
                     .Replace("%DATE%", DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss +0000", CultureInfo.InvariantCulture))
             );
 
+            // Custom arch, from: https://wiki.debian.org/SupportedArchitectures
+            var debArchString = target.Arch switch
+            {
+                ArchType.x86 => "i386",
+                ArchType.x64 => "amd64",
+                ArchType.Arm64 => "arm64",
+                ArchType.Arm7 => "armhf",
+                _ => throw new Exception($"Architeture not supported: {target.ArchString}")
+            };
+
             // Write a custom control file
             File.WriteAllText(
                 Path.Combine(pkgroot, "DEBIAN", "control"),
                 File.ReadAllText(Path.Combine(installerDir, "control.template.txt"))
                     .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
-                    .Replace("%ARCH%", target.ArchString)
+                    .Replace("%ARCH%", debArchString)
                     .Replace("%DEPENDS%", string.Join(", ", target.Interface == InterfaceType.GUI
                         ? DebianGUIDepends
                         : DebianCLIDepends))
