@@ -70,7 +70,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// Link to a generic download page
         /// </summary>
-        public string GenericUpdatePageUrl;
+        public string GenericUpdatePageUrl = string.Empty;
 
         /// <summary>
         /// Finds a package that matches the <paramref name="packageTypeId"/>
