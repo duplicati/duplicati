@@ -42,11 +42,16 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Set of files that are unwanted despite the OS
+        /// </summary>
+        static readonly IReadOnlyList<string> UnwantedCommonFiles = ["System.Reactive.xml"];
+
+        /// <summary>
         /// A list of folders that are unwanted for a given OS target
         /// </summary>
         /// <param name="os">The OS to get unwanted folders for</param>
         /// <returns>The unwanted folders</returns>
-        static string[] UnwantedFolders(OSType os)
+        static IEnumerable<string> UnwantedFolders(OSType os)
             => os switch
             {
                 OSType.Windows => ["lvm-scripts"],
@@ -60,14 +65,15 @@ public static partial class Command
         /// </summary>
         /// <param name="os">The OS to get unwanted files for</param>
         /// <returns>The files that are unwanted</returns>
-        static string[] UnwantedFiles(OSType os)
-            => os switch
+        static IEnumerable<string> UnwantedFiles(OSType os)
+            => UnwantedCommonFiles.Concat(os switch
             {
                 OSType.Windows => [],
                 OSType.MacOS => [Path.Combine("utility-scripts", "DuplicatiVerify.ps1")],
                 OSType.Linux => [Path.Combine("utility-scripts", "DuplicatiVerify.ps1")],
                 _ => throw new Exception($"Not supported os: {os}")
-            };
+            })
+            .Distinct();
 
 
         /// <summary>
@@ -200,10 +206,30 @@ public static partial class Command
                 overwrite: true
             );
 
+            // Rename the executables, as symlinks are not supported in DMG files
+            foreach (var x in ExecutableRenames)
+                File.Move(Path.Combine(binDir, x.Key), Path.Combine(binDir, x.Value));
+
+            // Move the licenses out of the code folder as the signing tool trips on it
+            var licenseTarget = Path.Combine(tmpApp, "Contents", "Licenses");
+            Directory.Move(Path.Combine(binDir, "licenses"), licenseTarget);
+
             if (rtcfg.UseCodeSignSigning)
             {
+                Console.WriteLine("Performing MacOS code signing ...");
+
+                // Executables cannot be signed before their dependencies are signed
+                // So they are placed last in the list
+                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x));
+
+                var signtargets = Directory.EnumerateFiles(binDir, "*", SearchOption.AllDirectories)
+                    .Except(executables)
+                    .Concat(executables)
+                    .Distinct()
+                    .ToList();
+
                 var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
-                foreach (var f in Directory.EnumerateFiles(binDir, "*", SearchOption.AllDirectories))
+                foreach (var f in signtargets)
                     await rtcfg.Codesign(f, entitlementFile);
 
                 await rtcfg.Codesign(Path.Combine(tmpApp), entitlementFile);
@@ -214,7 +240,7 @@ public static partial class Command
                     File.SetUnixFileMode(f, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
 
             Directory.Move(tmpApp, appDir);
-            Directory.Delete(Path.GetDirectoryName(tmpApp) ?? throw new Exception("Unexpected empty path"));
+            Directory.Delete(Path.GetDirectoryName(tmpApp) ?? throw new Exception("Unexpected empty path"), true);
         }
 
         /// <summary>

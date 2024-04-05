@@ -304,9 +304,16 @@ public static partial class Command
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
-            await PackageSupport.InstallPackageIdentifier(appFolder, target);
+            await PackageSupport.InstallPackageIdentifier(Path.Combine(appFolder, "Contents", "MacOS"), target);
             await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
-            await PackageSupport.MakeSymlinks(appFolder);
+
+            // After injecting the package_type_id, resign
+            if (rtcfg.UseCodeSignSigning)
+            {
+                await rtcfg.Codesign(Path.Combine(appFolder, "Contents", "MacOS", "package_type_id.txt"), Path.Combine(installerDir, "Entitlements.plist"));
+                await rtcfg.Codesign(Path.Combine(appFolder, "Contents", "MacOS", "duplicati"), Path.Combine(installerDir, "Entitlements.plist"));
+                await rtcfg.Codesign(Path.Combine(appFolder), Path.Combine(installerDir, "Entitlements.plist"));
+            }
 
             // Set permissions inside DMG file
             if (!OperatingSystem.IsWindows())
