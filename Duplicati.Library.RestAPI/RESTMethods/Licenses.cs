@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.IO;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -26,7 +27,16 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public void GET(string key, RequestInfo info)
         {
-            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), "licenses");
+            var exefolder = System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+            var path = System.IO.Path.Combine(exefolder, "licenses");
+            if (Duplicati.Library.Common.Platform.IsClientOSX && !Directory.Exists(path))
+            {
+                // Go up one, as the licenses cannot be in the binary folder in MacOS Packages
+                exefolder = Path.GetDirectoryName(exefolder);
+                var test = Path.Combine(exefolder, "Licenses");
+                if (Directory.Exists(test))
+                    path = test;
+            }
             info.OutputOK(Duplicati.License.LicenseReader.ReadLicenses(path));
         }
     }
