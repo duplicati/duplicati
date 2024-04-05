@@ -177,8 +177,9 @@ public record ConfigFiles(
         if (File.Exists(gatekeeperSettingsFile))
         {
             var kvp = File.ReadAllLines(gatekeeperSettingsFile)
-                .Where(x => !string.IsNullOrWhiteSpace(x) && x.StartsWith("export "))
-                .Select(x => x.Substring("export ".Length).Trim().Split("=", 2))
+                .Where(x => !string.IsNullOrWhiteSpace(x) && x.IndexOf('=') > 0)
+                .Select(x => x.StartsWith("export ") ? x.Substring("export ".Length).Trim() : x)
+                .Select(x => x.Trim().Split("=", 2))
                 .Where(x => x.Length == 2)
                 .Select(x => new { Key = x[0], Value = x[1] });
 
@@ -194,7 +195,7 @@ public record ConfigFiles(
             ExpandEnv("GITHUB_TOKEN_FILE", "${HOME}/.config/github-api-token"),
             ExpandEnv("DISCOURSE_TOKEN_FILE", "${HOME}/.config/discourse-api-token"),
             ExpandEnv("CODESIGN_IDENTITY", ""),
-            ExpandEnv("NOTARIZE_PROFILE", "")
+            ExpandEnv("NOTARIZE_PROFILE", "duplicati-notarize")
         );
     }
 }
