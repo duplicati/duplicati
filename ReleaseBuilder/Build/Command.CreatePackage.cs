@@ -245,6 +245,32 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Install the package identifier into the app bundle, and performs resigning of the binaries
+        /// </summary>
+        /// <param name="appFolder">The folder where the app bundle is located</param>
+        /// <param name="installerDir">The installer dir where the installer files are located</param>
+        /// <param name="target">The package target to create the file for</param>
+        /// <param name="rtcfg">The runtime config</param>
+        /// <returns>An awaitable task</returns>
+        static async Task PrepareAndReSignAppBundle(string appFolder, string installerDir, PackageTarget target, RuntimeConfig rtcfg)
+        {
+            await PackageSupport.InstallPackageIdentifier(Path.Combine(appFolder, "Contents", "MacOS"), target);
+            await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
+
+            // After injecting the package_type_id, resign
+            if (rtcfg.UseCodeSignSigning)
+            {
+                var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
+                var updates = new[] { Path.Combine(appFolder, "Contents", "MacOS", "package_type_id.txt") }
+                    .Concat(ExecutableRenames.Values.Select(x => Path.Combine(appFolder, "Contents", "MacOS", x)))
+                    .Append(appFolder);
+
+                foreach (var x in updates)
+                    await rtcfg.Codesign(x, entitlementFile);
+            }
+        }
+
+        /// <summary>
         /// Builds a DMG package asynchronously.
         /// </summary>
         /// <param name="baseDir">The source base directory.</param>
@@ -304,16 +330,7 @@ public static partial class Command
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
-            await PackageSupport.InstallPackageIdentifier(Path.Combine(appFolder, "Contents", "MacOS"), target);
-            await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
-
-            // After injecting the package_type_id, resign
-            if (rtcfg.UseCodeSignSigning)
-            {
-                await rtcfg.Codesign(Path.Combine(appFolder, "Contents", "MacOS", "package_type_id.txt"), Path.Combine(installerDir, "Entitlements.plist"));
-                await rtcfg.Codesign(Path.Combine(appFolder, "Contents", "MacOS", "duplicati"), Path.Combine(installerDir, "Entitlements.plist"));
-                await rtcfg.Codesign(Path.Combine(appFolder), Path.Combine(installerDir, "Entitlements.plist"));
-            }
+            await PrepareAndReSignAppBundle(appFolder, installerDir, target, rtcfg);
 
             // Set permissions inside DMG file
             if (!OperatingSystem.IsWindows())
@@ -357,9 +374,7 @@ public static partial class Command
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
-            await PackageSupport.InstallPackageIdentifier(appFolder, target);
-            await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
-            await PackageSupport.MakeSymlinks(appFolder);
+            await PrepareAndReSignAppBundle(appFolder, installerDir, target, rtcfg);
 
             // Copy the source script files
             var scripts = new[] { "daemon", "daemon-scripts", "app-scripts" };
@@ -400,9 +415,9 @@ public static partial class Command
             // Make the pkg files
             await ProcessHelper.ExecuteAll([
                 ["pkgbuild", "--analyze", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "InstallerComponent.plist"],
-            ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "app-scripts"), "--identifier", "com.duplicati.app", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "--component-plist", "InstallerComponent.plist", pkgAppFile],
-            ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "daemon-scripts"), "--identifier", "com.duplicati.app.daemon", "--root", Path.Combine(tmpFolder, "daemon"), "--install-location", "/Library/LaunchAgents", pkgDaemonFile],
-            ["productbuild", "--distribution", distributionFile, "--package-path", ".", "--resources", ".", pkgFile]
+                ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "app-scripts"), "--identifier", "com.duplicati.app", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "--component-plist", "InstallerComponent.plist", pkgAppFile],
+                ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "daemon-scripts"), "--identifier", "com.duplicati.app.daemon", "--root", Path.Combine(tmpFolder, "daemon"), "--install-location", "/Library/LaunchAgents", pkgDaemonFile],
+                ["productbuild", "--distribution", distributionFile, "--package-path", ".", "--resources", ".", pkgFile]
             ], workingDirectory: tmpFolder);
 
             // Clean up
