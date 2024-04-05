@@ -66,6 +66,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
                 MonoVersion = Duplicati.Library.Utility.Utility.IsMono ? Duplicati.Library.Utility.Utility.MonoVersion.ToString() : null,
                 MachineName = System.Environment.MachineName,
+                PackageTypeId = Duplicati.Library.AutoUpdater.UpdaterManager.PackageTypeId,
                 UserName = System.Environment.UserName,
                 NewLine = System.Environment.NewLine,
                 CLRVersion = System.Environment.Version.ToString(),
