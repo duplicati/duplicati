@@ -88,7 +88,7 @@ public static partial class Command
             if (!Directory.Exists(packageFolder))
                 Directory.CreateDirectory(packageFolder);
 
-            var packageFile = Path.Combine(packageFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}");
+            var packageFile = Path.Combine(packageFolder, $"duplicati-{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}");
 
             // Fix up non-conforming package names
             if (target.Package == PackageType.Deb)
@@ -114,7 +114,7 @@ public static partial class Command
             switch (target.Package)
             {
                 case PackageType.Zip:
-                    await BuildZipPackage(Path.Combine(buildRoot, $"{target.BuildTargetString}"), rtcfg.ReleaseInfo.ReleaseName, tempFile, target, rtcfg);
+                    await BuildZipPackage(Path.Combine(buildRoot, target.BuildTargetString), $"duplicati-{rtcfg.ReleaseInfo.ReleaseName}-{target.BuildTargetString}", tempFile, target, rtcfg);
                     break;
 
                 case PackageType.MSI:
@@ -166,6 +166,7 @@ public static partial class Command
                 File.Delete(zipFile);
 
             var executableExtensions = new HashSet<string>([".sh", ".bat", ".py", ".exe"], StringComparer.OrdinalIgnoreCase);
+            var executables = new List<string>();
 
             using (ZipArchive zip = ZipFile.Open(zipFile, ZipArchiveMode.Create))
             {
@@ -187,6 +188,9 @@ public static partial class Command
                         ? Convert.ToInt32("755", 8) << 16
                         : Convert.ToInt32("644", 8) << 16;
 
+                    if (isExecutable)
+                        executables.Add(relpath);
+
                     using (var stream = entry.Open())
                     using (var file = File.OpenRead(f))
                         await file.CopyToAsync(stream);
@@ -199,13 +203,16 @@ public static partial class Command
 
                 if (target.OS != OSType.Windows)
                 {
-                    using (var stream = zip.CreateEntry(Path.Combine(dirName, "set-permissions.sh"), CompressionLevel.Optimal).Open())
+                    var setEntry = zip.CreateEntry(Path.Combine(dirName, "set-permissions.sh"), CompressionLevel.Optimal);
+                    setEntry.ExternalAttributes = Convert.ToInt32("755", 8) << 16;
+
+                    using (var stream = setEntry.Open())
                     using (var writer = new StreamWriter(stream))
                     {
                         writer.WriteLine("#!/bin/sh");
-                        writer.WriteLine("# This script sets the executable flags for the Duplicati binaries");
+                        writer.WriteLine("# This script sets the executable flags for the Duplicati binaries and support scripts");
                         writer.WriteLine("set -e");
-                        foreach (var x in ExecutableRenames.Values)
+                        foreach (var x in executables)
                             writer.WriteLine($"chmod +x {x}");
                     }
                 }
