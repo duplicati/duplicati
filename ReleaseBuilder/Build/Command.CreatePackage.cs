@@ -165,17 +165,28 @@ public static partial class Command
             if (File.Exists(zipFile))
                 File.Delete(zipFile);
 
+            var executableExtensions = new HashSet<string>([".sh", ".bat", ".py", ".exe"], StringComparer.OrdinalIgnoreCase);
+
             using (ZipArchive zip = ZipFile.Open(zipFile, ZipArchiveMode.Create))
             {
                 foreach (var f in Directory.EnumerateFiles(buildRoot, "*", SearchOption.AllDirectories))
                 {
                     var relpath = Path.GetRelativePath(buildRoot, f);
+                    var isRenamedExecutable = ExecutableRenames.ContainsKey(relpath);
 
                     // Use more friendly names for executables on non-Windows platforms
-                    if (target.OS != OSType.Windows && ExecutableRenames.ContainsKey(relpath))
+                    if (target.OS != OSType.Windows && isRenamedExecutable)
                         relpath = ExecutableRenames[relpath];
 
                     var entry = zip.CreateEntry(Path.Combine(dirName, relpath), CompressionLevel.Optimal);
+
+                    var isExecutable = isRenamedExecutable || executableExtensions.Contains(Path.GetExtension(f));
+
+                    // Set execute/permission flags
+                    entry.ExternalAttributes = isExecutable
+                        ? Convert.ToInt32("755", 8) << 16
+                        : Convert.ToInt32("644", 8) << 16;
+
                     using (var stream = entry.Open())
                     using (var file = File.OpenRead(f))
                         await file.CopyToAsync(stream);
