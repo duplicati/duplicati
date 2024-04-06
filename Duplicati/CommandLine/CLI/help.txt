@@ -19,7 +19,7 @@ See duplicati.commandline.exe help <topic> for more information.
   Formats: date, time, size, encryption, compression
   Advanced: mail, advanced, returncodes, filter, filter-groups, <option>
 
-http://www.duplicati.com/              Version: %VERSION%
+https://duplicati.com/                 Version: %VERSION%
 
 
 
