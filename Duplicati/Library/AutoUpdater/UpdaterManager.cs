@@ -296,6 +296,13 @@ namespace Duplicati.Library.AutoUpdater
                             if (rt > channel)
                                 return null;
 
+                            // In case the manifest does not contain a URL, use the one from this assembly
+                            if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
+                                update.GenericUpdatePageUrl = SelfVersion.GenericUpdatePageUrl;
+
+                            // In case there is no url, fall back to the project download page
+                            if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
+                                update.GenericUpdatePageUrl = "https://duplicati.com/download";
                             LastUpdateCheckVersion = update;
                             return update;
                         }
