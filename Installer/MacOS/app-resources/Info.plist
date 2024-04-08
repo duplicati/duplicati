@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>Duplicati.GUI.TrayIcon</string>
+	<string>duplicati</string>
 	<key>CFBundleIconFile</key>
 	<string>Duplicati.icns</string>
 	<key>CFBundleIdentifier</key>
