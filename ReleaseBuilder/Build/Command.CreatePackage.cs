@@ -478,8 +478,6 @@ public static partial class Command
             Directory.CreateDirectory(Path.Combine(pkgroot, "DEBIAN"));
             Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "lib"));
             Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "bin"));
-            Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "share", "applications"));
-            Directory.CreateDirectory(Path.Combine(pkgroot, "usr", "share", "pixmaps"));
 
             // Copy main files
             EnvHelper.CopyDirectory(
@@ -525,7 +523,7 @@ public static partial class Command
 
             // Write in the release notes
             if (!string.IsNullOrEmpty(rtcfg.ChangelogNews))
-                File.WriteAllText(Path.Combine(debroot, "releasenotes.txt"), rtcfg.ChangelogNews);
+                File.WriteAllText(Path.Combine("DEBIAN", "releasenotes"), rtcfg.ChangelogNews);
 
             // Write a custom changelog file
             File.WriteAllText(
@@ -557,20 +555,41 @@ public static partial class Command
             );
 
             // Install various helper files
-            File.Copy(
-                Path.Combine(installerDir, "duplicati.desktop"),
-                Path.Combine(pkgroot, "usr", "share", "applications", "duplicati.desktop"),
-                true
+            var supportFiles = new List<(string Source, string Destination)>{
+                (
+                    Path.Combine(installerDir, "duplicati.default"),
+                    Path.Combine(pkgroot, "etc", "default", "duplicati")
+                ),
+                (
+                    Path.Combine(installerDir, "duplicati.service"),
+                    Path.Combine(pkgroot, "lib", "systemd", "system", "duplicati.service")
+                ),
+                (
+                    Path.Combine(installerDir, "duplicati.desktop"),
+                    Path.Combine(pkgroot, "usr", "share", "applications", "duplicati.desktop")
+                )
+            };
+
+            supportFiles.AddRange(
+                new[] { "duplicati.png", "duplicati.svg", "duplicati.xpm" }
+                    .Select(f => (
+                        Path.Combine(installerDir, f),
+                        Path.Combine(pkgroot, "usr", "share", "pixmaps", f)
+                    ))
             );
 
-            foreach (var f in new[] { "duplicati.png", "duplicati.svg", "duplicati.xpm" })
-                File.Copy(
-                    Path.Combine(installerDir, f),
-                    Path.Combine(pkgroot, "usr", "share", "pixmaps", f),
-                    true
-                );
+            foreach (var f in supportFiles)
+            {
+                var dir = Path.GetDirectoryName(f.Destination);
+                if (!Directory.Exists(dir) && dir != null)
+                    Directory.CreateDirectory(dir);
+                File.Copy(f.Source, f.Destination, true);
 
-            // Install the Docker build file
+                if (!OperatingSystem.IsWindows())
+                    File.SetUnixFileMode(f.Destination, UnixFileMode.OtherRead | UnixFileMode.GroupRead | UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
+
+            // Copy the Docker build file
             File.Copy(
                 Path.Combine(installerDir, "Dockerfile.build"),
                 Path.Combine(debroot, "Dockerfile"),

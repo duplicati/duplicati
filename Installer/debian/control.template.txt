@@ -1,8 +1,8 @@
 Source: duplicati
 Section: utils
 Priority: extra
+Build-Depends: debhelper-compat (= 13)
 Maintainer: Kenneth Skovhede <kenneth@duplicati.com>
-Build-Depends: debhelper (>= 9.0.0)
 Standards-Version: 3.9.4
 Homepage: http://duplicati.com
 Vcs-Git: https://github.com/duplicati/duplicati.git

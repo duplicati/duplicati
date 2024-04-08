@@ -49,11 +49,11 @@ public static partial class Command
     /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", "libicu72", "libssl3"];
+    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", "libicu70 | libicu71 | libicu72", "libssl3"];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianCLIDepends = ["libicu72", "libssl3"];
+    private static readonly IReadOnlyList<string> DebianCLIDepends = ["libicu70 | libicu71 | libicu72", "libssl3"];
 
     /// <summary>
     /// The packages that are required for GUI builds
