@@ -508,11 +508,12 @@ public static partial class Command
 
                 foreach (var e in ExecutableRenames)
                 {
-                    var exefile = Path.Combine(pkgroot, "usr", "lib", "duplicati", e.Key);
+                    var relpath = Path.Combine("usr", "lib", "duplicati", e.Key);
+                    var exefile = Path.Combine(pkgroot, relpath);
                     if (File.Exists(exefile))
                         await ProcessHelper.Execute([
                             "ln", "-s",
-                            exefile,
+                            Path.Combine("/", relpath),
                             Path.Combine(pkgroot, "usr", "bin", e.Value)
                         ]);
                 }
