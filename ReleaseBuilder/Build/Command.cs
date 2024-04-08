@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using Duplicati.Library.AutoUpdater;
 
@@ -37,11 +36,13 @@ public static partial class Command
     /// </summary>
     private static readonly IDictionary<string, string> ExecutableRenames = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
     {
-        { "Duplicati.CommandLine", "duplicati-cli" },
-        { "Duplicati.Server", "duplicati-server"},
         { "Duplicati.CommandLine.BackendTester", "duplicati-backend-tester"},
         { "Duplicati.CommandLine.BackendTool", "duplicati-backend-tool" },
         { "Duplicati.CommandLine.RecoveryTool", "duplicati-recovery-tool" },
+        { "Duplicati.CommandLine.AutoUpdater", "duplicati-autoupdater" },
+        { "Duplicati.CommandLine.ConfigurationImporter", "duplicati-configuration-importer" },
+        { "Duplicati.CommandLine", "duplicati-cli" },
+        { "Duplicati.Server", "duplicati-server"},
         { "Duplicati.GUI.TrayIcon", "duplicati" }
     };
 
@@ -57,11 +58,11 @@ public static partial class Command
     /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libice6", "libsm6", "libfontconfig1"];
+    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libice6", "libsm6", "libfontconfig1", "libicu"];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> FedoraCLIDepends = [];
+    private static readonly IReadOnlyList<string> FedoraCLIDepends = ["libicu"];
 
 
     /// <summary>

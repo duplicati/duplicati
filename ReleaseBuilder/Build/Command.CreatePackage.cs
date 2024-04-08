@@ -91,10 +91,11 @@ public static partial class Command
             var packageFile = Path.Combine(packageFolder, $"duplicati-{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}");
 
             // Fix up non-conforming package names
-            if (target.Package == PackageType.Deb)
-                packageFile = Path.Combine(packageFolder, $"duplicati-{target.InterfaceString}-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.deb");
-            if (target.Package == PackageType.RPM)
-                packageFile = Path.Combine(packageFolder, $"duplicati-{target.InterfaceString}-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.rpm");
+            // Temporary disable
+            // if (target.Package == PackageType.Deb)
+            //     packageFile = Path.Combine(packageFolder, $"duplicati-{target.InterfaceString}-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.deb");
+            // if (target.Package == PackageType.RPM)
+            //     packageFile = Path.Combine(packageFolder, $"duplicati-{target.InterfaceString}-{rtcfg.ReleaseInfo.Version}_{target.ArchString}.rpm");
 
             if (File.Exists(packageFile))
             {

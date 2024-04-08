@@ -44,7 +44,16 @@ public static partial class Command
         /// <summary>
         /// Set of files that are unwanted despite the OS
         /// </summary>
-        static readonly IReadOnlyList<string> UnwantedCommonFiles = ["System.Reactive.xml"];
+        static readonly IReadOnlyList<string> UnwantedCommonFiles = [
+            "System.Reactive.xml" // Extra documentation file
+        ];
+
+        /// <summary>
+        /// Set of folders that are unwanted despite the OS
+        /// </summary>
+        static readonly IReadOnlyList<string> UnwantedCommonFolders = [
+            "Duplicati" // Debug folder that gets picked up during builds
+        ];
 
         /// <summary>
         /// A list of folders that are unwanted for a given OS target
@@ -52,13 +61,13 @@ public static partial class Command
         /// <param name="os">The OS to get unwanted folders for</param>
         /// <returns>The unwanted folders</returns>
         static IEnumerable<string> UnwantedFolders(OSType os)
-            => os switch
+            => UnwantedCommonFolders.Concat(os switch
             {
                 OSType.Windows => ["lvm-scripts"],
                 OSType.MacOS => ["lvm-scripts", "win-tools"],
                 OSType.Linux => ["win-tools"],
                 _ => throw new Exception($"Not supported os: {os}")
-            };
+            });
 
         /// <summary>
         /// A list of files that are unwanted for a given OS target
