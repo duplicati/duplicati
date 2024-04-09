@@ -507,12 +507,11 @@ public static partial class Command
 
                 foreach (var e in ExecutableRenames)
                 {
-                    var relpath = Path.Combine("usr", "lib", "duplicati", e.Key);
-                    var exefile = Path.Combine(pkgroot, relpath);
+                    var exefile = Path.Combine(pkgroot, "usr", "lib", "duplicati", e.Key);
                     if (File.Exists(exefile))
                         await ProcessHelper.Execute([
                             "ln", "-s",
-                            Path.Combine("/", relpath),
+                            Path.Combine("..", "lib", "duplicati", e.Key),
                             Path.Combine(pkgroot, "usr", "bin", e.Value)
                         ]);
                 }
@@ -558,11 +557,11 @@ public static partial class Command
             var sharedDir = Path.Combine(baseDir, "Installer", "shared");
             var supportFiles = new List<(string Source, string Destination)>{
                 (
-                    Path.Combine(sharedDir, "systemd", "duplicati.default"),
+                    Path.Combine(installerDir, "systemd", "duplicati.default"),
                     Path.Combine(pkgroot, "etc", "default", "duplicati")
                 ),
                 (
-                    Path.Combine(sharedDir, "systemd", "duplicati.service"),
+                    Path.Combine(installerDir, "systemd", "duplicati.service"),
                     Path.Combine(pkgroot, "lib", "systemd", "system", "duplicati.service")
                 ),
                 (
@@ -657,14 +656,21 @@ public static partial class Command
         Directory.CreateDirectory(sources);
 
         File.Move(tarfile, Path.Combine(sources, Path.GetFileName(tarfile)));
-        foreach (var f in new[] { "duplicati-install-recursive.sh", "duplicati.service", "duplicati.default", "duplicati.xpm", "duplicati.png", "duplicati.desktop" })
-            File.Copy(Path.Combine(installerDir, f), Path.Combine(sources, f));
+
+        // Move in extra files for building
+        var sharedDir = Path.Combine(baseDir, "Installer", "shared");
+        File.Copy(Path.Combine(sharedDir, "pixmaps", "duplicati.xpm"), Path.Combine(sources, "duplicati.xpm"));
+        File.Copy(Path.Combine(sharedDir, "pixmaps", "duplicati.png"), Path.Combine(sources, "duplicati.png"));
+        File.Copy(Path.Combine(sharedDir, "desktop", "duplicati.desktop"), Path.Combine(sources, "duplicati.desktop"));
+        File.Copy(Path.Combine(installerDir, "systemd", "duplicati.service"), Path.Combine(sources, "duplicati.service"));
+        File.Copy(Path.Combine(installerDir, "systemd", "duplicati.default"), Path.Combine(sources, "duplicati.default"));
+        File.Copy(Path.Combine(installerDir, "duplicati-install-recursive.sh"), Path.Combine(sources, "duplicati-install-recursive.sh"));
 
         var executables = ExecutableRenames.AsEnumerable();
         if (target.Interface == InterfaceType.Cli)
             executables = executables.Where(x => !GUIProjects.Contains(x.Key));
 
-        // Build custom script to install files
+        // Write custom script to install executable files
         File.WriteAllLines(
             Path.Combine(sources, "duplicati-install-binaries.sh"),
             File.ReadAllLines(Path.Combine(installerDir, "duplicati-install-binaries.sh"))
@@ -686,7 +692,7 @@ public static partial class Command
 
         File.WriteAllText(
             Path.Combine(sources, "duplicati.spec"),
-            File.ReadAllText(Path.Combine(installerDir, "duplicati-binary.spec"))
+            File.ReadAllText(Path.Combine(installerDir, "duplicati.spec.template.txt"))
                 .Replace("%BUILDDATE%", DateTime.UtcNow.ToString("yyyyMMdd"))
                 .Replace("%BUILDVERSION%", rtcfg.ReleaseInfo.Version.ToString())
                 .Replace("%BUILDTAG%", rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant())
@@ -705,19 +711,21 @@ public static partial class Command
             true
         );
 
-        // Install the build script
-        File.Copy(
-            Path.Combine(installerDir, "inside-docker.sh"),
-            Path.Combine(tmpbuild, "inside-docker.sh"),
-            true
-        );
-
         // Build a Docker image to build with
         await ProcessHelper.Execute([
             "docker", "build",
                 "-t", "duplicati/fedora-build:latest",
                 tmpbuild
         ], workingDirectory: tmpbuild);
+
+        // Install the build script
+        // This is required because rpmbuild reads file mode
+        // in a way that is not compatible with Docker desktop bind mounts
+        File.Copy(
+            Path.Combine(installerDir, "inside-docker.sh"),
+            Path.Combine(tmpbuild, "inside-docker.sh"),
+            true
+        );
 
         // Then build the package itself
         await ProcessHelper.Execute([

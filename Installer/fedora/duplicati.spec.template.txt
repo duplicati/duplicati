@@ -1,6 +1,4 @@
-# TODO:
-# - check where Tools/* scripts should really be
-# - fix rpmlint warnings
+%define _build_id_links none
 
 # Set up some defaults
 %global namer duplicati
@@ -25,12 +23,12 @@ Summary:	Backup client for encrypted online backups
 License:	MIT
 URL:	https://duplicati.com
 Source0:	duplicati-%{_buildversion}.tar.bz2
-Source1: 	%{namer}-install-recursive.sh
-Source2:  %{namer}-install-binaries.sh
-Source3: 	%{namer}.service
-Source4: 	%{namer}.default
-Source5: 	%{namer}.png
-Source6: 	%{namer}.desktop
+Source1:	%{namer}-install-recursive.sh
+Source2:	%{namer}-install-binaries.sh
+Source3:	%{namer}.service
+Source4:	%{namer}.default
+Source5:	%{namer}.png
+Source6:	%{namer}.desktop
 
 BuildRequires:  desktop-file-utils
 BuildRequires:  systemd
@@ -69,6 +67,9 @@ install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
 install -d %{buildroot}%{_exec_prefix}/bin/
+install -d %{buildroot}%{_unitdir}
+install -d %{buildroot}%{_sysconfdir}/sysconfig/
+
 
 # Remove packaging artifacts
 find . -type f -name ._\* | xargs rm -rf
@@ -80,13 +81,13 @@ find . -type f -name ._\* | xargs rm -rf
 install -p  %{_topdir}/SOURCES/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 
 # Fix executable permissions and install symlinks
-/bin/bash %{_topdir}/SOURCES/%{namer}-install-binaries.sh "%{buildroot}%{_exec_prefix}/lib/%{namer}/" "%{_exec_prefix}/bin/"
+/bin/bash %{_topdir}/SOURCES/%{namer}-install-binaries.sh "%{buildroot}" "%{_exec_prefix}" "%{namer}"
 
 desktop-file-install %{_topdir}/SOURCES/%{namer}.desktop
 
 # Install the service:
-install -p -D -m 755 %{_topdir}/SOURCES/%{namer}.service %{_unitdir}
-install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.default %{_sysconfdir}/sysconfig/
+install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.service %{buildroot}%{_unitdir}
+install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.default %{buildroot}%{_sysconfdir}/sysconfig/%{namer}
 
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor || :
@@ -111,9 +112,14 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.default %{_sysconfdir}/sysconfi
 %doc changelog.txt licenses/license.txt
 %{_datadir}/*/*
 %{_exec_prefix}/lib/*
+%{_exec_prefix}/bin/*
+%{_sysconfdir}/sysconfig/*
 
 
 %changelog
+* Tue Apr 9 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240409.git
+- Fix package binaries installing and systemd service
+
 * Mon Mar 25 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240325.git
 - Updated to build from arch-specific .Net8 binaries
 

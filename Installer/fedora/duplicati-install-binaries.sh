@@ -3,8 +3,12 @@
 # Lines starting with REPL: are repeated for each file in the executable list
 # The values %SOURCE% and %TARGET% are replaced with the source and target (symlink) file names
 
+BUILDROOT=$1
+EXEC_PREFIX=$2
+NAMER=$3
+
 # Fix permissions
-REPL: chmod 755 $1/%SOURCE%
+REPL: chmod 755 ${BUILDROOT}${EXEC_PREFIX}/lib/${NAMER}/%SOURCE%
 
 # Setup symlinks
-REPL: ln -s $1/lib/%SOURCE% $2/%TARGET%
+REPL: ln -s ../lib/${NAMER}/%SOURCE% ${BUILDROOT}${EXEC_PREFIX}/bin/%TARGET%
