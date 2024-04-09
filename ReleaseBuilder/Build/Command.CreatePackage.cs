@@ -555,17 +555,18 @@ public static partial class Command
             );
 
             // Install various helper files
+            var sharedDir = Path.Combine(baseDir, "Installer", "shared");
             var supportFiles = new List<(string Source, string Destination)>{
                 (
-                    Path.Combine(installerDir, "duplicati.default"),
+                    Path.Combine(sharedDir, "systemd", "duplicati.default"),
                     Path.Combine(pkgroot, "etc", "default", "duplicati")
                 ),
                 (
-                    Path.Combine(installerDir, "duplicati.service"),
+                    Path.Combine(sharedDir, "systemd", "duplicati.service"),
                     Path.Combine(pkgroot, "lib", "systemd", "system", "duplicati.service")
                 ),
                 (
-                    Path.Combine(installerDir, "duplicati.desktop"),
+                    Path.Combine(sharedDir, "desktop", "duplicati.desktop"),
                     Path.Combine(pkgroot, "usr", "share", "applications", "duplicati.desktop")
                 )
             };
@@ -573,7 +574,7 @@ public static partial class Command
             supportFiles.AddRange(
                 new[] { "duplicati.png", "duplicati.svg", "duplicati.xpm" }
                     .Select(f => (
-                        Path.Combine(installerDir, f),
+                        Path.Combine(sharedDir, "pixmaps", f),
                         Path.Combine(pkgroot, "usr", "share", "pixmaps", f)
                     ))
             );
