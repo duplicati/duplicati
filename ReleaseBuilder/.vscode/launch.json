@@ -16,9 +16,13 @@
                 "debug",
                 "--disable-docker-push", "true",
                 "--git-stash-push", "false", 
+                "--targets",  "win-arm64-gui.zip",
+                "--targets",  "win-x86-gui.zip",
+                "--targets",  "win-x86-gui.msi",
                 "--targets", "win-x64-gui.msi",
                 "--targets", "win-x64-gui.zip",                
                 "--targets", "linux-x64-gui.zip",
+                "--targets", "linux-arm64-gui.zip",
                 "--targets", "osx-x64-gui.dmg",
                 "--targets", "osx-arm64-gui.dmg",
                 "--targets", "osx-x64-gui.pkg", 
@@ -40,10 +44,10 @@
                 "--disable-notarize-signing", "true",
                 "--disable-gpg-signing", "true",
                 "--password", "test1234",
-                "--version", "2.0.8.101"                
+                "--version", "2.0.8.104"                
             ],
             "env": {
-                "UPDATER_KEYFILE": "${workspaceFolder}/testfile.key:${workspaceFolder}/testfile.key2",
+                "UPDATER_KEYFILE": "${workspaceFolder}/testfile.key:${workspaceFolder}/testfile.key2"
             },
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
