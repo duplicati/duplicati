@@ -494,8 +494,6 @@ public static partial class Command
                 regex.Replace(File.ReadAllText(file), $"?v={releaseInfo.Version}")
             );
 
-        //FILEMAP.Add("AssemblyRedirects.xml", new Regex(@"newVersion\=\""" + versionre + @"\"""));
-
         return targetfiles;
     }
 

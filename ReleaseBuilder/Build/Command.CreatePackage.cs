@@ -763,7 +763,7 @@ public static partial class Command
         var dockerArchs = targets.Select(target => target switch
         {
             PackageTarget { Arch: ArchType.x64, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/amd64",
-            PackageTarget { Arch: ArchType.Arm64, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/arm64",
+            PackageTarget { Arch: ArchType.Arm64, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/arm64/v8",
             PackageTarget { Arch: ArchType.Arm7, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/arm/v7",
             _ => throw new Exception($"Unsupported Docker target: {target.OS}/{target.Arch} ({target.Interface})")
         });
@@ -798,7 +798,7 @@ public static partial class Command
             tags.Add("latest");
 
         // Make sure any dangling buildx instances are removed
-        try { await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false); }
+        try { await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false, suppressStdErr: true); }
         catch { }
 
         // Prepare multi-build
