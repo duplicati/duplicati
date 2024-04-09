@@ -53,7 +53,7 @@ public static partial class Command
                     Directory.CreateDirectory(packageFolder);
 
 
-                var packageFiles = dockerTargets.Select(x => Path.Combine(packageFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{x.PackageTargetString}"))
+                var packageFiles = dockerTargets.Select(x => Path.Combine(packageFolder, $"duplicati-{rtcfg.ReleaseInfo.ReleaseName}-{x.PackageTargetString}"))
                     .ToList();
 
                 if (packageFiles.All(File.Exists))
