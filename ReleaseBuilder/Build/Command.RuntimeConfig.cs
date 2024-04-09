@@ -269,7 +269,7 @@ public static partial class Command
         /// <param name="keyfilepassword">Password for the password file</param>
         /// <returns>The Authenticode password</returns>
         private string GetAuthenticodePassword(string keyfilepassword)
-            => EncryptionHelper.DecryptPasswordFile(Program.Configuration.ConfigFiles.AuthenticodePasswordFile, keyfilepassword);
+            => EncryptionHelper.DecryptPasswordFile(Program.Configuration.ConfigFiles.AuthenticodePasswordFile, keyfilepassword).Trim();
 
         /// <summary>
         /// Performs authenticode signing if enabled
