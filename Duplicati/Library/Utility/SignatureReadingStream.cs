@@ -30,7 +30,7 @@ namespace Duplicati.Library.Utility
         /// The size of the SHA256 output hash in bytes
         /// </summary>
         /// 
-        internal const int SIGNED_HASH_SIZE = 256;
+        internal const int SIGNED_HASH_SIZE = 128;
 
         /// <summary>
         /// The stream to read from
