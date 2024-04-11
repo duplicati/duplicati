@@ -47,13 +47,26 @@ public static partial class Command
     };
 
     /// <summary>
+    /// The supported versions of libicu for Debian
+    /// </summary>
+    private static string DebianLibIcuVersions => "libicu | " + string.Join(" | ",
+        "72;71;70;69;68;67;66;65;63;60;57;55;52"
+        .Split(";", StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => $"libicu{x}"));
+
+    /// <summary>
+    /// The supported versions of libssl for Debian
+    /// </summary>
+    private static string DebianLibSslVersions => "libssl3 | libssl1.1";
+
+    /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", "libicu70 | libicu71 | libicu72", "libssl3"];
+    private static readonly IReadOnlyList<string> DebianGUIDepends = ["libice6", "libsm6", "libfontconfig1", DebianLibIcuVersions, DebianLibSslVersions];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> DebianCLIDepends = ["libicu70 | libicu71 | libicu72", "libssl3"];
+    private static readonly IReadOnlyList<string> DebianCLIDepends = [DebianLibIcuVersions, DebianLibSslVersions];
 
     /// <summary>
     /// The packages that are required for GUI builds
