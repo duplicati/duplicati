@@ -147,6 +147,15 @@ public static partial class Command
                     throw new Exception($"Unsupported package type: {target.Package}");
             }
 
+            if (rtcfg.UseNotarizeSigning && target.Package == PackageType.DMG || target.Package == PackageType.MacPkg)
+            {
+                // # Notarize and staple takes a while...
+                Console.WriteLine($"Performing notarize and staple of {packageFile} ...");
+                await ProcessHelper.Execute(["xcrun", "notarytool", "submit", tempFile, "--keychain-profile", Program.Configuration.ConfigFiles.NotarizeProfile, "--wait"]);
+                await ProcessHelper.Execute(["xcrun", "stapler", "staple", tempFile]);
+            }
+
+
             File.Move(tempFile, packageFile);
 
             return packageFile;
@@ -522,7 +531,7 @@ public static partial class Command
 
             // Write in the release notes
             if (!string.IsNullOrEmpty(rtcfg.ChangelogNews))
-                File.WriteAllText(Path.Combine("DEBIAN", "releasenotes"), rtcfg.ChangelogNews);
+                File.WriteAllText(Path.Combine(pkgroot, "DEBIAN", "releasenotes"), rtcfg.ChangelogNews);
 
             // Write a custom changelog file
             File.WriteAllText(

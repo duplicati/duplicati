@@ -206,6 +206,29 @@ public static partial class Command
             getDefaultValue: () => null
         );
 
+        var disableS3UploadOption = new Option<bool>(
+            name: "--disable-s3-upload",
+            description: "Disables uploading to S3",
+            getDefaultValue: () => false
+        );
+
+        var disableGithubUploadOption = new Option<bool>(
+            name: "--disable-github-upload",
+            description: "Disables uploading to Github",
+            getDefaultValue: () => false
+        );
+
+        var disableUpdateServerReloadOption = new Option<bool>(
+            name: "--disable-update-server-reload",
+            description: "Disables reloading the update server",
+            getDefaultValue: () => false
+        );
+
+        var disableDiscordAnnounceOption = new Option<bool>(
+            name: "--disable-discourse-announce",
+            description: "Disables posting to the forum",
+            getDefaultValue: () => false
+        );
 
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
@@ -223,7 +246,11 @@ public static partial class Command
             changelogFileOption,
             disableNotarizeSigningOption,
             disableGpgSigningOption,
-            versionOverrideOption
+            versionOverrideOption,
+            disableS3UploadOption,
+            disableGithubUploadOption,
+            disableUpdateServerReloadOption,
+            disableDiscordAnnounceOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -249,6 +276,10 @@ public static partial class Command
     /// <param name="ChangelogFile">The path to the changelog file</param>
     /// <param name="DisableNotarizeSigning">If notarize signing should be disabled</param>
     /// <param name="DisableGpgSigning">If GPG signing should be disabled</param>
+    /// <param name="DisableS3Upload">If S3 upload should be disabled</param>
+    /// <param name="DisableGithubUpload">If Github upload should be disabled</param>
+    /// <param name="DisableUpdateServerReload">If the update server should not be reloaded</param>
+    /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -265,7 +296,11 @@ public static partial class Command
         string DockerRepo,
         FileInfo ChangelogFile,
         bool DisableNotarizeSigning,
-        bool DisableGpgSigning
+        bool DisableGpgSigning,
+        bool DisableS3Upload,
+        bool DisableGithubUpload,
+        bool DisableUpdateServerReload,
+        bool DisableDiscordAnnounce
     );
 
     static async Task DoBuild(CommandInput input)
@@ -332,6 +367,14 @@ public static partial class Command
             return;
         }
 
+        if (input.ChangelogFile.LastAccessTimeUtc < DateTime.UtcNow.AddDays(-1))
+        {
+            Console.WriteLine($"Changelog news file was last modified {input.ChangelogFile.LastAccessTimeUtc:yyyy-MM-dd}, indicating a stale file");
+            Console.WriteLine($"Please update the file with the changelog news for the release");
+            Program.ReturnCode = 1;
+            return;
+        }
+
         var changelogNews = File.ReadAllText(input.ChangelogFile.FullName);
 
         var releaseInfo = string.IsNullOrWhiteSpace(input.Version)
@@ -339,9 +382,11 @@ public static partial class Command
             : ReleaseInfo.Create(input.Channel, Version.Parse(input.Version));
         Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
 
-        var keyfilePassword = string.IsNullOrEmpty(input.Password)
-            ? ConsoleHelper.ReadPassword("Enter keyfile password")
-            : input.Password;
+        var keyfilePassword = input.Password;
+        if (string.IsNullOrWhiteSpace(keyfilePassword))
+            keyfilePassword = EnvHelper.GetEnvKey("KEYFILE_PASSWORD", "");
+        if (string.IsNullOrWhiteSpace(keyfilePassword))
+            keyfilePassword = ConsoleHelper.ReadPassword("Enter keyfile password");
 
         var primarySignKey = LoadKeyFile(Program.Configuration.ConfigFiles.UpdaterKeyfile.FirstOrDefault(), keyfilePassword, false);
         var additionalKeys = Program.Configuration.ConfigFiles.UpdaterKeyfile
@@ -360,6 +405,10 @@ public static partial class Command
         rtcfg.ToggleSignCodeSigning();
         rtcfg.ToggleNotarizeSigning();
         rtcfg.ToggleGpgSigning();
+        rtcfg.ToggleS3Upload();
+        rtcfg.ToggleGithubUpload(rtcfg.ReleaseInfo.Channel);
+        rtcfg.ToogleDiscourseAnnounce(rtcfg.ReleaseInfo.Channel);
+        rtcfg.ToggleUpdateServerReload();
         await rtcfg.ToggleDockerBuild();
 
         if (!rtcfg.UseDockerBuild)
@@ -394,69 +443,94 @@ public static partial class Command
 
         // Create the packages
         var builtPackages = await CreatePackage.BuildPackages(baseDir, input.BuildPath.FullName, buildTargets, input.KeepBuilds, rtcfg);
+        var files = builtPackages.Select(x => x.CreatedFile).ToList();
 
-        if (rtcfg.UseNotarizeSigning && builtPackages.Any(x => x.Target.Package == PackageType.DMG || x.Target.Package == PackageType.MacPkg))
-        {
-            // # Notarize and staple takes a while...
-            Console.WriteLine("Performing notarize and staple ...");
-            foreach (var p in builtPackages.Where(x => x.Target.Package == PackageType.DMG || x.Target.Package == PackageType.MacPkg))
-            {
-                await ProcessHelper.Execute(["xcrun", "notarytool", "submit", p.CreatedFile, "--keychain-profile", Program.Configuration.ConfigFiles.NotarizeProfile, "--wait"]);
-                await ProcessHelper.Execute(["xcrun", "stapler", "staple", p.CreatedFile]);
-            }
-        }
 
         // Build the signed manifest to be uploaded to remote storage
-        Console.WriteLine("Build completed, creating signed manifest ...");
         var manifestfile = Path.Combine(input.BuildPath.FullName, "packages", "autoupdate.manifest");
-        if (File.Exists(manifestfile))
-            File.Delete(manifestfile);
+        if (File.Exists(manifestfile) && new FileInfo(manifestfile).LastWriteTimeUtc > files.Max(x => new FileInfo(x).LastWriteTimeUtc))
+        {
+            Console.WriteLine("Manifest file already exists, skipping ...");
+        }
+        else
+        {
+            Console.WriteLine("Build completed, creating signed manifest ...");
+            if (File.Exists(manifestfile))
+                File.Delete(manifestfile);
 
-        UpdaterManager.CreateSignedManifest(
-            rtcfg.SignKeys.First(),
-            null,
-            Path.Combine(input.BuildPath.FullName, "packages"),
-            version: releaseInfo.Version.ToString(),
-            updateFromV1Url: Program.Configuration.ExtraSettings.UpdateFromV1Url,
-            genericUpdatePageUrl: Program.Configuration.ExtraSettings.GenericUpdatePageUrl,
-            releaseType: releaseInfo.Channel.ToString().ToLowerInvariant(),
-            packages: builtPackages.Select(x => new PackageEntry()
-            {
-                RemoteUrls = Program.Configuration.ExtraSettings.PackageUrls
-                    .Select(u =>
-                        u.Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
-                        .Replace("${RELEASE_VERSION}", releaseInfo.Version.ToString())
-                        .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"))
-                        .Replace("${FILENAME}", x.CreatedFile)
-                    ).ToArray(),
-                PackageTypeId = x.Target.PackageTargetString,
-                Length = new FileInfo(Path.Combine(input.BuildPath.FullName, x.CreatedFile)).Length,
-                MD5 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "md5"),
-                SHA256 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "sha256")
-            })
-        );
-
-        File.Move(
-            Path.Combine(input.BuildPath.FullName, "packages", "autoupdate.manifest"),
-            Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.manifest"),
-            true
-        );
-
-        var files = builtPackages.Select(x => x.CreatedFile).Append("latest-v2.manifest").ToList();
+            UpdaterManager.CreateSignedManifest(
+                rtcfg.SignKeys.First(),
+                null,
+                Path.Combine(input.BuildPath.FullName, "packages"),
+                version: releaseInfo.Version.ToString(),
+                updateFromV1Url: Program.Configuration.ExtraSettings.UpdateFromV1Url,
+                genericUpdatePageUrl: Program.Configuration.ExtraSettings.GenericUpdatePageUrl,
+                releaseType: releaseInfo.Channel.ToString().ToLowerInvariant(),
+                packages: builtPackages.Select(x => new PackageEntry()
+                {
+                    RemoteUrls = Program.Configuration.ExtraSettings.PackageUrls
+                        .Select(u =>
+                            u.Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
+                            .Replace("${RELEASE_VERSION}", releaseInfo.Version.ToString())
+                            .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"))
+                            .Replace("${FILENAME}", x.CreatedFile)
+                        ).ToArray(),
+                    PackageTypeId = x.Target.PackageTargetString,
+                    Length = new FileInfo(Path.Combine(input.BuildPath.FullName, x.CreatedFile)).Length,
+                    MD5 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "md5"),
+                    SHA256 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "sha256")
+                })
+            );
+        }
 
         // Create the GPG signatures for the files
         if (rtcfg.UseGPGSigning)
         {
-            Console.WriteLine("Creating GPG signatures ...");
-            await GpgSign.SignReleaseFiles(files, rtcfg);
+            var sigfile = Path.Combine(input.BuildPath.FullName, "packages", $"duplicati-{releaseInfo.ReleaseName}.signatures.zip");
+            if (File.Exists(sigfile) && new FileInfo(sigfile).LastWriteTimeUtc > files.Max(x => new FileInfo(x).LastWriteTimeUtc))
+            {
+                Console.WriteLine("Signature file already exists, skipping ...");
+            }
+            else
+            {
+                Console.WriteLine("Creating GPG signatures ...");
+                await GpgSign.SignReleaseFiles(files, sigfile, rtcfg);
+            }
+
+            files.Add(sigfile);
         }
 
-        Console.WriteLine("Build completed, uploading packages ...");
+        if (rtcfg.UseS3Upload || rtcfg.UseGithubUpload)
+        {
+            Console.WriteLine("Build completed, uploading packages ...");
+            if (rtcfg.UseS3Upload)
+            {
+                var manifestNames = new[] { $"duplicati-{releaseInfo.ReleaseName}.manifest", "latest-v2.manifest" };
 
+                var uploads = files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x)))
+                   .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)));
 
-        Console.WriteLine("Upload completed, releasing packages ...");
+                await Upload.UploadToS3(uploads, rtcfg);
+            }
 
-        Console.WriteLine("Release completed, posting release notes ...");
+            if (rtcfg.UseGithubUpload)
+                await Upload.UploadToGithub(
+                    files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x))),
+                    rtcfg
+                );
+        }
+
+        if (rtcfg.UseUpdateServerReload)
+        {
+            Console.WriteLine("Release completed, reloading update server ...");
+            await Upload.ReloadUpdateServer(rtcfg);
+        }
+
+        if (rtcfg.UseForumPosting)
+        {
+            Console.WriteLine("Release completed, posting release notes ...");
+            await Upload.PostToForum(rtcfg);
+        }
 
         // Clean up the source tree
         await ProcessHelper.Execute(new[] {
@@ -469,9 +543,12 @@ public static partial class Command
          , workingDirectory: baseDir);
 
         if (input.GitStashPush)
+        {
             await GitPush.TagAndPush(baseDir, releaseInfo);
+            input.ChangelogFile.Delete();
+        }
 
-        Console.WriteLine("All done");
+        Console.WriteLine("All done!");
     }
 
     /// <summary>
@@ -521,12 +598,28 @@ public static partial class Command
         File.WriteAllLines(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateSignKeys.txt"), rtcfg.SignKeys.Select(x => x.ToXmlString(false)));
 
         if (!string.IsNullOrWhiteSpace(rtcfg.ChangelogNews))
-            File.WriteAllText(
-                Path.Combine(baseDir, "changelog.txt"),
+        {
+            var current = File.ReadAllText(Path.Combine(baseDir, "changelog.txt"));
+            var previousEntry = current.IndexOf(rtcfg.ChangelogNews);
+            if (previousEntry >= 0 && previousEntry < 200)
+            {
+                Console.WriteLine("Note: release already in changelog, skipping ...");
+            }
+            else
+            {
+                File.WriteAllText(
+                    Path.Combine(baseDir, "changelog.txt"),
 
-                rtcfg.ChangelogNews + Environment.NewLine +
-                File.ReadAllText(Path.Combine(baseDir, "changelog.txt"))
-            );
+                    string.Join(Environment.NewLine, [
+                        $"{rtcfg.ReleaseInfo.Timestamp:yyy-MM-dd} - {rtcfg.ReleaseInfo.ReleaseName}",
+                        "==========",
+                        rtcfg.ChangelogNews.Trim(),
+                        "",
+                        current
+                    ])
+                );
+            }
+        }
 
         // Previous versions used to install the assembly redirects after the build
         // but it looks like .Net now handles this automatically

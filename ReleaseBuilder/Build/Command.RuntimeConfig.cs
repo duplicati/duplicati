@@ -203,6 +203,9 @@ public static partial class Command
         /// </summary>
         private bool? _useGpgSigning;
 
+        /// <summary>
+        /// Checks if GPG signing is enabled
+        /// </summary>
         public void ToggleGpgSigning()
         {
             if (!_useGpgSigning.HasValue)
@@ -213,13 +216,152 @@ public static partial class Command
                     return;
                 }
 
-                if (ConsoleHelper.ReadInput("Configuration missing for gpg, continue without gpg signing packages?", "Y", "n") == "Y")
+                if (Program.Configuration.IsGpgPossible())
+                    _useGpgSigning = true;
+                else
                 {
-                    _useGpgSigning = false;
+                    if (ConsoleHelper.ReadInput("Configuration missing for gpg, continue without gpg signing packages?", "Y", "n") == "Y")
+                    {
+                        _useGpgSigning = false;
+                        return;
+                    }
+
+                    throw new Exception("Configuration is not set up for gpg");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cache value for checking if S3 upload is enabled
+        /// </summary>
+        private bool? _useS3Upload;
+
+        /// <summary>
+        /// Checks if S3 upload is enabled
+        /// </summary>
+        public void ToggleS3Upload()
+        {
+            if (!_useS3Upload.HasValue)
+            {
+                if (Input.DisableS3Upload)
+                {
+                    _useS3Upload = false;
                     return;
                 }
 
-                throw new Exception("Configuration is not set up for gpg");
+                if (Program.Configuration.IsAwsUploadPossible())
+                    _useS3Upload = true;
+                else
+                {
+                    if (ConsoleHelper.ReadInput("Configuration missing for awscli, continue without uploading to S3?", "Y", "n") == "Y")
+                    {
+                        _useS3Upload = false;
+                        return;
+                    }
+
+                    throw new Exception("Configuration is not set up for awscli");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cache value for checking if Github upload is enabled
+        /// </summary>
+        private bool? _useGithubUpload;
+
+        /// <summary>
+        /// Checks if Github upload is enabled
+        /// </summary>
+        /// <param name="channel">The release channel to use</param>
+        public void ToggleGithubUpload(ReleaseChannel channel)
+        {
+            if (!_useGithubUpload.HasValue)
+            {
+                if (Input.DisableGithubUpload || channel == ReleaseChannel.Debug || channel == ReleaseChannel.Nightly)
+                {
+                    _useGithubUpload = false;
+                    return;
+                }
+
+                if (Program.Configuration.IsGithubUploadPossible())
+                    _useGithubUpload = true;
+                else
+                {
+                    if (ConsoleHelper.ReadInput("Configuration is missing a Github token, continue without uploading to Github?", "Y", "n") == "Y")
+                    {
+                        _useGithubUpload = false;
+                        return;
+                    }
+
+                    throw new Exception("Configuration is not set up for github releases");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cache value for checking if update server reload is enabled
+        /// </summary>
+        private bool? _useUpdateServerReload;
+
+        /// <summary>
+        /// Checks if update server reload is enabled
+        /// </summary>
+        public void ToggleUpdateServerReload()
+        {
+            if (!_useUpdateServerReload.HasValue)
+            {
+                if (Input.DisableUpdateServerReload)
+                {
+                    _useUpdateServerReload = false;
+                    return;
+                }
+
+                if (Program.Configuration.IsUpdateServerReloadPossible())
+                    _useUpdateServerReload = true;
+                else
+                {
+                    if (ConsoleHelper.ReadInput("Configuration missing for update server, continue without reloading the update server?", "Y", "n") == "Y")
+                    {
+                        _useUpdateServerReload = false;
+                        return;
+                    }
+
+                    throw new Exception("Configuration is not set up for update server");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cache value for checking if forum posting is enabled
+        /// </summary>
+        private bool? _useDiscourseAnnounce;
+
+        /// <summary>
+        /// Checks if forum posting is enabled
+        /// </summary>
+        /// <param name="channel">The release channel to use</param>
+        public void ToogleDiscourseAnnounce(ReleaseChannel channel)
+        {
+            if (!_useDiscourseAnnounce.HasValue)
+            {
+                if (Input.DisableDiscordAnnounce || channel == ReleaseChannel.Debug || channel == ReleaseChannel.Nightly)
+                {
+                    _useDiscourseAnnounce = false;
+                    return;
+                }
+
+                if (Program.Configuration.IsDiscourseAnnouncePossible())
+                    _useDiscourseAnnounce = true;
+                else
+                {
+                    if (ConsoleHelper.ReadInput("Configuration missing for forum posting, continue without posting to the forum?", "Y", "n") == "Y")
+                    {
+                        _useDiscourseAnnounce = false;
+                        return;
+                    }
+
+                    throw new Exception("Configuration is not set up for forum posting");
+                }
             }
         }
 
@@ -247,6 +389,26 @@ public static partial class Command
         /// Returns a value indicating if docker build is enabled
         /// </summary>
         public bool UseDockerBuild => _dockerBuild!.Value;
+
+        /// <summary>
+        /// Returns a value indicating if S3 upload is enabled
+        /// </summary>
+        public bool UseS3Upload => _useS3Upload!.Value;
+
+        /// <summary>
+        /// Returns a value indicating if Github upload is enabled
+        /// </summary>
+        public bool UseGithubUpload => _useGithubUpload!.Value;
+
+        /// <summary>
+        /// Returns a value indicating if update server reload is enabled
+        /// </summary>
+        public bool UseUpdateServerReload => _useUpdateServerReload!.Value;
+
+        /// <summary>
+        /// Returns a value indicating if forum posting is enabled
+        /// </summary>
+        public bool UseForumPosting => _useDiscourseAnnounce!.Value;
 
         /// <summary>
         /// Gets the MacOS app bundle name

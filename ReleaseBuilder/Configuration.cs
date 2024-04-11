@@ -138,6 +138,74 @@ public record Configuration(
     }
 
     /// <summary>
+    /// Checks if AWS uploads are possible
+    /// </summary>
+    /// <returns>A boolean indicating if AWS uploading is possible</returns>
+    public bool IsAwsUploadPossible()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigFiles.AwsUploadProfile) || string.IsNullOrWhiteSpace(ConfigFiles.AwsUploadBucket))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if Github uploads are possible
+    /// </summary>
+    public bool IsGithubUploadPossible()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigFiles.GithubTokenFile))
+            return false;
+
+        if (!File.Exists(ConfigFiles.GithubTokenFile))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if update server reloads are possible
+    /// </summary>
+    /// <returns>A boolean indicating if update server reloads are possible</returns>
+    public bool IsUpdateServerReloadPossible()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigFiles.ReloadUpdatesApiKey))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if Discourse announcements are possible
+    /// </summary>
+    /// <returns>A boolean indicating if Discourse announcements are possible</returns>
+    public bool IsDiscourseAnnouncePossible()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigFiles.DiscourseTokenFile))
+            return false;
+
+        if (!File.Exists(ConfigFiles.DiscourseTokenFile))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if GPG signing is possible
+    /// </summary>
+    /// <returns>A boolean indicating if GPG signing is possible</returns>
+    public bool IsGpgPossible()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigFiles.GpgKeyfile) || string.IsNullOrWhiteSpace(Commands.Gpg))
+            return false;
+
+        if (!File.Exists(ConfigFiles.GpgKeyfile))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
     /// Determines if creating a Synology package is possible.
     /// </summary>
     /// <returns><c>true</c> if creating a Synology package is possible; otherwise, <c>false</c>.</returns>
@@ -155,6 +223,8 @@ public record Configuration(
 /// <param name="DiscourseTokenFile">The token used for Discourse forum announce</param>
 /// <param name="CodesignIdentity">The identity to use for MacOS signing</param>
 /// <param name="NotarizeProfile">The profile to use for MacOS notarization</param>
+/// <param name="AwsUploadProfile">The profile used by the aws-cli tool for uploads</param>
+/// <param name="AwsUploadBucket">The S3 bucket to upload files to</param>
 public record ConfigFiles(
     string[] UpdaterKeyfile,
     string GpgKeyfile,
@@ -163,20 +233,22 @@ public record ConfigFiles(
     string GithubTokenFile,
     string DiscourseTokenFile,
     string CodesignIdentity,
-    string NotarizeProfile
+    string NotarizeProfile,
+    string AwsUploadProfile,
+    string AwsUploadBucket,
+    string ReloadUpdatesApiKey
 )
 {
     /// <summary>
-    /// Generates a new config files instance
+    /// Parses an environment file and sets the environment variables,
+    /// similar to the `source` command in bash
     /// </summary>
-    /// <returns>The config files instance</returns>
-
-    public static ConfigFiles Create()
+    /// <param name="path">The path to the file</param>
+    private static void ParseEnvironmentFile(string path)
     {
-        var gatekeeperSettingsFile = ExpandEnv("GATEKEEPER_SETTINGS_FILE", "${HOME}/.config/signkeys/Duplicati/macos-gatekeeper");
-        if (File.Exists(gatekeeperSettingsFile))
+        if (File.Exists(path))
         {
-            var kvp = File.ReadAllLines(gatekeeperSettingsFile)
+            var kvp = File.ReadAllLines(path)
                 .Where(x => !string.IsNullOrWhiteSpace(x) && x.IndexOf('=') > 0)
                 .Select(x => x.StartsWith("export ") ? x.Substring("export ".Length).Trim() : x)
                 .Select(x => x.Trim().Split("=", 2))
@@ -186,6 +258,17 @@ public record ConfigFiles(
             foreach (var k in kvp)
                 Environment.SetEnvironmentVariable(k.Key, k.Value);
         }
+    }
+
+    /// <summary>
+    /// Generates a new config files instance
+    /// </summary>
+    /// <returns>The config files instance</returns>
+
+    public static ConfigFiles Create()
+    {
+        ParseEnvironmentFile(ExpandEnv("BUILD_SETTINGS_FILE", "${HOME}/.config/build-settings"));
+        ParseEnvironmentFile(ExpandEnv("GATEKEEPER_SETTINGS_FILE", "${HOME}/.config/signkeys/Duplicati/macos-gatekeeper"));
 
         return new(
             ExpandEnv("UPDATER_KEYFILE", "${HOME}/.config/signkeys/Duplicati/updater-release.key").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
@@ -195,7 +278,10 @@ public record ConfigFiles(
             ExpandEnv("GITHUB_TOKEN_FILE", "${HOME}/.config/github-api-token"),
             ExpandEnv("DISCOURSE_TOKEN_FILE", "${HOME}/.config/discourse-api-token"),
             ExpandEnv("CODESIGN_IDENTITY", ""),
-            ExpandEnv("NOTARIZE_PROFILE", "duplicati-notarize")
+            ExpandEnv("NOTARIZE_PROFILE", "duplicati-notarize"),
+            ExpandEnv("AWS_UPLOAD_PROFILE", "duplicati-upload"),
+            ExpandEnv("AWS_UPLOAD_BUCKET", "updates.duplicati.com"),
+            ExpandEnv("RELOAD_UPDATES_API_KEY", "")
         );
     }
 }
@@ -206,7 +292,6 @@ public record ConfigFiles(
 /// <param name="Dotnet">The &quot;build&quot; command</param>
 /// <param name="Gpg">The &quot;gpg&quot; command</param>
 /// <param name="AwsCli">The &quot;aws&quot; command</param>
-/// <param name="GithubRelease">The &quot;github-release&quot; command</param>
 /// <param name="OsslSignCode">The &quot;osslsigncode&quot; command</param>
 /// <param name="Codesign">The &quot;codesign&quot; command</param>
 /// <param name="Productsign">The &quot;productsign&quot; command</param>
@@ -215,8 +300,6 @@ public record ConfigFiles(
 public record Commands(
     string Dotnet,
     string? Gpg,
-    string? AwsCli,
-    string? GithubRelease,
     string? OsslSignCode,
     string? Codesign,
     string? Productsign,
@@ -232,8 +315,6 @@ public record Commands(
         => new(
             FindCommand("dotnet", "DOTNET") ?? throw new Exception("Failed to find the \"dotnet\" command"),
             FindCommand("gpg2", "GPG", FindCommand("gpg", "GPG")),
-            FindCommand("aws", "AWSCLI"),
-            FindCommand("github-release", "GITHUB_RELEASE"),
             FindCommand(OperatingSystem.IsWindows() ? "signtool.exe" : "osslsigncode", "SIGNTOOL"),
             OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null,
             OperatingSystem.IsMacOS() ? FindCommand("productsign", "PRODUCTSIGN") : null,

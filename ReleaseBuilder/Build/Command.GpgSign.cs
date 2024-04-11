@@ -1,3 +1,5 @@
+using System.IO.Compression;
+
 namespace ReleaseBuilder.Build;
 
 public static partial class Command
@@ -11,28 +13,45 @@ public static partial class Command
         /// Performs a GPG sign operation on the files
         /// </summary>
         /// <param name="files">The files to sign</param>
+        /// <param name="signaturefile">The signature file to create</param>
         /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>An awaitable task</returns>
-        public static async Task SignReleaseFiles(IEnumerable<string> files, RuntimeConfig rtcfg)
+        public static async Task SignReleaseFiles(IEnumerable<string> files, string signaturefile, RuntimeConfig rtcfg)
         {
-            var (gpgid, passphrase) = GetGpgIdAndPassphrase(rtcfg);
+            var tmpfile = signaturefile + ".tmp";
+            if (File.Exists(tmpfile))
+                File.Delete(tmpfile);
 
-            foreach (var file in files)
-                foreach (var armored in new[] { true, false })
-                    await ProcessHelper.Execute(
-                        [
-                            Program.Configuration.Commands.Gpg!,
-                            "--pinentry-mode", "loopback",
-                            "--passphrase-fd", "0",
-                            "--batch", "--yes",
-                            armored ? "--armor" : string.Empty,
-                            "-u", gpgid,
-                            "--output", file + (armored ? "sig.asc" : ".sig"),
-                            "--detach-sign", file
-                        ],
-                        workingDirectory: Path.GetDirectoryName(file),
-                        writeStdIn: (stdin) => stdin.WriteLineAsync(passphrase)
-                    );
+            var (gpgid, passphrase) = GetGpgIdAndPassphrase(rtcfg);
+            using (var zip = ZipFile.Open(tmpfile, ZipArchiveMode.Create))
+            {
+                foreach (var file in files)
+                    foreach (var armored in new[] { true, false })
+                    {
+                        var outputfile = file + (armored ? ".sig.asc" : ".sig");
+                        var outputpath = Path.Combine(Path.GetDirectoryName(file) ?? string.Empty, outputfile);
+
+                        await ProcessHelper.Execute(
+                            [
+                                Program.Configuration.Commands.Gpg!,
+                                "--pinentry-mode", "loopback",
+                                "--passphrase-fd", "0",
+                                "--batch", "--yes",
+                                armored ? "--armor" : "--no-armor",
+                                "-u", gpgid,
+                                "--output", outputfile,
+                                "--detach-sign", file
+                            ],
+                            workingDirectory: Path.GetDirectoryName(file),
+                            writeStdIn: (stdin) => stdin.WriteLineAsync(passphrase)
+                        );
+
+                        zip.CreateEntryFromFile(outputpath, outputfile);
+                        File.Delete(outputpath);
+                    }
+            }
+
+            File.Move(tmpfile, signaturefile, true);
         }
 
         /// <summary>

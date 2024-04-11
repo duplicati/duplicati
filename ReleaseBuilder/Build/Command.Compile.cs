@@ -78,11 +78,11 @@ public static partial class Command
                         await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
                     }
 
+                    // Perform any post-build steps, cleaning and signing as needed
+                    await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target.OS, target.Arch, rtcfg, keepBuilds);
+
                     Directory.Move(tmpfolder, outputFolder);
                 }
-
-                // Perform any post-build steps, cleaning and signing as needed
-                await PostCompile.PrepareTargetDirectory(baseDir, outputFolder, target.OS, target.Arch, rtcfg, keepBuilds);
 
                 Console.WriteLine("Completed!");
             }

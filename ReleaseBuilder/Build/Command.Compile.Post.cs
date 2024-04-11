@@ -52,7 +52,8 @@ public static partial class Command
         /// Set of folders that are unwanted despite the OS
         /// </summary>
         static readonly IReadOnlyList<string> UnwantedCommonFolders = [
-            "Duplicati" // Debug folder that gets picked up during builds
+            "Duplicati", // Debug folder that gets picked up during builds
+            "control_dir", // Debug folder for lock files
         ];
 
         /// <summary>
