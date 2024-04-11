@@ -49,6 +49,10 @@ public static partial class Command
                         zip.CreateEntryFromFile(outputpath, outputfile);
                         File.Delete(outputpath);
                     }
+
+                // Add information about the signing key
+                using (var stream = zip.CreateEntry("sign-key.txt", CompressionLevel.Optimal).Open())
+                    stream.Write(System.Text.Encoding.UTF8.GetBytes($"{gpgid}\nhttps://pgp.mit.edu/pks/lookup?op=get&search={gpgid}\n"));
             }
 
             File.Move(tmpfile, signaturefile, true);
