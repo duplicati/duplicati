@@ -545,6 +545,7 @@ public static partial class Command
         await ProcessHelper.Execute(new[] {
                 "git", "checkout",
                 "Duplicati/License/VersionTag.txt",
+                "Duplicati/Library/AutoUpdater/autoupdate.manifest",
                 "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt",
                 "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt",
                 "Duplicati/Library/AutoUpdater/AutoUpdateSignKeys.txt",
@@ -554,6 +555,8 @@ public static partial class Command
         if (input.GitStashPush)
         {
             await GitPush.TagAndPush(baseDir, releaseInfo);
+
+            // Contents are added to changelog, so we can remove the file
             input.ChangelogFile.Delete();
         }
 
