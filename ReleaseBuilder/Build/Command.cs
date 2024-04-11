@@ -507,8 +507,17 @@ public static partial class Command
             {
                 var manifestNames = new[] { $"duplicati-{releaseInfo.ReleaseName}.manifest", "latest-v2.manifest" };
 
+                var packageJson = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.json");
+                var packageJs = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.js");
+                var content = Upload.CreatePackageJson(builtPackages, rtcfg);
+
+                File.WriteAllText(packageJson, content);
+                File.WriteAllText(packageJs, $"duplicati_installers = {content};");
+
                 var uploads = files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x)))
-                   .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)));
+                   .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)))
+                   .Append(new Upload.UploadFile(packageJson, Path.GetFileName(packageJson)))
+                   .Append(new Upload.UploadFile(packageJs, Path.GetFileName(packageJs)));
 
                 await Upload.UploadToS3(uploads, rtcfg);
             }

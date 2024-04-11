@@ -52,6 +52,32 @@ public static partial class Command
         public record UploadFile(string Path, string Name);
 
         /// <summary>
+        /// Single entry in the installer json support file
+        /// </summary>
+        /// <param name="url">The remote package url</param>
+        /// <param name="md5">The MD5 hash of the file</param>
+        /// <param name="sha256">The SHA256 hash of the file</param>
+        private record PackageEntry(string url, string md5, string sha256);
+
+        /// <summary>
+        /// Creates the package list in JSON format
+        /// </summary>
+        /// <param name="packages">The packages to include in the file</param>
+        /// <param name="rtcfg">The runtime configuration</param>
+        /// <returns>The JSON string</returns>
+        public static string CreatePackageJson(IEnumerable<CreatePackage.BuiltPackage> packages, RuntimeConfig rtcfg)
+        {
+            var entries = packages.Select(f => (f.Target.PackageTargetString, Entry: new PackageEntry(
+                url: $"https://updates.duplicati.com/{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/{System.Web.HttpUtility.UrlEncode(Path.GetFileName(f.CreatedFile))}",
+                md5: CalculateHash(f.CreatedFile, "md5"),
+                sha256: CalculateHash(f.CreatedFile, "sha256")
+            )))
+            .ToDictionary(x => x.PackageTargetString, x => x.Entry);
+
+            return System.Text.Json.JsonSerializer.Serialize(entries, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+
+        /// <summary>
         /// Upload release files to S3 storage
         /// </summary>
         /// <param name="files">The files to upload</param>
