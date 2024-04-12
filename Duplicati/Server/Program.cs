@@ -356,8 +356,8 @@ namespace Duplicati.Server
             ServerPortChanged |= WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
             DataConnection.ApplicationSettings.LastWebserverPort = WebServer.Port;
 
-            var server = new DuplicatiWebserver();
-            ShutdownModernWebserver = server.Foo();
+            // var server = new DuplicatiWebserver();
+            // ShutdownModernWebserver = server.Foo();
         }
 
         private static void SetWorkerThread()
