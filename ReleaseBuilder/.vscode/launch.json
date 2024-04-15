@@ -46,7 +46,7 @@
                 "--disable-s3-upload", "true",
                 "--disable-github-upload", "true",
                 "--disable-update-server-reload", "true",
-                "--disable-discord-announce", "true",
+                "--disable-discourse-announce", "true",
                 "--password", "test1234",
                 "--version", "2.0.8.104"                
             ],
