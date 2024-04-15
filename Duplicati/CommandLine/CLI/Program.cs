@@ -25,7 +25,7 @@ using System.Linq;
 using Duplicati.Library.Localization.Short;
 using System.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Logging;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.CommandLine
 {
@@ -94,7 +94,7 @@ namespace Duplicati.CommandLine
 
         private static int ShowChangeLog(TextWriter outwriter)
         {
-            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "changelog.txt");
+            var path = System.IO.Path.Combine(UpdaterManager.INSTALLATIONDIR, "changelog.txt");
             outwriter.WriteLine(System.IO.File.ReadAllText(path));
             return 0;
         }

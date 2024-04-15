@@ -34,6 +34,7 @@ public static partial class Command
     /// <summary>
     /// Some executables have shorter names that follow the Linux convention of all-lowercase
     /// </summary>
+    /// <remarks>Note that the values here mirror the values in the AutoUpdater.PackageHelper, so changes should be coordinated between the two</remarks>
     private static readonly IDictionary<string, string> ExecutableRenames = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
     {
         { "Duplicati.CommandLine.BackendTester", "duplicati-backend-tester"},

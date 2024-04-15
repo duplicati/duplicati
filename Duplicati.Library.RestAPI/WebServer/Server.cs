@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -224,8 +224,8 @@ namespace Duplicati.Server.WebServer
 
             server.Add(new RESTHandler());
 
-            string webroot = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string install_webroot = System.IO.Path.Combine(Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "webroot");
+            string webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
+            string install_webroot = System.IO.Path.Combine(webroot, "webroot");
 
 #if DEBUG
             // Easy test for extensions while debugging

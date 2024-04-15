@@ -234,7 +234,7 @@ namespace Duplicati.Server
             }
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
-            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 
             //Find commandline options here for handling special startup cases
             var args = new List<string>(_args);

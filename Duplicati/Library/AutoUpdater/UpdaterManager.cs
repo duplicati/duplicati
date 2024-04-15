@@ -150,7 +150,7 @@ namespace Duplicati.Library.AutoUpdater
             UpdateInfo selfVersion = null;
             try
             {
-                selfVersion = ReadInstalledManifest(System.IO.Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location));
+                selfVersion = ReadInstalledManifest(INSTALLATIONDIR);
             }
             catch
             {
