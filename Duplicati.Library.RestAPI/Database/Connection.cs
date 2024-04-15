@@ -260,8 +260,8 @@ namespace Duplicati.Server.Database
                     {
                         if (sb.Length != 0)
                             sb.Append(" OR ");
-                        sb.Append(@" ("","" || ""Tags"" || "","" LIKE ""%,"" || ? || "",%"") ");
-                        
+                        sb.Append(@" (',' || ""Tags"" || ',' LIKE '%,' || ? || ',%') ");
+
                         var p = cmd.CreateParameter();
                         p.Value = t;
                         cmd.Parameters.Add(p);
@@ -330,7 +330,7 @@ namespace Duplicati.Server.Database
             {
                 var usesEncryption = ReadFromDb(
                     (rd) => ConvertToBoolean(rd, 0),
-                    @"SELECT VALUE != """" FROM ""Option"" WHERE BackupID = ? AND NAME='encryption-module'", id)
+                    @"SELECT VALUE != '' FROM ""Option"" WHERE BackupID = ? AND NAME='encryption-module'", id)
                     .FirstOrDefault();
 
                 if (!usesEncryption)
@@ -340,7 +340,7 @@ namespace Duplicati.Server.Database
 
                 return ReadFromDb(
                     (rd) => ConvertToBoolean(rd, 0),
-                    @"SELECT VALUE != """" FROM ""Option"" WHERE BackupID = ? AND NAME='passphrase'", id)
+                    @"SELECT VALUE != '' FROM ""Option"" WHERE BackupID = ? AND NAME='passphrase'", id)
                 .FirstOrDefault();
             }
         }
@@ -359,8 +359,8 @@ namespace Duplicati.Server.Database
                     {
                         if (sb.Length != 0)
                             sb.Append(" OR ");
-                        sb.Append(@" ("","" || ""Tags"" || "","" LIKE ""%,"" || ? || "",%"") ");
-                        
+                        sb.Append(@" (',' || ""Tags"" || ',' LIKE '%,' || ? || ',%') ");
+
                         var p = cmd.CreateParameter();
                         p.Value = t;
                         cmd.Parameters.Add(p);

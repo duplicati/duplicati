@@ -119,7 +119,7 @@ namespace Duplicati.Library.Main.Database
         public IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
         {
             var sql = string.Format(
-                @"SELECT ""TimeStamp"", ""Message"" || "" "" || CASE WHEN ""Exception"" IS NULL THEN """" ELSE ""Exception"" END FROM ""LogData"" WHERE {0}" +
+                @"SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {0}" +
                 @" UNION " +
                 @"SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN ({1})",
                 string.Join(" OR ", items.Select(x => @"""Message"" LIKE ?")),

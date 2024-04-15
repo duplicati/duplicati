@@ -255,12 +255,12 @@ namespace Duplicati.Library.Main.Database
                     
                         // If we had instr support this would work:
                         /*var distinctPaths = @"SELECT DISTINCT :1 || " +
-                            @"CASE(INSTR(SUBSTR(""Path"", :2), ""/"")) " +
+                            @"CASE(INSTR(SUBSTR(""Path"", :2), '/')) " +
                             @"WHEN 0 THEN SUBSTR(""Path"", :2) " +
-                            @"ELSE SUBSTR(""Path"", :2,  INSTR(SUBSTR(path, :2), ""/"")) " +
+                            @"ELSE SUBSTR(""Path"", :2,  INSTR(SUBSTR(path, :2), '/')) " +
                             @"END AS ""Path"", ""FilesetID"" " +
                             @" FROM (" + cartesianPathFileset + @")";*/
-                        
+
                         // Instead we manually iterate the paths
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", tbname));
                         
