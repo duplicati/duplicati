@@ -559,7 +559,6 @@ public static partial class Command
         await ProcessHelper.Execute(new[] {
                 "git", "checkout",
                 "Duplicati/License/VersionTag.txt",
-                "Duplicati/Library/AutoUpdater/autoupdate.manifest",
                 "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt",
                 "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt",
                 "Duplicati/Library/AutoUpdater/AutoUpdateSignKeys.txt",
