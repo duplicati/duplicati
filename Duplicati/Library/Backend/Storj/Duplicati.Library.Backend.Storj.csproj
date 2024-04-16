@@ -9,9 +9,13 @@
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="uplink.NET" Version="2.12.3328" />
+		<!-- 
+		Disabled bundling binary components for now, as they crash Duplicati
+		
 		<PackageReference Include="uplink.NET.Win" Version="2.12.3328" />
 		<PackageReference Include="uplink.NET.Linux" Version="2.12.3328" />
-		<PackageReference Include="uplink.NET.Mac" Version="2.12.3328" />		
+		<PackageReference Include="uplink.NET.Mac" Version="2.12.3328" />		 
+		-->
 	</ItemGroup>
 
 	<ItemGroup>
