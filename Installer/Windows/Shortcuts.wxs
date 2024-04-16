@@ -5,7 +5,7 @@
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="DuplicatiProgramMenuShortcutComponent" Guid="1D03AB64-E310-4974-835E-E9E8CFB18BBC">
         <Shortcut Id="DuplicatiProgramMenuShortcut"
-                  Name="Duplicati 2"
+                  Name="Duplicati"
                   WorkingDirectory="INSTALLLOCATION"
                   Description="Launch Duplicati"
                   Directory="ProgramMenuFolder"

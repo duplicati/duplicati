@@ -5,7 +5,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
   <!-- Various nice-to-have shorthands for x64/x32 -->
-  <?if $(var.Arch) = "x64" ?>
+  <?if $(sys.BUILDARCH) = "x64" ?>
     <?define SystemFolder = "System64Folder" ?>
     <?define SystemFolderX86 = "SystemFolder" ?>
     <?define SoftwareKey = "Software" ?>
@@ -20,7 +20,7 @@
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
   <?endif?>
 
-  <?define DisplayName = "Duplicati 2" ?>
+  <?define DisplayName = "Duplicati" ?>
 
   <Product Id="$(var.ProductCode)" Name="$(var.DisplayName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
