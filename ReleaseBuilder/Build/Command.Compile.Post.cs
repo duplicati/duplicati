@@ -15,11 +15,11 @@ public static partial class Command
         /// <param name="baseDir">The source directory</param>
         /// <param name="buildDir">The output build directory to modify</param>
         /// <param name="os">The target operating system</param>
-        /// <param name="arch">The target architecture</param>
+        /// <param name="buildTargetString">The build target string os-arch-interface</param>
         /// <param name="rtcfg">The runtime config</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <returns>An awaitable task</returns>
-        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, OSType os, ArchType arch, RuntimeConfig rtcfg, bool keepBuilds)
+        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, OSType os, string buildTargetString, RuntimeConfig rtcfg, bool keepBuilds)
         {
             await RemoveUnwantedFiles(os, buildDir);
 
@@ -30,7 +30,7 @@ public static partial class Command
                     break;
 
                 case OSType.MacOS:
-                    await BundleMacOSApplication(baseDir, buildDir, rtcfg, keepBuilds);
+                    await BundleMacOSApplication(baseDir, buildDir, buildTargetString, rtcfg, keepBuilds);
                     break;
 
                 case OSType.Linux:
@@ -141,16 +141,17 @@ public static partial class Command
         /// </summary>
         /// <param name="baseDir">The source folder</param>
         /// <param name="buildDir">The MacOS build output</param>
+        /// <param name="buildTargetString">The build-target string os-arch-interface</param>
         /// <param name="rtcfg">The runtime configuration</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <returns>An awaitable task</returns>
-        static async Task BundleMacOSApplication(string baseDir, string buildDir, RuntimeConfig rtcfg, bool keepBuilds)
+        static async Task BundleMacOSApplication(string baseDir, string buildDir, string buildTargetString, RuntimeConfig rtcfg, bool keepBuilds)
         {
             var buildroot = Path.GetDirectoryName(buildDir) ?? throw new Exception("Bad build dir");
             // Create target .app folder
             var appDir = Path.Combine(
                 buildroot,
-                $"{Path.GetFileName(buildDir)}-{rtcfg.MacOSAppName}"
+                $"{buildTargetString}-{rtcfg.MacOSAppName}"
             );
 
             if (Directory.Exists(appDir))
