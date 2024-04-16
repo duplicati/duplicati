@@ -621,8 +621,8 @@ namespace Duplicati.Library.Main.Database
 
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName1), lastFilesetId);
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName2), m_filesetId);
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")",tmpName1));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")",tmpName2));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")", tmpName1));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")", tmpName2));
 
 
                     results.AddedFiles = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""{0}"")", tmpName1), 0, m_filesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
@@ -778,7 +778,7 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = ""Uploading"" OR ""RemoteVolume"".""State"" = ""Temporary"")"))
+                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
                     while (rd.Read())
                     {
                         yield return new KeyValuePair<long, DateTime>(
@@ -975,6 +975,5 @@ namespace Duplicati.Library.Main.Database
                 tr.Commit();
             }
         }
-        
     }
 }
