@@ -15,7 +15,7 @@
             "stopAtEntry": false,
             "console": "internalConsole"
         },
-        {B
+        {
             "name": "C#: Duplicati.GUI.TrayIcon Debug",
             "type": "dotnet",
             "request": "launch",
