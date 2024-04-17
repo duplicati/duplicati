@@ -582,11 +582,11 @@ public static partial class Command
     /// <param name="baseDir">The base directory</param>
     /// <param name="releaseInfo">The release info</param>
     /// <returns>The paths that were modified</returns>
-    private static string[] InjectVersionIntoFiles(string baseDir, ReleaseInfo releaseInfo)
+    private static IEnumerable<string> InjectVersionIntoFiles(string baseDir, ReleaseInfo releaseInfo)
     {
         var targetfiles = Directory.EnumerateFiles(Path.Combine(baseDir, "Duplicati", "Server", "webroot"), "*", SearchOption.AllDirectories)
             .Where(x => x.EndsWith(".html") || x.EndsWith(".js"))
-            .ToArray();
+            .ToList();
 
         var versionre = @"(?<version>\d+\.\d+\.(\*|(\d+(\.(\*|\d+)))?))";
         var regex = new Regex(@"\?v\=" + versionre);
@@ -595,6 +595,18 @@ public static partial class Command
                 file,
                 regex.Replace(File.ReadAllText(file), $"?v={releaseInfo.Version}")
             );
+
+        var wixFile = Path.Combine(baseDir, "Installer", "Windows", "UpgradeData.wxi");
+        File.WriteAllText(
+            wixFile,
+            Regex.Replace(
+                File.ReadAllText(wixFile),
+                @"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>",
+                $"<?define ProductVersion=\"{releaseInfo.Version}\" ?>"
+            )
+        );
+
+        targetfiles.Add(wixFile);
 
         return targetfiles;
     }
