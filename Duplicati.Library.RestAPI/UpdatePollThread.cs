@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+//  Copyright (C) 2015, The Duplicati Team
 
 //  http://www.duplicati.com, info@duplicati.com
 //
@@ -40,7 +40,7 @@ namespace Duplicati.Server
         public UpdatePollerStates ThreadState { get; private set; }
         public double DownloadProgess
         {
-            get { return m_downloadProgress ; }
+            get { return m_downloadProgress; }
 
             private set
             {
@@ -50,7 +50,7 @@ namespace Duplicati.Server
                     FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
             }
         }
-        
+
         public UpdatePollThread()
         {
             m_waitSignal = new AutoResetEvent(false);
@@ -63,7 +63,7 @@ namespace Duplicati.Server
 
         public void CheckNow()
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 m_forceCheck = true;
                 m_waitSignal.Set();
@@ -72,7 +72,7 @@ namespace Duplicati.Server
 
         public void Terminate()
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 m_terminated = true;
                 m_waitSignal.Set();
@@ -108,12 +108,12 @@ namespace Duplicati.Server
 
                 if (nextCheck < DateTime.UtcNow || m_forceCheck)
                 {
-                    lock(m_lock)
+                    lock (m_lock)
                         m_forceCheck = false;
 
                     ThreadState = UpdatePollerStates.Checking;
                     FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
-                     
+
                     DateTime started = DateTime.UtcNow;
                     FIXMEGlobal.DataConnection.ApplicationSettings.LastUpdateCheck = started;
                     nextCheck = FIXMEGlobal.DataConnection.ApplicationSettings.NextUpdateCheck;
@@ -126,7 +126,7 @@ namespace Duplicati.Server
                     rt = rt == Duplicati.Library.AutoUpdater.ReleaseType.Unknown ? Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel : rt;
 
                     try
-                    {                        
+                    {
                         var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate(rt);
                         if (update != null)
                             FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion = update;
@@ -144,13 +144,13 @@ namespace Duplicati.Server
                         var updatertstring = FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion.ReleaseType;
                         if (string.Equals(updatertstring, "preview", StringComparison.OrdinalIgnoreCase))
                             updatertstring = Library.AutoUpdater.ReleaseType.Experimental.ToString();
-                        
+
                         if (!Enum.TryParse<Library.AutoUpdater.ReleaseType>(updatertstring, true, out updatert))
                             updatert = Duplicati.Library.AutoUpdater.ReleaseType.Nightly;
 
                         if (updatert == Duplicati.Library.AutoUpdater.ReleaseType.Unknown)
                             updatert = Duplicati.Library.AutoUpdater.ReleaseType.Nightly;
-                        
+
                         if (updatert > rt)
                             FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion = null;
                     }
@@ -170,7 +170,8 @@ namespace Duplicati.Server
                                     null,
                                     "NewUpdateFound",
                                     null,
-                                    (self, all) => {
+                                    (self, all) =>
+                                    {
                                         return all.FirstOrDefault(x => x.Action == "update:new") ?? self;
                                     }
                                 );
@@ -190,14 +191,14 @@ namespace Duplicati.Server
                 // Guard against spin-loop
                 if (waitTime.TotalSeconds < 5)
                     waitTime = TimeSpan.FromSeconds(5);
-                
+
                 // Guard against year-long waits
                 // A re-check does not cause an update check
                 if (waitTime.TotalDays > 1)
                     waitTime = TimeSpan.FromDays(1);
-                
+
                 m_waitSignal.WaitOne(waitTime, true);
-            }   
+            }
         }
     }
 }
