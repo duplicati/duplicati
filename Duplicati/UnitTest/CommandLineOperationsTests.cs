@@ -24,7 +24,9 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Threading.Tasks;
+using System.Net.Http;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -44,7 +46,7 @@ namespace Duplicati.UnitTest
 
         private readonly string zipFilename = "data.zip";
         private string zipFilepath => Path.Combine(BASEFOLDER, this.zipFilename);
-        
+
         private readonly string zipAlternativeFilename = "data-alternative.zip";
         private string zipAlternativeFilepath => Path.Combine(BASEFOLDER, this.zipAlternativeFilename);
 
@@ -74,56 +76,58 @@ namespace Duplicati.UnitTest
             }
         }
 
-        private void DownloadS3FileIfNewer(string destinationFilePath, string url)
+        private void DownloadS3FileIfNewer(string destinationFilePath, string url, int retries = 5)
+            => DownloadS3FileIfNewerAsync(destinationFilePath, url, retries).Wait();
+
+        private async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
         {
-            var webRequest = (HttpWebRequest)WebRequest.Create(url);
-
-            if (systemIO.FileExists(destinationFilePath))
+            do
             {
-                webRequest.IfModifiedSince = systemIO.FileGetLastWriteTimeUtc(destinationFilePath);
-            }
-
-            try
-            {
-                // check if the file should be downloaded, exception if not
-                using (var wr = (HttpWebResponse)webRequest.GetResponse())
-
-                using (WebClient client = new WebClient())
-                { // try to workaround a weird intermittent bug where downloaded size
-                  // differs from real size but no error is thrown
-                    Console.WriteLine("downloading test file to: {0}, length: {1}", destinationFilePath, wr.ContentLength);
-                    var maxAttempts = 5;
-                    while (maxAttempts-- > 0) {
-                        DateTime beginTime = DateTime.Now;
-                        client.DownloadFile(url, destinationFilePath);
-                        long length = new System.IO.FileInfo(destinationFilePath).Length;
-                        Console.WriteLine("downloaded test file: {0}: length {1}, duration {2}", destinationFilePath, length, (DateTime.Now - beginTime).TotalSeconds);
-                        if (length == wr.ContentLength) {
-                            maxAttempts = -1;
-                        } else {
-                            Console.WriteLine("invalid downloaded length {0}, should be {1}...", length, wr.ContentLength);
-                            System.Threading.Thread.Sleep(120000);
-                        }
-                    }
-                    if (maxAttempts == 0) {
-                        throw new Exception(string.Format("Unable to download test file from {0}", url));
-                    }
-                }
-            }
-            catch (WebException ex)
-            {
-                if (ex.Response == null){
-                    Console.WriteLine("ex.Response is null !");
-                    throw;
-                }
-
-                if (((HttpWebResponse) ex.Response).StatusCode != HttpStatusCode.NotModified)
+                try
                 {
-                    Console.WriteLine("file to download {0} already exists and is up to date", destinationFilePath);
-                    throw;
+                    using var httpClient = new HttpClient();
+                    using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                    if (systemIO.FileExists(destinationFilePath))
+                        request.Headers.IfModifiedSince = systemIO.FileGetLastWriteTimeUtc(destinationFilePath);
+
+                    using var response = await httpClient.SendAsync(request);
+                    using var tmpFile = new TempFile();
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
+                    {
+                        Console.WriteLine("File has not been modified since last download.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Downloading file from {url} to: {tmpFile}");
+                        var contentStream = await response.Content.ReadAsStreamAsync();
+                        var fileInfo = new FileInfo(tmpFile);
+                        using (var fileStream = fileInfo.OpenWrite())
+                            await contentStream.CopyToAsync(fileStream);
+
+                        // After download, check if the file length matches the response length
+                        long responseLength = response.Content.Headers.ContentLength ?? 0;
+                        long fileLength = new FileInfo(tmpFile).Length;
+                        if (responseLength != fileLength)
+                            throw new Exception($"Downloaded file length {fileLength} does not match response length {responseLength}");
+
+                        Console.WriteLine($"Download completed, moving to {destinationFilePath}");
+                        File.Move(tmpFile, destinationFilePath, true);
+                        return;
+                    }
                 }
-                Console.WriteLine("download exception: {0}", ex.Response);
-            }
+                catch (Exception ex)
+                {
+                    retries--;
+                    Console.WriteLine($"Download failed: {ex.Message}");
+                    if (retries <= 0)
+                        throw;
+
+                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                    Console.WriteLine($"Retrying download, {retries} retries left.");
+                }
+            } while (retries > 0);
         }
 
         [OneTimeTearDown]
