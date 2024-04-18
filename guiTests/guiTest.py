@@ -24,13 +24,41 @@ parser.add_argument(
 parser.set_defaults(headless=True)
 cmdopt = parser.parse_args()
 
-# local
-print("Using LOCAL webdriver")
-profile = webdriver.FirefoxProfile()
-profile.set_preference("intl.accept_languages", "en")
-options = Options()
-options.headless = True
-driver = webdriver.Firefox(profile, options=options)
+if "TRAVIS_BUILD_NUMBER" in os.environ:
+    from selenium.webdriver.firefox.options import Options
+    if "SAUCE_USERNAME" not in os.environ:
+        print("No sauce labs login credentials found. Stopping tests...")
+        sys.exit(0)
+
+    capabilities = {'browserName': "firefox"}
+    capabilities['platform'] = "Windows 7"
+    capabilities['version'] = "48.0"
+    capabilities['screenResolution'] = "1280x1024"
+    capabilities["build"] = os.environ["TRAVIS_BUILD_NUMBER"]
+    capabilities["tunnel-identifier"] = os.environ["TRAVIS_JOB_NUMBER"]
+
+    # connect to sauce labs
+    username = os.environ["SAUCE_USERNAME"]
+    access_key = os.environ["SAUCE_ACCESS_KEY"]
+    hub_url = "%s:%s@localhost:4445" % (username, access_key)
+    driver = webdriver.Remote(command_executor="http://%s/wd/hub" % hub_url, desired_capabilities=capabilities)
+elif cmdopt.use_chrome:
+    print("using LOCAL Chrome webdriver")
+    from selenium.webdriver.chrome.options import Options
+    import chromedriver_autoinstaller
+    chromedriver_autoinstaller.install()
+    chr_opt = Options()
+    opt = ["--ignore-certificate-errors", "--window-size=1280,800" ]
+    if cmdopt.headless: opt += ["--headless"]
+    for o in opt: chr_opt.add_argument(o)
+    driver = webdriver.Chrome(options=chr_opt)
+else:
+    from selenium.webdriver.firefox.options import Options
+    print("Using LOCAL Firefox webdriver")
+    options = Options()
+    options.set_preference("intl.accept_languages", "en")
+    options.headless = cmdopt.headless
+    driver = webdriver.Firefox(options=options)
 
 def write_random_file(size, filename):
     if not os.path.exists(os.path.dirname(filename)):
