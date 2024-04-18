@@ -97,6 +97,7 @@ namespace Duplicati.UnitTest
                     if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
                     {
                         Console.WriteLine("File has not been modified since last download.");
+                        return;
                     }
                     else
                     {
