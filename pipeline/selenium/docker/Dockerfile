@@ -8,6 +8,8 @@ RUN source /etc/os-release && wget https://packages.microsoft.com/config/$ID/$VE
 RUN sudo dpkg -i ~/packages-microsoft-prod.deb
 RUN sudo apt update && sudo apt install -y python3-pip dotnet-sdk-8.0
 RUN pip3 install selenium
+RUN pip3 install --upgrade urllib3
+RUN pip3 install chromedriver-autoinstaller
 
 ADD runner.sh /
 CMD /runner.sh
