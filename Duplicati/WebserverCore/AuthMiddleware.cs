@@ -1,15 +1,9 @@
 
 namespace Duplicati.WebserverCore
 {
-    public class AuthMiddleware
+    public class AuthMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
         private readonly Server.WebServer.AuthenticationHandler _authHandler = new();
-
-        public AuthMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -18,11 +12,14 @@ namespace Duplicati.WebserverCore
             if (!_authHandler.Process(info.Request, info.Response, info.Session))
             {
                 // Call the next delegate/middleware in the pipeline.
-                await _next(context);
+                await next(context);
             }
             else
             {
-                info.Response.Send();
+                if (info.Response is LegacyHttpResponseShim legacy)
+                {
+                    await legacy.SendAsync();
+                }
             }
         }
     }

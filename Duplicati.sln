@@ -153,6 +153,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.RestAPI",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Browser.Test", "Duplicati\Duplicati.Browser.Test\Duplicati.Browser.Test.csproj", "{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -423,6 +425,10 @@ Global
 		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
