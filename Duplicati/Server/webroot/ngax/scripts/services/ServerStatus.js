@@ -196,7 +196,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     }
 
     function handleServerState(response) {
-        console.log("success", response)
         var oldEventId = state.lastEventId;
         var anychanged =
             notifyIfChanged(response.data, 'lastEventID', 'lastEventId') |
@@ -254,11 +253,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         var errorMessage = AppService.responseErrorMessage(response);
         state.xsfrerror = errorMessage.toLowerCase().indexOf('xsrf') >= 0;
 
-        console.log(response);
-        console.log(errorMessage);
-        console.log('xsfr', state.xsfrerror, oldxsfrstate);
-        console.log(state);
-
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             // Try again
@@ -267,7 +261,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             // Change state to connected to hide the connecting message, which is on top of the login message from the AppService
             state.connectionState = 'connected';
             // Notify
-            console.log(1)
             $rootScope.$broadcast('serverstatechanged');
         } else {
             state.connectionState = 'disconnected';
@@ -278,7 +271,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             }
             else {
                 // Notify
-                console.log(2)
                 $rootScope.$broadcast('serverstatechanged');
             }
         }

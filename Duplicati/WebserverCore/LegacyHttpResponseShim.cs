@@ -138,7 +138,7 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
 
         if (_reasonPhrase is not null)
         {
-            response.ContentType = "text/plain";
+            response.ContentType = "application/json";
             Console.WriteLine("Reason phrase: " + _reasonPhrase);
             await response.Body.WriteAsync(await JsonContent.Create(new { Reason = _reasonPhrase }).ReadAsByteArrayAsync());
         }
