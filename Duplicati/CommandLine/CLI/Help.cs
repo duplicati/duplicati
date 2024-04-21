@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common;
 using FilterGroup = Duplicati.Library.Utility.FilterGroup;
 
@@ -117,8 +118,7 @@ namespace Duplicati.CommandLine
 
                 tp = tp.Replace("%VERSION%", License.VersionNumbers.Version);
                 tp = tp.Replace("%BACKENDS%", string.Join(", ", Library.DynamicLoader.BackendLoader.Keys));
-                tp = tp.Replace("%MONO%", Library.Utility.Utility.IsMono ? "mono " : "");
-                tp = tp.Replace("%APP_PATH%", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                tp = tp.Replace("%APP_PATH%", Path.Combine(UpdaterManager.INSTALLATIONDIR, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine)));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
                 tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Platform.IsClientPosix ? "/source" : @"D:\source");
                 tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Platform.IsClientPosix ? "/source/myfile.txt" : @"D:\source\file.txt");

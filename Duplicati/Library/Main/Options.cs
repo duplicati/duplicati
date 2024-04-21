@@ -191,7 +191,7 @@ namespace Duplicati.Library.Main
             
         }
 
-        private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "default_compressed_extensions.txt");
+        private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "default_compressed_extensions.txt");
 
         /// <summary>
         /// Lock that protects the options collection

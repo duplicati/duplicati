@@ -61,7 +61,7 @@ namespace Duplicati.Server
             {
                 Controller = controller;
             }
-            
+
             public void Stop(bool allowCurrentFileToFinish)
             {
                 var c = Controller;
@@ -162,7 +162,8 @@ namespace Duplicati.Server
 
         public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string[] filterStrings = null)
         {
-            return new RunnerData() {
+            return new RunnerData()
+            {
                 Operation = operation,
                 Backup = backup,
                 ExtraOptions = extraOptions,
@@ -189,14 +190,14 @@ namespace Duplicati.Server
                 filters);
         }
 
-        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, 
-                                                    DateTime time, string restoreTarget, bool overwrite, bool restore_permissions, 
+        public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters,
+                                                    DateTime time, string restoreTarget, bool overwrite, bool restore_permissions,
                                                     bool skip_metadata, string passphrase)
         {
             var dict = new Dictionary<string, string>
             {
                 ["time"] = Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime()),
-                ["overwrite"] = overwrite? Boolean.TrueString : Boolean.FalseString,
+                ["overwrite"] = overwrite ? Boolean.TrueString : Boolean.FalseString,
                 ["restore-permissions"] = restore_permissions ? Boolean.TrueString : Boolean.FalseString,
                 ["skip-metadata"] = skip_metadata ? Boolean.TrueString : Boolean.FalseString,
                 ["allow-passphrase-change"] = Boolean.TrueString
@@ -263,7 +264,7 @@ namespace Duplicati.Server
                 public long CurrentFilesize { get { return m_currentFilesize; } }
                 public long CurrentFileoffset { get { return m_currentFileoffset; } }
                 public bool CurrentFilecomplete { get { return m_currentFilecomplete; } }
-                public string Phase { get { return  m_phase.ToString(); } }
+                public string Phase { get { return m_phase.ToString(); } }
                 public float OverallProgress { get { return m_overallProgress; } }
                 public long ProcessedFileCount { get { return m_processedFileCount; } }
                 public long ProcessedFileSize { get { return m_processedFileSize; } }
@@ -285,7 +286,7 @@ namespace Duplicati.Server
 
             public Server.Serialization.Interface.IProgressEventData Copy()
             {
-                lock(m_lock)
+                lock (m_lock)
                 {
                     if (m_backendProgress != null)
                         m_backendProgress.Update(out m_state.m_backendAction, out m_state.m_backendPath, out m_state.m_backendFileSize, out m_state.m_backendFileProgress, out m_state.m_backendSpeed, out m_state.m_backendIsBlocking);
@@ -302,7 +303,7 @@ namespace Duplicati.Server
             #region IMessageSink implementation
             public void BackendEvent(Duplicati.Library.Main.BackendActionType action, Duplicati.Library.Main.BackendEventType type, string path, long size)
             {
-                lock(m_lock)
+                lock (m_lock)
                 {
                     m_state.m_backendAction = action;
                     m_state.m_backendPath = path;
@@ -344,7 +345,7 @@ namespace Duplicati.Server
 
             var options = ApplyOptions(backup, GetCommonOptions());
             if (data.ExtraOptions != null)
-                foreach(var k in data.ExtraOptions)
+                foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
 
             var cf = FIXMEGlobal.DataConnection.Filters;
@@ -352,37 +353,31 @@ namespace Duplicati.Server
 
             var sources =
                 (from n in backup.Sources
-                    let p = SpecialFolders.ExpandEnvironmentVariables(n)
-                    where !string.IsNullOrWhiteSpace(p)
-                    select p).ToArray();
+                 let p = SpecialFolders.ExpandEnvironmentVariables(n)
+                 where !string.IsNullOrWhiteSpace(p)
+                 select p).ToArray();
 
-            var exe =
-                System.IO.Path.Combine(
-                    Library.AutoUpdater.UpdaterManager.InstalledBaseDir,
-                        System.IO.Path.GetFileName(
-                            typeof(Duplicati.CommandLine.Commands).Assembly.Location
-                        )
-                );
+            var exe = System.IO.Path.Combine(
+                Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR,
+                Library.AutoUpdater.PackageHelper.GetExecutableName(Library.AutoUpdater.PackageHelper.NamedExecutable.CommandLine)
+            );
 
             var cmd = new System.Text.StringBuilder();
-            if (Library.Utility.Utility.IsMono)
-                cmd.Append("mono ");
-
             cmd.Append(Library.Utility.Utility.WrapAsCommandLine(new string[] { exe, "backup", backup.TargetURL }, false));
 
             cmd.Append(" ");
             cmd.Append(Library.Utility.Utility.WrapAsCommandLine(sources, true));
 
             // TODO: We should check each option to see if it is a path, and allow expansion on that
-            foreach(var opt in options)
+            foreach (var opt in options)
                 cmd.AppendFormat(" --{0}={1}", opt.Key, Library.Utility.Utility.WrapCommandLineElement(opt.Value, false));
 
             if (cf != null)
-                foreach(var f in cf)
+                foreach (var f in cf)
                     cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", Library.Utility.Utility.WrapCommandLineElement(f.Expression, true));
 
             if (bf != null)
-                foreach(var f in bf)
+                foreach (var f in bf)
                     cmd.AppendFormat(" --{0}={1}", f.Include ? "include" : "exclude", Library.Utility.Utility.WrapCommandLineElement(f.Expression, true));
 
             return cmd.ToString();
@@ -438,7 +433,7 @@ namespace Duplicati.Server
 
                     task.Run(sink);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     FIXMEGlobal.DataConnection.LogError(string.Empty, "Failed while executing custom task", ex);
                 }
@@ -465,7 +460,7 @@ namespace Duplicati.Server
 
                 var options = ApplyOptions(backup, GetCommonOptions());
                 if (data.ExtraOptions != null)
-                    foreach(var k in data.ExtraOptions)
+                    foreach (var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
 
                 // Pack in the system or task config for easy restore
@@ -475,13 +470,14 @@ namespace Duplicati.Server
                 }
 
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
-                using (Library.Logging.Log.StartScope(log => {
+                using (Library.Logging.Log.StartScope(log =>
+                {
                     log[LogWriteHandler.LOG_EXTRA_TASKID] = data.TaskID.ToString();
                     log[LogWriteHandler.LOG_EXTRA_BACKUPID] = data.BackupID;
                 }))
 
-                using(tempfolder)
-                using(var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
+                using (tempfolder)
+                using (var controller = new Duplicati.Library.Main.Controller(backup.TargetURL, options, sink))
                 {
                     try
                     {
@@ -513,9 +509,9 @@ namespace Duplicati.Server
                                 var filter = ApplyFilter(backup, GetCommonFilter());
                                 var sources =
                                     (from n in backup.Sources
-                                        let p = SpecialFolders.ExpandEnvironmentVariables(n)
-                                        where !string.IsNullOrWhiteSpace(p)
-                                        select p).ToArray();
+                                     let p = SpecialFolders.ExpandEnvironmentVariables(n)
+                                     where !string.IsNullOrWhiteSpace(p)
+                                     select p).ToArray();
 
                                 var r = controller.Backup(sources, filter);
                                 UpdateMetadata(backup, r);
@@ -565,7 +561,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.CreateReport:
                             {
-                                using(var tf = new Duplicati.Library.Utility.TempFile())
+                                using (var tf = new Duplicati.Library.Utility.TempFile())
                                 {
                                     var r = controller.CreateLogDatabase(tf);
                                     var tempid = FIXMEGlobal.DataConnection.RegisterTempFile("create-bug-report", r.TargetPath, DateTime.Now.AddDays(3));
@@ -706,7 +702,8 @@ namespace Duplicati.Server
                 null,
                 messageid,
                 null,
-                (n, a) => {
+                (n, a) =>
+                {
                     return a.FirstOrDefault(x => x.BackupID == backup.ID) ?? n;
                 }
             );
@@ -909,12 +906,12 @@ namespace Duplicati.Server
             options["backup-id"] = $"DB-{backup.ID}";
 
             // Apply normal options
-            foreach(var o in backup.Settings)
+            foreach (var o in backup.Settings)
                 if (!o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name] = o.Value;
 
             // Apply override options
-            foreach(var o in backup.Settings)
+            foreach (var o in backup.Settings)
                 if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name.Substring(2)] = o.Value;
 
@@ -931,12 +928,12 @@ namespace Duplicati.Server
             {
                 var nf =
                     (from n in f2
-                    let exp =
-                        n.Expression.StartsWith("[", StringComparison.Ordinal) && n.Expression.EndsWith("]", StringComparison.Ordinal)
-                        ? SpecialFolders.ExpandEnvironmentVariablesRegexp(n.Expression)
-                        : SpecialFolders.ExpandEnvironmentVariables(n.Expression)
-                    orderby n.Order
-                    select (Library.Utility.IFilter)(new Library.Utility.FilterExpression(exp, n.Include)))
+                     let exp =
+                         n.Expression.StartsWith("[", StringComparison.Ordinal) && n.Expression.EndsWith("]", StringComparison.Ordinal)
+                         ? SpecialFolders.ExpandEnvironmentVariablesRegexp(n.Expression)
+                         : SpecialFolders.ExpandEnvironmentVariables(n.Expression)
+                     orderby n.Order
+                     select (Library.Utility.IFilter)(new Library.Utility.FilterExpression(exp, n.Include)))
                     .Aggregate((a, b) => Library.Utility.FilterExpression.Combine(a, b));
 
                 filter = Library.Utility.FilterExpression.Combine(filter, nf);
@@ -961,9 +958,9 @@ namespace Duplicati.Server
 
             return
                 (from n in filters
-                    orderby n.Order
-                    let exp = Environment.ExpandEnvironmentVariables(n.Expression)
-                    select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
+                 orderby n.Order
+                 let exp = Environment.ExpandEnvironmentVariables(n.Expression)
+                 select (Duplicati.Library.Utility.IFilter)(new Duplicati.Library.Utility.FilterExpression(exp, n.Include)))
                 .Aggregate((a, b) => Duplicati.Library.Utility.FilterExpression.Combine(a, b));
         }
     }

@@ -5,7 +5,7 @@
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="DuplicatiProgramMenuShortcutComponent" Guid="1D03AB64-E310-4974-835E-E9E8CFB18BBC">
         <Shortcut Id="DuplicatiProgramMenuShortcut"
-                  Name="Duplicati 2"
+                  Name="Duplicati"
                   WorkingDirectory="INSTALLLOCATION"
                   Description="Launch Duplicati"
                   Directory="ProgramMenuFolder"
@@ -25,7 +25,7 @@
     <DirectoryRef Id="DesktopFolder">
       <Component Id="DuplicatiDesktopShortcutComponent" Guid="7BF060B8-389F-4a95-931C-5D551E55902A">
         <Shortcut Id="DuplicatiDesktopComponent"
-                  Name="Duplicati 2"
+                  Name="Duplicati"
                   WorkingDirectory="INSTALLLOCATION"
                   Description="Launch Duplicati"
                   Directory="DesktopFolder"
@@ -46,7 +46,7 @@
       <Directory Id="StartupFolder">
         <Component Id="StartupMenuItem" Guid="A85B1D4E-26EF-4d6a-8C1F-279EAABCE8DE">
           <Shortcut Id="DuplicatiStartupComponent"
-                    Name="Duplicati 2"
+                    Name="Duplicati"
                     WorkingDirectory="INSTALLLOCATION"
                     Description="Launch Duplicati"
                     Directory="StartupFolder"
@@ -64,8 +64,6 @@
         </Component>
       </Directory>
     </DirectoryRef>
-
-    <Icon Id="DuplicatiIcon.exe" SourceFile="Duplicati\Duplicati.GUI.TrayIcon.exe" />
 
   </Fragment>
 </Wix>

@@ -76,16 +76,18 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
         /// </summary>
         /// <returns>The serialized result string.</returns>
         /// <param name="result">The result to serialize.</param>
+        /// <param name="exception">The exception, if any</param>
         /// <param name="loglines">The log lines to serialize.</param>
         /// <param name="additional">Additional parameters to include</param>
-        public string Serialize(object result, IEnumerable<string> loglines, Dictionary<string, string> additional)
+        public string Serialize(object result, Exception exception, IEnumerable<string> loglines, Dictionary<string, string> additional)
         {
             return JsonConvert.SerializeObject(
                 new
                 {
                     Data = result,
                     Extra = additional,
-                    LogLines = loglines
+                    LogLines = loglines,
+                    Exception = exception?.ToString()
                 }, 
                 
                 new JsonSerializerSettings()

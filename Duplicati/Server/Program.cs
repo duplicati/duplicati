@@ -43,7 +43,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The path to the directory that contains the main executable
         /// </summary>
-        public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
+        public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
         /// <summary>
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
@@ -218,17 +218,8 @@ namespace Duplicati.Server
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
+        public static int Main(string[] _args)
         {
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
-        }
-
-        public static int RealMain(string[] _args)
-        {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
-
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
             if (Platform.IsClientWindows)
@@ -243,7 +234,7 @@ namespace Duplicati.Server
             }
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
-            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 
             //Find commandline options here for handling special startup cases
             var args = new List<string>(_args);
@@ -339,7 +330,8 @@ namespace Duplicati.Server
             {
                 StatusEventNotifyer.SignalNewEvent();
 
-                ShutdownModernWebserver();
+                if (ShutdownModernWebserver != null)
+                    ShutdownModernWebserver();
                 UpdatePoller?.Terminate();
                 Scheduler?.Terminate(true);
                 WorkThread?.Terminate(true);
@@ -354,9 +346,6 @@ namespace Duplicati.Server
                 LogHandler?.Dispose();
             }
 
-            if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
-                return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
-
             return 0;
         }
 
@@ -367,8 +356,8 @@ namespace Duplicati.Server
             ServerPortChanged |= WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
             DataConnection.ApplicationSettings.LastWebserverPort = WebServer.Port;
 
-            var server = new DuplicatiWebserver();
-            ShutdownModernWebserver = server.Foo();
+            // var server = new DuplicatiWebserver();
+            // ShutdownModernWebserver = server.Foo();
         }
 
         private static void SetWorkerThread()

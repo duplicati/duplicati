@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
@@ -39,15 +41,50 @@ namespace Duplicati.Library.Utility
         {
         }
 
-        public SignatureReadingStream(System.IO.Stream stream, System.Security.Cryptography.RSACryptoServiceProvider key)
+        /// <summary>
+        /// Creates a new stream that reads from the given stream and verifies the signature using any of the given keys
+        /// </summary>
+        /// <param name="stream">The stream with a signature</param>
+        /// <param name="keys">The allowed keys</param>
+        public SignatureReadingStream(System.IO.Stream stream, IEnumerable<System.Security.Cryptography.RSA> keys)
         {
-            if (!VerifySignature(stream, key))
+            if (!VerifySignature(stream, keys))
                 throw new System.IO.InvalidDataException("Unable to verify signature");
             m_stream = stream;
             this.Position = 0;
         }
 
-        private static bool VerifySignature(System.IO.Stream stream, System.Security.Cryptography.RSACryptoServiceProvider key)
+        /// <summary>
+        /// Wraps trying the keys one by one, returning true if any of the keys validate
+        /// </summary>
+        /// <param name="stream">The stream to verify</param>
+        /// <param name="keys">The keys to try</param>
+        /// <returns><c>true</c> if the stream is valid; <c>false</c> otherwise</returns>
+        private static bool VerifySignature(System.IO.Stream stream, IEnumerable<System.Security.Cryptography.RSA> keys)
+        {
+            if (keys == null)
+                return false;
+
+            foreach (var key in keys)
+                try
+                {
+                    if (VerifySignature(stream, key))
+                        return true;
+                }
+                catch
+                {
+                }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Verifies the signature of the stream using the given key
+        /// </summary>
+        /// <param name="stream">The stream to verify</param>
+        /// <param name="key">The key to validate with</param>
+        /// <returns><c>true</c> if the stream signature matches the key; <c>false</c> otherwise</returns>
+        private static bool VerifySignature(System.IO.Stream stream, System.Security.Cryptography.RSA key)
         {
             stream.Position = 0;
             var signature = new byte[SIGNED_HASH_SIZE];
@@ -69,11 +106,16 @@ namespace Duplicati.Library.Utility
 
             sha256.TransformFinalBlock(buf, 0, 0);
             var hash = sha256.Hash;
-            var OID = System.Security.Cryptography.CryptoConfig.MapNameToOID("SHA256");
-            return key.VerifyHash(hash, OID, signature);
+            return key.VerifyHash(hash, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         }
 
-        public static void CreateSignedStream(System.IO.Stream datastream, System.IO.Stream signedstream, System.Security.Cryptography.RSACryptoServiceProvider key)
+        /// <summary>
+        /// Creates a signed stream from the given data stream and writes the signature to the signed stream
+        /// </summary>
+        /// <param name="datastream">The stream to sign</param>
+        /// <param name="signedstream">The stream with the signature</param>
+        /// <param name="key">The key used to sign it</param>
+        public static void CreateSignedStream(System.IO.Stream datastream, System.IO.Stream signedstream, System.Security.Cryptography.RSA key)
         {
             var sha256 = System.Security.Cryptography.SHA256.Create();
 
@@ -97,9 +139,9 @@ namespace Duplicati.Library.Utility
             sha256.TransformFinalBlock(buf, 0, 0);
             var hash = sha256.Hash;
 
-            var OID = System.Security.Cryptography.CryptoConfig.MapNameToOID("SHA256");
-            var signature = key.SignHash(hash, OID);
-
+            var signature = key.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            if (signature.Length != SIGNED_HASH_SIZE)
+                throw new System.IO.InvalidDataException("Unexpected signature length");
             signedstream.Position = 0;
             signedstream.Write(signature, 0, signature.Length);
 

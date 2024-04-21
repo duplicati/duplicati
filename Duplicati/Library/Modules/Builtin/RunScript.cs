@@ -170,7 +170,7 @@ namespace Duplicati.Library.Modules.Builtin
             m_localpath = localpath;
         }
 
-        public void OnFinish (object result)
+        public void OnFinish (object result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -184,7 +184,8 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is OperationAbortException oae)
+            OperationAbortException oae = result as OperationAbortException ?? exception as OperationAbortException;
+            if (oae != null)
             {
                 switch (oae.AbortReason)
                 {
@@ -202,7 +203,7 @@ namespace Duplicati.Library.Modules.Builtin
                         break;
                 }
             }
-            else if (result is Exception)
+            else if (result is Exception || exception != null)
                 level = ParsedResultType.Fatal;
             else if (result != null && result is IBasicResults results)
                 level = results.ParsedResult;
@@ -212,7 +213,7 @@ namespace Duplicati.Library.Modules.Builtin
             using (TempFile tmpfile = new TempFile())
             {
                 using (var streamWriter = new StreamWriter(tmpfile))
-                    streamWriter.Write(resultFormatSerializer.Serialize(result, m_logstorage, null));
+                    streamWriter.Write(resultFormatSerializer.Serialize(result, exception, m_logstorage, null));
 
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }

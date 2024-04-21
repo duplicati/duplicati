@@ -1,10 +1,6 @@
 name: Tests
 
-on:
-  push:
-    branches: "**net5**"
-  pull_request:
-    branches: "**net5**"
+on: [push, pull_request]
 
 jobs:
   unit_tests:
@@ -13,30 +9,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v1.8.0
-      with:
-        dotnet-version: 6.0.x
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v1.8.0
+        with:
+          dotnet-version: 8.0.x
 
-    - name: Checkout source
-      uses: actions/checkout@v2.3.4
+      - name: Checkout source
+        uses: actions/checkout@v2.3.4
 
-    - name: Restore NuGet dependencies
-      run: dotnet restore Duplicati.sln
+      - name: Restore NuGet dependencies
+        run: dotnet restore Duplicati.sln
 
-    - name: Build Duplicati
-      run: dotnet build --no-restore Duplicati.sln
+      - name: Build Duplicati
+        run: dotnet build --no-restore Duplicati.sln
 
-    - name: Run unit tests
-      run: dotnet test --no-build --verbosity minimal Duplicati.sln
+      - name: Run unit tests
+        run: dotnet test --no-build --verbosity minimal Duplicati.sln
 
   selenium:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Selenium
-      run: pipeline/selenium/test.sh
-      
+      - uses: actions/checkout@v2
+      - name: Selenium
+        run: pipeline/selenium/test.sh
