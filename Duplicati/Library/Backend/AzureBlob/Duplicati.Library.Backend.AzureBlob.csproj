@@ -1,14 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
   </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
-  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="3.0.4" />
     <PackageReference Include="Microsoft.Azure.KeyVault.WebKey" Version="3.0.4" />
@@ -18,8 +13,21 @@
     <PackageReference Include="Microsoft.Azure.Storage.Queue" Version="11.0.1" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.24" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure" Version="3.3.19" />
-    <PackageReference Include="System.Spatial" Version="5.8.4" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

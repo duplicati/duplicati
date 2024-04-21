@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+﻿﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -46,7 +46,9 @@ namespace Duplicati.Library.Localization
         public LocalizationContext(System.Globalization.CultureInfo ci)
         {
             m_prev = CallContext.GetData(LocalizationService.LOGICAL_CONTEXT_KEY) as string;
-            CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);            m_isDisposed = false;
+            CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);
+
+            m_isDisposed = false;
         }
 
         /// <summary>

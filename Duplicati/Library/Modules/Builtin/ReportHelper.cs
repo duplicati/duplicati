@@ -40,6 +40,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<ReportHelper>();
 
+        /// <summary>
+        /// The salt used for calculating a backup Id from the remote URL
+        /// </summary>
+        private const string SALT = "DUPL";
 
         /// <summary>
         /// Name of the option used to specify subject
@@ -293,8 +297,9 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>The expanded template.</returns>
         /// <param name="input">The input template.</param>
         /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
         /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
-        protected virtual string ReplaceTemplate(string input, object result, bool subjectline)
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
         {
             // For JSON, ignore the template and just use the contents
             if (ExportFormat == ResultExportFormat.Json && !subjectline)
@@ -310,11 +315,24 @@ namespace Duplicati.Library.Modules.Builtin
                 if (input.IndexOf("%PARSEDRESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                     extra["ParsedResult"] = m_parsedresultlevel;
 
+                // If the options contains the key, it is captured by the loop over m_options
+                // so we only patch it in case it is missing
+
+                if (input.IndexOf("%machine-id%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("machine-id"))
+                        extra["machine-id"] = Library.AutoUpdater.UpdaterManager.InstallID;
+                }
+
+                if (input.IndexOf("%backup-id%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("backup-id"))
+                        extra["backup-id"] = Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
+                }
+
                 if (input.IndexOf("%backup-name%", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    if (m_options.ContainsKey("backup-name"))
-                        extra["backup-name"] = m_options["backup-name"];
-                    else
+                    if (!m_options.ContainsKey("backup-name"))
                         extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
                 }
 
@@ -322,7 +340,7 @@ namespace Duplicati.Library.Modules.Builtin
                     if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
 
-                return m_resultFormatSerializer.Serialize(result, LogLines, extra);
+                return m_resultFormatSerializer.Serialize(result, exception, LogLines, extra);
             }
             else
             {
@@ -338,7 +356,7 @@ namespace Duplicati.Library.Modules.Builtin
                 else
                 {
                     if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, exception, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
@@ -346,6 +364,12 @@ namespace Duplicati.Library.Modules.Builtin
 
                 if (!m_options.ContainsKey("backup-name"))
                     input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("backup-id"))
+                    input = Regex.Replace(input, "\\%backup-id\\%", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT)), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("machine-id"))
+                    input = Regex.Replace(input, "\\%machine-id\\%", Library.AutoUpdater.UpdaterManager.InstallID, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
                 return input;
@@ -371,7 +395,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
         }
 
-        public void OnFinish(object result)
+        public void OnFinish(object result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -389,7 +413,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is Exception)
+            if (result is Exception || exception != null)
                 level = ParsedResultType.Fatal;
             else if (result != null && result is IBasicResults results)
                 level = results.ParsedResult;
@@ -415,8 +439,8 @@ namespace Duplicati.Library.Modules.Builtin
                 if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && System.IO.File.Exists(body))
                     body = System.IO.File.ReadAllText(body);
 
-                body = ReplaceTemplate(body, result, false);
-                subject = ReplaceTemplate(subject, result, true);
+                body = ReplaceTemplate(body, result, exception, false);
+                subject = ReplaceTemplate(subject, result, exception, true);
 
                 SendMessage(subject, body);
             }

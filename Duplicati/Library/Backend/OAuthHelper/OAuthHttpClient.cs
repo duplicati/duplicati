@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -35,19 +35,6 @@ namespace Duplicati.Library
         private static readonly string USER_AGENT_VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
         private readonly OAuthHttpMessageHandler m_authenticator;
-
-        static OAuthHttpClient()
-        {
-            // There is a regression in some versions of Mono (6.0) where an HttpClient
-            // with a BaseAddress cannot make requests to URLs that begin with '/'.
-            // https://github.com/mono/mono/issues/14630
-            // https://www.mono-project.com/docs/faq/known-issues/urikind-relativeorabsolute/.
-            if (Utility.Utility.IsMono)
-            {
-                FieldInfo field = typeof(System.Uri).GetField("useDotNetRelativeOrAbsolute", BindingFlags.Static | BindingFlags.GetField | BindingFlags.NonPublic);
-                field?.SetValue(null, true);
-            }
-        }
 
         public OAuthHttpClient(string authid, string protocolKey)
             : this(CreateMessageHandler(authid, protocolKey))
@@ -127,7 +114,7 @@ namespace Duplicati.Library
                 throw new TimeoutException($"HTTP timeout {this.Timeout} exceeded.");
             }
         }
-        
+
         /// <summary>
         /// Prevents authentication from being applied on the given request
         /// </summary>
@@ -148,6 +135,7 @@ namespace Duplicati.Library
         {
             OAuthHttpMessageHandler handler = new OAuthHttpMessageHandler(authid, protocolKey);
 
+            /* TODO-DNC - not supported https://github.com/dotnet/corefx/issues/26223
             // Set the read/write timeout
             if (HttpContextSettings.ReadWriteTimeout > TimeSpan.Zero)
             {
@@ -161,7 +149,7 @@ namespace Duplicati.Library
                 // TODO: This is no longer supported, the validation can now be done pr. connection as it should always have been
                 // handler.ServerCertificateValidationCallback = HttpContextSettings.CertificateValidator.ValidateServerCertficate;
             }
-
+            */
             return handler;
         }
     }

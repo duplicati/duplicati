@@ -1,15 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
   </PropertyGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
-    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="FasterHashing" Version="1.3.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

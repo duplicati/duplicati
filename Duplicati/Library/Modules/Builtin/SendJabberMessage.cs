@@ -185,15 +185,15 @@ namespace Duplicati.Library.Modules.Builtin
 
         #endregion
 
-        protected override string ReplaceTemplate(string input, object result, bool subjectline)
+        protected override string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
         {
             // No need to do the expansion as we throw away the result
             if (subjectline)
                 return string.Empty;
-            return base.ReplaceTemplate(input, result, subjectline);
+            return base.ReplaceTemplate(input, result, exception, subjectline);
         }
 
-        protected override void SendMessage(string subject, string body)
+        protected override async void SendMessage(string subject, string body)
         {
 
             var uri = new Library.Utility.Uri(m_username.Contains("://") ? m_username : "http://" + m_username);

@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Globalization;
@@ -190,26 +191,7 @@ namespace Duplicati.Library.Main
             
         }
 
-        private static string[] GetSupportedHashes()
-        {
-            var r = new List<string>();
-            foreach (var h in new string[] { "SHA1", "MD5", "SHA256", "SHA384", "SHA512" })
-            {
-                try
-                {
-                    var p = System.Security.Cryptography.HashAlgorithm.Create(h);
-                    if (p != null)
-                        r.Add(h);
-                }
-                catch
-                {
-                }
-            }
-            
-            return r.ToArray();
-        }
-
-        private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "default_compressed_extensions.txt");
+        private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "default_compressed_extensions.txt");
 
         /// <summary>
         /// Lock that protects the options collection
@@ -357,6 +339,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
+                    new CommandLineArgument("backup-id", CommandLineArgument.ArgumentType.String, Strings.Options.BackupidShort, Strings.Options.BackupidLong, ""),
+                    new CommandLineArgument("machine-id", CommandLineArgument.ArgumentType.String, Strings.Options.MachineidShort, Strings.Options.MachineidLong, Library.AutoUpdater.UpdaterManager.InstallID),
+
                     new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false", null, null, Strings.Options.VerboseDeprecated),
                     new CommandLineArgument("full-result", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullresultShort, Strings.Options.FullresultLong, "false"),
 
@@ -383,8 +368,8 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
-                    new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, GetSupportedHashes()),
-                    new CommandLineArgument("file-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FilehashalgorithmShort, Strings.Options.FilehashalgorithmLong, DEFAULT_FILE_HASH_ALGORITHM, null, GetSupportedHashes()),
+                    new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, HashFactory.GetSupportedHashes()),
+                    new CommandLineArgument("file-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FilehashalgorithmShort, Strings.Options.FilehashalgorithmLong, DEFAULT_FILE_HASH_ALGORITHM, null, HashFactory.GetSupportedHashes()),
 
                     new CommandLineArgument("no-auto-compact", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoautocompactShort, Strings.Options.NoautocompactLong, "false"),
                     new CommandLineArgument("small-file-size", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilesizeShort, Strings.Options.SmallfilesizeLong),
@@ -1285,6 +1270,30 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the ID of the backup
+        /// </summary>
+        public string BackupId
+        {
+            get
+            {
+                m_options.TryGetValue("backup-id", out var tmp);
+                return tmp;
+            }
+        }
+
+        /// <summary>
+        /// Gets the ID of the machine
+        /// </summary>
+        public string MachineId
+        {
+            get
+            {
+                if (m_options.TryGetValue("machine-id", out var tmp))
+                    return tmp;
+                return Library.AutoUpdater.UpdaterManager.InstallID;
+            }
+        }
+        /// <summary>
         /// Gets the path to the database
         /// </summary>
         public string Dbpath
@@ -1339,7 +1348,7 @@ namespace Duplicati.Library.Main
             get
             {
 				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
-					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
+					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, HashFactory.HashSizeBytes(BlockHashAlgorithm));
 				
 				return m_cachedBlockHashSize.Value;
             }

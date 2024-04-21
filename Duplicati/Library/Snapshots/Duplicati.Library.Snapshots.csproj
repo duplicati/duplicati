@@ -1,16 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <OutputType>Exe</OutputType>
   </PropertyGroup>
+  
   <ItemGroup>
-    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
-    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
-    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
+	<ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="lvm-scripts\create-lvm-snapshot.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -22,10 +28,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="AlphaFS" Version="2.2.6" />
-    <PackageReference Include="AlphaVSS" Version="2.0.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
 </Project>

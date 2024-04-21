@@ -31,9 +31,9 @@ CREATE UNIQUE INDEX "FileLookupPath" ON "FileLookup" ("PrefixID", "Path", "Block
 INSERT INTO "PathPrefix" ("Prefix")
 SELECT DISTINCT
     CASE SUBSTR("Path", LENGTH("Path")) WHEN  '/' THEN
-        rtrim(SUBSTR("Path", 1, LENGTH("Path")-1), replace(replace(SUBSTR("Path", 1, LENGTH("Path")-1), "\", "/"), '/', ''))
+        rtrim(SUBSTR("Path", 1, LENGTH("Path")-1), replace(replace(SUBSTR("Path", 1, LENGTH("Path")-1), '\', '/'), '/', ''))
     ELSE
-        rtrim("Path", replace(replace("Path", "\", "/"), '/', ''))
+        rtrim("Path", replace(replace("Path", '\', '/'), '/', ''))
     END AS "Prefix"
 FROM "File";
 
@@ -50,9 +50,9 @@ FROM
 
 (SELECT "ID", "Path", "BlocksetID", "MetadataID",
     CASE SUBSTR("Path", LENGTH("Path")) WHEN  '/' THEN
-        rtrim(SUBSTR("Path", 1, LENGTH("Path")-1), replace(replace(SUBSTR("Path", 1, LENGTH("Path")-1), "\", "/"), '/', ''))
+        rtrim(SUBSTR("Path", 1, LENGTH("Path")-1), replace(replace(SUBSTR("Path", 1, LENGTH("Path")-1), '\', '/'), '/', ''))
     ELSE
-        rtrim("Path", replace(replace("Path", "\", "/"), '/', ''))
+        rtrim("Path", replace(replace("Path", '\', '/'), '/', ''))
     END AS "ParentFolder"
 FROM "File") "A" INNER JOIN "PathPrefix" "B" ON "A"."ParentFolder" = "B"."Prefix";
 

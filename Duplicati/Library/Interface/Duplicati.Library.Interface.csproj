@@ -1,17 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Remove="IBackendGUI.cs" />
-    <Compile Remove="ICompressionGUI.cs" />
-    <Compile Remove="IEncryptionGUI.cs" />
-    <Compile Remove="IGUIControl.cs" />
-    <Compile Remove="IGUIMiniControl.cs" />
-    <Compile Remove="ISettingsControl.cs" />
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
 </Project>

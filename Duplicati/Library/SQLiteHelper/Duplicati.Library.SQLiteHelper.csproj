@@ -1,42 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <AssemblyName>SQLiteHelper</AssemblyName>
-  </PropertyGroup>
+    <Description>SQLiteHelper for Duplicati</Description>
+	</PropertyGroup>
+  
   <ItemGroup>
-    <Content Include="..\..\..\thirdparty\SQLite\win64\System.Data.SQLite.dll">
-      <Link>SQLite\win64\System.Data.SQLite.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\SQLite\win32\System.Data.SQLite.dll">
-      <Link>SQLite\win32\System.Data.SQLite.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\SQLite\pinvoke\System.Data.SQLite.dll">
-      <Link>SQLite\pinvoke\System.Data.SQLite.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\SQLite\win32\SQLite.Interop.dll">
-      <Link>SQLite\win32\SQLite.Interop.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\..\thirdparty\SQLite\win64\SQLite.Interop.dll">
-      <Link>SQLite\win64\SQLite.Interop.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
-    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="System.Data.SQLite" Version="1.0.111.0" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.111.0" />
-    <PackageReference Include="System.Data.SQLite.EF6" Version="1.0.118" />
-    <PackageReference Include="EntityFramework" Version="6.4.4" />
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- 
+      MS Data.Sqlite seems much more portable, but does not support unnamed parameters,
+      which are used extensively in Duplicati.
+      Issue tracking progress on the unnamed parameters:
+      https://github.com/dotnet/efcore/issues/24480
+      
+      <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.3" />
+    -->
+
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.0" />
+    <PackageReference Include="System.Data.SQLite.Core.MSIL" Version="1.0.115.0" />
+    <PackageReference Include="System.Data.SQLite.Core.Duplicati.macos.arm64" Version="1.0.116.1" />
+    <PackageReference Include="System.Data.SQLite.Core.Duplicati.linux.arm64" Version="1.0.116" />
+    <PackageReference Include="System.Data.SQLite.Core.Duplicati.linux.armv7" Version="1.0.116" />
   </ItemGroup>
+
 </Project>

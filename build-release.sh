@@ -20,6 +20,8 @@ RELEASE_FILE_NAME="duplicati-${RELEASE_NAME}"
 
 GIT_STASH_NAME="auto-build-${RELEASE_TIMESTAMP}"
 
+S3_BUCKET_NAME="updates.duplicati.com"
+
 UPDATE_ZIP_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip;https://alt.updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
 UPDATE_MANIFEST_URLS="https://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest;https://alt.updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
 UPDATER_KEYFILE="${HOME}/.config/signkeys/Duplicati/updater-release.key"
@@ -133,7 +135,7 @@ fi
 echo "${RELEASE_NAME}" > "Duplicati/License/VersionTag.txt"
 echo "${RELEASE_TYPE}" > "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt"
 echo "${UPDATE_MANIFEST_URLS}" > "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt"
-cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt"
+cp "Updates/release_key.txt"  "Duplicati/Library/AutoUpdater/AutoUpdateSignKeys.txt"
 
 RELEASE_CHANGEINFO=$(cat ${RELEASE_CHANGELOG_FILE})
 if [ "x${RELEASE_CHANGEINFO}" == "x" ]; then
@@ -301,12 +303,12 @@ cp "${UPDATE_TARGET}/latest.zip.sig.asc" "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.
 "${MONO}" "BuildTools/UpdateVersionStamp/bin/Release/UpdateVersionStamp.exe" --version="${RELEASE_VERSION}"
 
 echo "Uploading binaries"
-"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
-"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
-"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
-"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip" "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig" "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip.sig.asc" "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.zip.sig.asc"
+"${AWS}" --profile=duplicati-upload s3 cp "${UPDATE_TARGET}/${RELEASE_FILE_NAME}.manifest" "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest"
 
-"${AWS}" --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.manifest"
+"${AWS}" --profile=duplicati-upload s3 cp "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/latest.manifest"
 
 ZIP_MD5=$(md5 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $NF}')
 ZIP_SHA1=$(shasum -a 1 ${UPDATE_TARGET}/${RELEASE_FILE_NAME}.zip | awk -F ' ' '{print $1}')
@@ -331,13 +333,13 @@ echo "duplicati_version_info =" > "latest.js"
 cat "latest.json" >> "latest.js"
 echo ";" >> "latest.js"
 
-"${AWS}" --profile=duplicati-upload s3 cp "latest.json" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json"
-"${AWS}" --profile=duplicati-upload s3 cp "latest.js" "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.js"
+"${AWS}" --profile=duplicati-upload s3 cp "latest.json" "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/latest.json"
+"${AWS}" --profile=duplicati-upload s3 cp "latest.js" "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/latest.js"
 
 # echo "Propagating to other build types"
 # for OTHER in ${OTHER_UPLOADS}; do
-# 	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://updates.duplicati.com/${OTHER}/latest.manifest"
-# 	aws --profile=duplicati-upload s3 cp "s3://updates.duplicati.com/${RELEASE_TYPE}/latest.json" "s3://updates.duplicati.com/${OTHER}/latest.json"
+# 	aws --profile=duplicati-upload s3 cp "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/${RELEASE_FILE_NAME}.manifest" "s3://${S3_BUCKET_NAME}/${OTHER}/latest.manifest"
+# 	aws --profile=duplicati-upload s3 cp "s3://${S3_BUCKET_NAME}/${RELEASE_TYPE}/latest.json" "s3://${S3_BUCKET_NAME}/${OTHER}/latest.json"
 # done
 
 rm "${RELEASE_CHANGELOG_NEWS_FILE}"

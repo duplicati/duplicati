@@ -1,40 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
-    <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
-    <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="libstorj_uplink.dylib">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libstorj_uplink.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="win-x64\storj_uplink.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="win-x86\storj_uplink.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="sqlite-net-pcl" Version="1.7.335" />
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.0.3" />
-    <PackageReference Include="SQLitePCLRaw.core" Version="2.0.3" />
-    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.0.3" />
-    <PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.0.3" />
-    <PackageReference Include="uplink.NET" Version="2.7.1604" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-  </ItemGroup>
+		<Description>Storj backend for Duplicati</Description>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="uplink.NET" Version="2.12.3328" />
+		<!-- 
+		Disabled bundling binary components for now, as they crash Duplicati
+		
+		<PackageReference Include="uplink.NET.Win" Version="2.12.3328" />
+		<PackageReference Include="uplink.NET.Linux" Version="2.12.3328" />
+		<PackageReference Include="uplink.NET.Mac" Version="2.12.3328" />		 
+		-->
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
+		<ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
+		<ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
+		<ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
 </Project>

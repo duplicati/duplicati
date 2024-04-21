@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -27,19 +27,13 @@ namespace Duplicati.CommandLine.RecoveryTool
 {
     public static class Program
     {
+        private delegate int CommandRunner(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter);
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
-        }
-
-        private delegate int CommandRunner(List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter);
-
-        public static int RealMain(string[] _args)
+        public static int Main(string[] _args)
         {
             try
             {

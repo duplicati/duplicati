@@ -95,7 +95,7 @@ namespace Duplicati.Library.Modules.Builtin {
         /// <summary>
         /// The default message body
         /// </summary>
-        protected override string DEFAULT_BODY => string.Format("Duplicati %OPERATIONNAME% report for %backup-name%{0}{0}%RESULT%", Environment.NewLine);
+        protected override string DEFAULT_BODY => string.Format("Duplicati %OPERATIONNAME% report for %backup-name% (%machine-id%, %backup-id%){0}{0}%RESULT%", Environment.NewLine);
         /// <summary>
         /// Don't use the subject for HTTP
         /// </summary>
@@ -206,13 +206,13 @@ namespace Duplicati.Library.Modules.Builtin {
 
 		#endregion
 
-		protected override string ReplaceTemplate(string input, object result, bool subjectline)
+		protected override string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
 		{
             // No need to do the expansion as we throw away the result
             if (subjectline)
                 return string.Empty;
 
-            return base.ReplaceTemplate(input, result, subjectline);
+            return base.ReplaceTemplate(input, result, exception, subjectline);
 		}
 
         protected override void SendMessage(string subject, string body) {

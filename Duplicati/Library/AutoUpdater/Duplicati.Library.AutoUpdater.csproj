@@ -1,33 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <OutputType>Exe</OutputType>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\Release</OutputPath>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
+  
   <ItemGroup>
-    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
-    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
+  
   <ItemGroup>
     <EmbeddedResource Include="AutoUpdateAppName.txt" />
-    <EmbeddedResource Include="AutoUpdateSignKey.txt" />
+    <EmbeddedResource Include="AutoUpdateSignKeys.txt" />
     <EmbeddedResource Include="AutoUpdateURL.txt" />
     <EmbeddedResource Include="AutoUpdateFolderReadme.txt" />
     <EmbeddedResource Include="AutoUpdateInstallIDTemplate.txt" />
     <EmbeddedResource Include="AutoUpdateBuildChannel.txt" />
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
 </Project>

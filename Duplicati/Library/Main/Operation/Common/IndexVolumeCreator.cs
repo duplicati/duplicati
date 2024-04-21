@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,6 +23,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -139,7 +140,7 @@ namespace Duplicati.Library.Main.Operation.Common
     {
         public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database)
         {
-            using(var h = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm))
+            using(var h = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             {
                 var w = new IndexVolumeWriter(options);
                 w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
@@ -172,7 +173,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         /*public static async Task<IndexVolumeWriter> ReCreateIndexVolume(string selfname, Options options, Repair.RepairDatabase database)
         {
-            using(var h = System.Security.Cryptography.HashAlgorithm.Create(options.BlockHashAlgorithm))
+            using(var h = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             {
                 var w = new IndexVolumeWriter(options);
                 w.SetRemoteFilename(selfname);

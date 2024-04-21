@@ -18,36 +18,33 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Reflection;
+
+using System;
 
 namespace Duplicati.Library.Utility.Power
 {
     public class WindowsPowerSupplyState : IPowerSupplyState
     {
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         public PowerSupply.Source GetSource()
         {
             try
             {
-                // Using reflection to allow building on non-Windows
-                // PowerLineStatus status = System.Windows.Forms.SystemInformation.PowerStatus.PowerLineStatus;
-                var powerstatus = System.Type.GetType("System.Windows.Forms.SystemInformation, System.Windows.Forms")
-                    .GetProperty("PowerStatus", BindingFlags.Public | BindingFlags.Static)
-                    .GetValue(null);
+                var managementScope = new System.Management.ManagementScope(new System.Management.ManagementPath("root\\cimv2"));
+                var objectQuery = new System.Management.ObjectQuery("SELECT BatteryStatus FROM Win32_Battery");
+                var objectSearcher = new System.Management.ManagementObjectSearcher(managementScope, objectQuery);
+                var objectCollection = objectSearcher.Get();
 
-                var status = powerstatus.GetType()
-                    .GetProperty("PowerLineStatus", BindingFlags.Public | BindingFlags.Instance)
-                    .GetValue(powerstatus)
-                    .ToString();
-
-                    
-                if (string.Equals(status, "Online", System.StringComparison.OrdinalIgnoreCase))
-                {
+                if (objectCollection.Count == 0)
                     return PowerSupply.Source.AC;
-                }
-                if (string.Equals(status == "Offline", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return PowerSupply.Source.Battery;
-                }
+
+                foreach (System.Management.ManagementObject managementObject in objectCollection)
+                    if (Convert.ToUInt16(managementObject.Properties["BatteryStatus"].Value) == 2)
+                        return PowerSupply.Source.AC;
+                    else
+                        return PowerSupply.Source.Battery;
+
+                return PowerSupply.Source.Unknown;
             }
             catch
             { }

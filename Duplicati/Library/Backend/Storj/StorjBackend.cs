@@ -319,6 +319,10 @@ namespace Duplicati.Library.Backend.Storj
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false);
             await upload.StartUploadAsync();
+            if(upload.Failed)
+            {
+                throw new Exception(upload.ErrorMessage);
+            }
         }
 
         public void Test()
