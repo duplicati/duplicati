@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -218,7 +218,7 @@ namespace Duplicati.Library.Snapshots
             /// <returns>A string with the combined output of the stdout and stderr</returns>
             private static string ExecuteCommand(string program, string commandline, int expectedExitCode)
             {
-                program = System.IO.Path.Combine(System.IO.Path.Combine(AutoUpdater.UpdaterManager.InstalledBaseDir, "lvm-scripts"), program);
+                program = System.IO.Path.Combine(System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "lvm-scripts"), program);
                 var inf = new ProcessStartInfo(program, commandline)
                 {
                     CreateNoWindow = true,
@@ -487,12 +487,12 @@ namespace Duplicati.Library.Snapshots
         {
             try
             {
-                var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
+                var n = PosixFile.GetFileType(SystemIOLinux.NormalizePath(localPath));
                 switch (n)
                 {
-                    case UnixSupport.File.FileType.Directory:
-                    case UnixSupport.File.FileType.Symlink:
-                    case UnixSupport.File.FileType.File:
+                    case PosixFile.FileType.Directory:
+                    case PosixFile.FileType.Symlink:
+                    case PosixFile.FileType.File:
                         return false;
                     default:
                         return true;
@@ -516,10 +516,10 @@ namespace Duplicati.Library.Snapshots
         {
             var snapshotPath = ConvertToSnapshotPath(localPath);
             
-            if (UnixSupport.File.GetHardlinkCount(snapshotPath) <= 1)
+            if (PosixFile.GetHardlinkCount(snapshotPath) <= 1)
                 return null;
             
-            return UnixSupport.File.GetInodeTargetID(snapshotPath);
+            return PosixFile.GetInodeTargetID(snapshotPath);
         }
 
         /// <inheritdoc />

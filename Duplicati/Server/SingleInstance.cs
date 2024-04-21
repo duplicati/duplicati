@@ -144,7 +144,7 @@ namespace Duplicati.Server
             try
             {
                 if (Platform.IsClientPosix)
-                    temp_fs = UnixSupport.File.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
+                    temp_fs = PosixFile.OpenExclusive(m_lockfilename, System.IO.FileAccess.Write);
                 else
                     temp_fs = System.IO.File.Open(m_lockfilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None);
                 
@@ -199,7 +199,7 @@ namespace Duplicati.Server
 
                 //Write out the commandline arguments
                 string[] cmdargs = System.Environment.GetCommandLineArgs();
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(Platform.IsClientPosix ? UnixSupport.File.OpenExclusive(filename, System.IO.FileAccess.Write) : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(Platform.IsClientPosix ? PosixFile.OpenExclusive(filename, System.IO.FileAccess.Write) : new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write, System.IO.FileShare.None)))
                     for (int i = 1; i < cmdargs.Length; i++) //Skip the first, as that is the filename
                         sw.WriteLine(cmdargs[i]);
 
@@ -252,7 +252,7 @@ namespace Duplicati.Server
                         return;
 
                     List<string> args = new List<string>();
-                    using (System.IO.StreamReader sr = new System.IO.StreamReader(Platform.IsClientPosix ? UnixSupport.File.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
+                    using (System.IO.StreamReader sr = new System.IO.StreamReader(Platform.IsClientPosix ? PosixFile.OpenExclusive(e.FullPath, System.IO.FileAccess.ReadWrite) : new System.IO.FileStream(e.FullPath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None)))
                     {
                         while (!sr.EndOfStream)
                         {

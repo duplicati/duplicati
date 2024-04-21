@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -299,14 +299,7 @@ namespace Duplicati.Library.Common.IO
 
         public static IVssBackupComponents CreateVssBackupComponents()
         {
-            // Substitute for calling VssUtils.LoadImplementation(), as we have the dlls outside the GAC
-            var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            if (assemblyLocation == null)
-                throw new InvalidOperationException();
-
-            //Here we don't need a custom Path.Combine: we need unconditional access to alphaFS
-            var alphadll = Path.Combine(assemblyLocation, "alphavss", VssUtils.GetPlatformSpecificAssemblyShortName() + ".dll");
-            var vss = (IVssImplementation)System.Reflection.Assembly.LoadFile(alphadll).CreateInstance("Alphaleonis.Win32.Vss.VssImplementation");
+            var vss = VssFactoryProvider.Default.GetVssFactory();
             if (vss == null)
                 throw new InvalidOperationException();
 

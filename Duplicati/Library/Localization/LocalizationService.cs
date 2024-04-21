@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -25,6 +25,7 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Localization.Short;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Localization
 {
@@ -97,7 +98,7 @@ namespace Duplicati.Library.Localization
         { 
             get 
             {
-                var lc = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData(LOGICAL_CONTEXT_KEY) as string;
+                var lc = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
                 if (!string.IsNullOrWhiteSpace(lc))
                     return Get(new CultureInfo(lc));
                 return Get(CultureInfo.CurrentCulture); 

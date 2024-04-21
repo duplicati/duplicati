@@ -168,8 +168,12 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                
-                var defaults = new Amazon.S3.AmazonS3Config();
+                var defaults = new Amazon.S3.AmazonS3Config()
+                {
+                    // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
+                    // to get the region endpoint. This stalls the supported commands list.
+                    UseArnRegion = false
+                };
 
                 var exts =
                     typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
@@ -182,16 +186,12 @@ namespace Duplicati.Library.Backend
                             null,
                             x.PropertyType.IsEnum ? Enum.GetNames(x.PropertyType) : null));
 
-
                 var normal = new ICommandLineArgument[] {
-                  
                     new CommandLineArgument("access_key_secret", CommandLineArgument.ArgumentType.Password, Strings.Idrivee2Backend.KeySecretDescriptionShort, Strings.Idrivee2Backend.KeySecretDescriptionLong, null, new[]{"auth-password"}, null),
                     new CommandLineArgument("access_key_id", CommandLineArgument.ArgumentType.String, Strings.Idrivee2Backend.KeyIDDescriptionShort, Strings.Idrivee2Backend.KeyIDDescriptionLong,null, new[]{"auth-username"}, null)
-                 
                 };
 
                 return normal.Union(exts).ToList();
-
             }
         }
 

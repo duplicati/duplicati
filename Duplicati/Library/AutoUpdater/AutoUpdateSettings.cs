@@ -42,8 +42,8 @@ namespace Duplicati.Library.AutoUpdater
         private const string OEM_UPDATE_README = "oem-update-readme.txt";
         private const string OEM_UPDATE_INSTALL_FILE = "oem-update-installid.txt";
 
-        internal const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
-        internal const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
+        public const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
+        public const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
 
         internal const string MATCH_UPDATE_URL_PREFIX_GROUP = "prefix";
         internal const string MATCH_UPDATE_URL_CHANNEL_GROUP = "channel";
@@ -143,10 +143,6 @@ namespace Duplicati.Library.AutoUpdater
                 if (string.IsNullOrWhiteSpace(channelstring))
                     channelstring = BuildUpdateChannel;
 
-                if (string.IsNullOrWhiteSpace(channelstring))
-                    channelstring = UpdaterManager.BaseVersion.ReleaseType;
-
-
                 // Update from older builds
                 if (string.Equals(channelstring, "preview", StringComparison.OrdinalIgnoreCase))
                     channelstring = ReleaseType.Experimental.ToString();
@@ -181,21 +177,42 @@ namespace Duplicati.Library.AutoUpdater
             get { return string.Format(ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE), Guid.NewGuid().ToString("N")); }
         }
 
-        public static System.Security.Cryptography.RSACryptoServiceProvider SignKey
+        public static System.Security.Cryptography.RSACryptoServiceProvider[] SignKeys
         {
             get
-            { 
+            {
+                var keys = new List<System.Security.Cryptography.RSACryptoServiceProvider>();
+
                 try
                 {
-                    var key = System.Security.Cryptography.RSA.Create();
-                    key.FromXmlString(ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY)); 
-                    return (System.Security.Cryptography.RSACryptoServiceProvider)key;
+                    var src = ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY);
+
+                    // Allow multiple keys, one per line
+                    // For fallback, read the whole string as a key, in case there are old ones with line breaks
+
+                    var keystrings = src.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim())
+                        .Prepend(src.Trim())
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct();
+
+                    foreach (var str in keystrings)
+                    {
+                        try
+                        {
+                            var key = System.Security.Cryptography.RSA.Create();
+                            key.FromXmlString(str);
+                            keys.Add((System.Security.Cryptography.RSACryptoServiceProvider)key);
+                        }
+                        catch
+                        { }
+                    }
                 }
                 catch
                 {
                 }
 
-                return null;
+                return keys.ToArray();
             }
         }
     }

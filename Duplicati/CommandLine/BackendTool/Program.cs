@@ -34,13 +34,7 @@ namespace Duplicati.CommandLine.BackendTool
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
-        }
-
-        public static int RealMain(string[] _args)
+        public static int Main(string[] _args)
         {
             bool debugoutput = false;
             try
