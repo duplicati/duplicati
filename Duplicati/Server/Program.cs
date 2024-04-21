@@ -234,7 +234,7 @@ namespace Duplicati.Server
             }
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
-            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 
             //Find commandline options here for handling special startup cases
             var args = new List<string>(_args);
@@ -330,7 +330,8 @@ namespace Duplicati.Server
             {
                 StatusEventNotifyer.SignalNewEvent();
 
-                ShutdownModernWebserver();
+                if (ShutdownModernWebserver != null)
+                    ShutdownModernWebserver();
                 UpdatePoller?.Terminate();
                 Scheduler?.Terminate(true);
                 WorkThread?.Terminate(true);
@@ -355,8 +356,8 @@ namespace Duplicati.Server
             ServerPortChanged |= WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
             DataConnection.ApplicationSettings.LastWebserverPort = WebServer.Port;
 
-            var server = new DuplicatiWebserver();
-            ShutdownModernWebserver = server.Foo();
+            // var server = new DuplicatiWebserver();
+            // ShutdownModernWebserver = server.Foo();
         }
 
         private static void SetWorkerThread()

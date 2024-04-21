@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.ServiceProcess;
@@ -56,8 +57,8 @@ namespace Duplicati.WindowsService
             {
                 // Remove the install and uninstall flags if they are present
                 var commandline = Library.Utility.Utility.WrapAsCommandLine(args.Where(x => !(string.Equals("install", x, StringComparison.OrdinalIgnoreCase) || string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase))));
-                var selfexec = Assembly.GetExecutingAssembly().Location;
-                
+                var selfexec = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Duplicati.WindowsService.exe");
+
                 // --uninstall + --install = reinstall
                 if (uninstall)
                 {

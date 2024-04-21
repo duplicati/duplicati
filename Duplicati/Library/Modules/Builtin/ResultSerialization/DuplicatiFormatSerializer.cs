@@ -37,11 +37,18 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
         /// </summary>
         /// <returns>The serialized result string.</returns>
         /// <param name="result">The result to serialize.</param>
+        /// <param name="failException">The exception, if any</param>
         /// <param name="loglines">The log lines to serialize.</param>
         /// <param name="additional">Additional parameters to include</param>
-        public string Serialize(object result, IEnumerable<string> loglines, Dictionary<string, string> additional)
+        public string Serialize(object result, Exception failException, IEnumerable<string> loglines, Dictionary<string, string> additional)
         {
             StringBuilder sb = new StringBuilder();
+
+            // Prepend the error message as the first two lines, to mimic previous behavior with only the exception text
+            if (failException != null && result != failException)
+            {
+                sb.AppendLine(Serialize(failException, null, null, null));
+            }
 
             if (result == null)
             {
@@ -105,7 +112,7 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
             }
             else
             {
-                var ignore = new string[] { 
+                var ignore = new string[] {
                     nameof(IBasicResults.Warnings),
                     nameof(IBasicResults.Errors),
                     nameof(IBasicResults.Messages)
@@ -115,7 +122,7 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
             }
 
             if (additional != null && additional.Count > 0)
-                sb.AppendLine(Serialize(additional, null, null));
+                sb.AppendLine(Serialize(additional, null, null, null));
 
             if (loglines != null && loglines.Any())
             {

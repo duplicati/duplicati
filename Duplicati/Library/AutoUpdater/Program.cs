@@ -83,8 +83,9 @@ namespace Duplicati.Library.AutoUpdater
                             Console.WriteLine("Downloading update \"{0}\" to {1} ...", update.Displayname, filename);
 
                             long lastpg = 0;
-                            UpdaterManager.DownloadUpdate(update, package, filename, f => {
-                                var npg = (long)(f*100);
+                            UpdaterManager.DownloadUpdate(update, package, filename, f =>
+                            {
+                                var npg = (long)(f * 100);
                                 if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
                                 {
                                     lastpg = npg;
@@ -106,17 +107,17 @@ namespace Duplicati.Library.AutoUpdater
 
         private static void WriteUsage()
         {
-            Console.WriteLine("Usage:{0}\t{1}{2} [CHECK|DOWNLOAD|HELP]", Environment.NewLine, Duplicati.Library.Utility.Utility.IsMono ? "mono " : "", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            Console.WriteLine("Usage:{0}\t{1}{2} [CHECK|DOWNLOAD|HELP]", Environment.NewLine, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.AutoUpdater));
             Console.WriteLine();
             Console.WriteLine("Environment variables:");
             Console.WriteLine();
             Console.WriteLine("{0} - Disables updates completely", string.Format(UpdaterManager.SKIPUPDATE_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
             Console.WriteLine("{0} - Use alternate updates urls", string.Format(AutoUpdateSettings.UPDATEURL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
-            Console.WriteLine("{0} - Choose different channel than the default {1}, valid settings: {2}", string.Format(AutoUpdateSettings.UPDATECHANNEL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel, string.Join(",", Enum.GetNames(typeof(ReleaseType)).Where( x => x != ReleaseType.Unknown.ToString())));
+            Console.WriteLine("{0} - Choose different channel than the default {1}, valid settings: {2}", string.Format(AutoUpdateSettings.UPDATECHANNEL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel, string.Join(",", Enum.GetNames(typeof(ReleaseType)).Where(x => x != ReleaseType.Unknown.ToString())));
             Console.WriteLine();
             Console.WriteLine("Updates are downloaded from: {0}", string.Join(";", AutoUpdateSettings.URLs));
             Console.WriteLine("Machine settings are installed in: {0}", UpdaterManager.UPDATEDIR);
-            Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version, UpdaterManager.INSTALLATIONDIR);
             Console.WriteLine();
         }
     }

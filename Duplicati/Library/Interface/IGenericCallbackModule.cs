@@ -38,6 +38,7 @@ namespace Duplicati.Library.Interface
         /// Called when the operation finishes
         /// </summary>
         /// <param name="result">The result object, if this derives from an exception, the operation failed</param>
-        void OnFinish(object result);
+        /// <param name="exception">The exception that stopped the backup, or null</param>
+        void OnFinish(object result, Exception exception);
     }
 }

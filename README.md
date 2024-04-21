@@ -33,7 +33,7 @@ Download
 
 The latest version of Duplicati is a beta version for the Duplicati 2.0 release. 
 
-[Click here to download the latest Duplicati 2.0 beta release.](http://www.duplicati.com/download)
+[Click here to download the latest Duplicati 2.0 beta release.](https://duplicati.com/download)
 
 The beta release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal).
 For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.

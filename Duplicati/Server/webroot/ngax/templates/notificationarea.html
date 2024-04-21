@@ -2,11 +2,11 @@
     <li ng-repeat="item in Notifications track by item.ID" ng-show="$index < 4" class="{{item.Type.toLowerCase()}}">
         <div class="title">{{item.Title}}</div>
         <div class="content">
-            <div ng-if="item.Action != 'update:new'" class="message">{{item.Message}}</div>
+            <div ng-if="item.Action != 'update:new' &amp;&amp; item.Action != 'update:manual'" class="message">{{item.Message}}</div>
             <div ng-show="item.DownloadLink != null">
                 <div translate>If the backup file was not downloaded automatically, <a href="{{item.DownloadLink}}" target="_blank">right click and choose &quot;Save as …&quot;</a></div>
             </div>
-            <div ng-if="item.Action != 'update:new'" class="buttons">
+            <div ng-if="item.Action != 'update:new' &amp;&amp; item.Action != 'update:manual'" class="buttons">
                 <a href ng-click="doDismiss(item.ID)" class="button dismiss" translate>Dismiss</a>
 
                 <a href ng-show="item.Action == 'backup:show-log'" ng-click="doShowLog(item.BackupID)" class="button showlog" translate>Show</a>
@@ -17,7 +17,6 @@
                 <div class="clear"></div>
             </div>
 
-
             <div ng-if="item.Action == 'update:new'">
                 <div class="message" translate translate-params-message="item.Message">New update found: <a href="{{state.updateDownloadLink}}">{{message}}</a></div>
 
@@ -27,6 +26,16 @@
                     <a href ng-click="doDismiss(item.ID)" class="button dismiss" translate>Dismiss</a>
                     <a href="{{state.updateDownloadLink}}" class="button installupdate" translate>Download</a>
                     <a href ng-click="doShowUpdate()" class="button showupdate" translate>Show</a>
+                    <div class="clear"></div>
+                </div>
+            </div>
+                
+            <div ng-if="item.Action == 'update:manual'">
+                <div class="message"><span translate>Manual update found:</span> <a href="{{item.Message}}" target="_blank" rel="extenal">{{item.Message}}</a></div>
+                        
+                <div class="buttons">
+                    <a href ng-click="doDismiss(item.ID)" class="button dismiss" translate>Dismiss</a>
+                    <a href="{{item.Message}}" target="_blank" rel="extenal" class="button showupdate" translate>Show</a>
                     <div class="clear"></div>
                 </div>
             </div>
