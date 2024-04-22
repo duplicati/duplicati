@@ -203,18 +203,6 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(string[] _args)
         {
-            // var methodInfo = typeof(TemporaryIoCAccessor).Assembly.EntryPoint;
-            // var program = Activator.CreateInstance(methodInfo!.DeclaringType!);
-            // methodInfo.Invoke(program, [Array.Empty<string>()]);
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
-        }
-
-        public static int RealMain(string[] _args)
-        {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
-
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
             if (Platform.IsClientWindows)

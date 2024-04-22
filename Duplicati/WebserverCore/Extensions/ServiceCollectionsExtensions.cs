@@ -26,7 +26,6 @@ public static class ServiceCollectionsExtensions
         services.AddSingleton<EventPollNotify>();
 
         //transitional part - services that act as a proxy to old part for various reasons (not accessible in assembly i.e.)
-        services.AddSingleton<IUpdateManagerAccessor, UpdateManagerAccessor>();
         services.AddSingleton<ILiveControls>(c => c.GetRequiredService<LiveControls>());
         services.AddSingleton<IBoolParser, BoolParser>();
 

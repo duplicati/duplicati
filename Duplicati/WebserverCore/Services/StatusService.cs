@@ -1,4 +1,3 @@
-using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
@@ -14,7 +13,6 @@ public class StatusService : IStatusService
     private readonly LiveControls m_liveControls;
     private readonly UpdatePollThread m_updatePollThread;
     private readonly IUpdateService m_updateService;
-    private readonly IUpdateManagerAccessor m_updateManager;
     private readonly IWorkerThreadsManager m_workerThreadsManager;
     private readonly ISettingsService m_settingsService;
     private readonly IScheduler m_scheduler;
@@ -24,7 +22,6 @@ public class StatusService : IStatusService
     public StatusService(LiveControls liveControls,
         UpdatePollThread updatePollThread,
         IUpdateService updateService,
-        IUpdateManagerAccessor updateManager,
         IWorkerThreadsManager workerThreadsManager,
         ISettingsService settingsService,
         IScheduler scheduler,
@@ -35,7 +32,6 @@ public class StatusService : IStatusService
         m_liveControls = liveControls;
         m_updatePollThread = updatePollThread;
         m_updateService = updateService;
-        m_updateManager = updateManager;
         m_workerThreadsManager = workerThreadsManager;
         m_settingsService = settingsService;
         m_scheduler = scheduler;
@@ -52,7 +48,6 @@ public class StatusService : IStatusService
             UpdatedVersion = GetUpdatedVersion(),
             UpdaterState = m_updatePollThread.ThreadState,
             UpdateDownloadProgress = m_updatePollThread.DownloadProgess,
-            UpdateReady = m_updateManager.HasUpdateInstalled,
             ActiveTask = m_workerThreadsManager.CurrentTask,
             SchedulerQueueIds = m_scheduler.GetSchedulerQueueIds(),
             LastEventID = m_eventPollNotify.EventNo,
@@ -98,6 +93,7 @@ public class StatusService : IStatusService
     {
         status.HasError = m_settingsService.GetSettings().UnackedError;
         status.HasWarning = m_settingsService.GetSettings().UnackedWarning;
+        status.UpdateDownloadLink = m_settingsService.GetSettings().UpdateCheckNewVersion;
     }
 
     private string? GetUpdatedVersion()

@@ -4,9 +4,8 @@ Link to a feature: [Calculator](Duplicati.Browser.Test/Features/LocalBackup.feat
 ***Further read***: **[Learn more about how to generate Living Documentation](https://docs.specflow.org/projects/specflow-livingdoc/en/latest/LivingDocGenerator/Generating-Documentation.html)**
 
 Scenario: Configure Backup
-	Given the first number is 50
-	And the second number is 70
-	When the two numbers are added
+	Given there is local backup defined
+	When you run the backup
 	Then the result should be 120
 
 

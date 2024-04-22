@@ -1,4 +1,5 @@
 ﻿using System;
+using Duplicati.Browser.Test.Drivers;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 
@@ -18,23 +19,15 @@ namespace Duplicati.Browser.Test.PageObjects
         public const int DefaultWaitInSeconds = 5;
 
         //Finding elements by ID
-        private IWebElement AddBackupElement => webDriver.FindElement(By.ClassName("add"));
-        private IWebElement SecondNumberElement => webDriver.FindElement(By.Id("second-number"));
-        private IWebElement AddButtonElement => webDriver.FindElement(By.Id("add-button"));
-        private IWebElement ResultElement => webDriver.FindElement(By.Id("result"));
-        private IWebElement ResetButtonElement => webDriver.FindElement(By.Id("reset-button"));
+        private IWebElement AddBackupElement => webDriver.WaitForElement(By.ClassName("add"));
+        private IWebElement AddButtonElement => webDriver.WaitForElement(By.Id("add-button"));
+        private IWebElement ResultElement => webDriver.WaitForElement(By.Id("result"));
+        private IWebElement ResetButtonElement => webDriver.WaitForElement(By.Id("reset-button"));
 
-        public void NavigateToBackupCreation()
+        public AddBackupPage NavigateToBackupCreation()
         {
             AddBackupElement.Click();
-        }
-
-        public void EnterSecondNumber(string number)
-        {
-            //Clear text box
-            SecondNumberElement.Clear();
-            //Enter text
-            SecondNumberElement.SendKeys(number);
+            return new AddBackupPage(webDriver);
         }
 
         public void ClickAdd()

@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Net;
+using Duplicati.Library.RestAPI.Abstractions;
 using HttpServer;
 using HttpServer.FormDecoders;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -8,7 +9,7 @@ using HttpRequest = Microsoft.AspNetCore.Http.HttpRequest;
 
 namespace Duplicati.WebserverCore;
 
-class LegacyHttpRequestShim : HttpServer.IHttpRequest
+class LegacyHttpRequestShim : HttpServer.IHttpRequest, IModernHttpRequestAccess
 {
     HttpRequest request;
     public LegacyHttpRequestShim(HttpRequest request) { this.request = request; }
@@ -146,5 +147,10 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest
     public void SetCookies(RequestCookies cookies)
     {
         throw new NotImplementedException();
+    }
+
+    public string? GetQueryParam(string name)
+    {
+        return request.Query[name].FirstOrDefault();
     }
 }

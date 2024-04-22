@@ -19,11 +19,12 @@
 
   <ItemGroup>
     <Folder Include="Drivers\" />
+    <Folder Include="test-backup-source\" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="msedgedriver">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

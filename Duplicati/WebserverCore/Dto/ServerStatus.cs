@@ -19,6 +19,6 @@ public class ServerStatusDto : IServerStatus
     public long LastNotificationUpdateID { get; init; }
     public string? UpdatedVersion { get; init; }
     public UpdatePollerStates UpdaterState { get; init; }
-    public bool UpdateReady { get; init; }
+    public string UpdateDownloadLink { get; set; }
     public double UpdateDownloadProgress { get; init; }
 }

@@ -1,6 +1,8 @@
-﻿using Duplicati.Browser.Test.Drivers;
+﻿using System.IO;
+using Duplicati.Browser.Test.Drivers;
 using Duplicati.Browser.Test.PageObjects;
 using FluentAssertions;
+using OpenQA.Selenium.Support.Extensions;
 using TechTalk.SpecFlow;
 
 namespace Duplicati.Browser.Test.Steps
@@ -11,22 +13,29 @@ namespace Duplicati.Browser.Test.Steps
         //Page Object for Calculator
         private readonly DuplicatiPageObject _duplicatiPageObject = new(browserDriver.Current);
 
-        [Given("the first number is (.*)")]
-        public void GivenTheFirstNumberIs(int number)
+        [Given("there is local backup defined")]
+        public void GivenLocalBackupDefined()
         {
+            browserDriver.Current.TakeScreenshot();
             //delegate to Page Object
-            _duplicatiPageObject.NavigateToBackupCreation();
+           _duplicatiPageObject.NavigateToBackupCreation()
+                .ToGeneralSettings()
+                .SetName("Local Backup")
+                .GenerateRandomPassword()
+                .ToBackupTarget()
+                .ChoosePathManually()
+                .SetManualPath(Path.Combine(Directory.GetCurrentDirectory(), "test-backup-target"))
+                .ToBackupSource()
+                .AddSourceManually(Path.Combine(Directory.GetCurrentDirectory(), "test-backup-source")+"/")
+                .ToSchedule()
+                .DisableAutorun()
+                .ToOptions()
+                .Save()
+                ;
         }
 
-        [Given("the second number is (.*)")]
-        public void GivenTheSecondNumberIs(int number)
-        {
-            //delegate to Page Object
-            _duplicatiPageObject.EnterSecondNumber(number.ToString());
-        }
-
-        [When("the two numbers are added")]
-        public void WhenTheTwoNumbersAreAdded()
+        [When("you run the backup")]
+        public void WhenBackupIsRun()
         {
             //delegate to Page Object
             _duplicatiPageObject.ClickAdd();
