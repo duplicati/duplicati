@@ -26,7 +26,6 @@
 	<ProjectReference Include="..\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj" />
 	<ProjectReference Include="..\Backend\Storj\Duplicati.Library.Backend.Storj.csproj" />
 	<ProjectReference Include="..\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj" />
-	<ProjectReference Include="..\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj" />
 	<ProjectReference Include="..\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj" />
 	<ProjectReference Include="..\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj" />
 	</ItemGroup>

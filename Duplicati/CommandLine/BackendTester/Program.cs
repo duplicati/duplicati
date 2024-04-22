@@ -31,7 +31,6 @@ namespace Duplicati.CommandLine.BackendTester
 {
     public class Program
     {
-
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
@@ -63,13 +62,7 @@ namespace Duplicati.CommandLine.BackendTester
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
-        }
-
-        public static void RealMain(string[] _args)
+        public static int Main(string[] _args)
         {
             try
             {
@@ -107,7 +100,7 @@ namespace Duplicati.CommandLine.BackendTester
                     foreach (string s in lines)
                         Console.WriteLine(s);
 
-                    return;
+                    return 0;
                 }
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
@@ -129,14 +122,17 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     Console.WriteLine("Starting run no {0}", i);
                     if (!Run(args, options, i == 0))
-                        return;
+                        return 1;
                 }
                 Console.WriteLine("Unittest complete!");
+                return 0;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Unittest failed: " + ex);
             }
+
+            return 1;
         }
 
         static bool Run(List<string> args, Dictionary<string, string> options, bool first)

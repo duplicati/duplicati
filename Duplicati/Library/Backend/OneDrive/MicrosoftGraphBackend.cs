@@ -93,12 +93,13 @@ namespace Duplicati.Library.Backend
         private const int UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE = 320 * 1024;
 
         /// <summary>
-        /// Whether to use the HttpClient class for HTTP requests.
-        /// Default is false when running under Mono (as it seems it might be causing a memory leak in some environments / versions)
-        /// but true in other cases (where these memory leaks haven't been reproduced).
+        /// Whether to use the HttpClient class for HTTP requests as default.
         /// </summary>
-        private static readonly bool USE_HTTP_CLIENT_DEFAULT = Utility.Utility.IsMono ? false : true;
+        private static readonly bool USE_HTTP_CLIENT_DEFAULT = true;
 
+        /// <summary>
+        /// Cached copy of the PATH method
+        /// </summary>
         private static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
 
         /// <summary>
@@ -203,8 +204,8 @@ namespace Duplicati.Library.Backend
                 return this.DescriptionTemplate(
                     "Microsoft Service Agreement",
                     SERVICES_AGREEMENT,
-                    "Microsoft Online Privacy Statement", 
-                    PRIVACY_STATEMENT); 
+                    "Microsoft Online Privacy Statement",
+                    PRIVACY_STATEMENT);
             }
         }
 
@@ -554,7 +555,7 @@ namespace Duplicati.Library.Backend
                                                         cancelToken).ConfigureAwait(false);
                                                 }
                                             }
-                                            
+
                                             // Error handling based on recommendations here:
                                             // https://docs.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession#best-practices
                                             if (attempt >= retryCount - 1)
@@ -941,7 +942,7 @@ namespace Duplicati.Library.Backend
                 return this.ParseResponse<T>(response);
             }
         }
-        
+
         private IEnumerable<T> Enumerate<T>(string url)
         {
             string nextUrl = url;

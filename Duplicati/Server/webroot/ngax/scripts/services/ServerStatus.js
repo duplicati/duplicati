@@ -18,8 +18,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         failedConnectionAttempts: 0,
         lastPgEvent: null,
         updaterState: 'Waiting',
+        updateDownloadLink: null,
         updatedVersion: null,
-        updateReady: false,
         updateDownloadProgress: 0,
         proposedSchedule: [],
         schedulerQueueIds: []
@@ -205,7 +205,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             notifyIfChanged(response.data, 'programState', 'programState') |
             notifyIfChanged(response.data, 'estimatedPauseEnd', 'estimatedPauseEnd') |
             notifyIfChanged(response.data, 'updaterState', 'updaterState') |
-            notifyIfChanged(response.data, 'updateReady', 'updateReady') |
+            notifyIfChanged(response.data, 'updateDownloadLink', 'updateDownloadLink') |
             notifyIfChanged(response.data, 'updatedVersion', 'updatedVersion') |
             notifyIfChanged(response.data, 'updateDownloadProgress', 'updateDownloadProgress');
 

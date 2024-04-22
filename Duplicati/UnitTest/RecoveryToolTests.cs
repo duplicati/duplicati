@@ -90,17 +90,17 @@ namespace Duplicati.UnitTest
             // Download the backend files.
             string downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
             Directory.CreateDirectory(downloadFolder);
-            int status = CommandLine.RecoveryTool.Program.RealMain(new[] {"download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}"});
+            int status = CommandLine.RecoveryTool.Program.Main(new[] {"download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}"});
             Assert.AreEqual(0, status);
 
             // Create the index.
-            status = CommandLine.RecoveryTool.Program.RealMain(new[] {"index", $"{downloadFolder}", $"--build-index-with-files={buildIndexWithFiles}"});
+            status = CommandLine.RecoveryTool.Program.Main(new[] {"index", $"{downloadFolder}", $"--build-index-with-files={buildIndexWithFiles}"});
             Assert.AreEqual(0, status);
 
             // Restore to a different folder.
             string restoreFolder = Path.Combine(this.RESTOREFOLDER, "restoredFiles");
             Directory.CreateDirectory(restoreFolder);
-            status = CommandLine.RecoveryTool.Program.RealMain(new[] {"restore", $"{downloadFolder}", $"--targetpath={restoreFolder}"});
+            status = CommandLine.RecoveryTool.Program.Main(new[] {"restore", $"{downloadFolder}", $"--targetpath={restoreFolder}"});
             Assert.AreEqual(0, status);
 
             // Since this.DATAFOLDER is a folder, Path.GetFileName will return the name of the

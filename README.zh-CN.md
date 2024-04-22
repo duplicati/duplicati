@@ -35,7 +35,7 @@ Duplicati 根据 LGPL 许可证授权，并可用于 Windows、OSX 和 Linux (.N
 
 Duplicati 的最新版本是 Duplicati 2.0 发布的测试版。
 
-[点击此处下载最新的 Duplicati 2.0 测试版。](http://www.duplicati.com/download)
+[点击此处下载最新的 Duplicati 2.0 测试版。](https://duplicati.com/download)
 
 测试版将自动通知您更新，并允许您通过单击（或在终端中的命令）升级。
 要获取更多[前沿版本，查看最新发布](https://github.com/duplicati/duplicati/releases)或在 UI 或命令行中选择另一个更新渠道。

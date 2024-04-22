@@ -9,7 +9,7 @@ RELEASE_VERSION="2.0.0.${RELEASE_INC_VERSION}"
 
 echo "${RELEASE_NAME}" > Duplicati/License/VersionTag.txt
 cp "Updates/debug_urls.txt"  Duplicati/Library/AutoUpdater/AutoUpdateURL.txt
-cp "Updates/debug_key.txt"  Duplicati/Library/AutoUpdater/AutoUpdateSignKey.txt
+cp "Updates/debug_key.txt"  Duplicati/Library/AutoUpdater/AutoUpdateSignKeys.txt
 
 mono BuildTools/UpdateVersionStamp/bin/Debug/UpdateVersionStamp.exe --version="${RELEASE_VERSION}"
 xbuild /p:Configuration=Debug Duplicati.sln

@@ -48,7 +48,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The path to the directory that contains the main executable
         /// </summary>
-        public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
+        public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
         /// <summary>
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
@@ -201,7 +201,7 @@ namespace Duplicati.Server
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
+        public static int Main(string[] _args)
         {
             // var methodInfo = typeof(TemporaryIoCAccessor).Assembly.EntryPoint;
             // var program = Activator.CreateInstance(methodInfo!.DeclaringType!);
@@ -229,7 +229,7 @@ namespace Duplicati.Server
             }
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
-            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 
             //Find commandline options here for handling special startup cases
             var args = new List<string>(_args);
@@ -327,7 +327,8 @@ namespace Duplicati.Server
             {
                 StatusEventNotifyer.SignalNewEvent();
 
-                ShutdownModernWebserver();
+                if (ShutdownModernWebserver != null)
+                    ShutdownModernWebserver();
                 UpdatePoller?.Terminate();
                 Scheduler?.Terminate(true);
                 FIXMEGlobal.WorkThread?.Terminate(true);
@@ -341,9 +342,6 @@ namespace Duplicati.Server
 
                 LogHandler?.Dispose();
             }
-
-            if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
-                return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
         }
@@ -364,7 +362,7 @@ namespace Duplicati.Server
             FIXMEGlobal.WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
             FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
             FIXMEGlobal.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
-           FIXMEGlobal.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
+            FIXMEGlobal.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
             FIXMEGlobal.WorkThread.OnError += (worker, task, exception) =>
             {
                 Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception);
@@ -397,8 +395,8 @@ namespace Duplicati.Server
                 }
             }
 
-           FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { RegisterTaskResult(task.TaskID, null); };
-           FIXMEGlobal.WorkThread.OnError += (worker, task, exception) => { RegisterTaskResult(task.TaskID, exception); };
+            FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { RegisterTaskResult(task.TaskID, null); };
+            FIXMEGlobal.WorkThread.OnError += (worker, task, exception) => { RegisterTaskResult(task.TaskID, exception); };
         }
 
         private static void SetLiveControls()

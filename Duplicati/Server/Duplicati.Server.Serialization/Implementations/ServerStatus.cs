@@ -20,8 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Duplicati.Server.Serialization.Implementations
 {
@@ -39,8 +37,8 @@ namespace Duplicati.Server.Serialization.Implementations
         public long LastNotificationUpdateID { get; set; }
 
         public string UpdatedVersion { get; set; }
+        public string UpdateDownloadLink { get; set; }
         public UpdatePollerStates UpdaterState { get; set; }
-        public bool UpdateReady { get; set; }
         public double UpdateDownloadProgress { get; set; }
     }
 }

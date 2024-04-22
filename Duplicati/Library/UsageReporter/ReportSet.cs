@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,9 +21,7 @@
 
 using System;
 using Newtonsoft.Json;
-using System.Linq;
 using System.Collections.Generic;
-using Duplicati.Library.Common;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -50,15 +48,11 @@ namespace Duplicati.Library.UsageReporter
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void DoInitOS()
         {
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
                 Cached_OSType = "OSX";
-            else if (Platform.IsClientPosix)
+            else if (OperatingSystem.IsLinux())
                 Cached_OSType = "Linux";
-            else if (new PlatformID[] {
-                PlatformID.Win32NT,
-                PlatformID.Win32S,
-                PlatformID.Win32Windows
-            }.Contains(Environment.OSVersion.Platform))
+            else if (OperatingSystem.IsWindows())
                 Cached_OSType = "Windows";
             else
                 Cached_OSType = Environment.OSVersion.Platform.ToString();
@@ -69,10 +63,7 @@ namespace Duplicati.Library.UsageReporter
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void DoInitCLR()
         {
-            if (Utility.Utility.IsMono)
-                Cached_CLRVersion = string.Format("Mono {0} ({1}), CLR: {2}", Utility.Utility.MonoDisplayVersion, Utility.Utility.MonoVersion, Environment.Version);
-            else
-                Cached_CLRVersion = string.Format(".Net {0}", Environment.Version);
+            Cached_CLRVersion = string.Format(".Net {0}", Environment.Version);
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]

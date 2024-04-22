@@ -28,3 +28,5 @@ binfiles.wxs
 Installer/debian/*.buildinfo
 /*.deb
 /*.rpm
+
+ReleaseBuilder/build-temp/
