@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,6 +23,7 @@ using System;
 using System.IO;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.SQLiteHelper
 {
@@ -34,29 +35,27 @@ namespace Duplicati.Library.SQLiteHelper
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
         /// <summary>
-        /// A cached copy of the type
-        /// </summary>
-        private static Type m_type = null;
-
-        /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format
         /// </summary>
         /// <param name="con">The SQLite connection object</param>
         /// <param name="databasePath">The location of Duplicati's database.</param>
-        /// <param name="useDatabaseEncryption">Specify if database is encrypted</param>
-        /// <param name="password">Encryption password</param>
-        public static void OpenDatabase(System.Data.IDbConnection con, string databasePath, bool useDatabaseEncryption, string password)
+        /// <param name="decryptionPassword">The password to use for decryption.</param>
+        public static void OpenDatabase(System.Data.IDbConnection con, string databasePath, string decryptionPassword)
         {
-            var setPwdMethod = con.GetType().GetMethod("SetPassword", new[] { typeof(string) });
-            string attemptedPassword;
-
-            if (!useDatabaseEncryption || string.IsNullOrEmpty(password))
-                attemptedPassword = null; //No encryption specified, attempt to open without
-            else
-                attemptedPassword = password; //Encryption specified, attempt to open with
-
-            if (setPwdMethod != null)
-                setPwdMethod.Invoke(con, new object[] { attemptedPassword });
+            if (SQLiteRC4Decrypter.IsDatabaseEncrypted(databasePath))
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteRC4Decrypter", null, "Database is encrypted, attempting to decrypt...");
+                try
+                {
+                    SQLiteRC4Decrypter.DecryptSQLiteFile(databasePath, decryptionPassword);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "SQLiteRC4Decrypter", "Database decrypted successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "SQLiteRC4Decrypter", ex, "Failed to decrypt database");
+                    throw new UserInformationException("The database appears to be encrypted, but the decrypting failed. Please check the password.", "RC4DecryptionFailed", ex);
+                }
+            }
 
             try
             {
@@ -66,36 +65,14 @@ namespace Duplicati.Library.SQLiteHelper
             }
             catch
             {
-                try
-                {
-                    //We can't try anything else without a password
-                    if (string.IsNullOrEmpty(password))
-                        throw;
+                try { con.Dispose(); }
+                catch { }
 
-                    //Open failed, now try the reverse
-                    attemptedPassword = attemptedPassword == null ? password : null;
-
-                    con.Close();
-                    if (setPwdMethod != null)
-                        setPwdMethod.Invoke(con, new object[] { attemptedPassword });
-                    OpenSQLiteFile(con, databasePath);
-
-                    TestSQLiteFile(con);
-                }
-                catch
-                {
-                    try { con.Close(); }
-                    catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "OpenDatabaseFailed", ex, "Failed to open the SQLite database: {0}", databasePath); }
-                }
-
-                //If the db is not open now, it won't open
-                if (con.State != System.Data.ConnectionState.Open)
-                    throw; //Report original error
-
-                //The open method succeeded with the non-default method, now change the password
-                var changePwdMethod = con.GetType().GetMethod("ChangePassword", new[] { typeof(string) });
-                changePwdMethod.Invoke(con, new object[] { useDatabaseEncryption ? password : null });
+                throw;
             }
+
+            if (con.State != System.Data.ConnectionState.Open)
+                throw new UserInformationException("Failed to open database for unknown reason, check the logs to see error messages", "DatabaseOpenFailed");
         }
 
         /// <summary>
