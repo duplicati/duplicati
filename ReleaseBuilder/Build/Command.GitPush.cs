@@ -18,7 +18,7 @@ public static partial class Command
             // Add modified files
             await ProcessHelper.Execute(new[] {
                     "git", "add",
-                    "Updates/build_version.txt",
+                    "ReleaseBuilder/build_version.txt",
                     "changelog.txt"
                 }, workingDirectory: baseDir);
 

@@ -345,7 +345,7 @@ public static partial class Command
         }
 
         var baseDir = Path.GetDirectoryName(input.SolutionFile.FullName) ?? throw new Exception("Path to solution file was invalid");
-        var versionFilePath = Path.Combine(baseDir, "Updates", "build_version.txt");
+        var versionFilePath = Path.Combine(baseDir, "ReleaseBuilder", "build_version.txt");
         if (!File.Exists(versionFilePath))
             throw new FileNotFoundException($"Version file not found: {versionFilePath}");
 
@@ -596,7 +596,7 @@ public static partial class Command
                 regex.Replace(File.ReadAllText(file), $"?v={releaseInfo.Version}")
             );
 
-        var wixFile = Path.Combine(baseDir, "Installer", "Windows", "UpgradeData.wxi");
+        var wixFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "UpgradeData.wxi");
         File.WriteAllText(
             wixFile,
             Regex.Replace(
