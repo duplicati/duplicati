@@ -1,7 +1,9 @@
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Web;
 using Duplicati.Library.AutoUpdater;
 
 namespace ReleaseBuilder.Build;
@@ -473,27 +475,28 @@ public static partial class Command
                 File.Delete(manifestfile);
 
             UpdaterManager.CreateSignedManifest(
-                rtcfg.SignKeys.First(),
-                null,
+                rtcfg.SignKeys,
+                JsonSerializer.Serialize(new
+                {
+                    Displayname = $"Duplicati v{releaseInfo.Version} - {releaseInfo.Channel}",
+                    ChangeInfo = rtcfg.ChangelogNews
+                }),
                 Path.Combine(input.BuildPath.FullName, "packages"),
                 version: releaseInfo.Version.ToString(),
-                updateFromV1Url: Program.Configuration.ExtraSettings.UpdateFromV1Url,
-                genericUpdatePageUrl: Program.Configuration.ExtraSettings.GenericUpdatePageUrl,
+                incompatibleUpdateUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.UpdateFromIncompatibleVersionUrl, releaseInfo),
+                genericUpdatePageUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.GenericUpdatePageUrl, releaseInfo),
                 releaseType: releaseInfo.Channel.ToString().ToLowerInvariant(),
-                packages: builtPackages.Select(x => new PackageEntry()
-                {
-                    RemoteUrls = Program.Configuration.ExtraSettings.PackageUrls
+                packages: builtPackages.Select(x => new PackageEntry(
+                    RemoteUrls: Program.Configuration.ExtraSettings.PackageUrls
                         .Select(u =>
-                            u.Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
-                            .Replace("${RELEASE_VERSION}", releaseInfo.Version.ToString())
-                            .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"))
-                            .Replace("${FILENAME}", x.CreatedFile)
+                            ReplaceVersionPlaceholders(u, releaseInfo)
+                            .Replace("${FILENAME}", HttpUtility.UrlEncode(Path.GetFileName(x.CreatedFile)))
                         ).ToArray(),
-                    PackageTypeId = x.Target.PackageTargetString,
-                    Length = new FileInfo(Path.Combine(input.BuildPath.FullName, x.CreatedFile)).Length,
-                    MD5 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "md5"),
-                    SHA256 = CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "sha256")
-                })
+                    PackageTypeId: x.Target.PackageTargetString,
+                    Length: new FileInfo(Path.Combine(input.BuildPath.FullName, x.CreatedFile)).Length,
+                    MD5: CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "md5"),
+                    SHA256: CalculateHash(Path.Combine(input.BuildPath.FullName, x.CreatedFile), "sha256")
+                ))
             );
         }
 
@@ -577,6 +580,22 @@ public static partial class Command
     }
 
     /// <summary>
+    /// Replaces common placeholders with their respective values
+    /// </summary>
+    /// <param name="input">The string to update</param>
+    /// <param name="releaseInfo">The release info to replace with</param>
+    /// <param name="urlEncode">If the values should be URL encoded</param>
+    /// <returns>The updated string</returns>
+    private static string ReplaceVersionPlaceholders(string input, ReleaseInfo releaseInfo, bool urlEncode = true)
+    {
+        return input
+            .Replace("${RELEASE_VERSION}", urlEncode ? HttpUtility.UrlEncode(releaseInfo.Version.ToString()) : releaseInfo.Version.ToString())
+            .Replace("${RELEASE_TIMESTAMP}", urlEncode ? HttpUtility.UrlEncode(releaseInfo.Timestamp.ToString("yyyy-MM-dd")) : releaseInfo.Timestamp.ToString("yyyy-MM-dd"))
+            .Replace("${RELEASE_CHANNEL}", urlEncode ? HttpUtility.UrlEncode(releaseInfo.Channel.ToString().ToLowerInvariant()) : releaseInfo.Channel.ToString().ToLowerInvariant())
+            .Replace("${RELEASE_TYPE}", urlEncode ? HttpUtility.UrlEncode(releaseInfo.Channel.ToString().ToLowerInvariant()) : releaseInfo.Channel.ToString().ToLowerInvariant());
+    }
+
+    /// <summary>
     /// Injects the version number into some html files
     /// </summary>
     /// <param name="baseDir">The base directory</param>
@@ -623,10 +642,8 @@ public static partial class Command
     static Task PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
     {
         var urlstring = string.Join(";", Program.Configuration.ExtraSettings.UpdaterUrls.Select(x =>
-            x.Replace("${RELEASE_TYPE}", releaseInfo.Channel.ToString().ToLowerInvariant())
-            .Replace("${RELEASE_VERSION}", releaseInfo.Version.ToString())
-            .Replace("${RELEASE_TIMESTAMP}", releaseInfo.Timestamp.ToString("yyyy-MM-dd"))
-            .Replace("${FILENAME}", "latest-v2.manifest")
+            ReplaceVersionPlaceholders(x, releaseInfo)
+            .Replace("${FILENAME}", HttpUtility.UrlEncode("latest-v2.manifest"))
         ));
 
         File.WriteAllText(Path.Combine(baseDir, "Duplicati", "License", "VersionTag.txt"), releaseInfo.Version.ToString());
@@ -668,16 +685,14 @@ public static partial class Command
             File.Delete(manifestFile);
 
         UpdaterManager.CreateSignedManifest(
-            rtcfg.SignKeys.First(),
-            null,
+            rtcfg.SignKeys,
+            JsonSerializer.Serialize(new { Displayname = $"Duplicati v{releaseInfo.Version} - {releaseInfo.Channel}" }),
             Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater"),
             version: releaseInfo.Version.ToString(),
-            updateFromV1Url: Program.Configuration.ExtraSettings.UpdateFromV1Url,
-            genericUpdatePageUrl: Program.Configuration.ExtraSettings.GenericUpdatePageUrl,
+            incompatibleUpdateUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.UpdateFromIncompatibleVersionUrl, releaseInfo),
+            genericUpdatePageUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.GenericUpdatePageUrl, releaseInfo),
             releaseType: releaseInfo.Channel.ToString().ToLowerInvariant()
         );
-
-
 
         return Task.CompletedTask;
     }

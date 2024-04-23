@@ -19,121 +19,156 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Linq;
 
-namespace Duplicati.Library.AutoUpdater
+namespace Duplicati.Library.AutoUpdater;
+
+/// <summary>
+/// The different kinds of releases supported
+/// </summary>
+public enum ReleaseType
 {
     /// <summary>
-    /// The different kinds of releases supported
+    /// Placeholder for unknown release types
     /// </summary>
-    public enum ReleaseType
+    Unknown,
+    /// <summary>
+    /// A stable release
+    /// </summary>
+    Stable,
+    /// <summary>
+    /// A beta release
+    /// </summary>
+    Beta,
+    /// <summary>
+    /// An experimental release
+    /// </summary>
+    Experimental,
+    /// <summary>
+    /// A canary release
+    /// </summary>
+    Canary,
+    /// <summary>
+    /// A nightly release
+    /// </summary>
+    Nightly,
+    /// <summary>
+    /// A debug release
+    /// </summary>
+    Debug
+}
+
+/// <summary>
+/// The severity of an update
+/// </summary>
+public enum UpdateSeverity
+{
+    /// <summary>
+    /// No severity specified
+    /// </summary>
+    None,
+    /// <summary>
+    /// A low severity update
+    /// </summary>
+    Low,
+    /// <summary>
+    /// A normal severity update
+    /// </summary>
+    Normal,
+    /// <summary>
+    /// A high severity update
+    /// </summary>
+    High,
+    /// <summary>
+    /// A critical severity update
+    /// </summary>
+    Critical
+}
+
+/// <summary>
+/// Information about an update package
+/// </summary>
+/// <param name="MinimumCompatibleVersion">The minimum version required to read this update</param>
+/// <param name="IncompatibleUpdateUrl">The URL to present to the user for updating, if this client is too old</param>
+/// <param name="Displayname">Name of the update package</param>
+/// <param name="Version">Version of the update package</param>
+/// <param name="ReleaseTime">The timestamp when the update was released</param>
+/// <param name="ReleaseType">The release update type</param>
+/// <param name="UpdateSeverity">The severity of the update</param>
+/// <param name="ChangeInfo">The changelog text for this entry</param>
+/// <param name="PackageUpdaterVersion">The version of the package structure</param>
+/// <param name="Packages">List of installer packages</param>
+/// <param name="GenericUpdatePageUrl">Link to a generic download page</param>
+public record UpdateInfo(
+    int MinimumCompatibleVersion,
+    string? IncompatibleUpdateUrl,
+    string? Displayname,
+    string? Version,
+    DateTime ReleaseTime,
+    string? ReleaseType,
+    string? UpdateSeverity,
+    string? ChangeInfo,
+    int PackageUpdaterVersion,
+    PackageEntry[]? Packages,
+    string GenericUpdatePageUrl
+)
+{
+    /// <summary>
+    /// Finds a package that matches the <paramref name="packageTypeId"/>
+    /// </summary>
+    /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+    /// <returns>The matching package or <c>null</c></returns>
+    public PackageEntry? FindPackage(string? packageTypeId = null)
     {
-        Unknown,
-        Stable,
-        Beta,
-        Experimental,
-        Canary,
-        Nightly,
-        Debug
+        if (MinimumCompatibleVersion > UpdaterManager.SUPPORTED_PACKAGE_UPDATER_VERSION)
+            return null;
+
+        packageTypeId ??= UpdaterManager.PackageTypeId;
+        if (string.IsNullOrWhiteSpace(packageTypeId) || Packages == null)
+            return null;
+
+        return Packages.FirstOrDefault(x => string.Equals(x.PackageTypeId, packageTypeId, StringComparison.OrdinalIgnoreCase));
     }
 
-    public enum UpdateSeverity
+    /// <summary>
+    /// Gets the generic update page url for the <paramref name="packageTypeId"/>
+    /// </summary>
+    /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+    /// <returns>The generic update page url</returns>
+    public string GetGenericUpdatePageUrl(string? packageTypeId = null)
     {
-        None,
-        Low,
-        Normal,
-        High,
-        Critical
+        var baseurl = GenericUpdatePageUrl;
+        if (MinimumCompatibleVersion > UpdaterManager.SUPPORTED_PACKAGE_UPDATER_VERSION && !string.IsNullOrWhiteSpace(IncompatibleUpdateUrl))
+            baseurl = IncompatibleUpdateUrl;
+
+        packageTypeId ??= UpdaterManager.PackageTypeId;
+        if (string.IsNullOrWhiteSpace(packageTypeId))
+            return baseurl;
+
+        return baseurl + $"{(baseurl.IndexOf('?') > 0 ? "&" : "?")}packagetypeid={Uri.EscapeDataString(packageTypeId ?? "")}";
     }
 
-    public class UpdateInfo
+    /// <summary>
+    /// Gets the updated package urls for the <paramref name="packageTypeId"/>
+    /// </summary>
+    /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+    /// <returns>The matching update urls</returns>
+    public string[] GetUpdateUrls(string? packageTypeId = null)
     {
-        public string UpdateFromV1Url;
-        public string UpdateFromV2Url;
-        public string Displayname;
-        public string Version;
-        public DateTime ReleaseTime;
-        public string ReleaseType;
-        public string UpdateSeverity;
-        public string ChangeInfo;
-        public int PackageUpdaterVersion;
-        /// <summary>
-        /// Legacy entry, do not use
-        /// </summary>
-        [Obsolete("Only kept to avoid v2.0.7.x and earlier releases from crashing on nulls")]
-        public string[] RemoteURLS = Array.Empty<string>();
-        /// <summary>
-        /// List of installer packages
-        /// </summary>
-        public PackageEntry[] Packages;
-        /// <summary>
-        /// Link to a generic download page
-        /// </summary>
-        public string GenericUpdatePageUrl = string.Empty;
+        packageTypeId ??= UpdaterManager.PackageTypeId;
+        var package = FindPackage(packageTypeId);
+        if (package != null)
+            return package.RemoteUrls;
 
-        /// <summary>
-        /// Finds a package that matches the <paramref name="packageTypeId"/>
-        /// </summary>
-        /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
-        /// <returns>The matching package or <c>null</c></returns>
-        public PackageEntry? FindPackage(string packageTypeId = null)
-        {
-            if (!string.IsNullOrWhiteSpace(UpdateFromV2Url) || PackageUpdaterVersion != UpdaterManager.SUPPORTED_PACKAGE_UPDATER_VERSION)
-                return null;
+        var generic = GetGenericUpdatePageUrl(packageTypeId);
+        if (!string.IsNullOrWhiteSpace(generic))
+            return [generic];
 
-            packageTypeId ??= UpdaterManager.PackageTypeId;
-            if (string.IsNullOrWhiteSpace(packageTypeId) || Packages == null)
-                return null;
-
-            return Packages.FirstOrDefault(x => string.Equals(x.PackageTypeId, packageTypeId, StringComparison.OrdinalIgnoreCase));
-        }
-
-        /// <summary>
-        /// Gets the generic update page url for the <paramref name="packageTypeId"/>
-        /// </summary>
-        /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
-        /// <returns>The generic update page url</returns>
-        public string GetGenericUpdatePageUrl(string packageTypeId = null)
-        {
-            var baseurl = string.IsNullOrWhiteSpace(UpdateFromV2Url)
-                ? GenericUpdatePageUrl
-                : UpdateFromV2Url;
-
-            packageTypeId ??= UpdaterManager.PackageTypeId;
-            if (string.IsNullOrWhiteSpace(packageTypeId))
-                return GenericUpdatePageUrl;
-
-            return GenericUpdatePageUrl + $"{(GenericUpdatePageUrl.IndexOf('?') > 0 ? "&" : "?")}packagetypeid={Uri.EscapeDataString(packageTypeId ?? "")}";
-        }
-
-        /// <summary>
-        /// Gets the updated package urls for the <paramref name="packageTypeId"/>
-        /// </summary>
-        /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
-        /// <returns>The matching update urls</returns>
-        public string[] GetUpdateUrls(string packageTypeId = null)
-        {
-            packageTypeId ??= UpdaterManager.PackageTypeId;
-            var package = FindPackage(packageTypeId);
-            if (package != null)
-                return package.RemoteUrls;
-
-            var generic = GetGenericUpdatePageUrl(packageTypeId);
-            if (!string.IsNullOrWhiteSpace(generic))
-                return [generic];
-
-            return Array.Empty<string>();
-        }
-
-        /// <summary>
-        /// Creates a copy of the instance by serializing and deseriaizing the data
-        /// </summary>
-        /// <returns>A cloned copy</returns>
-        public UpdateInfo Clone()
-            => System.Text.Json.JsonSerializer.Deserialize<UpdateInfo>(
-                System.Text.Json.JsonSerializer.Serialize(this)
-            );
+        return [];
     }
 }
+
 

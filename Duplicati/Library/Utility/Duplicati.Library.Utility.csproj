@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
+    <RootNamespace>Duplicati.Library.Utility</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

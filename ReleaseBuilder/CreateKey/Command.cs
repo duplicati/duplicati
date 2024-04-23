@@ -34,7 +34,7 @@ public static class Command
                 ? ConsoleHelper.ReadPassword("Enter keyfile password")
                 : password;
 
-            var newkey = RSA.Create(1024).ToXmlString(true);
+            var newkey = RSA.Create(2048).ToXmlString(true);
             using (var fs = File.OpenWrite(keyfile.FullName))
             using (var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(newkey)))
                 SharpAESCrypt.SharpAESCrypt.Encrypt(keyfilePassword, ms, fs);
