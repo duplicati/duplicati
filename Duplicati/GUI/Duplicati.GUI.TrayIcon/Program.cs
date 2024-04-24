@@ -184,7 +184,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     try
                     {
-                        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
+                        ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
                         using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, options))
                         {
                             using (var tk = RunTrayIcon())

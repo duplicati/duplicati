@@ -162,8 +162,7 @@ namespace Duplicati.Server.WebServer
 
                     if (certValid)
                     {
-                        var secProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
-                        server.Start(listenInterface, p, cert, secProtocols, null, false);
+                        server.Start(listenInterface, p, cert, System.Security.Authentication.SslProtocols.None, null, false);
                     }
                     else
                     {
