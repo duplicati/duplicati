@@ -67,6 +67,11 @@ public static class JSONSignature
     };
 
     /// <summary>
+    /// The header type for the signature
+    /// </summary>
+    private const string HEADER_TYPE = "SIGJSONv1";
+
+    /// <summary>
     /// The length of the signature header string
     /// </summary>
     private static readonly int SignatureLength = "//SIGJSONv1: ".Length;
@@ -129,14 +134,18 @@ public static class JSONSignature
         if (signOperations == null || !signOperations.Any())
             throw new InvalidOperationException("No sign operations provided, cannot sign data");
 
-        foreach (var key in signOperations)
-            await target.WriteAsync(Encoding.UTF8.GetBytes(CreateSignature(source, key)));
-
         source.Position = 0;
         var buffer = new byte["//SIGJSON".Length];
         await source.ReadAsync(buffer, 0, buffer.Length);
         if (Encoding.UTF8.GetString(buffer) == "//SIGJSON")
             throw new Exception("Cannot sign data with an existing signature");
+
+        foreach (var key in signOperations)
+        {
+            source.Position = 0;
+            await target.WriteAsync(Encoding.UTF8.GetBytes(CreateSignature(source, key)));
+        }
+
 
         source.Position = 0;
         await source.CopyToAsync(target);
@@ -244,6 +253,7 @@ public static class JSONSignature
         var headers = skey.HeaderValues ?? new List<KeyValuePair<string, string>>();
         headers = headers.Append(new KeyValuePair<string, string>("alg", skey.Algorithm));
         headers = headers.Append(new KeyValuePair<string, string>("key", skey.PublicKey));
+        headers = headers.Append(new KeyValuePair<string, string>("typ", HEADER_TYPE));
 
         if (headers.DistinctBy(x => x.Key).Count() != headers.Count())
             throw new InvalidOperationException("Duplicate headers are not allowed");
@@ -261,7 +271,6 @@ public static class JSONSignature
         headerStream.Write(headerData);
 
         headerStream.Position = 0;
-        data.Position = 0;
         using var prefixedStream = new CombinedStream([headerStream, data], leaveOpen: true);
         var signature = signMethod(prefixedStream, skey);
 
@@ -293,7 +302,8 @@ public static class JSONSignature
 
         var alg = headers?.FirstOrDefault(x => x.Key == "alg").Value;
         var key = headers?.FirstOrDefault(x => x.Key == "key").Value;
-        if (string.IsNullOrWhiteSpace(alg) || string.IsNullOrWhiteSpace(key))
+        var typ = headers?.FirstOrDefault(x => x.Key == "typ").Value;
+        if (string.IsNullOrWhiteSpace(alg) || string.IsNullOrWhiteSpace(key) || typ != HEADER_TYPE)
             yield break;
 
         var potentialMatches = verifiers.Where(x => x.Algorithm == alg && x.PublicKey == key);
