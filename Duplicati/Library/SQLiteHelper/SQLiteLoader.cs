@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.IO;
 using Duplicati.Library.Common;
@@ -40,9 +42,9 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="con">The SQLite connection object</param>
         /// <param name="databasePath">The location of Duplicati's database.</param>
         /// <param name="decryptionPassword">The password to use for decryption.</param>
-        public static void OpenDatabase(System.Data.IDbConnection con, string databasePath, string decryptionPassword)
+        public static void OpenDatabase(System.Data.IDbConnection con, string databasePath, string? decryptionPassword)
         {
-            if (SQLiteRC4Decrypter.IsDatabaseEncrypted(databasePath))
+            if (!string.IsNullOrWhiteSpace(decryptionPassword) && SQLiteRC4Decrypter.IsDatabaseEncrypted(databasePath))
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteRC4Decrypter", null, "Database is encrypted, attempting to decrypt...");
                 try
@@ -81,12 +83,12 @@ namespace Duplicati.Library.SQLiteHelper
         /// <returns>The SQLite connection instance.</returns>
         public static System.Data.IDbConnection LoadConnection()
         {
-            System.Data.IDbConnection con = null;
+            System.Data.IDbConnection? con = null;
             SetEnvironmentVariablesForSQLiteTempDir();
 
             try
             {
-                con = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                con = (System.Data.IDbConnection?)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
             }
             catch (Exception ex)
             {
@@ -96,7 +98,7 @@ namespace Duplicati.Library.SQLiteHelper
                 throw;
             }
 
-            return con;
+            return con ?? throw new InvalidOperationException("Failed to load connection");
         }
 
         /// <summary>
@@ -162,7 +164,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <summary>
         /// Returns the version string from the SQLite type
         /// </summary>
-        public static string SQLiteVersion
+        public static string? SQLiteVersion
         {
             get
             {
@@ -194,7 +196,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// Wrapper to dispose the SQLite connection
         /// </summary>
         /// <param name="con">The connection to close.</param>
-        private static void DisposeConnection(System.Data.IDbConnection con)
+        private static void DisposeConnection(System.Data.IDbConnection? con)
         {
             if (con != null)
                 try { con.Dispose(); }
