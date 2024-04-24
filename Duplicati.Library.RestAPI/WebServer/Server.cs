@@ -160,21 +160,14 @@ namespace Duplicati.Server.WebServer
                 
                     var server = CreateServer(options);
 
-                    if (!certValid)
-                        server.Start(listenInterface, p);
+                    if (certValid)
+                    {
+                        var secProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
+                        server.Start(listenInterface, p, cert, secProtocols, null, false);
+                    }
                     else
                     {
-                        var secProtocols = System.Security.Authentication.SslProtocols.Tls12;
-
-                        try
-                        { 
-                            //try TLS 1.3 (type not available on .NET < 4.8)
-                            secProtocols = System.Security.Authentication.SslProtocols.Tls12 | (System.Security.Authentication.SslProtocols)12288;
-                        }
-                        catch (NotSupportedException)
-                        {
-                        }
-                        server.Start(listenInterface, p, cert, secProtocols, null, false);
+                        server.Start(listenInterface, p);
                     }
 
                     m_server = server;

@@ -186,9 +186,9 @@ public static partial class Command
             EnvHelper.CopyDirectory(buildDir, binDir, recursive: true);
 
             // Patch the plist and place the icon from the resources
-            var installerDir = Path.Combine(baseDir, "Installer", "MacOS");
+            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS");
 
-            var plist = File.ReadAllText(Path.Combine(installerDir, "app-resources", "Info.plist"))
+            var plist = File.ReadAllText(Path.Combine(resourcesDir, "app-resources", "Info.plist"))
                 .Replace("!LONG_VERSION!", rtcfg.ReleaseInfo.ReleaseName)
                 .Replace("!SHORT_VERSION!", rtcfg.ReleaseInfo.Version.ToString());
 
@@ -198,21 +198,21 @@ public static partial class Command
             );
 
             File.Copy(
-                Path.Combine(installerDir, "app-resources", "Duplicati.icns"),
+                Path.Combine(resourcesDir, "app-resources", "Duplicati.icns"),
                 Path.Combine(tmpApp, "Contents", "Resources", "Duplicati.icns"),
                 overwrite: true
             );
 
             // Inject the launch agent
             EnvHelper.CopyDirectory(
-                Path.Combine(installerDir, "daemon"),
+                Path.Combine(resourcesDir, "daemon"),
                 Path.Combine(tmpApp, "Contents", "Resources"),
                 recursive: true
             );
 
             // Inject the uninstall.sh script
             File.Copy(
-                Path.Combine(installerDir, "uninstall.sh"),
+                Path.Combine(resourcesDir, "uninstall.sh"),
                 Path.Combine(tmpApp, "Contents", "MacOS", "uninstall.sh"),
                 overwrite: true
             );
@@ -239,7 +239,7 @@ public static partial class Command
                     .Distinct()
                     .ToList();
 
-                var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
+                var entitlementFile = Path.Combine(resourcesDir, "Entitlements.plist");
                 foreach (var f in signtargets)
                     await rtcfg.Codesign(f, entitlementFile);
 

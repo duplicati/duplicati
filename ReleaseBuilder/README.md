@@ -48,13 +48,13 @@ The `create-key` command creates a RSA 1024 bit signing, and encrypts it with th
 The `build` command creates the packages. An example command that builds all packages would be:
 
 ```
-dotnet build debug --version 1.0.0.1
+dotnet run build debug --version 1.0.0.1
 ```
 
 To build only a single platform relase, disable all the features and choose the architectures:
 
 ```
-dotnet build debug --version 1.0.0.1 \
+dotnet run build debug --version 1.0.0.1 \
     --disable-docker-push true \
     --keep-builds true \
     --disable-authenticode true \
