@@ -12,16 +12,33 @@ namespace Duplicati.WebserverCore;
 class LegacyHttpRequestShim : HttpServer.IHttpRequest, IModernHttpRequestAccess
 {
     HttpRequest request;
-    public LegacyHttpRequestShim(HttpRequest request) { this.request = request; }
+
+    public LegacyHttpRequestShim(HttpRequest request)
+    {
+        this.request = request;
+    }
 
     public string[] AcceptTypes => throw new NotImplementedException();
 
-    public Stream Body { get => request.Body; set => throw new NotImplementedException(); }
+    public Stream Body
+    {
+        get => request.Body;
+        set => throw new NotImplementedException();
+    }
 
     public bool BodyIsComplete => throw new NotImplementedException();
 
-    public ConnectionType Connection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public int ContentLength { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public ConnectionType Connection
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
+
+    public int ContentLength
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
 
     public RequestCookies Cookies => new RequestCookies(request.Headers.Cookie);
 
@@ -31,9 +48,11 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest, IModernHttpRequestAccess
         {
             var form = new HttpForm();
 
-            if (request.ContentType != null && (request.ContentType.StartsWith("multipart/form-data", true, CultureInfo.InvariantCulture) || request.ContentType.StartsWith("application/x-www-form-urlencoded", true, CultureInfo.InvariantCulture) ))
+            if (request.ContentType != null &&
+                (request.ContentType.StartsWith("multipart/form-data", true, CultureInfo.InvariantCulture) ||
+                 request.ContentType.StartsWith("application/x-www-form-urlencoded", true,
+                     CultureInfo.InvariantCulture)))
             {
-
                 foreach (var kvp in request.Form)
                 {
                     form.Add(kvp.Key, kvp.Value);
@@ -61,6 +80,7 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest, IModernHttpRequestAccess
                     form.AddFile(new HttpFile(file.Name, tempFile, file.ContentType, file.FileName));
                 }
             }
+
             return form;
         }
     }
@@ -77,37 +97,58 @@ class LegacyHttpRequestShim : HttpServer.IHttpRequest, IModernHttpRequestAccess
                     headers.Add(pair.Key, value);
                 }
             }
+
             return headers;
         }
     }
 
-    public string HttpVersion { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string HttpVersion
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
 
     public bool IsAjax => throw new NotImplementedException();
 
-    public string Method { get => request.Method; set => throw new NotImplementedException(); }
+    public string Method
+    {
+        get => request.Method;
+        set => throw new NotImplementedException();
+    }
 
-    public HttpParam Param => throw new NotImplementedException();
+    public HttpParam Param => new (new LegacyHttpInput(request), new LegacyHttpInput(request));
 
     public HttpInput QueryString
     {
         get
         {
             var input = new HttpInput("QueryString");
-            foreach (var kvp in request.Query) { input.Add(kvp.Key, kvp.Value); }
+            foreach (var kvp in request.Query)
+            {
+                input.Add(kvp.Key, kvp.Value);
+            }
+
             return input;
         }
     }
 
     public bool Secure => throw new NotImplementedException();
 
-    public IPEndPoint RemoteEndPoint => throw new NotImplementedException();
+    public IPEndPoint RemoteEndPoint => new (request.HttpContext.Connection.RemoteIpAddress ?? throw new InvalidDataException("No remote client address available"), request.HttpContext.Connection.RemotePort);
 
-    public System.Uri Uri { get => new System.Uri(request.GetEncodedUrl()); set => throw new NotImplementedException(); }
+    public System.Uri Uri
+    {
+        get => new System.Uri(request.GetEncodedUrl());
+        set => throw new NotImplementedException();
+    }
 
     public string[] UriParts => throw new NotImplementedException();
 
-    public string UriPath { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string UriPath
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
 
     public void AddHeader(string name, string value)
     {
