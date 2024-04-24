@@ -13,12 +13,12 @@ jobs:
 
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v1.8.0
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 8.x
 
       - name: Checkout source
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v4
 
       - name: Restore NuGet dependencies
         run: dotnet restore Duplicati.sln
@@ -32,6 +32,6 @@ jobs:
   selenium:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Selenium
         run: pipeline/selenium/test.sh
