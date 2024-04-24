@@ -1,5 +1,5 @@
 *.csproj text
 *.sh text eol=lf
 #The #! in rules won't work if CRLF
-/Installer/debian/docker/debian/* text eol=lf
-/Installer/fedora/*.sh text eol=lf
+/ReleaseBuilder/Resources/debian/* text eol=lf
+/ReleaseBuilder/Resources/fedora/*.sh text eol=lf
