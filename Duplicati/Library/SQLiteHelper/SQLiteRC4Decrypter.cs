@@ -69,6 +69,10 @@ public static class SQLiteRC4Decrypter
     /// <returns><c>true</c> if the database is encrypted; <c>false</c> otherwise</returns>
     public static bool IsDatabaseEncrypted(string databasePath)
     {
+        // A file that is not created yet is not encrypted :)
+        if (!File.Exists(databasePath))
+            return false;
+
         using (var probefs = File.OpenRead(databasePath))
         {
             var probebuf = new byte[MAGIC_HEADER.Length];
