@@ -73,7 +73,7 @@ public static class SQLiteRC4Decrypter
         if (!File.Exists(databasePath))
             return false;
 
-        using (var probefs = File.OpenRead(databasePath))
+        using (var probefs = new FileStream(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
         {
             var probebuf = new byte[MAGIC_HEADER.Length];
             probefs.Read(probebuf, 0, probebuf.Length);
