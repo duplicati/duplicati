@@ -184,17 +184,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     try
                     {
-                        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-                        try
-                        {
-                            //try TLS 1.3 (type not available on .NET < 4.8)
-                            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | (SecurityProtocolType)12288;
-                        }
-                        catch (NotSupportedException)
-                        {
-                        }
-
+                        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
                         using (Connection = new HttpServerConnection(serverURL, password, saltedpassword, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, options))
                         {
                             using (var tk = RunTrayIcon())
