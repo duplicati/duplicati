@@ -152,6 +152,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var buildOnlyOption = new Option<bool>(
+            name: "--build-only",
+            description: "Only build the binaries, do not create packages",
+            getDefaultValue: () => false
+        );
+
         var buildTempOption = new Option<DirectoryInfo>(
             name: "--build-path",
             description: "The path to the temporary folder used for builds; will be deleted on startup",
@@ -251,6 +257,7 @@ public static partial class Command
             buildTargetOption,
             solutionFileOption,
             keepBuildsOption,
+            buildOnlyOption,
             disableAuthenticodeOption,
             disableCodeSignOption,
             passwordOption,
@@ -281,6 +288,7 @@ public static partial class Command
     /// <param name="Channel">The release channel</param>
     /// <param name="Version">The version override to use</param>
     /// <param name="KeepBuilds">If the builds should be kept</param>
+    /// <param name="BuildOnly">If only the build should be performed</param>
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
     /// <param name="DisableSignCode">If signcode should be disabled</param>
     /// <param name="Password">The password to use for the keyfile</param>
@@ -302,6 +310,7 @@ public static partial class Command
         ReleaseChannel Channel,
         string? Version,
         bool KeepBuilds,
+        bool BuildOnly,
         bool DisableAuthenticode,
         bool DisableSignCode,
         string Password,
@@ -454,6 +463,12 @@ public static partial class Command
 
         // Perform the main compilations
         await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, GUIProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg);
+
+        if (input.BuildOnly)
+        {
+            Console.WriteLine("Build completed, skipping package creation ...");
+            return;
+        }
 
         // Create the packages
         var builtPackages = await CreatePackage.BuildPackages(baseDir, input.BuildPath.FullName, buildTargets, input.KeepBuilds, rtcfg);
