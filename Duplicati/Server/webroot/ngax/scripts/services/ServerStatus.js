@@ -17,7 +17,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         connectionAttemptTimer: 0,
         failedConnectionAttempts: 0,
         lastPgEvent: null,
-        updaterState: 'Waiting',
+        updaterState: 'waiting',
         updateDownloadLink: null,
         updatedVersion: null,
         updateDownloadProgress: 0,
@@ -187,7 +187,12 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     var notifyIfChanged = function (data, dataname, varname) {
         if (state[varname] != data[dataname]) {
-            state[varname] = data[dataname];
+            if (varname === 'estimatedPauseEnd') {
+                state[varname] = new Date(data[dataname]);
+            } else {
+                state[varname] = data[dataname];
+            }
+            console.log("state changed: ", "serverstatechanged." + varname)
             $rootScope.$broadcast('serverstatechanged.' + varname, state[varname]);
             return true;
         }
@@ -304,7 +309,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             handleServerState({data: status});
         });
         w.addEventListener("close", (event) => {
-            console.log("Websocket closed. Reconnecting...", event.data);
+            console.log("Websocket closed. Reconnecting...", event);
             handleConnectionError("Websocket disconnected.");
             countdownForReconnect(() => websocket = reconnect());
         });
