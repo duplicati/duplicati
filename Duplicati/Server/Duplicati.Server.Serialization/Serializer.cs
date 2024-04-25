@@ -26,6 +26,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Duplicati.Server.Serialization
 {    
@@ -38,10 +39,15 @@ namespace Duplicati.Server.Serialization
         {
             JsonSettings = new JsonSerializerSettings
             {
+                ContractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                },
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Converters = new JsonConverter[] {
+                Converters = new JsonConverter[]
+                {
                     new DayOfWeekConcerter(),
-                    new StringEnumConverter(),
+                    new StringEnumConverter { NamingStrategy = new CamelCaseNamingStrategy() },
                     new SerializableStatusCreator(),
                     new SettingsCreator(),
                     new FilterCreator(),

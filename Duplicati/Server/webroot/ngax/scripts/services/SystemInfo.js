@@ -125,7 +125,7 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
             if (reload !== true) {
                 uiLanguage = $cookies.get('ui-locale');
                 if ((uiLanguage || '').trim().length == 0) {
-                    gettextCatalog.setCurrentLanguage(state.BrowserLocale.Code.replace("-", "_"));
+                    gettextCatalog.setCurrentLanguage(state.browserLocale.code.replace("-", "_"));
                 } else {
                     gettextCatalog.setCurrentLanguage(uiLanguage.replace("-", "_"));
                 }

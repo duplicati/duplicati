@@ -1,4 +1,6 @@
-﻿using Duplicati.WebserverCore.Database;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Duplicati.WebserverCore.Database;
 using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +19,11 @@ public class DuplicatiWebserver
     {
         var builder = WebApplication.CreateBuilder();
         builder.Host.UseRESTHandlers();
+        builder.Services.ConfigureHttpJsonOptions(opt =>
+        {
+            opt.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        });
         builder.Services.AddControllers()
             // This app gets launched by a different assembly, so we need to tell it to look in this one
             .AddApplicationPart(GetType().Assembly);
