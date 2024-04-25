@@ -37,8 +37,6 @@ public class StatusService : IStatusService
         m_scheduler = scheduler;
         m_eventPollNotify = eventPollNotify;
         m_notificationUpdateService = notificationUpdateService;
-
-        eventPollNotify.NewEvent += async (_, _) => { await websocketAccessor.Send(GetStatus()); };
     }
 
     public ServerStatusDto GetStatus()
