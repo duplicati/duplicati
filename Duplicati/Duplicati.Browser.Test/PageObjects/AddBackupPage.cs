@@ -137,10 +137,12 @@ public class ScheduleSettingsPage(IWebDriver webDriver)
 public class ToOptionsSettingsPage(IWebDriver webDriver)
 {
     private IWebElement SaveButtonElement => webDriver.WaitForElement(By.CssSelector("#save"));
+    private IWebElement ConfirmationModal => webDriver.WaitForElement(By.CssSelector(".content.buttons"));
 
     public ToOptionsSettingsPage Save()
     {
         SaveButtonElement.Click();
+        ConfirmationModal.WaitForElement(By.CssSelector("ul>li:nth-child(2)>a")).Click();
 
         return this;
     }

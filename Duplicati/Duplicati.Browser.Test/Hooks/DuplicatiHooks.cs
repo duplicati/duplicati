@@ -17,7 +17,7 @@ namespace Duplicati.Browser.Test.Hooks
         public static void BeforeScenario(BrowserDriver browserDriver)
         {
             var calculatorPageObject = new DuplicatiPageObject(browserDriver.Current);
-            calculatorPageObject.EnsureCalculatorIsOpenAndReset();
+            calculatorPageObject.Open();
         }
     }
 }

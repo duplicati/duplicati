@@ -19,7 +19,6 @@
 
   <ItemGroup>
     <Folder Include="Drivers\" />
-    <Folder Include="test-backup-source\" />
   </ItemGroup>
 
   <ItemGroup>
