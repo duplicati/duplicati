@@ -39,15 +39,11 @@ namespace Duplicati.Server.Serialization
         {
             JsonSettings = new JsonSerializerSettings
             {
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new CamelCaseNamingStrategy()
-                },
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 Converters = new JsonConverter[]
                 {
                     new DayOfWeekConcerter(),
-                    new StringEnumConverter { NamingStrategy = new CamelCaseNamingStrategy() },
+                    new StringEnumConverter(),
                     new SerializableStatusCreator(),
                     new SettingsCreator(),
                     new FilterCreator(),

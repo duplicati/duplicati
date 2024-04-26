@@ -21,8 +21,8 @@ public class DuplicatiWebserver
         builder.Host.UseRESTHandlers();
         builder.Services.ConfigureHttpJsonOptions(opt =>
         {
-            opt.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            opt.SerializerOptions.PropertyNamingPolicy = null;
+            opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
         builder.Services.AddControllers()
             // This app gets launched by a different assembly, so we need to tell it to look in this one

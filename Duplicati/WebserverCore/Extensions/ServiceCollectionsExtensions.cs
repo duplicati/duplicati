@@ -1,4 +1,3 @@
-using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.RestAPI.Abstractions;

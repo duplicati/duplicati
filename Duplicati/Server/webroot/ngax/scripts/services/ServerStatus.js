@@ -203,16 +203,16 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     function handleServerState(response) {
         var oldEventId = state.lastEventId;
         var anychanged =
-            notifyIfChanged(response.data, 'lastEventID', 'lastEventId') |
-            notifyIfChanged(response.data, 'lastDataUpdateID', 'lastDataUpdateId') |
-            notifyIfChanged(response.data, 'lastNotificationUpdateID', 'lastNotificationUpdateId') |
-            notifyIfChanged(response.data, 'activeTask', 'activeTask') |
-            notifyIfChanged(response.data, 'programState', 'programState') |
-            notifyIfChanged(response.data, 'estimatedPauseEnd', 'estimatedPauseEnd') |
-            notifyIfChanged(response.data, 'updaterState', 'updaterState') |
-            notifyIfChanged(response.data, 'updateDownloadLink', 'updateDownloadLink') |
-            notifyIfChanged(response.data, 'updatedVersion', 'updatedVersion') |
-            notifyIfChanged(response.data, 'updateDownloadProgress', 'updateDownloadProgress');
+            notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
+            notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
+            notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
+            notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
+            notifyIfChanged(response.data, 'ProgramState', 'programState') |
+            notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
+            notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
+            notifyIfChanged(response.data, 'UpdateDownloadLink', 'updateDownloadLink') |
+            notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion') |
+            notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
 
 
         if (!angular.equals(state.proposedSchedule, response.data.ProposedSchedule)) {
