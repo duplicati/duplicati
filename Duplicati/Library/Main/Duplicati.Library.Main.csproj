@@ -8,24 +8,15 @@
   <ItemGroup>	
     <ProjectReference Include="..\..\License\Duplicati.License.csproj" />	
     <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj" />	
-    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\Snapshots\Duplicati.Library.Snapshots.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
-    </ProjectReference>
+    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\Snapshots\Duplicati.Library.Snapshots.csproj" />
+    <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
+    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
+    <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
   </ItemGroup>
   
   <ItemGroup>

@@ -19,9 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
+using Duplicati.Library.Backend;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.DynamicLoader
@@ -50,6 +49,11 @@ namespace Duplicati.Library.DynamicLoader
             {
                 get { return new string[] { "webmodules" }; }
             }
+
+            /// <summary>
+            /// The built-in modules
+            /// </summary>
+            override protected IEnumerable<IWebModule> BuiltInModules => WebModules.BuiltInWebModules;
         }
 
         #region Public static API

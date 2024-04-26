@@ -21,12 +21,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Interface;
-using System.Collections.Specialized;
-using System.Web;
 using System.Linq;
 using System.Runtime.ExceptionServices;
+using Duplicati.Library.Backends;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -53,10 +51,12 @@ namespace Duplicati.Library.DynamicLoader
             /// <summary>
             /// Returns the subfolders searched for backends
             /// </summary>
-            protected override string[] Subfolders
-            {
-                get { return new string[] {"backends"}; }
-            }
+            protected override string[] Subfolders => ["backends"];
+
+            /// <summary>
+            /// The built-in modules
+            /// </summary>
+            protected override IEnumerable<IBackend> BuiltInModules => BackendModules.BuiltInBackendModules;
 
             /// <summary>
             /// Instanciates a specific backend, given the url and options
@@ -67,9 +67,9 @@ namespace Duplicati.Library.DynamicLoader
             public IBackend GetBackend(string url, Dictionary<string, string> options)
             {
                 var uri = new Utility.Uri(url);
-                
+
                 LoadInterfaces();
-                
+
                 var newOpts = new Dictionary<string, string>(options);
                 foreach (var key in uri.QueryParameters.AllKeys)
                     newOpts[key] = uri.QueryParameters[key];
@@ -108,7 +108,7 @@ namespace Duplicati.Library.DynamicLoader
 
                         throw;
                     }
-                    
+
                     return null;
                 }
             }
@@ -118,27 +118,28 @@ namespace Duplicati.Library.DynamicLoader
             /// </summary>
             /// <param name="url">The url to find commands for</param>
             /// <returns>The supported commands or null if the url scheme was not supported</returns>
-            public IList<ICommandLineArgument> GetSupportedCommands(string url)
+            public IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
             {
                 var uri = new Utility.Uri(url);
 
                 LoadInterfaces();
 
+                // TODO: The loading logic is replicated in the "GetBackend" method, should be refactored
                 lock (m_lock)
                 {
                     IBackend b;
                     if (m_interfaces.TryGetValue(uri.Scheme, out b) && b != null)
-                        return b.SupportedCommands;
+                        return GetSupportedCommandsCached(b).ToList();
                     else if (uri.Scheme.EndsWith("s", StringComparison.Ordinal))
                     {
                         var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
-                        if (m_interfaces.ContainsKey(tmpscheme))
-                            return m_interfaces[tmpscheme].SupportedCommands;
+                        if (m_interfaces.TryGetValue(tmpscheme, out b) && b != null)
+                            return GetSupportedCommandsCached(b).ToList();
                     }
-                    
+
                     return null;
                 }
-            }            
+            }
         }
 
         /// <summary>
@@ -152,18 +153,18 @@ namespace Duplicati.Library.DynamicLoader
         /// Gets a list of loaded backends, the instances can be used to extract interface information, not used to interact with the backend.
         /// </summary>
         public static IBackend[] Backends { get { return _backendLoader.Interfaces; } }
-        
+
         /// <summary>
         /// Gets a list of keys supported
         /// </summary>
         public static string[] Keys { get { return _backendLoader.Keys; } }
-        
+
         /// <summary>
         /// Gets the supported commands for a given backend
         /// </summary>
         /// <param name="url">The url to find the commands for</param>
         /// <returns>The supported commands or null if the url is not supported</returns>
-        public static IList<ICommandLineArgument> GetSupportedCommands(string url)
+        public static IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
