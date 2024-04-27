@@ -233,5 +233,16 @@ namespace Duplicati.Library.DynamicLoader
                 return m_supportedCommands[type] = item.SupportedCommands.ToList().AsReadOnly();
             }
         }
+
+        /// <summary>
+        /// Helper method to register a module
+        /// </summary>
+        /// <param name="module">The module to register</param>
+        public void AddModule(T module)
+        {
+            LoadInterfaces();
+            lock (m_lock)
+                m_interfaces[GetInterfaceKey(module)] = module;
+        }
     }
 }

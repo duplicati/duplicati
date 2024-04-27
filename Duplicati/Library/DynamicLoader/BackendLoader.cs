@@ -183,5 +183,14 @@ namespace Duplicati.Library.DynamicLoader
             return _backendLoader.GetBackend(url, options);
         }
         #endregion
+
+        /// <summary>
+        /// Adds a backend to the loader
+        /// </summary>
+        /// <param name="backend">The backend to add</param>
+        public static void AddBackend(IBackend backend)
+        {
+            _backendLoader.AddModule(backend);
+        }
     }
 }
