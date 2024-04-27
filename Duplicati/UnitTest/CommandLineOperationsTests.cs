@@ -153,6 +153,7 @@ namespace Duplicati.UnitTest
         [Category("BulkNoSize")]
         public void RunCommandsWithoutSize()
         {
+            Duplicati.Library.DynamicLoader.BackendLoader.AddBackend(new SizeOmittingBackend());
             DoRunCommands(new SizeOmittingBackend().ProtocolKey + "://" + TARGETFOLDER);
         }
 
