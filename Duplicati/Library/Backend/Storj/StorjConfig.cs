@@ -21,9 +21,6 @@
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Storj
 {
@@ -54,7 +51,7 @@ namespace Duplicati.Library.Backend.Storj
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, "The config to get", "Provides different config values", DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
 
-                }); 
+                });
             }
         }
 

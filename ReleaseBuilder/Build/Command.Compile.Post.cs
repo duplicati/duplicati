@@ -1,4 +1,7 @@
+using System.IO.Compression;
+using System.Net;
 using System.Text.RegularExpressions;
+using Duplicati.Library.Utility;
 
 namespace ReleaseBuilder.Build;
 
@@ -15,12 +18,14 @@ public static partial class Command
         /// <param name="baseDir">The source directory</param>
         /// <param name="buildDir">The output build directory to modify</param>
         /// <param name="os">The target operating system</param>
+        /// <param name="arch">The target architecture</param>
         /// <param name="buildTargetString">The build target string os-arch-interface</param>
         /// <param name="rtcfg">The runtime config</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <returns>An awaitable task</returns>
-        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, OSType os, string buildTargetString, RuntimeConfig rtcfg, bool keepBuilds)
+        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, OSType os, ArchType arch, string buildTargetString, RuntimeConfig rtcfg, bool keepBuilds)
         {
+            await InstallUplinkBinaries(buildDir, os, arch);
             await RemoveUnwantedFiles(os, buildDir);
 
             switch (os)
@@ -275,5 +280,91 @@ public static partial class Command
             foreach (var file in filenames)
                 await rtcfg.AuthenticodeSign(file);
         }
+    }
+
+    /// <summary>
+    /// Downloads a file from a URL and saves it to a destination path
+    /// </summary>
+    /// <param name="url">The URL to download from</param>
+    /// <param name="destinationPath">The path to save the file to</param>
+    /// <returns>An awaitable task</returns>
+    static async Task DownloadFileAsync(string url, string destinationPath)
+    {
+        using var httpClient = new HttpClient(new HttpClientHandler
+        {
+            CookieContainer = new CookieContainer()
+        });
+
+        using var response = await httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        using var tf = new TempFile();
+        using var fileStream = File.Create(tf);
+        await response.Content.CopyToAsync(fileStream);
+
+        File.Move(tf, destinationPath);
+    }
+
+    /// <summary>
+    /// Due to an issue with the packages for Uplink.Net, we need to download the binaries and manully extract them
+    /// </summary>
+    /// <param name="buildDir">The build directory</param>
+    /// <param name="os">The target operating system</param>
+    /// <param name="arch">The target architecture</param>
+    /// <returns>An awaitable task</returns>
+    static async Task InstallUplinkBinaries(string buildDir, OSType os, ArchType arch)
+    {
+        var buildroot = Path.GetDirectoryName(buildDir) ?? throw new Exception("Bad build dir");
+        var pkgfolder = Path.Combine(buildroot, "nuget");
+        var pkgname = os switch
+        {
+            OSType.Windows => (Url: "https://www.nuget.org/api/v2/package/uplink.NET.Win/2.12.3363", File: "uplink.net.win.2.12.3363.nupkg"),
+            OSType.MacOS => (Url: "https://www.nuget.org/api/v2/package/uplink.NET.Mac/2.12.3365", File: "uplink.net.mac.2.12.3365.nupkg"),
+            OSType.Linux => (Url: "https://www.nuget.org/api/v2/package/uplink.NET.Linux/2.12.3365", File: "uplink.net.linux.2.12.3365.nupkg"),
+            _ => (null, null)
+        };
+
+        var zipEntryName = os switch
+        {
+            OSType.Windows => arch switch
+            {
+                ArchType.x64 => "runtimes/win-x64/native/storj_uplink.dll",
+                ArchType.x86 => "runtimes/win-x86/native/storj_uplink.dll",
+                ArchType.Arm64 => "runtimes/win-arm64/native/storj_uplink.dll",
+                _ => null
+            },
+            OSType.MacOS => arch switch
+            {
+                ArchType.x64 or ArchType.Arm64 => "runtimes/osx-x64/native/libstorj_uplink.dylib", // Dual-arch binary
+                _ => null
+            },
+            OSType.Linux => arch switch
+            {
+                ArchType.x64 => "runtimes/linux-x64/native/storj_uplink.so",
+                _ => null
+            },
+            _ => null
+        };
+
+        // Combination not supported
+        if (pkgname.Url == null || pkgname.File == null || zipEntryName == null)
+            return;
+
+        var pkgpath = Path.Combine(pkgfolder, pkgname.File);
+        if (!File.Exists(pkgpath))
+        {
+            if (!Directory.Exists(pkgfolder))
+                Directory.CreateDirectory(pkgfolder);
+
+            await DownloadFileAsync(
+                pkgname.Url,
+                pkgpath
+            );
+        }
+
+        // Extract the binary and install it in the target folder
+        using var archive = new ZipArchive(File.OpenRead(pkgpath));
+        var entry = archive.GetEntry(zipEntryName);
+        if (entry != null)
+            entry.ExtractToFile(Path.Combine(buildDir, Path.GetFileName(zipEntryName)), true);
     }
 }

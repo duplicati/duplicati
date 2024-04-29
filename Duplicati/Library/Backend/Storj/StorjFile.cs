@@ -20,10 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Storj
 {
