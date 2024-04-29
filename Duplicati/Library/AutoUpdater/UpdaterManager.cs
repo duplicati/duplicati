@@ -91,13 +91,14 @@ namespace Duplicati.Library.AutoUpdater
         /// </summary>
         private const string PACKAGE_TYPE_FILE = "package_type_id.txt";
         /// <summary>
-        /// The README file stored in the <see cref="UPDATEDIR"/> folder, explaining what the folder is for
-        /// </summary>
-        private const string README_FILE = "README.txt";
-        /// <summary>
         /// The installation ID filename stored in <see cref="UPDATEDIR"/>
         /// </summary>
         private const string INSTALL_FILE = "installation.txt";
+
+        /// <summary>
+        /// The machine ID filename stored in <see cref="UPDATEDIR"/>
+        /// </summary>
+        private const string MACHINE_FILE = "machineid.txt";
 
         /// <summary>
         /// Gets the last version found from an update
@@ -119,19 +120,31 @@ namespace Duplicati.Library.AutoUpdater
                 var candidates = new List<string>();
                 if (Platform.IsClientWindows)
                 {
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME, "updates"));
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
+                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME));
+                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
                 }
                 else
                 {
-                    if (Platform.IsClientOSX)
-                        candidates.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME, "updates"));
-
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME, "updates"));
+                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
                 }
+
+                if (Platform.IsClientOSX)
+                    candidates.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME));
 
                 // Find the first writeable directory in the list
                 UPDATEDIR = candidates.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p));
+
+                // Try to create a writeable folder, if none is found
+                if (string.IsNullOrWhiteSpace(UPDATEDIR))
+                    UPDATEDIR = candidates.Where(p => !string.IsNullOrWhiteSpace(p) && !System.IO.Directory.Exists(p))
+                        .Select(p =>
+                        {
+                            try { System.IO.Directory.CreateDirectory(p); }
+                            catch { }
+                            return p;
+                        })
+                        .Where(p => System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p))
+                        .FirstOrDefault();
             }
             else
             {
@@ -141,10 +154,18 @@ namespace Duplicati.Library.AutoUpdater
 
             if (!string.IsNullOrWhiteSpace(UPDATEDIR))
             {
-                if (!System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, README_FILE)))
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, README_FILE), AutoUpdateSettings.UpdateFolderReadme);
                 if (!System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE)))
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE), AutoUpdateSettings.UpdateInstallFileText);
+                {
+                    // In case there was already a machine id file, copy it to the new location
+                    if (System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, "updates", INSTALL_FILE)))
+                        System.IO.File.Copy(System.IO.Path.Combine(UPDATEDIR, "updates", INSTALL_FILE), System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE), true);
+                    else
+                        System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE), AutoUpdateSettings.UpdateInstallFileText);
+                }
+
+                if (!System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE)))
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(InstallID));
+
             }
 
             // Attempt to read the installed manifest file
@@ -223,6 +244,23 @@ namespace Duplicati.Library.AutoUpdater
                 catch { }
 
                 return "";
+            }
+        }
+
+        /// <summary>
+        /// The unique machine ID
+        /// </summary>
+        public static string MachineID
+        {
+            get
+            {
+                string machinedId = null;
+                try { machinedId = System.IO.File.ReadAllLines(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+                catch { }
+
+                return string.IsNullOrWhiteSpace(machinedId)
+                    ? InstallID
+                    : machinedId;
             }
         }
 

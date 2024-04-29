@@ -346,7 +346,7 @@ namespace Duplicati.Library.Modules.Builtin
                 if (input.IndexOf("%machine-id%", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     if (!m_options.ContainsKey("machine-id"))
-                        extra["machine-id"] = Library.AutoUpdater.UpdaterManager.InstallID;
+                        extra["machine-id"] = Library.AutoUpdater.UpdaterManager.MachineID;
                 }
 
                 if (input.IndexOf("%backup-id%", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -394,7 +394,7 @@ namespace Duplicati.Library.Modules.Builtin
                     input = Regex.Replace(input, "\\%backup-id\\%", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT)), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 if (!m_options.ContainsKey("machine-id"))
-                    input = Regex.Replace(input, "\\%machine-id\\%", Library.AutoUpdater.UpdaterManager.InstallID, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Regex.Replace(input, "\\%machine-id\\%", Library.AutoUpdater.UpdaterManager.MachineID, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
                 return input;
