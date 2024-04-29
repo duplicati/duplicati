@@ -98,6 +98,7 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="file">The file to read the data from</param>
         /// <returns>A stream with data from the given file</returns>
+        /// <remarks>This method has slightly strange logic, in that it will return a null value if the file does not exist, instead of throwing an exception</remarks>
         System.IO.Stream OpenRead(string file);
 
         /// <summary>
