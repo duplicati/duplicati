@@ -87,7 +87,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The default subject or title line
         /// </summary>
-        protected virtual string DEFAULT_SUBJECT { get; }= "Duplicati %OPERATIONNAME% report for %backup-name%";
+        protected virtual string DEFAULT_SUBJECT { get; } = "Duplicati %OPERATIONNAME% report for %backup-name%";
         /// <summary>
         /// The default report level
         /// </summary>
@@ -267,7 +267,8 @@ namespace Duplicati.Library.Modules.Builtin
             var logLevel = Utility.Utility.ParseEnumOption(m_options, LogLevelOptionName, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m => {
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
                     return result;
@@ -300,9 +301,33 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="exception">An optional exception that has stopped the backup</param>
         /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
         protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
+            => ReplaceTemplate(input, result, exception, subjectline, m_resultFormatSerializer);
+
+        /// <summary>
+        /// Helper method to perform template expansion
+        /// </summary>
+        /// <returns>The expanded template.</returns>
+        /// <param name="input">The input template.</param>
+        /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
+        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
+        /// <param name="format">The format to use when serializing the result</param>
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline, ResultExportFormat format)
+            => ReplaceTemplate(input, result, exception, subjectline, ResultFormatSerializerProvider.GetSerializer(format));
+
+        /// <summary>
+        /// Helper method to perform template expansion
+        /// </summary>
+        /// <returns>The expanded template.</returns>
+        /// <param name="input">The input template.</param>
+        /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
+        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
+        /// <param name="resultFormatSerializer">The serializer to use when serializing the result</param>
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline, IResultFormatSerializer resultFormatSerializer)
         {
             // For JSON, ignore the template and just use the contents
-            if (ExportFormat == ResultExportFormat.Json && !subjectline)
+            if (resultFormatSerializer.Format == ResultExportFormat.Json && !subjectline)
             {
                 var extra = new Dictionary<string, string>();
 
@@ -340,7 +365,7 @@ namespace Duplicati.Library.Modules.Builtin
                     if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
 
-                return m_resultFormatSerializer.Serialize(result, exception, LogLines, extra);
+                return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
             }
             else
             {
@@ -356,7 +381,7 @@ namespace Duplicati.Library.Modules.Builtin
                 else
                 {
                     if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, exception, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, "\\%RESULT\\%", resultFormatSerializer.Serialize(result, exception, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
@@ -446,7 +471,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
             catch (Exception ex)
             {
-                Exception top = ex; 
+                Exception top = ex;
                 var sb = new StringBuilder();
                 while (top != null)
                 {
