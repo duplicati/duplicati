@@ -153,6 +153,7 @@ namespace Duplicati.UnitTest
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             RandomErrorBackend.WrappedBackend = u.Scheme;
             var target = u.SetScheme(new RandomErrorBackend().ProtocolKey).ToString();
+            Library.DynamicLoader.BackendLoader.AddBackend(new RandomErrorBackend());
 
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
         }
@@ -164,6 +165,7 @@ namespace Duplicati.UnitTest
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             SizeOmittingBackend.WrappedBackend = u.Scheme;
             var target = u.SetScheme(new SizeOmittingBackend().ProtocolKey).ToString();
+            Library.DynamicLoader.BackendLoader.AddBackend(new SizeOmittingBackend());
 
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
         }

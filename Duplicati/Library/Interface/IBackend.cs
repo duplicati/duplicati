@@ -36,12 +36,12 @@ namespace Duplicati.Library.Interface
     /// The other constructor is used to do the actual work.
     /// An instance is never reused.
     /// </summary>
-    public interface IBackend : IDisposable
+    public interface IBackend : IDynamicModule, IDisposable
     {
         /// <summary>
         /// The localized name to display for this backend
         /// </summary>
-        string DisplayName { get;}
+        string DisplayName { get; }
 
         /// <summary>
         /// The protocol key, eg. ftp, http or ssh
@@ -74,11 +74,6 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         void Delete(string remotename);
-
-        /// <summary>
-        /// Gets a list of supported commandline arguments
-        /// </summary>
-        IList<ICommandLineArgument> SupportedCommands { get; }
 
         /// <summary>
         /// A localized description of the backend, for display in the usage information

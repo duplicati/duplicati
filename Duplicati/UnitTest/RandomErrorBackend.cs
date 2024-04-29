@@ -23,6 +23,7 @@ using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -127,7 +128,7 @@ namespace Duplicati.UnitTest
             get
             {
                 if (m_backend == null)
-                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://"); }
+                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://").ToList(); }
                     catch { }
 
                 return m_backend.SupportedCommands;

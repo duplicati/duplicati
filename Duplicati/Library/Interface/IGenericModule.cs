@@ -19,9 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.Interface
 {
@@ -36,7 +34,7 @@ namespace Duplicati.Library.Interface
     /// All instances where the Configure method is called will be disposed,
     /// if they implement the IDisposable interface as well.
     /// </summary>
-    public interface IGenericModule
+    public interface IGenericModule : IDynamicModule
     {
         /// <summary>
         /// The module key, used to activate or deactivate the module on the commandline
@@ -59,11 +57,6 @@ namespace Duplicati.Library.Interface
         /// If false, the user can choose to load the module by entering the appropriate commandline option.
         /// </summary>
         bool LoadAsDefault { get; }
-
-        /// <summary>
-        /// Gets a list of supported commandline arguments
-        /// </summary>
-        IList<ICommandLineArgument> SupportedCommands { get; }
 
         /// <summary>
         /// This method is the interception where the module can interact with the execution environment and modify the settings.

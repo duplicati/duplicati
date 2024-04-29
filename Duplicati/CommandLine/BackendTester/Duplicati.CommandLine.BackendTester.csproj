@@ -7,31 +7,16 @@
   </PropertyGroup>
     
   <ItemGroup>
-    <ProjectReference Include="..\..\Library\Backends\Duplicati.Library.Backends.csproj" />
-    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\License\Duplicati.License.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\Compression\Duplicati.Library.Compression.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj">
-    </ProjectReference>
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
+    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
+    <ProjectReference Include="..\..\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
+    <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
+    <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\..\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace Duplicati.Library.Interface
@@ -37,7 +36,7 @@ namespace Duplicati.Library.Interface
     /// The other constructor is used to do the actual work.
     /// An instance can be used to encrypt or decrypt multiple files/streams.
     /// </summary>
-    public interface IEncryption : IDisposable
+    public interface IEncryption : IDynamicModule, IDisposable
     {
         /// <summary>
         /// Encrypts the contents of the inputfile, and saves the result as the outputfile.
@@ -95,11 +94,6 @@ namespace Duplicati.Library.Interface
         /// A localized description of the encryption module
         /// </summary>
         string Description { get; }
-
-        /// <summary>
-        /// Gets a list of supported commandline arguments
-        /// </summary>
-        IList<ICommandLineArgument> SupportedCommands { get; }
 
         /// <summary>
         /// Returns the size in bytes of the overhead that will be added to a file of the given size when encrypted

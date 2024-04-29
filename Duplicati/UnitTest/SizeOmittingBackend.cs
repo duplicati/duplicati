@@ -112,8 +112,8 @@ namespace Duplicati.UnitTest
             get
             {
                 if (m_backend == null)
-                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://"); }
-                catch { }
+                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://").ToList(); }
+                    catch { }
 
                 return m_backend.SupportedCommands;
             }
@@ -131,7 +131,7 @@ namespace Duplicati.UnitTest
         {
             if (m_backend != null)
                 try { m_backend.Dispose(); }
-            finally { m_backend = null; }
+                finally { m_backend = null; }
         }
         #endregion
     }
