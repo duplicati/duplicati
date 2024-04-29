@@ -225,10 +225,9 @@ namespace Duplicati.Library.Compression
                 throw new InvalidOperationException(Strings.SevenZipCompression.NoReaderError);
 
             var item = m_reader.GetFiles(m_archive).FirstOrDefault(x => x.Name == file);
-            if (item == null)
-                throw new FileNotFoundException(Strings.SevenZipCompression.FileNotFoundError, file);
-
-            return m_reader.OpenStream(m_archive, m_reader.GetFileIndex(m_archive, item), null);
+            return item == null
+                ? null
+                : m_reader.OpenStream(m_archive, m_reader.GetFileIndex(m_archive, item), null);
         }
 
         #endregion
