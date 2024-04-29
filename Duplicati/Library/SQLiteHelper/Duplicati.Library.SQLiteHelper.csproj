@@ -5,6 +5,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>SQLiteHelper</AssemblyName>
     <Description>SQLiteHelper for Duplicati</Description>
+    <RootNamespace>Duplicati.Library.SQLiteHelper</RootNamespace>
 	</PropertyGroup>
   
   <ItemGroup>
