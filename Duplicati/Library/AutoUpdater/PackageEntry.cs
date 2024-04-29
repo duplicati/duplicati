@@ -22,45 +22,34 @@
 using System;
 using System.IO;
 
-namespace Duplicati.Library.AutoUpdater
+namespace Duplicati.Library.AutoUpdater;
+
+/// <summary>
+/// An installer entry, describing an architecture specific package
+/// </summary>
+/// <param name="RemoteUrls">The urls for the updater payload</param>
+/// <param name="Length">The length of the payload</param>
+/// <param name="MD5">The MD5 hash of the payload</param>
+/// <param name="SHA256">The SHA256 hash of the payload</param>
+/// <param name="PackageTypeId">The package type id</param>
+public record PackageEntry(
+    string[] RemoteUrls,
+    long Length,
+    string MD5,
+    string SHA256,
+    string PackageTypeId
+)
 {
     /// <summary>
-    /// An installer entry, describing an architecture specific package
+    /// Gets the name of the package file, formatted as a valid local filename
     /// </summary>
-    public class PackageEntry
+    /// <returns>The filename of the package</returns>
+    public string GetFilename()
     {
-        /// <summary>
-        /// The urls for the updater payload
-        /// </summary>
-        public string[] RemoteUrls;
-        /// <summary>
-        /// The length of the payload
-        /// </summary>
-        public long Length;
-        /// <summary>
-        /// The MD5 hash of the payload
-        /// </summary>
-        public string MD5;
-        /// <summary>
-        /// The SHA256 hash of the payload
-        /// </summary>
-        public string SHA256;
-        /// <summary>
-        /// The package type id
-        /// </summary>
-        public string PackageTypeId;
+        var guess = Path.GetFileName(new Uri(RemoteUrls[0]).LocalPath);
+        if (string.IsNullOrWhiteSpace(guess))
+            guess = "update.bin";
 
-        /// <summary>
-        /// Gets the name of the package file
-        /// </summary>
-        /// <returns>The filename of the package</returns>
-        public string GetFilename()
-        {
-            var guess = Path.GetFileName(new Uri(RemoteUrls[0]).LocalPath);
-            if (string.IsNullOrWhiteSpace(guess))
-                guess = "update.bin";
-
-            return guess;
-        }
+        return guess;
     }
 }

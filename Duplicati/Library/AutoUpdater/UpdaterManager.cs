@@ -26,6 +26,7 @@ using System.IO;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -159,18 +160,24 @@ namespace Duplicati.Library.AutoUpdater
             // In case the installed manifest is broken, try to set some sane values
             if (selfVersion == null)
             {
-                SelfVersion = new UpdateInfo()
-                {
-                    Displayname = string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
-                    Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
-                    ReleaseTime = new DateTime(0),
-                    ReleaseType =
+                SelfVersion = new UpdateInfo(
+                    MinimumCompatibleVersion: 1,
+                    PackageUpdaterVersion: 1,
+                    IncompatibleUpdateUrl: string.Empty,
+                    GenericUpdatePageUrl: "https://duplicati.com/download",
+                    UpdateSeverity: null,
+                    ChangeInfo: null,
+                    Packages: null,
+                    Displayname: string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
+                    Version: System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                    ReleaseTime: new DateTime(0),
+                    ReleaseType:
 #if DEBUG
                         "Debug"
 #else
                         string.IsNullOrWhiteSpace(AutoUpdateSettings.BuildUpdateChannel) ? "Nightly" : AutoUpdateSettings.BuildUpdateChannel
 #endif
-                };
+                );
             }
         }
 
@@ -274,11 +281,16 @@ namespace Duplicati.Library.AutoUpdater
                         wc.DownloadFile(url, tmpfile);
 
                         using (var fs = System.IO.File.OpenRead(tmpfile))
-                        using (var ss = new SignatureReadingStream(fs, SIGN_KEYS))
-                        using (var tr = new System.IO.StreamReader(ss))
-                        using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
                         {
-                            var update = new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
+                            var verifyOps = SIGN_KEYS.Select(k => new JSONSignature.VerifyOperation(
+                                Algorithm: JSONSignature.RSA_SHA256,
+                                PublicKey: k.ToXmlString(false)
+                            ));
+
+                            if (!JSONSignature.VerifyAtLeastOne(fs, verifyOps))
+                                throw new Exception("No valid signature found in manifest file");
+
+                            var update = JsonSerializer.Deserialize<UpdateInfo>(fs);
 
                             if (TryParseVersion(update.Version) <= TryParseVersion(SelfVersion.Version))
                                 return null;
@@ -298,11 +310,12 @@ namespace Duplicati.Library.AutoUpdater
 
                             // In case the manifest does not contain a URL, use the one from this assembly
                             if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
-                                update.GenericUpdatePageUrl = SelfVersion.GenericUpdatePageUrl;
+                                update = update with { GenericUpdatePageUrl = SelfVersion.GenericUpdatePageUrl };
 
                             // In case there is no url, fall back to the project download page
                             if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
-                                update.GenericUpdatePageUrl = "https://duplicati.com/download";
+                                update = update with { GenericUpdatePageUrl = "https://duplicati.com/download" };
+
                             LastUpdateCheckVersion = update;
                             return update;
                         }
@@ -325,11 +338,18 @@ namespace Duplicati.Library.AutoUpdater
             {
                 try
                 {
+                    var verifyOps = SIGN_KEYS.Select(k => new JSONSignature.VerifyOperation(
+                        Algorithm: JSONSignature.RSA_SHA256,
+                        PublicKey: k.ToXmlString(false)
+                    ));
+
                     using (var fs = System.IO.File.OpenRead(manifest))
-                    using (var ss = new SignatureReadingStream(fs, SIGN_KEYS))
-                    using (var tr = new System.IO.StreamReader(ss))
-                    using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
-                        return new Newtonsoft.Json.JsonSerializer().Deserialize<UpdateInfo>(jr);
+                    {
+                        if (!JSONSignature.VerifyAtLeastOne(fs, verifyOps))
+                            throw new Exception("Installed manifest signature is invalid");
+
+                        return JsonSerializer.Deserialize<UpdateInfo>(fs);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -427,42 +447,42 @@ namespace Duplicati.Library.AutoUpdater
         /// <param name="sourcedata">The template content in JSON format</param>
         /// <param name="outputfolder">The folder where the signed manifest will be written to</param>
         /// <param name="version">The version of the manifest</param>
-        /// <param name="updateFromV1Url">The URL to use for V1 updates</param>
+        /// <param name="incompatibleUpdateUrl">The URL to use for incompatible updates</param>
         /// <param name="genericUpdatePageUrl">The URL to use for generic updates</param>
-        public static void CreateSignedManifest(System.Security.Cryptography.RSA key, string sourcedata, string outputfolder, string version = null, string updateFromV1Url = null, string genericUpdatePageUrl = null, string releaseType = null, IEnumerable<PackageEntry> packages = null)
+        public static void CreateSignedManifest(IEnumerable<System.Security.Cryptography.RSA> keys, string sourcedata, string outputfolder, string version = null, string incompatibleUpdateUrl = null, string genericUpdatePageUrl = null, string releaseType = null, IEnumerable<PackageEntry> packages = null)
         {
             // Read the existing manifest
-            var remoteManifest = Newtonsoft.Json.JsonConvert.DeserializeObject<UpdateInfo>(string.IsNullOrWhiteSpace(sourcedata) ? "{}" : sourcedata);
+            var remoteManifest = JsonSerializer.Deserialize<UpdateInfo>(string.IsNullOrWhiteSpace(sourcedata) ? "{}" : sourcedata);
 
             if (remoteManifest.ReleaseTime.Ticks == 0)
-                remoteManifest.ReleaseTime = DateTime.UtcNow;
+                remoteManifest = remoteManifest with { ReleaseTime = DateTime.UtcNow };
 
             // No files to update with are allowed, as we currently do not use the information
             if (remoteManifest.Packages == null)
-                remoteManifest.Packages = Array.Empty<PackageEntry>();
+                remoteManifest = remoteManifest with { Packages = Array.Empty<PackageEntry>() };
 
-            // Disable the warning as we enforce the field to be set to the default value
-#pragma warning disable CS0618 // Type or member is obsolete
-            if (remoteManifest.RemoteURLS == null)
-                remoteManifest.RemoteURLS = Array.Empty<string>();
-#pragma warning restore CS0618 // Type or member is obsolete
+            remoteManifest = remoteManifest with
+            {
+                PackageUpdaterVersion = SUPPORTED_PACKAGE_UPDATER_VERSION,
+                MinimumCompatibleVersion = 2
+            };
 
             if (version != null)
-                remoteManifest.Version = version.ToString();
-            if (!string.IsNullOrWhiteSpace(updateFromV1Url))
-                remoteManifest.UpdateFromV1Url = updateFromV1Url;
+                remoteManifest = remoteManifest with { Version = version.ToString() };
+            if (!string.IsNullOrWhiteSpace(incompatibleUpdateUrl))
+                remoteManifest = remoteManifest with { IncompatibleUpdateUrl = incompatibleUpdateUrl };
             if (!string.IsNullOrWhiteSpace(genericUpdatePageUrl))
-                remoteManifest.GenericUpdatePageUrl = genericUpdatePageUrl;
+                remoteManifest = remoteManifest with { GenericUpdatePageUrl = genericUpdatePageUrl };
             if (!string.IsNullOrWhiteSpace(releaseType))
-                remoteManifest.ReleaseType = releaseType;
+                remoteManifest = remoteManifest with { ReleaseType = releaseType };
             if (packages != null)
-                remoteManifest.Packages = packages.ToArray();
+                remoteManifest = remoteManifest with { Packages = packages.ToArray() };
 
-            if (string.IsNullOrWhiteSpace(remoteManifest.UpdateFromV1Url))
-                remoteManifest.UpdateFromV1Url = remoteManifest.GenericUpdatePageUrl;
+            if (string.IsNullOrWhiteSpace(remoteManifest.IncompatibleUpdateUrl))
+                remoteManifest = remoteManifest with { IncompatibleUpdateUrl = remoteManifest.GenericUpdatePageUrl };
 
-            if (string.IsNullOrWhiteSpace(remoteManifest.UpdateFromV1Url))
-                throw new Exception($"Field must be set: {nameof(remoteManifest.UpdateFromV1Url)}");
+            if (string.IsNullOrWhiteSpace(remoteManifest.IncompatibleUpdateUrl))
+                throw new Exception($"Field must be set: {nameof(remoteManifest.IncompatibleUpdateUrl)}");
             if (string.IsNullOrWhiteSpace(remoteManifest.GenericUpdatePageUrl))
                 throw new Exception($"Field must be set: {nameof(remoteManifest.GenericUpdatePageUrl)}");
             if (string.IsNullOrWhiteSpace(remoteManifest.Version))
@@ -471,19 +491,40 @@ namespace Duplicati.Library.AutoUpdater
                 throw new Exception($"Field must be set: {nameof(remoteManifest.ReleaseType)}");
 
             // Write a signed manifest for upload
-            using (var tf = new Duplicati.Library.Utility.TempFile())
+            using (var tf = new TempFile())
             {
-                using (var ms = new System.IO.MemoryStream())
-                using (var sw = new System.IO.StreamWriter(ms))
+                using (var ms = new MemoryStream())
                 {
-                    new Newtonsoft.Json.JsonSerializer().Serialize(sw, remoteManifest);
-                    sw.Flush();
+                    JsonSerializer.Serialize<UpdateInfo>(ms, remoteManifest, new JsonSerializerOptions { WriteIndented = false });
+                    ms.Position = 0;
 
-                    using (var fs = System.IO.File.Create(tf))
-                        SignatureReadingStream.CreateSignedStream(ms, fs, key);
+                    var signops = keys.Select(k => new JSONSignature.SignOperation(
+                        Algorithm: JSONSignature.RSA_SHA256,
+                        PublicKey: k.ToXmlString(false),
+                        PrivateKey: k.ToXmlString(true)
+                    ));
+
+                    using (var fs = File.Create(tf))
+                        JSONSignature.SignAsync(ms, fs, signops).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
 
-                System.IO.File.Move(tf, System.IO.Path.Combine(outputfolder, UPDATE_MANIFEST_FILENAME));
+                // Validate that the written file can also be read  
+                using (var fs = File.OpenRead(tf))
+                {
+                    var validSigs = JSONSignature.Verify(fs, keys.Select(k => new JSONSignature.VerifyOperation(
+                        Algorithm: JSONSignature.RSA_SHA256,
+                        PublicKey: k.ToXmlString(false)
+                    )));
+
+                    if (validSigs.Count() != keys.Count())
+                        throw new Exception("Failed to verify all signatures after signing");
+
+                    var deserialized = JsonSerializer.Deserialize<UpdateInfo>(fs);
+                    if (deserialized == null || deserialized.Version != remoteManifest.Version)
+                        throw new Exception("Failed to deserialize the signed manifest");
+                }
+
+                File.Move(tf, Path.Combine(outputfolder, UPDATE_MANIFEST_FILENAME));
             }
         }
     }

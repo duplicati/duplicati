@@ -326,12 +326,12 @@ public record Commands(
 /// <summary>
 /// Extra settings used by the build script, that are not expected to be changed often
 /// </summary>
-/// <param name="UpdateFromV1Url">The URL to use for clients upgrading from earlier versions</param>
+/// <param name="UpdateFromIncompatibleVersionUrl">The URL to use for clients upgrading from earlier versions</param>
 /// <param name="GenericUpdatePageUrl">The URL to redirect to when the update has no specific package</param>
 /// <param name="PackageUrls">The urls where packages are stored</param>
 /// <param name="UpdaterUrls">The urls where manifest files are stored</param>
 public record ExtraSettings(
-    string UpdateFromV1Url,
+    string UpdateFromIncompatibleVersionUrl,
     string GenericUpdatePageUrl,
     string[] PackageUrls,
     string[] UpdaterUrls
@@ -343,9 +343,9 @@ public record ExtraSettings(
     /// <returns>The extra settings instance</returns>
     public static ExtraSettings Create()
         => new(
-            GetEnvKey("UPDATE_FROM_V1_URL", "https://duplicati.com/update-from-v1"),
-            GetEnvKey("GENERIC_UPDATE_PAGE_URL", "https://duplicati.com/download"),
-            GetEnvKey("PACKAGE_URLS", "https://updates.duplicati.com/${RELEASE_TYPE}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_TYPE}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-            GetEnvKey("UPDATER_URLS", "https://updates.duplicati.com/${RELEASE_TYPE}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_TYPE}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            GetEnvKey("UPDATE_FROM_INCOMPATIBLE_URL", "https://duplicati.com/download?update_from=${RELEASE_VERSION}"),
+            GetEnvKey("GENERIC_UPDATE_PAGE_URL", "https://duplicati.com/download?from=${RELEASE_VERSION}"),
+            GetEnvKey("PACKAGE_URLS", "https://updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+            GetEnvKey("UPDATER_URLS", "https://updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         );
 }
