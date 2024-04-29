@@ -60,25 +60,12 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
 		private IDisposable m_oauthsettings;
 
-		// Copied from system reference
-		[Flags]
-        private enum CopySecurityProtocolType
-        {
-            Ssl3 = 48,
-            Tls = 192,
-            Tls11 = 768,
-            Tls12 = 3072,
-        }
-
         private static Dictionary<string, int> SecurityProtocols
         {
             get
             {
                 var res = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                foreach (var val in Enum.GetNames(typeof(CopySecurityProtocolType)).Zip(Enum.GetValues(typeof(CopySecurityProtocolType)).Cast<int>(), (x,y) => new KeyValuePair<string, int>(x, y)))
-                    res[val.Key] = val.Value;
-
-                foreach (var val in Enum.GetNames(typeof(System.Net.SecurityProtocolType)).Zip(Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<int>(), (x,y) => new KeyValuePair<string, int>(x, y)))
+                foreach (var val in Enum.GetNames(typeof(System.Net.SecurityProtocolType)).Zip(Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<int>(), (x, y) => new KeyValuePair<string, int>(x, y)))
                     res[val.Key] = val.Value;
 
                 return res;
@@ -122,7 +109,7 @@ namespace Duplicati.Library.Modules.Builtin
         {
             get { 
                 var sslnames = SecurityProtocols.Select(x => x.Key).ToArray();
-                var defaultssl = string.Join(",", Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<Enum>().Where(x => System.Net.ServicePointManager.SecurityProtocol.HasFlag(x)));
+                var defaultssl = System.Net.SecurityProtocolType.SystemDefault.ToString();
 
                 return new List<Duplicati.Library.Interface.ICommandLineArgument>( new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_EXPECT100, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableExpect100Short, Strings.HttpOptions.DisableExpect100Long, "false"),
