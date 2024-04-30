@@ -332,7 +332,7 @@ namespace Duplicati.Library.Modules.Builtin
             foreach (var target in m_report_targets)
             {
                 if (m_cachedBodyResults.TryGetValue(target.Format, out var result))
-                    ex ??= SendMessage(client, target, subject, body).ConfigureAwait(false).GetAwaiter().GetResult();
+                    ex ??= SendMessage(client, target, subject, result).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             if (ex != null)
