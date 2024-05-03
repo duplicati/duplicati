@@ -57,7 +57,7 @@ public static class ConsoleHelper
             }
         } while (key != ConsoleKey.Enter);
 
-        return Console.ReadLine() ?? string.Empty;
+        return pass;
     }
 
 }
