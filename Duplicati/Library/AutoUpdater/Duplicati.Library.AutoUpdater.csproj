@@ -19,8 +19,8 @@
     <EmbeddedResource Include="AutoUpdateAppName.txt" />
     <EmbeddedResource Include="AutoUpdateSignKeys.txt" />
     <EmbeddedResource Include="AutoUpdateURL.txt" />
-    <EmbeddedResource Include="AutoUpdateFolderReadme.txt" />
     <EmbeddedResource Include="AutoUpdateInstallIDTemplate.txt" />
+    <EmbeddedResource Include="AutoUpdateMachineIDTemplate.txt" />
     <EmbeddedResource Include="AutoUpdateBuildChannel.txt" />
   </ItemGroup>
 
