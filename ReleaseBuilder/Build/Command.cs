@@ -53,7 +53,7 @@ public static partial class Command
     /// The supported versions of libicu for Debian
     /// </summary>
     private static string DebianLibIcuVersions => "libicu | " + string.Join(" | ",
-        "72;71;70;69;68;67;66;65;63;60;57;55;52"
+        "74;72;71;70;69;68;67;66;65;63;60;57;55;52"
         .Split(";", StringSplitOptions.RemoveEmptyEntries)
         .Select(x => $"libicu{x}"));
 
