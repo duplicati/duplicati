@@ -23,11 +23,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility
 {
     //The signatures in this file are from http://pinvoke.net
 
+    [SupportedOSPlatform("windows")]
     /// <summary>
     /// Various Windows specific calls 
     /// </summary>
