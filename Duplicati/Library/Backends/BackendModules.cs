@@ -19,7 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backends;
@@ -29,7 +32,12 @@ public static class BackendModules
     /// <summary>
     /// The list of all built-in backend modules
     /// </summary>
-    public static IReadOnlyList<IBackend> BuiltInBackendModules => [
+    public static IReadOnlyList<IBackend> BuiltInBackendModules => SupportedBackends;
+
+    /// <summary>
+    /// Calculate list once and cache it
+    /// </summary>
+    private static readonly IReadOnlyList<IBackend> SupportedBackends = new IBackend[] {
         new Backend.AliyunOSS.OSS(),
         new Backend.AlternativeFTP.AlternativeFtpBackend(),
         new Backend.AzureBlob.AzureBlobBackend(),
@@ -54,9 +62,21 @@ public static class BackendModules
         new Backend.SharePointBackend(),
         new Backend.SharePointV2(),
         new Backend.Sia.Sia(),
-        new Backend.Storj.Storj(),
+        IsStorjSupported? new Backend.Storj.Storj() : null,
         new Backend.TahoeBackend(),
         new Backend.TencentCOS.COS(),
         new Backend.WEBDAV()
-    ];
+    }
+    .Where(x => x != null)
+    .ToList();
+
+    /// <summary>
+    /// Logic for Storj depends on available binaries
+    /// </summary>
+    private static bool IsStorjSupported =>
+        (OperatingSystem.IsWindows() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.X86 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64))
+        ||
+        (OperatingSystem.IsLinux() && (RuntimeInformation.ProcessArchitecture == Architecture.X64))
+        ||
+        (OperatingSystem.IsMacOS() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64));
 }

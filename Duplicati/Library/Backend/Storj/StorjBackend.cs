@@ -23,9 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using uplink.NET.Interfaces;
@@ -67,26 +64,12 @@ namespace Duplicati.Library.Backend.Storj
             { "Access grant", "Access grant" },
         };
 
-        [DllImport("kernel32.dll")]
-        protected static extern IntPtr LoadLibrary(string filename);
-
         private static bool _libraryLoaded = false;
         private static void InitStorjLibrary()
         {
             if (_libraryLoaded)
                 return;
 
-            if (Duplicati.Library.Common.Platform.IsClientWindows) //We need to init only on Windows to distinguish between x64 and x86
-            {
-                if (System.Environment.Is64BitProcess)
-                {
-                    var res = LoadLibrary("win-x64/storj_uplink.dll");
-                }
-                else
-                {
-                    var res = LoadLibrary("win-x86/storj_uplink.dll");
-                }
-            }
             Access.SetTempDirectory(Library.Utility.TempFolder.SystemTempPath);
             _libraryLoaded = true;
         }
@@ -103,9 +86,9 @@ namespace Duplicati.Library.Backend.Storj
         {
             InitStorjLibrary();
 
-            foreach(var option in options.ToList())
+            foreach (var option in options.ToList())
             {
-                if(option.Key.ToLower().Contains("tardigrade"))
+                if (option.Key.ToLower().Contains("tardigrade"))
                 {
                     options.Add(option.Key.ToLower().Replace("tardigrade", "storj"), option.Value);
                 }
@@ -319,7 +302,7 @@ namespace Duplicati.Library.Backend.Storj
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false);
             await upload.StartUploadAsync();
-            if(upload.Failed)
+            if (upload.Failed)
             {
                 throw new Exception(upload.ErrorMessage);
             }
