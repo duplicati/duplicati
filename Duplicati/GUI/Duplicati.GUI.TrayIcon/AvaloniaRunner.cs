@@ -56,7 +56,7 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         #region implemented abstract members of Duplicati.GUI.TrayIcon.TrayIconBase
-        protected override void Run(string[] args)
+        protected override void Run(string[] args, Action? postInit = null)
         {
             var lifetime = new ClassicDesktopStyleApplicationLifetime()
             {
@@ -64,7 +64,7 @@ namespace Duplicati.GUI.TrayIcon
                 ShutdownMode = ShutdownMode.OnExplicitShutdown
             };
 
-            var builder = AppBuilderBase<Avalonia.AppBuilder>
+            var builder = AppBuilder
                 .Configure<AvaloniaApp>()
                 .UsePlatformDetect()
                 .LogToTrace()
@@ -75,6 +75,7 @@ namespace Duplicati.GUI.TrayIcon
             application.SetMenu(menuItems);
             application.Configure();
 
+            postInit?.Invoke();
             lifetime.Start(args);
         }
 
@@ -105,7 +106,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void Exit()
         {
-            UpdateUIState(() => this.application?.Shutdown() );
+            UpdateUIState(() => this.application?.Shutdown());
         }
 
         protected override void SetIcon(TrayIcons icon)
@@ -120,7 +121,7 @@ namespace Duplicati.GUI.TrayIcon
                 UpdateUIState(() => this.application?.SetMenu(menuItems));
         }
 
-        public override void Dispose() 
+        public override void Dispose()
         {
         }
         #endregion
@@ -133,10 +134,23 @@ namespace Duplicati.GUI.TrayIcon
                 Dispatcher.UIThread.Post(action);
         }
 
-        internal static IBitmap LoadBitmap(string iconName)
+        internal static string GetThemePath()
         {
-            var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-            return new Bitmap(assets.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/" + iconName)));
+            // var isDark = string.Equals(Application.Current.ActualThemeVariant.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
+
+            if (OperatingSystem.IsMacOS())
+                return "macos";
+            if (OperatingSystem.IsWindows())
+                return "windows";
+
+            // Linux
+            return "linux";
+        }
+
+
+        internal static Bitmap LoadBitmap(string iconName)
+        {
+            return new Bitmap(AssetLoader.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/{GetThemePath()}/" + iconName)));
         }
 
         internal static WindowIcon LoadIcon(string iconName)
@@ -174,7 +188,6 @@ namespace Duplicati.GUI.TrayIcon
             this.Text = text;
             if (nativeMenuItem != null)
                 AvaloniaRunner.RunOnUIThread(() => nativeMenuItem.Header = text);
-
         }
 
         public void SetIcon(MenuIcons icon)
@@ -190,14 +203,14 @@ namespace Duplicati.GUI.TrayIcon
         /// </summary>
         private void UpdateIcon()
         {
-            nativeMenuItem.Icon = this.Icon switch {
+            nativeMenuItem.Icon = this.Icon switch
+            {
                 MenuIcons.Status => AvaloniaRunner.LoadBitmap("context-menu-open.png"),
                 MenuIcons.Quit => AvaloniaRunner.LoadBitmap("context-menu-quit.png"),
                 MenuIcons.Pause => AvaloniaRunner.LoadBitmap("context-menu-pause.png"),
                 MenuIcons.Resume => AvaloniaRunner.LoadBitmap("context-menu-resume.png"),
                 _ => null
             };
-
         }
 
         public void SetEnabled(bool isEnabled)
@@ -295,21 +308,20 @@ namespace Duplicati.GUI.TrayIcon
         public void Shutdown()
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-                desktop.Shutdown();      
+                desktop.Shutdown();
         }
 
         public override void OnFrameworkInitializationCompleted()
         {
-            var light = new FluentTheme(new Uri($"avares://{Assembly.GetExecutingAssembly().GetName()}")) { Mode = FluentThemeMode.Light };
-            Styles.Add(light);
+            Styles.Add(new FluentTheme());
 
             var icon = AvaloniaRunner.LoadIcon("normal.png");
-            this.trayIcon = new Avalonia.Controls.TrayIcon() { Icon = icon};
-            
+            this.trayIcon = new Avalonia.Controls.TrayIcon() { Icon = icon };
+
             // Handle being loaded with menu items
             if (menuItems != null)
                 this.SetMenu(menuItems);
-            
+
             // Register tray icons to be removed on application shutdown
             var icons = new Avalonia.Controls.TrayIcons { trayIcon };
             Avalonia.Controls.TrayIcon.SetIcons(Application.Current, icons);

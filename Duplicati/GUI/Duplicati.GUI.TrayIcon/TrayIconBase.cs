@@ -34,7 +34,7 @@ namespace Duplicati.GUI.TrayIcon
         Pause,
         Resume,
     }
-    
+
     public enum TrayIcons
     {
         Idle,
@@ -58,51 +58,50 @@ namespace Duplicati.GUI.TrayIcon
         Warning,
         Error
     }
-    
+
     public interface IMenuItem
     {
         void SetDefault(bool isDefault);
         void SetIcon(MenuIcons icon);
         void SetText(string text);
     }
-    
+
     public abstract class TrayIconBase : IDisposable
-    {           
+    {
         protected IMenuItem m_pauseMenu;
         protected bool m_stateIsPaused;
         protected Action m_onSingleClick;
         protected Action m_onDoubleClick;
         protected Action m_onNotificationClick;
-        
+
         public virtual void Init(string[] args)
         {
             SetMenu(BuildMenu());
             RegisterStatusUpdateCallback();
             RegisterNotificationCallback();
-            OnStatusUpdated(Program.Connection.Status);
             m_onDoubleClick = ShowStatusWindow;
             m_onNotificationClick = ShowStatusWindow;
-            Run(args);
+            Run(args, () => OnStatusUpdated(Program.Connection.Status));
         }
-        
-        protected abstract void Run(string[] args);
+
+        protected abstract void Run(string[] args, Action? postInit = null);
 
         public void InvokeExit()
         {
             UpdateUIState(() => { this.Exit(); });
         }
-        
+
         protected virtual void UpdateUIState(Action action)
         {
             action();
         }
-        
+
         protected abstract IMenuItem CreateMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems);
-        
+
         protected abstract void Exit();
 
         protected abstract void SetIcon(TrayIcons icon);
-        
+
         protected abstract void SetMenu(IEnumerable<IMenuItem> items);
 
         protected abstract void NotifyUser(string title, string message, NotificationType type);
@@ -133,7 +132,8 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
-            UpdateUIState(() => {
+            UpdateUIState(() =>
+            {
                 NotifyUser(notification.Title, notification.Message, type);
             });
         }
@@ -146,7 +146,7 @@ namespace Duplicati.GUI.TrayIcon
             return null;
         }
 
-        protected IEnumerable<IMenuItem> BuildMenu() 
+        protected IEnumerable<IMenuItem> BuildMenu()
         {
             var tmp = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
             tmp.SetDefault(true);
@@ -156,7 +156,7 @@ namespace Duplicati.GUI.TrayIcon
                 CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
             };
         }
-        
+
         protected void ShowStatusWindow()
         {
             var window = ShowUrlInWindow(Program.Connection.StatusWindowURL);
@@ -184,11 +184,12 @@ namespace Duplicati.GUI.TrayIcon
             else
                 Program.Connection.Pause();
         }
-        
+
         protected void OnStatusUpdated(IServerStatus status)
         {
-            this.UpdateUIState(() => {
-                switch(status.SuggestedStatusIcon)
+            this.UpdateUIState(() =>
+            {
+                switch (status.SuggestedStatusIcon)
                 {
                     case SuggestedStatusIcon.Active:
                         this.SetIcon(TrayIcons.Running);
@@ -206,12 +207,12 @@ namespace Duplicati.GUI.TrayIcon
                         this.SetIcon(TrayIcons.Paused);
                         break;
                     case SuggestedStatusIcon.Ready:
-                    default:    
+                    default:
                         this.SetIcon(TrayIcons.Idle);
                         break;
-                    
+
                 }
-    
+
                 if (status.ProgramState == LiveControlState.Running)
                 {
                     m_pauseMenu.SetIcon(MenuIcons.Pause);

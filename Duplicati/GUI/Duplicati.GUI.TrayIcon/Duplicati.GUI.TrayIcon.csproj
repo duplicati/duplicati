@@ -9,20 +9,8 @@
   	<!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
     <TrimMode>copyused</TrimMode>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="TrayResources\SVGIcons\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="TrayResources\WinIcons\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="TrayResources\OSXIcons\**" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
@@ -40,11 +28,11 @@
 	    <TrimmableAssembly Include="Avalonia.Themes.Default" />
     </ItemGroup>
     <ItemGroup>
-	    <PackageReference Include="Avalonia" Version="0.10.17" />
-	    <PackageReference Include="Avalonia.Desktop" Version="0.10.17" />
+	    <PackageReference Include="Avalonia" Version="11.0.10" />
+	    <PackageReference Include="Avalonia.Desktop" Version="11.0.10" />
+      <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.10" />
 	    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-	    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.17" />
-	    <PackageReference Include="XamlNameReferenceGenerator" Version="1.3.4" />
+	    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.10" />
     </ItemGroup>
     <ItemGroup>
 	    <AvaloniaResource Include="Assets\**" />
