@@ -253,7 +253,7 @@ public static partial class Command
             if (!sourceFiles.EndsWith(Path.DirectorySeparatorChar))
                 sourceFiles += Path.DirectorySeparatorChar;
 
-            var binFiles = Path.Combine(resourcesDir, "binfiles.txt");
+            var binFiles = Path.Combine(resourcesDir, "binfiles.wxs");
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
