@@ -311,6 +311,9 @@ namespace Duplicati.Library.AutoUpdater
 
                 try
                 {
+                    if (SIGN_KEYS.Length == 0)
+                        throw new Exception("No signing keys are available, cannot check update");
+
                     using (var tmpfile = new Library.Utility.TempFile())
                     {
                         System.Net.WebClient wc = new System.Net.WebClient();
