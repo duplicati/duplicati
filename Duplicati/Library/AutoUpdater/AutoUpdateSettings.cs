@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.AutoUpdater
@@ -31,7 +32,7 @@ namespace Duplicati.Library.AutoUpdater
         private static readonly Dictionary<string, string> _cache = new Dictionary<string, string>();
         private const string APP_NAME = "AutoUpdateAppName.txt";
         private const string UPDATE_URL = "AutoUpdateURL.txt";
-        private const string UPDATE_KEY = "AutoUpdateSignKey.txt";
+        private const string UPDATE_KEY = "AutoUpdateSignKeys.txt";
         private const string UPDATE_CHANNEL = "AutoUpdateBuildChannel.txt";
         private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
         private const string UPDATE_MACHINE_FILE = "AutoUpdateMachineIDTemplate.txt";
@@ -174,11 +175,11 @@ namespace Duplicati.Library.AutoUpdater
         public static string UpdateMachineFileText(string machineid)
             => string.Format(ReadResourceText(UPDATE_MACHINE_FILE, "{0}"), string.IsNullOrWhiteSpace(machineid) ? Guid.NewGuid().ToString("N") : machineid);
 
-        public static System.Security.Cryptography.RSACryptoServiceProvider[] SignKeys
+        public static RSACryptoServiceProvider[] SignKeys
         {
             get
             {
-                var keys = new List<System.Security.Cryptography.RSACryptoServiceProvider>();
+                var keys = new List<RSACryptoServiceProvider>();
 
                 try
                 {
@@ -197,9 +198,9 @@ namespace Duplicati.Library.AutoUpdater
                     {
                         try
                         {
-                            var key = System.Security.Cryptography.RSA.Create();
+                            var key = new RSACryptoServiceProvider();
                             key.FromXmlString(str);
-                            keys.Add((System.Security.Cryptography.RSACryptoServiceProvider)key);
+                            keys.Add(key);
                         }
                         catch
                         { }

@@ -140,7 +140,7 @@ public record UpdateInfo(
     /// <returns>The generic update page url</returns>
     public string GetGenericUpdatePageUrl(string? packageTypeId = null)
     {
-        var baseurl = GenericUpdatePageUrl;
+        var baseurl = GenericUpdatePageUrl ?? string.Empty;
         if (MinimumCompatibleVersion > UpdaterManager.SUPPORTED_PACKAGE_UPDATER_VERSION && !string.IsNullOrWhiteSpace(IncompatibleUpdateUrl))
             baseurl = IncompatibleUpdateUrl;
 

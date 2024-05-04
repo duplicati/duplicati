@@ -458,10 +458,10 @@ public static partial class Command
             await ProcessHelper.Execute(["git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}"], workingDirectory: baseDir);
 
         // Inject various files that will be embedded into the build artifacts
-        await PrepareSourceDirectory(baseDir, releaseInfo, rtcfg);
+        var revertableFiles = await PrepareSourceDirectory(baseDir, releaseInfo, rtcfg);
 
         // Inject a version tag into the html files
-        var revertableFiles = InjectVersionIntoFiles(baseDir, releaseInfo);
+        revertableFiles.AddRange(InjectVersionIntoFiles(baseDir, releaseInfo));
 
         // Perform the main compilations
         await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, GUIProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg);
@@ -576,10 +576,6 @@ public static partial class Command
         // Clean up the source tree
         await ProcessHelper.Execute(new[] {
                 "git", "checkout",
-                "Duplicati/License/VersionTag.txt",
-                "Duplicati/Library/AutoUpdater/AutoUpdateURL.txt",
-                "Duplicati/Library/AutoUpdater/AutoUpdateBuildChannel.txt",
-                "Duplicati/Library/AutoUpdater/AutoUpdateSignKeys.txt",
             }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
          , workingDirectory: baseDir);
 
@@ -653,8 +649,8 @@ public static partial class Command
     /// <param name="baseDir">The source folder base</param>
     /// <param name="releaseInfo">The release info to use</param>
     /// <param name="rtcfg">The runtime configuration</param>
-    /// <returns>An awaitable task</returns>
-    static Task PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
+    /// <returns>Modified files</returns>
+    static Task<List<string>> PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
     {
         var urlstring = string.Join(";", Program.Configuration.ExtraSettings.UpdaterUrls.Select(x =>
             ReplaceVersionPlaceholders(x, releaseInfo)
@@ -709,7 +705,14 @@ public static partial class Command
             releaseType: releaseInfo.Channel.ToString().ToLowerInvariant()
         );
 
-        return Task.CompletedTask;
+        return Task.FromResult(new List<string> {
+            manifestFile,
+            Path.Combine(baseDir, "Duplicati", "License", "VersionTag.txt"),
+            Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateBuildChannel.txt"),
+            Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateURL.txt"),
+            Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateSignKeys.txt"),
+            Path.Combine(baseDir, "changelog.txt")
+        });
     }
 
     /// <summary>

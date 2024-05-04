@@ -107,7 +107,7 @@ namespace Duplicati.Library.AutoUpdater
 
         private static void WriteUsage()
         {
-            Console.WriteLine("Usage:{0}\t{1}{2} [CHECK|DOWNLOAD|HELP]", Environment.NewLine, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.AutoUpdater));
+            Console.WriteLine("Usage:{0}\t{1} [CHECK|DOWNLOAD|HELP]", Environment.NewLine, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.AutoUpdater));
             Console.WriteLine();
             Console.WriteLine("Environment variables:");
             Console.WriteLine();

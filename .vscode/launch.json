@@ -38,6 +38,17 @@
             "console": "internalConsole"
         },
         {
+            "name": "Launch AutoUpdater executable",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.AutoUpdater/bin/Debug/net8.0/Duplicati.CommandLine.AutoUpdater",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
             "name": "C#: Duplicati.GUI.TrayIcon Debug",
             "type": "dotnet",
             "request": "launch",
