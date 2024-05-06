@@ -147,7 +147,7 @@ public static partial class Command
                     throw new Exception($"Unsupported package type: {target.Package}");
             }
 
-            if (rtcfg.UseNotarizeSigning && target.Package == PackageType.DMG || target.Package == PackageType.MacPkg)
+            if (rtcfg.UseNotarizeSigning && (target.Package == PackageType.DMG || target.Package == PackageType.MacPkg))
             {
                 // # Notarize and staple takes a while...
                 Console.WriteLine($"Performing notarize and staple of {packageFile} ...");
