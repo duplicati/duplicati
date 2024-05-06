@@ -14,7 +14,6 @@
             "args": [ 
                 "build", 
                 "debug",
-                "--disable-docker-push", "true",
                 "--git-stash-push", "false", 
                 "--targets", "win-arm64-gui.zip",
                 "--targets", "win-x86-gui.zip",
@@ -38,6 +37,7 @@
                 "--targets", "linux-arm64-gui.rpm", 
                 "--targets", "linux-x64-cli.rpm", 
                 "--targets", "linux-arm64-cli.rpm", 
+                "--disable-docker-push", "true",
                 "--keep-builds", "true",
                 "--disable-authenticode", "true",
                 "--disable-signcode", "true",
