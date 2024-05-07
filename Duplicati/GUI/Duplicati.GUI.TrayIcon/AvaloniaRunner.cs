@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -67,15 +68,25 @@ namespace Duplicati.GUI.TrayIcon
             var builder = AppBuilder
                 .Configure<AvaloniaApp>()
                 .UsePlatformDetect()
-                .LogToTrace()
                 .With(new MacOSPlatformOptions() { ShowInDock = false })
                 .SetupWithLifetime(lifetime);
+
+#if DEBUG
+            builder = builder.LogToTrace();
+#else
+            if (Environment.GetEnvironmentVariable("DEBUG_AVALONIA") == "1")
+                builder = builder.LogToTrace();
+            else if (Environment.GetEnvironmentVariable("DEBUG_AVALONIA") == "2")
+                builder = builder.LogToTrace(Avalonia.Logging.LogEventLevel.Verbose);
+#endif
 
             application = builder.Instance as AvaloniaApp;
             application.SetMenu(menuItems);
             application.Configure();
 
-            postInit?.Invoke();
+            // Delay postInit to allow the UI to initialize before calling updates
+            if (postInit != null)
+                Task.Delay(1000).ContinueWith(_ => postInit());
             lifetime.Start(args);
         }
 
