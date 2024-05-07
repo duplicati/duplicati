@@ -1,3 +1,22 @@
+2024-05-07 - 2.0.8.1_beta_2024-05-07
+==========
+After almost a year, a new experimental build is ready!
+
+Since we are switching the underlying framework to .Net8, this release will be the last that runs on .NET 4 / Mono.
+The new releases will be built with the framework included for minimal dependencies.
+
+Thanks to all the amazing contributors and community for supporting the project!
+
+For this release the following major changes are included:
+- Updates to various third-party libraries: mail, Ssh.Net, RestSharp, FluentFTP, Sharp.Xmpp, Uplink
+- Improved error handling with interrupted backups and damaged local database
+- Removed defunct links and backends
+- Changed to MIT license and removed donation messages
+- Even more options!
+
+
+As always, a detailed change list is in the project changelog.
+
 2024-04-19 - 2.0.7.103_canary_2024-04-19
 ==========
 - Added microfix that adds a missing default value to the backup reports.
