@@ -461,8 +461,18 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 string body = m_body;
                 string subject = m_subject;
-                if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && System.IO.File.Exists(body))
-                    body = System.IO.File.ReadAllText(body);
+                if (body != DEFAULT_BODY)
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(body) && System.IO.Path.IsPathRooted(body))
+                            body = System.IO.File.ReadAllText(body);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ReportSubmitError", ex, "Invalid path, or unable to read file given as body";
+                    }
+                }
 
                 body = ReplaceTemplate(body, result, exception, false);
                 subject = ReplaceTemplate(subject, result, exception, true);
