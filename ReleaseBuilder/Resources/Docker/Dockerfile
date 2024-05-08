@@ -3,7 +3,7 @@ FROM --platform=$TARGETPLATFORM debian:latest
 RUN apt update && apt install tini
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
 
-RUN apt update && apt install libssl3 gnupg libicu72
+RUN apt update -y && apt install -y libssl3 ca-certificates gnupg libicu72 
 
 ENV XDG_CONFIG_HOME=/data
 VOLUME /data
