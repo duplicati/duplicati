@@ -132,11 +132,15 @@ public static class SQLiteRC4Decrypter
                     decryptedStream.Write(block, 0, bytesRead);
                 }
             }
-
-            // Decrypt worked, place the original as a backup and move the decrypted file to the original location
-            File.Move(databasePath, Path.Combine(Path.GetDirectoryName(databasePath)!, Path.GetFileNameWithoutExtension(databasePath) + $"{DateTime.Now:yyyyMMdd-HHmmss}.bak"), false);
-            File.Move(tempfile, databasePath, false);
         }
+
+        // Windows file locking can be slightly delayed
+        if (OperatingSystem.IsWindows())
+            System.Threading.Thread.Sleep(500);
+
+        // Decrypt worked, place the original as a backup and move the decrypted file to the original location
+        File.Move(databasePath, Path.Combine(Path.GetDirectoryName(databasePath)!, Path.GetFileNameWithoutExtension(databasePath) + $"{DateTime.Now:yyyyMMdd-HHmmss}.bak"), false);
+        File.Move(tempfile, databasePath, false);
     }
 
     /// <summary>

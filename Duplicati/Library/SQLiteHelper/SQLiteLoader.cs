@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -55,7 +55,7 @@ namespace Duplicati.Library.SQLiteHelper
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "SQLiteRC4Decrypter", ex, "Failed to decrypt database");
-                    throw new UserInformationException("The database appears to be encrypted, but the decrypting failed. Please check the password.", "RC4DecryptionFailed", ex);
+                    throw new UserInformationException($"The database appears to be encrypted, but the decrypting failed. Please check the password. Error message: {ex.Message}", "RC4DecryptionFailed", ex);
                 }
             }
 
@@ -110,7 +110,7 @@ namespace Duplicati.Library.SQLiteHelper
         {
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
-                
+
             System.Data.IDbConnection con = LoadConnection();
 
             try
@@ -125,24 +125,28 @@ namespace Duplicati.Library.SQLiteHelper
                 throw;
             }
 
-	    // set custom Sqlite options
+            // set custom Sqlite options
             var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI");
-            if (opts != null) {
-                var topts = opts.Split(new char[]{';'}, StringSplitOptions.RemoveEmptyEntries);
-                if (topts.Length > 0) {
-                    using (var cmd = con.CreateCommand()) {
-                        foreach (var opt in topts) {
+            if (opts != null)
+            {
+                var topts = opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                if (topts.Length > 0)
+                {
+                    using (var cmd = con.CreateCommand())
+                    {
+                        foreach (var opt in topts)
+                        {
                             Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
                             try
                             {
                                 cmd.CommandText = string.Format("pragma {0}", opt);
                                 cmd.ExecuteNonQuery();
                             }
-			    catch (Exception ex)
+                            catch (Exception ex)
                             {
-                               Logging.Log.WriteErrorMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
+                                Logging.Log.WriteErrorMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
                             }
-	                }
+                        }
                     }
                 }
             }
@@ -234,9 +238,9 @@ namespace Duplicati.Library.SQLiteHelper
         {
             var fi = PosixFile.GetUserGroupAndPermissions(path);
             PosixFile.SetUserGroupAndPermissions(
-                    path, 
-                    fi.UID, 
-                    fi.GID, 
+                    path,
+                    fi.UID,
+                    fi.GID,
                     0x180 /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR*/
                 );
         }
