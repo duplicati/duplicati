@@ -470,7 +470,7 @@ namespace Duplicati.Library.Modules.Builtin
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "ReportSubmitError", ex, "Invalid path, or unable to read file given as body";
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ReportSubmitError", ex, "Invalid path, or unable to read file given as body");
                     }
                 }
 
