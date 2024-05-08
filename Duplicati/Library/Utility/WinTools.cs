@@ -19,10 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Utility
 {
+    [SupportedOSPlatform("windows")]
     public static class WinTools
     {
         public static string GetWindowsGpgExePath()
