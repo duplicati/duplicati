@@ -1,6 +1,0 @@
-duplicati (%VERSION%-1) unstable; urgency=low
-
-  * Packaged release
-  * See changelog.txt for changes
-
- -- Kenneth Skovhede <kenneth@duplicati.com>  %DATE%

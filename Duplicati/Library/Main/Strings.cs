@@ -1,3 +1,23 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using Duplicati.Library.Localization.Short;
 
@@ -139,6 +159,10 @@ namespace Duplicati.Library.Main.Strings
         public static string VssusemappingShort { get { return LC.L(@"Map snapshots to a drive (Windows only)"); } }
         public static string BackupnameLong { get { return LC.L(@"A display name that is attached to this backup. Can be used to identify the backup when sending mail or running scripts."); } }
         public static string BackupnameShort { get { return LC.L(@"Name of the backup"); } }
+        public static string BackupidLong { get { return LC.L(@"A unique identification for this backup. Can be used to identify the backup when sending mail or running scripts."); } }
+        public static string BackupidShort { get { return LC.L(@"Backup ID"); } }
+        public static string MachineidLong { get { return LC.L(@"A unique identification of the machine running the backup. Can be used to identify the machine when sending mail or running scripts."); } }
+        public static string MachineidShort { get { return LC.L(@"Machine ID"); } }
         public static string CompressionextensionfileLong(string path) { return LC.L(@"This property can be used to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}.", path); }
         public static string CompressionextensionfileShort { get { return LC.L(@"Manage non-compressible file extensions"); } }
         public static string BlocksizeLong { get { return LC.L(@"The block size determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created."); } }
@@ -197,7 +221,7 @@ namespace Duplicati.Library.Main.Strings
         public static string BackendtestpercentageShort { get { return LC.L(@"The percentage of samples to test after a backup"); } }
         public static string BackendtestpercentageLong { get { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to specify the percentage (between 0 and 100) of files to test. If the backup-test-samples option is also provided, the number of samples tested is the maximum implied by the two options. If the no-backend-verification option is provided, no remote files are verified."); } }
         public static string FullremoteverificationShort { get { return LC.L(@"Activates in-depth verification of files"); } }
-        public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly.", optionname); }
+        public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly. ListAndIndexes is like True but only dlist and index volumes are handled.", optionname); }
         public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
         public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes are read from a file before processing"); } }
         public static string AllowpassphrasechangeShort { get { return LC.L(@"Allow the passphrase to change"); } }

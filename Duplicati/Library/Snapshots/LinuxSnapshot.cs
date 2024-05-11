@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 
 using System;
 using System.Collections.Generic;
@@ -216,7 +218,7 @@ namespace Duplicati.Library.Snapshots
             /// <returns>A string with the combined output of the stdout and stderr</returns>
             private static string ExecuteCommand(string program, string commandline, int expectedExitCode)
             {
-                program = System.IO.Path.Combine(System.IO.Path.Combine(AutoUpdater.UpdaterManager.InstalledBaseDir, "lvm-scripts"), program);
+                program = System.IO.Path.Combine(System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "lvm-scripts"), program);
                 var inf = new ProcessStartInfo(program, commandline)
                 {
                     CreateNoWindow = true,
@@ -485,12 +487,12 @@ namespace Duplicati.Library.Snapshots
         {
             try
             {
-                var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
+                var n = PosixFile.GetFileType(SystemIOLinux.NormalizePath(localPath));
                 switch (n)
                 {
-                    case UnixSupport.File.FileType.Directory:
-                    case UnixSupport.File.FileType.Symlink:
-                    case UnixSupport.File.FileType.File:
+                    case PosixFile.FileType.Directory:
+                    case PosixFile.FileType.Symlink:
+                    case PosixFile.FileType.File:
                         return false;
                     default:
                         return true;
@@ -514,10 +516,10 @@ namespace Duplicati.Library.Snapshots
         {
             var snapshotPath = ConvertToSnapshotPath(localPath);
             
-            if (UnixSupport.File.GetHardlinkCount(snapshotPath) <= 1)
+            if (PosixFile.GetHardlinkCount(snapshotPath) <= 1)
                 return null;
             
-            return UnixSupport.File.GetInodeTargetID(snapshotPath);
+            return PosixFile.GetInodeTargetID(snapshotPath);
         }
 
         /// <inheritdoc />

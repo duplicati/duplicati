@@ -1,25 +1,28 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Globalization;
@@ -36,9 +39,9 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
 
         /// <summary>
-        /// The default block size
+        /// The default block size, chose to minimize hash numbers but allow smaller upload sizes.
         /// </summary>
-        private const string DEFAULT_BLOCKSIZE = "100kb";
+        private const string DEFAULT_BLOCKSIZE = "1mb";
 
         /// <summary>
         /// The default threshold value
@@ -125,6 +128,27 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// The possible settings for the remote test strategy
+        /// </summary>
+        public enum RemoteTestStrategy
+        {
+            /// <summary>
+            /// test the remote volumes
+            /// </summary>
+            True,
+
+            /// <summary>
+            /// do not test the remote volumes
+            /// </summary>
+            False,
+
+            /// <summary>
+            /// test only the list and index volumes
+            /// </summary>
+            ListAndIndexes
+        }
+
+        /// <summary>
         /// The possible settings for the hardlink strategy
         /// </summary>
         public enum HardlinkStrategy
@@ -167,26 +191,7 @@ namespace Duplicati.Library.Main
 
         }
 
-        private static string[] GetSupportedHashes()
-        {
-            var r = new List<string>();
-            foreach (var h in new string[] { "SHA1", "MD5", "SHA256", "SHA384", "SHA512" })
-            {
-                try
-                {
-                    var p = System.Security.Cryptography.HashAlgorithm.Create(h);
-                    if (p != null)
-                        r.Add(h);
-                }
-                catch
-                {
-                }
-            }
-
-            return r.ToArray();
-        }
-
-        private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir, "default_compressed_extensions.txt");
+        private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "default_compressed_extensions.txt");
 
         /// <summary>
         /// Lock that protects the options collection
@@ -335,6 +340,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
+                    new CommandLineArgument("backup-id", CommandLineArgument.ArgumentType.String, Strings.Options.BackupidShort, Strings.Options.BackupidLong, ""),
+                    new CommandLineArgument("machine-id", CommandLineArgument.ArgumentType.String, Strings.Options.MachineidShort, Strings.Options.MachineidLong, Library.AutoUpdater.UpdaterManager.InstallID),
+
                     new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false", null, null, Strings.Options.VerboseDeprecated),
                     new CommandLineArgument("full-result", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullresultShort, Strings.Options.FullresultLong, "false"),
 
@@ -357,11 +365,12 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
                     new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
-                    new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), "false"),
+                    new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
+
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
 
-                    new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, GetSupportedHashes()),
-                    new CommandLineArgument("file-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FilehashalgorithmShort, Strings.Options.FilehashalgorithmLong, DEFAULT_FILE_HASH_ALGORITHM, null, GetSupportedHashes()),
+                    new CommandLineArgument("block-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BlockhashalgorithmShort, Strings.Options.BlockhashalgorithmLong, DEFAULT_BLOCK_HASH_ALGORITHM, null, HashFactory.GetSupportedHashes()),
+                    new CommandLineArgument("file-hash-algorithm", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FilehashalgorithmShort, Strings.Options.FilehashalgorithmLong, DEFAULT_FILE_HASH_ALGORITHM, null, HashFactory.GetSupportedHashes()),
 
                     new CommandLineArgument("no-auto-compact", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoautocompactShort, Strings.Options.NoautocompactLong, "false"),
                     new CommandLineArgument("small-file-size", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilesizeShort, Strings.Options.SmallfilesizeLong),
@@ -383,6 +392,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("log-retention", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LogretentionShort, Strings.Options.LogretentionLong, DEFAULT_LOG_RETENTION),
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
+                    new CommandLineArgument("repair-force-block-use", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
                     new CommandLineArgument("force-actual-date", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ForceActualDateShort, Strings.Options.ForceActualDateLong, "false"),
 
@@ -1098,7 +1108,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+                else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
@@ -1147,7 +1160,10 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-                return Duplicati.Library.Logging.LogMessageType.Warning;
+	        if (Dryrun)
+                    return Duplicati.Library.Logging.LogMessageType.DryRun;
+		else
+                    return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
 
@@ -1266,6 +1282,30 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the ID of the backup
+        /// </summary>
+        public string BackupId
+        {
+            get
+            {
+                m_options.TryGetValue("backup-id", out var tmp);
+                return tmp;
+            }
+        }
+
+        /// <summary>
+        /// Gets the ID of the machine
+        /// </summary>
+        public string MachineId
+        {
+            get
+            {
+                if (m_options.TryGetValue("machine-id", out var tmp))
+                    return tmp;
+                return Library.AutoUpdater.UpdaterManager.InstallID;
+            }
+        }
+        /// <summary>
         /// Gets the path to the database
         /// </summary>
         public string Dbpath
@@ -1319,10 +1359,10 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
-                    m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, Duplicati.Library.Utility.HashAlgorithmHelper.Create(BlockHashAlgorithm).HashSize / 8);
-
-                return m_cachedBlockHashSize.Value;
+				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
+					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, HashFactory.HashSizeBytes(BlockHashAlgorithm));
+				
+				return m_cachedBlockHashSize.Value;
             }
         }
 
@@ -1632,11 +1672,22 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if the remote verification is deep
+        /// Gets a value indicating if the remote verification is deep
         /// </summary>
-        public bool FullRemoteVerification
+        public RemoteTestStrategy FullRemoteVerification
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "full-remote-verification"); }
+            get
+            {
+                string policy;
+                if (!m_options.TryGetValue("full-remote-verification", out policy))
+                    policy = "False";
+
+                RemoteTestStrategy r;
+                if (!Enum.TryParse(policy, true, out r))
+                    r = RemoteTestStrategy.True;
+
+                return r;
+            }
         }
 
         /// <summary>
@@ -1722,6 +1773,15 @@ namespace Duplicati.Library.Main
         public bool RepairOnlyPaths
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-only-paths"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the repair process will always use blocks
+        /// </summary>
+        /// <value><c>true</c> if repair process always use blocks; otherwise, <c>false</c>.</value>
+        public bool RepairForceBlockUse
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-force-block-use"); }
         }
 
         /// <summary>

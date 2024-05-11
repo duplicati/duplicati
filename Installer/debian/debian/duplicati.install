@@ -1,4 +1,0 @@
-build/bin/* usr/bin
-build/lib/duplicati/* usr/lib/duplicati
-build/share/applications/* usr/share/applications
-build/share/pixmaps/* usr/share/pixmaps
