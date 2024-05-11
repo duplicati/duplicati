@@ -31,9 +31,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
     EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
-	EditUriBackendConfig.templates['rclone']       = 'templates/backends/rclone.html';
-	EditUriBackendConfig.templates['cos']       = 'templates/backends/cos.html';
-    EditUriBackendConfig.templates['e2'] = 'templates/backends/e2.html';
+	  EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
+    EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
+	  EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
+    EditUriBackendConfig.templates['e2']          = 'templates/backends/e2.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -216,6 +217,24 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         scope.oauth_service_link = 'https://duplicati-oauth-handler.appspot.com/';
         scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
         scope.oauth_in_progress = false;
+        
+        // Handle a global override for OAuth or a local from advanced options
+        // This is needed to start the token creation on the non-default OAuth server
+        AppService.get('/serversettings').then(function(data) {
+            var oauthurl = scope.oauth_global_server;
+            if (data.data['--oauth-url'] != null && data.data['--oauth-url'] != '') {
+                oauthurl = data.data['--oauth-url'];
+                if (oauthurl.endsWith("/refresh"))
+                    oauthurl = oauthurl.substr(0, oauthurl.length - 7);
+                if (!oauthurl.endsWith("/")) oauthurl += "/";
+                scope.oauth_global_server = oauthurl;
+            }
+
+            if (!oauthurl.endsWith("/")) 
+                oauthurl += "/";
+            scope.oauth_service_link = oauthurl;
+            scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+        }, AppUtils.connectionError);
 
         scope.oauth_start_token_creation = function () {
 
@@ -224,18 +243,32 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             var w = 450;
             var h = 600;
 
-            var url = scope.oauth_start_link;
+            var servicelink = scope.oauth_service_link;
+
+            // Handle local override
+            for (var n in scope.AdvancedOptions) {
+                if (scope.AdvancedOptions[n].indexOf('--oauth-url=') == 0) {
+                    servicelink = scope.AdvancedOptions[n].substr('--oauth-url='.length);
+                    if (servicelink.endsWith("/refresh"))
+                        servicelink = servicelink.substr(0, servicelink.length - 7);
+                }
+            }
+
+            if (!servicelink.endsWith("/")) 
+                servicelink += "/";
+
+            scope.oauth_start_link = servicelink + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token
 
             var countDown = 100;
             var ft = scope.oauth_create_token;
             var left = (screen.width / 2) - (w / 2);
             var top = (screen.height / 2) - (h / 2);
-            var wnd = window.open(url, '_blank', 'height=' + h + ',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
+            var wnd = window.open(scope.oauth_start_link, '_blank', 'height=' + h + ',width=' + w + ',menubar=0,status=0,titlebar=0,toolbar=0,left=' + left + ',top=' + top)
 
             var recheck = function () {
                 countDown--;
                 if (countDown > 0 && ft == scope.oauth_create_token) {
-                    $http.jsonp(scope.oauth_service_link + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
+                    $http.jsonp(servicelink + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
                         function (response) {
                             if (response.data.authid) {
                                 scope.AuthID = response.data.authid;
@@ -587,6 +620,26 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 		EditUriBackendConfig.mergeServerAndPath(scope);
     }
 
+    EditUriBackendConfig.parsers['aliyunoss'] = function (scope, module, server, port, path, options) {
+        if (options['--oss-endpoint'])
+            scope.oss_endpoint = options['--oss-endpoint'];
+        if (options['--oss-region'])
+            scope.oss_region = options['--oss-region'];
+        if (options['--oss-access-key-id'])
+            scope.oss_access_key_id = options['--oss-access-key-id'];
+        if (options['--oss-access-key-secret'])
+            scope.oss_access_key_secret = options['--oss-access-key-secret'];
+        if (options['--oss-bucket-name'])
+            scope.oss_bucket_name = options['--oss-bucket-name'];
+
+        var nukeopts = ['--oss-endpoint', '--oss-region', '--oss-access-key-id', '--oss-access-key-secret', '--oss-bucket-name'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+
+        EditUriBackendConfig.mergeServerAndPath(scope);
+    }
+
+
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function (scope) {
         var opts = {
@@ -911,7 +964,28 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 		
         return url;
     }
+	
+    EditUriBackendConfig.builders['aliyunoss'] = function (scope) {
+        var opts = {
+            'oss-endpoint': scope.oss_endpoint,
+            'oss-region': scope.oss_region,
+            'oss-access-key-id': scope.oss_access_key_id,
+            'oss-access-key-secret': scope.oss_access_key_secret,
+            'oss-bucket-name': scope.oss_bucket_name
+        };
 
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
+
+        var url = AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
+
+        return url;
+    }
+    
+	
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))
             continuation();
@@ -952,7 +1026,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'AuthID', gettextCatalog.getString('AuthID'));
 
         if (res)
-            EditUriBackendConfig.recommend_path(scope, continuation);
+            EditUriBackendConfig.recommend_path(scope, function() {
+                
+                continuation();
+            });
     };
 
     EditUriBackendConfig.validaters['googledrive'] = EditUriBackendConfig.validaters['authid-base'];
@@ -1240,6 +1317,18 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.require_field(scope, 'cos_bucket', gettextCatalog.getString('cos_bucket'));
 			
 		if (res)
+            continuation();
+    };
+	
+    EditUriBackendConfig.validaters['aliyunoss'] = function (scope, continuation) {
+        var res =
+            EditUriBackendConfig.require_field(scope, 'oss_endpoint', gettextCatalog.getString('oss_endpoint')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_access_key_id', gettextCatalog.getString('oss_access_key_id')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_access_key_secret', gettextCatalog.getString('oss_access_key_secret')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_region', gettextCatalog.getString('oss_region')) &&
+            EditUriBackendConfig.require_field(scope, 'oss_bucket_name', gettextCatalog.getString('oss_bucket_name'));
+
+        if (res)
             continuation();
     };
 

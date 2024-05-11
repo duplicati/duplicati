@@ -17,8 +17,8 @@
             translate-params-mail2="'mailto:rene@duplicati.com'"
             translate-params-websitename="'duplicati.com'" 
             translate-params-websitelink="'http://www.duplicati.com'" 
-            translate-params-licensename="'GNU Lesser General Public License'" 
-            translate-params-licenselink="'https://www.gnu.org/licenses/lgpl.html'" 
+            translate-params-licensename="'MIT license'" 
+            translate-params-licenselink="'https://raw.githubusercontent.com/duplicati/duplicati/master/LICENSE.txt'" 
             >
             {{appname}} was primarily developed by <a href="{{mail1}}">{{dev1}}</a> and <a href="{{mail2}}">{{dev2}}</a>. {{appname}} can be downloaded from <a href="{{websitelink}}">{{websitename}}</a>. {{appname}} is licensed under the <a href="{{licenselink}}">{{licensename}}</a>.
         </div>
@@ -26,11 +26,8 @@
         <div>&nbsp;</div>
         <div translate translate-params-appname="brandingService.appName" translate-params-version="sysinfo.ServerVersionName || 'unknown'">You are currently running {{appname}} {{version}}</div>
 
-        <div ng-show="state.updatedVersion != null &amp;&amp; !state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
-            Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available, <a href ng-click="doStartUpdateDownload()">download now</a>
-        </div>
-        <div ng-show="state.updatedVersion != null &amp;&amp; state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
-            Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is installed, <a href ng-click="doStartUpdateActivate()">activate now</a>
+        <div ng-show="state.updatedVersion != null &amp;&amp; state.updateDownloadLink != null &amp;&amp; !state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
+            Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available, <a href="{{state.updateDownloadLink}}">download now</a>
         </div>
 
         <a ng-show="state.updaterState == 'Waiting'" href ng-click="doCheckForUpdates()" translate>Check for updates now</a>

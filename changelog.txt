@@ -1,3 +1,36 @@
+2024-04-19 - 2.0.7.103_canary_2024-04-19
+==========
+- Added microfix that adds a missing default value to the backup reports.
+
+2024-04-03 - 2.0.7.102_canary_2024-04-03
+==========
+This build is intended to be the last build that uses .Net4 (aka .Net Desktop).
+Future builds are expected to use .Net8 and will require a manual update,
+because the .Net builds are no longer operating system independent.
+
+The upside is that there are fewer dependencies (no more Mono),
+and execution times are greatly improved.
+
+* Removed donation messages
+* Updated MacOS Installer license text
+* Updated installer to support future manual upgrade
+* Added information to reports when encountering an exception
+
+2024-03-08 - 2.0.7.101_canary_2024-03-08
+==========
+* Updated license to MIT, thanks @kenkendk
+* Fixed crash when logging startup errors, thanks @Jojo-1000
+* Updated SSH.Net, thanks @gpatel-fr
+* Fixed exception happening when stopping the running backup, thanks @Jojo-1000
+* Fixed issue with connecting to server thanks @kellycampbe
+* Improved file-backend listing speed, thanks @Jojo-1000
+* Added support for IPv6 addresses as hostnames, thanks @Jojo-1000
+* Added AliyunOSS backend, thanks @trueai-org
+* Added fix to not show empty form on restarts, thanks @kenkendk
+* Updated Uplink for Storj to 2.12, thanks @gpatel-fr and @kenkendk
+* Added machine and backup id options for reports, thanks @kenkendk
+* Fixed issues with using alternate OAuth server url, thanks @gpatel-fr and @kenkendk
+
 2023-12-27 - 2.0.7.100_canary_2023-12-27
 ==========
 This canary is a bugfix release with error reporting improvements, no database format change.

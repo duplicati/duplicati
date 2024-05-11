@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -140,23 +142,24 @@ namespace Duplicati.Library.SQLiteHelper
             var asm = eltype.Assembly;
 
             string schema;
-            using (var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(eltype, FOLDER_NAME + "." + SCHEMA_NAME)))
+            using (var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(eltype, $"{FOLDER_NAME}.{SCHEMA_NAME}")))
                 schema = rd.ReadToEnd();
 
             //Get updates, and sort them according to version
             //This enables upgrading through several versions
             //ea, from 1 to 8, by stepping 2->3->4->5->6->7->8
             SortedDictionary<int, string> upgrades = new SortedDictionary<int, string>();
-            string prefix = eltype.Namespace + "." + FOLDER_NAME + ".";
+            string prefix = FOLDER_NAME + ".";
             foreach (string s in asm.GetManifestResourceNames())
             {
-                //The resource name will be "Duplicati.GUI.Database_schema.1.Sample upgrade.sql"
+                //The resource name will be "Duplicati.Library.Main.Database.Database_schema.1.Sample upgrade.sql"
                 //The number indicates the version that will be upgraded to
-                if (s.StartsWith(prefix, StringComparison.Ordinal) && !s.Equals(prefix + SCHEMA_NAME))
+                //Could be ""Duplicati.Server.Database.Database_schema.1. Add Notifications.sql""
+                if ((s.IndexOf(prefix, 0, StringComparison.Ordinal) >= 0) && !s.EndsWith(prefix + SCHEMA_NAME))
                 {
                     try
                     {
-                        string version = s.Substring(prefix.Length, s.IndexOf(".", prefix.Length + 1, StringComparison.Ordinal) - prefix.Length);
+                        string version = s.Substring(s.IndexOf(prefix) + prefix.Length, s.IndexOf(".", s.IndexOf(prefix) + prefix.Length + 1, StringComparison.Ordinal) - s.IndexOf(prefix) - prefix.Length);
                         int fileversion = int.Parse(version);
 
                         string prev;

@@ -1,10 +1,31 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Localization.Short;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
-namespace Duplicati.Library.Modules.Builtin.Strings {
-    internal static class ConsolePasswordInput {
+namespace Duplicati.Library.Modules.Builtin.Strings
+{
+    internal static class ConsolePasswordInput
+    {
         public static string ConfirmPassphrasePrompt { get { return LC.L(@"Confirm encryption passphrase"); } }
         public static string Description { get { return LC.L(@"This module will ask the user for an encryption password on the command line unless encryption is disabled or the password is supplied by other means"); } }
         public static string Displayname { get { return LC.L(@"Password prompt"); } }
@@ -14,12 +35,14 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string ForcepassphrasefromstdinShort { get { return LC.L(@"Read passphrase from STDIN"); } }
         public static string ForcepassphrasefromstdinLong { get { return LC.L(@"By default, the passphrase is attempted read from the TTY device directly, increasing the security by not copying the passphrase into a stream. In some setups, such as when running detached from a console, this does not work. Set this flag to prevent trying a TTY read and only read the passphrase from STDIN."); } }
     }
-    internal static class CheckMonoSSL {
+    internal static class CheckMonoSSL
+    {
         public static string Description { get { return LC.L(@"When running with Mono, this module will check if any certificates are installed and suggest installing them otherwise"); } }
         public static string Displayname { get { return LC.L(@"Check for SSL certificates"); } }
         public static string ErrorMessage { get { return LC.L(@"No certificates found, you can install some with one of these commands:{0}    cert-sync /etc/ssl/certs/ca-certificates.crt #for Debian based systems{0}    cert-sync /etc/pki/tls/certs/ca-bundle.crt #for RedHat derivatives{0}    curl -LO https://curl.se/ca/cacert.pem; cert-sync --user cacert.pem; rm cacert.pem #for MacOS{0}Read more: {1}", Environment.NewLine, "http://www.mono-project.com/docs/about-mono/releases/3.12.0/#cert-sync"); } }
     }
-    internal static class HttpOptions {
+    internal static class HttpOptions
+    {
         public static string Description { get { return LC.L(@"This module exposes a number of properties that can be used to change the way http requests are issued"); } }
         public static string DescriptionAcceptAnyCertificateLong { get { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible."); } }
         public static string DescriptionAcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
@@ -41,7 +64,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string BufferrequestsShort { get { return LC.L(@"Sets HTTP buffering"); } }
         public static string BufferrequestsLong { get { return LC.L(@"This option sets the HTTP buffering. Setting this to ""{0}"" can cause memory leaks, but can also improve performance in some cases.", "true"); } }
     }
-    internal static class HyperVOptions {
+    internal static class HyperVOptions
+    {
         public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Hyper-V virtual machines"); } }
         public static string DisplayName { get { return LC.L(@"Configure Hyper-V module"); } }
     }
@@ -50,7 +74,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Microsoft SQL Server databases"); } }
         public static string DisplayName { get { return LC.L(@"Configure Microsoft SQL Server module"); } }
     }
-    internal static class RunScript {
+    internal static class RunScript
+    {
         public static string Description { get { return LC.L(@"Executes a script before starting an operation, and again on completion"); } }
         public static string DisplayName { get { return LC.L(@"Run script"); } }
         public static string FinishoptionLong { get { return LC.L(@"Executes a script after performing an operation. The script will receive the operation results written to stdout."); } }
@@ -69,7 +94,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings {
         public static string TimeoutoptionLong { get { return LC.L(@"Sets the maximum time a script is allowed to execute. If the script has not completed within this time, it will continue to execute but the operation will continue too, and no script output will be processed."); } }
         public static string TimeoutoptionShort { get { return LC.L(@"Sets the script timeout"); } }
     }
-    internal static class SendMail {
+    internal static class SendMail
+    {
         public static string Description { get { return LC.L(@"This module can send email after an operation completes"); } }
         public static string Displayname { get { return LC.L(@"Send mail"); } }
         public static string FailedToLookupMXServer(string optionname) { return LC.L(@"Unable to find the destination mail server through MX lookup, please use the option {0} to specify what smtp server to use.", optionname); }
@@ -112,7 +138,8 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
         public static string SendMailFailedRetryError(string failedserver, string message, string retryserver) { return LC.L(@"Failed to send email with server: {0}, message: {1}, retrying with {2}", failedserver, message, retryserver); }
         public static string SendMailSuccess(string server) { return LC.L(@"Email sent successfully using server: {0}", server); }
     }
-    internal static class SendJabberMessage {
+    internal static class SendJabberMessage
+    {
         public static string SendxmpptoShort { get { return LC.L(@"XMPP recipient email"); } }
         public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent, specify multiple users separated with commas"); } }
         public static string SendxmppmessageShort { get { return LC.L(@"The message template"); } }
@@ -139,7 +166,8 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
     }
 
-    internal static class SendHttpMessage {
+    internal static class SendHttpMessage
+    {
         public static string DisplayName { get { return LC.L(@"HTTP report module"); } }
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via HTTP messages"); } }
         public static string SendhttpurlShort { get { return LC.L(@"HTTP report url"); } }
@@ -165,9 +193,14 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
         public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }
         public static string HttpverbLong { get { return LC.L(@"Use this option to change the default HTTP verb used to submit a report"); } }
+        public static string SendhttpurlsformShort { get { return LC.L(@"HTTP report urls for sending form data"); } }
+        public static string SendhttpurlsformLong { get { return LC.L(@"HTTP report urls for sending form-encoded data. This property accepts multiple urls, seperated by a semi-colon. All urls will receive the same data. Note that this option ignores the format and verb settings"); } }
+        public static string SendhttpurlsjsonShort { get { return LC.L(@"HTTP report urls for sending JSON data"); } }
+        public static string SendhttpurlsjsonLong { get { return LC.L(@"HTTP report urls for sending JSON data. This property accepts multiple urls, seperated by a semi-colon. All urls will receive the same data. Note that this option ignores the format and verb settings"); } }
     }
 
-    internal static class ReportHelper {
+    internal static class ReportHelper
+    {
         public static string SendMessageFailedError(string message) { return LC.L(@"Failed to send message: {0}", message); }
         public static string OptionLoglevellShort { get { return LC.L("Defines a log level for messages"); } }
         public static string OptionLoglevelLong { get { return LC.L("Use this option to set the log level for messages to include in the report"); } }
