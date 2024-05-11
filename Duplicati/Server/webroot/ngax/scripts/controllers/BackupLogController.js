@@ -57,17 +57,19 @@ backupApp.controller('BackupLogController', function($scope, $routeParams, AppUt
             });
     };
 
-    $scope.ResultIcon = function(parsedResult) {
+    $scope.ResultIcon = function (parsedResult) {
         if (parsedResult == 'Success') {
             return 'fa fa-check-circle success-color';
         } else if (parsedResult == 'Warning') {
             return 'fa fa-exclamation-circle warning-color';
         } else if (parsedResult == 'Error') {
             return 'fa fa-times-circle error-color';
+        } else if (parsedResult == 'Fatal') {
+            return 'fa fa-exclamation-triangle fatal-color';
         } else {
             return 'fa fa-question-circle';
         }
-    }
+    };
 
     $scope.LoadMoreGeneralData();
     $scope.Backup = BackupList.lookup[$scope.BackupID];

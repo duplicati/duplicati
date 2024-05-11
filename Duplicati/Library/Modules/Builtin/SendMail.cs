@@ -1,4 +1,24 @@
-﻿using System;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +26,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using DnsLib;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
@@ -15,6 +34,7 @@ using System.Net.Sockets;
 using MailKit.Net.Smtp;
 using MimeKit;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
+using DnsClient;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -231,42 +251,10 @@ namespace Duplicati.Library.Modules.Builtin
             List<string> servers = null;
             if (string.IsNullOrEmpty(m_server))
             {
-                var dnslite = new DnsLib.DnsLite();
-                var dnslist = new List<string>();
+                var dnsclient = new LookupClient();
+                var records = dnsclient.Query(toMailDomain, QueryType.MX).Answers.MxRecords();
 
-                //Grab all IPv4 addresses
-                foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
-                    try
-                    {
-                        foreach (IPAddress dnsAddress in networkInterface.GetIPProperties().DnsAddresses)
-                            if (dnsAddress.AddressFamily == AddressFamily.InterNetwork)
-                                dnslist.Add(dnsAddress.ToString());
-                    }
-                    catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "DNSServerLookupFailure", ex, "Failed to get DNS servers from network interface"); }
-
-                dnslist = dnslist.Distinct().ToList();
-
-                // If we have no DNS servers, try Google and OpenDNS
-                if (dnslist.Count == 0)
-                {
-                    // https://developers.google.com/speed/public-dns/
-                    dnslist.Add("8.8.8.8");
-                    dnslist.Add("8.8.4.4");
-
-                    //http://www.opendns.com/opendns-ip-addresses/
-                    dnslist.Add("208.67.222.222");
-                    dnslist.Add("208.67.220.220");
-                }
-
-                var records = new List<MXRecord>();
-                foreach (var s in dnslist)
-                {
-                    var res = dnslite.getMXRecords(toMailDomain, s);
-                    if (res != null)
-                        records.AddRange(res.OfType<MXRecord>());
-                }
-
-                servers = records.OrderBy(record => record.preference).Select(x => "smtp://" + x.exchange).Distinct().ToList();
+                servers = records.OrderBy(record => record.Preference).Select(x => "smtp://" + x.Exchange).Distinct().ToList();
                 if (servers.Count == 0)
                     throw new IOException(Strings.SendMail.FailedToLookupMXServer(OPTION_SERVER));
             }

@@ -1,3 +1,23 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,6 +25,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
@@ -17,7 +38,7 @@ namespace Duplicati.UnitTest
     public class DisruptionTests : BasicSetupHelper
     {
         // Files to create in MB.
-        private readonly int[] fileSizes = {10, 20, 30};
+        private readonly int[] fileSizes = { 10, 20, 30 };
 
         private void ModifySourceFiles()
         {
@@ -35,19 +56,32 @@ namespace Duplicati.UnitTest
             this.ModifySourceFiles();
 
             // ReSharper disable once AccessToDisposedClosure
-            Task<IBackupResults> backupTask = Task.Run(() => controller.Backup(new[] {this.DATAFOLDER}));
+            Task<IBackupResults> backupTask = Task.Run(() => controller.Backup(new[] { this.DATAFOLDER }));
 
-            // Block for a small amount of time to allow the ITaskControl to be associated
-            // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
-            Thread.Sleep(1000);
+            IBackupResults taskControl = null;
+            // Wait for the controller to have the task associated
+            while (!backupTask.IsCompleted)
+            {
+                taskControl = controller.GetType().GetField("m_currentTask", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(controller) as IBackupResults;
+                if (taskControl != null)
+                    break;
+                Thread.Sleep(100);
+            }
+
+            // Wait for the first file to be processed
+            while (!backupTask.IsCompleted && taskControl.ExaminedFiles == 0)
+                Thread.Sleep(100);
+
+            if (backupTask.IsCompleted)
+                throw new Exception("Backup task completed before we could stop it");
 
             controller.Stop(true);
             return await backupTask.ConfigureAwait(false);
         }
 
-        public override void SetUp()
+        [SetUp]
+        public void SetUp()
         {
-            base.SetUp();
             this.ModifySourceFiles();
         }
 
@@ -67,10 +101,13 @@ namespace Duplicati.UnitTest
             // Run a full backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
+
+            // Inject some spacing to allow for the purged fileset
+            Thread.Sleep(2000);
 
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
@@ -155,14 +192,14 @@ namespace Duplicati.UnitTest
         public async Task KeepTimeRetention()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["dblock-size"] = "10mb" };
 
             // First, run two complete backups followed by a partial backup.  We will then set the keep-time
             // option so that the threshold lies between the first and second backups.
             DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 firstBackupTime = c.List().Filesets.First().Time;
@@ -175,7 +212,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 secondBackupTime = c.List().Filesets.First().Time;
@@ -195,7 +232,7 @@ namespace Duplicati.UnitTest
             // and run the delete operation.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                options["keep-time"] = $"{(int) ((DateTime.Now - firstBackupTime).TotalSeconds - (secondBackupTime - firstBackupTime).TotalSeconds / 2)}s";
+                options["keep-time"] = $"{(int)((DateTime.Now - firstBackupTime).TotalSeconds - (secondBackupTime - firstBackupTime).TotalSeconds / 2)}s";
                 IDeleteResults deleteResults = c.Delete();
                 Assert.AreEqual(0, deleteResults.Errors.Count());
                 Assert.AreEqual(0, deleteResults.Warnings.Count());
@@ -240,13 +277,13 @@ namespace Duplicati.UnitTest
         public async Task KeepVersionsRetention()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["dblock-size"] = "10mb" };
 
             // Run a full backup.
             DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 firstBackupTime = c.List().Filesets.First().Time;
@@ -273,7 +310,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 fourthBackupTime = c.List().Filesets.First().Time;
@@ -303,7 +340,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 DateTime sixthBackupTime = c.List().Filesets.First().Time;
@@ -332,7 +369,7 @@ namespace Duplicati.UnitTest
             // Run a full backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -368,7 +405,7 @@ namespace Duplicati.UnitTest
             DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 firstBackupTime = c.List().Filesets.First().Time;
@@ -377,7 +414,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(1, filesets.Count);
 
                 this.ModifySourceFiles();
-                backupResults = c.Backup(new[] {this.DATAFOLDER});
+                backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 DateTime secondBackupTime = c.List().Filesets.First().Time;
@@ -418,7 +455,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 fourthBackupTime = c.List().Filesets.First().Time;
@@ -436,7 +473,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
 
                 this.ModifySourceFiles();
-                backupResults = c.Backup(new[] {this.DATAFOLDER});
+                backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 DateTime fifthBackupTime = c.List().Filesets.First().Time;
@@ -463,7 +500,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 DateTime sixthBackupTime = c.List().Filesets.First().Time;
@@ -489,12 +526,12 @@ namespace Duplicati.UnitTest
         public async Task StopAfterCurrentFile()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb"};
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["dblock-size"] = "10mb" };
 
             // Run a complete backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
 
@@ -516,7 +553,7 @@ namespace Duplicati.UnitTest
             }
 
             // Restore files from the partial backup set.
-            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) {["restore-path"] = this.RESTOREFOLDER};
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) { ["restore-path"] = this.RESTOREFOLDER };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 IListResults lastResults = c.List("*");
@@ -547,7 +584,7 @@ namespace Duplicati.UnitTest
             // Run a complete backup.  Listing the Filesets should include both full and partial backups.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 Assert.AreEqual(3, c.List().Filesets.Count());
@@ -582,12 +619,12 @@ namespace Duplicati.UnitTest
         public async Task StopNow()
         {
             // Choose a dblock size that is small enough so that more than one volume is needed.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["dblock-size"] = "10mb", ["disable-synthetic-filelist"] = "true"};
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["dblock-size"] = "10mb", ["disable-synthetic-filelist"] = "true" };
 
             // Run a complete backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
 
@@ -601,7 +638,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 // ReSharper disable once AccessToDisposedClosure
-                Task backupTask = Task.Run(() => c.Backup(new[] {this.DATAFOLDER}));
+                Task backupTask = Task.Run(() => c.Backup(new[] { this.DATAFOLDER }));
 
                 // Block for a small amount of time to allow the ITaskControl to be associated
                 // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
@@ -614,7 +651,7 @@ namespace Duplicati.UnitTest
             // The next backup should proceed without issues.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
 
@@ -625,7 +662,7 @@ namespace Duplicati.UnitTest
             }
 
             // Restore from the backup that followed the interruption.
-            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) {["restore-path"] = this.RESTOREFOLDER};
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) { ["restore-path"] = this.RESTOREFOLDER };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 IListResults lastResults = c.List("*");

@@ -1,3 +1,78 @@
+2024-04-19 - 2.0.7.103_canary_2024-04-19
+==========
+- Added microfix that adds a missing default value to the backup reports.
+
+2024-04-03 - 2.0.7.102_canary_2024-04-03
+==========
+This build is intended to be the last build that uses .Net4 (aka .Net Desktop).
+Future builds are expected to use .Net8 and will require a manual update,
+because the .Net builds are no longer operating system independent.
+
+The upside is that there are fewer dependencies (no more Mono),
+and execution times are greatly improved.
+
+* Removed donation messages
+* Updated MacOS Installer license text
+* Updated installer to support future manual upgrade
+* Added information to reports when encountering an exception
+
+2024-03-08 - 2.0.7.101_canary_2024-03-08
+==========
+* Updated license to MIT, thanks @kenkendk
+* Fixed crash when logging startup errors, thanks @Jojo-1000
+* Updated SSH.Net, thanks @gpatel-fr
+* Fixed exception happening when stopping the running backup, thanks @Jojo-1000
+* Fixed issue with connecting to server thanks @kellycampbe
+* Improved file-backend listing speed, thanks @Jojo-1000
+* Added support for IPv6 addresses as hostnames, thanks @Jojo-1000
+* Added AliyunOSS backend, thanks @trueai-org
+* Added fix to not show empty form on restarts, thanks @kenkendk
+* Updated Uplink for Storj to 2.12, thanks @gpatel-fr and @kenkendk
+* Added machine and backup id options for reports, thanks @kenkendk
+* Fixed issues with using alternate OAuth server url, thanks @gpatel-fr and @kenkendk
+
+2023-12-27 - 2.0.7.100_canary_2023-12-27
+==========
+This canary is a bugfix release with error reporting improvements, no database format change.
+Options changes:
+     `--s3-disable-chunk-encoding` added to the AWS backend (only useful for some providers)
+     `--full-remote-verification` changes from a boolean option to a tri-valued one. Existing configurations should not be impacted.
+     `--aftp-log-to-console` and `--aftp-log-privateinfo-to-console` added to the Alternative Ftp backend (for debugging purposes only)
+     `--repair-force-block-use` added to the database rebuild process (only for very damaged databases)
+
+Changes:
+  - Fix various bugs with backup filters, thanks @jojo-1000
+  - Fix highlighting in restore file picker, thanks @jojo-1000
+  - Update mail libraries, thanks gpatel-fr
+  - Remove dead facebook link and add doc link, thanks @jojo-1000
+  - Remove obsolete hubic backend, thanks @gpatel-fr
+  - Remove obsolete tool TlsTest, thanks @gpatel-fr
+  - Update Serbian translation, thanks @sagitarion
+  - Improve result reporting for interrupted/failed backups, thanks @jojo-1000
+  - Add return code 3 to help.txt, thanks @gpatel-fr
+  - Fix missing file error caused by interrupted compact, thanks @jojo-1000 and @warwickmm
+  - Include exception type and message in job log, thanks @jojo-1000
+  - Update thirdparty info to remove obsolete references, thanks @gpatel-fr
+  - Remove JS error in negated 'IN' expressions, fixing bad restore prompt (thanks @gorosgobe and Bloomberg)
+  - Update restsharp, thanks @gpatel-fr
+  - Update FluentFTP (Alternative FTP) to 46.0.2 and fixes for initial directory creation, thanks @taz-il
+  - Add console log to the Alternative FTP backend, thanks @gpatel-fr
+  - Fix hidden username and password options when changing backends, thanks @jojo-1000
+  - Add option to disable chunked encoding for AWS S3, thanks @jojo-1000
+  - Specify the name of the backup when reporting failures, thanks @taz-il
+  - Allow to perform tests without checking file list, thanks @gpatel-fr
+  - Enhance database rebuilding of very damaged databases, thanks @gpatel-fr
+  - Set the job state to error when post backup verification fails, thanks @gpatel-fr
+  - Allow full-remote-verification to target only list and index files, thanks @gpatel-fr
+  - Fix restore search error in RestoreController, thanks @jojo-1000
+  - Replace agsXmpp with Sharp.Xmpp, thanks @gpatel-fr
+  - Set default log level to Dryrun if dryrun option is set, thanks @gpatel-fr
+  - Enhance Python restore tool, thanks @gpatel-fr
+  - Report all filesets in error in VerifyConsistency, thanks @gpatel-fr
+  - Remove reliance on statusText for error messages (http2 proxy support), thanks @jojo-1000
+  - Keep user-defined whitespace in description field (allow multiline support), thanks @jojo-1000
+  - Force a vacuum of bug report database for privacy reasons, thanks @gpatel-fr
+
 2023-05-25 - 2.0.7.2_canary_2023-05-25
 ==========
 - update Github tests versions, thanks @taz-il

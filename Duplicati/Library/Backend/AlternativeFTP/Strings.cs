@@ -1,3 +1,24 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using Duplicati.Library.Localization.Short;
@@ -11,6 +32,10 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
+        public static string DescriptionLogToConsoleLong { get { return LC.L(@"Log FTP dialog to terminal console for debugging purposes"); } }
+        public static string DescriptionLogToConsoleShort { get { return LC.L(@"Log FTP dialog to terminal console"); } }
+        public static string DescriptionLogPrivateInfoToConsoleLong { get { return LC.L(@"Log FTP PRIVATE info (username, password) to console for debugging purposes (DO NOT POST THIS TO THE INTERNET!)"); } }
+        public static string DescriptionLogPrivateInfoToConsoleShort { get { return LC.L(@"Log FTP PRIVATE info to console"); } }
         public static string DisplayName { get { return LC.L(@"Alternative FTP"); } }
         public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found. Message: {1}", foldername, message); }
         public static string ListVerifyFailure(string filename, IEnumerable<string> files) { return LC.L(@"The file {0} was uploaded but not found afterwards, the file listing returned {1}", filename, string.Join(Environment.NewLine, files)); }

@@ -1,3 +1,23 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -601,8 +621,8 @@ namespace Duplicati.Library.Main.Database
 
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName1), lastFilesetId);
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName2), m_filesetId);
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")",tmpName1));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")",tmpName2));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")", tmpName1));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")", tmpName2));
 
 
                     results.AddedFiles = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""{0}"")", tmpName1), 0, m_filesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
@@ -758,7 +778,7 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = ""Uploading"" OR ""RemoteVolume"".""State"" = ""Temporary"")"))
+                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
                     while (rd.Read())
                     {
                         yield return new KeyValuePair<long, DateTime>(
@@ -955,6 +975,5 @@ namespace Duplicati.Library.Main.Database
                 tr.Commit();
             }
         }
-        
     }
 }

@@ -895,7 +895,7 @@ msgstr ""
 #: Library/Backend/GoogleServices/Strings.cs:26
 #: Library/Backend/GoogleServices/Strings.cs:42
 #: Library/Backend/Box/Strings.cs:23 Library/Backend/OneDrive/Strings.cs:6
-#: Library/Backend/HubiC/Strings.cs:23 Library/Backend/Dropbox/Strings.cs:24
+#: Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
 msgstr "Код авторизации"
@@ -903,7 +903,7 @@ msgstr "Код авторизации"
 #: Library/Backend/GoogleServices/Strings.cs:27
 #: Library/Backend/GoogleServices/Strings.cs:43
 #: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:7
-#: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:25
+#: Library/Backend/Dropbox/Strings.cs:25
 #: Library/Backend/OAuthHelper/Strings.cs:10
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
@@ -1949,18 +1949,6 @@ msgstr ""
 #, csharp-format
 msgid "Conflicting group IDs used: given {0} but found {1}"
 msgstr ""
-
-#: Library/Backend/HubiC/Strings.cs:21
-msgid ""
-"This backend can read and write data to HubiC. Supported format is "
-"\"hubic://container/folder\"."
-msgstr ""
-"Этот бэкэнд может читать и записывать данные в HubiC. Поддерживаемый формат "
-"— «hubic://container/folder»."
-
-#: Library/Backend/HubiC/Strings.cs:22
-msgid "HubiC"
-msgstr "HubiC"
 
 #: Library/Backend/AzureBlob/Strings.cs:4
 msgid "All files will be written to the container specified"

@@ -1,42 +1,35 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
+using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.AutoUpdater
 {
     public static class Program
     {
-        public static int Main(string[] args)
+        public static int Main(string[] _args)
         {
-            // Ignore webroot during startup verification
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, AutoUpdateStrategy.Never);
-        }
-
-        public static int RealMain(string[] _args)
-        {
-            // Enable webroot checks for the verifier
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = false;
-
-            var args = new List<string>(_args);
+            var args = _args.ToList();
             Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
             if (args.Count == 0)
@@ -58,26 +51,6 @@ namespace Duplicati.Library.AutoUpdater
                 case "help":
                     WriteUsage();
                     return 0;
-                case "list":
-                    {
-                        var versions = UpdaterManager.FindInstalledVersions();
-                        var selfdir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                        if (string.Equals(Util.AppendDirSeparator(selfdir), Util.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
-                            versions = versions.Union(new KeyValuePair<string, UpdateInfo>[] { new KeyValuePair<string, UpdateInfo>(selfdir, UpdaterManager.SelfVersion) });
-                        Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => string.Format(" {0} {1} ({2})", (x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-"), x.Value.Displayname, x.Value.Version))));
-                        return 0;
-                    }
-
-                case "verify":
-                    {
-                        var versions = UpdaterManager.FindInstalledVersions();
-                        var selfdir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                        if (string.Equals(Util.AppendDirSeparator(selfdir), Util.AppendDirSeparator(UpdaterManager.InstalledBaseDir)))
-                            versions = versions.Union(new KeyValuePair<string, UpdateInfo>[] { new KeyValuePair<string, UpdateInfo>(selfdir, UpdaterManager.SelfVersion) });
-
-                        Console.WriteLine(string.Join(Environment.NewLine, versions.Select(x => string.Format(" {0} {1} ({2}): {3}", (x.Value.Version == UpdaterManager.SelfVersion.Version ? "*" : "-"), x.Value.Displayname, x.Value.Version, UpdaterManager.VerifyUnpackedFolder(x.Key, x.Value) ? "Valid" : "*** Modified ***"))));
-                        return 0;
-                    }
                 case "check":
                     {
                         var update = UpdaterManager.CheckForUpdate();
@@ -90,7 +63,7 @@ namespace Duplicati.Library.AutoUpdater
 
                         return 0;
                     }
-                case "install":
+                case "download":
                     {
                         var update = UpdaterManager.CheckForUpdate();
                         if (update == null || update.Version == UpdaterManager.SelfVersion.Version)
@@ -98,19 +71,30 @@ namespace Duplicati.Library.AutoUpdater
                             Console.WriteLine("You are running the latest version: {0} ({1})", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
                             return 0;
                         }
-                        Console.WriteLine("Downloading update \"{0}\" ...", update.Displayname);
 
-                        long lastpg = 0;
-                        UpdaterManager.DownloadAndUnpackUpdate(update, f => {
-                            var npg = (long)(f*100);
-                            if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
+                        var package = update.FindPackage();
+                        if (package == null)
+                        {
+                            Console.WriteLine($"Failed to locate a matching package for this machine, please visit this link and select the correct package: {update.GetGenericUpdatePageUrl()}");
+                        }
+                        else
+                        {
+                            var filename = Path.GetFullPath(package.GetFilename());
+                            Console.WriteLine("Downloading update \"{0}\" to {1} ...", update.Displayname, filename);
+
+                            long lastpg = 0;
+                            UpdaterManager.DownloadUpdate(update, package, filename, f =>
                             {
-                                lastpg = npg;
-                                Console.WriteLine("Downloading {0}% ...", npg);
-                            }
-                        });
+                                var npg = (long)(f * 100);
+                                if (Math.Abs(npg - lastpg) >= 5 || (npg == 100 && lastpg != 100))
+                                {
+                                    lastpg = npg;
+                                    Console.WriteLine("Downloading {0}% ...", npg);
+                                }
+                            });
+                        }
 
-                        Console.WriteLine("New version \"{0}\" installed!", update.Displayname);
+                        Console.WriteLine("New version \"{0}\" downloaded!", update.Displayname);
                         return 0;
                     }
                 default:
@@ -123,19 +107,17 @@ namespace Duplicati.Library.AutoUpdater
 
         private static void WriteUsage()
         {
-            Console.WriteLine("Usage:{0}\t{1}{2} [LIST|VERIFY|CHECK|INSTALL|HELP]", Environment.NewLine, Duplicati.Library.Utility.Utility.IsMono ? "mono " : "", System.IO.Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            Console.WriteLine("Usage:{0}\t{1} [CHECK|DOWNLOAD|HELP]", Environment.NewLine, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.AutoUpdater));
             Console.WriteLine();
             Console.WriteLine("Environment variables:");
             Console.WriteLine();
             Console.WriteLine("{0} - Disables updates completely", string.Format(UpdaterManager.SKIPUPDATE_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
-            Console.WriteLine("{0} - Choose how to handle updates, valid settings: {1}", string.Format(UpdaterManager.UPDATE_STRATEGY_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), string.Join(", ", Enum.GetNames(typeof(AutoUpdateStrategy))));
             Console.WriteLine("{0} - Use alternate updates urls", string.Format(AutoUpdateSettings.UPDATEURL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
-            Console.WriteLine("{0} - Choose different channel than the default {1}, valid settings: {2}", string.Format(AutoUpdateSettings.UPDATECHANNEL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel, string.Join(",", Enum.GetNames(typeof(ReleaseType)).Where( x => x != ReleaseType.Unknown.ToString())));
+            Console.WriteLine("{0} - Choose different channel than the default {1}, valid settings: {2}", string.Format(AutoUpdateSettings.UPDATECHANNEL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel, string.Join(",", Enum.GetNames(typeof(ReleaseType)).Where(x => x != ReleaseType.Unknown.ToString())));
             Console.WriteLine();
             Console.WriteLine("Updates are downloaded from: {0}", string.Join(";", AutoUpdateSettings.URLs));
-            Console.WriteLine("Updates are installed in: {0}", UpdaterManager.INSTALLDIR);
-            Console.WriteLine("The base version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.BaseVersion.Displayname, UpdaterManager.BaseVersion.Version, UpdaterManager.InstalledBaseDir);
-            Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version, System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            Console.WriteLine("Machine settings are installed in: {0}", UpdaterManager.UPDATEDIR);
+            Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version, UpdaterManager.INSTALLATIONDIR);
             Console.WriteLine();
         }
     }
