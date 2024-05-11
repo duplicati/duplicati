@@ -1,9 +1,31 @@
-﻿using System;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -92,8 +114,13 @@ namespace Duplicati.Library.Main.Operation
             using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
                 restoredb.RepairInProgress = true;
+                var expRecreateDb = false; // experimental recreate db code flag
                 var autoDetectBlockSize = !(m_options.HasBlocksize && restoredb.GetDbOptions().ContainsKey("blocksize"));                    
                 var volumeIds = new Dictionary<string, long>();
+
+                if (string.Equals(Environment.GetEnvironmentVariable("EXPERIMENTAL_RECREATEDB_DUPLICATI") ?? string.Empty, "1")) {
+                    expRecreateDb = true;
+                }
 
                 var rawlist = backend.List();
         
@@ -320,17 +347,19 @@ namespace Duplicati.Library.Main.Operation
                     using(new Logging.Timer(LOGTAG, "CommitUpdateFilesetFromRemote", "CommitUpdateFilesetFromRemote"))
                         tr.Commit();
                 }
-            
+
+                // do we stop after just handling the dlist files ?
+		// (if yes, we never will be able to do a backup !)
                 if (!m_options.RepairOnlyPaths)
                 {
-                    var hashalg = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-                    if (hashalg == null)
-                        throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                    var hashsize = hashalg.HashSize / 8;
-
+                    var hashsize = 0;
                     //Grab all index files, and update the block table
+
+                    using(var hashalg = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
                     using(var tr = restoredb.BeginTransaction())
                     {
+                        hashsize = hashalg.HashSize / 8;
+
                         var indexfiles = (
                                          from n in remotefiles
                                           where n.FileType == RemoteVolumeType.Index
@@ -382,17 +411,18 @@ namespace Duplicati.Library.Main.Operation
 											    volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Temporary, tr);
                                             }
                                             
+                                            bool anyChange = false;
                                             //Add all block/volume mappings
                                             foreach(var b in a.Blocks)
-                                                restoredb.UpdateBlock(b.Key, b.Value, volumeID, tr);
+                                                restoredb.UpdateBlock(b.Key, b.Value, volumeID, tr, ref anyChange);
 
-										    restoredb.UpdateRemoteVolume(filename, missing ? RemoteVolumeState.Temporary : RemoteVolumeState.Verified, a.Length, a.Hash, tr);
+                                            restoredb.UpdateRemoteVolume(filename, missing ? RemoteVolumeState.Temporary : RemoteVolumeState.Verified, a.Length, a.Hash, tr);
                                             restoredb.AddIndexBlockLink(restoredb.GetRemoteVolumeID(sf.Name), volumeID, tr);
                                         }
                                 
-                                        //If there are blocklists in the index file, update the blocklists
+                                        //If there are blocklists in the index file, add them to the temp blocklist hashes table
                                         foreach(var b in svr.BlockLists)
-                                            restoredb.UpdateBlockset(b.Hash, b.Blocklist, tr);
+                                            restoredb.AddTempBlockListHash(b.Hash, b.Blocklist, tr);
                                     }
                                 }
                             }
@@ -421,15 +451,21 @@ namespace Duplicati.Library.Main.Operation
                     if (!m_options.UnittestMode)
                         restoredb.CleanupMissingVolumes();
 
+                    // Update the real tables from the temp tables
+                    if (expRecreateDb)
+                        // add missing blocks and blocksetentry data (at this point
+                        // we have not yet anything in the blocksetentry table)
+                        restoredb.AddBlockAndBlockSetEntryFromTemp(hashsize, m_options.Blocksize, null);
+                    else
+                        restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, null);
+
                     // We have now grabbed as much information as possible,
                     // if we are still missing data, we must now fetch block files
-                    restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, null);
-                
                     //We do this in three passes
                     for(var i = 0; i < 3; i++)
                     {
                         // Grab the list matching the pass type
-                        var lst = restoredb.GetMissingBlockListVolumes(i, m_options.Blocksize, hashsize).ToList();
+                        var lst = restoredb.GetMissingBlockListVolumes(i, m_options.Blocksize, hashsize, m_options.RepairForceBlockUse).ToList();
                         if (lst.Count > 0)
                         {
                             var fullist = ": " + string.Join(", ", lst.Select(x => x.Name));
@@ -445,7 +481,7 @@ namespace Duplicati.Library.Main.Operation
                                     break;
                                 default:
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingAllBlocklistVolumes", "Processing all of the {0} volumes for blocklists{1}", lst.Count, fullist);
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingAllBlocklistVolumes", "Processing all of the {0} volumes for blocklists{1}", lst.Count, m_options.FullResult ? fullist : string.Empty);
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "ProcessingAllBlocklistVolumes", "Processing all of the {0} volumes for blocklists{1}", lst.Count, m_options.FullResult ? fullist : string.Empty);
                                     break;
                             }
                         }
@@ -474,16 +510,34 @@ namespace Duplicati.Library.Main.Operation
 
                                     restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Uploaded, sf.Size, sf.Hash, tr);
 
+                                    bool anyChange = false;
                                     // Update the block table so we know about the block/volume map
                                     foreach (var h in rd.Blocks)
-                                        restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr);
+                                        restoredb.UpdateBlock(h.Key, h.Value, volumeid, tr, ref anyChange);
 
-                                    // Grab all known blocklists from the volume
-                                    foreach (var blocklisthash in restoredb.GetBlockLists(volumeid))
-                                        restoredb.UpdateBlockset(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr);
+                                    // now that we have the blocks/volume relationships, we can go from the (already known from dlist step) blocklisthashes
+                                    // to the needed list blocks in the volume, so grab them from the database
+                                    // read the blocks list hashes from the volume data (the handled file) and insert them into the temp blocklisthash table
+                                    foreach (var blocklisthash in restoredb.GetBlockLists(volumeid)) {
+                                        if (restoredb.AddTempBlockListHash(blocklisthash, rd.ReadBlocklist(blocklisthash, hashsize), tr)) {
+                                            anyChange = true;
+                                        }
+                                    }
 
-                                    // Update tables so we know if we are done
-                                    restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
+                                    // Update tables if necessary (if no block or hash have been changed by a data volume
+                                    // there is no need to run expensive queries - most data volumes have been
+                                    // managed successfully by correct index volumes), so we know if we are done
+                                    // if any change, add to the block and blocksetentry tables the references found in
+                                    // the block lists of the volume saved in the temp blocklisthash table by AddTempBLockListHash
+                                    if (anyChange) {
+                                        if (i == 2) {
+                                            Logging.Log.WriteWarningMessage(LOGTAG, "UpdatingTables", null, "Unexpected changes caused by block {0}", sf.Name);
+                                        }
+                                        if (expRecreateDb)
+                                            restoredb.AddBlockAndBlockSetEntryFromTemp(hashsize, m_options.Blocksize, tr, false);
+                                        else
+                                            restoredb.FindMissingBlocklistHashes(hashsize, m_options.Blocksize, tr);
+                                    }
 
                                     using (new Logging.Timer(LOGTAG, "CommitRestoredBlocklist", "CommitRestoredBlocklist"))
                                         tr.Commit();

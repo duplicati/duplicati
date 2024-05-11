@@ -1,113 +1,152 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.0.31919.166
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Utility", "Duplicati\Library\Utility\Duplicati.Library.Utility.csproj", "{DE3E5D4C-51AB-4E5E-BEE8-E636CEBFBA65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Main", "Duplicati\Library\Main\Duplicati.Library.Main.csproj", "{10D2D1B7-C664-41D8-9B3A-00040C3D421B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Main", "Duplicati\Library\Main\Duplicati.Library.Main.csproj", "{10D2D1B7-C664-41D8-9B3A-00040C3D421B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.File", "Duplicati\Library\Backend\File\Duplicati.Library.Backend.File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.File", "Duplicati\Library\Backend\File\Duplicati.Library.Backend.File.csproj", "{FC9B7611-836F-4127-8B44-A7C31F506807}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.FTP", "Duplicati\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj", "{F61679A9-E5DE-468A-B5A4-05F92D0143D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.FTP", "Duplicati\Library\Backend\FTP\Duplicati.Library.Backend.FTP.csproj", "{F61679A9-E5DE-468A-B5A4-05F92D0143D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Compression", "Duplicati\Library\Compression\Duplicati.Library.Compression.csproj", "{19ECCE09-B5EB-406C-8C57-BAC66997D469}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Logging", "Duplicati\Library\Logging\Duplicati.Library.Logging.csproj", "{D10A5FC0-11B4-4E70-86AA-8AEA52BD9798}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.S3", "Duplicati\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj", "{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.S3", "Duplicati\Library\Backend\S3\Duplicati.Library.Backend.S3.csproj", "{C03F6DFD-805A-4BE0-9338-64870ADDB4A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine", "Duplicati\CommandLine\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj", "{81765A64-3661-4E3E-B850-2F6F87A51F74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.WEBDAV", "Duplicati\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj", "{BAE27510-8B5D-44B2-B33E-372A98908041}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.WEBDAV", "Duplicati\Library\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj", "{BAE27510-8B5D-44B2-B33E-372A98908041}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.CloudFiles", "Duplicati\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj", "{1BFAE226-8364-4086-825C-BB83F6F3EE4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.CloudFiles", "Duplicati\Library\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj", "{1BFAE226-8364-4086-825C-BB83F6F3EE4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTester", "Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{E7280DCA-7776-4A73-B9B5-41FD77FC8799}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{E7280DCA-7776-4A73-B9B5-41FD77FC8799}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Interface", "Duplicati\Library\Interface\Duplicati.Library.Interface.csproj", "{C5899F45-B0FF-483C-9D38-24A9FCAAB237}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Interface", "Duplicati\Library\Interface\Duplicati.Library.Interface.csproj", "{C5899F45-B0FF-483C-9D38-24A9FCAAB237}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.DynamicLoader", "Duplicati\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.DynamicLoader", "Duplicati\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj", "{0CA86ECF-5BEC-4909-B4F6-110A03B30B92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Snapshots", "Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Snapshots", "Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.License", "Duplicati\License\Duplicati.License.csproj", "{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.License", "Duplicati\License\Duplicati.License.csproj", "{4D012CB1-4B92-47F4-89B7-BF80A73A2E99}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Modules.Builtin", "Duplicati\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj", "{52826615-7964-47FE-B4B3-1B2DBDF605B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Modules.Builtin", "Duplicati\Library\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj", "{52826615-7964-47FE-B4B3-1B2DBDF605B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TahoeLAFS", "Duplicati\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj", "{C0270709-2A40-43B5-8CF1-69581B9FA2A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.TahoeLAFS", "Duplicati\Library\Backend\TahoeLAFS\Duplicati.Library.Backend.TahoeLAFS.csproj", "{C0270709-2A40-43B5-8CF1-69581B9FA2A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.OneDrive", "Duplicati\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj", "{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.OneDrive", "Duplicati\Library\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj", "{CCD76347-7DC7-4B42-B7E1-E500E624CAC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SSHv2", "Duplicati\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj", "{FF2BF37C-E502-4C98-BEA0-701671DDFA08}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.SSHv2", "Duplicati\Library\Backend\SSHv2\Duplicati.Library.Backend.SSHv2.csproj", "{FF2BF37C-E502-4C98-BEA0-701671DDFA08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server", "Duplicati\Server\Duplicati.Server.csproj", "{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server", "Duplicati\Server\Duplicati.Server.csproj", "{19E661D2-C5DA-4F35-B3EE-7586E5734B5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.GUI.TrayIcon", "Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{17566860-3D98-4604-AA5B-47661F75609F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.GUI.TrayIcon", "Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{17566860-3D98-4604-AA5B-47661F75609F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Server.Serialization", "Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj", "{33FD1D24-C28F-4C71-933F-98F1586EA76C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server.Serialization", "Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj", "{33FD1D24-C28F-4C71-933F-98F1586EA76C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.BackendTool", "Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTool", "Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SQLiteHelper", "Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.SQLiteHelper", "Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj", "{2C838169-B187-4B09-8768-1C24C2521C8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Localization", "Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Localization", "Duplicati\Library\Localization\Duplicati.Library.Localization.csproj", "{B68F2214-951F-4F78-8488-66E1ED3F50BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.AutoUpdater", "Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj", "{7E119745-1F62-43F0-936C-F312A1912C0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Service", "Duplicati\Service\Duplicati.Service.csproj", "{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Duplicati\Service\Duplicati.Service.csproj", "{E93F3DE2-FF3A-4709-96A3-8190AA14FA25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AzureBlob", "Duplicati\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj", "{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AzureBlob", "Duplicati\Library\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj", "{8E4CECFB-0413-4B00-AB93-78D1C3902BD5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.UnitTest", "Duplicati\UnitTest\Duplicati.UnitTest.csproj", "{ECB63D1C-1724-442D-9228-DEABF14F2EA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.OAuthHelper", "Duplicati\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj", "{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.OAuthHelper", "Duplicati\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj", "{D4C37C33-5E73-4B56-B2C3-DC4A6BAA36BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.GoogleServices", "Duplicati\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj", "{5489181D-950C-44AF-873C-45EB0A3B6BD2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.GoogleServices", "Duplicati\Library\Backend\GoogleServices\Duplicati.Library.Backend.GoogleServices.csproj", "{5489181D-950C-44AF-873C-45EB0A3B6BD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.OpenStack", "Duplicati\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj", "{D9E4E686-423C-48EC-A392-404E7C00860C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.OpenStack", "Duplicati\Library\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj", "{D9E4E686-423C-48EC-A392-404E7C00860C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.HubiC", "Duplicati\Library\Backend\HubiC\Duplicati.Library.Backend.HubiC.csproj", "{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.RecoveryTool", "Duplicati\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{4A010589-76E6-4F05-A5C4-4598D5DF11F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Backblaze", "Duplicati\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj", "{61C43D61-4368-4942-84A3-1EB623F4EF2A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Backblaze", "Duplicati\Library\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj", "{61C43D61-4368-4942-84A3-1EB623F4EF2A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Mega", "Duplicati\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj", "{6643A5AE-AB38-453F-ADCE-408E35A81A83}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Mega", "Duplicati\Library\Backend\Mega\Duplicati.Library.Backend.Mega.csproj", "{6643A5AE-AB38-453F-ADCE-408E35A81A83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Box", "Duplicati\Library\Backend\Box\Duplicati.Library.Backend.Box.csproj", "{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.UsageReporter", "Duplicati\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj", "{BB014EA5-CE2C-4444-8D30-38983A0E8553}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.UsageReporter", "Duplicati\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj", "{BB014EA5-CE2C-4444-8D30-38983A0E8553}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.SharePoint", "Duplicati\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj", "{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SharePoint", "Duplicati\Library\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj", "{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AlternativeFTP", "Duplicati\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj", "{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsService", "Duplicati\WindowsService\WindowsService.csproj", "{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Dropbox", "Duplicati\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj", "{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.AlternativeFTP", "Duplicati\Library\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj", "{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Tools", "Duplicati\Tools\Duplicati.Tools.csproj", "{0797AA22-C5DD-4950-BB60-34765AB8C6DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Dropbox", "Duplicati\Library\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj", "{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Jottacloud", "Duplicati\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj", "{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Tools", "Duplicati\Tools\Duplicati.Tools.csproj", "{0797AA22-C5DD-4950-BB60-34765AB8C6DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Sia", "Duplicati\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj", "{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Jottacloud", "Duplicati\Library\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj", "{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Rclone", "Duplicati\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj", "{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Sia", "Duplicati\Library\Backend\Sia\Duplicati.Library.Backend.Sia.csproj", "{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Common", "Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Rclone", "Duplicati\Library\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj", "{851A1CB8-3CEB-41B4-956F-34D760D2A8E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.ConfigurationImporter", "Duplicati\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{B93E3BF0-DAA7-49B7-B07D-0559C5816735}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Common", "Duplicati\Library\Common\Duplicati.Library.Common.csproj", "{D63E53E4-A458-4C2F-914D-92F715F58ACF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ConfigurationImporter", "Duplicati\CommandLine\ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{B93E3BF0-DAA7-49B7-B07D-0559C5816735}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Duplicati\CommandLine\AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{4D1B198B-F773-44F2-872B-2B283053323C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Encryption", "Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj", "{2CF2D90E-C25B-47AD-91E0-98451BAB8058}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Storj", "Duplicati\Library\Backend\Storj\Duplicati.Library.Backend.Storj.csproj", "{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Storj", "Duplicati\Library\Backend\Storj\Duplicati.Library.Backend.Storj.csproj", "{AE035E01-C917-4F13-A35E-78F21C1A2F17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.TencentCOS", "Duplicati\Library\Backend\TencentCOS\Duplicati.Library.Backend.TencentCOS.csproj", "{545DD6D4-9476-42D6-B51C-A28E000C489E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Executables", "Executables", "{FA88A246-EF8E-46E3-90AF-539B8C0A6ADE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Tardigrade", "Duplicati\Library\Backend\Tardigrade\Duplicati.Library.Backend.Tardigrade.csproj", "{9A04CB37-DA72-4008-9703-3AC5191974E9}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net8", "net8", "{6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Idrivee2", "Duplicati\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj", "{6B594D23-B629-465C-B799-70EE9E56C218}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net8\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Executables\net8\Duplicati_Service\Duplicati.Service.csproj", "{34149709-F3ED-4FB5-A087-43EB195C948B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Executables\net8\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTool", "Executables\net8\Duplicati.CommandLine.BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.ConfigurationImporter", "Executables\net8\Duplicati.CommandLine.ConfigurationImporter\Duplicati.CommandLine.ConfigurationImporter.csproj", "{156B9B77-C2B7-4169-8FE7-1171D221446C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.RecoveryTool", "Executables\net8\Duplicati.CommandLine.RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.GUI.TrayIcon", "Executables\net8\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{AF32C621-30DC-40F5-8CE6-DD69053068E9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server", "Executables\net8\Duplicati.Server\Duplicati.Server.csproj", "{55EEEBD2-CE45-45D6-9838-958F1C7354E4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsService", "Duplicati\WindowsService\WindowsService.csproj", "{8A651E2D-A7C8-4EC7-B421-7A457654811D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.WindowsService", "Executables\net8\Duplicati.WindowsService\Duplicati.WindowsService.csproj", "{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Executables\net8\Duplicati.CommandLine\Duplicati.CommandLine.csproj", "{0F5A1F4E-25FA-4D02-920D-CA2138498081}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Idrivee2", "Duplicati\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj", "{6B594D23-B629-465C-B799-70EE9E56C218}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C03F6DFD-805A-4BE0-9338-64870ADDB4A2} = {C03F6DFD-805A-4BE0-9338-64870ADDB4A2}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Backends", "Backends", "{E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helper Libraries", "Helper Libraries", "{566EBBDA-19A4-4056-A615-D901D57D2439}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Implementation", "Implementation", "{D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backends", "Duplicati\Library\Backends\Duplicati.Library.Backends.csproj", "{5290E237-C2CD-48F2-99D2-817F9C2163C8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.WebserverCore", "Duplicati\WebserverCore\Duplicati.WebserverCore.csproj", "{5A702CEE-DB36-4153-BD94-D8CF867E75A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.RestAPI", "Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj", "{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -243,10 +282,6 @@ Global
 		{D9E4E686-423C-48EC-A392-404E7C00860C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9E4E686-423C-48EC-A392-404E7C00860C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9E4E686-423C-48EC-A392-404E7C00860C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D60AD540-0E7D-40CE-83AE-D26E01FFE9B8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A010589-76E6-4F05-A5C4-4598D5DF11F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -271,10 +306,6 @@ Global
 		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BEF7AF9A-3978-4F90-8592-198BF6EA6C6B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -311,25 +342,131 @@ Global
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CF2D90E-C25B-47AD-91E0-98451BAB8058}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AE035E01-C917-4F13-A35E-78F21C1A2F17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D1B198B-F773-44F2-872B-2B283053323C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489}.Release|Any CPU.Build.0 = Release|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{545DD6D4-9476-42D6-B51C-A28E000C489E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9A04CB37-DA72-4008-9703-3AC5191974E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34149709-F3ED-4FB5-A087-43EB195C948B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34149709-F3ED-4FB5-A087-43EB195C948B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34149709-F3ED-4FB5-A087-43EB195C948B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34149709-F3ED-4FB5-A087-43EB195C948B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{156B9B77-C2B7-4169-8FE7-1171D221446C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{156B9B77-C2B7-4169-8FE7-1171D221446C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{156B9B77-C2B7-4169-8FE7-1171D221446C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{156B9B77-C2B7-4169-8FE7-1171D221446C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF32C621-30DC-40F5-8CE6-DD69053068E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF32C621-30DC-40F5-8CE6-DD69053068E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF32C621-30DC-40F5-8CE6-DD69053068E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF32C621-30DC-40F5-8CE6-DD69053068E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55EEEBD2-CE45-45D6-9838-958F1C7354E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55EEEBD2-CE45-45D6-9838-958F1C7354E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55EEEBD2-CE45-45D6-9838-958F1C7354E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55EEEBD2-CE45-45D6-9838-958F1C7354E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A651E2D-A7C8-4EC7-B421-7A457654811D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A651E2D-A7C8-4EC7-B421-7A457654811D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A651E2D-A7C8-4EC7-B421-7A457654811D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A651E2D-A7C8-4EC7-B421-7A457654811D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F5A1F4E-25FA-4D02-920D-CA2138498081}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F5A1F4E-25FA-4D02-920D-CA2138498081}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F5A1F4E-25FA-4D02-920D-CA2138498081}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F5A1F4E-25FA-4D02-920D-CA2138498081}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B594D23-B629-465C-B799-70EE9E56C218}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5290E237-C2CD-48F2-99D2-817F9C2163C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5290E237-C2CD-48F2-99D2-817F9C2163C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5290E237-C2CD-48F2-99D2-817F9C2163C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5290E237-C2CD-48F2-99D2-817F9C2163C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A702CEE-DB36-4153-BD94-D8CF867E75A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A702CEE-DB36-4153-BD94-D8CF867E75A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A702CEE-DB36-4153-BD94-D8CF867E75A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A702CEE-DB36-4153-BD94-D8CF867E75A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FC9B7611-836F-4127-8B44-A7C31F506807} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{F61679A9-E5DE-468A-B5A4-05F92D0143D2} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{19ECCE09-B5EB-406C-8C57-BAC66997D469} = {566EBBDA-19A4-4056-A615-D901D57D2439}
+		{C03F6DFD-805A-4BE0-9338-64870ADDB4A2} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{81765A64-3661-4E3E-B850-2F6F87A51F74} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{BAE27510-8B5D-44B2-B33E-372A98908041} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{1BFAE226-8364-4086-825C-BB83F6F3EE4C} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{E7280DCA-7776-4A73-B9B5-41FD77FC8799} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{0CA86ECF-5BEC-4909-B4F6-110A03B30B92} = {566EBBDA-19A4-4056-A615-D901D57D2439}
+		{C0270709-2A40-43B5-8CF1-69581B9FA2A1} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{CCD76347-7DC7-4B42-B7E1-E500E624CAC3} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{FF2BF37C-E502-4C98-BEA0-701671DDFA08} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{19E661D2-C5DA-4F35-B3EE-7586E5734B5F} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{17566860-3D98-4604-AA5B-47661F75609F} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{2AF960C0-357D-4D44-A3D5-8B6E89DB0F11} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{2C838169-B187-4B09-8768-1C24C2521C8D} = {566EBBDA-19A4-4056-A615-D901D57D2439}
+		{E93F3DE2-FF3A-4709-96A3-8190AA14FA25} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{8E4CECFB-0413-4B00-AB93-78D1C3902BD5} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{5489181D-950C-44AF-873C-45EB0A3B6BD2} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{D9E4E686-423C-48EC-A392-404E7C00860C} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{4A010589-76E6-4F05-A5C4-4598D5DF11F8} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{61C43D61-4368-4942-84A3-1EB623F4EF2A} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{6643A5AE-AB38-453F-ADCE-408E35A81A83} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{3FF7DD0B-5284-4BF9-97D9-1E4417FDABB2} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{59C8BBC5-6E42-46FB-AB3E-6C183A82459A} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{3F47CB0C-CEE1-447F-9C26-7F8E419E3E3F} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{B20A7CEE-9C5B-47B9-8B76-BC85ADFE8493} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{2CD5DBC3-3DA6-432D-BA97-F0B8D24501C2} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{32A74526-3E5F-413A-8CB4-1EFDAD4C8B91} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{851A1CB8-3CEB-41B4-956F-34D760D2A8E5} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{B93E3BF0-DAA7-49B7-B07D-0559C5816735} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{4D1B198B-F773-44F2-872B-2B283053323C} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{E9AB8491-BD4C-4E4F-84C3-0BD551CC7489} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{545DD6D4-9476-42D6-B51C-A28E000C489E} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3} = {FA88A246-EF8E-46E3-90AF-539B8C0A6ADE}
+		{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{34149709-F3ED-4FB5-A087-43EB195C948B} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{156B9B77-C2B7-4169-8FE7-1171D221446C} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{0FFC557E-1B84-46A2-B6E8-06064FA7EA58} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{AF32C621-30DC-40F5-8CE6-DD69053068E9} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{55EEEBD2-CE45-45D6-9838-958F1C7354E4} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{8A651E2D-A7C8-4EC7-B421-7A457654811D} = {566EBBDA-19A4-4056-A615-D901D57D2439}
+		{5D20B150-C445-47BE-8CE8-C9F74F19A4F2} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{0F5A1F4E-25FA-4D02-920D-CA2138498081} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{6B594D23-B629-465C-B799-70EE9E56C218} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B} = {FA88A246-EF8E-46E3-90AF-539B8C0A6ADE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}
@@ -337,7 +474,7 @@ Global
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
 		$0.StandardHeader = $1
-		$1.Text = @ Copyright (C) ${Year}, The Duplicati Team\n http://www.duplicati.com, info@duplicati.com\n \n This library is free software; you can redistribute it and/or modify\n it under the terms of the GNU Lesser General Public License as\n published by the Free Software Foundation; either version 2.1 of the\n License, or (at your option) any later version.\n\n This library is distributed in the hope that it will be useful, but\n WITHOUT ANY WARRANTY; without even the implied warranty of\n MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n Lesser General Public License for more details.\n\n You should have received a copy of the GNU Lesser General Public\n License along with this library; if not, write to the Free Software\n Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+		$1.Text = @ Copyright (C) ${Year}, The Duplicati Team\nhttps://duplicati.com, hello@duplicati.com\n\nPermission is hereby granted, free of charge, to any person obtaining a \ncopy of this software and associated documentation files (the "Software"), \nto deal in the Software without restriction, including without limitation \nthe rights to use, copy, modify, merge, publish, distribute, sublicense, \nand/or sell copies of the Software, and to permit persons to whom the \nSoftware is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in \nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS \nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING \nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER \nDEALINGS IN THE SOFTWARE.\n
 		$0.DotNetNamingPolicy = $2
 		$2.DirectoryNamespaceAssociation = PrefixedHierarchical
 		$0.TextStylePolicy = $5
@@ -345,9 +482,5 @@ Global
 		$5.TabsToSpaces = True
 		$5.EolMarker = Windows
 		$5.scope = text/plain
-	EndGlobalSection
-	GlobalSection(SubversionScc) = preSolution
-		Svn-Managed = True
-		Manager = AnkhSVN - Subversion Support for Visual Studio
 	EndGlobalSection
 EndGlobal

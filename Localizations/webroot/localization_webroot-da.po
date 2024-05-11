@@ -2660,16 +2660,6 @@ msgid ""
 "'/'"
 msgstr "Stien skal være en absolut sti, altså skal den starte med '/'"
 
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
-"Stien bør starte med \"{{præfiks1}}\" eller \"{{præfiks2}}\", ellers vil du ikke kunne se andre filer i HubiC web konsollen\n"
-"\n"
-"Vil du tilføje præfikset til stien automatisk?"
-
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr "Regionsparameteren anvendes kun når der oprettes en ny bucket"

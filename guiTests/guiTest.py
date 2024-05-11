@@ -54,13 +54,11 @@ elif cmdopt.use_chrome:
     driver = webdriver.Chrome(options=chr_opt)
 else:
     from selenium.webdriver.firefox.options import Options
-    # local
     print("Using LOCAL Firefox webdriver")
     options = Options()
     options.set_preference("intl.accept_languages", "en")
     options.headless = cmdopt.headless
     driver = webdriver.Firefox(options=options)
-
 
 def write_random_file(size, filename):
     if not os.path.exists(os.path.dirname(filename)):
@@ -120,7 +118,7 @@ driver.maximize_window()
 driver.get("http://localhost:8200/ngax/index.html")
 
 if "Duplicati" not in driver.title:
-    raise Exception("Unable to load duplicati GUI!")
+    raise Exception("Unable to load duplicati GUI! Got: " + driver.title)
 
 # Create and hash random files in the source folder
 write_random_file(1024 * 1024, SOURCE_FOLDER + os.sep + "1MB.test")
