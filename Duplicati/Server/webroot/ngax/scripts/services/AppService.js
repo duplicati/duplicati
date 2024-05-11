@@ -53,7 +53,6 @@ backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogSe
                 DialogService.accept('Not logged in', function () {
                     window.location = appConfig.login_url;
                 });
-                return;
             }
             deferred.reject(response);
         });
@@ -122,5 +121,25 @@ backupApp.service('AppService', function($http, $cookies, $q, $cookies, DialogSe
         var rurl = '/logout.cgi';
 
         return installResponseHook($http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', {}, null, rurl)));
+    };
+
+    this.responseErrorMessage = function (resp) {
+        if (resp == null) {
+            return '';
+        }
+        var message = resp.statusText;
+        if (resp.data != null) {
+            // Different ways to communicate error message (this should be refactored in the server at some point)
+            if (resp.data.Message != null) {
+                message = resp.data.Message;
+            } else if (resp.data.Error != null) {
+                message = resp.data.Error;
+            }else if (resp.data.message != null) {
+                message = resp.data.message;
+            } else if (resp.data.reason != null) {
+                message = resp.data.reason;
+            }
+        }
+        return message;
     };
 });

@@ -1,19 +1,24 @@
-﻿// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +30,7 @@ using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
-using Duplicati.Library.Interface;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
@@ -40,11 +45,6 @@ namespace Duplicati.Library.Utility
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
         /// </summary>
         private static bool? CachedIsFSCaseSensitive;
-
-        /// <summary>
-        /// Gets the hash algorithm used for calculating a hash
-        /// </summary>
-        public static string HashAlgorithm => "SHA256";
 
         /// <summary>
         /// The EPOCH offset (unix style)
@@ -637,16 +637,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
-        /// </summary>
-        /// <param name="stream">The stream to calculate the hash for</param>
-        /// <returns>The base64 encoded hash</returns>
-        public static string CalculateHash(Stream stream)
-        {
-            return Convert.ToBase64String(HashAlgorithmHelper.Create(HashAlgorithm).ComputeHash(stream));
-        }
-
-        /// <summary>
         /// Reads a file, attempts to detect encoding
         /// </summary>
         /// <param name="filename">The path to the file to read</param>
@@ -887,64 +877,6 @@ namespace Duplicati.Library.Utility
                 }
 
                 return CachedIsFSCaseSensitive.Value;
-            }
-        }
-
-        /// <summary>
-        /// Returns a value indicating if the app is running under Mono
-        /// </summary>
-        public static bool IsMono => Type.GetType("Mono.Runtime") != null;
-
-        /// <summary>
-        /// Gets the current Mono runtime version, will return 0.0 if not running Mono
-        /// </summary>
-        public static Version MonoVersion
-        {
-            get
-            {
-                try
-                {
-                    var v = MonoDisplayVersion;
-                    if (v != null)
-                    {
-                        var regex = new Regex(@"\d+\.\d+(\.\d+)?(\.\d+)?");
-                        var match = regex.Match(v);
-                        if (match.Success)
-                            return new Version(match.Value);
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return new Version();
-            }
-        }
-
-        /// <summary>
-        /// Gets the Mono display version, or null if not running Mono
-        /// </summary>
-        public static string MonoDisplayVersion
-        {
-            get
-            {
-                try
-                {
-                    var t = Type.GetType("Mono.Runtime");
-                    if (t != null)
-                    {
-                        var mi = t.GetMethod("GetDisplayName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-                        if (mi != null)
-                            return (string)mi.Invoke(null, null);
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return null;
             }
         }
 

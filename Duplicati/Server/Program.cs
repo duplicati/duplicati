@@ -1,9 +1,31 @@
-﻿using System;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.RestAPI;
+using Duplicati.WebserverCore;
 
 namespace Duplicati.Server
 {
@@ -21,7 +43,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The path to the directory that contains the main executable
         /// </summary>
-        public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.InstalledBaseDir;
+        public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
         /// <summary>
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
@@ -36,7 +58,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the folder where Duplicati data is stored
         /// </summary>
-        public static string DataFolder { get; private set; }
+        public static string DataFolder { get => FIXMEGlobal.DataFolder; private set => FIXMEGlobal.DataFolder = value; }
 
         /// <summary>
         /// The single instance
@@ -46,27 +68,27 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the only access to the database
         /// </summary>
-        public static Database.Connection DataConnection;
+        public static Database.Connection DataConnection { get => FIXMEGlobal.DataConnection; set => FIXMEGlobal.DataConnection = value; }
 
         /// <summary>
         /// This is the lock to be used before manipulating the shared resources
         /// </summary>
-        public static readonly object MainLock = new object();
+        public static object MainLock { get => FIXMEGlobal.MainLock; }
 
         /// <summary>
         /// This is the scheduling thread
         /// </summary>
-        public static Scheduler Scheduler;
+        public static Scheduler Scheduler { get => FIXMEGlobal.Scheduler; set => FIXMEGlobal.Scheduler = value; }
 
         /// <summary>
         /// This is the working thread
         /// </summary>
-        public static Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData> WorkThread;
+        public static Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData> WorkThread { get => FIXMEGlobal.WorkThread; set => FIXMEGlobal.WorkThread = value; }
 
         /// <summary>
         /// List of completed task results
         /// </summary>
-        public static readonly List<KeyValuePair<long, Exception>> TaskResultCache = new List<KeyValuePair<long, Exception>>();
+        public static List<KeyValuePair<long, Exception>> TaskResultCache { get => FIXMEGlobal.TaskResultCache; }
 
         /// <summary>
         /// The maximum number of completed task results to keep in memory
@@ -86,12 +108,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The controller interface for pause/resume and throttle options
         /// </summary>
-        public static LiveControls LiveControl;
+        public static LiveControls LiveControl { get => FIXMEGlobal.LiveControl; set => FIXMEGlobal.LiveControl = value; }
 
         /// <summary>
         /// The application exit event
         /// </summary>
-        public static System.Threading.ManualResetEvent ApplicationExitEvent;
+        public static System.Threading.ManualResetEvent ApplicationExitEvent { get => FIXMEGlobal.ApplicationExitEvent; set => FIXMEGlobal.ApplicationExitEvent = value; }
 
         /// <summary>
         /// The webserver instance
@@ -99,9 +121,14 @@ namespace Duplicati.Server
         private static WebServer.Server WebServer;
 
         /// <summary>
+        /// Callback to shutdown the modern webserver
+        /// </summary>
+        private static Action ShutdownModernWebserver;
+
+        /// <summary>
         /// The update poll thread.
         /// </summary>
-        public static UpdatePollThread UpdatePoller;
+        public static UpdatePollThread UpdatePoller { get => FIXMEGlobal.UpdatePoller; set => FIXMEGlobal.UpdatePoller = value; }
 
         /// <summary>
         /// An event that is set once the server is ready to respond to requests
@@ -111,12 +138,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The status event signaler, used to control long polling of status updates
         /// </summary>
-        public static readonly EventPollNotify StatusEventNotifyer = new EventPollNotify();
+        public static EventPollNotify StatusEventNotifyer { get => FIXMEGlobal.StatusEventNotifyer; }
 
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
         /// </summary>
-        public static Func<Duplicati.Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
+        public static Func<Duplicati.Server.Serialization.Interface.IProgressEventData> GenerateProgressState { get => FIXMEGlobal.GenerateProgressState; set => FIXMEGlobal.GenerateProgressState = value; }
 
         /// <summary>
         /// An event ID that increases whenever the database is updated
@@ -131,12 +158,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The log redirect handler
         /// </summary>
-        public static readonly LogWriteHandler LogHandler = new LogWriteHandler();
+        public static LogWriteHandler LogHandler { get => FIXMEGlobal.LogHandler; }
 
         /// <summary>
         /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
         /// </summary>
-        public static string Origin = "Server";
+        public static string Origin { get => FIXMEGlobal.Origin; set => FIXMEGlobal.Origin = value; }
 
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
@@ -166,16 +193,32 @@ namespace Duplicati.Server
             set { DataConnection.ApplicationSettings.ServerPortChanged = value; }
         }
 
+        public static void IncrementLastDataUpdateID()
+        {
+            System.Threading.Interlocked.Increment(ref Program.LastDataUpdateID);
+        }
+
+        public static void IncrementLastNotificationUpdateID()
+        {
+            System.Threading.Interlocked.Increment(ref Program.LastNotificationUpdateID);
+        }
+
+        static Program()
+        {
+            FIXMEGlobal.IncrementLastDataUpdateID = Program.IncrementLastDataUpdateID;
+            FIXMEGlobal.PeekLastDataUpdateID = () => Program.LastDataUpdateID;
+            FIXMEGlobal.IncrementLastNotificationUpdateID = Program.IncrementLastNotificationUpdateID;
+            FIXMEGlobal.PeekLastNotificationUpdateID = () => Program.LastNotificationUpdateID;
+            FIXMEGlobal.GetDatabaseConnection = Program.GetDatabaseConnection;
+            FIXMEGlobal.StartOrStopUsageReporter = Program.StartOrStopUsageReporter;
+            FIXMEGlobal.UpdateThrottleSpeeds = Program.UpdateThrottleSpeeds;
+        }
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
-        }
-
-        public static int RealMain(string[] _args)
+        public static int Main(string[] _args)
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
@@ -191,7 +234,7 @@ namespace Duplicati.Server
             }
 
             //If this executable is invoked directly, write to console, otherwise throw exceptions
-            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly() == System.Reflection.Assembly.GetExecutingAssembly();
+            var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 
             //Find commandline options here for handling special startup cases
             var args = new List<string>(_args);
@@ -287,6 +330,8 @@ namespace Duplicati.Server
             {
                 StatusEventNotifyer.SignalNewEvent();
 
+                if (ShutdownModernWebserver != null)
+                    ShutdownModernWebserver();
                 UpdatePoller?.Terminate();
                 Scheduler?.Terminate(true);
                 WorkThread?.Terminate(true);
@@ -295,14 +340,11 @@ namespace Duplicati.Server
 
                 Library.UsageReporter.Reporter.ShutDown();
 
-                try { PingPongThread?.Abort(); }
+                try { PingPongThread?.Interrupt(); }
                 catch { }
 
                 LogHandler?.Dispose();
             }
-
-            if (UpdatePoller != null && UpdatePoller.IsUpdateRequested)
-                return Library.AutoUpdater.UpdaterManager.MAGIC_EXIT_CODE;
 
             return 0;
         }
@@ -313,6 +355,9 @@ namespace Duplicati.Server
 
             ServerPortChanged |= WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
             DataConnection.ApplicationSettings.LastWebserverPort = WebServer.Port;
+
+            // var server = new DuplicatiWebserver();
+            // ShutdownModernWebserver = server.Foo();
         }
 
         private static void SetWorkerThread()
@@ -535,34 +580,6 @@ namespace Duplicati.Server
 
         public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
         {
-            var dbPassword = Environment.GetEnvironmentVariable(DB_KEY_ENV_NAME);
-
-            //If we are on windows we encrypt the database by default
-            //We do not encrypt on Linux as most distros use a SQLite library without encryption support,
-            //Linux users can use an encrypted home folder, or install a SQLite library with encryption support
-
-            //Note that the password here is a default password and public knowledge
-            //
-            //The purpose of this is to prevent casual read of the database, as well
-            // as protect from harddisk string scans, not to protect from determined
-            // attacks.
-            //
-            //If you desire better security, start Duplicati once with the commandline option
-            // --unencrypted-database to decrypt the database.
-            //Then set the environment variable DUPLICATI_DB_KEY to the desired key,
-            // and run Duplicati again without the --unencrypted-database option
-            // to re-encrypt it with the new key
-            //
-            //If you change the key, please note that you need to supply the same
-            // key when restoring the setup, as the setup being backed up will
-            // be encrypted as well.
-            if (!Platform.IsClientPosix && string.IsNullOrEmpty(dbPassword))
-                dbPassword = Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42";
-
-            // Allow override of the environment variables from the commandline
-            if (commandlineOptions.ContainsKey("server-encryption-key"))
-                dbPassword = commandlineOptions["server-encryption-key"];
-
             var serverDataFolder = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
             if (commandlineOptions.ContainsKey("server-datafolder"))
                 serverDataFolder = commandlineOptions["server-datafolder"];
@@ -616,8 +633,7 @@ namespace Duplicati.Server
             else
                 DataFolder = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
 
-            var sqliteVersion = new Version((string)Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType.GetProperty("SQLiteVersion").GetValue(null, null));
-
+            var sqliteVersion = new Version(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteVersion);
             if (sqliteVersion < new Version(3, 6, 3))
             {
                 //The official Mono SQLite provider is also broken with less than 3.6.3
@@ -633,17 +649,11 @@ namespace Duplicati.Server
 
                 if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
-#if DEBUG
-                //Default is to not use encryption for debugging
-                var useDatabaseEncryption = commandlineOptions.ContainsKey("unencrypted-database") && !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
-#else
-                var useDatabaseEncryption = !commandlineOptions.ContainsKey("unencrypted-database") || !Library.Utility.Utility.ParseBool(commandlineOptions["unencrypted-database"], true);
-#endif
 
-                //Attempt to open the database, handling any encryption present
-                Duplicati.Library.SQLiteHelper.SQLiteLoader.OpenDatabase(con, DatabasePath, useDatabaseEncryption, dbPassword);
+                // Attempt to open the database, removing any encryption present
+                Duplicati.Library.SQLiteHelper.SQLiteLoader.OpenDatabase(con, DatabasePath, Library.SQLiteHelper.SQLiteRC4Decrypter.GetEncryptionPassword(commandlineOptions));
 
-                Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Database.Connection));
+                Duplicati.Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Duplicati.Library.RestAPI.Database.DatabaseConnectionSchemaMarker));
             }
             catch (Exception ex)
             {
@@ -769,11 +779,11 @@ namespace Duplicati.Server
         {
             get
             {
-                var lst = new List<Duplicati.Library.Interface.ICommandLineArgument> (new Duplicati.Library.Interface.ICommandLineArgument[] {
+                var lst = new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument("tempdir", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.TempdirShort, Strings.Program.TempdirLong, System.IO.Path.GetTempPath()),
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
-                    new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription, "false", null, null, "Database encryption is no longer supported, this setting has no effect"),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
@@ -791,7 +801,7 @@ namespace Duplicati.Server
                 });
 
                 if (!Platform.IsClientPosix)
-                    lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42"));
+                    lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42", null, null, "Database encryption is no longer supported, this setting can only be used to decrypt the database"));
 
                 return lst.ToArray();
             }

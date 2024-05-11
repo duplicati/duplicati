@@ -1,20 +1,24 @@
-//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -166,7 +170,7 @@ namespace Duplicati.Library.Modules.Builtin
             m_localpath = localpath;
         }
 
-        public void OnFinish (object result)
+        public void OnFinish (object result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -180,7 +184,8 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is OperationAbortException oae)
+            OperationAbortException oae = result as OperationAbortException ?? exception as OperationAbortException;
+            if (oae != null)
             {
                 switch (oae.AbortReason)
                 {
@@ -198,7 +203,7 @@ namespace Duplicati.Library.Modules.Builtin
                         break;
                 }
             }
-            else if (result is Exception)
+            else if (result is Exception || exception != null)
                 level = ParsedResultType.Fatal;
             else if (result != null && result is IBasicResults results)
                 level = results.ParsedResult;
@@ -208,7 +213,7 @@ namespace Duplicati.Library.Modules.Builtin
             using (TempFile tmpfile = new TempFile())
             {
                 using (var streamWriter = new StreamWriter(tmpfile))
-                    streamWriter.Write(resultFormatSerializer.Serialize(result, m_logstorage, null));
+                    streamWriter.Write(resultFormatSerializer.Serialize(result, exception, m_logstorage, null));
 
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
             }

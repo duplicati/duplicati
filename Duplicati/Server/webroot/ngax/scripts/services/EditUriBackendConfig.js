@@ -24,7 +24,7 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
     this.defaulttemplate = 'templates/backends/generic.html';
     this.defaultbuilder = function(scope) {
         var opts = {};
-        self.merge_in_advanced_options(scope, opts);
+        self.merge_in_advanced_options(scope, opts, true);
 
         var url = AppUtils.format('{0}{1}://{2}{3}/{4}{5}',
             scope.Backend.Key,
@@ -38,10 +38,17 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
         return url;
     };
 
-    this.merge_in_advanced_options = function(scope, dict) {
-        if (scope.Username != null && scope.Username != '')
+    this.merge_in_advanced_options = function (scope, dict, includeUserPassword) {
+        if (includeUserPassword == null) {
+            includeUserPassword = true;
+        }
+        // Some backends do not have input fields for Username and Password
+        // When changing backends, these variables are not cleared
+        // Only include them if the backend supports it and shows input fields for them
+        // Other options appear in the AdvancedOptions list and can be removed manually if not supported
+        if (includeUserPassword && scope.Username != null && scope.Username != '')
             dict['auth-username'] = scope.Username;
-        if (scope.Password != null && scope.Password != '')
+        if (includeUserPassword && scope.Password != null && scope.Password != '')
             dict['auth-password'] = scope.Password;
 
         if (!AppUtils.parse_extra_options(scope.AdvancedOptions, dict))

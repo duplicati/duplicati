@@ -1,1 +1,1 @@
-http://sshnet.codeplex.com
+https://github.com/sshnet/SSH.NET

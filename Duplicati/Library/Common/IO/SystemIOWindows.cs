@@ -1,20 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Generic;
 using System.Security.AccessControl;
@@ -75,7 +79,7 @@ namespace Duplicati.Library.Common.IO
                 }
             }
         }
-        
+
         /// <summary>
         /// Returns true if prefixed with @"\\" or @"//".
         /// </summary>
@@ -233,22 +237,22 @@ namespace Duplicati.Library.Common.IO
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
-            return System.IO.Directory.GetAccessControl(AddExtendedDevicePathPrefix(path));
+            return new DirectoryInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
-            return System.IO.File.GetAccessControl(AddExtendedDevicePathPrefix(path));
+            return new FileInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
-            System.IO.File.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
+            new FileInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
         }
 
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
-            System.IO.Directory.SetAccessControl(AddExtendedDevicePathPrefix(path), rules);
+            new DirectoryInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
         }
 
         #region ISystemIO implementation
@@ -361,7 +365,7 @@ namespace Duplicati.Library.Common.IO
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
         {
-            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern,  searchOption).Select(RemoveExtendedDevicePathPrefix);
+            return System.IO.Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption).Select(RemoveExtendedDevicePathPrefix);
         }
 
         public string PathGetFileName(string path)
@@ -474,6 +478,30 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
+        {
+            // For consistency with previous implementation, enumerate files first and directories after
+            DirectoryInfo dir;
+            if (IsPrefixedWithExtendedDevicePathPrefix(path))
+            {
+                dir = new DirectoryInfo(path);
+            }
+            else
+            {
+                dir = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
+            }
+
+            foreach (FileInfo file in dir.EnumerateFiles())
+            {
+                yield return FileEntry(file);
+            }
+
+            foreach (DirectoryInfo d in dir.EnumerateDirectories())
+            {
+                yield return DirectoryEntry(d);
+            }
+        }
+
         public void FileCopy(string source, string target, bool overwrite)
         {
             File.Copy(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target), overwrite);
@@ -498,7 +526,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry DirectoryEntry(string path)
         {
-            var dInfo = new DirectoryInfo(AddExtendedDevicePathPrefix(path));
+            return DirectoryEntry(new DirectoryInfo(AddExtendedDevicePathPrefix(path)));
+        }
+        public IFileEntry DirectoryEntry(DirectoryInfo dInfo)
+        {
             return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
             {
                 IsFolder = true
@@ -507,7 +538,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry FileEntry(string path)
         {
-            var fileInfo = new FileInfo(AddExtendedDevicePathPrefix(path));
+            return FileEntry(new FileInfo(AddExtendedDevicePathPrefix(path)));
+        }
+        public IFileEntry FileEntry(FileInfo fileInfo)
+        {
             var lastAccess = new DateTime();
             try
             {
@@ -611,11 +645,11 @@ namespace Duplicati.Library.Common.IO
 
             if (asDir)
             {
-                Alphaleonis.Win32.Filesystem.Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                AlphaFS.Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
             }
             else
             {
-                Alphaleonis.Win32.Filesystem.File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                AlphaFS.File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
             }
 
             //Sadly we do not get a notification if the creation fails :(
