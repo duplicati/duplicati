@@ -1,24 +1,24 @@
-#region Disclaimer / License
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-
-#endregion
 
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -42,18 +42,16 @@ namespace Duplicati.Library.Backend
         private readonly string m_locationConstraint;
         private readonly string m_storageClass;
         private AmazonS3Client m_client;
+        private readonly bool m_useChunkEncoding;
 
         private readonly string m_dnsHost;
 
         public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
-            string storageClass, bool useSSL, Dictionary<string, string> options)
+            string storageClass, bool useSSL, bool disableChunkEncoding, Dictionary<string, string> options)
         {
-            var cfg = new AmazonS3Config
-            {
-                UseHttp = !useSSL,
-                ServiceURL = (useSSL ? "https://" : "http://") + servername,
-                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
-            };
+            var cfg = S3AwsClient.GetDefaultAmazonS3Config();
+            cfg.UseHttp = !useSSL;
+            cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
 
             foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
             {
@@ -82,6 +80,7 @@ namespace Duplicati.Library.Backend
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
             m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
+            m_useChunkEncoding = !disableChunkEncoding;
         }
 
         public void AddBucket(string bucketName)
@@ -94,7 +93,21 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            m_client.PutBucket(request);
+            m_client.PutBucketAsync(request).GetAwaiter().GetResult();
+        }
+
+        internal static AmazonS3Config GetDefaultAmazonS3Config()
+        {
+            return new AmazonS3Config()
+            {
+                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
+
+                // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
+                // to get the region endpoint.  The use of ARNs (Amazon Resource Names) doesn't appear to be
+                // critical for our usages.
+                // See: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
+                UseArnRegion = false,
+            };
         }
 
         public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
@@ -105,17 +118,11 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
+            using (GetObjectResponse objectGetResponse = m_client.GetObjectAsync(objectGetRequest).GetAwaiter().GetResult())
             using (System.IO.Stream s = objectGetResponse.ResponseStream)
             {
-                try
-                {
-                    s.ReadTimeout = (int) TimeSpan.FromMinutes(1).TotalMilliseconds;
-                }
-                catch
-                {
-                    // We don't care about this timeout
-                }
+                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
+                catch { }
 
                 Utility.Utility.CopyStream(s, target);
             }
@@ -133,7 +140,8 @@ namespace Duplicati.Library.Backend
             {
                 BucketName = bucketName,
                 Key = keyName,
-                InputStream = source
+                InputStream = source,
+                UseChunkEncoding = m_useChunkEncoding
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
@@ -161,7 +169,7 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            m_client.DeleteObject(objectDeleteRequest);
+            m_client.DeleteObjectAsync(objectDeleteRequest).GetAwaiter().GetResult();
         }
 
         public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -189,7 +197,7 @@ namespace Duplicati.Library.Backend
                 ListObjectsResponse listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjects(listRequest);
+                    listResponse = m_client.ListObjectsAsync(listRequest).GetAwaiter().GetResult();
                 }
                 catch (AmazonS3Exception e)
                 {
@@ -227,7 +235,7 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            m_client.CopyObject(copyObjectRequest);
+            m_client.CopyObjectAsync(copyObjectRequest).GetAwaiter().GetResult();
 
             DeleteObject(bucketName, source);
         }

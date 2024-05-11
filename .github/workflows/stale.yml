@@ -1,0 +1,25 @@
+name: Close inactive issues
+on:
+  schedule:
+    - cron: "30 1 * * *"
+
+jobs:
+  close-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/stale@v8
+        with:
+          days-before-issue-stale: 15
+          days-before-issue-close: 15
+          stale-issue-label: "stale"
+          stale-issue-message: "This issue is stale because it has been open for 15 days with no activity."
+          close-issue-message: "This issue was closed because it has been inactive for 15 days since being marked as stale."
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          exempt-all-assignees: true
+          only-labels: "pending user feedback"
+          exempt-issue-labels: "bug,enhancement,good first issue,backend enhancement,backend issue,backup corruption,bounty,bugreport attached,core logic,docker,filters,help wanted,linux,localization,MacOS,mono,performance issue,reproduced,server side,ssl/tls issue,Synology,tests,translation,UI,windows"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+

@@ -54,11 +54,18 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
 
         combined.unshift($scope.Command);
 
-        for(n in opts) {
-            if (opts[n] == null)
+        for (n in opts) {
+            var value = opts[n];
+            if (n == 'include' || n == 'exclude') {
+                // Handle filters that appear multiple times
+                for (var i = 0; i < value.length; ++i) {
+                    combined.push('--' + n + '=' + value[i]);
+                }
+            } else if (value == null) {
                 combined.push(n);
-            else
-                combined.push(n + '=' + opts[n]);
+            } else {
+                combined.push(n + '=' + value);
+            }
         }
 
         options = {
@@ -163,9 +170,7 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
                 $scope.Command = 'backup';
             },
             function(resp) {
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                var message = AppService.responseErrorMessage(resp);
 
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
             }

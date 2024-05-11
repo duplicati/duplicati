@@ -18,8 +18,8 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         failedConnectionAttempts: 0,
         lastPgEvent: null,
         updaterState: 'Waiting',
+        updateDownloadLink: null,
         updatedVersion: null,
-        updateReady: false,
         updateDownloadProgress: 0,
         proposedSchedule: [],
         schedulerQueueIds: []
@@ -218,7 +218,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
                     notifyIfChanged(response.data, 'ProgramState', 'programState') |
                     notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
                     notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
-                    notifyIfChanged(response.data, 'UpdateReady', 'updateReady') |
+                    notifyIfChanged(response.data, 'UpdateDownloadLink', 'updateDownloadLink') |
                     notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion')|
                     notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
 
@@ -267,13 +267,17 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
                 var oldxsfrstate = state.xsfrerror;
                 state.failedConnectionAttempts++;
-                state.xsfrerror = response.statusText.toLowerCase().indexOf('xsrf') >= 0;
+                var errorMessage = AppService.responseErrorMessage(response);
+                state.xsfrerror = errorMessage.toLowerCase().indexOf('xsrf') >= 0;
 
                 // First failure, we ignore
                 if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
 
                     // Try again
                     longpoll(true);
+                } else if (response.status == 401) {
+                    // Change state to connected to hide the connecting message, which is on top of the login message from the AppService
+                    state.connectionState = 'connected';
                 } else {
 
                     state.connectionState = 'disconnected';

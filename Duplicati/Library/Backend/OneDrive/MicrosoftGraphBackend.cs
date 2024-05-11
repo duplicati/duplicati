@@ -1,4 +1,24 @@
-﻿using Duplicati.Library.Backend.MicrosoftGraph;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
@@ -73,12 +93,13 @@ namespace Duplicati.Library.Backend
         private const int UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE = 320 * 1024;
 
         /// <summary>
-        /// Whether to use the HttpClient class for HTTP requests.
-        /// Default is false when running under Mono (as it seems it might be causing a memory leak in some environments / versions)
-        /// but true in other cases (where these memory leaks haven't been reproduced).
+        /// Whether to use the HttpClient class for HTTP requests as default.
         /// </summary>
-        private static readonly bool USE_HTTP_CLIENT_DEFAULT = Utility.Utility.IsMono ? false : true;
+        private static readonly bool USE_HTTP_CLIENT_DEFAULT = true;
 
+        /// <summary>
+        /// Cached copy of the PATH method
+        /// </summary>
         private static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
 
         /// <summary>
@@ -183,8 +204,8 @@ namespace Duplicati.Library.Backend
                 return this.DescriptionTemplate(
                     "Microsoft Service Agreement",
                     SERVICES_AGREEMENT,
-                    "Microsoft Online Privacy Statement", 
-                    PRIVACY_STATEMENT); 
+                    "Microsoft Online Privacy Statement",
+                    PRIVACY_STATEMENT);
             }
         }
 
@@ -534,7 +555,7 @@ namespace Duplicati.Library.Backend
                                                         cancelToken).ConfigureAwait(false);
                                                 }
                                             }
-                                            
+
                                             // Error handling based on recommendations here:
                                             // https://docs.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession#best-practices
                                             if (attempt >= retryCount - 1)
@@ -921,7 +942,7 @@ namespace Duplicati.Library.Backend
                 return this.ParseResponse<T>(response);
             }
         }
-        
+
         private IEnumerable<T> Enumerate<T>(string url)
         {
             string nextUrl = url;
