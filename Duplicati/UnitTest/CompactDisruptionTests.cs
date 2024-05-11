@@ -83,6 +83,7 @@ namespace Duplicati.UnitTest
             }
 
             // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
             target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             // Fail the compact after the first dblock put is completed
             bool firstPutCompleted = false;

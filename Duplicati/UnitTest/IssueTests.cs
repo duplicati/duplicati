@@ -234,7 +234,7 @@ namespace Duplicati.UnitTest
                 block1[i] = 2;
             }
 
-            HashAlgorithm blockhasher = Library.Utility.HashAlgorithmHelper.Create(new Options(testopts).BlockHashAlgorithm);
+            HashAlgorithm blockhasher = Library.Utility.HashFactory.CreateHasher(new Options(testopts).BlockHashAlgorithm);
 
             var hash1 = blockhasher.ComputeHash(block1, 0, block1.Length);
             var hash2 = blockhasher.ComputeHash(block2, 0, block2.Length);

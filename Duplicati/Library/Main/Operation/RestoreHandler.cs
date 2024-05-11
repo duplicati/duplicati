@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +26,8 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
+using System.Security.Cryptography;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -160,8 +164,8 @@ namespace Duplicati.Library.Main.Operation
             var blocksize = options.Blocksize;
             var updateCounter = 0L;
             var fullblockverification = options.FullBlockVerification;
-            var blockhasher = fullblockverification ? Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm) : null;
-
+            
+            using(var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             using (var blockmarker = database.CreateBlockMarker())
             using(var volumekeeper = database.GetMissingBlockData(blocks, options.Blocksize))
             {
@@ -198,7 +202,6 @@ namespace Duplicati.Library.Main.Operation
                                         var valid = !fullblockverification;
                                         if (!valid)
                                         {
-                                            blockhasher.Initialize();
                                             var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
                                             if (targetblock.Key == key)
                                                 valid = true;
@@ -317,18 +320,6 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyParameters(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
-                
-                var blockhasher = Library.Utility.HashAlgorithmHelper.Create(m_options.BlockHashAlgorithm);
-                var filehasher = Library.Utility.HashAlgorithmHelper.Create(m_options.FileHashAlgorithm);
-                if (blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                if (!blockhasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-
-                if (filehasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-                if (!filehasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(m_options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
 
                 if (!m_options.NoBackendverification)
                 {
@@ -348,11 +339,14 @@ namespace Duplicati.Library.Main.Operation
                 
                 //If we are patching an existing target folder, do not touch stuff that is already updated
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForExistingFiles);
+                using(var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                using(var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
                 using(new Logging.Timer(LOGTAG, "ScanForExistingTargetBlocks", "ScanForExistingTargetBlocks"))
                     ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, result);
 
                 //Look for existing blocks in the original source files only
-                using(new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
+                using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
                     if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
                     {
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
@@ -369,7 +363,8 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.PatchWithLocalBlocks)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
-                    using(new Logging.Timer(LOGTAG, "PatchWithLocalBlocks", "PatchWithLocalBlocks"))
+                    using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                    using (new Logging.Timer(LOGTAG, "PatchWithLocalBlocks", "PatchWithLocalBlocks"))
                         ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result, metadatastorage);
                 }
 
@@ -443,9 +438,6 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.SkipMetadata)
                     ApplyStoredMetadata(m_options, metadatastorage);
                 
-                // Reset the filehasher if it was used to verify existing files
-                filehasher.Initialize();
-                    
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     return;
                 
@@ -454,7 +446,8 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.PerformRestoredFileVerification)
                 {
                     // After all blocks in the files are restored, verify the file hash
-                    using(new Logging.Timer(LOGTAG, "RestoreVerification", "RestoreVerification"))
+                    using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
+                    using (new Logging.Timer(LOGTAG, "RestoreVerification", "RestoreVerification"))
                         foreach(var file in database.GetFilesToRestore(true))
                         {
                             try

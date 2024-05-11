@@ -1,3 +1,23 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,14 +34,13 @@ namespace Duplicati.UnitTest
         private string originalCurrentDirectory;
 
         [SetUp]
-        public override void SetUp()
+        public void SetUp()
         {
-            base.SetUp();
             this.originalCurrentDirectory = Directory.GetCurrentDirectory();
         }
 
         [TearDown]
-        public override void TearDown()
+        public void TearDown()
         {
             // Since the RecoveryTool changes the current directory, we will reset it so that
             // the teardown methods do not complain about the paths being used by another process.
@@ -29,8 +48,6 @@ namespace Duplicati.UnitTest
             {
                 Directory.SetCurrentDirectory(this.originalCurrentDirectory);
             }
-
-            base.TearDown();
         }
 
         [Test]
@@ -73,17 +90,17 @@ namespace Duplicati.UnitTest
             // Download the backend files.
             string downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
             Directory.CreateDirectory(downloadFolder);
-            int status = CommandLine.RecoveryTool.Program.RealMain(new[] {"download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}"});
+            int status = CommandLine.RecoveryTool.Program.Main(new[] {"download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}"});
             Assert.AreEqual(0, status);
 
             // Create the index.
-            status = CommandLine.RecoveryTool.Program.RealMain(new[] {"index", $"{downloadFolder}", $"--build-index-with-files={buildIndexWithFiles}"});
+            status = CommandLine.RecoveryTool.Program.Main(new[] {"index", $"{downloadFolder}", $"--build-index-with-files={buildIndexWithFiles}"});
             Assert.AreEqual(0, status);
 
             // Restore to a different folder.
             string restoreFolder = Path.Combine(this.RESTOREFOLDER, "restoredFiles");
             Directory.CreateDirectory(restoreFolder);
-            status = CommandLine.RecoveryTool.Program.RealMain(new[] {"restore", $"{downloadFolder}", $"--targetpath={restoreFolder}"});
+            status = CommandLine.RecoveryTool.Program.Main(new[] {"restore", $"{downloadFolder}", $"--targetpath={restoreFolder}"});
             Assert.AreEqual(0, status);
 
             // Since this.DATAFOLDER is a folder, Path.GetFileName will return the name of the

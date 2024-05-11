@@ -1,24 +1,30 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -31,8 +37,6 @@ namespace Duplicati.Library.Main.Operation.Common
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendHandler>();
-
-        public const string VOLUME_HASH = "SHA256";
 
         /// <summary>
         /// Data storage for an ongoing backend operation
@@ -111,7 +115,7 @@ namespace Duplicati.Library.Main.Operation.Common
             public static string CalculateFileHash(string filename)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                using (var hasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(VOLUME_HASH))
+                using (var hasher = VolumeHashFactory.CreateHasher())
                     return Convert.ToBase64String(hasher.ComputeHash(fs));
             }
 
