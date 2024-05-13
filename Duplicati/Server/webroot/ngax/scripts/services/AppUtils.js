@@ -1,4 +1,4 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogService, gettextCatalog) {
+backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppService, DialogService, gettextCatalog) {
 
     var apputils = this;
 
@@ -214,6 +214,17 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         $rootScope.$broadcast('apputillookupschanged');
     };
 
+    apputils.filterGroupMap = null;
+    apputils.loadFilterGroups = function (reload) {
+        if (reload || apputils.filterGroupMap === null) {
+            AppService.get('/systeminfo/filtergroups').then(function (data) {
+                apputils.filterGroupMap = angular.copy(data.data.FilterGroups);
+
+                $rootScope.$broadcast('apputillookupschanged');
+            }, apputils.connectionError);
+        }
+    }
+
     reloadTexts();
     $rootScope.$on('gettextLanguageChanged', reloadTexts);
 
@@ -228,14 +239,27 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     };
 
 
-    this.splitSizeString = function(val) {
+    this.splitSizeString = function (val) {
         var m = (/(\d*)(\w*)/mg).exec(val);
         var mul = null;
         if (!m)
             return [parseInt(val), null];
         else
             return [parseInt(m[1]), m[2]];
-    }
+    };
+
+    this.parseSizeString = function (val) {
+        if (val == null) {
+            return null;
+        }
+        var split = this.splitSizeString(val);
+        var formatSizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var idx = formatSizes.indexOf((split[1]||'').toUpperCase());
+        if (idx == -1) {
+            idx = 0;
+        }
+        return split[0] * Math.pow(1024, idx);
+    };
 
 
     this.toDisplayDateAndTime = function(dt) {
@@ -631,6 +655,34 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         return pre + body + suf;
     };
 
+    this.filterToRegexpStr = function (filter) {
+        var firstChar = filter.substr(0, 1);
+        var lastChar = filter.substr(filter.length - 1, 1);
+        var isFilterGroup = firstChar == '{' && lastChar == '}';
+        if (isFilterGroup && this.filterGroupMap !== null) {
+            // Replace filter groups with filter strings
+            var filterGroups = filter.substr(1,filter.length - 2).split(',');
+            var filterStrings = [];
+            for (var i = 0; i < filterGroups.length; ++i) {
+                filterStrings = filterStrings.concat(this.filterGroupMap[filterGroups[i].trim()] || []);
+            }
+
+            filter = filterStrings.map(function (s) {
+                return '(?:' + apputils.filterToRegexpStr(s) + ')'
+            }).join('|');
+
+        } else {
+            var rx = firstChar == '[' && lastChar == ']';
+            if (rx)
+                filter = filter.substr(1, filter.length - 2);
+            else {
+                filter = this.globToRegexp(filter);
+            }
+        }
+
+        return filter;
+    };
+
     this.filterListToRegexps = function(filters, caseSensitive) {
         var res = [];
 
@@ -642,14 +694,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
             var flag = f.substr(0, 1);
             var filter = f.substr(1);
-            var rx = filter.substr(0, 1) == '[' && filter.substr(filter.length - 1, 1) == ']';
-            if (rx)
-                filter = filter.substr(1, filter.length - 2);
-            else
-                filter = this.globToRegexp(filter);
 
             try {
-                res.push([flag == '+', new RegExp(filter, caseSensitive ? 'g' : 'gi')]);
+                var regexp = this.filterToRegexpStr(filter);
+                res.push([flag == '+', new RegExp(regexp, caseSensitive ? 'g' : 'gi')]);
             } catch (e) {
             }
         }

@@ -43,9 +43,21 @@ namespace Duplicati.Server.Serializable
         /// </summary>
         public bool hidden { get; set; }
         /// <summary>
+        /// True if the element has the system file attribute
+        /// </summary>
+        public bool systemFile { get; set; }
+        /// <summary>
+        /// True if the element is marked as temporary
+        /// </summary>
+        public bool temporary { get; set; }
+        /// <summary>
         /// True if the element is a symlink
         /// </summary>
         public bool symlink { get; set; }
+        /// <summary>
+        /// Size of the file. -1 if directory or inaccessible
+        /// </summary>
+        public long fileSize { get; set; }
 
         /// <summary>
         /// Constructs a new TreeNode

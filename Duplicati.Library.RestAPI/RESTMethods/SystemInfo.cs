@@ -31,7 +31,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
     {
         public string Description { get { return "Gets various system properties"; } }
         public IEnumerable<KeyValuePair<string, Type>> Types
-        { 
+        {
             get
             {
                 return new KeyValuePair<string, Type>[] {
@@ -42,7 +42,18 @@ namespace Duplicati.Server.WebServer.RESTMethods
 
         public void GET(string key, RequestInfo info)
         {
-            info.BodyWriter.OutputOK(SystemData(info));            
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                info.BodyWriter.OutputOK(SystemData(info));
+            }
+            else if (key.Equals("filtergroups", StringComparison.OrdinalIgnoreCase))
+            {
+                info.BodyWriter.OutputOK(FilterGroups());
+            }
+            else
+            {
+                info.OutputError(code: System.Net.HttpStatusCode.NotFound, reason: "Not found");
+            }
         }
 
         private static object SystemData(RequestInfo info)
@@ -93,16 +104,21 @@ namespace Duplicati.Server.WebServer.RESTMethods
                     EnglishName = browserlanguage.EnglishName,
                     DisplayName = browserlanguage.NativeName
                 },
-                SupportedLocales = 
+                SupportedLocales =
                     Library.Localization.LocalizationService.SupportedCultures
-                            .Select(x => new { 
-                                Code = x, 
+                            .Select(x => new {
+                                Code = x,
                                 EnglishName = new System.Globalization.CultureInfo(x).EnglishName,
                                 DisplayName = new System.Globalization.CultureInfo(x).NativeName
-                                }
+                            }
                             ),
                 BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage)
             };
+        }
+
+        private static object FilterGroups()
+        {
+            return new { FilterGroups = Library.Utility.FilterGroups.GetFilterStringMap() };
         }
     }
 }
