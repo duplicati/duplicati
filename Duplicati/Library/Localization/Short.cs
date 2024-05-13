@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Threading;
 
 namespace Duplicati.Library.Localization.Short
 {
@@ -31,15 +32,10 @@ namespace Duplicati.Library.Localization.Short
         /// <summary>
         /// The instance for translation
         /// </summary>
-        private static ILocalizationService LS = LocalizationService.Current;
-
-        /// <summary>
-        /// Sets the culture
-        /// </summary>
-        /// <param name="ci">CultureInfo</param>
-        public static void setCulture(System.Globalization.CultureInfo ci)
+        private static ILocalizationService LS
         {
-            LS = LocalizationService.Get(ci);
+            // Get up-to-date service (may be changed by temporary contexts)
+            get => LocalizationService.Current;
         }
 
         /// <summary>
@@ -97,7 +93,7 @@ namespace Duplicati.Library.Localization.Short
         public static string L(string message, params object[] args)
         {
             return LS.Localize(message, args);
-        }    
+        }
     }
 }
 

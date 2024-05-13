@@ -59,7 +59,6 @@ namespace Duplicati.Library.Localization
             if (ci == null)
                 return null;
 
-            LC.setCulture(ci);
             return new LocalizationContext(ci);
         }
 
@@ -94,15 +93,15 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// Gets a localization provider with the current language
         /// </summary>
-        public static ILocalizationService Current 
-        { 
-            get 
+        public static ILocalizationService Current
+        {
+            get
             {
                 var lc = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
                 if (!string.IsNullOrWhiteSpace(lc))
                     return Get(new CultureInfo(lc));
-                return Get(CultureInfo.CurrentCulture); 
-            } 
+                return Get(CultureInfo.CurrentCulture);
+            }
         }
 
         /// <summary>
