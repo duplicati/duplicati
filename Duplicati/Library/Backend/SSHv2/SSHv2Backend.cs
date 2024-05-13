@@ -59,28 +59,6 @@ namespace Duplicati.Library.Backend
 
         private SftpClient m_con;
 
-        private static readonly bool supportsECDSA;
-
-        static SSHv2()
-        {
-            // SSH.NET relies on the System.Security.Cryptography.ECDsaCng class for
-            // ECDSA algorithms, which is not implemented in Mono (as of 6.12.0.144).
-            // This prevents clients from connecting if one of the ECDSA algorithms is
-            // chosen as the host key algorithm.  In this case, we will prevent the
-            // client from advertising support for ECDSA algorithms.
-            //
-            // See https://github.com/mono/mono/blob/mono-6.12.0.144/mcs/class/referencesource/System.Core/System/Security/Cryptography/ECDsaCng.cs.
-            try
-            {
-                ECDsaCng unused = new ECDsaCng();
-                SSHv2.supportsECDSA = true;
-            }
-            catch
-            {
-                SSHv2.supportsECDSA = false;
-            }
-        }
-
         public SSHv2()
         {
         }
@@ -358,15 +336,6 @@ namespace Duplicati.Library.Backend
 
         private void TryConnect(SftpClient client)
         {
-            if (!SSHv2.supportsECDSA)
-            {
-                List<string> ecdsaKeys = client.ConnectionInfo.HostKeyAlgorithms.Keys.Where(x => x.StartsWith("ecdsa")).ToList();
-                foreach (string key in ecdsaKeys)
-                {
-                    client.ConnectionInfo.HostKeyAlgorithms.Remove(key);
-                }
-            }
-
             client.Connect();
         }
 
@@ -401,7 +370,8 @@ namespace Duplicati.Library.Backend
             {
                 if (ls.Name.ToString() == "." || ls.Name.ToString() == "..") continue;
                 yield return new FileEntry(ls.Name, ls.Length,
-                    ls.LastAccessTime, ls.LastWriteTime) {IsFolder = ls.Attributes.IsDirectory};
+                    ls.LastAccessTime, ls.LastWriteTime)
+                { IsFolder = ls.Attributes.IsDirectory };
             }
         }
 
@@ -445,7 +415,7 @@ namespace Duplicati.Library.Backend
 
         public string[] DNSName
         {
-            get { return new[] {m_server}; }
+            get { return new[] { m_server }; }
         }
     }
 }
