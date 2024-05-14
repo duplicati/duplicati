@@ -77,7 +77,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,
                 MachineName = System.Environment.MachineName,
                 PackageTypeId = Duplicati.Library.AutoUpdater.UpdaterManager.PackageTypeId,
-                UserName = System.Environment.UserName,
+                UserName = OperatingSystem.IsWindows() ? System.Security.Principal.WindowsIdentity.GetCurrent().Name : System.Environment.UserName,
                 NewLine = System.Environment.NewLine,
                 CLRVersion = System.Environment.Version.ToString(),
                 CLROSInfo = new
@@ -106,7 +106,8 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 },
                 SupportedLocales =
                     Library.Localization.LocalizationService.SupportedCultures
-                            .Select(x => new {
+                            .Select(x => new
+                            {
                                 Code = x,
                                 EnglishName = new System.Globalization.CultureInfo(x).EnglishName,
                                 DisplayName = new System.Globalization.CultureInfo(x).NativeName
