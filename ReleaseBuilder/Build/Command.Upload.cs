@@ -55,9 +55,11 @@ public static partial class Command
         /// Single entry in the installer json support file
         /// </summary>
         /// <param name="url">The remote package url</param>
+        /// <param name="filename">The filename of the package</param>
         /// <param name="md5">The MD5 hash of the file</param>
         /// <param name="sha256">The SHA256 hash of the file</param>
-        private record PackageEntry(string url, string md5, string sha256);
+        /// <param name="size">The size of the file</param>
+        private record PackageEntry(string url, string filename, string md5, string sha256, long size);
 
         /// <summary>
         /// Creates the package list in JSON format
@@ -69,8 +71,10 @@ public static partial class Command
         {
             var entries = packages.Select(f => (f.Target.PackageTargetString, Entry: new PackageEntry(
                 url: $"https://updates.duplicati.com/{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/{System.Web.HttpUtility.UrlEncode(Path.GetFileName(f.CreatedFile))}",
+                filename: Path.GetFileName(f.CreatedFile),
                 md5: CalculateHash(f.CreatedFile, "md5"),
-                sha256: CalculateHash(f.CreatedFile, "sha256")
+                sha256: CalculateHash(f.CreatedFile, "sha256"),
+                size: new FileInfo(f.CreatedFile).Length
             )))
             .ToDictionary(x => x.PackageTargetString, x => x.Entry);
 
