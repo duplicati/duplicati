@@ -81,10 +81,11 @@ namespace Duplicati.GUI.TrayIcon
             RegisterNotificationCallback();
             m_onDoubleClick = ShowStatusWindow;
             m_onNotificationClick = ShowStatusWindow;
-            Run(args, () => OnStatusUpdated(Program.Connection.Status));
+            OnStatusUpdated(Program.Connection.Status);
+            Run(args);
         }
 
-        protected abstract void Run(string[] args, Action? postInit = null);
+        protected abstract void Run(string[] args);
 
         public void InvokeExit()
         {
