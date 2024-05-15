@@ -343,8 +343,8 @@ public record ExtraSettings(
     /// <returns>The extra settings instance</returns>
     public static ExtraSettings Create()
         => new(
-            GetEnvKey("UPDATE_FROM_INCOMPATIBLE_URL", "https://duplicati.com/download?update_from=${RELEASE_VERSION}"),
-            GetEnvKey("GENERIC_UPDATE_PAGE_URL", "https://duplicati.com/download?from=${RELEASE_VERSION}"),
+            GetEnvKey("UPDATE_FROM_INCOMPATIBLE_URL", "https://duplicati.com/download-dynamic?channel=${RELEASE_CHANNEL}&update_from=${RELEASE_VERSION}"),
+            GetEnvKey("GENERIC_UPDATE_PAGE_URL", "https://duplicati.com/download-dynamic?channel=${RELEASE_CHANNEL}&from=${RELEASE_VERSION}"),
             GetEnvKey("PACKAGE_URLS", "https://updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
             GetEnvKey("UPDATER_URLS", "https://updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME};https://alt.updates.duplicati.com/${RELEASE_CHANNEL}/${FILENAME}").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         );
