@@ -728,7 +728,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['openstack-version'] || '') == '')
             delete opts['openstack-version'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,
