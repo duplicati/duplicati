@@ -31,13 +31,15 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
-using Duplicati.Server.Serialization.Interface;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.GUI.TrayIcon
 {
     public class AvaloniaRunner : TrayIconBase
     {
+        private static readonly string LOGTAG = Log.LogTagFromType<AvaloniaRunner>();
         private AvaloniaApp application;
+        private ProcessBasedActionDelay actionDelayer = new ProcessBasedActionDelay();
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
 
         public override void Init(string[] args)
@@ -48,22 +50,43 @@ namespace Duplicati.GUI.TrayIcon
         protected override void UpdateUIState(Action action)
             => RunOnUIThread(action);
 
+        internal void RunOnUIThread(Action action)
+            => actionDelayer.ExecuteAction(() =>
+            {
+                try
+                {
+                    RunOnUIThreadInternal(action);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteErrorMessage(LOGTAG, "AvaloniaRunOnUIThreadFailed", ex, "Failed to run action on UI thread");
+                    throw;
+                }
+            });
+
+        private void RunOnUIThreadInternal(Action action)
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+                action();
+            else
+                Dispatcher.UIThread.Post(action);
+        }
+
         protected override void RegisterStatusUpdateCallback()
         {
-            Program.Connection.OnStatusUpdated += delegate (IServerStatus status)
-            {
-                this.OnStatusUpdated(status);
-            };
+            Program.Connection.OnStatusUpdated += this.OnStatusUpdated;
         }
 
         #region implemented abstract members of Duplicati.GUI.TrayIcon.TrayIconBase
-        protected override void Run(string[] args, Action? postInit = null)
+        protected override void Run(string[] args)
         {
             var lifetime = new ClassicDesktopStyleApplicationLifetime()
             {
                 Args = args,
                 ShutdownMode = ShutdownMode.OnExplicitShutdown
             };
+
+            lifetime.Startup += (_, _) => CheckForAppInitialized(lifetime);
 
             var builder = AppBuilder
                 .Configure<AvaloniaApp>()
@@ -84,15 +107,59 @@ namespace Duplicati.GUI.TrayIcon
             application.SetMenu(menuItems);
             application.Configure();
 
-            // Delay postInit to allow the UI to initialize before calling updates
-            if (postInit != null)
-                Task.Delay(1000).ContinueWith(_ => postInit());
             lifetime.Start(args);
+        }
+
+        private async void CheckForAppInitialized(IClassicDesktopStyleApplicationLifetime lifetime)
+        {
+            Exception lastEx = null;
+
+            // Jump out of the UI thread, ot ensure that the check is done with posting to the UI thread,
+            // as opposed to just calling the method directly
+            await Task.Delay(100).ConfigureAwait(false);
+
+            // Wait for the app to be initialized, max 5 seconds, after the app has announced it is initialized
+            var tcs = new TaskCompletionSource<bool>();
+            for (var i = 1; i < 10; i++)
+            {
+                try
+                {
+                    // Try a no-op to see if the app is really initialized
+                    RunOnUIThreadInternal(() => tcs.TrySetResult(true));
+                    await Task.WhenAny(Task.Delay(500), tcs.Task).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    lastEx = ex;
+                }
+
+                if (tcs.Task.IsCompletedSuccessfully)
+                    break;
+
+                await Task.Delay(100 * i).ConfigureAwait(false);
+            }
+
+            if (tcs.Task.IsCompletedSuccessfully)
+            {
+                actionDelayer.SignalStart();
+            }
+            else
+            {
+                Log.WriteErrorMessage(LOGTAG, "AvaloniaInitFailed", lastEx, "Failed to initialize Avalonia app");
+                try
+                {
+                    lifetime.Shutdown();
+                }
+                catch (Exception shutdownEx)
+                {
+                    Log.WriteErrorMessage(LOGTAG, "AvaloniaShutdownFailed", shutdownEx, "Failed to shutdown Avalonia app");
+                }
+            }
         }
 
         protected override IMenuItem CreateMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
         {
-            return new AvaloniaMenuItem(text, icon, callback, subitems);
+            return new AvaloniaMenuItem(this, text, icon, callback, subitems);
         }
 
         protected override void NotifyUser(string title, string message, NotificationType type)
@@ -134,16 +201,9 @@ namespace Duplicati.GUI.TrayIcon
 
         public override void Dispose()
         {
+            actionDelayer.Dispose();
         }
         #endregion
-
-        internal static void RunOnUIThread(Action action)
-        {
-            if (Dispatcher.UIThread.CheckAccess())
-                action();
-            else
-                Dispatcher.UIThread.Post(action);
-        }
 
         internal static string GetThemePath()
         {
@@ -180,12 +240,14 @@ namespace Duplicati.GUI.TrayIcon
         public MenuIcons Icon { get; private set; }
         public bool IsDefault { get; private set; }
         private NativeMenuItem nativeMenuItem;
+        private readonly AvaloniaRunner parent;
 
-        public AvaloniaMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
+        public AvaloniaMenuItem(AvaloniaRunner parent, string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
         {
             if (subitems != null && subitems.Count > 0)
                 throw new NotImplementedException("So far not needed.");
 
+            this.parent = parent;
             this.Text = text;
             this.Callback = callback;
             this.SubItems = subitems;
@@ -198,14 +260,14 @@ namespace Duplicati.GUI.TrayIcon
         {
             this.Text = text;
             if (nativeMenuItem != null)
-                AvaloniaRunner.RunOnUIThread(() => nativeMenuItem.Header = text);
+                parent.RunOnUIThread(() => nativeMenuItem.Header = text);
         }
 
         public void SetIcon(MenuIcons icon)
         {
             this.Icon = icon;
             if (nativeMenuItem != null)
-                AvaloniaRunner.RunOnUIThread(() => this.UpdateIcon());
+                parent.RunOnUIThread(() => this.UpdateIcon());
         }
 
         /// <summary>
@@ -228,7 +290,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             this.Enabled = isEnabled;
             if (nativeMenuItem != null)
-                AvaloniaRunner.RunOnUIThread(() => nativeMenuItem.IsEnabled = this.Enabled);
+                parent.RunOnUIThread(() => nativeMenuItem.IsEnabled = this.Enabled);
         }
 
         public void SetDefault(bool value)
