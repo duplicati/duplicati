@@ -341,8 +341,20 @@
       <Link>licenses\AngularGettext\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-	<Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
+    <Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
       <Link>licenses\SharpCompress\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\licensedata.json">
+      <Link>licenses\aliyun-oss-csharp-sdk\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\LICENSE.txt">
+      <Link>licenses\aliyun-oss-csharp-sdk\LICENSE.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\download.txt">
+      <Link>licenses\aliyun-oss-csharp-sdk\README.md</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
