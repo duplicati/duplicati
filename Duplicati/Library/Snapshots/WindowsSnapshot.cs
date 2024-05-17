@@ -38,10 +38,10 @@ namespace Duplicati.Library.Snapshots
     /// </summary>
     public sealed class WindowsSnapshot : SnapshotBase
     {
-		/// <summary>
+        /// <summary>
         /// The tag used for logging messages
         /// </summary>
-		public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
+        public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
 
         /// <summary>
         /// The main reference to the backup controller
@@ -93,9 +93,9 @@ namespace Duplicati.Library.Snapshots
                 {
                     Dispose();
                 }
-				catch(Exception ex2)
+                catch (Exception ex2)
                 {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex2, "Failed during VSS error cleanup");
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex2, "Failed during VSS error cleanup");
                 }
 
                 throw;
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Snapshots
         {
             string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
-            tmp = SystemIO.IO_WIN.GetDirectories(spath); 
+            tmp = SystemIO.IO_WIN.GetDirectories(spath);
             var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.AddExtendedDevicePathPrefix(volumePath);
@@ -266,7 +266,7 @@ namespace Duplicati.Library.Snapshots
 
             foreach (var kvp in _vssBackupComponents.SnapshotDeviceAndVolumes)
             {
-				if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
+                if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
                     return SystemIO.IO_WIN.PathCombine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
             }
 
@@ -321,7 +321,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (disposing)
             {
-                _vssBackupComponents.Dispose();
+                _vssBackupComponents?.Dispose();
             }
 
             base.Dispose(disposing);
