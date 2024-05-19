@@ -9,7 +9,7 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: actions/stale@v8
+      - uses: actions/stale@v9
         with:
           days-before-issue-stale: 15
           days-before-issue-close: 15
@@ -22,4 +22,4 @@ jobs:
           only-labels: "pending user feedback"
           exempt-issue-labels: "bug,enhancement,good first issue,backend enhancement,backend issue,backup corruption,bounty,bugreport attached,core logic,docker,filters,help wanted,linux,localization,MacOS,mono,performance issue,reproduced,server side,ssl/tls issue,Synology,tests,translation,UI,windows"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
+          operations-per-run: 60
