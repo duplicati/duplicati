@@ -399,16 +399,16 @@ namespace Duplicati.Library.Main.Operation
                                             if (volumeID < 0)
                                                 volumeID = ProbeForMatchingFilename(ref filename, restoredb);
 
-											var missing = false;                                            
+											                      var missing = false;                                            
                                             // Still broken, register a missing item
                                             if (volumeID < 0)
                                             {
                                                 var p = VolumeBase.ParseFilename(filename);
                                                 if (p == null)
                                                     throw new Exception(string.Format("Unable to parse filename: {0}", filename));
-    											Logging.Log.WriteErrorMessage(LOGTAG, "MissingFileDetected", null, "Remote file referenced as {0} by {1}, but not found in list, registering a missing remote file", filename, sf.Name);
-												missing = true;
-											    volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Temporary, tr);
+                                                Logging.Log.WriteErrorMessage(LOGTAG, "MissingFileDetected", null, "Remote file referenced as {0} by {1}, but not found in list, registering a missing remote file", filename, sf.Name);
+                                                missing = true;
+											                          volumeID = restoredb.RegisterRemoteVolume(filename, p.FileType, RemoteVolumeState.Temporary, tr);
                                             }
                                             
                                             bool anyChange = false;
@@ -555,13 +555,22 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                     }
+
+                }
+                backend.WaitForComplete(restoredb, null);
+
+                if (!m_options.RepairOnlyPaths)
+                {
+                    // All blocks are collected and added into the Block table
+                    // Find out which blocks are deleted and move them into DeletedBlock, so that compact notices these blocks are empty
+                    restoredb.CleanupDeletedBlocks(null);
                 }
 
                 backend.WaitForComplete(restoredb, null);
 
-				// In some cases we have a stale reference from an index file to a deleted block file
+                // In some cases we have a stale reference from an index file to a deleted block file
                 if (!m_options.UnittestMode)
-    				restoredb.CleanupMissingVolumes();
+    				        restoredb.CleanupMissingVolumes();
 
                 if (m_options.RepairOnlyPaths)
                 {
