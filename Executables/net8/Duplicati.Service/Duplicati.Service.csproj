@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <Description>Service controller for Duplicati</Description>
+    <AssemblyName>Duplicati.Service</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>	

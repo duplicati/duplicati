@@ -1,4 +1,4 @@
-namespace Duplicati.Server.Net8
+namespace Duplicati.CommandLine.Snapshots.Net8
 {
     // Wrapper class to keep code independent
     public static class Program
