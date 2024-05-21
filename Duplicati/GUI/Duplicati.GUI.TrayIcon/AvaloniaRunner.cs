@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Themes.Fluent;
@@ -98,9 +99,9 @@ namespace Duplicati.GUI.TrayIcon
             builder = builder.LogToTrace();
 #else
             if (Environment.GetEnvironmentVariable("DEBUG_AVALONIA") == "1")
-                builder = builder.LogToTrace();
+                Logger.Sink = new ConsoleLogSink(LogEventLevel.Information);
             else if (Environment.GetEnvironmentVariable("DEBUG_AVALONIA") == "2")
-                builder = builder.LogToTrace(Avalonia.Logging.LogEventLevel.Verbose);
+                Logger.Sink = new ConsoleLogSink(LogEventLevel.Verbose);
 #endif
 
             application = builder.Instance as AvaloniaApp;
@@ -402,4 +403,19 @@ namespace Duplicati.GUI.TrayIcon
             base.OnFrameworkInitializationCompleted();
         }
     }
+
+    internal class ConsoleLogSink(LogEventLevel minLevel) : ILogSink
+    {
+        private readonly LogEventLevel _minLevel = minLevel;
+
+        public bool IsEnabled(LogEventLevel level, string area)
+            => level >= _minLevel;
+
+        public void Log(LogEventLevel level, string area, object source, string messageTemplate)
+            => Log(level, area, source, messageTemplate, null);
+
+        public void Log(LogEventLevel level, string area, object source, string messageTemplate, params object[] propertyValues)
+            => Console.WriteLine($"Avalonia [{level}]: {source} {messageTemplate} {string.Join(" ", propertyValues)}");
+    }
+
 }
