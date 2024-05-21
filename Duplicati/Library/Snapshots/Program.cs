@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Snapshots
@@ -73,8 +74,8 @@ namespace Duplicati.Library.Snapshots
 
                 if (args.Count != 1)
                 {
-                    Console.WriteLine(@"Usage:
-Duplicati.Library.Snapshots.exe [test-folder]
+                    Console.WriteLine(@$"Usage:
+{PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.Snapshots)} [test-folder]
 
 Where <test-folder> is the folder where files will be locked/created etc");
                     return;
