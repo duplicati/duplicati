@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
     <Description>Service controller for Duplicati</Description>
-    <AssemblyName>Duplicati.Service</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>	

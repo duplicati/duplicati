@@ -3,8 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <Description>The Server Duplicati implementation</Description>
-    <AssemblyName>Duplicati.Server</AssemblyName>
+    <Description>The Duplicati Server implementation</Description>
   </PropertyGroup>
 
   <ItemGroup>	
