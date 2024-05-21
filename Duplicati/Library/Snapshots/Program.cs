@@ -21,12 +21,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Snapshots
 {
-    static class Program
+    public static class Program
     {
         private static Dictionary<string, string> ExtractOptions(List<string> args)
         {
@@ -68,7 +67,7 @@ namespace Duplicati.Library.Snapshots
             {
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = ExtractOptions(args);
-                
+
                 if (args.Count == 0)
                     args = new List<string> { System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) };
 

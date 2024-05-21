@@ -43,6 +43,8 @@ public static partial class Command
         { "Duplicati.CommandLine.BackendTool", "duplicati-backend-tool" },
         { "Duplicati.CommandLine.RecoveryTool", "duplicati-recovery-tool" },
         { "Duplicati.CommandLine.AutoUpdater", "duplicati-autoupdater" },
+        { "Duplicati.CommandLine.SharpAESCrypt", "duplicati-aescrypt" },
+        { "Duplicati.CommandLine.Snapshots", "duplicati-snapshots" },
         { "Duplicati.CommandLine.ConfigurationImporter", "duplicati-configuration-importer" },
         { "Duplicati.CommandLine", "duplicati-cli" },
         { "Duplicati.Server", "duplicati-server"},
