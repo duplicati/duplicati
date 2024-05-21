@@ -9,7 +9,7 @@
 > duplicati.commandline.exe
 > duplicati.commandline.exe help
 
-See duplicati.commandline.exe help <topic> for more information.
+See %CLI_EXE% help <topic> for more information.
   General: example, changelog
   Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
   Repair: repair, affected, list-broken-files, purge-broken-files
@@ -68,7 +68,7 @@ Restore a specific file
 # =============================================================================
 > duplicati.commandline.exe help backup
   
-Usage: backup <storage-URL> "<source-path>" [<options>]
+Usage: %CLI_EXE% backup <storage-URL> "<source-path>" [<options>]
 
   Makes a backup of <source-path> and stores it in <storage-URL>. The format for <storage-URL> is 
     protocol://username:password@hostname:port/path?backend_option1=value1&backend_option2=value2. 
@@ -97,7 +97,7 @@ Usage: backup <storage-URL> "<source-path>" [<options>]
 > duplicati.commandline.exe help find
 > duplicati.commandline.exe help list
 
-Usage: find <storage-URL> ["<filename>"] [<options>]
+Usage: %CLI_EXE% find <storage-URL> ["<filename>"] [<options>]
 
   Finds specific files in specific backups. If <filename> is specified, all occurrences of <filename> in the backup are listed. <filename> can contain * and ? as wildcards. File names in [brackets] are interpreted as regular expression. Latest backup is searched by default. If entire path is specified, all available versions of the file are listed. If no <filename> is specified, a list of all available backups is shown.
 
@@ -116,7 +116,7 @@ Usage: find <storage-URL> ["<filename>"] [<options>]
 # =============================================================================
 > duplicati.commandline.exe help restore
 
-Usage: restore <storage-URL> ["<filename>"] [<options>]
+Usage: %CLI_EXE% restore <storage-URL> ["<filename>"] [<options>]
   
   Restores <filename> to its original destination. If <filename> exists already, <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
 
@@ -134,7 +134,7 @@ Usage: restore <storage-URL> ["<filename>"] [<options>]
 # =============================================================================
 > duplicati.commandline.exe help delete
 
-Usage: delete <storage-URL> [<options>]
+Usage: %CLI_EXE% delete <storage-URL> [<options>]
   
   Marks old data deleted and removes outdated dlist files. A backup is deleted when it is older than <keep-time> or when there are more newer versions than <keep-versions>. Data is considered old, when it is not required from any existing backup anymore.
   
@@ -154,7 +154,7 @@ Usage: delete <storage-URL> [<options>]
 # =============================================================================
 > duplicati.commandline.exe help compact
 
-Usage: compact <storage-URL> [<options>]
+Usage: %CLI_EXE% compact <storage-URL> [<options>]
   
   Old data is not deleted immediately as in most cases only small parts of a dblock file are old data. When the amount of old data in a dblock file grows it might be worth to replace it. This is especially the case when the number of dblock files and thus the required storage space can be reduced. When backups are frequently made and only few files have changed, the uploaded dblock files are small. At some point it might make sense to replace a large number of small files with one large file. This is what compacting does.
   
@@ -171,7 +171,7 @@ Usage: compact <storage-URL> [<options>]
 # =============================================================================
 > duplicati.commandline.exe help compare
 
-Usage: compare <storage-URL> [<base-version>] [<compare-to>] [<options>]
+Usage: %CLI_EXE% compare <storage-URL> [<base-version>] [<compare-to>] [<options>]
 
   Compares two backups and shows differences. If no versions are given, changes are shown between the two latest backups. The versions can either be timestamps or backup version numbers. If only one version is given, the most recent backup is compared to that version.
 
@@ -187,7 +187,7 @@ Usage: compare <storage-URL> [<base-version>] [<compare-to>] [<options>]
 # =============================================================================
 > duplicati.commandline.exe help create-report
 
-Usage: create-report <storage-URL> <output-file> [<options>]
+Usage: %CLI_EXE% create-report <storage-URL> <output-file> [<options>]
 
   Analyses the backup and prepares a report with anonymous information. This report can be sent to the developers for a better analysis in case something went wrong.
 
@@ -197,7 +197,7 @@ Usage: create-report <storage-URL> <output-file> [<options>]
 # =============================================================================
 > duplicati.commandline.exe help repair
 
-Usage: repair <storage-URL> [<options>]
+Usage: %CLI_EXE% repair <storage-URL> [<options>]
   
   Tries to repair the backup. If no local db is found or the db is empty, the db is re-created with data from the storage. If the db is in place but the remote storage is corrupt, the remote storage gets repaired with local data (if available).
 
@@ -206,7 +206,7 @@ Usage: repair <storage-URL> [<options>]
 # =============================================================================
 > duplicati.commandline.exe help purge
 
-Usage: purge <storage-URL> <filenames> [<options>]
+Usage: %CLI_EXE% purge <storage-URL> <filenames> [<options>]
   
   Purges (removes) files from remote backup data. This command can either take a list of filenames or use the filters to choose which files to purge. The purge process creates new filesets on the remote destination with the purged files removed, and will start the compacting process after a purge. By default, the matching files are purged in all versions, but this can be limited by choosing one or more versions. To test what will happen, use the --dry-run flag.
 
@@ -228,11 +228,11 @@ Usage: purge <storage-URL> <filenames> [<options>]
 > duplicati.commandline.exe help list-broken-files
 > duplicati.commandline.exe help purge-broken-files
 
-Usage: list-broken-files <storage-URL> [<options>]
+Usage: %CLI_EXE% list-broken-files <storage-URL> [<options>]
   
   Checks the database for missing data that cause files not not be restoreable. Files can become unrestoreable if remote data files are defect or missing. Use the list-broken-files command to see what the purge-broken-files command will remove.
 
-Usage: purge-broken-files <storage-URL> [<options>]
+Usage: %CLI_EXE% purge-broken-files <storage-URL> [<options>]
 
   Removes all files from the database and remote storage that are no longer restoreable. Use this operation with caution, and only if you cannot recover the missing remote files, but want to continue a backup. Even with missing remote files, it may be possible to restore parts of the files that will be removed with this command.
 
@@ -244,7 +244,7 @@ Usage: purge-broken-files <storage-URL> [<options>]
 > duplicati.commandline.exe help test
 > duplicati.commandline.exe help verify
 
-Usage: test <storage-URL> <samples> [<options>]
+Usage: %CLI_EXE% test <storage-URL> <samples> [<options>]
   
   Verifies integrity of a backup. A random sample of dlist, dindex, dblock files is downloaded, decrypted and the content is checked against recorded size values and data hashes. <samples> specifies the number of samples to be tested. If "all” is specified, all files in the backup will be tested. This is a rolling check, i.e. when executed another time different samples are verified than in the first run. A sample consists of 1 dlist, 1 dindex, 1 dblock.
   
@@ -262,21 +262,21 @@ Usage: test <storage-URL> <samples> [<options>]
 > duplicati.commandline.exe help test-filters
 > duplicati.commandline.exe help test-filter
 
-Usage: test-filters <source-path> [<options>]
+Usage: %CLI_EXE% test-filters <source-path> [<options>]
   
   Scans the source files and tests against the filters specified, the console output shows which files and folders are examined and the result.
     
 # =============================================================================
 > duplicati.commandline.exe help affected
 
-Usage: affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
+Usage: %CLI_EXE% affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
   
   Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted. Notes that this command requires a local database to be present, if the database is not found automatically, you can set --dbpath to point to the database to use.
 
 # =============================================================================
 > duplicati.commandline.exe help vacuum
 
-Usage: vacuum <storage-URL> [<options>]
+Usage: %CLI_EXE% vacuum <storage-URL> [<options>]
 
   Rebuilds the local database, repacking it into a minimal amount of disk space. 
   

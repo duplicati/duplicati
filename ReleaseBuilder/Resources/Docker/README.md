@@ -1,23 +1,24 @@
 # [Duplicati](https://www.duplicati.com)
+
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
-*Amazon S3, IDrive e2, OneDrive, Google Drive, Rackspace Cloud Files, Backblaze (B2), Swift / OpenStack, WebDAV, SSH (SFTP), FTP, and more!*
+_Amazon S3, IDrive e2, OneDrive, Google Drive, Rackspace Cloud Files, Backblaze (B2), Swift / OpenStack, WebDAV, SSH (SFTP), FTP, and more!_
 
-Duplicati is licensed under the MIT license and available for Windows, OSX and Linux (.NET 4.7.1+ or Mono 4.8.0+ required).
+Duplicati is licensed under the MIT license and available for Windows, OSX and Linux (.NET 8+ required).
 
 ## Available tags
 
-  * `beta` - the most recent beta release
-  * `experimental` - the most recent experimental release
-  * `canary` - the most recent canary release
-  * `latest` - an alias for `beta`
-  * specific versions like `2.0.2.1_beta_2017-08-01`
+- `beta` - the most recent beta release
+- `experimental` - the most recent experimental release
+- `canary` - the most recent canary release
+- `latest` - an alias for `beta`
+- specific versions like `2.0.2.1_beta_2017-08-01`
 
 Images for the following OS/architecture combinations are available using Docker's multi-arch support:
 
-  * `linux/amd64`
-  * `linux/arm/v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
-  * `linux/arm64` - 64-bit ARMv8 devices like the Raspberry Pi 4 (when running a 64-bit OS)
+- `linux/amd64`
+- `linux/arm/v7` - 32-bit ARMv7 devices like the Raspberry Pi 2
+- `linux/arm64` - 64-bit ARMv8 devices like the Raspberry Pi 4 (when running a 64-bit OS)
 
 ## How to use this image
 
@@ -48,7 +49,7 @@ Run the `duplicati-cli` command to use the Duplicati command-line interface:
 
 ```console
 $ docker run --rm duplicati/duplicati duplicati-cli help
-See duplicati.commandline.exe help <topic> for more information.
+See duplicati-cli help <topic> for more information.
   General: example, changelog
 ...
 $ docker run --rm -v /home:/backup/home duplicati/duplicati duplicati-cli backup ssh://user@host /backup/home
