@@ -79,8 +79,9 @@ namespace Duplicati.Library.AutoUpdater
                 using (var rd = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(AutoUpdateSettings), name)))
                     result = rd.ReadToEnd();
             }
-            catch
+            catch (Exception ex)
             {
+                Logging.Log.WriteWarningMessage(nameof(AutoUpdateSettings), "ReadResourceStreamError", ex, "Failed to read resource {0}: {1}", name, ex.Message);
             }
 
             try
