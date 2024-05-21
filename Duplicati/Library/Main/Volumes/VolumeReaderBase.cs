@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main.Volumes
         protected readonly bool m_disposeCompression = false;
         protected ICompression m_compression;
         protected Stream m_stream;
-        
+
         private static ICompression LoadCompressor(string compressor, Stream stream, Options options)
         {
             var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, stream, Interface.ArchiveMode.Read, options.RawOptions);
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Volumes
             ReadFileset();
 
             ReadManifests(options);
-            
+
             m_disposeCompression = true;
         }
 
@@ -130,6 +130,12 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
+        /// <summary>
+        /// Updates the options with data from the manifest file, but does not overwrite existing values
+        /// </summary>
+        /// <param name="compressor">The compressor to use</param>
+        /// <param name="file">The file to read the manifest from</param>
+        /// <param name="options">The options to update</param>
         public static void UpdateOptionsFromManifest(string compressor, string file, Options options)
         {
             using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -170,13 +176,13 @@ namespace Duplicati.Library.Main.Volumes
             using (var fs = compression.OpenRead(filename))
             {
                 int s;
-				var read = 0L;
+                var read = 0L;
                 while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
                 {
                     if (s != buffer.Length)
-						throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
+                        throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
 
-					read++;
+                    read++;
                     yield return Convert.ToBase64String(buffer);
                 }
             }
