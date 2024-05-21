@@ -222,6 +222,12 @@ namespace Duplicati.Library.SQLiteHelper
 
             con.ConnectionString = "Data Source=" + path;
             con.Open();
+            if (con is System.Data.SQLite.SQLiteConnection sqlitecon)
+            {
+                sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DDL, false);
+                sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DML, false);
+            }
+
 
             // If we are non-Windows, make the file only accessible by the current user
             if (!Platform.IsClientWindows && !fileExists)
