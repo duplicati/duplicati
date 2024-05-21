@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -35,9 +36,13 @@ namespace Duplicati.CommandLine.RecoveryTool
                 Console.WriteLine("Unsupported command: {0}", args[0]);
                 Console.WriteLine();
                 return 100;
-            }   
+            }
 
-            Console.Write(new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + "." + RESOURCE_NAME)).ReadToEnd());
+            using var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Help), RESOURCE_NAME));
+            Console.Write(s.ReadToEnd()
+                .Replace("%CLI_EXE%", PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine))
+                .Replace("%RECOVERY_EXE%", PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.RecoveryTool))
+            );
 
             return 0;
         }
