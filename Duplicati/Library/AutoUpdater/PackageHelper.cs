@@ -56,7 +56,11 @@ namespace Duplicati.Library.AutoUpdater
             /// <summary>
             /// The snapshot tool
             /// </summary>
-            Snapshots
+            Snapshots,
+            /// <summary>
+            /// The configuration importer
+            /// </summary>
+            ConfigurationImporter
 
         }
 
@@ -79,6 +83,7 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.BackendTester => Platform.IsClientWindows ? "Duplicati.CommandLine.BackendTester.exe" : "duplicati-backend-tester",
                 NamedExecutable.SharpAESCrypt => Platform.IsClientWindows ? "Duplicati.CommandLine.SharpAESCrypt.exe" : "duplicati-aescrypt",
                 NamedExecutable.Snapshots => Platform.IsClientWindows ? "Duplicati.CommandLine.Snapshots.exe" : "duplicati-snapshots",
+                NamedExecutable.ConfigurationImporter => Platform.IsClientWindows ? "Duplicati.CommandLine.ConfigurationImporter.exe" : "duplicati-configuration-importer",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 
