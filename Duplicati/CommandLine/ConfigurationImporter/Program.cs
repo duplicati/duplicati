@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Server.Serializable;
 using Duplicati.Server.WebServer.RESTMethods;
 using System;
@@ -29,26 +30,32 @@ namespace Duplicati.CommandLine.ConfigurationImporter
 {
     public static class ConfigurationImporter
     {
-        private static readonly string usageString = $"Usage: {nameof(ConfigurationImporter)}.exe <configuration-file> --import-metadata=(true | false) --server-datafolder=<folder containing Duplicati-server.sqlite>";
+        private static readonly string UsageString = $"Usage: {PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.ConfigurationImporter)} <configuration-file> --import-metadata=(true | false) --server-datafolder=<folder containing Duplicati-server.sqlite>";
 
         public static int Main(string[] args)
         {
             if (args.Length != 3)
             {
-                throw new ArgumentException($"Incorrect number of input arguments.  {ConfigurationImporter.usageString}");
+                Console.WriteLine($"Incorrect number of input arguments.");
+                Console.WriteLine(UsageString);
+                return 1;
             }
 
             string configurationFile = args[0];
             Dictionary<string, string> importOptions = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args.Skip(1).ToList());
             if (!importOptions.TryGetValue("import-metadata", out string importMetadataString))
             {
-                throw new ArgumentException($"Invalid import-metadata argument.  {ConfigurationImporter.usageString}");
+                Console.WriteLine($"Missing import-metadata argument.");
+                Console.WriteLine(UsageString);
+                return 1;
             }
             bool importMetadata = Duplicati.Library.Utility.Utility.ParseBool(importMetadataString, false);
 
             if (!importOptions.TryGetValue("server-datafolder", out string serverDatafolder))
             {
-                throw new ArgumentException($"Invalid server-datafolder argument.  {ConfigurationImporter.usageString}");
+                Console.WriteLine($"Missing server-datafolder argument.");
+                Console.WriteLine(UsageString);
+                return 1;
             }
 
             Dictionary<string, string> advancedOptions = new Dictionary<string, string>

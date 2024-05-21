@@ -48,7 +48,20 @@ namespace Duplicati.Library.AutoUpdater
             /// <summary>
             /// The backend testing tool
             /// </summary>
-            BackendTester
+            BackendTester,
+            /// <summary>
+            /// The SharpAESCrypt tool
+            /// </summary>
+            SharpAESCrypt,
+            /// <summary>
+            /// The snapshot tool
+            /// </summary>
+            Snapshots,
+            /// <summary>
+            /// The configuration importer
+            /// </summary>
+            ConfigurationImporter
+
         }
 
         /// <summary>
@@ -66,8 +79,11 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.Server => Platform.IsClientWindows ? "Duplicati.Server.exe" : "duplicati-server",
                 NamedExecutable.WindowsService => "Duplicati.WindowsServer.exe",
                 NamedExecutable.BackendTool => Platform.IsClientWindows ? "Duplicati.CommandLine.BackendTool.exe" : "duplicati-backend-tool",
-                NamedExecutable.RecoveryTool => Platform.IsClientWindows ? "Duplicati.Command.RecoveryTool.exe" : "duplicati-recovery-tool",
+                NamedExecutable.RecoveryTool => Platform.IsClientWindows ? "Duplicati.CommandLine.RecoveryTool.exe" : "duplicati-recovery-tool",
                 NamedExecutable.BackendTester => Platform.IsClientWindows ? "Duplicati.CommandLine.BackendTester.exe" : "duplicati-backend-tester",
+                NamedExecutable.SharpAESCrypt => Platform.IsClientWindows ? "Duplicati.CommandLine.SharpAESCrypt.exe" : "duplicati-aescrypt",
+                NamedExecutable.Snapshots => Platform.IsClientWindows ? "Duplicati.CommandLine.Snapshots.exe" : "duplicati-snapshots",
+                NamedExecutable.ConfigurationImporter => Platform.IsClientWindows ? "Duplicati.CommandLine.ConfigurationImporter.exe" : "duplicati-configuration-importer",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 

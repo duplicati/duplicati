@@ -49,6 +49,17 @@
             "console": "internalConsole"
         },
         {
+            "name": "Launch ConfigurationImporter executable",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.ConfigurationImporter/bin/Debug/net8.0/Duplicati.CommandLine.ConfigurationImporter",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
             "name": "Launch RecoveryTool executable",
             "type": "coreclr",
             "request": "launch",
