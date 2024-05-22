@@ -20,7 +20,6 @@ using Duplicati.Library.RestAPI;
 using Duplicati.Server.WebServer.RESTMethods;
 using Duplicati.WebserverCore;
 using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Bcpg.Sig;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Reflection;
@@ -93,7 +92,7 @@ namespace Duplicati.WebserverCore
 
                         get.GET(key, info);
                     }
-                    else if (method =="PUT" && mod is IRESTMethodPUT put)
+                    else if (method == "PUT" && mod is IRESTMethodPUT put)
                         put.PUT(key, info);
                     else if (method == "POST" && mod is IRESTMethodPOST post)
                     {
@@ -124,7 +123,7 @@ namespace Duplicati.WebserverCore
                 }
                 catch (Exception ex)
                 {
-                    FIXMEGlobal.DataConnection.LogError("", string.Format("Request for {0} gave error",Request.Path), ex);
+                    FIXMEGlobal.DataConnection.LogError("", string.Format("Request for {0} gave error", Request.Path), ex);
                     Console.WriteLine(ex);
 
                     try
