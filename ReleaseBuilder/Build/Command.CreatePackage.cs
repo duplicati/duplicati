@@ -286,7 +286,6 @@ public static partial class Command
         static async Task PrepareAndReSignAppBundle(string appFolder, string installerDir, PackageTarget target, RuntimeConfig rtcfg)
         {
             await PackageSupport.InstallPackageIdentifier(Path.Combine(appFolder, "Contents", "MacOS"), target);
-            await PackageSupport.SetExecutableFlags(appFolder, rtcfg);
 
             // After injecting the package_type_id, resign
             if (rtcfg.UseCodeSignSigning)
@@ -497,36 +496,24 @@ public static partial class Command
                 Path.Combine(pkgroot, "usr", "lib", "duplicati"),
                 recursive: true);
 
-            await PackageSupport.InstallPackageIdentifier(Path.Combine(pkgroot, "usr", "lib", "duplicati"), target);
+            var pkglib = Path.Combine(pkgroot, "usr", "lib", "duplicati");
 
-            // TODO: For improved Windows support, this can be done in Docker
-            if (!OperatingSystem.IsWindows())
+            await PackageSupport.InstallPackageIdentifier(pkglib, target);
+            await PackageSupport.RenameExecutables(pkglib);
+            await PackageSupport.SetPermissionFlags(pkglib, rtcfg);
+
+            if (OperatingSystem.IsWindows())
+                throw new PlatformNotSupportedException("Creating unresolved symlinks is not supported on Windows, use WSL or Docker");
+
+            foreach (var e in ExecutableRenames.Values)
             {
-                var roflags = UnixFileMode.OtherRead | UnixFileMode.GroupRead | UnixFileMode.UserRead | UnixFileMode.UserWrite;
-                var exflags = roflags | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
-
-                // Set permissions
-                foreach (var f in Directory.EnumerateFileSystemEntries(Path.Combine(pkgroot, "usr", "lib", "duplicati"), "*", SearchOption.AllDirectories))
-                {
-                    if (File.Exists(f))
-                        File.SetUnixFileMode(f,
-                            ExecutableRenames.ContainsKey(Path.GetFileName(f))
-                                ? exflags
-                                : roflags);
-                    else if (Directory.Exists(f))
-                        File.SetUnixFileMode(f, exflags);
-                }
-
-                foreach (var e in ExecutableRenames)
-                {
-                    var exefile = Path.Combine(pkgroot, "usr", "lib", "duplicati", e.Key);
-                    if (File.Exists(exefile))
-                        await ProcessHelper.Execute([
-                            "ln", "-s",
-                            Path.Combine("..", "lib", "duplicati", e.Key),
-                            Path.Combine(pkgroot, "usr", "bin", e.Value)
-                        ]);
-                }
+                var exefile = Path.Combine(pkgroot, "usr", "lib", "duplicati", e);
+                if (File.Exists(exefile))
+                    await ProcessHelper.Execute([
+                        "ln", "-s",
+                        Path.Combine("..", "lib", "duplicati", e),
+                        Path.Combine(pkgroot, "usr", "bin", e)
+                    ]);
             }
 
             // Copy debian files
@@ -575,20 +562,24 @@ public static partial class Command
                 (
                     Path.Combine(resourcesDir, "systemd", "duplicati.service"),
                     Path.Combine(pkgroot, "lib", "systemd", "system", "duplicati.service")
-                ),
-                (
-                    Path.Combine(sharedDir, "desktop", "duplicati.desktop"),
-                    Path.Combine(pkgroot, "usr", "share", "applications", "duplicati.desktop")
                 )
             };
 
-            supportFiles.AddRange(
-                new[] { "duplicati.png", "duplicati.svg", "duplicati.xpm" }
-                    .Select(f => (
-                        Path.Combine(sharedDir, "pixmaps", f),
-                        Path.Combine(pkgroot, "usr", "share", "pixmaps", f)
-                    ))
-            );
+            if (target.Interface == InterfaceType.GUI)
+            {
+                supportFiles.Add((
+                    Path.Combine(sharedDir, "desktop", "duplicati.desktop"),
+                    Path.Combine(pkgroot, "usr", "share", "applications", "duplicati.desktop")
+                ));
+
+                supportFiles.AddRange(
+                    new[] { "duplicati.png", "duplicati.svg", "duplicati.xpm" }
+                        .Select(f => (
+                            Path.Combine(sharedDir, "pixmaps", f),
+                            Path.Combine(pkgroot, "usr", "share", "pixmaps", f)
+                        ))
+                );
+            }
 
             foreach (var f in supportFiles)
             {
@@ -652,8 +643,18 @@ public static partial class Command
 
         var tarsrc = Path.Combine(tmpbuild, $"duplicati-{rtcfg.ReleaseInfo.Version}");
         EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), tarsrc, recursive: true);
+
         await PackageSupport.InstallPackageIdentifier(tarsrc, target);
-        await PackageSupport.SetExecutableFlags(tarsrc, rtcfg);
+        await PackageSupport.RenameExecutables(tarsrc);
+        await PackageSupport.SetPermissionFlags(tarsrc, rtcfg);
+
+        var binaries = ExecutableRenames.Values.Where(x => File.Exists(Path.Combine(tarsrc, x))).ToList();
+
+        var executables =
+            binaries
+            .Concat(Directory.GetFiles(tarsrc, "*.sh", SearchOption.AllDirectories).Select(x => Path.GetRelativePath(tarsrc, x)))
+            .Concat(Directory.GetFiles(tarsrc, "*.py", SearchOption.AllDirectories).Select(x => Path.GetRelativePath(tarsrc, x)))
+            .ToList();
 
         // Create the tarball
         var tarfile = Path.Combine(tmpbuild, $"duplicati-{rtcfg.ReleaseInfo.Version}.tar.bz2");
@@ -678,10 +679,6 @@ public static partial class Command
         File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati.default"), Path.Combine(sources, "duplicati.default"));
         File.Copy(Path.Combine(resourcesDir, "duplicati-install-recursive.sh"), Path.Combine(sources, "duplicati-install-recursive.sh"));
 
-        var executables = ExecutableRenames.AsEnumerable();
-        if (target.Interface == InterfaceType.Cli)
-            executables = executables.Where(x => !GUIProjects.Contains(x.Key));
-
         // Write custom script to install executable files
         File.WriteAllLines(
             Path.Combine(sources, "duplicati-install-binaries.sh"),
@@ -689,7 +686,9 @@ public static partial class Command
                 .SelectMany(line =>
                 {
                     if (line.StartsWith("REPL: "))
-                        return executables.Select(str => line.Substring("REPL: ".Length).Replace("%SOURCE%", str.Key).Replace("%TARGET%", str.Value));
+                        return executables.Select(x => line.Substring("REPL: ".Length).Replace("%SOURCE%", x).Replace("%TARGET%", x));
+                    if (line.StartsWith("SYML: "))
+                        return binaries.Select(x => line.Substring("SYML: ".Length).Replace("%SOURCE%", x).Replace("%TARGET%", x));
                     return [line];
                 })
         );
@@ -702,18 +701,27 @@ public static partial class Command
             _ => throw new Exception($"Unsupported arch: {target.Arch}")
         };
 
-        File.WriteAllText(
-            Path.Combine(sources, "duplicati.spec"),
-            File.ReadAllText(Path.Combine(resourcesDir, "duplicati.spec.template.txt"))
+        var specData = File.ReadAllText(Path.Combine(resourcesDir, "duplicati.spec.template.txt"))
                 .Replace("%BUILDDATE%", DateTime.UtcNow.ToString("yyyyMMdd"))
                 .Replace("%BUILDVERSION%", rtcfg.ReleaseInfo.Version.ToString())
                 .Replace("%BUILDTAG%", rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant())
                 .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
-                .Replace("%PROVIDES%", string.Join("\n", executables.Select(x => $"Provides:\t{x.Value}")))
+                .Replace("%PROVIDES%", string.Join("\n", executables.Select(x => $"Provides:\t{x}")))
                 .Replace("%DEPENDS%", string.Join("\n",
                     (target.Interface == InterfaceType.GUI
                         ? FedoraGUIDepends
                         : FedoraCLIDepends).Select(x => $"Requires:\t{x}")))
+                .Replace("#GUI_ONLY#", target.Interface == InterfaceType.Cli ? "# " : "");
+
+        // Remove comment markers, or remove lines
+        if (target.Interface == InterfaceType.GUI)
+            specData = specData.Replace("#GUI_ONLY#", "");
+        else
+            specData = string.Join("\n", specData.Split('\n').Where(x => !x.StartsWith("#GUI_ONLY#")));
+
+        File.WriteAllText(
+            Path.Combine(sources, "duplicati.spec"),
+            specData
         );
 
         // Install the Docker build file
@@ -801,8 +809,8 @@ public static partial class Command
 
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), tgfolder, recursive: true);
             await PackageSupport.InstallPackageIdentifier(tgfolder, target);
-            await PackageSupport.SetExecutableFlags(tgfolder, rtcfg);
-            await PackageSupport.MakeSymlinks(tgfolder);
+            await PackageSupport.RenameExecutables(tgfolder);
+            await PackageSupport.SetPermissionFlags(tgfolder, rtcfg);
         }
 
         var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString() };

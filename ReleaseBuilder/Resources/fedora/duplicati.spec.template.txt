@@ -8,6 +8,8 @@
 %global _buildversion %BUILDVERSION%
 %global _buildtag %BUILDTAG%
 
+# All lines starting with #GUI_ONLY# are removed in CLI builds
+
 Name:	%{namer}
 Version:	%{_buildversion}
 Release:	%{_buildtag}
@@ -27,13 +29,12 @@ Source1:	%{namer}-install-recursive.sh
 Source2:	%{namer}-install-binaries.sh
 Source3:	%{namer}.service
 Source4:	%{namer}.default
-Source5:	%{namer}.png
-Source6:	%{namer}.desktop
+#GUI_ONLY#Source5:	%{namer}.png
+#GUI_ONLY#Source6:	%{namer}.desktop
 
-BuildRequires:  desktop-file-utils
+#GUI_ONLY#BuildRequires:  desktop-file-utils
 BuildRequires:  systemd
 
-Requires:	desktop-file-utils
 Requires:	bash
 %DEPENDS%
 
@@ -61,7 +62,7 @@ backups for specific purposes.
 
 %install
 
-install -d %{buildroot}%{_datadir}/pixmaps/
+#GUI_ONLY#install -d %{buildroot}%{_datadir}/pixmaps/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
 install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
@@ -78,45 +79,48 @@ find . -type f -name ._\* | xargs rm -rf
 /bin/bash %{_topdir}/SOURCES/%{namer}-install-recursive.sh "." "%{buildroot}%{_exec_prefix}/lib/%{namer}/"
 
 # Move the icon in to place
-install -p  %{_topdir}/SOURCES/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
+#GUI_ONLY#install -p  %{_topdir}/SOURCES/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 
 # Fix executable permissions and install symlinks
 /bin/bash %{_topdir}/SOURCES/%{namer}-install-binaries.sh "%{buildroot}" "%{_exec_prefix}" "%{namer}"
 
-desktop-file-install %{_topdir}/SOURCES/%{namer}.desktop
+#GUI_ONLY#desktop-file-install %{_topdir}/SOURCES/%{namer}.desktop
 
 # Install the service:
 install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.service %{buildroot}%{_unitdir}
 install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.default %{buildroot}%{_sysconfdir}/sysconfig/%{namer}
 
 %post
-/bin/touch --no-create %{_datadir}/icons/hicolor || :
-%{_bindir}/gtk-update-icon-cache \
-  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
+#GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
+#GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
+#GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
 %systemd_post %{namer}.service
 
 %preun
 %systemd_preun %{namer}.service
 
 %postun
-/bin/touch --no-create %{_datadir}/icons/hicolor || :
-%{_bindir}/gtk-update-icon-cache \
-  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
+#GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
+#GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
+#GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
 %systemd_postun_with_restart %{namer}.service
 
 %posttrans
-/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
+#GUI_ONLY#/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 
 %files
 %doc changelog.txt licenses/license.txt
-%{_datadir}/*/*
+#GUI_ONLY#%{_datadir}/*/*
 %{_exec_prefix}/lib/*
 %{_exec_prefix}/bin/*
 %{_sysconfdir}/sysconfig/*
 
 
 %changelog
+* Wed May 22 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240522.git
+- Split for CLI and GUI package
+
 * Tue Apr 9 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240409.git
 - Fix package binaries installing and systemd service
 
