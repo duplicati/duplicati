@@ -261,6 +261,7 @@ public static partial class Command
 
             await ProcessHelper.Execute([
                 Program.Configuration.Commands.Wix!,
+                "--ext", "ui",
                 "--define", $"HarvestPath={sourceFiles}",
                 "--arch", target.ArchString,
                 "--output", msiFile,
