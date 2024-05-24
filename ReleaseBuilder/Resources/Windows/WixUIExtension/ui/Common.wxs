@@ -1,0 +1,22 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.txt file in this directory for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <Binary Id="WixUI_Bmp_Banner" SourceFile="Resources/InstallerSmall.bmp" />
+        <Binary Id="WixUI_Bmp_Dialog" SourceFile="Resources/InstallerLarge.bmp" />
+        <Binary Id="WixUI_Ico_Exclam" SourceFile="ui/bitmaps/exclamic.ico" />
+        <Binary Id="WixUI_Ico_Info" SourceFile="ui/bitmaps/info.ico" />
+        <Binary Id="WixUI_Bmp_New" SourceFile="ui/bitmaps/New.ico" />
+        <Binary Id="WixUI_Bmp_Up" SourceFile="ui/bitmaps/Up.ico" />
+
+        <UI Id="WixUI_Common">
+            <!-- ui text -->
+            <UIText Id="AbsentPath" />
+            <UIText Id="bytes" Value="bytes" />
+            <UIText Id="GB" Value="GB" />
+            <UIText Id="KB" Value="KB" />
+            <UIText Id="MB" Value="MB" />
+        </UI>
+    </Fragment>
+</Wix>

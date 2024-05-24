@@ -262,6 +262,7 @@ public static partial class Command
             await ProcessHelper.Execute([
                 Program.Configuration.Commands.Wix!,
                 "--ext", "ui",
+                "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
                 "--define", $"HarvestPath={sourceFiles}",
                 "--arch", target.ArchString,
                 "--output", msiFile,
