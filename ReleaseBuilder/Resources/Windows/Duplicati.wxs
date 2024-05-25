@@ -26,7 +26,7 @@
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <UIRef Id="WixUI_Minimal"/>
+    <UIRef Id="WixUI_FeatureTree"/>
 
     <Property Id="FORSERVICE" Value="false" />
 
