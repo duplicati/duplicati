@@ -31,6 +31,8 @@ Patch dialog sequence:
             <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
             <Property Id="WixUI_Mode" Value="FeatureTree" />
 
+            <DialogRef Id="BrowseDlg" />
+            <DialogRef Id="DiskCostDlg" />
             <DialogRef Id="ErrorDlg" />
             <DialogRef Id="FatalError" />
             <DialogRef Id="FilesInUse" />
