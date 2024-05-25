@@ -259,12 +259,20 @@ public static partial class Command
 
             File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles));
 
+            var msiArch = target.Arch switch
+            {
+                ArchType.x86 => "x86",
+                ArchType.x64 => "x64",
+                ArchType.Arm64 => "x64", // Using x64 MSI for ARM64
+                _ => throw new Exception($"Architeture not supported: {target.ArchString}")
+            };
+
             await ProcessHelper.Execute([
                 Program.Configuration.Commands.Wix!,
                 "--ext", "ui",
                 "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
                 "--define", $"HarvestPath={sourceFiles}",
-                "--arch", target.ArchString,
+                "--arch", msiArch,
                 "--output", msiFile,
                 Path.Combine(resourcesDir, "Shortcuts.wxs"),
                 binFiles,
