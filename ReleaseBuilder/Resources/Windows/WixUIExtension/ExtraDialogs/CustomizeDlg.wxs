@@ -6,10 +6,10 @@
         <UI>
             <Dialog Id="CustomizeDlg" Width="370" Height="270" Title="Customize [ProductName]" TrackDiskSpace="yes">
                 <!-- Note: Buttons need to go first, or it will create "Error 2834: The next pointers on the dialog BrowseDlg do not form a single loop" -->
-                <Control Id="Back" Type="PushButton" X="192" Y="243" Width="56" Height="17" Text="Back" />
                 <Control Id="Next" Type="PushButton" X="248" Y="243" Width="56" Height="17" Default="yes" Text="Next">
                     <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
                 </Control>
+                <Control Id="Back" Type="PushButton" X="192" Y="243" Width="56" Height="17" Text="Back" />
 
                 <Control Id="Tree" Type="SelectionTree" X="25" Y="85" Width="175" Height="115" Property="_BrowseProperty" Sunken="yes" TabSkip="no" Text="Tree of selections" />
                 <Control Id="Browse" Type="PushButton" X="294" Y="210" Width="66" Height="17" Text="B&amp;rowse..." HideCondition="Installed" DisableCondition="Installed">
