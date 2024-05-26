@@ -16,6 +16,7 @@
                 "debug",
                 "--git-stash-push", "false", 
                 "--targets", "win-arm64-gui.zip",
+                "--targets", "win-arm64-gui.msi",
                 "--targets", "win-x86-gui.zip",
                 "--targets", "win-x86-gui.msi",
                 "--targets", "win-x64-gui.msi",
