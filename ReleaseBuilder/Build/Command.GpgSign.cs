@@ -46,13 +46,13 @@ public static partial class Command
                             writeStdIn: (stdin) => stdin.WriteLineAsync(passphrase)
                         );
 
-                        zip.CreateEntryFromFile(outputpath, outputfile);
+                        zip.CreateEntryFromFile(outputpath, Path.GetFileName(outputfile));
                         File.Delete(outputpath);
                     }
 
                 // Add information about the signing key
                 using (var stream = zip.CreateEntry("sign-key.txt", CompressionLevel.Optimal).Open())
-                    stream.Write(System.Text.Encoding.UTF8.GetBytes($"{gpgid}\nhttps://pgp.mit.edu/pks/lookup?op=get&search={gpgid}\n"));
+                    stream.Write(System.Text.Encoding.UTF8.GetBytes($"{gpgid}\nhttps://keys.openpgp.org/search?q={gpgid}\nhttps://pgp.mit.edu/pks/lookup?op=get&search={gpgid}\n"));
             }
 
             File.Move(tmpfile, signaturefile, true);
