@@ -32,6 +32,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.GUI.TrayIcon
@@ -90,7 +91,7 @@ namespace Duplicati.GUI.TrayIcon
             lifetime.Startup += (_, _) => CheckForAppInitialized(lifetime);
 
             var builder = AppBuilder
-                .Configure<AvaloniaApp>()
+                .Configure(() => new AvaloniaApp() { Name = AutoUpdateSettings.AppName })
                 .UsePlatformDetect()
                 .With(new MacOSPlatformOptions() { ShowInDock = false })
                 .SetupWithLifetime(lifetime);
@@ -398,7 +399,7 @@ namespace Duplicati.GUI.TrayIcon
 
             // Register tray icons to be removed on application shutdown
             var icons = new Avalonia.Controls.TrayIcons { trayIcon };
-            Avalonia.Controls.TrayIcon.SetIcons(Application.Current, icons);
+            Avalonia.Controls.TrayIcon.SetIcons(this, icons);
 
             base.OnFrameworkInitializationCompleted();
         }

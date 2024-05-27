@@ -76,7 +76,7 @@ public static partial class Command
     /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libICE", "libSM", "fontconfig", "libicu"];
+    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libICE", "libSM", "fontconfig", "libicu", "desktop-file-utils"];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>
@@ -254,6 +254,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var useHostedBuildsOption = new Option<bool>(
+            name: "--use-hosted-builds",
+            description: "Create hosted builds that require .NET installed, instead of self-contained builds with no .NET dependency",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -275,7 +281,8 @@ public static partial class Command
             disableS3UploadOption,
             disableGithubUploadOption,
             disableUpdateServerReloadOption,
-            disableDiscordAnnounceOption
+            disableDiscordAnnounceOption,
+            useHostedBuildsOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -306,6 +313,7 @@ public static partial class Command
     /// <param name="DisableGithubUpload">If Github upload should be disabled</param>
     /// <param name="DisableUpdateServerReload">If the update server should not be reloaded</param>
     /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
+    /// <param name="UseHostedBuilds">If hosted builds should be used</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -327,7 +335,8 @@ public static partial class Command
         bool DisableS3Upload,
         bool DisableGithubUpload,
         bool DisableUpdateServerReload,
-        bool DisableDiscordAnnounce
+        bool DisableDiscordAnnounce,
+        bool UseHostedBuilds
     );
 
     static async Task DoBuild(CommandInput input)
@@ -369,6 +378,7 @@ public static partial class Command
         var primaryGUI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryGUIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find tray icon executable");
         var primaryCLI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryCLIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find cli executable");
         var windowsOnly = sourceProjects.Where(x => WindowsOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var guiOnlyProjects = sourceProjects.Where(x => GUIProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // Put primary at the end
         sourceProjects.Remove(primaryGUI);
@@ -466,7 +476,7 @@ public static partial class Command
         revertableFiles.AddRange(InjectVersionIntoFiles(baseDir, releaseInfo));
 
         // Perform the main compilations
-        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, GUIProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg);
+        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, guiOnlyProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds);
 
         if (input.BuildOnly)
         {

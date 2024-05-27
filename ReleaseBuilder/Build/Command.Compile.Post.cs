@@ -223,8 +223,8 @@ public static partial class Command
             );
 
             // Rename the executables, as symlinks are not supported in DMG files
-            foreach (var x in ExecutableRenames)
-                File.Move(Path.Combine(binDir, x.Key), Path.Combine(binDir, x.Value));
+            await PackageSupport.RenameExecutables(binDir);
+            await PackageSupport.SetPermissionFlags(binDir, rtcfg);
 
             // Move the licenses out of the code folder as the signing tool trips on it
             var licenseTarget = Path.Combine(tmpApp, "Contents", "Licenses");
