@@ -39,25 +39,25 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private readonly string m_backendurl;
         private readonly TestResults m_results;
-        
+
         public TestHandler(string backendurl, Options options, TestResults results)
         {
             m_options = options;
             m_backendurl = backendurl;
             m_results = results;
         }
-        
+
         public void Run(long samples)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
-                                
-            using(var db = new LocalTestDatabase(m_options.Dbpath))
-            using(var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
+
+            using (var db = new LocalTestDatabase(m_options.Dbpath))
+            using (var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
             {
                 db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyParameters(db, m_options);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
                 FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter, true, null);
 
@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation
                 db.WriteResults();
             }
         }
-        
+
         public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
         {
             var files = db.SelectTestTargets(samples, m_options).ToList();
@@ -73,10 +73,10 @@ namespace Duplicati.Library.Main.Operation
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
             m_results.OperationProgressUpdater.UpdateProgress(0);
             var progress = 0L;
-            
+
             if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
-                foreach(var vol in new AsyncDownloader(files, backend))
+                foreach (var vol in new AsyncDownloader(files, backend))
                 {
                     try
                     {
@@ -85,13 +85,13 @@ namespace Duplicati.Library.Main.Operation
                             backend.WaitForComplete(db, null);
                             m_results.EndTime = DateTime.UtcNow;
                             return;
-                        }    
+                        }
 
                         progress++;
                         m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                        using(var tf = vol.TempFile)
+                        using (var tf = vol.TempFile)
                             res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
@@ -118,7 +118,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                         }
-                        
+
                         db.UpdateVerificationCount(vol.Name);
                     }
                     catch (Exception ex)
@@ -135,7 +135,7 @@ namespace Duplicati.Library.Main.Operation
             }
             else
             {
-                foreach(var f in files)
+                foreach (var f in files)
                 {
                     try
                     {
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                             backend.GetForTesting(f.Name, f.Size, f.Hash);
-                        
+
                         db.UpdateVerificationCount(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
                     }
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.Operation
             }
             else
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "Test results", null,  "Verified {0} remote files with {1} problem(s)", m_results.VerificationsActualLength, filtered.Count());
+                Logging.Log.WriteErrorMessage(LOGTAG, "Test results", null, "Verified {0} remote files with {1} problem(s)", m_results.VerificationsActualLength, filtered.Count());
             }
         }
 
