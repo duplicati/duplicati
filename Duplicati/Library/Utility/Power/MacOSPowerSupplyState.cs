@@ -52,7 +52,7 @@ namespace Duplicati.Library.Utility.Power
                 };
 
                 var pi = System.Diagnostics.Process.Start(psi);
-                pi.WaitForExit(1000);
+                pi!.WaitForExit(1000);
                 if (pi.HasExited)
                 {
                     var pmout = pi.StandardOutput.ReadToEnd().Trim();
@@ -89,7 +89,7 @@ namespace Duplicati.Library.Utility.Power
                 };
 
                 var pi = System.Diagnostics.Process.Start(psi);
-                pi.WaitForExit(1000);
+                pi!.WaitForExit(1000);
                 if (pi.HasExited)
                 {
                     // Find:
