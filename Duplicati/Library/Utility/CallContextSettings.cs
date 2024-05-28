@@ -32,7 +32,7 @@ namespace Duplicati.Library.Utility
 {
     public static class SystemContextSettings
     {
-        private static string defaultTempPath = null;
+        private static string? defaultTempPath = null;
 
         private struct SystemSettings
         {
@@ -54,7 +54,7 @@ namespace Duplicati.Library.Utility
             }
         }
 
-        public static IDisposable StartSession(string tempdir = null, long buffersize = 0)
+        public static IDisposable StartSession(string? tempdir = null, long buffersize = 0)
         {
             if (buffersize < 1024)
                 buffersize = 64 * 1024;
@@ -142,10 +142,10 @@ namespace Duplicati.Library.Utility
         /// <param name="operationTimeout">The operation timeout.</param>
         /// <param name="readwriteTimeout">The readwrite timeout.</param>
         /// <param name="bufferRequests">If set to <c>true</c> http requests are buffered.</param>
-        public static IDisposable StartSession(TimeSpan operationTimeout = default(TimeSpan), TimeSpan readwriteTimeout = default(TimeSpan), bool bufferRequests = false, bool acceptAnyCertificate = false, string[] allowedCertificates = null)
+        public static IDisposable StartSession(TimeSpan operationTimeout = default(TimeSpan), TimeSpan readwriteTimeout = default(TimeSpan), bool bufferRequests = false, bool acceptAnyCertificate = false, string[]? allowedCertificates = null)
         {
             // Make sure we always use our own version of the callback
-            System.Net.ServicePointManager.ServerCertificateValidationCallback = ServicePointManagerCertificateCallback;
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = ServicePointManagerCertificateCallback!;
 
             var httpSettings = new HttpSettings
             {
@@ -236,7 +236,7 @@ namespace Duplicati.Library.Utility
         /// The context setting types that are used and need their private setting key
         /// to prevent overwriting each others settings.
         /// </summary>
-        private static string contextSettingsType = null;
+        private static string? contextSettingsType = null;
 
         /// <summary>
         /// Lock for protecting the dictionary
@@ -253,13 +253,13 @@ namespace Duplicati.Library.Utility
             {
                 var key = ContextID;
                 if (string.IsNullOrWhiteSpace(key))
-                    return default(T);
+                    return default(T)!;
 
 
-                if (!_settings.TryGetValue(key, out T res))
+                if (!_settings.TryGetValue(key, out T? res))
                     lock (_lock) // if not present but context id is not null, wait
                         if (!_settings.TryGetValue(key, out res))
-                            return default(T);
+                            return default(T)!;
 
                 return res;
             }
@@ -277,11 +277,11 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The disposable handle for the context.</returns>
         /// <param name="initial">The initial value.</param>
-        public static IDisposable StartContext(string settingsKey, T initial = default(T))
+        public static IDisposable StartContext(string settingsKey, T? initial = default(T))
         {
             contextSettingsType = settingsKey;
             var res = new ContextGuard();
-            Settings = initial;
+            Settings = initial!;
             return res;
         }
 
@@ -290,7 +290,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The disposable handle for the context.</returns>
         /// <param name="initial">The initial value.</param>
-        public static IDisposable StartContext(T initial = default(T))
+        public static IDisposable StartContext(T? initial = default(T))
         {
             return StartContext(typeof(T).ToString(), initial);
         }
@@ -351,7 +351,7 @@ namespace Duplicati.Library.Utility
         /// Gets the context ID for this call.
         /// </summary>
         /// <value>The context identifier.</value>
-        private static string ContextID
+        private static string? ContextID
         {
             get
             {

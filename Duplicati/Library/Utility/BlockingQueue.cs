@@ -30,7 +30,7 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class BlockingQueueAsEnumerable<T> : IEnumerable<T>
     {
-        private IEnumerator<T> m_enumerator;
+        private IEnumerator<T>? m_enumerator;
 
         public BlockingQueueAsEnumerable(BlockingQueue<T> queue)
         {
@@ -60,7 +60,7 @@ namespace Duplicati.Library.Utility
         {
             private readonly BlockingQueue<T> m_queue;
             private readonly bool m_first = true;
-            private T m_current;
+            private T? m_current;
 
             public BlockingQueueEnumerator(BlockingQueue<T> queue)
             {
@@ -91,7 +91,8 @@ namespace Duplicati.Library.Utility
             {
                 get
                 {
-                    return m_current;
+
+                    return m_current!;
                 }
             }
             #endregion
@@ -101,7 +102,7 @@ namespace Duplicati.Library.Utility
             {
                 get
                 {
-                    return m_current;
+                    return m_current!;
                 }
             }
             #endregion
@@ -217,7 +218,7 @@ namespace Duplicati.Library.Utility
                     }
 
                     if (m_completed)
-                        return default(T);
+                        return default(T)!;
 
                     m_itemsProduced.Reset();
                 }

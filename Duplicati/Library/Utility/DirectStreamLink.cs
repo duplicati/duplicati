@@ -252,7 +252,7 @@ namespace Duplicati.Library.Utility
                 if (m_readerClosed) return;
                 m_readerClosed = true;
                 m_signalBufferAvailable.Set(); // unblock potentially waiting writer
-                m_readerStream = null;
+                m_readerStream = null!;
             }
 
             if (Interlocked.Decrement(ref m_autoDisposeCounter) == 0)
@@ -266,7 +266,7 @@ namespace Duplicati.Library.Utility
                 if (m_writerClosed) return;
                 m_writerClosed = true;
                 m_signalDataAvailable.Set(); // unblock potentially waiting reader
-                m_writerStream = null;
+                m_writerStream = null!;
             }
 
             flush();
@@ -398,7 +398,7 @@ namespace Duplicati.Library.Utility
             public const int DEFAULTBUFSIZE = 1 << 14; // 16K
 
             private readonly bool m_closeInputWhenDone, m_closeOutputWhenDone;
-            private readonly Action<DataPump> m_callbackFinalizePumping = null;
+            private readonly Action<DataPump>? m_callbackFinalizePumping = null;
             private Stream m_input, m_output;
 
             private long m_count = 0;
@@ -410,7 +410,7 @@ namespace Duplicati.Library.Utility
             /// <param name="callbackFinalizePumping"> A callback to issue when pumping is done but before streams are closed. e.g. Can add data to output. </param>
             /// <param name="dontCloseInputWhenDone"> Disable auto close of input stream when pumping is done. </param>
             /// <param name="dontCloseOutputWhenDone"> Disable auto close of output stream when pumping is done. </param>
-            public DataPump(Stream input, Stream output, Action<DataPump> callbackFinalizePumping = null
+            public DataPump(Stream input, Stream output, Action<DataPump>? callbackFinalizePumping = null
                 , bool dontCloseInputWhenDone = false, bool dontCloseOutputWhenDone = false)
             {
                 this.m_input = input;
