@@ -1,26 +1,80 @@
-
-using HttpServer;
-using HttpServer.FormDecoders;
-using System.Collections.Specialized;
 using System.Net;
 using System.Text;
+using HttpServer;
 using HttpResponse = Microsoft.AspNetCore.Http.HttpResponse;
+
+namespace Duplicati.WebserverCore;
 
 class LegacyHttpResponseShim : HttpServer.IHttpResponse
 {
     HttpResponse response;
     ResponseCookies cookies = new();
-    public LegacyHttpResponseShim(HttpResponse response) { this.response = response; }
-    public Stream Body { get => response.Body; set => throw new NotImplementedException(); }
-    public string ProtocolVersion { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public bool Chunked { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public ConnectionType Connection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public Encoding Encoding { get => Encoding.UTF8; set => throw new NotImplementedException(); }
-    public int KeepAlive { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public HttpStatusCode Status { get => throw new NotImplementedException(); set => response.StatusCode = (int)value; }
-    public string Reason { get => throw new NotImplementedException(); set { /*NOP*/ } }
-    public long ContentLength { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string ContentType { get => throw new NotImplementedException(); set => response.ContentType = value; }
+    private string? _reasonPhrase;
+
+    public LegacyHttpResponseShim(HttpResponse response)
+    {
+        this.response = response;
+    }
+
+    public Stream Body
+    {
+        get => response.Body;
+        set => throw new NotImplementedException();
+    }
+
+    public string ProtocolVersion
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
+
+    public bool Chunked
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
+
+    public ConnectionType Connection
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
+
+    public Encoding Encoding
+    {
+        get => Encoding.UTF8;
+        set => throw new NotImplementedException();
+    }
+
+    public int KeepAlive
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
+
+    public HttpStatusCode Status
+    {
+        get => (HttpStatusCode)response.StatusCode;
+        set => response.StatusCode = (int)value;
+    }
+
+    public string Reason
+    {
+        get => throw new NotImplementedException();
+        set => _reasonPhrase = value;
+    }
+
+    public long ContentLength
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
+
+    public string ContentType
+    {
+        get => throw new NotImplementedException();
+        set => response.ContentType = value;
+    }
 
     public bool HeadersSent => response.HasStarted;
 
@@ -34,6 +88,7 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
         {
             response.Headers.Remove(name);
         }
+
         response.Headers.Add(name, value);
     }
 
@@ -49,10 +104,12 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
 
     public void Send()
     {
-        foreach(ResponseCookie cookie in cookies)
+        foreach (ResponseCookie cookie in cookies)
         {
-            response.Cookies.Append(cookie.Name, cookie.Value, new CookieOptions() { Expires = cookie.Expires, Path = cookie.Path, IsEssential=true }) ;
+            response.Cookies.Append(cookie.Name, cookie.Value,
+                new CookieOptions() { Expires = cookie.Expires, Path = cookie.Path, IsEssential = true });
         }
+
         response.StartAsync();
     }
 
@@ -69,5 +126,23 @@ class LegacyHttpResponseShim : HttpServer.IHttpResponse
     public void SendHeaders()
     {
         throw new NotImplementedException();
+    }
+
+    public async Task SendAsync()
+    {
+        foreach (ResponseCookie cookie in cookies)
+        {
+            response.Cookies.Append(cookie.Name, cookie.Value,
+                new CookieOptions { Expires = cookie.Expires, Path = cookie.Path, IsEssential = true });
+        }
+
+        if (_reasonPhrase is not null)
+        {
+            response.ContentType = "application/json";
+            Console.WriteLine("Reason phrase: " + _reasonPhrase);
+            await response.Body.WriteAsync(await JsonContent.Create(new { Reason = _reasonPhrase }).ReadAsByteArrayAsync());
+        }
+
+        await response.StartAsync();
     }
 }

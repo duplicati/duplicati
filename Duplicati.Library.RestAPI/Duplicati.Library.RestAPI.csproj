@@ -17,6 +17,9 @@
   </ItemGroup>
 
 	<ItemGroup>
+		<Reference Include="Duplicati.WebserverCore">
+		  <HintPath>..\Executables\net8\Duplicati.Server\bin\Debug\net8.0\Duplicati.WebserverCore.dll</HintPath>
+		</Reference>
 		<Reference Include="HttpServer">
 			<HintPath>..\thirdparty\HttpServer\HttpServer.dll</HintPath>
 		</Reference>
@@ -30,6 +33,10 @@
     <ProjectReference Include="..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
     <ProjectReference Include="..\Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
     <ProjectReference Include="..\Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="WebServer\Kestrel\" />
   </ItemGroup>
 
 </Project>

@@ -224,8 +224,19 @@ namespace Duplicati.Server.WebServer.RESTMethods
         {
             string url;
 
-            using(var sr = new System.IO.StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
-                url = sr.ReadToEnd();
+            using (var sr = new System.IO.StreamReader(info.Request.Body, System.Text.Encoding.UTF8, true))
+            {
+                try
+                {
+                    url = sr.ReadToEnd();
+                }
+                catch (InvalidOperationException)
+                {
+                    url = sr.ReadLineAsync().Result;
+                }
+            }
+            
+            Console.WriteLine(url);
 
             switch (key)
             {

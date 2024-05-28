@@ -1,4 +1,4 @@
-backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
+backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
 
     var longpolltime = 5 * 60 * 1000;
 
@@ -17,7 +17,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         connectionAttemptTimer: 0,
         failedConnectionAttempts: 0,
         lastPgEvent: null,
-        updaterState: 'Waiting',
+        updaterState: 'waiting',
         updateDownloadLink: null,
         updatedVersion: null,
         updateDownloadProgress: 0,
@@ -71,9 +71,9 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
     reloadTexts();
     $rootScope.$on('gettextLanguageChanged', reloadTexts);
 
-    this.watch = function(scope, m) {
-        scope.$on('serverstatechanged', function() {
-            $timeout(function() {
+    this.watch = function (scope, m) {
+        scope.$on('serverstatechanged', function () {
+            $timeout(function () {
                 if (m) m();
                 scope.$digest();
             });
@@ -83,26 +83,26 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         return state;
     }
 
-    this.resume = function() {
+    this.resume = function () {
         return AppService.post('/serverstate/resume');
     };
 
-    this.pause = function(duration) {
+    this.pause = function (duration) {
         return AppService.post('/serverstate/pause' + (duration == null ? '' : '?duration=' + duration));
     };
 
-    this.callWhenTaskCompletes = function(taskid, callback) {
+    this.callWhenTaskCompletes = function (taskid, callback) {
         if (waitingfortask[taskid] == null)
             waitingfortask[taskid] = [];
         waitingfortask[taskid].push(callback);
     };
 
     var lastTaskId = null;
-    $rootScope.$on('serverstatechanged.activeTask', function() {
+    $rootScope.$on('serverstatechanged.activeTask', function () {
         var currentTaskId = state.activeTask == null ? null : state.activeTask.Item1;
 
         if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null) {
-            for(var i in waitingfortask[lastTaskId])
+            for (var i in waitingfortask[lastTaskId])
                 waitingfortask[lastTaskId][i]();
             delete waitingfortask[lastTaskId];
         }
@@ -131,13 +131,13 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
             progressPollTimer = null;
 
             AppService.get('/progressstate').then(
-                function(resp) {
+                function (resp) {
                     state.lastPgEvent = resp.data;
                     progressPollInProgress = false;
                     progressPollTimer = setTimeout(startUpdateProgressPoll, progressPollWait);
                 },
 
-                function(resp) {
+                function (resp) {
                     progressPollInProgress = false;
                     progressPollTimer = setTimeout(startUpdateProgressPoll, progressPollWait);
                 }
@@ -146,7 +146,7 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
     };
 
     var longPollRetryTimer = null;
-    var countdownForForReLongPoll = function(m) {
+    var countdownForReconnect = function (m) {
         if (longPollRetryTimer != null) {
             window.clearInterval(longPollRetryTimer);
             longPollRetryTimer = null;
@@ -156,24 +156,24 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         state.connectionAttemptTimer = new Date() - retryAt;
         $rootScope.$broadcast('serverstatechanged');
 
-        longPollRetryTimer = window.setInterval(function() {
+        longPollRetryTimer = window.setInterval(function () {
             state.connectionAttemptTimer = retryAt - new Date();
             if (state.connectionAttemptTimer <= 0)
                 m();
             else {
                 $rootScope.$broadcast('serverstatechanged');
             }
-
         }, 1000);
     };
 
     var updatepausetimer = null;
+
     function pauseTimerUpdater(skipNotify) {
         var prev = state.pauseTimeRemain;
 
         state.pauseTimeRemain = Math.max(0, AppUtils.parseDate(state.estimatedPauseEnd) - new Date());
         if (state.pauseTimeRemain > 0 && updatepausetimer == null) {
-            updatepausetimer = setInterval(pauseTimerUpdater, 500);
+            updatepausetimer = setInterval(pauseTimerUpdater, 5000);
         } else if (state.pauseTimeRemain <= 0 && updatepausetimer != null) {
             clearInterval(updatepausetimer);
             updatepausetimer = null;
@@ -187,7 +187,12 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
 
     var notifyIfChanged = function (data, dataname, varname) {
         if (state[varname] != data[dataname]) {
-            state[varname] = data[dataname];
+            if (varname === 'estimatedPauseEnd') {
+                state[varname] = new Date(data[dataname]);
+            } else {
+                state[varname] = data[dataname];
+            }
+            console.log("state changed: ", "serverstatechanged." + varname)
             $rootScope.$broadcast('serverstatechanged.' + varname, state[varname]);
             return true;
         }
@@ -195,110 +200,122 @@ backupApp.service('ServerStatus', function($rootScope, $timeout, AppService, App
         return false;
     }
 
-    var longpoll = function(fastcall) {
-        if (longPollRetryTimer != null) {
-            window.clearInterval(longPollRetryTimer);
-            longPollRetryTimer = null;
+    function handleServerState(response) {
+        var oldEventId = state.lastEventId;
+        var anychanged =
+            notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
+            notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
+            notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
+            notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
+            notifyIfChanged(response.data, 'ProgramState', 'programState') |
+            notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
+            notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
+            notifyIfChanged(response.data, 'UpdateDownloadLink', 'updateDownloadLink') |
+            notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion') |
+            notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
+
+
+        if (!angular.equals(state.proposedSchedule, response.data.ProposedSchedule)) {
+            state.proposedSchedule.length = 0;
+            state.proposedSchedule.push.apply(state.proposedSchedule, response.data.ProposedSchedule);
+            $rootScope.$broadcast('serverstatechanged.proposedSchedule', state.proposedSchedule);
+            anychanged = true;
         }
 
+        if (!angular.equals(state.schedulerQueueIds, response.data.SchedulerQueueIds)) {
+            state.schedulerQueueIds.length = 0;
+            state.schedulerQueueIds.push.apply(state.schedulerQueueIds, response.data.SchedulerQueueIds);
+            $rootScope.$broadcast('serverstatechanged.schedulerQueueIds', state.schedulerQueueIds);
+            anychanged = true;
+        }
+
+        // Clear error indicators
+        state.failedConnectionAttempts = 0;
+        state.xsfrerror = false;
+
         if (state.connectionState != 'connected') {
+            state.connectionState = 'connected';
+            $rootScope.$broadcast('serverstatechanged.connectionState', state.connectionState);
+            anychanged = true;
+
+            // Reload page, server restarted
+            if (oldEventId > state.lastEventId)
+                location.reload(true);
+        }
+
+        anychanged |= pauseTimerUpdater(true);
+
+        if (anychanged)
+            $rootScope.$broadcast('serverstatechanged');
+
+        if (state.activeTask != null)
+            startUpdateProgressPoll();
+    }
+
+    function handleConnectionError(response) {
+        var oldxsfrstate = state.xsfrerror;
+        state.failedConnectionAttempts++;
+        var errorMessage = AppService.responseErrorMessage(response);
+        state.xsfrerror = errorMessage.toLowerCase().indexOf('xsrf') >= 0;
+
+        // First failure, we ignore
+        if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
+            // Try again
+            updateServerState();
+        } else if (response.status == 401) {
+            // Change state to connected to hide the connecting message, which is on top of the login message from the AppService
+            state.connectionState = 'connected';
+            // Notify
+            $rootScope.$broadcast('serverstatechanged');
+        } else {
+            state.connectionState = 'disconnected';
+
+            //If we got a new XSRF token this time, quickly retry
+            if (state.xsfrerror && !oldxsfrstate) {
+                updateServerState();
+            }
+            else {
+                // Notify
+                $rootScope.$broadcast('serverstatechanged');
+            }
+        }
+    }
+
+    var updateServerState = function () {
+        if (state.connectionState !== 'connected') {
             state.connectionState = 'connecting';
             $rootScope.$broadcast('serverstatechanged');
         }
 
-        var url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (((!fastcall) && (state.lastEventId > 0)) ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
+        const url = window.location.origin + '/api/v1/serverstate';
         AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
-            function (response) {
-                var oldEventId = state.lastEventId;
-                var anychanged =
-                    notifyIfChanged(response.data, 'LastEventID', 'lastEventId') |
-                    notifyIfChanged(response.data, 'LastDataUpdateID', 'lastDataUpdateId') |
-                    notifyIfChanged(response.data, 'LastNotificationUpdateID', 'lastNotificationUpdateId') |
-                    notifyIfChanged(response.data, 'ActiveTask', 'activeTask') |
-                    notifyIfChanged(response.data, 'ProgramState', 'programState') |
-                    notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
-                    notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
-                    notifyIfChanged(response.data, 'UpdateDownloadLink', 'updateDownloadLink') |
-                    notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion')|
-                    notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
-
-
-                if (!angular.equals(state.proposedSchedule, response.data.ProposedSchedule)) {
-                    state.proposedSchedule.length = 0;
-                    state.proposedSchedule.push.apply(state.proposedSchedule, response.data.ProposedSchedule);
-                    $rootScope.$broadcast('serverstatechanged.proposedSchedule', state.proposedSchedule);
-                    anychanged = true;
-                }
-
-                if (!angular.equals(state.schedulerQueueIds, response.data.SchedulerQueueIds)) {
-                    state.schedulerQueueIds.length = 0;
-                    state.schedulerQueueIds.push.apply(state.schedulerQueueIds, response.data.SchedulerQueueIds);
-                    $rootScope.$broadcast('serverstatechanged.schedulerQueueIds', state.schedulerQueueIds);
-                    anychanged = true;
-                }
-
-                // Clear error indicators
-                state.failedConnectionAttempts = 0;
-                state.xsfrerror = false;
-
-                if (state.connectionState != 'connected') {
-                    state.connectionState = 'connected';
-                    $rootScope.$broadcast('serverstatechanged.connectionState', state.connectionState);
-                    anychanged = true;
-
-                    // Reload page, server restarted
-                    if (oldEventId > state.lastEventId)
-                        location.reload(true);
-                }
-
-                anychanged |= pauseTimerUpdater(true);
-
-                if (anychanged)
-                    $rootScope.$broadcast('serverstatechanged');
-
-                if (state.activeTask != null)
-                    startUpdateProgressPoll();
-
-
-                longpoll(false);
-            },
-
-            function(response) {
-
-                var oldxsfrstate = state.xsfrerror;
-                state.failedConnectionAttempts++;
-                var errorMessage = AppService.responseErrorMessage(response);
-                state.xsfrerror = errorMessage.toLowerCase().indexOf('xsrf') >= 0;
-
-                // First failure, we ignore
-                if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
-
-                    // Try again
-                    longpoll(true);
-                } else if (response.status == 401) {
-                    // Change state to connected to hide the connecting message, which is on top of the login message from the AppService
-                    state.connectionState = 'connected';
-                } else {
-
-                    state.connectionState = 'disconnected';
-
-                    //If we got a new XSRF token this time, quickly retry
-                    if (state.xsfrerror && !oldxsfrstate) {
-                        longpoll(true);
-                    } else {
-                        // Otherwise, start countdown to next try
-                        countdownForForReLongPoll(function() { longpoll(true); });
-                    }
-                }
-
-                // Notify
-                $rootScope.$broadcast('serverstatechanged');
-
-            }
+            handleServerState, handleConnectionError
         );
     };
 
-    this.reconnect = function() { longpoll(true); };
+    updateServerState();
 
-    longpoll(true);
+    const reconnect = function () {
+        window.clearInterval(longPollRetryTimer);
+        const w = new WebSocket('ws://' + window.location.host + '/notifications');
+        w.addEventListener("open", (event) => {
+            state.connectionState = 'connected';
+            $rootScope.$broadcast('serverstatechanged.connectionState', state.connectionState);
+            $rootScope.$broadcast('serverstatechanged');
+        });
+        w.addEventListener("message", (event) => {
+            console.log("Message from server ", event.data);
+            const status = JSON.parse(event.data);
+            handleServerState({data: status});
+        });
+        w.addEventListener("close", (event) => {
+            console.log("Websocket closed. Reconnecting...", event);
+            handleConnectionError("Websocket disconnected.");
+            countdownForReconnect(() => websocket = reconnect());
+        });
+        return w;
+    };
+
+    let websocket = reconnect()
+    window.websocket = websocket;
 });

@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.RestAPI.Abstractions;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -636,7 +637,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 return;
             }
 
-            var delete_remote_files = Library.Utility.Utility.ParseBool(info.Request.Param["delete-remote-files"].Value, false);
+            var delete_remote_files = info.Request is IModernHttpRequestAccess request && Library.Utility.Utility.ParseBool(request.GetQueryParam("delete-remote-files"), false);
 
             if (delete_remote_files)
             {

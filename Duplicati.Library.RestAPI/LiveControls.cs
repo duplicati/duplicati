@@ -18,9 +18,8 @@
 // 
 #endregion
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Common;
+using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 
 namespace Duplicati.Server
@@ -29,7 +28,7 @@ namespace Duplicati.Server
     /// This class keeps track of the users modifications regarding
     /// throttling and pause/resume
     /// </summary>
-    public class LiveControls
+    public class LiveControls : ILiveControls
     {
         /// <summary>
         /// The tag used for logging
@@ -85,6 +84,8 @@ namespace Duplicati.Server
         /// Gets the current state for the control
         /// </summary>
         public LiveControlState State { get { return m_state; } }
+
+        public bool IsPaused => State == LiveControlState.Paused;
 
         /// <summary>
         /// The internal variable that tracks the the priority
@@ -160,7 +161,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The timer that is activated after a pause period.
         /// </summary>
-        private readonly System.Threading.Timer m_waitTimer;
+        private System.Threading.Timer m_waitTimer;
 
         /// <summary>
         /// The time that the current pause is expected to expire
@@ -170,7 +171,14 @@ namespace Duplicati.Server
         /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
-        public LiveControls(Database.ServerSettings settings)
+        public LiveControls()
+        {
+        }
+        
+                /// <summary>
+        /// Constructs a new instance of the LiveControl
+        /// </summary>
+        public void Init(Database.ServerSettings settings)
         {
             m_state = LiveControlState.Running;
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);

@@ -132,7 +132,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
             Serializable.ImportExportStructure importedStructure = Backups.LoadConfiguration(configurationFile, importMetadata, getPassword);
 
             // This will create the Duplicati-server.sqlite database file if it doesn't exist.
-            using (Duplicati.Server.Database.Connection connection = FIXMEGlobal.GetDatabaseConnection(advancedOptions))
+            using (Duplicati.Server.Database.Connection connection = FIXMEGlobal.GetDatabaseConnection(null, advancedOptions))
             {
                 if (connection.Backups.Any(x => x.Name.Equals(importedStructure.Backup.Name, StringComparison.OrdinalIgnoreCase)))
                 {

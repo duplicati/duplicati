@@ -24,7 +24,7 @@ using System.Collections.Generic;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
-    public class ServerState : IRESTMethodGET, IRESTMethodPOST, IRESTMethodDocumented
+    public class ServerState : IRESTMethodPOST, IRESTMethodDocumented
     {
         public void GET(string key, RequestInfo info)
         {
@@ -32,16 +32,17 @@ namespace Duplicati.Server.WebServer.RESTMethods
             long id = 0;
             long.TryParse(key, out id);
 
+            var serverStatus = new Serializable.ServerStatus();
             if (info.LongPollCheck(FIXMEGlobal.StatusEventNotifyer, ref id, out isError))
             {
                 //Make sure we do not report a higher number than the eventnotifier says
-                var st = new Serializable.ServerStatus();
+                var st = serverStatus;
                 st.LastEventID = id;
                 info.OutputOK(st);
             }
             else if (!isError)
             {
-                info.OutputOK(new Serializable.ServerStatus());
+                info.OutputOK(serverStatus);
             }
         }
 
