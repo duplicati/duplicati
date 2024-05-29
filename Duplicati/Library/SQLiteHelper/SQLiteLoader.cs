@@ -218,14 +218,14 @@ namespace Duplicati.Library.SQLiteHelper
             // Check if SQLite database exists before opening a connection to it.
             // This information is used to 'fix' permissions on a newly created file.
             var fileExists = false;
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
                 fileExists = File.Exists(path);
 
             con.ConnectionString = "Data Source=" + path;
             con.Open();
 
             // If we are non-Windows, make the file only accessible by the current user
-            if (!Platform.IsClientWindows && !fileExists)
+            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && !fileExists)
                 SetUnixPermissionUserRWOnly(path);
         }
 

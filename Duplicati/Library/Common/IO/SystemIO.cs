@@ -40,14 +40,16 @@ namespace Duplicati.Library.Common.IO
 
         static SystemIO()
         {
+            // TODO: These interfaces cannot be properly guarded by the supported platform attribute in this form.
+            // They are used in static methods of USNJournal on all platforms.
+            IO_WIN = new SystemIOWindows();
+            IO_SYS = new SystemIOLinux();
             if (OperatingSystem.IsWindows())
             {
-                IO_WIN = new SystemIOWindows();
                 IO_OS = IO_WIN;
             }
             else if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
             {
-                IO_SYS = new SystemIOLinux();
                 IO_OS = IO_SYS;
             }
         }

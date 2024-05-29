@@ -104,7 +104,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         private void StartSleepPrevention()
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 try
                 {
@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main
                     Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
                 }
             }
-            else if (Platform.IsClientOSX)
+            else if (OperatingSystem.IsMacOS())
             {
                 try
                 {
@@ -150,7 +150,7 @@ namespace Duplicati.Library.Main
         {
             var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 var handle = System.Diagnostics.Process.GetCurrentProcess().Handle;
 
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Main
             }
             else
             {
-                if (Platform.IsClientOSX)
+                if (OperatingSystem.IsMacOS())
                 {
                     var data = RunProcessAndGetResult("ps", $"-onice -p {pid}");
                     if (data.Item1 != 0)
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main
             //
             // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-rtlqueryprocessplaceholdercompatibilitymode
 
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 try
                 {
@@ -286,7 +286,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         private void StopSleepPrevention()
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 try
                 {
@@ -301,7 +301,7 @@ namespace Duplicati.Library.Main
                     Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
                 }
             }
-            else if (Platform.IsClientOSX)
+            else if (OperatingSystem.IsMacOS())
             {
                 try
                 {
@@ -334,7 +334,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         private void DeactivateBackgroundIOPriority()
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 try
                 {
@@ -377,7 +377,7 @@ namespace Duplicati.Library.Main
                     var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
                     Tuple<int, string, string> data;
 
-                    if (Platform.IsClientOSX)
+                    if (OperatingSystem.IsMacOS())
                     {
                         // TODO: We can only give lower priority, thus not reset it ...
                         data = RunProcessAndGetResult($"renice", $"{m_originalNiceLevel} -p {pid}");

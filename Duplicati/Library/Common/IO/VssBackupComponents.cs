@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using Alphaleonis.Win32.Vss;
 
 namespace Duplicati.Library.Common.IO
@@ -35,6 +36,7 @@ namespace Duplicati.Library.Common.IO
         public List<string> Paths { get; set; }
     }
 
+    [SupportedOSPlatform("windows")]
     public class VssBackupComponents : IDisposable
     {
         /// <summary>

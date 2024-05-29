@@ -213,7 +213,7 @@ namespace Duplicati.Server
 
             try
             {
-                if (!Platform.IsClientPosix)
+                if (OperatingSystem.IsWindows())
                     RegisterHibernateMonitor();
             }
             catch { }

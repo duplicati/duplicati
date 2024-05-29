@@ -51,7 +51,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestUncBehaviourOfGetPathRoot()
         {
-            if (!Platform.IsClientWindows)
+            if (!System.OperatingSystem.IsWindows())
             {
                 return;
             }
@@ -104,7 +104,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestAddExtendedDevicePathPrefixInWindowsClient()
         {
-            if (!Platform.IsClientWindows)
+            if (!System.OperatingSystem.IsWindows())
             {
                 return;
             }
@@ -212,7 +212,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestPathGetFullPathInWindowsClient()
         {
-            if (!Platform.IsClientWindows)
+            if (!System.OperatingSystem.IsWindows())
             {
                 return;
             }

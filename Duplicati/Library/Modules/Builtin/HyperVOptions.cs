@@ -76,7 +76,7 @@ namespace Duplicati.Library.Modules.Builtin
         public Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVWindowsOnly", null, "Hyper-V backup works only on Windows OS");
 

@@ -699,7 +699,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The list of paths to exclude.</returns>
         private static string[] GetWindowsRegistryFilters()
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 // One Windows, filters may also be stored in the registry
                 try

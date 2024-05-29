@@ -42,10 +42,18 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The ISnapshotService implementation</returns>
         public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
-            return
-                Platform.IsClientPosix
-                       ? CreateLinuxSnapshot(folders)
-                       : CreateWindowsSnapshot(folders, options);
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                return CreateLinuxSnapshot(folders);
+            }
+            else if (OperatingSystem.IsWindows())
+            {
+                return CreateWindowsSnapshot(folders, options);
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupported Operating System");
+            }
             
         }
 

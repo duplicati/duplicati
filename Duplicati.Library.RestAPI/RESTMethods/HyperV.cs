@@ -34,7 +34,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         public void GET(string key, RequestInfo info)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
                 RealGET(key, info);
             else
                 info.OutputOK(new string[0]);

@@ -28,6 +28,7 @@ using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -110,6 +111,9 @@ namespace Duplicati.Library.Snapshots
                 try
                 {
                     // prepare journal data entry to store with current fileset
+                    if (!OperatingSystem.IsWindows())
+                        throw new Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError, "UsnOnLinuxNotSupported");
+
                     var journal = new USNJournal(volume);
                     var nextData = new USNJournalDataEntry
                     {

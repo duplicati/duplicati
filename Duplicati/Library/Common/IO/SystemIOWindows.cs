@@ -32,7 +32,6 @@ using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Common.IO
 {
-    [SupportedOSPlatform("windows")]
     public struct SystemIOWindows : ISystemIO
     {
         // Based on the constant names used in
@@ -158,6 +157,8 @@ namespace Duplicati.Library.Common.IO
             return path.Replace("/", Util.DirectorySeparatorString);
         }
 
+
+        [SupportedOSPlatform("windows")]
         private class FileSystemAccess
         {
             // Use JsonProperty Attribute to allow readonly fields to be set by deserializer
@@ -237,21 +238,29 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+
+        [SupportedOSPlatform("windows")]
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlDir(string path)
         {
             return new DirectoryInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
+
+        [SupportedOSPlatform("windows")]
         private System.Security.AccessControl.FileSystemSecurity GetAccessControlFile(string path)
         {
             return new FileInfo(AddExtendedDevicePathPrefix(path)).GetAccessControl();
         }
 
+
+        [SupportedOSPlatform("windows")]
         private void SetAccessControlFile(string path, FileSecurity rules)
         {
             new FileInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
         }
 
+
+        [SupportedOSPlatform("windows")]
         private void SetAccessControlDir(string path, DirectorySecurity rules)
         {
             new DirectoryInfo(AddExtendedDevicePathPrefix(path)).SetAccessControl(rules);
@@ -559,6 +568,7 @@ namespace Duplicati.Library.Common.IO
             return new FileEntry(fileInfo.Name, fileInfo.Length, lastAccess, fileInfo.LastWriteTime);
         }
 
+        [SupportedOSPlatform("windows")]
         public Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink)
         {
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
@@ -584,6 +594,7 @@ namespace Duplicati.Library.Common.IO
             return dict;
         }
 
+        [SupportedOSPlatform("windows")]
         public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
             var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
