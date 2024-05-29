@@ -31,6 +31,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility
 {
@@ -1314,6 +1315,7 @@ namespace Duplicati.Library.Utility
         /// <param name="volumeGuid">Volume guid</param>
         /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static string GetDriveLetterFromVolumeGuid(Guid volumeGuid)
         {
             // Based on this answer:
@@ -1348,6 +1350,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>Pairs of drive letter to volume guids</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static IEnumerable<KeyValuePair<string, string>> GetVolumeGuidsAndDriveLetters()
         {
             using (var searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))

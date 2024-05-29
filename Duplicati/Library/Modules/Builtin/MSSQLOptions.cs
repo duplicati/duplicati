@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common;
 using Duplicati.Library.Snapshots;
@@ -100,6 +101,7 @@ namespace Duplicati.Library.Modules.Builtin
         // Make sure the JIT does not attempt to inline this call and thus load
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             var changedOptions = new Dictionary<string, string>();

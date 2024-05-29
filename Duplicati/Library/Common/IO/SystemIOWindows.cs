@@ -28,9 +28,11 @@ using System.Linq;
 using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Common.IO
 {
+    [SupportedOSPlatform("windows")]
     public struct SystemIOWindows : ISystemIO
     {
         // Based on the constant names used in

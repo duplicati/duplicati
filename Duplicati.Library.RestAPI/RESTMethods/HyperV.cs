@@ -25,6 +25,7 @@ using System.Linq;
 using System.Security.Principal;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Common;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
@@ -42,6 +43,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         // Make sure the JIT does not attempt to inline this call and thus load
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private void RealGET(string key, RequestInfo info)
         {
             var hypervUtility = new HyperVUtility();

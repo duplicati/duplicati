@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
@@ -81,6 +82,7 @@ namespace Duplicati.Library.Snapshots
         }
     }
 
+    [SupportedOSPlatform("windows")]
     public class HyperVUtility
     {
         /// <summary>

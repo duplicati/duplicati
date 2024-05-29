@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Xml.Linq;
 using Duplicati.Library.Common;
 
@@ -719,6 +720,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The list of paths to exclude.</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private static string[] GetWindowsRegistryFiltersInternal()
         {
             var rk = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Default);

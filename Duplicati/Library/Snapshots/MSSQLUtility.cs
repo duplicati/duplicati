@@ -23,6 +23,7 @@ using Duplicati.Library.Common.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -81,6 +82,7 @@ namespace Duplicati.Library.Snapshots
         }
     }
 
+    [SupportedOSPlatform("windows")]
     public class MSSQLUtility
     {
         /// <summary>

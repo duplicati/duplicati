@@ -23,6 +23,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -234,6 +235,8 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="path">The file to set permissions on.</param>
         /// <remarks> Make sure we do not inline this, as we might eventually load Mono.Posix, which is not present on Windows</remarks>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macOS")]
         private static void SetUnixPermissionUserRWOnly(string path)
         {
             var fi = PosixFile.GetUserGroupAndPermissions(path);

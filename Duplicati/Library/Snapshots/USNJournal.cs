@@ -28,6 +28,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
@@ -37,6 +38,7 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// Class that encapsulates USN journal access to a single volume
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public sealed class USNJournal : IDisposable
     {
         /// <summary>

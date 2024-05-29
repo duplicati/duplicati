@@ -24,7 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -36,6 +36,7 @@ namespace Duplicati.Library.Snapshots
     /// The class presents all files and folders with their regular filenames to the caller,
     /// and internally handles the conversion to the shadow path.
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public sealed class WindowsSnapshot : SnapshotBase
     {
         /// <summary>

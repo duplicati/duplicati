@@ -25,15 +25,17 @@ using System.Linq;
 using System.Security.Principal;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Common;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Server.WebServer.RESTMethods
 {
+
     public class MSSQL : IRESTMethodGET, IRESTMethodDocumented
     {
         public void GET(string key, RequestInfo info)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
                 RealGET(key, info);
             else
                 info.OutputOK(new string[0]);
@@ -42,6 +44,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
         // Make sure the JIT does not attempt to inline this call and thus load
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private void RealGET(string key, RequestInfo info)
         {
             var mssqlUtility = new MSSQLUtility();
