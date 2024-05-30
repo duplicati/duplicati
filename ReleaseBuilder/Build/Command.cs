@@ -96,24 +96,15 @@ public static partial class Command
         /// </summary>
         public string ReleaseName => $"{Version}_{Channel.ToString().ToLowerInvariant()}_{Timestamp:yyy-MM-dd}";
 
-
-        /// <summary>
-        /// Create a new release info
-        /// </summary>
-        /// <param name="type">The release type</param>
-        /// <param name="incVersion">The incremental version</param>
-        /// <returns>The release info</returns>
-        public static ReleaseInfo Create(ReleaseChannel type, int incVersion)
-            => new ReleaseInfo(new Version(2, 0, 0, incVersion), type, DateTime.Today);
-
         /// <summary>
         /// Create a new release info
         /// </summary>
         /// <param name="type">The release type</param>
         /// <param name="version">The version</param>
+        /// <param name="increment">The build version increment</param>
         /// <returns>The release info</returns>
-        public static ReleaseInfo Create(ReleaseChannel type, Version version)
-            => new ReleaseInfo(version, type, DateTime.Today);
+        public static ReleaseInfo Create(ReleaseChannel type, Version version, int increment)
+            => new ReleaseInfo(new Version(version.Major, version.Minor, version.Build, version.Revision + increment), type, DateTime.Today);
     }
 
     /// <summary>
@@ -415,8 +406,8 @@ public static partial class Command
         var changelogNews = File.ReadAllText(input.ChangelogFile.FullName);
 
         var releaseInfo = string.IsNullOrWhiteSpace(input.Version)
-            ? ReleaseInfo.Create(input.Channel, int.Parse(File.ReadAllText(versionFilePath)) + 1)
-            : ReleaseInfo.Create(input.Channel, Version.Parse(input.Version));
+            ? ReleaseInfo.Create(input.Channel, Version.Parse(File.ReadAllText(versionFilePath)), 1)
+            : ReleaseInfo.Create(input.Channel, Version.Parse(input.Version), 0);
         Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
 
         var keyfilePassword = input.Password;
