@@ -90,9 +90,9 @@ namespace Duplicati.Library.Utility
         private readonly bool m_blockOnClose = true;
 
         /// <summary> The helper stream for reader from pipe. </summary>
-        private LinkedReaderStream m_readerStream;
+        private LinkedReaderStream? m_readerStream;
         /// <summary> The helper stream for writer to pipe. </summary>
-        private LinkedWriterStream m_writerStream;
+        private LinkedWriterStream? m_writerStream;
 
 
         /// <summary> Sets up the DirectStreamLink with a certain behaviour. </summary>
@@ -252,7 +252,7 @@ namespace Duplicati.Library.Utility
                 if (m_readerClosed) return;
                 m_readerClosed = true;
                 m_signalBufferAvailable.Set(); // unblock potentially waiting writer
-                m_readerStream = null!;
+                m_readerStream = null;
             }
 
             if (Interlocked.Decrement(ref m_autoDisposeCounter) == 0)
@@ -266,7 +266,7 @@ namespace Duplicati.Library.Utility
                 if (m_writerClosed) return;
                 m_writerClosed = true;
                 m_signalDataAvailable.Set(); // unblock potentially waiting reader
-                m_writerStream = null!;
+                m_writerStream = null;
             }
 
             flush();

@@ -283,7 +283,7 @@ namespace Duplicati.Library.Utility
             // ("C:" or "D:") we can remove it if the path matches.
             HashSet<string> wildcardRootWindowsPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            string prev = null;
+            string? prev = null;
             foreach (var n in filters.OrderBy(x => x, Utility.ClientFilenameStringComparer))
             {
                 if (n.StartsWith("?:", StringComparison.Ordinal) || n.StartsWith("*:", StringComparison.Ordinal))

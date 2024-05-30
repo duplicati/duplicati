@@ -36,13 +36,13 @@ namespace Duplicati.Library.Utility
     {
         private class StreamEnumerator : IEnumerator<T>, System.Collections.IEnumerator
         {
-            private Stream m_stream;
+            private Stream? m_stream;
             private readonly Func<Stream, long, T> m_deserialize;
             private long m_position;
             private readonly byte[] m_sizebuffer;
             private readonly long m_expectedCount;
             private readonly FileBackedList<T> m_parent;
-            private T m_current;
+            private T? m_current;
 
             public StreamEnumerator(Stream stream, Func<Stream, long, T> deserialize, FileBackedList<T> parent)
             {
@@ -60,7 +60,7 @@ namespace Duplicati.Library.Utility
                 {
                     if (m_expectedCount != m_parent.Count)
                         throw new Exception("Collection modified");
-                    return m_current;
+                    return m_current ?? throw new InvalidOperationException("m_current is null");
                 }
             }
 
@@ -71,11 +71,17 @@ namespace Duplicati.Library.Utility
 
             object System.Collections.IEnumerator.Current
             {
-                get { return this.Current; }
+                get
+                {
+                    return this.Current ?? throw new InvalidOperationException("Current is null.");
+                }
             }
 
             public bool MoveNext()
             {
+                if (m_stream == null)
+                    throw new InvalidOperationException("StreamEnumerator");
+
                 if (m_position >= m_stream.Length)
                 {
                     m_current = default(T);
@@ -101,8 +107,8 @@ namespace Duplicati.Library.Utility
             }
         }
 
-        private Library.Utility.TempFile m_file;
-        private Stream m_stream;
+        private Library.Utility.TempFile? m_file;
+        private Stream? m_stream;
         private long m_count;
                 
         public bool IsFileBacked { get { return !(m_stream is MemoryStream); } }
@@ -130,7 +136,7 @@ namespace Duplicati.Library.Utility
                     oldstream.CopyTo(m_stream);
                 }
             }
-
+            if (m_stream == null) throw new InvalidOperationException("m_stream is null");
             m_stream.Position = m_stream.Length;
             m_stream.Write(BitConverter.GetBytes(size), 0, 8);
             var pos = m_stream.Position;
@@ -179,6 +185,7 @@ namespace Duplicati.Library.Utility
 
         public IEnumerator<T> GetEnumerator()
         {
+            if(m_stream == null) throw new InvalidOperationException("m_stream is null");
             return new StreamEnumerator(m_stream, this.Deserialize, this);
         }
 
@@ -203,7 +210,7 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class FileBackedStringList : FileBackedList<string>
     {
-        private byte[] m_buf;
+        private byte[]? m_buf;
         public readonly System.Text.Encoding m_encoding;
         private const int MIN_BUF_SIZE = 1024;
         private const int BUFFER_OVERSHOOT = 32;
@@ -212,7 +219,7 @@ namespace Duplicati.Library.Utility
         /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.FileBackedStringList"/> class.
         /// </summary>
         /// <param name="encoding">The text encoding to use, defaults to UTF8</param>
-        public FileBackedStringList(System.Text.Encoding encoding = null)
+        public FileBackedStringList(System.Text.Encoding? encoding = null)
         {
             m_encoding = encoding ?? System.Text.Encoding.UTF8;
         }
@@ -227,6 +234,7 @@ namespace Duplicati.Library.Utility
         
         protected override void Serialize(string value, Stream stream)
         {
+            if(m_buf == null) throw new InvalidOperationException("m_buf is null");
             var size = m_encoding.GetBytes(value, 0, value.Length, m_buf, 0);            
             stream.Write(m_buf, 0, size);
         }

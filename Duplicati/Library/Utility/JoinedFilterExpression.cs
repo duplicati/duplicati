@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System;
+
 namespace Duplicati.Library.Utility
 {
     public class JoinedFilterExpression : IFilter
@@ -73,9 +75,9 @@ namespace Duplicati.Library.Utility
         public override string ToString()
         {
             if (this.First.Empty)
-                return this.Second.ToString();
+                return this.Second.ToString() ?? throw new InvalidOperationException("Second is null");
             else if (this.Second.Empty)
-                return this.First.ToString();
+                return this.First.ToString() ?? throw new InvalidOperationException("First is null");
             else
                 return "(" + this.First + ") || (" + this.Second + ")";
         }

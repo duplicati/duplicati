@@ -92,7 +92,7 @@ namespace Duplicati.Library.Utility
                 get
                 {
 
-                    return m_current!;
+                    return m_current ?? throw new InvalidOperationException("The current value is null.");
                 }
             }
             #endregion

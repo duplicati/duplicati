@@ -51,8 +51,8 @@ namespace Duplicati.Library.Utility.Power
                     UseShellExecute = false
                 };
 
-                var pi = System.Diagnostics.Process.Start(psi);
-                pi!.WaitForExit(1000);
+                var pi = System.Diagnostics.Process.Start(psi) ?? throw new InvalidOperationException("Failed to start process");
+                pi.WaitForExit(1000);
                 if (pi.HasExited)
                 {
                     var pmout = pi.StandardOutput.ReadToEnd().Trim();
@@ -88,8 +88,8 @@ namespace Duplicati.Library.Utility.Power
                     UseShellExecute = false
                 };
 
-                var pi = System.Diagnostics.Process.Start(psi);
-                pi!.WaitForExit(1000);
+                var pi = System.Diagnostics.Process.Start(psi) ?? throw new Exception("Failed to start process");
+                pi.WaitForExit(1000);
                 if (pi.HasExited)
                 {
                     // Find:

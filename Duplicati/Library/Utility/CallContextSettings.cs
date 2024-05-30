@@ -253,14 +253,13 @@ namespace Duplicati.Library.Utility
             {
                 var key = ContextID;
                 if (string.IsNullOrWhiteSpace(key))
-                    return default(T)!;
+                    return default(T) ?? throw new InvalidOperationException("The key is null");
 
 
                 if (!_settings.TryGetValue(key, out T? res))
                     lock (_lock) // if not present but context id is not null, wait
                         if (!_settings.TryGetValue(key, out res))
-                            return default(T)!;
-
+                            return default(T) ?? throw new InvalidOperationException("The key is null");
                 return res;
             }
             set
@@ -281,7 +280,7 @@ namespace Duplicati.Library.Utility
         {
             contextSettingsType = settingsKey;
             var res = new ContextGuard();
-            Settings = initial!;
+            Settings = initial ?? throw new ArgumentNullException(nameof(initial), "The initial value cannot be null.");
             return res;
         }
 

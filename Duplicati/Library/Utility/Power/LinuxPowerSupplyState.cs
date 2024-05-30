@@ -57,7 +57,7 @@ namespace Duplicati.Library.Utility.Power
                 {
                     if (!reply)
                     {
-                        string? sourceType = File.ReadLines(Path.Combine(source, "type")).FirstOrDefault();
+                        var sourceType = File.ReadLines(Path.Combine(source, "type")).FirstOrDefault();
                         if (String.Equals(sourceType, "Mains", StringComparison.Ordinal))
                         {
                             haveMains = true;

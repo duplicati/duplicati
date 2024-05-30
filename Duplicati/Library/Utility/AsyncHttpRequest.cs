@@ -158,7 +158,7 @@ namespace Duplicati.Library.Utility
             }
 
             if (m_state == RequestStates.GetRequest)
-                return (Stream)m_asyncRequest!.GetResponseOrStream();
+                return (Stream)(m_asyncRequest?.GetResponseOrStream() ?? throw new InvalidOperationException("The async request is null."));
 
             if (m_state != RequestStates.Created)
                 throw new InvalidOperationException();
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Utility
         public WebResponse GetResponse()
         {
             if (m_state == RequestStates.GetResponse)
-                return (WebResponse)m_asyncResponse!.GetResponseOrStream();
+                return (WebResponse)(m_asyncResponse?.GetResponseOrStream() ?? throw new InvalidOperationException("The async response is null."));
 
             if (m_state == RequestStates.Done)
                 throw new InvalidOperationException();
