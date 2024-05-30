@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AlphaFS" Version="2.2.6" />
     <PackageReference Include="AlphaVSS" Version="2.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
