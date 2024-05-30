@@ -191,7 +191,7 @@ namespace Duplicati.Server
 
                 //HACK: the unix file lock does not allow us to read the file length when the file is locked
                 if (new System.IO.FileInfo(m_lockfilename).Length == 0)
-                    if (!Platform.IsClientPosix)
+                    if (!(OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()))
                         throw new Exception("The file was locked, but had no data");
 
                 //Notify the other process that we have started
@@ -241,7 +241,7 @@ namespace Duplicati.Server
             // needs a little time to create+lock the file. This is not really a fix, but an
             // ugly workaround. This functionality is only used to allow a new instance to signal
             // the running instance, so errors here would only affect that functionality
-            if (Platform.IsClientPosix)
+            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()))
                 System.Threading.Thread.Sleep(1000);
 
             do

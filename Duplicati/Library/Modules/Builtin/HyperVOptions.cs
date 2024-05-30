@@ -57,7 +57,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public bool LoadAsDefault
         {
-            get { return Platform.IsClientWindows; }
+            get { return OperatingSystem.IsWindows(); }
         }
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
@@ -218,7 +218,7 @@ namespace Duplicati.Library.Modules.Builtin
         
         public bool ContainFilesForBackup(string[] paths)
         {
-            if (paths == null || !Platform.IsClientWindows)
+            if (paths == null || !OperatingSystem.IsWindows())
                 return false;
 
             return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Any(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));

@@ -107,7 +107,7 @@ namespace Duplicati.Library.Snapshots
         {
             m_DBs = new List<MSSQLDB>();
 
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 IsMSSQLInstalled = false;
                 return;

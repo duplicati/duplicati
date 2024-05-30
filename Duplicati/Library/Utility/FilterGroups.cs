@@ -237,11 +237,11 @@ namespace Duplicati.Library.Utility
         {
             IEnumerable<string> osFilters;
 
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
                 osFilters = CreateOSXFilters(group);
-            else if (Platform.IsClientPosix)
+            else if (OperatingSystem.IsLinux())
                 osFilters = CreateLinuxFilters(group);
-            else if (Platform.IsClientWindows)
+            else if (OperatingSystem.IsWindows())
                 osFilters = CreateWindowsFilters(group);
             else
                 throw new ArgumentException("Unknown operating system?");
@@ -641,7 +641,7 @@ namespace Duplicati.Library.Utility
         private static IEnumerable<string> GetOSXExcludeFiles()
         {
             var res = new List<string>();
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
             {
                 try
                 {

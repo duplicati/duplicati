@@ -222,7 +222,7 @@ namespace Duplicati.Server
         {
             //If we are on Windows, append the bundled "win-tools" programs to the search path
             //We add it last, to allow the user to override with other versions
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 Environment.SetEnvironmentVariable("PATH",
                     Environment.GetEnvironmentVariable("PATH") +
@@ -800,7 +800,7 @@ namespace Duplicati.Server
 
                 });
 
-                if (!Platform.IsClientPosix)
+                if (!(OperatingSystem.IsMacOS()|| OperatingSystem.IsLinux()))
                     lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42", null, null, "Database encryption is no longer supported, this setting can only be used to decrypt the database"));
 
                 return lst.ToArray();

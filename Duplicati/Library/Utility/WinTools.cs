@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 
@@ -29,7 +30,7 @@ namespace Duplicati.Library.Utility
     {
         public static string GetWindowsGpgExePath()
         {
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 return null;
             }

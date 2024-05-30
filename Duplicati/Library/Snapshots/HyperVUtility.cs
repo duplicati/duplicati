@@ -116,13 +116,14 @@ namespace Duplicati.Library.Snapshots
         {
             Guests = new List<HyperVGuest>();
 
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 IsHyperVInstalled = false;
                 IsVSSWriterSupported = false;
                 return;
             }
 
+            // TODO: Replace with OperatingSystem.IsWindowsVersionAtLeast(6,2) if that is correct
             //Set the namespace depending off host OS
             _wmiv2Namespace = Environment.OSVersion.Version.Major > 6 || (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 2);
 

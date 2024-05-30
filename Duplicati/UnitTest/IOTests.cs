@@ -26,6 +26,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common;
 using System.Collections.Generic;
+using System;
 
 namespace Duplicati.UnitTest
 {
@@ -42,7 +43,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetPathRootWithLongPath()
         {
-            var pathRoot =  Platform.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = OperatingSystem.IsWindows() ? "C:\\" : "/";
             var root = SystemIO.IO_OS.GetPathRoot(LongPath(pathRoot));
 
             Assert.AreEqual(pathRoot, root);
@@ -51,7 +52,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestUncBehaviourOfGetPathRoot()
         {
-            if (!System.OperatingSystem.IsWindows())
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }
@@ -74,7 +75,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetFilesWhenDirectoryDoesNotExist()
         {
-            var pathRoot = Platform.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = OperatingSystem.IsWindows() ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
             if (SystemIO.IO_OS.DirectoryExists(longPath))
@@ -89,7 +90,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestGetDirectoriesWhenDirectoryDoesNotExist()
         {
-            var pathRoot = Platform.IsClientWindows ? "C:\\" : "/";
+            var pathRoot = OperatingSystem.IsWindows() ? "C:\\" : "/";
 
             var longPath = LongPath(pathRoot);
             if (SystemIO.IO_OS.DirectoryExists(longPath))
@@ -104,7 +105,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestAddExtendedDevicePathPrefixInWindowsClient()
         {
-            if (!System.OperatingSystem.IsWindows())
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }
@@ -212,7 +213,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TestPathGetFullPathInWindowsClient()
         {
-            if (!System.OperatingSystem.IsWindows())
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }

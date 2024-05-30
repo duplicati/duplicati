@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main
 
 			var folder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duplicati");
 
-			if (Platform.IsClientWindows)
+			if (OperatingSystem.IsWindows())
 			{
 				var newlocation = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Duplicati");
 

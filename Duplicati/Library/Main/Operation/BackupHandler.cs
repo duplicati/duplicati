@@ -233,6 +233,7 @@ namespace Duplicati.Library.Main.Operation
                     // append files from previous fileset, unless part of modifiedSources, which we've just scanned
                     await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
                     {
+                        // TODO: This is technically unsupported, but the method itself works cross-platform
                         if (journalService.IsPathEnumerated(path))
                             return true;
 

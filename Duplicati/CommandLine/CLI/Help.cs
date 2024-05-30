@@ -120,9 +120,9 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%BACKENDS%", string.Join(", ", Library.DynamicLoader.BackendLoader.Keys));
                 tp = tp.Replace("%APP_PATH%", Path.Combine(UpdaterManager.INSTALLATIONDIR, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine)));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
-                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Platform.IsClientPosix ? "/source" : @"D:\source");
-                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Platform.IsClientPosix ? "/source/myfile.txt" : @"D:\source\file.txt");
-                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Platform.IsClientPosix ? "/restore" : @"D:\restore");
+                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", !OperatingSystem.IsWindows() ? "/source" : @"D:\source");
+                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", !OperatingSystem.IsWindows() ? "/source/myfile.txt" : @"D:\source\file.txt");
+                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", !OperatingSystem.IsWindows() ? "/restore" : @"D:\restore");
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
                 tp = tp.Replace("%COMPRESSIONMODULES%", string.Join(", ", Library.DynamicLoader.CompressionLoader.Keys));
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
