@@ -25,7 +25,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using System.Net.NetworkInformation;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
-using Sharp.Xmpp.Client;
+using Artalk.Xmpp.Client;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// A localized string describing the module with a friendly name
         /// </summary>
-        public override string DisplayName { get { return Strings.SendJabberMessage.DisplayName;} }
+        public override string DisplayName { get { return Strings.SendJabberMessage.DisplayName; } }
 
         /// <summary>
         /// A localized description of the module
@@ -203,31 +203,32 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (string.IsNullOrWhiteSpace(resource))
                 resource = "Duplicati";
-            using (XmppClient client = new XmppClient(uri.Host, uri.Username, string.IsNullOrWhiteSpace(m_password) ? uri.Password : m_password,  uri.Port == -1 ? (uri.Scheme == "https" ? 5223 :5222) : uri.Port))
+            using (ArtalkXmppClient client = new ArtalkXmppClient(uri.Host, uri.Username, string.IsNullOrWhiteSpace(m_password) ? uri.Password : m_password, uri.Port == -1 ? (uri.Scheme == "https" ? 5223 : 5222) : uri.Port))
             {
                 client.Connect(resource);
                 try
                 {
-                    foreach(var recipient in m_to.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (var recipient in m_to.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
                     {
-		        client.SendMessage(recipient, new Dictionary<string, string>(){ {"en", body} });
+                        Artalk.Xmpp.Jid jid = new Artalk.Xmpp.Jid(recipient);
+                        client.SendMessage(jid, new Dictionary<string, string>() { { "en", body } });
                         // hack to work around a failure to send the second time
                         // (the xmpp server reports a read failure)
-			try 
-			{
-			    client.Ping(recipient);
-			}
-			catch {}
+                        try
+                        {
+                            client.Ping(jid);
+                        }
+                        catch { }
                     }
-		}
+                }
                 catch (Exception e)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send to XMPP messages: {0}", e.Message);
                 }
-		finally 
-		{
+                finally
+                {
                     client.Close();
-		}
+                }
             }
 
         }
