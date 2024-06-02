@@ -61,7 +61,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The current task being processed
         /// </summary>
-        private Tx m_currentTask;
+        private Tx? m_currentTask;
         /// <summary>
         /// A callback that performs the actual work on the item
         /// </summary>
@@ -254,7 +254,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return m_currentTask;
+                return m_currentTask ?? throw new InvalidOperationException("m_currentTask is null");
             }
         }
 

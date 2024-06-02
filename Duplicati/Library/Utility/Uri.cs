@@ -77,7 +77,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Cache for the query parameters.
         /// </summary>
-        private NameValueCollection m_queryParams;
+        private NameValueCollection? m_queryParams;
 
         /// <summary>
         /// Gets the parameters in the query string
