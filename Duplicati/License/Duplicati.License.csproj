@@ -83,7 +83,8 @@
       <Link>licenses\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="licenses\duplicati-url.txt">
+    <Content Include="duplicati-url.txt">
+      <Link>licenses\duplicat-url.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SSH.NET\Homepage.txt">
@@ -197,28 +198,16 @@
     <Content Include="acknowledgements.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\Sharp.Xmpp\download.txt">
-      <Link>licenses\Sharp.Xmpp\download.txt</Link>
+    <Content Include="..\..\thirdparty\Artalk.Xmpp\download.txt">
+      <Link>licenses\Artalk.Xmpp\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\Sharp.Xmpp\license.txt">
-      <Link>licenses\Sharp.Xmpp\license.txt</Link>
+    <Content Include="..\..\thirdparty\Artalk.Xmpp\license.txt">
+      <Link>licenses\Artalk.Xmpp\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\Sharp.Xmpp\licensedata.json">
-      <Link>licenses\Sharp.Xmpp\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\download.txt">
-      <Link>licenses\ARSoft.Tools.Net\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\license.txt">
-      <Link>licenses\ARSoft.Tools.Net\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ARSoft.Tools.Net\licensedata.json">
-      <Link>licenses\ARSoft.Tools.Net\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\Artalk.Xmpp\licensedata.json">
+      <Link>licenses\Artalk.Xmpp\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
