@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListBrokenFilesDatabase : LocalDatabase
     {
-        private const string BLOCK_VOLUME_IDS = @"SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ""{2}""";
+        private const string BLOCK_VOLUME_IDS = @"SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{2}'";
 
         // Invalid blocksets include those that:
         // - Have BlocksetEntries with unknown/invalid blocks (meaning the data to rebuild the blockset isn't available)
