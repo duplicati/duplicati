@@ -109,8 +109,7 @@ namespace Duplicati.Library.Backend
             { "China (Ningxia)", "cn-northwest-1" },
 
             // For backwards compatibility, should no longer be used
-            { "EU", "eu-west-1" },
-            { "US", "us-east-1" },
+            { "EU", "eu-west-1" }
         };
 
         public static readonly Dictionary<string, string> DEFAULT_S3_LOCATION_BASED_HOSTS;
@@ -143,11 +142,8 @@ namespace Duplicati.Library.Backend
 
             DEFAULT_S3_LOCATION_BASED_HOSTS = KNOWN_S3_LOCATIONS
                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
-                .Select(x => new KeyValuePair<string, string>(x.Key, $"s3.{x.Value}.amazonaws.com"))
-                .Concat([
-                    new KeyValuePair<string, string>("EU", "s3.eu-west-1.amazonaws.com"),
-                    new KeyValuePair<string, string>("US", "s3.eu-west-1.amazonaws.com")
-                ])
+                .Select(x => new KeyValuePair<string, string>(x.Value, $"s3.{x.Value}.amazonaws.com"))
+                .Append(new KeyValuePair<string, string>("EU", "s3.eu-west-1.amazonaws.com"))
                 .DistinctBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         }
