@@ -85,7 +85,7 @@ namespace Duplicati.Library.Modules.Builtin
                     catch (InvalidOperationException)
                     {
                         // Handle redirect issues on Windows only
-                        if (!Platform.IsClientWindows)
+                        if (!OperatingSystem.IsWindows())
                             throw;
 
                         commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);

@@ -21,9 +21,11 @@
 
 using System;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility.Power
 {
+    [SupportedOSPlatform("macOS")]
     public class MacOSPowerSupplyState : IPowerSupplyState
     {
         public PowerSupply.Source GetSource()

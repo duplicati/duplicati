@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Text;
 using Duplicati.Library.Common.IO;
 
@@ -35,12 +36,14 @@ namespace Duplicati.Library.Snapshots
     /// The class presents all files and folders with their regular filenames to the caller,
     /// and internally handles the conversion to the snapshot path.
     /// </summary>
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macOS")]
     public sealed class LinuxSnapshot : SnapshotBase
     {
 		/// <summary>
         /// The tag used for logging messages
         /// </summary>
-        public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
+        public static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(WindowsSnapshot));
 
         /// <summary>
         /// This is a lookup, mapping each source folder to the corresponding snapshot

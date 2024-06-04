@@ -31,6 +31,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility
 {
@@ -459,13 +460,13 @@ namespace Duplicati.Library.Utility
             if (last == -1 || last == 0 && len == 0)
                 return null;
             
-            if (last == 0 && !Platform.IsClientWindows)
+            if (last == 0 && !OperatingSystem.IsWindows())
                 return Util.DirectorySeparatorString;
 
             var parent = path.Substring(0, last);
 
             if (forceTrailingDirectorySeparator ||
-                Platform.IsClientWindows && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
+                OperatingSystem.IsWindows() && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
             {
                 parent += Path.DirectorySeparatorChar;
             }
@@ -873,7 +874,7 @@ namespace Duplicati.Library.Utility
 
                     // TODO: This should probably be determined by filesystem rather than OS,
                     // OSX can actually have the disks formatted as Case Sensitive, but insensitive is default
-                    CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientPosix && !Platform.IsClientOSX);
+                    CachedIsFSCaseSensitive = ParseBool(str, () => OperatingSystem.IsLinux());
                 }
 
                 return CachedIsFSCaseSensitive.Value;
@@ -893,7 +894,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The path to the users home directory
         /// </summary>
-        public static readonly string HOME_PATH = Environment.GetFolderPath(Platform.IsClientPosix ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
+        public static readonly string HOME_PATH = Environment.GetFolderPath(!OperatingSystem.IsWindows() ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)
@@ -1314,6 +1315,7 @@ namespace Duplicati.Library.Utility
         /// <param name="volumeGuid">Volume guid</param>
         /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static string GetDriveLetterFromVolumeGuid(Guid volumeGuid)
         {
             // Based on this answer:
@@ -1348,6 +1350,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>Pairs of drive letter to volume guids</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static IEnumerable<KeyValuePair<string, string>> GetVolumeGuidsAndDriveLetters()
         {
             using (var searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
@@ -1389,7 +1392,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(arg))
                 return arg;
 
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 // We could consider using single quotes that prevents all expansions
                 //if (!allowEnvExpansion)

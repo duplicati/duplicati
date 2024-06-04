@@ -24,9 +24,12 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Common.IO
 {
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macOS")]
     public struct SystemIOLinux : ISystemIO
     {
         #region ISystemIO implementation

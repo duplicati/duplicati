@@ -283,9 +283,9 @@ namespace Duplicati.Library.Encryption
         /// </summary>
         public static string GetGpgProgramPath()
         {
-            Log.WriteInformationMessage("GetGpgProgramPath", "gpg", Platform.IsClientWindows ? WinTools.GetWindowsGpgExePath() : "gpg");
+            Log.WriteInformationMessage("GetGpgProgramPath", "gpg", OperatingSystem.IsWindows() ? WinTools.GetWindowsGpgExePath() : "gpg");
             // for Windows return the full path, otherwise just return "gpg"
-            return Platform.IsClientWindows ? WinTools.GetWindowsGpgExePath() : "gpg";
+            return OperatingSystem.IsWindows() ? WinTools.GetWindowsGpgExePath() : "gpg";
         }
     }
 }

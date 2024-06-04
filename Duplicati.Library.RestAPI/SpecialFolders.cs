@@ -114,7 +114,7 @@ namespace Duplicati.Server
         {
             var lst = new List<Serializable.TreeNode>();
             
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");

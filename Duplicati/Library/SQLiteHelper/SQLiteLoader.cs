@@ -23,6 +23,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -217,14 +218,14 @@ namespace Duplicati.Library.SQLiteHelper
             // Check if SQLite database exists before opening a connection to it.
             // This information is used to 'fix' permissions on a newly created file.
             var fileExists = false;
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
                 fileExists = File.Exists(path);
 
             con.ConnectionString = "Data Source=" + path;
             con.Open();
 
             // If we are non-Windows, make the file only accessible by the current user
-            if (!Platform.IsClientWindows && !fileExists)
+            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && !fileExists)
                 SetUnixPermissionUserRWOnly(path);
         }
 
@@ -234,6 +235,8 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="path">The file to set permissions on.</param>
         /// <remarks> Make sure we do not inline this, as we might eventually load Mono.Posix, which is not present on Windows</remarks>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macOS")]
         private static void SetUnixPermissionUserRWOnly(string path)
         {
             var fi = PosixFile.GetUserGroupAndPermissions(path);

@@ -71,7 +71,7 @@ namespace Duplicati.Server.WebServer.RESTMethods
                 DefaultUpdateChannel = Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel,
                 DefaultUsageReportLevel = Duplicati.Library.UsageReporter.Reporter.DefaultReportLevel,
                 ServerTime = DateTime.Now,
-                OSType = Platform.IsClientPosix ? (Platform.IsClientOSX ? "OSX" : "Linux") : "Windows",
+                OSType = OperatingSystem.IsWindows() ? "Windows" : (OperatingSystem.IsMacOS() ? "OSX" : "Linux"),
                 DirectorySeparator = System.IO.Path.DirectorySeparatorChar,
                 PathSeparator = System.IO.Path.PathSeparator,
                 CaseSensitiveFilesystem = Duplicati.Library.Utility.Utility.IsFSCaseSensitive,

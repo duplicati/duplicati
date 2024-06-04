@@ -88,10 +88,18 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
             }
 
-            return Platform.IsClientPosix ?
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
-                    :
-                new Duplicati.Library.Snapshots.NoSnapshotWindows();
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                return new NoSnapshotLinux();
+            }
+            else if (OperatingSystem.IsWindows())
+            {
+                return new NoSnapshotWindows();
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupported Operating System");
+            }
         }
 
         /// <summary>
@@ -225,6 +233,7 @@ namespace Duplicati.Library.Main.Operation
                     // append files from previous fileset, unless part of modifiedSources, which we've just scanned
                     await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
                     {
+                        // TODO: This is technically unsupported, but the method itself works cross-platform
                         if (journalService.IsPathEnumerated(path))
                             return true;
 

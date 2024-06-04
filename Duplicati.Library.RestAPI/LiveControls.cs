@@ -19,6 +19,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.Text;
 using Duplicati.Library.Common;
 using Duplicati.Library.RestAPI;
@@ -212,7 +213,7 @@ namespace Duplicati.Server
 
             try
             {
-                if (!Platform.IsClientPosix)
+                if (OperatingSystem.IsWindows())
                     RegisterHibernateMonitor();
             }
             catch { }
@@ -337,6 +338,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Method for calling a Win32 API
         /// </summary>
+        [SupportedOSPlatform("windows")]
         private void RegisterHibernateMonitor()
         {
             Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
@@ -347,6 +349,7 @@ namespace Duplicati.Server
         /// </summary>
         /// <param name="sender">Unused sender parameter</param>
         /// <param name="_e">The event information</param>
+        [SupportedOSPlatform("windows")]
         private void SystemEvents_PowerModeChanged(object sender, object _e)
         {
             Microsoft.Win32.PowerModeChangedEventArgs e = _e as Microsoft.Win32.PowerModeChangedEventArgs;

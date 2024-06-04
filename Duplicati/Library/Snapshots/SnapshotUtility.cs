@@ -20,8 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
@@ -40,10 +42,18 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The ISnapshotService implementation</returns>
         public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
-            return
-                Platform.IsClientPosix
-                       ? CreateLinuxSnapshot(folders)
-                       : CreateWindowsSnapshot(folders, options);
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                return CreateLinuxSnapshot(folders);
+            }
+            else if (OperatingSystem.IsWindows())
+            {
+                return CreateWindowsSnapshot(folders, options);
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupported Operating System");
+            }
             
         }
 
@@ -57,6 +67,8 @@ namespace Duplicati.Library.Snapshots
         /// <param name="folders">The list of folders to create snapshots of</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macOS")]
         private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders)
         {
             return new LinuxSnapshot(folders);
@@ -69,6 +81,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private static ISnapshotService CreateWindowsSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
         {
             return new WindowsSnapshot(folders, options);

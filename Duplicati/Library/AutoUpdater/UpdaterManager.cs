@@ -118,7 +118,7 @@ namespace Duplicati.Library.AutoUpdater
             {
                 // OS specific folders for probing
                 var candidates = new List<string>();
-                if (Platform.IsClientWindows)
+                if (OperatingSystem.IsWindows())
                 {
                     candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME));
                     candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
@@ -128,7 +128,7 @@ namespace Duplicati.Library.AutoUpdater
                     candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
                 }
 
-                if (Platform.IsClientOSX)
+                if (OperatingSystem.IsMacOS())
                     candidates.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME));
 
                 // Find the first writeable directory in the list

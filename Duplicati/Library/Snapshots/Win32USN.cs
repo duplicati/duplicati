@@ -21,6 +21,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
 
 namespace Duplicati.Library.Snapshots
@@ -30,6 +31,7 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// Various Windows specific calls to support USN
     /// </summary>
+    [SupportedOSPlatform("windows")]
     internal static class Win32USN
     {
         public const int ERROR_HANDLE_EOF = 38;

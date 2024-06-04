@@ -27,25 +27,30 @@ namespace Duplicati.Library.Common
         /// <value>
         /// Gets or sets a value indicating if the client is Linux/Unix based
         /// </value>
+        [Obsolete("Use OperatingSystem.IsXXX instead")]
         public static readonly bool IsClientPosix;
 
 
         /// <summary>
         /// Gets a value indicating if the client is Windows based
         /// </summary>
+        [Obsolete("Use OperatingSystem.IsXXX instead")]
         public static readonly bool IsClientWindows;
 
 
         /// <value>
         /// Gets or sets a value indicating if the client is running OSX
         /// </value>
+        [Obsolete("Use OperatingSystem.IsXXX instead")]
         public static readonly bool IsClientOSX;
 
         static Platform()
         {
+#pragma warning disable CS0618 // Obsolete
             IsClientPosix = Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX;
             IsClientWindows = !IsClientPosix;
             IsClientOSX = IsClientPosix && "Darwin".Equals(_RetrieveUname(false));
+#pragma warning restore CS0618 // Obsolete
         }
 
         /// <value>
@@ -55,8 +60,10 @@ namespace Duplicati.Library.Common
         {
             get
             {
+#pragma warning disable CS0618 // Obsolete
                 if (!IsClientPosix)
                     return null;
+#pragma warning restore CS0618 // Obsolete
 
                 return _RetrieveUname(true);
 

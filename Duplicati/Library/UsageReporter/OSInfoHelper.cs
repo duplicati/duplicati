@@ -77,11 +77,11 @@ namespace Duplicati.Library.UsageReporter
         {
             get
             {
-                if (!Platform.IsClientPosix)
+                if (!(OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()))
                 {
                     return Environment.OSVersion.ToString();
                 }
-                else if (Platform.IsClientOSX)
+                else if (OperatingSystem.IsMacOS())
                 {
                     var m = RunProgramAndReadOutput("sw_vers", null);
                     if (m != null)
