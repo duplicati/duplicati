@@ -22,14 +22,6 @@
       <Link>licenses\FluentFTP\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\gpg\Homepage.txt">
-      <Link>licenses\gpg\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\License.txt">
-      <Link>licenses\gpg\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\..\thirdparty\Otp.NET\Homepage.txt">
       <Link>licenses\Otp.NET\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -120,10 +112,6 @@
     </Content>
     <Content Include="..\..\thirdparty\AWS SDK\license.txt">
       <Link>licenses\AWSSDK\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\gpg\licensedata.json">
-      <Link>licenses\gpg\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\HttpServer\licensedata.json">
