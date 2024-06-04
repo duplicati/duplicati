@@ -36,9 +36,7 @@ namespace Duplicati.Library.Backend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
 
-        private const string RRS_OPTION = "s3-use-rrs";
         private const string STORAGECLASS_OPTION = "s3-storage-class";
-        private const string EU_BUCKETS_OPTION = "s3-european-buckets";
         private const string SERVER_NAME = "s3-server-name";
         private const string LOCATION_OPTION = "s3-location-constraint";
         private const string SSL_OPTION = "use-ssl";
@@ -172,9 +170,6 @@ namespace Duplicati.Library.Backend
         private readonly string m_prefix;
 
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
-        private const string S3_EU_REGION_NAME = "eu-west-1";
-        private const string S3_RRS_CLASS_NAME = "REDUCED_REDUNDANCY";
-
         private IS3Client s3Client;
 
         public S3()
@@ -186,25 +181,14 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
-            string host = uri.Host;
+            m_bucket = uri.Host;
             m_prefix = uri.Path;
 
-            string awsID = null;
-            string awsKey = null;
+            if (!options.TryGetValue("aws-access-key-id", out var awsID))
+                options.TryGetValue("auth-username", out awsID);
+            if (!options.TryGetValue("aws-secret-access-key", out var awsKey))
+                options.TryGetValue("auth-password", out awsKey);
 
-            if (options.ContainsKey("auth-username"))
-                awsID = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                awsKey = options["auth-password"];
-
-            if (options.ContainsKey("aws_access_key_id"))
-                awsID = options["aws_access_key_id"];
-            if (options.ContainsKey("aws-access-key-id"))
-                awsID = options["aws-access-key-id"];
-            if (options.ContainsKey("aws_secret_access_key"))
-                awsKey = options["aws_secret_access_key"];
-            if (options.ContainsKey("aws-secret-access-key"))
-                awsKey = options["aws-secret-access-key"];
             if (!string.IsNullOrEmpty(uri.Username))
                 awsID = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -215,105 +199,42 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrEmpty(awsKey))
                 throw new UserInformationException(Strings.S3Backend.NoAMZKeyError, "S3NoAmzKey");
 
-            bool euBuckets = Utility.Utility.ParseBoolOption(options, EU_BUCKETS_OPTION);
-            bool useRRS = Utility.Utility.ParseBoolOption(options, RRS_OPTION);
-            bool useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
+            var useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
+            options.TryGetValue(LOCATION_OPTION, out var locationConstraint);
+            options.TryGetValue(STORAGECLASS_OPTION, out var storageClass);
 
-            string locationConstraint;
-            options.TryGetValue(LOCATION_OPTION, out locationConstraint);
-
-            if (!string.IsNullOrEmpty(locationConstraint) && euBuckets)
-                throw new UserInformationException(Strings.S3Backend.OptionsAreMutuallyExclusiveError(LOCATION_OPTION, EU_BUCKETS_OPTION), "S3CannotMixLocationAndEuOptions");
-
-            if (euBuckets)
-                locationConstraint = S3_EU_REGION_NAME;
-
-            string storageClass;
-            options.TryGetValue(STORAGECLASS_OPTION, out storageClass);
-            if (string.IsNullOrWhiteSpace(storageClass) && useRRS)
-                storageClass = S3_RRS_CLASS_NAME;
-
-            string s3host;
-            options.TryGetValue(SERVER_NAME, out s3host);
-            if (string.IsNullOrEmpty(s3host))
+            options.TryGetValue(SERVER_NAME, out var hostname);
+            if (string.IsNullOrEmpty(hostname))
             {
-                s3host = DEFAULT_S3_HOST;
+                hostname = DEFAULT_S3_HOST;
 
                 //Change in S3, now requires that you use location specific endpoint
                 if (!string.IsNullOrEmpty(locationConstraint))
                 {
                     if (DEFAULT_S3_LOCATION_BASED_HOSTS.TryGetValue(locationConstraint, out var s3hostmatch))
-                        s3host = s3hostmatch;
+                        hostname = s3hostmatch;
                 }
-            }
-
-            //Fallback to previous formats
-            if (host.Contains(DEFAULT_S3_HOST))
-            {
-                Uri u = new Uri(url);
-                host = u.Host;
-                m_prefix = "";
-
-                if (String.Equals(host, s3host, StringComparison.OrdinalIgnoreCase))
-                {
-                    m_bucket = Utility.Uri.UrlDecode(u.PathAndQuery);
-
-                    if (m_bucket.StartsWith("/", StringComparison.Ordinal))
-                        m_bucket = m_bucket.Substring(1);
-
-                    if (m_bucket.Contains("/"))
-                    {
-                        m_prefix = m_bucket.Substring(m_bucket.IndexOf("/", StringComparison.Ordinal) + 1);
-                        m_bucket = m_bucket.Substring(0, m_bucket.IndexOf("/", StringComparison.Ordinal));
-                    }
-                }
-                else
-                {
-                    //Subdomain type lookup
-                    if (host.EndsWith("." + s3host, StringComparison.OrdinalIgnoreCase))
-                    {
-                        m_bucket = host.Substring(0, host.Length - ("." + s3host).Length);
-                        host = s3host;
-                        m_prefix = Utility.Uri.UrlDecode(u.PathAndQuery);
-
-                        if (m_prefix.StartsWith("/", StringComparison.Ordinal))
-                            m_prefix = m_prefix.Substring(1);
-                    }
-                    else
-                        throw new UserInformationException(Strings.S3Backend.UnableToDecodeBucketnameError(url), "S3CannotDecodeBucketName");
-                }
-
-                Logging.Log.WriteWarningMessage(LOGTAG, "DeprecatedS3Format", null, Strings.S3Backend.DeprecatedUrlFormat("s3://" + m_bucket + "/" + m_prefix));
-            }
-            else
-            {
-                //The new simplified url style s3://bucket/prefix
-                m_bucket = host;
-                host = s3host;
             }
 
             m_prefix = m_prefix.Trim();
             if (m_prefix.Length != 0)
-            {
                 m_prefix = Util.AppendDirSeparator(m_prefix, "/");
-            }
 
-            // Auto-disable dns lookup for non AWS configurations
-            var hasForcePathStyle = options.ContainsKey("s3-ext-forcepathstyle");
-            if (!hasForcePathStyle && !DEFAULT_S3_LOCATION_BASED_HOSTS.Any(x => string.Equals(x.Value, host, StringComparison.OrdinalIgnoreCase)) && !string.Equals(host, "s3.amazonaws.com", StringComparison.OrdinalIgnoreCase))
+            // Auto-disable DNS lookup for non-AWS configurations
+            if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
-            bool disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
+            var disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
 
             options.TryGetValue(S3_CLIENT_OPTION, out var s3ClientOptionValue);
 
             if (s3ClientOptionValue == "aws" || s3ClientOptionValue == null)
             {
-                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, disableChunkEncoding, options);
+                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, options);
             }
             else
             {
-                s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, host, storageClass, useSSL, options);
+                s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, options);
             }
         }
 
@@ -367,11 +288,11 @@ namespace Duplicati.Library.Backend
 
         public void Get(string remotename, string localname)
         {
-            using (var fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+            using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
                 Get(remotename, fs);
         }
 
-        public void Get(string remotename, System.IO.Stream output)
+        public void Get(string remotename, Stream output)
         {
             Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
         }
@@ -408,12 +329,8 @@ namespace Duplicati.Library.Backend
 
 
                 var normal = new ICommandLineArgument[] {
-                    new CommandLineArgument("aws_secret_access_key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong, null, null, null,"This is deprecated, use aws-secret-access-key instead"),
                     new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, new string[] {"auth-password"}, null ),
-                    new CommandLineArgument("aws_access_key_id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong,null, null, null, "This is deprecated, use aws-access-key-id instead"),
                     new CommandLineArgument("aws-access-key-id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
-                    new CommandLineArgument(EU_BUCKETS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3EurobucketDescriptionShort, Strings.S3Backend.S3EurobucketDescriptionLong, "false", null, null, Strings.S3Backend.S3EurobucketDeprecationDescription(LOCATION_OPTION, S3_EU_REGION_NAME)),
-                    new CommandLineArgument(RRS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.S3UseRRSDescriptionShort, Strings.S3Backend.S3UseRRSDescriptionLong, "false", null, null, Strings.S3Backend.S3RRSDeprecationDescription(STORAGECLASS_OPTION, S3_RRS_CLASS_NAME)),
                     new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3StorageclassDescriptionShort, Strings.S3Backend.S3StorageclassDescriptionLong),
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
