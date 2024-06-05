@@ -1,25 +1,26 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Server.Serialization.Interface;
 
-
-#endregion
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -67,7 +68,7 @@ namespace Duplicati.Server
         /// The currently scheduled items
         /// </summary>
         private KeyValuePair<DateTime, ISchedule>[] m_schedule;
-        
+
         /// <summary>
         /// List of update tasks, used to set the timestamp on the schedule once completed
         /// </summary>
@@ -104,13 +105,13 @@ namespace Duplicati.Server
         /// <summary>
         /// A snapshot copy of the current schedule list
         /// </summary>
-        public List<KeyValuePair<DateTime, ISchedule>> Schedule 
-        { 
-            get 
+        public List<KeyValuePair<DateTime, ISchedule>> Schedule
+        {
+            get
             {
                 lock (m_lock)
                     return m_schedule.ToList();
-            } 
+            }
         }
 
         /// <summary>
@@ -195,26 +196,26 @@ namespace Duplicati.Server
 
                 throw new Exception(Strings.Scheduler.InvalidTimeSetupError(basetime, repetition, sb.ToString()));
             }
-            
+
             return res;
         }
-        
+
         private void OnCompleted(WorkerThread<Runner.IRunnerData> worker, Runner.IRunnerData task)
         {
             Tuple<ISchedule, DateTime, DateTime> t = null;
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (task != null && m_updateTasks.TryGetValue(task, out t))
                     m_updateTasks.Remove(task);
             }
-            
+
             if (t != null)
             {
                 t.Item1.Time = t.Item2;
                 t.Item1.LastRun = t.Item3;
                 FIXMEGlobal.DataConnection.AddOrUpdateSchedule(t.Item1);
             }
-            
+
         }
 
         private void OnStartingWork(WorkerThread<Runner.IRunnerData> worker, Runner.IRunnerData task)
@@ -223,8 +224,8 @@ namespace Duplicati.Server
             {
                 return;
             }
-            
-            lock(m_lock)
+
+            lock (m_lock)
             {
                 if (m_updateTasks.TryGetValue(task, out Tuple<ISchedule, DateTime, DateTime> scheduleInfo))
                 {
@@ -245,10 +246,10 @@ namespace Duplicati.Server
             {
                 //TODO: As this is executed repeatedly we should cache it
                 // to avoid frequent db lookups
-                
+
                 //Determine schedule list
                 var lst = FIXMEGlobal.DataConnection.Schedules;
-                foreach(var sc in lst)
+                foreach (var sc in lst)
                 {
                     if (!string.IsNullOrEmpty(sc.Repeat))
                     {
@@ -267,7 +268,7 @@ namespace Duplicati.Server
                         {
                             start = startkey.Value;
                         }
-                        
+
                         try
                         {
                             // Recover from timedrift issues by overriding the dates if the last run date is in the future.
@@ -288,15 +289,15 @@ namespace Duplicati.Server
                         {
                             var jobsToRun = new List<Server.Runner.IRunnerData>();
                             //TODO: Cache this to avoid frequent lookups
-                            foreach(var id in FIXMEGlobal.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct().Select(x => x.ToString()))
+                            foreach (var id in FIXMEGlobal.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct().Select(x => x.ToString()))
                             {
                                 //See if it is already queued
                                 var tmplst = from n in m_worker.CurrentTasks
-                                        where n.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup
-                                         select n.Backup;
+                                             where n.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup
+                                             select n.Backup;
                                 var tastTemp = m_worker.CurrentTask;
                                 if (tastTemp != null && tastTemp.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup)
-                                    tmplst = tmplst.Union(new [] { tastTemp.Backup });
+                                    tmplst = tmplst.Union(new[] { tastTemp.Backup });
 
                                 //If it is not already in queue, put it there
                                 if (!tmplst.Any(x => x.ID == id))
@@ -323,12 +324,12 @@ namespace Duplicati.Server
                             {
                                 start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
                             }
-                            catch(Exception ex)
+                            catch (Exception ex)
                             {
                                 FIXMEGlobal.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date", ex);
                                 continue;
                             }
-                            
+
                             Server.Runner.IRunnerData lastJob = jobsToRun.LastOrDefault();
                             if (lastJob != null)
                             {
@@ -341,7 +342,7 @@ namespace Duplicati.Server
 
                             foreach (var job in jobsToRun)
                                 m_worker.AddTask(job);
-                            
+
                             if (start < DateTime.UtcNow)
                             {
                                 //TODO: Report this somehow
@@ -349,20 +350,20 @@ namespace Duplicati.Server
                             }
                         }
 
-                        scheduled[sc.ID] = new KeyValuePair<long,DateTime>(scticks, start);
+                        scheduled[sc.ID] = new KeyValuePair<long, DateTime>(scticks, start);
                     }
                 }
 
                 var existing = lst.ToDictionary(x => x.ID);
                 //Sort them, lock as we assign the m_schedule variable
-                lock(m_lock)
+                lock (m_lock)
                     m_schedule = (from n in scheduled
-                        where existing.ContainsKey(n.Key)
-                        orderby n.Value.Value
-                        select new KeyValuePair<DateTime, ISchedule>(n.Value.Value, existing[n.Key])).ToArray();
+                                  where existing.ContainsKey(n.Key)
+                                  orderby n.Value.Value
+                                  select new KeyValuePair<DateTime, ISchedule>(n.Value.Value, existing[n.Key])).ToArray();
 
                 // Remove unused entries                        
-                foreach(var c in (from n in scheduled where !existing.ContainsKey(n.Key) select n.Key).ToArray())
+                foreach (var c in (from n in scheduled where !existing.ContainsKey(n.Key) select n.Key).ToArray())
                     scheduled.Remove(c);
 
                 //Raise event if needed
@@ -406,7 +407,7 @@ namespace Duplicati.Server
             if (allowedDays == null || allowedDays.Length == 0)
                 return true;
             else
-                return Array.IndexOf<DayOfWeek>(allowedDays, localTime.DayOfWeek) >= 0; 
+                return Array.IndexOf<DayOfWeek>(allowedDays, localTime.DayOfWeek) >= 0;
         }
 
     }
