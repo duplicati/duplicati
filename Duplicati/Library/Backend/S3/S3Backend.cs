@@ -70,58 +70,49 @@ namespace Duplicati.Library.Backend
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
-        public static readonly Dictionary<string, string> KNOWN_S3_LOCATIONS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+        public static readonly Dictionary<string, string> KNOWN_S3_LOCATIONS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "(default)", "" },
-            { "Europe (EU)", "EU" },
-            { "Europe (EU, Frankfurt)", "eu-central-1" },
-            { "Europe (EU, Ireland)", "eu-west-1" },
-            { "Europe (EU, London)", "eu-west-2" },
-            { "Europe (EU, Paris)", "eu-west-3" },
-            { "Europe (EU, Stockholm)", "eu-north-1" },
-            { "Europe (EU, Milan)", "eu-south-1" },
-            { "US East (Northern Virginia)", "us-east-1" },
             { "US East (Ohio)", "us-east-2" },
-            { "US West (Northern California)", "us-west-1" },
+            { "US East (N. Virginia)", "us-east-1" },
+            { "US West (N. California)", "us-west-1" },
             { "US West (Oregon)", "us-west-2" },
-            { "Canada (Central)", "ca-central-1" },
+            { "Africa (Cape Town)", "af-south-1" },
             { "Asia Pacific (Hong Kong)", "ap-east-1" },
+            { "Asia Pacific (Hyderabad)", "ap-south-2" },
+            { "Asia Pacific (Jakarta)", "ap-southeast-3" },
+            { "Asia Pacific (Melbourne)", "ap-southeast-4" },
             { "Asia Pacific (Mumbai)", "ap-south-1" },
+            { "Asia Pacific (Osaka)", "ap-northeast-3" },
+            { "Asia Pacific (Seoul)", "ap-northeast-2" },
             { "Asia Pacific (Singapore)", "ap-southeast-1" },
             { "Asia Pacific (Sydney)", "ap-southeast-2" },
             { "Asia Pacific (Tokyo)", "ap-northeast-1" },
-            { "Asia Pacific (Seoul)", "ap-northeast-2" },
-            { "Asia Pacific (Osaka-Local)", "ap-northeast-3" },
+            { "Canada (Central)", "ca-central-1" },
+            { "Canada West (Calgary)", "ca-west-1" },
+            { "Europe (Frankfurt)", "eu-central-1" },
+            { "Europe (Ireland)", "eu-west-1" },
+            { "Europe (London)", "eu-west-2" },
+            { "Europe (Milan)", "eu-south-1" },
+            { "Europe (Paris)", "eu-west-3" },
+            { "Europe (Spain)", "eu-south-2" },
+            { "Europe (Stockholm)", "eu-north-1" },
+            { "Europe (Zurich)", "eu-central-2" },
+            { "Israel (Tel Aviv)", "il-central-1" },
+            { "Middle East (Bahrain)", "me-south-1" },
+            { "Middle East (UAE)", "me-central-1" },
             { "South America (São Paulo)", "sa-east-1" },
+            { "AWS GovCloud (US-East)", "us-gov-east-1" },
+            { "AWS GovCloud (US-West)", "us-gov-west-1" },
+
+            // No longer listed on the AWS site
             { "China (Beijing)", "cn-north-1" },
             { "China (Ningxia)", "cn-northwest-1" },
-            { "Middle East (Bahrain)", "me-south-1" },
+
+            // For backwards compatibility, should no longer be used
+            { "EU", "eu-west-1" }
         };
 
-        public static readonly Dictionary<string, string> DEFAULT_S3_LOCATION_BASED_HOSTS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
-            { "EU", "s3.eu-west-1.amazonaws.com" },
-            { "ca-central-1", "s3.ca-central-1.amazonaws.com" },
-            { "eu-west-1", "s3.eu-west-1.amazonaws.com" },
-            { "eu-west-2", "s3.eu-west-2.amazonaws.com" },
-            { "eu-west-3", "s3.eu-west-3.amazonaws.com" },
-            { "eu-north-1", "s3.eu-north-1.amazonaws.com" },
-            { "eu-south-1", "s3.eu-south-1.amazonaws.com" },
-            { "eu-central-1", "s3.eu-central-1.amazonaws.com" },
-            { "us-east-1", "s3.amazonaws.com" },
-            { "us-east-2", "s3.us-east-2.amazonaws.com" },
-            { "us-west-1", "s3.us-west-1.amazonaws.com" },
-            { "us-west-2", "s3.us-west-2.amazonaws.com" },
-            { "ap-east-1", "s3.ap-east-1.amazonaws.com" },
-            { "ap-south-1", "s3.ap-south-1.amazonaws.com" },
-            { "ap-southeast-1", "s3.ap-southeast-1.amazonaws.com" },
-            { "ap-southeast-2", "s3.ap-southeast-2.amazonaws.com" },
-            { "ap-northeast-1", "s3.ap-northeast-1.amazonaws.com" },
-            { "ap-northeast-2", "s3.ap-northeast-2.amazonaws.com" },
-            { "ap-northeast-3", "s3.ap-northeast-3.amazonaws.com" },
-            { "sa-east-1", "s3.sa-east-1.amazonaws.com" },
-            { "cn-north-1", "s3.cn-north-1.amazonaws.com.cn" },
-            { "cn-northwest-1", "s3.cn-northwest-1.amazonaws.com.cn" },
-            { "me-south-1", "s3.me-south-1.amazonaws.com" },
-        };
+        public static readonly Dictionary<string, string> DEFAULT_S3_LOCATION_BASED_HOSTS;
 
         public static readonly Dictionary<string, string> KNOWN_S3_STORAGE_CLASSES;
 
@@ -148,8 +139,14 @@ namespace Duplicati.Library.Backend
             }
 
             KNOWN_S3_STORAGE_CLASSES = ns;
-        }
 
+            DEFAULT_S3_LOCATION_BASED_HOSTS = KNOWN_S3_LOCATIONS
+                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                .Select(x => new KeyValuePair<string, string>(x.Value, $"s3.{x.Value}.amazonaws.com"))
+                .Append(new KeyValuePair<string, string>("EU", "s3.eu-west-1.amazonaws.com"))
+                .DistinctBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        }
         /// <summary>
         /// Fetch storage classes from the API through reflection so we are always updated
         /// </summary>
