@@ -36,7 +36,7 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         public static HttpServerConnection Connection;
-    
+
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
         private const string READCONFIGFROMDB_OPTION = "read-config-from-db";
@@ -45,7 +45,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
         private const string DEFAULT_HOSTURL = "http://localhost:8200";
-        
+
         private static string _browser_command = null;
         private static bool disableTrayIconLogin = false;
         private static bool openui = false;
@@ -134,7 +134,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
-                databaseConnection = Server.Program.GetDatabaseConnection(null, options);
+                databaseConnection = Server.Program.GetDatabaseConnection(options);
 
                 if (databaseConnection != null)
                 {
@@ -261,7 +261,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     new Duplicati.Library.Interface.CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
                     new Duplicati.Library.Interface.CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
-                    new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),               
+                    new Duplicati.Library.Interface.CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
                 };
 

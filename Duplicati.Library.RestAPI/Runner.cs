@@ -942,7 +942,7 @@ namespace Duplicati.Server
             return filter;
         }
 
-        internal static Dictionary<string, string> GetCommonOptions()
+        public static Dictionary<string, string> GetCommonOptions()
         {
             return
                 (from n in FIXMEGlobal.DataConnection.Settings

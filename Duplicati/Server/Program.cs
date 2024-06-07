@@ -22,15 +22,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.WebserverCore;
 using Duplicati.WebserverCore.Abstractions;
-using Duplicati.WebserverCore.Database;
 using Microsoft.Extensions.DependencyInjection;
-using Sharp.Xmpp.Extensions.Dataforms;
 
 namespace Duplicati.Server
 {
@@ -108,17 +106,12 @@ namespace Duplicati.Server
         /// <summary>
         /// The controller interface for pause/resume and throttle options
         /// </summary>
-        public static LiveControls LiveControl { get => DuplicatiWebserver.Provider.GetRequiredService<LiveControls>() ; }
+        public static LiveControls LiveControl { get => DuplicatiWebserver.Provider.GetRequiredService<LiveControls>(); }
 
         /// <summary>
         /// The application exit event
         /// </summary>
         public static System.Threading.ManualResetEvent ApplicationExitEvent { get => FIXMEGlobal.ApplicationExitEvent; set => FIXMEGlobal.ApplicationExitEvent = value; }
-
-        /// <summary>
-        /// The webserver instance
-        /// </summary>
-        private static WebServer.Server WebServer;
 
         /// <summary>
         /// Duplicati webserver instance
@@ -169,7 +162,7 @@ namespace Duplicati.Server
         {
             get
             {
-                return WebServer.Port;
+                return DuplicatiWebserver.Port;
             }
         }
 
@@ -252,10 +245,7 @@ namespace Duplicati.Server
 
             try
             {
-                DuplicatiWebserver = new DuplicatiWebserver();
-                DuplicatiWebserver.InitWebServer();
-                FIXMEGlobal.Provider = DuplicatiWebserver.Provider;
-                DataConnection = GetDatabaseConnection(DuplicatiWebserver, commandlineOptions);
+                DataConnection = GetDatabaseConnection(commandlineOptions);
 
                 if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
                     DataConnection.FixInvalidBackupId();
@@ -272,7 +262,9 @@ namespace Duplicati.Server
                 {
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
-                
+
+                DuplicatiWebserver = StartWebServer(commandlineOptions).ConfigureAwait(false).GetAwaiter().GetResult();
+
                 UpdatePoller.Init();
 
                 SetPurgeTempFilesTimer(commandlineOptions);
@@ -281,11 +273,10 @@ namespace Duplicati.Server
 
                 SetWorkerThread();
 
-                StartWebServer(DuplicatiWebserver, commandlineOptions);
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, "ping-pong-keepalive"))
                 {
-                    PingPongThread = new System.Threading.Thread(PingPongMethod) {IsBackground = true};
+                    PingPongThread = new System.Threading.Thread(PingPongMethod) { IsBackground = true };
                     PingPongThread.Start();
                 }
 
@@ -296,7 +287,7 @@ namespace Duplicati.Server
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (!writeToConsole) throw;
-                
+
                 Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 return 100;
             }
@@ -334,14 +325,31 @@ namespace Duplicati.Server
             return 0;
         }
 
-        private static void StartWebServer(DuplicatiWebserver webserver, Dictionary<string, string> commandlineOptions)
+        private static async Task<DuplicatiWebserver> StartWebServer(IReadOnlyDictionary<string, string> options)
         {
-            WebServer = new WebServer.Server(commandlineOptions);
+            var server = await WebServerLoader.TryRunServer(options, async parsedOptions =>
+            {
+                var mappedSettings = new DuplicatiWebserver.InitSettings(
+                    parsedOptions.WebRoot,
+                    parsedOptions.Port,
+                    parsedOptions.Interface,
+                    parsedOptions.Certificate,
+                    parsedOptions.Servername,
+                    parsedOptions.Password,
+                    parsedOptions.AllowedHostnames);
 
-            ServerPortChanged |= WebServer.Port != DataConnection.ApplicationSettings.LastWebserverPort;
-            DataConnection.ApplicationSettings.LastWebserverPort = WebServer.Port;
-            
-            webserver.Start().GetAwaiter().GetResult();
+                var server = new DuplicatiWebserver();
+
+                server.InitWebServer(mappedSettings, DataConnection);
+                server.Start(mappedSettings);
+                return server;
+            }).ConfigureAwait(false);
+
+            FIXMEGlobal.Provider = server.Provider;
+            ServerPortChanged |= server.Port != DataConnection.ApplicationSettings.LastWebserverPort;
+            DataConnection.ApplicationSettings.LastWebserverPort = server.Port;
+
+            return server;
         }
 
         private static void SetWorkerThread()
@@ -350,7 +358,7 @@ namespace Duplicati.Server
             FIXMEGlobal.WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
             FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
             FIXMEGlobal.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
-            FIXMEGlobal.Scheduler.NewSchedule += new EventHandler(SignalNewEvent);
+            FIXMEGlobal.Scheduler.SubScribeToNewSchedule(() => SignalNewEvent(null, null));
             FIXMEGlobal.WorkThread.OnError += (worker, task, exception) =>
             {
                 Program.DataConnection.LogError(task?.BackupID, "Error in worker", exception);
@@ -471,16 +479,16 @@ namespace Duplicati.Server
 
         private static void AdjustApplicationSettings(Dictionary<string, string> commandlineOptions)
         {
-            if (commandlineOptions.ContainsKey("webservice-password"))
+            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_PASSWORD))
             {
-                DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions["webservice-password"]);
+                DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_PASSWORD]);
             }
 
             DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
 
-            if (commandlineOptions.ContainsKey("webservice-allowed-hostnames"))
+            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES))
             {
-                DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions["webservice-allowed-hostnames"]);
+                DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES]);
             }
         }
 
@@ -559,7 +567,7 @@ namespace Duplicati.Server
             throw new Exception("Server invoked with --help");
         }
 
-        public static Database.Connection GetDatabaseConnection(object webserver, Dictionary<string, string> commandlineOptions)
+        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
         {
             var serverDataFolder = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
             if (commandlineOptions.ContainsKey("server-datafolder"))
@@ -698,7 +706,7 @@ namespace Duplicati.Server
             {
                 case LiveControls.LiveControlState.Paused:
                     {
-                       worker.Pause();
+                        worker.Pause();
                         var t = worker.CurrentTask;
                         t?.Pause();
                         break;
@@ -757,25 +765,21 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument("tempdir", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.TempdirShort, Strings.Program.TempdirLong, System.IO.Path.GetTempPath()),
                     new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
-                    new Duplicati.Library.Interface.CommandLineArgument("unencrypted-database", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.UnencrypteddatabaseCommandDescription, Strings.Program.UnencrypteddatabaseCommandDescription, "false", null, null, "Database encryption is no longer supported, this setting has no effect"),
                     new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
-                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_WEBROOT),
-                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_PORT.ToString()),
-                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificateFileDescription, Strings.Program.WebserverCertificateFileDescription, Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILE),
-                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILEPASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificatePasswordDescription, Strings.Program.WebserverCertificatePasswordDescription, Duplicati.Server.WebServer.Server.OPTION_SSLCERTIFICATEFILEPASSWORD),
-                    new Duplicati.Library.Interface.CommandLineArgument(Duplicati.Server.WebServer.Server.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, Duplicati.Server.WebServer.Server.DEFAULT_OPTION_INTERFACE),
-                    new Duplicati.Library.Interface.CommandLineArgument("webservice-password", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
-                    new Duplicati.Library.Interface.CommandLineArgument("webservice-allowed-hostnames", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverAllowedhostnamesDescription, Strings.Program.WebserverAllowedhostnamesDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, WebServerLoader.DEFAULT_OPTION_WEBROOT),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, WebServerLoader.DEFAULT_OPTION_PORT.ToString()),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificateFileDescription, Strings.Program.WebserverCertificateFileDescription, WebServerLoader.OPTION_SSLCERTIFICATEFILE),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILEPASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificatePasswordDescription, Strings.Program.WebserverCertificatePasswordDescription, WebServerLoader.OPTION_SSLCERTIFICATEFILEPASSWORD),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, WebServerLoader.DEFAULT_OPTION_INTERFACE),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_PASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverAllowedhostnamesDescription, Strings.Program.WebserverAllowedhostnamesDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                     new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                     new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
 
                 });
-
-                if (!Platform.IsClientPosix)
-                    lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42", null, null, "Database encryption is no longer supported, this setting can only be used to decrypt the database"));
 
                 return lst.ToArray();
             }
@@ -792,7 +796,8 @@ namespace Duplicati.Server
                 string appendfilter = null;
                 string replacefilter = null;
 
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) =>
+                {
                     if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
                     {
                         newsource.Add(value);

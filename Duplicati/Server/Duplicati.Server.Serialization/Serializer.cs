@@ -18,18 +18,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 namespace Duplicati.Server.Serialization
-{    
+{
     public class Serializer
     {
         public static JsonSerializerSettings JsonSettings { get; }
@@ -54,7 +48,7 @@ namespace Duplicati.Server.Serialization
 
         public static void SerializeJson(System.IO.TextWriter sw, object o, bool preventDispose = false)
         {
-            Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(JsonSettings);
+            JsonSerializer jsonSerializer = JsonSerializer.Create(JsonSettings);
             var jsonWriter = new JsonTextWriter(sw);
             using (preventDispose ? null : jsonWriter)
             {
@@ -65,26 +59,9 @@ namespace Duplicati.Server.Serialization
             }
         }
 
-        public static async Task SerializeJsonAsync(System.IO.TextWriter tw, object o, bool preventDispose = false)
-        {
-            Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(JsonSettings);
-            StringBuilder sb = new StringBuilder();
-            StringWriter sw = new StringWriter(sb);
-            var jsonWriter = new JsonTextWriter(sw);
-            using (preventDispose ? null : jsonWriter)
-            {
-                jsonWriter.Formatting = m_jsonFormatting;
-                jsonSerializer.Serialize(jsonWriter, o); 
-                await jsonWriter.FlushAsync();
-            }
-            await sw.FlushAsync();
-            await tw.WriteAsync(sb.ToString());
-            await tw.FlushAsync();
-        }
-
         public static T Deserialize<T>(System.IO.TextReader sr)
         {
-            Newtonsoft.Json.JsonSerializer jsonSerializer = Newtonsoft.Json.JsonSerializer.Create(JsonSettings);
+            JsonSerializer jsonSerializer = JsonSerializer.Create(JsonSettings);
             using (var jsonReader = new JsonTextReader(sr))
             {
                 jsonReader.Culture = System.Globalization.CultureInfo.InvariantCulture;

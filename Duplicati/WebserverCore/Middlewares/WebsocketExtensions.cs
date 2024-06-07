@@ -1,41 +1,28 @@
 using System.Net.WebSockets;
 using System.Text;
 using Duplicati.WebserverCore.Abstractions.Notifications;
-using Duplicati.WebserverCore.Options;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
 public static class WebsocketExtensions
 {
-    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IConfiguration configuration)
+    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IEnumerable<string> allowedHostnames, string notificationPath)
     {
-        var kestrelUrl = configuration["Kestrel:Endpoints:MyHttpEndpoint:Url"];
-        if (kestrelUrl != null)
-        {
-            var uri = new Uri(kestrelUrl);
-            kestrelUrl = uri.Scheme + "://" + uri.Authority;
-        }
-        else
-        {
-            kestrelUrl = "http://localhost:8201";
-        }
+        var opts = new WebSocketOptions();
+        if (!allowedHostnames.Any(x => x == "*"))
+            foreach (var allowedHostname in allowedHostnames)
+                opts.AllowedOrigins.Add(allowedHostname);
 
-        var options = configuration.GetRequiredSection(NotificationsOptions.SectionName).Get<NotificationsOptions>()!;
-
-        app.UseWebSockets(new WebSocketOptions
-        {
-            AllowedOrigins = { kestrelUrl }
-        });
-
+        app.UseWebSockets(opts);
         return app.Use(async (context, next) =>
         {
-            var websocketAccessor = context.RequestServices.GetRequiredService<IWebsocketAccessor>();
-            if (context.Request.Path != options.WebsocketPath)
+            if (context.Request.Path != notificationPath)
             {
                 await next(context);
             }
             else
             {
+                var websocketAccessor = context.RequestServices.GetRequiredService<IWebsocketAccessor>();
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();

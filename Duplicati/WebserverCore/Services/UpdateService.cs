@@ -6,7 +6,7 @@ namespace Duplicati.WebserverCore.Services;
 public class UpdateService(ISettingsService settingsService, JsonSerializerSettings options, ILogger<ISettingsService> logger) : IUpdateService
 {
     private UpdateInfo? _updateInfo;
-    
+
     public UpdateInfo? GetUpdateInfo()
     {
         var settings = settingsService.GetSettings();

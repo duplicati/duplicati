@@ -1,29 +1,130 @@
+
 namespace Duplicati.WebserverCore.Abstractions;
 
 public class ServerSettings
 {
-    public string StartupDelay { get; set; } = "";
-    public string DownloadSpeedLimit { get; set; }= "";
-    public string UploadSpeedLimit { get; set; }= "";
-    public string ThreadPriority { get; set; }= "";
-    public string LastWebserverPort { get; set; }= "";
-    public string IsFirstRun { get; set; }= "";
-    public string ServerPortChanged { get; set; }= "";
-    public string ServerPassphrase { get; set; }= "";
-    public string ServerPassphraseSalt { get; set; }= "";
-    public string ServerPassphraseTrayIcon { get; set; }= "";
-    public string ServerPassphraseTrayIconHash { get; set; }= "";
-    public string UpdateCheckLast { get; set; }= "";
-    public string UpdateCheckInterval { get; set; }= "";
-    public string UpdateCheckNewVersion { get; set; }= "";
-    public bool UnackedError { get; set; }
-    public bool UnackedWarning { get; set; }
-    public string ServerListenInterface { get; set; }= "";
-    public string ServerSslCertificate { get; set; }= "";
-    public string HasFixedInvalidBackupId { get; set; }= "";
-    public string UpdateChannel { get; set; }= "";
-    public string UsageReporterLevel { get; set; }= "";
-    public string HasAskedForPasswordProtection { get; set; }= "";
-    public string DisableTrayIconLogin { get; set; }= "";
-    public string ServerAllowedHostnames { get; set; }= "";
+    private readonly Server.Database.ServerSettings applicationSettings;
+
+    public ServerSettings(Server.Database.ServerSettings applicationSettings)
+        => this.applicationSettings = applicationSettings;
+
+    public string StartupDelay
+    {
+        get => applicationSettings.StartupDelayDuration;
+        set => applicationSettings.StartupDelayDuration = value;
+    }
+
+    public string DownloadSpeedLimit
+    {
+        get => applicationSettings.DownloadSpeedLimit;
+        set => applicationSettings.DownloadSpeedLimit = value;
+    }
+    public string UploadSpeedLimit
+    {
+        get => applicationSettings.UploadSpeedLimit;
+        set => applicationSettings.UploadSpeedLimit = value;
+    }
+    public ThreadPriority? ThreadPriority
+    {
+        get => applicationSettings.ThreadPriorityOverride;
+        set => applicationSettings.ThreadPriorityOverride = value;
+    }
+    public int LastWebserverPort
+    {
+        get => applicationSettings.LastWebserverPort;
+        set => applicationSettings.LastWebserverPort = value;
+    }
+
+    public bool IsFirstRun
+    {
+        get => applicationSettings.IsFirstRun;
+        set => applicationSettings.IsFirstRun = value;
+    }
+
+    public bool ServerPortChanged
+    {
+        get => applicationSettings.ServerPortChanged;
+        set => applicationSettings.ServerPortChanged = value;
+    }
+    public string ServerPassphrase
+    {
+        get => applicationSettings.WebserverPassword;
+        set => applicationSettings.SetWebserverPassword(value);
+    }
+    public string ServerPassphraseSalt
+    {
+        get => applicationSettings.WebserverPasswordSalt;
+    }
+    public string ServerPassphraseTrayIcon
+    {
+        get => applicationSettings.WebserverPasswordTrayIcon;
+    }
+    public string ServerPassphraseTrayIconHash
+    {
+        get => applicationSettings.WebserverPasswordTrayIconHash;
+    }
+    public DateTime UpdateCheckLast
+    {
+        get => applicationSettings.LastUpdateCheck;
+        set => applicationSettings.LastUpdateCheck = value;
+    }
+    public string UpdateCheckInterval
+    {
+        get => applicationSettings.UpdateCheckInterval;
+        set => applicationSettings.UpdateCheckInterval = value;
+    }
+    public string? UpdateCheckNewVersion
+    {
+        get => applicationSettings.UpdatedVersion?.GetUpdateUrls()?.FirstOrDefault();
+    }
+    public bool UnackedError
+    {
+        get => applicationSettings.UnackedError;
+        set => applicationSettings.UnackedError = value;
+    }
+    public bool UnackedWarning
+    {
+        get => applicationSettings.UnackedWarning;
+        set => applicationSettings.UnackedWarning = value;
+    }
+    public string ServerListenInterface
+    {
+        get => applicationSettings.ServerListenInterface;
+        set => applicationSettings.ServerListenInterface = value;
+    }
+    public bool HasFixedInvalidBackupId
+    {
+        get => applicationSettings.FixedInvalidBackupId;
+        set => applicationSettings.FixedInvalidBackupId = value;
+    }
+    public string UpdateChannel
+    {
+        get => applicationSettings.UpdateChannel;
+        set => applicationSettings.UpdateChannel = value;
+    }
+    public string UsageReporterLevel
+    {
+        get => applicationSettings.UsageReporterLevel;
+        set => applicationSettings.UsageReporterLevel = value;
+    }
+    public bool HasAskedForPasswordProtection
+    {
+        get => applicationSettings.HasAskedForPasswordProtection;
+        set => applicationSettings.HasAskedForPasswordProtection = value;
+    }
+    public bool DisableTrayIconLogin
+    {
+        get => applicationSettings.DisableTrayIconLogin;
+        set => applicationSettings.DisableTrayIconLogin = value;
+    }
+    public string ServerAllowedHostnames
+    {
+        get => applicationSettings.AllowedHostnames;
+        set => applicationSettings.SetAllowedHostnames(value);
+    }
+
+    public bool HasSSLCertificate
+    {
+        get => applicationSettings.ServerSSLCertificate != null;
+    }
 }

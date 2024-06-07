@@ -1,5 +1,3 @@
-#region Disclaimer / License
-
 // Copyright (C) 2015, The Duplicati Team
 // http://www.duplicati.com, info@duplicati.com
 // 
@@ -16,10 +14,8 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-using Duplicati.Server.Serialization.Interface;
 
-#endregion
+using Duplicati.Server.Serialization.Interface;
 
 using System;
 using System.Collections.Generic;
@@ -28,14 +24,16 @@ using System.Linq;
 using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.Library.RestAPI;
-using Duplicati.WebserverCore.Abstractions;
+
+// TODO: Rewrite this class.
+// It should just signal what new backups to run, and not mix with the worker thread.
 
 namespace Duplicati.Server
 {
     /// <summary>
     /// This class handles scheduled runs of backups
     /// </summary>
-    public class Scheduler : IScheduler
+    public class Scheduler
     {
         private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Scheduler>();
 
@@ -108,8 +106,8 @@ namespace Duplicati.Server
         public IList<Tuple<long, string>> GetSchedulerQueueIds()
         {
             return (from n in WorkerQueue
-                where n.Backup != null
-                select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList();
+                    where n.Backup != null
+                    select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList();
         }
 
         /// <summary>
@@ -317,8 +315,8 @@ namespace Duplicati.Server
                             {
                                 //See if it is already queued
                                 var tmplst = from n in m_worker.CurrentTasks
-                                    where n.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup
-                                    select n.Backup;
+                                             where n.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup
+                                             select n.Backup;
                                 var tastTemp = m_worker.CurrentTask;
                                 if (tastTemp != null && tastTemp.Operation ==
                                     Duplicati.Server.Serialization.DuplicatiOperation.Backup)
@@ -393,9 +391,9 @@ namespace Duplicati.Server
                 //Sort them, lock as we assign the m_schedule variable
                 lock (m_lock)
                     m_schedule = (from n in scheduled
-                        where existing.ContainsKey(n.Key)
-                        orderby n.Value.Value
-                        select new KeyValuePair<DateTime, ISchedule>(n.Value.Value, existing[n.Key])).ToArray();
+                                  where existing.ContainsKey(n.Key)
+                                  orderby n.Value.Value
+                                  select new KeyValuePair<DateTime, ISchedule>(n.Value.Value, existing[n.Key])).ToArray();
 
                 // Remove unused entries                        
                 foreach (var c in (from n in scheduled where !existing.ContainsKey(n.Key) select n.Key).ToArray())

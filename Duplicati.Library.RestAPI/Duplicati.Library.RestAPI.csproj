@@ -13,17 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="6.0.0" />
-    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
   </ItemGroup>
-
-	<ItemGroup>
-		<Reference Include="Duplicati.WebserverCore">
-		  <HintPath>..\Executables\net8\Duplicati.Server\bin\Debug\net8.0\Duplicati.WebserverCore.dll</HintPath>
-		</Reference>
-		<Reference Include="HttpServer">
-			<HintPath>..\thirdparty\HttpServer\HttpServer.dll</HintPath>
-		</Reference>
-	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj" />

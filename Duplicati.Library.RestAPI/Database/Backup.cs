@@ -46,7 +46,7 @@ namespace Duplicati.Server.Database
         {
             this.ID = null;
         }
-        
+
         internal void LoadChildren(Connection con)
         {
             if (this.IsTemporary)
@@ -65,7 +65,9 @@ namespace Duplicati.Server.Database
                 this.Metadata = con.GetMetadata(id);
             }
         }
-    
+
+        protected void SetDBPath(string path) => this.DBPath = path;
+
         /// <summary>
         /// The backup ID
         /// </summary>
@@ -90,27 +92,27 @@ namespace Duplicati.Server.Database
         /// The path to the local database
         /// </summary>
         public string DBPath { get; internal set; }
-                
+
         /// <summary>
         /// The backup source folders and files
         /// </summary>
         public string[] Sources { get; set; }
-        
+
         /// <summary>
         /// The backup settings
         /// </summary>
         public ISetting[] Settings { get; set; }
-        
+
         /// <summary>
         /// The filters applied to the source files
         /// </summary>
         public IFilter[] Filters { get; set; }
-        
+
         /// <summary>
         /// The backup metadata
         /// </summary>
-        public IDictionary<string, string> Metadata { get; set; }        
-        
+        public IDictionary<string, string> Metadata { get; set; }
+
         /// <summary>
         /// Gets a value indicating if this instance is not persisted to the database
         /// </summary>        

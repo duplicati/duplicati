@@ -50,7 +50,13 @@ public class StatusService : IStatusService
             SchedulerQueueIds = m_scheduler.GetSchedulerQueueIds(),
             LastEventID = m_eventPollNotify.EventNo,
             LastDataUpdateID = m_notificationUpdateService.LastDataUpdateId,
-            LastNotificationUpdateID = m_notificationUpdateService.LastNotificationUpdateId
+            LastNotificationUpdateID = m_notificationUpdateService.LastNotificationUpdateId,
+            ProgramState = GetProgramState(),
+            HasWarning = m_settingsService.GetSettings().UnackedWarning,
+            HasError = m_settingsService.GetSettings().UnackedError,
+            EstimatedPauseEnd = m_liveControls.EstimatedPauseEnd,
+            SuggestedStatusIcon = MapStateToIcon(),
+            UpdateDownloadLink = m_settingsService.GetSettings().UpdateCheckNewVersion
         };
         PullSettings(status);
         PullLiveControls(status);

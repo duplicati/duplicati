@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using Duplicati.Library.Localization.Short;
 using System.Linq;
 
-namespace Duplicati.Server.Strings {
-    public static class Program {
+namespace Duplicati.Server.Strings
+{
+    public static class Program
+    {
         public static string AnotherInstanceDetected { get { return LC.L(@"Another instance is running, and was notified"); } }
         public static string DatabaseOpenError(string message) { return LC.L(@"Failed to create, open or upgrade the database.
 Error message: {0}", message); }
@@ -42,11 +44,12 @@ Error message: {0}", error); }
         public static string ServerencryptionkeyLong(string envname, string decryptionoption) { return LC.L(@"This option sets the encryption key used to scramble the local settings database. This option can also be set with the environment variable {0}. Use the option --{1} to disable the database scrambling.", envname, decryptionoption); }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
         public static string TempdirLong { get { return LC.L(@"This option can be used to supply an alternative folder for temporary storage. By default the system default temporary folder is used. Note that also SQLite will put temporary files in this temporary folder."); } }
-}
-    internal static class Scheduler {
+    }
+    internal static class Scheduler
+    {
         public static string InvalidTimeSetupError(System.DateTime startdate, string interval, string alloweddays) { return LC.L(@"Unable to find a valid date, given the start date {0}, the repetition interval {1} and the allowed days {2}", startdate, interval, alloweddays); }
     }
-    internal static class Server
+    public static class Server
     {
         public static string DefectSSLCertInDatabase { get { return @"Unable to create SSL certificate using data from database. Starting without SSL."; } }
         public static string StartedServer(string ip, int port) { return LC.L(@"Server has started and is listening on {0}, port {1}", ip, port); }

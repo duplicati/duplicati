@@ -120,7 +120,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information …');
                 inProgress[version] = true;
 
-                AppService.post('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
+                AppService.postJson('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
                     function(resp) {
 
                         var taskid = resp.data.ID;
@@ -159,7 +159,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information …');
                 inProgress[version] = true;
 
-                AppService.get('/backup/' + $scope.BackupID + '/files/*?prefix-only=true&folder-contents=false&time=' + encodeURIComponent(stamp)).then(
+                AppService.get('/backup/' + $scope.BackupID + '/files?prefix-only=true&folder-contents=false&time=' + encodeURIComponent(stamp)).then(
                     function(resp) {
                         delete inProgress[version];
                         $scope.connecting = false;
@@ -219,7 +219,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var version = $scope.RestoreVersion + '';
         var stamp = filesetStamps[version];
 
-        AppService.get('/backup/' + $scope.BackupID + '/files/*' + $scope.SearchFilter + '*?prefix-only=false&time=' + encodeURIComponent(stamp) + '&filter=*' + encodeURIComponent($scope.SearchFilter) + '*').then(
+        AppService.get('/backup/' + $scope.BackupID + '/files?prefix-only=false&time=' + encodeURIComponent(stamp) + '&filter=*' + encodeURIComponent($scope.SearchFilter) + '*').then(
             function(resp) {
                 $scope.Searching = false;
                 var searchNodes = [];

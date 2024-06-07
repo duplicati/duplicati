@@ -12,7 +12,7 @@ public static class WebApplicationExtensions
 
     private static WebApplication AddV1(WebApplication application)
     {
-        var mapperInterfaceType = typeof(IV1Endpoint);
+        var mapperInterfaceType = typeof(IEndpointV1);
         var endpoints =
             typeof(WebApplicationExtensions).Assembly.DefinedTypes
                 .Where(t => t.ImplementedInterfaces.Contains(mapperInterfaceType))
@@ -28,7 +28,7 @@ public static class WebApplicationExtensions
                 //TODO: make this work with clean environment - can we enable this by disable globally until user sets up some password?  
                 //.RequireAuthorization()
                 ;
-            var methodMap = endpoint.GetMethod(nameof(IV1Endpoint.Map), BindingFlags.Static | BindingFlags.Public);
+            var methodMap = endpoint.GetMethod(nameof(IEndpointV1.Map), BindingFlags.Static | BindingFlags.Public);
             methodMap!.Invoke(null, [group]);
         }
 

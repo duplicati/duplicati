@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-
 namespace Duplicati.Server.Serialization.Interface
 {
     public interface IQueuedTask
@@ -28,7 +26,7 @@ namespace Duplicati.Server.Serialization.Interface
         long TaskID { get; }
         string BackupID { get; }
         Duplicati.Server.Serialization.DuplicatiOperation Operation { get; }
-    
+
     }
 }
 

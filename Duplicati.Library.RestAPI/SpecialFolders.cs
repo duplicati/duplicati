@@ -31,7 +31,7 @@ namespace Duplicati.Server
 
         public static string ExpandEnvironmentVariables(string path)
         {
-            foreach(var n in Nodes)
+            foreach (var n in Nodes)
                 if (path.StartsWith(n.id, StringComparison.Ordinal))
                     path = path.Replace(n.id, n.resolvedpath);
             return Environment.ExpandEnvironmentVariables(path);
@@ -54,21 +54,21 @@ namespace Duplicati.Server
                 });
         }
 
-        public static string TranslateToPath(string str) 
+        public static string TranslateToPath(string str)
         {
             string res;
             if (PathMap.TryGetValue(str, out res))
                 return res;
-            
+
             return null;
         }
 
-        public static string TranslateToDisplayString(string str) 
+        public static string TranslateToDisplayString(string str)
         {
             string res;
             if (DisplayMap.TryGetValue(str, out res))
                 return res;
-            
+
             return null;
         }
 
@@ -109,11 +109,11 @@ namespace Duplicati.Server
             {
             }
         }
-        
+
         static SpecialFolders()
         {
             var lst = new List<Serializable.TreeNode>();
-            
+
             if (Platform.IsClientWindows)
             {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
@@ -147,7 +147,7 @@ namespace Duplicati.Server
             Nodes = lst.ToArray();
         }
 
-        internal static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
+        public static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
         {
             if (backup.Sources == null || backup.Sources.Length == 0)
                 return new Dictionary<string, string>();
@@ -181,7 +181,7 @@ namespace Duplicati.Server
 
             // Handle duplicates
             var result = new Dictionary<string, string>();
-            foreach(var x in sources)
+            foreach (var x in sources)
                 result[x.Key] = x.Value;
 
             return result;

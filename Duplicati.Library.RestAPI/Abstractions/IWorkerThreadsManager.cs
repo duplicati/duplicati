@@ -12,4 +12,6 @@ public interface IWorkerThreadsManager
     Tuple<long, string>? CurrentTask { get; }
     WorkerThread<Runner.IRunnerData>? WorkerThread { get; }
     void UpdateThrottleSpeeds();
+
+    long AddTask(Runner.IRunnerData data, bool skipQueue = false);
 }

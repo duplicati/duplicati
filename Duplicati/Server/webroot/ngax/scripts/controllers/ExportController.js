@@ -27,7 +27,7 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
         function getExport() {
             if ($scope.ExportType === "commandline") {
                 $scope.Connecting = true;
-                AppService.get("/backup/" + $scope.BackupID + "/export?cmdline=true&export-passwords=" + encodeURIComponent($scope.ExportPasswords)).then(
+                AppService.get("/backup/" + $scope.BackupID + "/export-cmdline?export-passwords=" + encodeURIComponent($scope.ExportPasswords)).then(
                     function(resp) {
                         $scope.Connecting = false;
                         $scope.Completed = true;

@@ -1,6 +1,8 @@
 backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogService, appConfig) {
     this.apiurl = '../api/v1';
     this.proxy_url = null;
+    this.xsrftoken = null;
+    this.xsrfpromise = null;
 
     var self = this;
 
@@ -71,38 +73,94 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         return deferred.promise;
     };
 
+    var chainPromise = function (deferred, callback) {
+        callback().then(function (response) {
+            deferred.resolve(response);
+        }, function (response) { 
+            deferred.reject(response); 
+        });        
+    };
+
+    this.injectXsrf = function (options, callback) {
+        options.headers = options.headers || {};
+        if (this.xsrftoken != null) {
+            options.headers['X-XSRF-Token'] = this.xsrftoken;
+            return callback();
+        }
+
+        var deferred = $q.defer();
+        var self = this;
+        if (this.xsrfpromise == null) {
+            this.xsrfpromise = deferred.promise;
+            var url = this.apiurl + '/antiforgery/token';
+            installResponseHook(() => $http.get(this.proxy_url == null ? url : this.proxy_url, setupConfig('GET', {'responseType': 'text'}, null, url)))
+                .then(function (response) {
+                    self.xsrftoken = response.data;
+                    options.headers['X-XSRF-Token'] = self.xsrftoken;
+                    chainPromise(deferred, callback);
+                }, function (response) {
+                    deferred.reject(response);
+                });
+
+        } else {            
+            this.xsrfpromise.then(() => { 
+                options.headers['X-XSRF-Token'] = self.xsrftoken;
+                chainPromise(deferred, callback);
+            }, (response) => deferred.reject(response));
+        }
+        return deferred.promise;
+    };
+    
     this.get = function (url, options) {
         let rurl = url;
         if (!url.startsWith('http')) {
             rurl = this.apiurl + url;
         }
 
-        return installResponseHook(() => $http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl)));
+        options = options || {};
+        return this.injectXsrf(options, () => installResponseHook(() => $http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl))));
     };
 
     this.patch = function (url, data, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook(() => $http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl)));
+        options = options || {};
+        return this.injectXsrf(options, () => installResponseHook(() => $http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl))));
     };
 
     this.post = function (url, data, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl)));
+        options = options || {};
+        return this.injectXsrf(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
+    };
+
+    this.postJson = function (url, data, options) {     
+   
+        var rurl = this.apiurl + url;
+        options = options || {};
+        options.headers = options.headers || {};
+        options.headers['Content-Type'] = 'application/json; charset=utf-8';
+        return this.injectXsrf(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
     };
 
     this.put = function (url, data, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook(() => $http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl)));
+        options = options || {};
+        return this.injectXsrf(options, () => installResponseHook(() => $http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl))));
     };
 
     this.delete = function (url, options) {
         var rurl = this.apiurl + url;
-        return installResponseHook(() => $http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl)));
+        options = options || {};
+        return this.injectXsrf(options, () => installResponseHook(() => $http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl))));
     };
 
+    this.get_xsrf_token = function () {
+        return this.xsrftoken;
+    }
+
     this.get_export_url = function (backupid, passphrase, exportPasswords) {
-        var rurl = this.apiurl + '/backup/' + backupid + '/export?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
-        rurl += '&export-passwords=' + encodeURIComponent(exportPasswords);
+        var rurl = this.apiurl + '/backup/' + backupid + '/export';
+        rurl += '?export-passwords=' + encodeURIComponent(exportPasswords);
         if ((passphrase || '').trim().length > 0)
             rurl += '&passphrase=' + encodeURIComponent(passphrase);
 
@@ -112,7 +170,7 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
     };
 
     this.get_import_url = function (passphrase) {
-        var rurl = this.apiurl + '/backups/import?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+        var rurl = this.apiurl + '/backups/import';
         if ((passphrase || '').trim().length > 0)
             rurl += '&passphrase=' + encodeURIComponent(passphrase);
 

@@ -2,7 +2,6 @@
 using Duplicati.Server;
 using System;
 using System.Collections.Generic;
-using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Library.Utility;
 using Duplicati.WebserverCore.Abstractions;
@@ -16,8 +15,13 @@ namespace Duplicati.Library.RestAPI
      */
     public static class FIXMEGlobal
     {
+        /// <summary>
+        /// The placeholder for passwords in the UI
+        /// </summary>
+        public const string PASSWORD_PLACEHOLDER = "**********";
+
         public static IServiceProvider Provider { get; set; }
-        
+
         /// <summary>
         /// This is the only access to the database
         /// </summary>
@@ -42,6 +46,10 @@ namespace Duplicati.Library.RestAPI
         /// For keeping and incrementing last last events Ids of db save and last notification
         /// </summary>
         public static INotificationUpdateService NotificationUpdateService => Provider.GetRequiredService<INotificationUpdateService>();
+        /// <summary>
+        /// Checks if the server has started and is listening for events
+        /// </summary>
+        public static bool IsServerStarted => Provider != null;
 
         /// <summary>
         /// This is the working thread
@@ -69,7 +77,7 @@ namespace Duplicati.Library.RestAPI
         /// </summary>
         public static readonly LogWriteHandler LogHandler = new LogWriteHandler();
 
-        public static Func<object, Dictionary<string, string>, Server.Database.Connection> GetDatabaseConnection;
+        public static Func<Dictionary<string, string>, Server.Database.Connection> GetDatabaseConnection;
 
         /// <summary>
         /// The update poll thread.
@@ -100,6 +108,5 @@ namespace Duplicati.Library.RestAPI
         /// </summary>
         public static readonly object MainLock = new object();
 
-        private static LiveControls _liveControl;
     }
 }

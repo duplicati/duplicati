@@ -12,7 +12,7 @@
 
         <div class="input text">
             <label for="passphrase" translate>Passphrase (if encrypted)</label>
-            <input type="password" name="passphrase" id="passphrase" placeholder="{{'Enter encryption passphrase' | translate}}" />
+            <input type="password" name="passphrase" id="passphrase" placeholder="Enter encryption passphrase" />
         </div>
 
         <div class="input checkbox" ng-hide="restoremode">
@@ -26,6 +26,7 @@
         </div>
 
         <input type="hidden" name="callback" value="{{CallbackMethod}}" />
+        <input type="hidden" name="x-xsrf-token" value="{{XSRFToken}}" />
 
         <div class="buttons" ng-hide="Connecting">
             <a href ng-click="doSubmit()" translate>Import</a>

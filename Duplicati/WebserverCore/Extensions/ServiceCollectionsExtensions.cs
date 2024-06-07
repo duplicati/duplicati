@@ -1,8 +1,6 @@
 using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.RestAPI.Abstractions;
-using Duplicati.Library.Utility;
-using Duplicati.Library.Utility.Abstractions;
 using Duplicati.Server;
 using Duplicati.Server.Serialization;
 using Duplicati.WebserverCore.Abstractions;
@@ -10,6 +8,7 @@ using Duplicati.WebserverCore.Abstractions.Notifications;
 using Duplicati.WebserverCore.Notifications;
 using Duplicati.WebserverCore.Services;
 using Duplicati.WebserverCore.Services.Settings;
+using WebserverCore.Services;
 
 namespace Duplicati.WebserverCore.Extensions;
 
@@ -21,12 +20,10 @@ public static class ServiceCollectionsExtensions
         services.AddSingleton<LiveControls>();
         services.AddSingleton(Serializer.JsonSettings);
         services.AddSingleton<UpdatePollThread>();
-        services.AddSingleton<Scheduler>();
         services.AddSingleton<EventPollNotify>();
 
         //transitional part - services that act as a proxy to old part for various reasons (not accessible in assembly i.e.)
         services.AddSingleton<ILiveControls>(c => c.GetRequiredService<LiveControls>());
-        services.AddSingleton<IBoolParser, BoolParser>();
 
         //new part
         services.AddSingleton<ISettingsService, SettingsService>();
@@ -34,8 +31,11 @@ public static class ServiceCollectionsExtensions
         services.AddTransient<IUpdateService, UpdateService>();
         services.AddSingleton<INotificationUpdateService, NotificationUpdateService>();
         services.AddSingleton<IWorkerThreadsManager, WorkerThreadsManager>();
-        services.AddSingleton<IScheduler, Scheduler>();
+        services.AddSingleton<IScheduler, SchedulerService>();
         services.AddSingleton<IWebsocketAccessor, WebsocketAccessor>();
+        services.AddTransient<ILanguageService, LanguageService>();
+        services.AddSingleton<ICaptchaProvider, CaptchaService>();
+        services.AddSingleton<ICommandlineRunService, CommandlineRunService>();
 
         return services;
     }

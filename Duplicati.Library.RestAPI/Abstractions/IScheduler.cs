@@ -23,9 +23,9 @@ public interface IScheduler
     void Terminate(bool wait);
 
     /// <summary>
-    /// An event that is raised when the schedule changes
+    /// Subscribes to the event that is triggered when the schedule changes
     /// </summary>
-    event EventHandler NewSchedule;
+    void SubScribeToNewSchedule(Action handler);
 
     /// <summary>
     /// A snapshot copy of the current schedule list
