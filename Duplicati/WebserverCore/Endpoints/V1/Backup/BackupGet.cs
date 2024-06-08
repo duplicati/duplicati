@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
@@ -229,7 +230,14 @@ public class BackupGet : IEndpointV1
         var ipx = connection.PrepareBackupForExport(bk);
 
         using var ms = new MemoryStream();
-        JsonSerializer.Serialize(ms, ipx, new JsonSerializerOptions() { WriteIndented = true });
+        JsonSerializer.Serialize(ms, ipx, new JsonSerializerOptions()
+        {
+            WriteIndented = true,
+            Converters = {
+                new JsonStringEnumConverter(),
+                new DayOfWeekStringEnumConverter()
+            }
+        });
 
         if (string.IsNullOrWhiteSpace(passphrase))
             return ms.ToArray();

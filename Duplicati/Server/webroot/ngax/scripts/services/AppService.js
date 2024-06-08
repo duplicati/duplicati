@@ -155,7 +155,13 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
     };
 
     this.get_xsrf_token = function () {
-        return this.xsrftoken;
+        var deferred = $q.defer();
+        const self = this;
+        this.injectXsrf({}, () => {             
+            deferred.resolve(self.xsrftoken); 
+            return $q.resolve();
+        });
+        return deferred.promise;
     }
 
     this.get_export_url = function (backupid, passphrase, exportPasswords) {

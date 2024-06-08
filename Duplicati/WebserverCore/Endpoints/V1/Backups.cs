@@ -102,7 +102,11 @@ public class Backups : IEndpointV1
             if (file == null)
                 throw new TextOutputErrorException("No file uploaded");
 
-            var ipx = BackupImportExportHandler.LoadConfiguration(file.FileName, import_metadata, () => passphrase);
+            using var tempfile = new Library.Utility.TempFile();
+            using (var fs = File.OpenWrite(tempfile))
+                file.CopyTo(fs);
+
+            var ipx = BackupImportExportHandler.LoadConfiguration(tempfile, import_metadata, () => passphrase);
             if (direct)
             {
                 lock (connection.m_lock)
