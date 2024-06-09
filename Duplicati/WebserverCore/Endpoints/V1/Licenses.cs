@@ -13,7 +13,7 @@ public class Licenses : IEndpointV1
     {
         var exefolder = Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? ".";
         var path = Path.Combine(exefolder, "licenses");
-        if (Duplicati.Library.Common.Platform.IsClientOSX && !Directory.Exists(path))
+        if (OperatingSystem.IsMacOS() && !Directory.Exists(path))
         {
             // Go up one, as the licenses cannot be in the binary folder in MacOS Packages
             exefolder = Path.GetDirectoryName(exefolder) ?? ".";
