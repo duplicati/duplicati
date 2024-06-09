@@ -22,7 +22,7 @@
 using System;
 using System.Runtime.Versioning;
 using Duplicati.Library.IO;
-using Duplicati.Library.RestAPI;
+using Duplicati.Server.Database;
 
 namespace Duplicati.Server
 {
@@ -171,17 +171,26 @@ namespace Duplicati.Server
         private DateTime m_waitTimeExpiration = new DateTime(0);
 
         /// <summary>
+        /// The connection to use
+        /// </summary>
+        private readonly Connection m_connection;
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
-        public LiveControls()
+        /// <param name="connection">The connection to use</param>
+        public LiveControls(Connection connection)
         {
+            m_connection = connection;
+            Init();
         }
 
         /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
-        public void Init(Database.ServerSettings settings)
+        private void Init()
         {
+            var settings = m_connection.ApplicationSettings;
             m_state = LiveControlState.Running;
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
 
@@ -392,7 +401,7 @@ namespace Duplicati.Server
                 {
                     long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
 
-                    var appset = FIXMEGlobal.DataConnection.ApplicationSettings;
+                    var appset = m_connection.ApplicationSettings;
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
                         try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
                         catch { }

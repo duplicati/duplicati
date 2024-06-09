@@ -398,7 +398,6 @@ namespace Duplicati.Server
 
         private static void SetLiveControls()
         {
-            LiveControl.Init(DataConnection.ApplicationSettings);
             LiveControl.StateChanged += LiveControl_StateChanged;
             LiveControl.ThreadPriorityChanged += LiveControl_ThreadPriorityChanged;
             LiveControl.ThrottleSpeedChanged += LiveControl_ThrottleSpeedChanged;
