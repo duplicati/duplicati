@@ -18,6 +18,7 @@
 // 
 #endregion
 using System;
+using System.Runtime.Versioning;
 using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 
