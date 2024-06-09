@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace Duplicati.UnitTest
             const string asterisk = "*";
             string dirWithAsterisk = Path.Combine(this.DATAFOLDER, asterisk);
             // Windows does not support literal asterisks in paths.
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 SystemIO.IO_OS.DirectoryCreate(dirWithAsterisk);
                 TestUtils.WriteFile(SystemIO.IO_OS.PathCombine(dirWithAsterisk, file), new byte[] {0});
@@ -62,7 +63,7 @@ namespace Duplicati.UnitTest
             const string questionMark = "?";
             string dirWithQuestionMark = Path.Combine(this.DATAFOLDER, questionMark);
             // Windows does not support literal question marks in paths.
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 SystemIO.IO_OS.DirectoryCreate(dirWithQuestionMark);
                 TestUtils.WriteFile(SystemIO.IO_OS.PathCombine(dirWithQuestionMark, file), new byte[] { 1 });
@@ -280,7 +281,7 @@ namespace Duplicati.UnitTest
         [TestCase("ends_with_newline\n", true)]
         public void ProblematicSuffixes(string pathComponent, bool skipOnWindows)
         {
-            if (Platform.IsClientWindows && skipOnWindows)
+            if (OperatingSystem.IsWindows() && skipOnWindows)
             {
                 return;
             }

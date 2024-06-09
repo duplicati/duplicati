@@ -20,9 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Microsoft.Win32;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility
 {
+    [SupportedOSPlatform("windows")]
     public static class RegistryUtility
     {
         public static string GetDataByValueName(string parentKeyName, string name)

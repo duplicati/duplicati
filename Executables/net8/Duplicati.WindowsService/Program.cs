@@ -1,3 +1,5 @@
+using System.Runtime.Versioning;
+
 namespace Duplicati.WindowsService.Net8
 {
     // Wrapper class to keep code independent

@@ -73,17 +73,17 @@ namespace Duplicati.Library.AutoUpdater
         public static string GetExecutableName(NamedExecutable exe)
             => exe switch
             {
-                NamedExecutable.TrayIcon => Platform.IsClientWindows ? "Duplicati.GUI.TrayIcon.exe" : "duplicati",
-                NamedExecutable.CommandLine => Platform.IsClientWindows ? "Duplicati.CommandLine.exe" : "duplicati-cli",
-                NamedExecutable.AutoUpdater => Platform.IsClientWindows ? "Duplicati.CommandLine.AutoUpdater.exe" : "duplicati-autoupdater",
-                NamedExecutable.Server => Platform.IsClientWindows ? "Duplicati.Server.exe" : "duplicati-server",
+                NamedExecutable.TrayIcon => OperatingSystem.IsWindows() ? "Duplicati.GUI.TrayIcon.exe" : "duplicati",
+                NamedExecutable.CommandLine => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.exe" : "duplicati-cli",
+                NamedExecutable.AutoUpdater => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.AutoUpdater.exe" : "duplicati-autoupdater",
+                NamedExecutable.Server => OperatingSystem.IsWindows() ? "Duplicati.Server.exe" : "duplicati-server",
                 NamedExecutable.WindowsService => "Duplicati.WindowsServer.exe",
-                NamedExecutable.BackendTool => Platform.IsClientWindows ? "Duplicati.CommandLine.BackendTool.exe" : "duplicati-backend-tool",
-                NamedExecutable.RecoveryTool => Platform.IsClientWindows ? "Duplicati.CommandLine.RecoveryTool.exe" : "duplicati-recovery-tool",
-                NamedExecutable.BackendTester => Platform.IsClientWindows ? "Duplicati.CommandLine.BackendTester.exe" : "duplicati-backend-tester",
-                NamedExecutable.SharpAESCrypt => Platform.IsClientWindows ? "Duplicati.CommandLine.SharpAESCrypt.exe" : "duplicati-aescrypt",
-                NamedExecutable.Snapshots => Platform.IsClientWindows ? "Duplicati.CommandLine.Snapshots.exe" : "duplicati-snapshots",
-                NamedExecutable.ConfigurationImporter => Platform.IsClientWindows ? "Duplicati.CommandLine.ConfigurationImporter.exe" : "duplicati-configuration-importer",
+                NamedExecutable.BackendTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.BackendTool.exe" : "duplicati-backend-tool",
+                NamedExecutable.RecoveryTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.RecoveryTool.exe" : "duplicati-recovery-tool",
+                NamedExecutable.BackendTester => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.BackendTester.exe" : "duplicati-backend-tester",
+                NamedExecutable.SharpAESCrypt => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.SharpAESCrypt.exe" : "duplicati-aescrypt",
+                NamedExecutable.Snapshots => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.Snapshots.exe" : "duplicati-snapshots",
+                NamedExecutable.ConfigurationImporter => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.ConfigurationImporter.exe" : "duplicati-configuration-importer",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 

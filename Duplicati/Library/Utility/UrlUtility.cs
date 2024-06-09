@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.Text;
 using Duplicati.Library.Common;
 
@@ -57,7 +58,7 @@ namespace Duplicati.Library.Utility
                 browserprogram = SystemBrowser;
 
             //Fallback is to just show the window in a browser
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
             {
                 try
                 {
@@ -70,7 +71,7 @@ namespace Duplicati.Library.Utility
                         ErrorHandler(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url));
                 }
             }
-            else if (Platform.IsClientPosix)
+            else if (OperatingSystem.IsLinux())
             {
                 try
                 {
@@ -93,9 +94,13 @@ namespace Duplicati.Library.Utility
                         ErrorHandler(string.Format("Unable to open a browser window, please manually visit: \r\n{0}", url));
                 }
             }
-            else
+            else if (OperatingSystem.IsWindows())
             {
                 OpenUrlWindows(url, browserprogram);
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupported Operating System");
             }
         }
 
@@ -103,6 +108,7 @@ namespace Duplicati.Library.Utility
         /// Opens the given URL in a browser
         /// </summary>
         /// <param name="url">The url to open, must start with http:// or https://</param>
+        [SupportedOSPlatform("windows")]
         private static void OpenUrlWindows(string url, string browserprogram)
         {
             if (string.IsNullOrWhiteSpace(browserprogram))

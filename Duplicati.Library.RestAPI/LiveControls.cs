@@ -18,7 +18,6 @@
 // 
 #endregion
 using System;
-using Duplicati.Library.Common;
 using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 
@@ -110,8 +109,8 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the current overridden thread priority
         /// </summary>
-        public System.Threading.ThreadPriority? ThreadPriority 
-        { 
+        public System.Threading.ThreadPriority? ThreadPriority
+        {
             get { return m_priority; }
             set
             {
@@ -127,8 +126,8 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the current upload limit in bps
         /// </summary>
-        public long? UploadLimit 
-        { 
+        public long? UploadLimit
+        {
             get { return m_uploadLimit; }
             set
             {
@@ -144,8 +143,8 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the download limit in bps
         /// </summary>
-        public long? DownloadLimit 
-        { 
+        public long? DownloadLimit
+        {
             get { return m_downloadLimit; }
             set
             {
@@ -174,8 +173,8 @@ namespace Duplicati.Server
         public LiveControls()
         {
         }
-        
-                /// <summary>
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
         public void Init(Database.ServerSettings settings)
@@ -187,7 +186,7 @@ namespace Duplicati.Server
             {
                 long milliseconds = 0;
                 try { milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds; }
-                catch {}
+                catch { }
 
                 if (milliseconds > 0)
                 {
@@ -220,7 +219,7 @@ namespace Duplicati.Server
 
             try
             {
-                if (!Platform.IsClientPosix)
+                if (OperatingSystem.IsWindows())
                     RegisterHibernateMonitor();
             }
             catch { }
@@ -230,7 +229,7 @@ namespace Duplicati.Server
         /// Event that occurs when the timeout duration is exceeded
         /// </summary>
         /// <param name="sender">The sender of the event</param>
-        private void  m_waitTimer_Tick(object sender)
+        private void m_waitTimer_Tick(object sender)
         {
             lock (m_lock)
                 Resume();
@@ -277,7 +276,7 @@ namespace Duplicati.Server
         /// </summary>
         public void Pause()
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 var fireEvent = m_waitTimeExpiration.Ticks != 0 && m_state == LiveControlState.Paused && StateChanged != null;
 
@@ -345,6 +344,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Method for calling a Win32 API
         /// </summary>
+        [SupportedOSPlatform("windows")]
         private void RegisterHibernateMonitor()
         {
             Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
@@ -355,6 +355,7 @@ namespace Duplicati.Server
         /// </summary>
         /// <param name="sender">Unused sender parameter</param>
         /// <param name="_e">The event information</param>
+        [SupportedOSPlatform("windows")]
         private void SystemEvents_PowerModeChanged(object sender, object _e)
         {
             Microsoft.Win32.PowerModeChangedEventArgs e = _e as Microsoft.Win32.PowerModeChangedEventArgs;

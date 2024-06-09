@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common;
 using Duplicati.Library.Snapshots;
@@ -56,7 +57,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public bool LoadAsDefault
         {
-            get { return Platform.IsClientWindows; }
+            get { return OperatingSystem.IsWindows(); }
         }
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
@@ -75,7 +76,7 @@ namespace Duplicati.Library.Modules.Builtin
         public Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVWindowsOnly", null, "Hyper-V backup works only on Windows OS");
 
@@ -99,6 +100,7 @@ namespace Duplicati.Library.Modules.Builtin
         // Make sure the JIT does not attempt to inline this call and thus load
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             var changedOptions = new Dictionary<string, string>();
@@ -216,7 +218,7 @@ namespace Duplicati.Library.Modules.Builtin
         
         public bool ContainFilesForBackup(string[] paths)
         {
-            if (paths == null || !Platform.IsClientWindows)
+            if (paths == null || !OperatingSystem.IsWindows())
                 return false;
 
             return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Any(x => x.Equals(m_HyperVPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));

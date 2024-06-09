@@ -23,6 +23,7 @@ using Duplicati.Library.Common.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -81,6 +82,7 @@ namespace Duplicati.Library.Snapshots
         }
     }
 
+    [SupportedOSPlatform("windows")]
     public class MSSQLUtility
     {
         /// <summary>
@@ -105,7 +107,7 @@ namespace Duplicati.Library.Snapshots
         {
             m_DBs = new List<MSSQLDB>();
 
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 IsMSSQLInstalled = false;
                 return;

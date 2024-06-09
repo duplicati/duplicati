@@ -64,7 +64,7 @@ namespace Duplicati.GUI.TrayIcon
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
-            if (Platform.IsClientWindows && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
+            if (OperatingSystem.IsWindows() && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Duplicati.Library.Utility.Win32.AttachConsole(Duplicati.Library.Utility.Win32.ATTACH_PARENT_PROCESS);
 
             foreach (string s in args)
@@ -265,7 +265,7 @@ namespace Duplicati.GUI.TrayIcon
                     new Duplicati.Library.Interface.CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
                 };
 
-                if (Platform.IsClientWindows)
+                if (OperatingSystem.IsWindows())
                 {
                     args.Add(new Duplicati.Library.Interface.CommandLineArgument(DETACHED_PROCESS, CommandLineArgument.ArgumentType.String, "Runs the tray-icon detached", "This option runs the tray-icon in detached mode, meaning that the process will exit immediately and not send output to the console of the caller"));
                 }

@@ -22,9 +22,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility.Power
 {
+    [SupportedOSPlatform("linux")]
     public class LinuxPowerSupplyState : IPowerSupplyState
     {
         private readonly string sysfsPath = Path.Combine("/", "sys", "class", "power_supply");

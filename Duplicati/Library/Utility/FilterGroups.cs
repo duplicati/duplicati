@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Xml.Linq;
 using Duplicati.Library.Common;
 
@@ -236,11 +237,11 @@ namespace Duplicati.Library.Utility
         {
             IEnumerable<string> osFilters;
 
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
                 osFilters = CreateOSXFilters(group);
-            else if (Platform.IsClientPosix)
+            else if (OperatingSystem.IsLinux())
                 osFilters = CreateLinuxFilters(group);
-            else if (Platform.IsClientWindows)
+            else if (OperatingSystem.IsWindows())
                 osFilters = CreateWindowsFilters(group);
             else
                 throw new ArgumentException("Unknown operating system?");
@@ -640,7 +641,7 @@ namespace Duplicati.Library.Utility
         private static IEnumerable<string> GetOSXExcludeFiles()
         {
             var res = new List<string>();
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
             {
                 try
                 {
@@ -698,7 +699,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The list of paths to exclude.</returns>
         private static string[] GetWindowsRegistryFilters()
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 // One Windows, filters may also be stored in the registry
                 try
@@ -719,6 +720,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The list of paths to exclude.</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private static string[] GetWindowsRegistryFiltersInternal()
         {
             var rk = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Default);

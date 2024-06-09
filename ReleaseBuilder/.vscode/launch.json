@@ -11,6 +11,12 @@
             "preLaunchTask": "dotnet: build",
             "program": "${workspaceFolder}/bin/Debug/net8.0/ReleaseBuilder.dll",
             // "args": ["create-key", "testfile.key1", "--password", "test1234"],
+
+            // "args": ["build", "canary"],
+            // "args": ["build", "experimental"],
+            // "args": ["build", "beta"],
+            // "args": ["build", "stable"],
+
             "args": [ 
                 "build", 
                 "debug",

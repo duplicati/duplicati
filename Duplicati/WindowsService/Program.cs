@@ -31,6 +31,10 @@ namespace Duplicati.WindowsService
         [STAThread]
         public static int Main(string[] args)
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                throw new NotSupportedException("Unsupported Operating System");
+            }
             var install = args != null && args.Any(x => string.Equals("install", x, StringComparison.OrdinalIgnoreCase));
             var uninstall = args != null && args.Any(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase));
             var help = args != null && args.Any(x => string.Equals("help", x, StringComparison.OrdinalIgnoreCase));

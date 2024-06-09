@@ -497,7 +497,7 @@ namespace Duplicati.Server.Database
                 if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
                     return null;
 
-                if (Platform.IsClientWindows)
+                if (OperatingSystem.IsWindows())
                     return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]));
                 else
                     return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]), "");
@@ -511,7 +511,7 @@ namespace Duplicati.Server.Database
                 }
                 else
                 {
-                    if (Platform.IsClientWindows)
+                    if (OperatingSystem.IsWindows())
                         lock (databaseConnection.m_lock)
                             settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
                     else

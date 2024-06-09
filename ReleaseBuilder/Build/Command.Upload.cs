@@ -142,6 +142,7 @@ public static partial class Command
             request.Headers.Add("Accept", "application/vnd.github+json");
             request.Headers.Add("Authorization", $"Bearer {ghtoken}");
             request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+            request.Headers.Add("User-Agent", "Duplicati Release Builder v1");
             request.Content = JsonContent.Create(new GhReleaseInfo(
                 tag_name: $"v{rtcfg.ReleaseInfo.ReleaseName}",
                 target_commitish: "master",
@@ -166,10 +167,11 @@ public static partial class Command
                 request.Headers.Add("Accept", "application/vnd.github+json");
                 request.Headers.Add("Authorization", $"Bearer {ghtoken}");
                 request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-                request.Headers.Add("Content-Type", "application/octet-stream");
+                request.Headers.Add("User-Agent", "Duplicati Release Builder v1");
 
                 using var fileStream = File.OpenRead(file.Path);
                 request.Content = new StreamContent(fileStream);
+                request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
 
                 response = await httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
@@ -218,11 +220,12 @@ public static partial class Command
             req.Headers.Add("Accept", "application/json");
             req.Content = new FormUrlEncodedContent([
                 new KeyValuePair<string, string>("category", "10"),
-                new KeyValuePair<string, string>("title", $"Release: ${rtcfg.ReleaseInfo.Version} (${rtcfg.ReleaseInfo.Channel}) ${rtcfg.ReleaseInfo.Timestamp:yyyy-MM-dd}"),
-                new KeyValuePair<string, string>("raw", $"# [${rtcfg.ReleaseInfo.ReleaseName}](https://github.com/duplicati/duplicati/releases/tag/v${rtcfg.ReleaseInfo.ReleaseName})\n\n{rtcfg.ChangelogNews}")
+                new KeyValuePair<string, string>("title", $"Release: {rtcfg.ReleaseInfo.Version} ({rtcfg.ReleaseInfo.Channel}) {rtcfg.ReleaseInfo.Timestamp:yyyy-MM-dd}"),
+                new KeyValuePair<string, string>("raw", $"# [{rtcfg.ReleaseInfo.ReleaseName}](https://github.com/duplicati/duplicati/releases/tag/v{rtcfg.ReleaseInfo.ReleaseName})\n\n{rtcfg.ChangelogNews}")
             ]);
 
-            await client.SendAsync(req);
+            var resp = await client.SendAsync(req);
+            resp.EnsureSuccessStatusCode();
         }
     }
 }
