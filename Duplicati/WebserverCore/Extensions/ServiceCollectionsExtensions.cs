@@ -2,6 +2,7 @@ using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
+using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Abstractions.Notifications;
@@ -14,13 +15,17 @@ namespace Duplicati.WebserverCore.Extensions;
 
 public static class ServiceCollectionsExtensions
 {
-    public static IServiceCollection AddDuplicati(this IServiceCollection services)
+    public static IServiceCollection AddDuplicati(this IServiceCollection services, Connection connection)
     {
         //old part
-        services.AddSingleton<LiveControls>();
-        services.AddSingleton(Serializer.JsonSettings);
-        services.AddSingleton<UpdatePollThread>();
-        services.AddSingleton<EventPollNotify>();
+        services
+            .AddSingleton<LiveControls>()
+            .AddSingleton(Serializer.JsonSettings)
+            .AddSingleton<UpdatePollThread>()
+            .AddSingleton<EventPollNotify>()
+            .AddSingleton<Scheduler>()
+            .AddSingleton(connection);
+
 
         //transitional part - services that act as a proxy to old part for various reasons (not accessible in assembly i.e.)
         services.AddSingleton<ILiveControls>(c => c.GetRequiredService<LiveControls>());

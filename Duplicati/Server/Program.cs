@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.RestAPI;
+using Duplicati.Server.Database;
 using Duplicati.WebserverCore;
 using Duplicati.WebserverCore.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
@@ -263,7 +264,7 @@ namespace Duplicati.Server
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
 
-                DuplicatiWebserver = StartWebServer(commandlineOptions).ConfigureAwait(false).GetAwaiter().GetResult();
+                DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 UpdatePoller.Init();
 
@@ -325,9 +326,9 @@ namespace Duplicati.Server
             return 0;
         }
 
-        private static async Task<DuplicatiWebserver> StartWebServer(IReadOnlyDictionary<string, string> options)
+        private static async Task<DuplicatiWebserver> StartWebServer(IReadOnlyDictionary<string, string> options, Connection connection)
         {
-            var server = await WebServerLoader.TryRunServer(options, async parsedOptions =>
+            var server = await WebServerLoader.TryRunServer(options, connection, async parsedOptions =>
             {
                 var mappedSettings = new DuplicatiWebserver.InitSettings(
                     parsedOptions.WebRoot,
@@ -340,7 +341,7 @@ namespace Duplicati.Server
 
                 var server = new DuplicatiWebserver();
 
-                server.InitWebServer(mappedSettings, DataConnection);
+                server.InitWebServer(mappedSettings, connection);
                 server.Start(mappedSettings);
                 return server;
             }).ConfigureAwait(false);

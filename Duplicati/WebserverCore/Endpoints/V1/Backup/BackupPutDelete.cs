@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
@@ -33,9 +34,9 @@ public class BackupPutDelete : IEndpointV1
         });
 
 
-        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] ICaptchaProvider captchaProvider, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery] bool? delete_remote_files, [FromQuery] bool? delete_local_db, [FromQuery] string captcha_token, [FromQuery] string captcha_answer, [FromQuery] bool force) =>
+        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] ICaptchaProvider captchaProvider, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery] bool? delete_remote_files, [FromQuery] bool? delete_local_db, [FromQuery] string captcha_token, [FromQuery] string captcha_answer, [FromQuery] bool force) =>
         {
-            var res = ExecuteDelete(GetBackup(connection, id), connection, workerThreadsManager, captchaProvider, delete_remote_files ?? false, delete_local_db, captcha_token, captcha_answer, force);
+            var res = ExecuteDelete(GetBackup(connection, id), connection, workerThreadsManager, captchaProvider, liveControls, delete_remote_files ?? false, delete_local_db, captcha_token, captcha_answer, force);
             if (res.Status != "OK" && httpContextAccessor.HttpContext != null)
                 httpContextAccessor.HttpContext.Response.StatusCode = 500;
             return res;
@@ -127,7 +128,7 @@ public class BackupPutDelete : IEndpointV1
         }
     }
 
-    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, Connection connection, IWorkerThreadsManager workerThreadsManager, ICaptchaProvider captchaProvider, bool delete_remote_files, bool? delete_local_db, string captcha_token, string captcha_answer, bool force)
+    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, Connection connection, IWorkerThreadsManager workerThreadsManager, ICaptchaProvider captchaProvider, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, string captcha_token, string captcha_answer, bool force)
     {
         if (delete_remote_files)
         {
@@ -151,8 +152,8 @@ public class BackupPutDelete : IEndpointV1
                         return new Dto.DeleteBackupOutputDto("failed", "backup-in-progress", nt?.TaskID);
 
 
-                    bool hasPaused = FIXMEGlobal.LiveControl.State == LiveControls.LiveControlState.Paused;
-                    FIXMEGlobal.LiveControl.Pause();
+                    bool hasPaused = liveControls.State == LiveControls.LiveControlState.Paused;
+                    liveControls.Pause();
 
                     for (int i = 0; i < 10; i++)
                         if (workerThreadsManager.WorkerThread.Active)
@@ -172,14 +173,14 @@ public class BackupPutDelete : IEndpointV1
                         if (backup.Equals(t == null ? null : t.Backup))
                         {
                             if (hasPaused)
-                                FIXMEGlobal.LiveControl.Resume();
+                                liveControls.Resume();
 
                             return new Dto.DeleteBackupOutputDto("failed", "backup-unstoppable", t?.TaskID);
                         }
                     }
 
                     if (hasPaused)
-                        FIXMEGlobal.LiveControl.Resume();
+                        liveControls.Resume();
                 }
             }
             catch (Exception ex)

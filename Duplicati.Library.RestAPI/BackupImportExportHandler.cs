@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 
@@ -14,9 +15,9 @@ public static class BackupImportExportHandler
         backup.SanitizeTargetUrl();
     }
 
-    public static byte[] ExportToJSON(IBackup backup, string passphrase)
+    public static byte[] ExportToJSON(Connection connection, IBackup backup, string passphrase)
     {
-        Server.Serializable.ImportExportStructure ipx = FIXMEGlobal.DataConnection.PrepareBackupForExport(backup);
+        Server.Serializable.ImportExportStructure ipx = connection.PrepareBackupForExport(backup);
 
         byte[] data;
         using (var ms = new System.IO.MemoryStream())

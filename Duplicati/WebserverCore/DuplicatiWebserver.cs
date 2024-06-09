@@ -78,8 +78,6 @@ public partial class DuplicatiWebserver
             .AddHostedService<ApplicationPartsLogger>()
             .AddEndpointsApiExplorer()
             .AddSwaggerGen()
-            .AddSingleton(connection)
-            .AddSingleton<Scheduler>()
             .AddHttpContextAccessor()
             .AddAntiforgery(options =>
             {
@@ -88,7 +86,7 @@ public partial class DuplicatiWebserver
                 options.FormFieldName = "x-xsrf-token";
             });
 
-        builder.Services.AddDuplicati();
+        builder.Services.AddDuplicati(connection);
 
         Configuration = builder.Configuration;
         App = builder.Build();

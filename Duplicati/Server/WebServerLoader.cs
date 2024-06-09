@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Duplicati.Library.RestAPI;
+using Duplicati.Server.Database;
 
 namespace Duplicati.Server;
 
@@ -93,7 +94,7 @@ public static class WebServerLoader
     /// </summary>
     /// <param name="options">A set of options</param>
     /// <param name="createServer">The method to start the server</param>
-    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string> options, Func<ParsedWebserverSettings, Task<TServer>> createServer)
+    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
     {
         var ports = Enumerable.Empty<int>();
         options.TryGetValue(OPTION_PORT, out var portstring);
@@ -109,7 +110,7 @@ public static class WebServerLoader
         options.TryGetValue(OPTION_INTERFACE, out var interfacestring);
 
         if (string.IsNullOrWhiteSpace(interfacestring))
-            interfacestring = FIXMEGlobal.DataConnection.ApplicationSettings.ServerListenInterface;
+            interfacestring = connection.ApplicationSettings.ServerListenInterface;
         if (string.IsNullOrWhiteSpace(interfacestring))
             interfacestring = DEFAULT_OPTION_INTERFACE;
 
@@ -129,7 +130,7 @@ public static class WebServerLoader
         {
             try
             {
-                cert = FIXMEGlobal.DataConnection.ApplicationSettings.ServerSSLCertificate;
+                cert = connection.ApplicationSettings.ServerSSLCertificate;
             }
             catch (Exception ex)
             {
@@ -138,7 +139,7 @@ public static class WebServerLoader
         }
         else if (certificateFile.Length == 0)
         {
-            FIXMEGlobal.DataConnection.ApplicationSettings.ServerSSLCertificate = null;
+            connection.ApplicationSettings.ServerSSLCertificate = null;
         }
         else
         {
@@ -197,11 +198,11 @@ public static class WebServerLoader
                 settings = settings with { Port = p };
 
                 var server = await createServer(settings);
-                if (interfacestring != FIXMEGlobal.DataConnection.ApplicationSettings.ServerListenInterface)
-                    FIXMEGlobal.DataConnection.ApplicationSettings.ServerListenInterface = interfacestring;
+                if (interfacestring != connection.ApplicationSettings.ServerListenInterface)
+                    connection.ApplicationSettings.ServerListenInterface = interfacestring;
 
-                if (certValid && cert != FIXMEGlobal.DataConnection.ApplicationSettings.ServerSSLCertificate)
-                    FIXMEGlobal.DataConnection.ApplicationSettings.ServerSSLCertificate = cert;
+                if (certValid && cert != connection.ApplicationSettings.ServerSSLCertificate)
+                    connection.ApplicationSettings.ServerSSLCertificate = cert;
 
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Duplicati.Server.Strings.Server.StartedServer(listenInterface.ToString(), p));
 

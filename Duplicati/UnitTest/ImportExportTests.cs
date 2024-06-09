@@ -107,7 +107,7 @@ namespace Duplicati.UnitTest
             byte[] jsonByteArray;
             using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
             {
-                jsonByteArray = BackupImportExportHandler.ExportToJSON(backup, null);
+                jsonByteArray = BackupImportExportHandler.ExportToJSON(Program.DataConnection, backup, null);
             }
 
             // The username should not have the '%40' converted to '@' since the import code
@@ -131,14 +131,14 @@ namespace Duplicati.UnitTest
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
+                File.WriteAllBytes(unencryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
                 BackupImportExportHandler.ImportBackup(unencryptedWithoutMetadata, false, () => null, advancedOptions);
                 Assert.AreEqual(1, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Program.DataConnection.Backups[0].Metadata.Count);
 
                 // Unencrypted file, import metadata.
                 string unencryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithMetadata, BackupImportExportHandler.ExportToJSON(this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
+                File.WriteAllBytes(unencryptedWithMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
                 BackupImportExportHandler.ImportBackup(unencryptedWithMetadata, true, () => null, advancedOptions);
                 Assert.AreEqual(2, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[1].Metadata.Count);
@@ -146,14 +146,14 @@ namespace Duplicati.UnitTest
                 // Encrypted file, don't import metadata.
                 string encryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 string passphrase = "abcde";
-                File.WriteAllBytes(encryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
+                File.WriteAllBytes(encryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
                 BackupImportExportHandler.ImportBackup(encryptedWithoutMetadata, false, () => passphrase, advancedOptions);
                 Assert.AreEqual(3, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Program.DataConnection.Backups[2].Metadata.Count);
 
                 // Encrypted file, import metadata.
                 string encryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(encryptedWithMetadata, BackupImportExportHandler.ExportToJSON(this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
+                File.WriteAllBytes(encryptedWithMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
                 BackupImportExportHandler.ImportBackup(encryptedWithMetadata, true, () => passphrase, advancedOptions);
                 Assert.AreEqual(4, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[3].Metadata.Count);

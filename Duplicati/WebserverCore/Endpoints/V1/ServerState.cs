@@ -1,4 +1,5 @@
 using Duplicati.Library.RestAPI;
+using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -12,8 +13,8 @@ public class ServerState : IEndpointV1
         group.MapGet("/serverstate", ([FromQuery] long? lastEventId, [FromQuery] bool? longpoll, string? duration, [FromServices] IStatusService statusService)
             => Execute(lastEventId, longpoll, duration, statusService));
 
-        group.MapPost("/serverstate/pause", ([FromServices] IStatusService statusService, [FromQuery] string? duration) => ExecutePause(statusService, duration));
-        group.MapPost("/serverstate/resume", ([FromServices] IStatusService statusService) => ExecuteResume(statusService));
+        group.MapPost("/serverstate/pause", ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls, [FromQuery] string? duration) => ExecutePause(statusService, liveControls, duration));
+        group.MapPost("/serverstate/resume", ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls) => ExecuteResume(statusService, liveControls));
     }
 
     private static Dto.ServerStatusDto Execute(long? lastEventId, bool? longpoll, string? duration, IStatusService statusService)
@@ -42,7 +43,7 @@ public class ServerState : IEndpointV1
         return status;
     }
 
-    private static void ExecutePause(IStatusService statusService, string? duration)
+    private static void ExecutePause(IStatusService statusService, LiveControls liveControls, string? duration)
     {
         var ts = TimeSpan.Zero;
         if (duration != null)
@@ -50,13 +51,13 @@ public class ServerState : IEndpointV1
             catch { throw new BadRequestException("The duration must be a valid time span"); }
 
         if (ts.TotalMilliseconds > 0)
-            FIXMEGlobal.LiveControl.Pause(ts);
+            liveControls.Pause(ts);
         else
-            FIXMEGlobal.LiveControl.Pause();
+            liveControls.Pause();
     }
 
-    private static void ExecuteResume(IStatusService statusService)
+    private static void ExecuteResume(IStatusService statusService, LiveControls liveControls)
     {
-        FIXMEGlobal.LiveControl.Resume();
+        liveControls.Resume();
     }
 }

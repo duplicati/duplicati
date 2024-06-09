@@ -28,11 +28,6 @@ namespace Duplicati.Library.RestAPI
         public static Server.Database.Connection DataConnection;
 
         /// <summary>
-        /// The controller interface for pause/resume and throttle options
-        /// </summary>
-        public static LiveControls LiveControl => Provider.GetRequiredService<LiveControls>();
-
-        /// <summary>
         /// A delegate method for creating a copy of the current progress state
         /// </summary>
         public static Func<Duplicati.Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
