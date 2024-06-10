@@ -364,7 +364,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
                     new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
                     new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), "1"),
-                    new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0"),
+                    new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0.1"),
                     new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
 
                     new CommandLineArgument("dry-run", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DryrunShort, Strings.Options.DryrunLong, "false", new string[] { "dryrun" }),
@@ -522,23 +522,23 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("version", out v);
                 if (string.IsNullOrEmpty(v))
                     return null;
-                
-                var versions = v.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries);
+
+                var versions = v.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                 if (v.Length == 0)
                     return null;
-                
+
                 var res = new List<long>();
-                foreach(var n in versions)
+                foreach (var n in versions)
                     if (n.Contains('-'))
                     {
                         //TODO: Throw errors if too many entries?
-                        var parts = n.Split(new char[]{'-'}, StringSplitOptions.RemoveEmptyEntries).Select(x => Convert.ToInt64(x.Trim())).ToArray();
-                        for(var i = Math.Min(parts[0], parts[1]); i <= Math.Max(parts[0], parts[1]); i++)
+                        var parts = n.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries).Select(x => Convert.ToInt64(x.Trim())).ToArray();
+                        for (var i = Math.Min(parts[0], parts[1]); i <= Math.Max(parts[0], parts[1]); i++)
                             res.Add(i);
                     }
                     else
                         res.Add(Convert.ToInt64(n));
-                        
+
                 return res.ToArray();
             }
         }
@@ -856,7 +856,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                lock(m_lock)
+                lock (m_lock)
                 {
                     string v;
                     m_options.TryGetValue("throttle-upload", out v);
@@ -1108,7 +1108,7 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-	        if (Dryrun)
+                if (Dryrun)
                     return Duplicati.Library.Logging.LogMessageType.DryRun;
                 else
                     return Duplicati.Library.Logging.LogMessageType.Warning;
@@ -1160,9 +1160,9 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-	        if (Dryrun)
+                if (Dryrun)
                     return Duplicati.Library.Logging.LogMessageType.DryRun;
-		else
+                else
                     return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
@@ -1184,7 +1184,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.TryGetValue("exclude-files-attributes", out v))
                     return res;
 
-                foreach(string s in v.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
+                foreach (string s in v.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     System.IO.FileAttributes f;
                     if (Enum.TryParse(s.Trim(), true, out f))
@@ -1359,10 +1359,10 @@ namespace Duplicati.Library.Main
         {
             get
             {
-				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
-					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, HashFactory.HashSizeBytes(BlockHashAlgorithm));
-				
-				return m_cachedBlockHashSize.Value;
+                if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
+                    m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, HashFactory.HashSizeBytes(BlockHashAlgorithm));
+
+                return m_cachedBlockHashSize.Value;
             }
         }
 
@@ -1566,20 +1566,20 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the percentage of samples to test during a backup operation
         /// </summary>
-        public long BackupTestPercentage
+        public decimal BackupTestPercentage
         {
             get
             {
                 m_options.TryGetValue("backup-test-percentage", out string s);
                 if (string.IsNullOrEmpty(s))
                 {
-                    return 0;
+                    return 0.1m;
                 }
 
-                long percentage;
+                decimal percentage;
                 try
                 {
-                    percentage = long.Parse(s);
+                    percentage = decimal.Parse(s, CultureInfo.InvariantCulture);
                 }
                 catch (Exception ex)
                 {

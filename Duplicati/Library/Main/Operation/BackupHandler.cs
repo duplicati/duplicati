@@ -306,7 +306,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             long remoteVolumeCount = m_database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
-            long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100D), MidpointRounding.AwayFromZero));
+            long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100m), MidpointRounding.AwayFromZero));
             if (samplesToTest > 0 && remoteVolumeCount > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
