@@ -22,7 +22,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Globalization;
@@ -376,7 +375,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("small-file-size", CommandLineArgument.ArgumentType.Size, Strings.Options.SmallfilesizeShort, Strings.Options.SmallfilesizeLong),
                     new CommandLineArgument("small-file-max-count", CommandLineArgument.ArgumentType.Integer, Strings.Options.SmallfilemaxcountShort, Strings.Options.SmallfilemaxcountLong, DEFAULT_SMALL_FILE_MAX_COUNT.ToString()),
 
-                    new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong, "false"),
+                    new CommandLineArgument("patch-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PatchwithlocalblocksShort, Strings.Options.PatchwithlocalblocksLong, "false", null, null, Strings.Options.PatchwithlocalblocksDeprecated("restore-with-local-blocks")),
                     new CommandLineArgument("no-local-db", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocaldbShort, Strings.Options.NolocaldbLong, "false"),
                     new CommandLineArgument("dont-compress-restore-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DontcompressrestorepathsShort, Strings.Options.DontcompressrestorepathsLong, "false"),
 
@@ -385,7 +384,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("retention-policy", CommandLineArgument.ArgumentType.String, Strings.Options.RetentionPolicyShort, Strings.Options.RetentionPolicyLong),
                     new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
                     new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
-                    new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false"),
+                    new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false", null, null, Strings.Options.NolocalblocksDeprecated("restore-with-local-blocks")),
+                    new CommandLineArgument("restore-with-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorewithlocalblocksShort, Strings.Options.RestorewithlocalblocksLong, "false"),
                     new CommandLineArgument("full-block-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullblockverificationShort, Strings.Options.FullblockverificationLong, "false"),
                     new CommandLineArgument("allow-full-removal", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowfullremovalShort, Strings.Options.AllowfullremovalLong, "false"),
 
@@ -522,23 +522,23 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("version", out v);
                 if (string.IsNullOrEmpty(v))
                     return null;
-                
-                var versions = v.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries);
+
+                var versions = v.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                 if (v.Length == 0)
                     return null;
-                
+
                 var res = new List<long>();
-                foreach(var n in versions)
+                foreach (var n in versions)
                     if (n.Contains('-'))
                     {
                         //TODO: Throw errors if too many entries?
-                        var parts = n.Split(new char[]{'-'}, StringSplitOptions.RemoveEmptyEntries).Select(x => Convert.ToInt64(x.Trim())).ToArray();
-                        for(var i = Math.Min(parts[0], parts[1]); i <= Math.Max(parts[0], parts[1]); i++)
+                        var parts = n.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries).Select(x => Convert.ToInt64(x.Trim())).ToArray();
+                        for (var i = Math.Min(parts[0], parts[1]); i <= Math.Max(parts[0], parts[1]); i++)
                             res.Add(i);
                     }
                     else
                         res.Add(Convert.ToInt64(n));
-                        
+
                 return res.ToArray();
             }
         }
@@ -856,7 +856,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                lock(m_lock)
+                lock (m_lock)
                 {
                     string v;
                     m_options.TryGetValue("throttle-upload", out v);
@@ -1108,7 +1108,7 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-	        if (Dryrun)
+                if (Dryrun)
                     return Duplicati.Library.Logging.LogMessageType.DryRun;
                 else
                     return Duplicati.Library.Logging.LogMessageType.Warning;
@@ -1160,9 +1160,9 @@ namespace Duplicati.Library.Main
                     if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                         return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
 
-	        if (Dryrun)
+                if (Dryrun)
                     return Duplicati.Library.Logging.LogMessageType.DryRun;
-		else
+                else
                     return Duplicati.Library.Logging.LogMessageType.Warning;
             }
         }
@@ -1184,7 +1184,7 @@ namespace Duplicati.Library.Main
                 if (!m_options.TryGetValue("exclude-files-attributes", out v))
                     return res;
 
-                foreach(string s in v.Split(new string[] {","}, StringSplitOptions.RemoveEmptyEntries))
+                foreach (string s in v.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     System.IO.FileAttributes f;
                     if (Enum.TryParse(s.Trim(), true, out f))
@@ -1359,10 +1359,10 @@ namespace Duplicati.Library.Main
         {
             get
             {
-				if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
-					m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, HashFactory.HashSizeBytes(BlockHashAlgorithm));
-				
-				return m_cachedBlockHashSize.Value;
+                if (m_cachedBlockHashSize.Key != BlockHashAlgorithm)
+                    m_cachedBlockHashSize = new KeyValuePair<string, int>(BlockHashAlgorithm, HashFactory.HashSizeBytes(BlockHashAlgorithm));
+
+                return m_cachedBlockHashSize.Value;
             }
         }
 
@@ -1723,20 +1723,12 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if the current operation is intended to delete files older than a certain threshold
-        /// </summary>
-        public bool PatchWithLocalBlocks
-        {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "patch-with-local-blocks"); }
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether local blocks usage should be skipped.
+        /// Gets a value indicating whether local blocks usage should be used for restore.
         /// </summary>
         /// <value><c>true</c> if no local blocks; otherwise, <c>false</c>.</value>
-        public bool NoLocalBlocks
+        public bool UseLocalBlocks
         {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "no-local-blocks"); }
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-with-local-blocks"); }
         }
 
         /// <summary>

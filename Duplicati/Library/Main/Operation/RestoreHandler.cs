@@ -344,13 +344,15 @@ namespace Duplicati.Library.Main.Operation
                     ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, result);
 
                 //Look for existing blocks in the original source files only
-                using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
-                using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
-                    if (!m_options.NoLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
+                if (m_options.UseLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
+                {
+                    using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                    using (new Logging.Timer(LOGTAG, "ScanForExistingSourceBlocksFast", "ScanForExistingSourceBlocksFast"))
                     {
                         m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForLocalBlocks);
                         ScanForExistingSourceBlocksFast(database, m_options, m_blockbuffer, blockhasher, result);
                     }
+                }
 
                 if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                 {
@@ -359,7 +361,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 // If other local files already have the blocks we want, we use them instead of downloading
-                if (m_options.PatchWithLocalBlocks)
+                if (m_options.UseLocalBlocks)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PatchWithLocalBlocks);
                     using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
