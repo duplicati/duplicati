@@ -588,7 +588,7 @@ namespace Duplicati.Server
                     //
 
                     serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
-                    if (Platform.IsClientWindows)
+                    if (OperatingSystem.IsWindows())
                     {
                         var localappdata = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
 
