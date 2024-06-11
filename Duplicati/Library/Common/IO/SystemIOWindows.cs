@@ -25,7 +25,6 @@ using System.Security.AccessControl;
 using System.IO;
 using System.Linq;
 
-using AlphaFS = Alphaleonis.Win32.Filesystem;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using System.Runtime.Versioning;
@@ -351,17 +350,7 @@ namespace Duplicati.Library.Common.IO
         /// <returns>The symlink target</returns>
         public string GetSymlinkTarget(string file)
         {
-            try
-            {
-                return AlphaFS.File.GetLinkTargetInfo(AddExtendedDevicePathPrefix(file)).PrintName;
-            }
-            catch (AlphaFS.NotAReparsePointException) { }
-            catch (AlphaFS.UnrecognizedReparsePointException) { }
-
-            // This path looks like it isn't actually a symlink
-            // (Note that some reparse points aren't actually symlinks -
-            // things like the OneDrive folder in the Windows 10 Fall Creator's Update for example)
-            return null;
+            return new FileInfo(AddExtendedDevicePathPrefix(file)).LinkTarget;
         }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
@@ -656,13 +645,14 @@ namespace Duplicati.Library.Common.IO
             if (FileExists(symlinkfile) || DirectoryExists(symlinkfile))
                 throw new System.IO.IOException(string.Format("File already exists: {0}", symlinkfile));
 
+
             if (asDir)
             {
-                AlphaFS.Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                Directory.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target);
             }
             else
             {
-                AlphaFS.File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target, AlphaFS.PathFormat.LongFullPath);
+                File.CreateSymbolicLink(AddExtendedDevicePathPrefix(symlinkfile), target);
             }
 
             //Sadly we do not get a notification if the creation fails :(

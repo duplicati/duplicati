@@ -197,19 +197,6 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(string[] _args)
         {
-            //If we are on Windows, append the bundled "win-tools" programs to the search path
-            //We add it last, to allow the user to override with other versions
-            if (OperatingSystem.IsWindows())
-            {
-                Environment.SetEnvironmentVariable("PATH",
-                    Environment.GetEnvironmentVariable("PATH") +
-                    System.IO.Path.PathSeparator.ToString() +
-                    System.IO.Path.Combine(
-                        System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        "win-tools")
-                );
-            }
-
             //If this executable is invoked directly, write to console, otherwise throw exceptions
             var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 

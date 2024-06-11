@@ -651,11 +651,15 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         else if (scope.s3_region_custom != null) {
             opts['s3-location-constraint'] = scope.s3_region_custom;
         }
+
+        // In case the user has selected a region, we need to choose the region specific endpoint for AWS
+        if (opts['s3-server-name'] == 's3.amazonaws.com' && opts['s3-location-constraint'] != null)
+            delete opts['s3-server-name'];
         
         if (scope.s3_storageclass != null)
             opts['s3-storage-class'] = AppUtils.contains_value(scope.s3_storageclasses, scope.s3_storageclass) ? scope.s3_storageclass : scope.s3_storageclass_custom;
 
-        opts['s3-client']=scope.s3_client.name;
+        opts['s3-client'] = scope.s3_client.name;
         
         EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 

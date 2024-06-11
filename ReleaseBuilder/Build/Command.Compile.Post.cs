@@ -70,8 +70,8 @@ public static partial class Command
             => UnwantedCommonFolders.Concat(os switch
             {
                 OSType.Windows => ["lvm-scripts"],
-                OSType.MacOS => ["lvm-scripts", "win-tools"],
-                OSType.Linux => ["win-tools"],
+                OSType.MacOS => ["lvm-scripts"],
+                OSType.Linux => [],
                 _ => throw new Exception($"Not supported os: {os}")
             });
 
