@@ -220,19 +220,6 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(string[] _args)
         {
-            //If we are on Windows, append the bundled "win-tools" programs to the search path
-            //We add it last, to allow the user to override with other versions
-            if (OperatingSystem.IsWindows())
-            {
-                Environment.SetEnvironmentVariable("PATH",
-                    Environment.GetEnvironmentVariable("PATH") +
-                    System.IO.Path.PathSeparator.ToString() +
-                    System.IO.Path.Combine(
-                        System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                        "win-tools")
-                );
-            }
-
             //If this executable is invoked directly, write to console, otherwise throw exceptions
             var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 
@@ -287,7 +274,7 @@ namespace Duplicati.Server
                 {
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
-                
+
                 UpdatePoller = new UpdatePollThread();
 
                 SetPurgeTempFilesTimer(commandlineOptions);
@@ -300,7 +287,7 @@ namespace Duplicati.Server
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, "ping-pong-keepalive"))
                 {
-                    PingPongThread = new System.Threading.Thread(PingPongMethod) {IsBackground = true};
+                    PingPongThread = new System.Threading.Thread(PingPongMethod) { IsBackground = true };
                     PingPongThread.Start();
                 }
 
@@ -311,7 +298,7 @@ namespace Duplicati.Server
             {
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (!writeToConsole) throw;
-                
+
                 Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 return 100;
             }
@@ -742,7 +729,7 @@ namespace Duplicati.Server
 
             StatusEventNotifyer.SignalNewEvent();
         }
-               
+
         /// <summary>
         /// Simple method for tracking if the server has crashed
         /// </summary>
@@ -800,7 +787,7 @@ namespace Duplicati.Server
 
                 });
 
-                if (!(OperatingSystem.IsMacOS()|| OperatingSystem.IsLinux()))
+                if (!(OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()))
                     lst.Add(new Duplicati.Library.Interface.CommandLineArgument("server-encryption-key", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.ServerencryptionkeyShort, Strings.Program.ServerencryptionkeyLong(DB_KEY_ENV_NAME, "unencrypted-database"), Library.AutoUpdater.AutoUpdateSettings.AppName + "_Key_42", null, null, "Database encryption is no longer supported, this setting can only be used to decrypt the database"));
 
                 return lst.ToArray();
@@ -818,7 +805,8 @@ namespace Duplicati.Server
                 string appendfilter = null;
                 string replacefilter = null;
 
-                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) => {
+                var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(fargs, (key, value) =>
+                {
                     if (key.Equals("source", StringComparison.OrdinalIgnoreCase))
                     {
                         newsource.Add(value);
