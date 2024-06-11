@@ -152,8 +152,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Sharp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Snapshots", "Executables\net8\Duplicati.CommandLine.Snapshots\Duplicati.CommandLine.Snapshots.csproj", "{0364E724-1929-445E-9145-90A70B01DDC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Browser.Test", "Duplicati\Duplicati.Browser.Test\Duplicati.Browser.Test.csproj", "{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -428,10 +426,6 @@ Global
 		{0364E724-1929-445E-9145-90A70B01DDC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0364E724-1929-445E-9145-90A70B01DDC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0364E724-1929-445E-9145-90A70B01DDC0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2C783DCE-F9E9-4E0F-8423-F8F37E5C6753}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
