@@ -28,6 +28,7 @@ using Duplicati.Server.Database;
 using Duplicati.Server.Serializable;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Backup = Duplicati.Server.Database.Backup;
 
@@ -127,6 +128,11 @@ namespace Duplicati.UnitTest
         {
             Dictionary<string, string> metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
             Dictionary<string, string> advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton<INotificationUpdateService, NotificationUpdateService>();
+            serviceCollection.AddSingleton(new EventPollNotify());
+            FIXMEGlobal.Provider = new DefaultServiceProviderFactory().CreateServiceProvider(serviceCollection);
+
             using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
             {
                 // Unencrypted file, don't import metadata.
