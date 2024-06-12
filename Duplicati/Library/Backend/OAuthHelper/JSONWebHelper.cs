@@ -155,7 +155,28 @@ namespace Duplicati.Library
                 await rs.WriteAsync(bodyTerminator, 0, bodyTerminator.Length, cancelToken).ConfigureAwait(false);
             }
 
-            return (HttpWebResponse)(await req.GetResponseAsync().ConfigureAwait(false));
+            try
+            {
+                return (HttpWebResponse)(await req.GetResponseAsync().ConfigureAwait(false));
+            }
+            /*
+             * Catch any web exceptions and grab the error detail from the respose stream
+             */
+            catch (WebException wex)
+            {
+                using (Stream exstream = wex.Response.GetResponseStream())
+                {
+                    using (StreamReader reader = new StreamReader(exstream))
+                    {
+                        string error = reader.ReadToEnd();
+                        throw new WebException(error, wex, wex.Status, wex.Response);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         protected virtual HttpWebRequest PreparePostMultipart(string url, Action<HttpWebRequest> setup, string boundary, byte[] bodyTerminator, out HeaderPart[] headers, params MultipartItem[] parts)
@@ -372,6 +393,20 @@ namespace Duplicati.Library
                 if (wex.Response is HttpWebResponse response)
                     return response;
 
+                /*
+                 * If not an HttpWebResponse then grab the error detail from the response stream
+                 */
+                using (Stream exstream = wex.Response.GetResponseStream())
+                {
+                    using (StreamReader reader = new StreamReader(exstream))
+                    {
+                        string error = reader.ReadToEnd();
+                        throw new WebException(error, wex, wex.Status, wex.Response);
+                    }
+                }
+            }
+            catch (Exception)
+            {
                 throw;
             }
         }
@@ -425,7 +460,17 @@ namespace Duplicati.Library
                 if (wex.Response is HttpWebResponse response)
                     return response;
 
-                throw;
+                /*
+                 * If not an HttpWebResponse then grab the error detail from the response stream
+                 */
+                using (Stream exstream = wex.Response.GetResponseStream())
+                {
+                    using (StreamReader reader = new StreamReader(exstream))
+                    {
+                        string error = reader.ReadToEnd();
+                        throw new WebException(error, wex, wex.Status, wex.Response);
+                    }
+                }
             }
         }
 
@@ -473,6 +518,20 @@ namespace Duplicati.Library
 
                 return (HttpWebResponse)req.GetResponse();
             }
+            /*
+             * If a web exception then grab the error detail from the response stream
+             */
+            catch (WebException wex)
+            {
+                using (Stream exstream = wex.Response.GetResponseStream())
+                {
+                    using (StreamReader reader = new StreamReader(exstream))
+                    {
+                        string error = reader.ReadToEnd();
+                        throw new WebException(error, wex, wex.Status, wex.Response);
+                    }
+                }
+            }
             catch (Exception ex)
             {
                 ParseException(ex);
@@ -519,6 +578,20 @@ namespace Duplicati.Library
                 }
 
                 return (HttpWebResponse)req.GetResponse();
+            }
+            /*
+             * If a web exception then grab the error detail from the response stream
+             */
+            catch (WebException wex)
+            {
+                using (Stream exstream = wex.Response.GetResponseStream())
+                {
+                    using (StreamReader reader = new StreamReader(exstream))
+                    {
+                        string error = reader.ReadToEnd();
+                        throw new WebException(error, wex, wex.Status, wex.Response);
+                    }
+                }
             }
             catch (Exception ex)
             {
