@@ -20,19 +20,18 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
-using System.Linq;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace Duplicati.Library.Modules.Builtin
 {
-    public class RunScript : Duplicati.Library.Interface.IGenericCallbackModule
+    public class RunScript : IGenericCallbackModule
     {
         /// <summary>
         /// The tag used for logging
@@ -42,6 +41,15 @@ namespace Duplicati.Library.Modules.Builtin
         /// The default log level
         /// </summary>
         private const Logging.LogMessageType DEFAULT_LOG_LEVEL = Logging.LogMessageType.Warning;
+
+        /// <summary>
+        /// The regex used to parse arguments
+        /// </summary>
+        private static readonly Regex ARGREGEX = new Regex(
+            @"(?<arg>(?<=\s|^)(""(?<value>[^""\\]*(?:\\.[^""\\]*)*)""|'(?<value>[^'\\]*(?:\\.[^'\\]*)*)'|(?<value>[^\s]+))\s?)",
+            RegexOptions.Compiled | RegexOptions.ExplicitCapture
+        );
+
 
         private const string STARTUP_OPTION = "run-script-before";
         private const string FINISH_OPTION = "run-script-after";
@@ -90,10 +98,12 @@ namespace Duplicati.Library.Modules.Builtin
 
             string tmpResultFormat;
             ResultExportFormat resultFormat;
-            if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out tmpResultFormat)) {
+            if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out tmpResultFormat))
+            {
                 resultFormat = ResultExportFormat.Duplicati;
             }
-            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat)) {
+            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
+            {
                 resultFormat = ResultExportFormat.Duplicati;
             }
 
@@ -112,7 +122,8 @@ namespace Duplicati.Library.Modules.Builtin
             var logLevel = Utility.Utility.ParseEnumOption(m_options, OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m => {
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
                     return result;
@@ -126,17 +137,17 @@ namespace Duplicati.Library.Modules.Builtin
         public string Key { get { return "runscript"; } }
         public string DisplayName { get { return Strings.RunScript.DisplayName; } }
         public string Description { get { return Strings.RunScript.Description; } }
-        public bool LoadAsDefault  { get { return true; } }
+        public bool LoadAsDefault { get { return true; } }
 
-        public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
+        public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                string[] resultOutputFormatOptions = new string[] { ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString() };
-                return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
-                    new Duplicati.Library.Interface.CommandLineArgument(STARTUP_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(FINISH_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(REQUIRED_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
+                string[] resultOutputFormatOptions = [ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString()];
+                return new List<ICommandLineArgument>([
+                    new CommandLineArgument(STARTUP_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
+                    new CommandLineArgument(FINISH_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
+                    new CommandLineArgument(REQUIRED_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
                     new CommandLineArgument(RESULT_FORMAT_OPTION,
                         CommandLineArgument.ArgumentType.Enumeration,
                         Strings.RunScript.ResultFormatShort,
@@ -144,11 +155,11 @@ namespace Duplicati.Library.Modules.Builtin
                         ResultExportFormat.Duplicati.ToString(),
                         null,
                         resultOutputFormatOptions),
-                    new Duplicati.Library.Interface.CommandLineArgument(TIMEOUT_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
+                    new CommandLineArgument(TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
 
                     new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
                     new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
-                });
+                ]);
             }
         }
         #endregion
@@ -170,7 +181,7 @@ namespace Duplicati.Library.Modules.Builtin
             m_localpath = localpath;
         }
 
-        public void OnFinish (object result, Exception exception)
+        public void OnFinish(object result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -224,7 +235,16 @@ namespace Duplicati.Library.Modules.Builtin
         {
             try
             {
-                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo(scriptpath)
+                var args = ARGREGEX.Matches(scriptpath);
+                var arguments = new List<string>();
+                if (args.Any())
+                {
+                    arguments = args.AsEnumerable().Select(m => m.Groups["value"].Value).ToList();
+                    scriptpath = arguments[0];
+                    arguments.RemoveAt(0);
+                }
+
+                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo(scriptpath, arguments)
                 {
                     WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
                     CreateNoWindow = true,
@@ -267,9 +287,9 @@ namespace Duplicati.Library.Modules.Builtin
                     if (requiredScript)
                     {
                         if (!p.HasExited)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.ScriptTimeoutError(scriptpath), "RunScriptTimeout");
+                            throw new UserInformationException(Strings.RunScript.ScriptTimeoutError(scriptpath), "RunScriptTimeout");
                         else if (p.ExitCode != 0)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode), "RunScriptInvalidExitCode");
+                            throw new UserInformationException(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode), "RunScriptInvalidExitCode");
                     }
 
                     if (p.HasExited)
