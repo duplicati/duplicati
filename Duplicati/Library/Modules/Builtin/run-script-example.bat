@@ -11,7 +11,6 @@ REM --run-script-before = <filename>
 REM --run-script-before-required = <filename>
 REM --run-script-timeout = <time>
 REM --run-script-after = <filename>
-REM --run-script-arguments = <arguments>
 REM 
 REM --run-script-before = <filename>
 REM Duplicati will run the script before the backup job and waits for its 

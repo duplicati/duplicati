@@ -11,7 +11,6 @@
 # --run-script-before-required = <filename>
 # --run-script-timeout = <time>
 # --run-script-after = <filename>
-# --run-script-arguments = <arguments>
 #
 # --run-script-before = <filename>
 # Duplicati will run the script before the backup job and waits for its 
