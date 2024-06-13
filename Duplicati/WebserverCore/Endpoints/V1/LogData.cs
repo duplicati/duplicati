@@ -13,7 +13,7 @@ public class LogData : IEndpointV1
             => ExecuteLogPoll(level, id, offset ?? 0, pagesize ?? 100));
 
         group.MapGet("/logdata/log", ([FromServices] Connection connection, [FromQuery] long? offset, [FromQuery] int? pagesize)
-            => ExecuteGetLog(connection, offset ?? 0, pagesize ?? 100));
+            => ExecuteGetLog(connection, offset, pagesize ?? 100));
     }
 
     private static Server.LogWriteHandler.LogEntry[] ExecuteLogPoll(Library.Logging.LogMessageType level, long id, long offset, int pagesize)
@@ -22,28 +22,28 @@ public class LogData : IEndpointV1
         return FIXMEGlobal.LogHandler.AfterID(id, level, pagesize);
     }
 
-    private static List<Dictionary<string, object>>? ExecuteGetLog(Connection connection, long offset, long pagesize)
+    private static List<Dictionary<string, object>>? ExecuteGetLog(Connection connection, long? offset, long pagesize)
     {
         List<Dictionary<string, object>>? res = null;
         connection.ExecuteWithCommand(x =>
         {
-            res = DumpTable(x, "LogData", "Timestamp", offset, pagesize);
+            res = DumpTable(x, "ErrorLog", "Timestamp", offset, pagesize);
         });
 
         return res;
     }
 
-    public static List<Dictionary<string, object>> DumpTable(System.Data.IDbCommand cmd, string tablename, string pagingfield, long offset, long pagesize)
+    public static List<Dictionary<string, object>> DumpTable(System.Data.IDbCommand cmd, string tablename, string pagingfield, long? offset, long pagesize)
     {
         var result = new List<Dictionary<string, object>>();
 
         pagesize = Math.Max(10, Math.Min(500, pagesize));
 
         cmd.CommandText = "SELECT * FROM \"" + tablename + "\"";
-        if (!string.IsNullOrEmpty(pagingfield))
+        if (!string.IsNullOrEmpty(pagingfield) && offset != null)
         {
             var p = cmd.CreateParameter();
-            p.Value = offset;
+            p.Value = offset.Value;
             cmd.Parameters.Add(p);
 
             cmd.CommandText += " WHERE \"" + pagingfield + "\" < ?";
