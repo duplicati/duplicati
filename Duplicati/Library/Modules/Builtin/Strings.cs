@@ -78,24 +78,21 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     {
         public static string Description { get { return LC.L(@"Executes a script before starting an operation, and again on completion"); } }
         public static string DisplayName { get { return LC.L(@"Run script"); } }
-        public static string FinishoptionLong { get { return LC.L(@"Executes a script after performing an operation. The script will receive the operation results written to stdout. This option supports arguments using either the !# prefix or JSON encoded."); } }
+        public static string FinishoptionLong { get { return LC.L(@"Executes a script after performing an operation. The script will receive the operation results written to stdout."); } }
         public static string FinishoptionShort { get { return LC.L(@"Run a script on exit"); } }
         public static string InvalidExitCodeError(string script, int exitcode) { return LC.L(@"The script ""{0}"" returned with exit code {1}", script, exitcode); }
         public static string ExitCodeError(string script, int exitcode, string message) { return LC.L(@"The script ""{0}"" returned with exit code {1}{2}", script, exitcode, string.IsNullOrWhiteSpace(message) ? string.Empty : string.Format(": {0}", message)); }
-        public static string RequiredoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted. This option supports arguments using either the !# prefix or JSON encoded."); } }
+        public static string RequiredoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted."); } }
         public static string RequiredoptionShort { get { return LC.L(@"Run a required script on startup"); } }
         public static string ResultFormatShort { get { return LC.L(@"Selects the output format for results"); } }
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Selects the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ScriptExecuteError(string script, string message) { return LC.L(@"Error while executing script ""{0}"": {1}", script, message); }
         public static string ScriptTimeoutError(string script) { return LC.L(@"Execution of the script ""{0}"" timed out", script); }
-        public static string StartupoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out. This option supports arguments using either the !# prefix or JSON encoded."); } }
+        public static string StartupoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out."); } }
         public static string StartupoptionShort { get { return LC.L(@"Run a script on startup"); } }
         public static string StdErrorReport(string script, string message) { return LC.L(@"The script ""{0}"" reported error messages: {1}", script, message); }
         public static string TimeoutoptionLong { get { return LC.L(@"Sets the maximum time a script is allowed to execute. If the script has not completed within this time, it will continue to execute but the operation will continue too, and no script output will be processed."); } }
         public static string TimeoutoptionShort { get { return LC.L(@"Sets the script timeout"); } }
-        public static string ScriptArgumentError(string script) { return LC.L(@"The script argument ""{0}"" looks like JSON but is not valid JSON", script); }
-        public static string ArgumentsoptionShort { get { return LC.L(@"Sets the script arguments"); } }
-        public static string ArgumentsoptionLong { get { return LC.L(@"This option sets the arguments to pass to the script. The arguments are expected to be space separated, unless the input is a JSON encoded string list."); } }
     }
     internal static class SendMail
     {

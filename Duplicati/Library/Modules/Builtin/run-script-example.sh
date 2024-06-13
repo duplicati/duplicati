@@ -46,31 +46,6 @@
 # as it has already completed so stopping it during stop is useless.
 
 
-# #############################################################################
-# Passing arguments to the script
-# #############################################################################
-
-# To pass arguments to the script, use the --run-script-arguments option.
-# The arguments are passed as a list of strings, separated by spaces. For 
-# example, to pass the arguments "a" and " b" to the script, use:
-# --run-script-arguments="a b"
-#
-# Advanced cases with spaces in the arguments require the arguments to be
-# wrapped in JSON. For example, to pass the arguments "a b" and "c" to the
-# script, use --run-script-arguments="[\"a b\", \"c\"]"
-# 
-# The options passed via --run-script-arguments are the same for all the 
-# scripts.
-# If you need to pass different arguments to different scripts, you can use
-# the she-bang prefix, !#, to toggle space splitting. For example, 
-# to pass the arguments "a" and "b" to the script, use the syntax:
-# --run-script-before="#!./script.sh a b"
-# 
-# If the arguments contain spaces, you can use a JSON encoded string list:
-# --run-script-before="[\"./script.sh\", \"a\", \"b\"]"
-#
-# If a script has arguments supplied it will ignore the --run-script-arguments.
-
 ###############################################################################
 # Changing options from within the script 
 ###############################################################################

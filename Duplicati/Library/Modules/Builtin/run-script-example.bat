@@ -11,7 +11,7 @@ REM --run-script-before = <filename>
 REM --run-script-before-required = <filename>
 REM --run-script-timeout = <time>
 REM --run-script-after = <filename>
-REM 
+REM
 REM --run-script-before = <filename>
 REM Duplicati will run the script before the backup job and waits for its 
 REM completion for 60 seconds (default timeout value). After a timeout a 
@@ -45,29 +45,6 @@ REM The same exit codes as in --run-script-before are supported, but
 REM the operation will always continue (i.e. 1 => 0, 3 => 2, 5 => 4)
 REM as it has already completed so stopping it during stop is useless.
 
-REM ###############################################################################
-REM Passing arguments to the script
-REM ###############################################################################
-
-REM To pass arguments to the script, use the --run-script-arguments option.
-REM The arguments are passed as a list of strings, separated by spaces. For example,
-REM to pass the arguments "a" and " b" to the script, use:
-REM --run-script-arguments="a b"
-REM
-REM Advanced cases with spaces in the arguments require the arguments to be
-REM wrapped in JSON. For example, to pass the arguments "a b" and "c" to the
-REM script, use --run-script-arguments="[\"a b\", \"c\"]"
-REM 
-REM The options passed via --run-script-arguments are the same for all the scripts.
-REM If you need to pass different arguments to different scripts, you can use
-REM the she-bang prefix, !#, to toggle space splitting. For example, to pass 
-REM the arguments "a" and "b" to the script, use the syntax:
-REM --run-script-before="#!./script.bat a b"
-REM 
-REM If the arguments contain spaces, you can use a JSON encoded string list:
-REM --run-script-before="[\"./script.bat\", \"a\", \"b\"]"
-REM 
-REM If a script has arguments supplied it will ignore the --run-script-arguments.
 
 
 REM ###############################################################################
