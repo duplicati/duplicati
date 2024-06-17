@@ -95,6 +95,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string TimeoutoptionShort { get { return LC.L(@"Sets the script timeout"); } }
         public static string EnableArgumentsShort { get { return LC.L(@"Enable script arguments"); } }
         public static string EnableArgumentsLong { get { return LC.L(@"This option enables the use of script arguments. If this option is enabled, the script arguments are treated as commandline strings. Use single or double quotes to separate arguments."); } }
+        public static string UseShellExecuteShort { get { return LC.L(@"Use document open"); } }
+        public static string UseShellExecuteLong { get { return LC.L(@"This option treats the executable as a ""document"" and will open it with the the default program associated with the file extension."); } }
     }
     internal static class SendMail
     {
