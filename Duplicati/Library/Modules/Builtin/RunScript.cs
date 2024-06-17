@@ -237,7 +237,7 @@ namespace Duplicati.Library.Modules.Builtin
         {
             try
             {
-                var arguments = new List<string>() { scriptpath };
+                var arguments = new List<string>();
                 if (enableArguments)
                 {
                     var args = ARGREGEX.Matches(scriptpath);
