@@ -56,7 +56,6 @@ namespace Duplicati.Library.Modules.Builtin
         private const string REQUIRED_OPTION = "run-script-before-required";
         private const string TIMEOUT_OPTION = "run-script-timeout";
         private const string ENABLE_ARGUMENTS_OPTION = "run-script-with-arguments";
-        private const string USE_SHELL_EXECUTE_OPTION = "run-script-use-document-open";
         /// <summary>
         /// Option used to set the log level for mail reports
         /// </summary>
@@ -75,7 +74,6 @@ namespace Duplicati.Library.Modules.Builtin
         private string m_finishScript = null;
         private int m_timeout = 0;
         private bool m_enableArguments = false;
-        private bool m_useShellExecute = false;
 
         private string m_operationName;
         private string m_remoteurl;
@@ -100,7 +98,6 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(REQUIRED_OPTION, out m_requiredScript);
             commandlineOptions.TryGetValue(FINISH_OPTION, out m_finishScript);
             m_enableArguments = Utility.Utility.ParseBoolOption(commandlineOptions, ENABLE_ARGUMENTS_OPTION);
-            m_useShellExecute = Utility.Utility.ParseBoolOption(commandlineOptions, USE_SHELL_EXECUTE_OPTION);
 
             ResultExportFormat resultFormat;
             if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out var tmpResultFormat))
@@ -153,7 +150,6 @@ namespace Duplicati.Library.Modules.Builtin
                     new CommandLineArgument(FINISH_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
                     new CommandLineArgument(REQUIRED_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
                     new CommandLineArgument(ENABLE_ARGUMENTS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.RunScript.EnableArgumentsShort, Strings.RunScript.EnableArgumentsLong),
-                    new CommandLineArgument(USE_SHELL_EXECUTE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.RunScript.UseShellExecuteShort, Strings.RunScript.UseShellExecuteLong),
                     new CommandLineArgument(RESULT_FORMAT_OPTION,
                         CommandLineArgument.ArgumentType.Enumeration,
                         Strings.RunScript.ResultFormatShort,
@@ -175,10 +171,10 @@ namespace Duplicati.Library.Modules.Builtin
         public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
         {
             if (!string.IsNullOrEmpty(m_requiredScript))
-                Execute(m_requiredScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, true, m_enableArguments, m_useShellExecute, m_options, null, null);
+                Execute(m_requiredScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, true, m_enableArguments, m_options, null, null);
 
             if (!string.IsNullOrEmpty(m_startScript))
-                Execute(m_startScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, false, m_enableArguments, m_useShellExecute, m_options, null, null);
+                Execute(m_startScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, false, m_enableArguments, m_options, null, null);
 
             // Save options that might be set by a --run-script-before script so that the OnFinish method
             // references the same values.
@@ -232,12 +228,12 @@ namespace Duplicati.Library.Modules.Builtin
                 using (var streamWriter = new StreamWriter(tmpfile))
                     streamWriter.Write(resultFormatSerializer.Serialize(result, exception, m_logstorage, null));
 
-                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_enableArguments, m_useShellExecute, m_options, tmpfile, level);
+                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_enableArguments, m_options, tmpfile, level);
             }
         }
         #endregion
 
-        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, bool enableArguments, bool useShellExecute, IDictionary<string, string> options, string datafile, ParsedResultType? level)
+        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, bool enableArguments, IDictionary<string, string> options, string datafile, ParsedResultType? level)
         {
             try
             {
@@ -257,7 +253,7 @@ namespace Duplicati.Library.Modules.Builtin
                 {
                     WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
                     CreateNoWindow = true,
-                    UseShellExecute = useShellExecute,
+                    UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     RedirectStandardInput = false
