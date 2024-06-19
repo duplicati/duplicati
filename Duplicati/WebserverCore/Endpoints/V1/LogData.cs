@@ -10,10 +10,12 @@ public class LogData : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/logdata/poll", ([FromServices] Connection connection, [FromQuery] Library.Logging.LogMessageType level, [FromQuery] long id, [FromQuery] long? offset, [FromQuery] int? pagesize)
-            => ExecuteLogPoll(level, id, offset ?? 0, pagesize ?? 100));
+            => ExecuteLogPoll(level, id, offset ?? 0, pagesize ?? 100))
+            .RequireAuthorization();
 
         group.MapGet("/logdata/log", ([FromServices] Connection connection, [FromQuery] long? offset, [FromQuery] int? pagesize)
-            => ExecuteGetLog(connection, offset, pagesize ?? 100));
+            => ExecuteGetLog(connection, offset, pagesize ?? 100))
+            .RequireAuthorization();
     }
 
     private static Server.LogWriteHandler.LogEntry[] ExecuteLogPoll(Library.Logging.LogMessageType level, long id, long offset, int pagesize)

@@ -16,7 +16,8 @@ public class BackupDefaults : IEndpointV1
         {
             http.HttpContext!.Response.ContentType = "application/json";
             return Execute(connection);
-        });
+        })
+        .RequireAuthorization();
     }
 
     private static string Execute(Connection connection)

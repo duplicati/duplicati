@@ -11,8 +11,8 @@ public class MSSql : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/mssql", () => Execute(null));
-        group.MapGet("/mssql/{key}", ([FromRoute] string key) => Execute(key));
+        group.MapGet("/mssql", () => Execute(null)).RequireAuthorization();
+        group.MapGet("/mssql/{key}", ([FromRoute] string key) => Execute(key)).RequireAuthorization();
     }
 
     private static IEnumerable<Dto.TreeNodeDto> Execute(string? key)

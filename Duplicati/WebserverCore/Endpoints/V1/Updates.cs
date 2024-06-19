@@ -7,7 +7,7 @@ public class Updates : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("/updates/check", Execute);
+        group.MapPost("/updates/check", Execute).RequireAuthorization();
     }
 
     private static void Execute()

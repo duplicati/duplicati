@@ -2,8 +2,8 @@ backupApp.controller('ImportController', function($rootScope, $scope, $timeout, 
     $scope.Connecting = false;
     $scope.Completed = false;
     $scope.ImportURL = AppService.get_import_url();
-    $scope.XSRFToken = '';
-    AppService.get_xsrf_token().then((token) => { $scope.XSRFToken = token;});
+    $scope.AccessToken = '';
+    AppService.get_access_token().then((token) => { $scope.AccessToken = token;});
 
     $scope.restoremode = $location.$$path.indexOf('/restore-import') == 0;
 

@@ -23,8 +23,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore;
@@ -53,11 +53,6 @@ namespace Duplicati.Server
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
         /// </summary>
         private static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_HOME";
-
-        /// <summary>
-        /// The environment variable that holds the database key used to encrypt the SQLite database
-        /// </summary>
-        private static readonly string DB_KEY_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_DB_KEY";
 
         /// <summary>
         /// Gets the folder where Duplicati data is stored
@@ -238,6 +233,8 @@ namespace Duplicati.Server
                 if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
                     DataConnection.FixInvalidBackupId();
 
+                DataConnection.ApplicationSettings.UpgradePasswordToKBDF();
+
                 CreateApplicationInstance(writeToConsole);
 
                 StartOrStopUsageReporter();
@@ -252,6 +249,13 @@ namespace Duplicati.Server
                 };
 
                 DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                if (FIXMEGlobal.Origin == "Server")
+                {
+                    var signinToken = DuplicatiWebserver.Provider.GetRequiredService<IJWTTokenProvider>().CreateSigninToken("server-cli");
+                    Console.WriteLine($"Server is now running on port {DuplicatiWebserver.Port}");
+                    Console.WriteLine($"Initial signin url: http://localhost:{DuplicatiWebserver.Port}/signin.html?token={signinToken}");
+                }
 
                 UpdatePoller.Init();
 
@@ -446,32 +450,29 @@ namespace Duplicati.Server
                 }
             };
 
-            try
-            {
 #if DEBUG
-                PurgeTempFilesTimer =
-                    new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromSeconds(10), TimeSpan.FromHours(1));
+            PurgeTempFilesTimer =
+                new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromSeconds(10), TimeSpan.FromHours(1));
 #else
-                PurgeTempFilesTimer =
-                    new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
+            PurgeTempFilesTimer =
+                new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
 #endif
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                //Bugfix for older Mono, slightly more resources used to avoid large values in the period field
-                PurgeTempFilesTimer =
-                    new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
-            }
         }
 
         private static void AdjustApplicationSettings(Dictionary<string, string> commandlineOptions)
         {
+            // This clears the JWT config, and a new will be generated, invalidating all existing tokens
+            if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_RESET_JWT_CONFIG))
+            {
+                DataConnection.ApplicationSettings.JWTConfig = null;
+                // Clean up stored tokens as they are now invalid
+                DataConnection.ExecuteWithCommand((con) => con.ExecuteNonQuery("DELETE FROM TokenFamily"));
+            }
+
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_PASSWORD))
             {
                 DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_PASSWORD]);
             }
-
-            DataConnection.ApplicationSettings.GenerateWebserverPasswordTrayIcon();
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES))
             {
@@ -762,6 +763,7 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, WebServerLoader.DEFAULT_OPTION_INTERFACE),
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_PASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverAllowedhostnamesDescription, Strings.Program.WebserverAllowedhostnamesDescription),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_RESET_JWT_CONFIG, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverResetJwtConfigDescription, Strings.Program.WebserverResetJwtConfigDescription),
                     new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                     new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                     new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),

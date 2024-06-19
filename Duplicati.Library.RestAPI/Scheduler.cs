@@ -404,6 +404,7 @@ namespace Duplicati.Server
                     scheduled.Remove(c);
 
                 //Raise event if needed
+                // TODO: This triggers a new data event and a reconnect with long-poll
                 if (NewSchedule != null)
                     NewSchedule(this, null);
 
@@ -422,6 +423,7 @@ namespace Duplicati.Server
                 }
                 else
                 {
+                    // TODO: This should be handled with events, instead of one wakeup per minute
                     //No tasks, check back later
                     waittime = 60 * 1000;
                 }

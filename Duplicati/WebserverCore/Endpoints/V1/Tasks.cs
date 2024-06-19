@@ -15,11 +15,11 @@ public class Tasks : IEndpointV1
     }
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/tasks", Execute);
-        group.MapGet("/task/{taskid}", ([FromRoute] long taskId) => ExecuteGet(taskId));
-        group.MapPost("/task/{taskid}/stopaftercurrentfile", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopAfterCurrentFile));
-        group.MapPost("/task/{taskid}/stopnow", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopNow));
-        group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Abort));
+        group.MapGet("/tasks", Execute).RequireAuthorization();
+        group.MapGet("/task/{taskid}", ([FromRoute] long taskId) => ExecuteGet(taskId)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/stopaftercurrentfile", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopAfterCurrentFile)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/stopnow", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopNow)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Abort)).RequireAuthorization();
 
     }
 

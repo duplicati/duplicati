@@ -6,6 +6,7 @@ using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Abstractions.Notifications;
+using Duplicati.WebserverCore.Middlewares;
 using Duplicati.WebserverCore.Notifications;
 using Duplicati.WebserverCore.Services;
 using Duplicati.WebserverCore.Services.Settings;
@@ -31,16 +32,20 @@ public static class ServiceCollectionsExtensions
         services.AddSingleton<ILiveControls>(c => c.GetRequiredService<LiveControls>());
 
         //new part
-        services.AddSingleton<ISettingsService, SettingsService>();
-        services.AddTransient<IStatusService, StatusService>();
-        services.AddTransient<IUpdateService, UpdateService>();
-        services.AddSingleton<INotificationUpdateService, NotificationUpdateService>();
-        services.AddSingleton<IWorkerThreadsManager, WorkerThreadsManager>();
-        services.AddSingleton<IScheduler, SchedulerService>();
-        services.AddSingleton<IWebsocketAccessor, WebsocketAccessor>();
-        services.AddTransient<ILanguageService, LanguageService>();
-        services.AddSingleton<ICaptchaProvider, CaptchaService>();
-        services.AddSingleton<ICommandlineRunService, CommandlineRunService>();
+        services
+            .AddSingleton<ISettingsService, SettingsService>()
+            .AddTransient<IStatusService, StatusService>()
+            .AddTransient<IUpdateService, UpdateService>()
+            .AddSingleton<INotificationUpdateService, NotificationUpdateService>()
+            .AddSingleton<IWorkerThreadsManager, WorkerThreadsManager>()
+            .AddSingleton<IScheduler, SchedulerService>()
+            .AddSingleton<IWebsocketAccessor, WebsocketAccessor>()
+            .AddTransient<ILanguageService, LanguageService>()
+            .AddSingleton<ICaptchaProvider, CaptchaService>()
+            .AddSingleton<ICommandlineRunService, CommandlineRunService>()
+            .AddTransient<IJWTTokenProvider, JWTTokenProvider>()
+            .AddTransient<ITokenFamilyStore, TokenFamilyStore>()
+            .AddTransient<ILoginProvider, LoginProvider>();
 
         return services;
     }

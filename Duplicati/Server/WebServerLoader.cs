@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 
 namespace Duplicati.Server;
@@ -37,6 +36,11 @@ public static class WebServerLoader
     /// Option for setting the webservice password
     /// </summary>
     public const string OPTION_WEBSERVICE_PASSWORD = "webservice-password";
+
+    /// <summary>
+    /// Option for resetting the JWT configuration
+    /// </summary>
+    public const string OPTION_WEBSERVICE_RESET_JWT_CONFIG = "webservice-reset-jwt-config";
 
     /// <summary>
     /// Option for setting the webservice allowed hostnames
@@ -76,7 +80,6 @@ public static class WebServerLoader
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">The certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
-    /// <param name="Password">The password to access the server</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     public record ParsedWebserverSettings(
         string WebRoot,
@@ -84,7 +87,6 @@ public static class WebServerLoader
         System.Net.IPAddress Interface,
         X509Certificate2? Certificate,
         string Servername,
-        string Password,
         IEnumerable<string> AllowedHostnames
     );
 
@@ -134,7 +136,7 @@ public static class WebServerLoader
             }
             catch (Exception ex)
             {
-                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "DefectStoredSSLCert", ex, Duplicati.Server.Strings.Server.DefectSSLCertInDatabase);
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "DefectStoredSSLCert", ex, Strings.Server.DefectSSLCertInDatabase);
             }
         }
         else if (certificateFile.Length == 0)
@@ -149,7 +151,7 @@ public static class WebServerLoader
             }
             catch (Exception ex)
             {
-                throw new Exception(Duplicati.Server.Strings.Server.SSLCertificateFailure(ex.Message), ex);
+                throw new Exception(Strings.Server.SSLCertificateFailure(ex.Message), ex);
             }
         }
 
@@ -185,8 +187,7 @@ public static class WebServerLoader
             -1,
             listenInterface,
             cert,
-            string.Format("{0} v{1}", Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
-            options.GetValueOrDefault(OPTION_WEBSERVICE_PASSWORD, ""),
+            string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
             options.GetValueOrDefault(OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, "").Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
 
@@ -204,7 +205,7 @@ public static class WebServerLoader
                 if (certValid && cert != connection.ApplicationSettings.ServerSSLCertificate)
                     connection.ApplicationSettings.ServerSSLCertificate = cert;
 
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Duplicati.Server.Strings.Server.StartedServer(listenInterface.ToString(), p));
+                Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Strings.Server.StartedServer(listenInterface.ToString(), p));
 
                 return server;
             }
@@ -212,6 +213,6 @@ public static class WebServerLoader
             {
             }
 
-        throw new Exception(Duplicati.Server.Strings.Server.ServerStartFailure(ports));
+        throw new Exception(Strings.Server.ServerStartFailure(ports));
     }
 }

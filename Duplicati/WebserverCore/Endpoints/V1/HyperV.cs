@@ -11,8 +11,8 @@ public class HyperV : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/hyperv", () => Execute(null));
-        group.MapGet("/hyperv/{key}", ([FromRoute] string key) => Execute(key));
+        group.MapGet("/hyperv", () => Execute(null)).RequireAuthorization();
+        group.MapGet("/hyperv/{key}", ([FromRoute] string key) => Execute(key)).RequireAuthorization();
     }
 
     private static IEnumerable<Dto.TreeNodeDto> Execute(string? key)

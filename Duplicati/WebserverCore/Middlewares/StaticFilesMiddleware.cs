@@ -1,17 +1,13 @@
-using Duplicati.WebserverCore.Options;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
 public static class StaticFilesExtensions
 {
-    public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, IConfiguration configuration)
+    public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, string webroot)
     {
-        var options = configuration.GetRequiredSection(StaticFilesOptions.SectionName).Get<StaticFilesOptions>()!;
-
-        var webroot = Path.Combine(options.ContentRootPathOverride ?? app.Environment.ContentRootPath, options.Webroot);
-        var fileProvider = new PhysicalFileProvider(webroot);
-
+        var fileProvider = new PhysicalFileProvider(Path.GetFullPath(webroot));
         var defaultFiles = GetDefaultFiles(fileProvider);
         app.UseDefaultFiles(defaultFiles);
 
@@ -19,6 +15,19 @@ public static class StaticFilesExtensions
         {
             FileProvider = fileProvider,
             RequestPath = "",
+            ContentTypeProvider = new FileExtensionContentTypeProvider()
+            {
+                Mappings = {
+                    ["htc"] = "text/x-component",
+                    ["json"] = "application/json",
+                    ["map"] = "application/json",
+                    ["htm"] = "text/html; charset=utf-8",
+                    ["html"] = "text/html; charset=utf-8",
+                    ["hbs"] = "application/x-handlebars-template",
+                    ["woff"] = "application/font-woff",
+                    ["woff2"] = "application/font-woff",
+                }
+            }
         });
 
         return app;

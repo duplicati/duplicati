@@ -12,13 +12,16 @@ public class Notification : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/notification/{id}", ([FromRoute] long id, [FromServices] Connection connection)
-            => ExecuteGet(id, connection));
+            => ExecuteGet(id, connection))
+            .RequireAuthorization();
 
         group.MapGet("/notifications", ([FromServices] Connection connection)
-            => ExecuteGet(connection));
+            => ExecuteGet(connection))
+            .RequireAuthorization();
 
         group.MapDelete("/notification/{id}", ([FromRoute] long id, [FromServices] Connection connection)
-            => ExecuteDelete(id, connection));
+            => ExecuteDelete(id, connection))
+            .RequireAuthorization();
     }
 
     private static Dto.NotificationDto FromEntity(INotification notification)

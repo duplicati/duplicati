@@ -31,7 +31,8 @@ public class BackupPutDelete : IEndpointV1
                 ?? throw new BadRequestException("No data found in request body");
 
             ExecutePut(GetBackup(connection, id), connection, input);
-        });
+        })
+        .RequireAuthorization();
 
 
         group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] ICaptchaProvider captchaProvider, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery] bool? delete_remote_files, [FromQuery] bool? delete_local_db, [FromQuery] string captcha_token, [FromQuery] string captcha_answer, [FromQuery] bool force) =>
@@ -40,7 +41,8 @@ public class BackupPutDelete : IEndpointV1
             if (res.Status != "OK" && httpContextAccessor.HttpContext != null)
                 httpContextAccessor.HttpContext.Response.StatusCode = 500;
             return res;
-        });
+        })
+        .RequireAuthorization();
 
     }
 

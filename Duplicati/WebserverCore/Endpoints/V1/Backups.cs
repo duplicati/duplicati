@@ -12,11 +12,12 @@ public class Backups : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/backups", ([FromServices] Connection connection)
-            => ExecuteGet(connection));
+            => ExecuteGet(connection))
+               .RequireAuthorization();
 
         // TODO: Figure out why the JSON deserialization is not working here
         // group.MapPost("/backups", ([FromServices] Connection connection, [FromBody] Dto.BackupAndScheduleInputDto input, [FromQuery] bool? temporary, [FromQuery] bool? existingdb)
-        //     => ExecuteAdd(connection, input, temporary ?? false, existingdb ?? false));
+        //     => ExecuteAdd(connection, input, temporary ?? false, existingdb ?? false)).RequireAuthorization();
 
         group.MapPost("/backups", async ([FromServices] Connection connection, [FromQuery] bool? temporary, [FromQuery] bool? existingdb, [FromServices] IHttpContextAccessor httpContextAccessor) =>
             {
@@ -27,10 +28,16 @@ public class Backups : IEndpointV1
                 var input = await JsonSerializer.DeserializeAsync<Dto.BackupAndScheduleInputDto>(httpContextAccessor.HttpContext!.Request.Body, opts)
                     ?? throw new BadRequestException("No data found in request body");
                 return ExecuteAdd(connection, input, temporary ?? false, existingdb ?? false);
-            });
+            })
+            .RequireAuthorization();
 
-        group.MapPost("/backups/import", ([FromForm] IFormFile config, [FromForm] bool? cmdline, [FromForm] bool? import_metadata, [FromForm] bool? direct, [FromForm] string? callback, [FromForm] string? passphrase, [FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor) =>
+        // TODO: This is still using form due to file upload, but should be fixed as we are only sending a small file that could be base64 encoded
+        group.MapPost("/backups/import", ([FromForm] IFormFile config, [FromForm] bool? cmdline, [FromForm] bool? import_metadata, [FromForm] bool? direct, [FromForm] string? callback, [FromForm] string? passphrase, [FromForm] string access_token, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor) =>
         {
+            // Manually verify the access token
+            if (jWTTokenProvider.ReadAccessToken(access_token) == null)
+                throw new UnauthorizedException("Invalid access token");
+
             var html = ExecuteImport(connection, cmdline ?? false, import_metadata ?? false, direct ?? false, callback ?? "", passphrase ?? "", config);
             httpContextAccessor.HttpContext!.Response.ContentType = "text/html";
             return html;

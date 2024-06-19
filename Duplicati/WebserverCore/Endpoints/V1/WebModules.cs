@@ -9,8 +9,8 @@ public record WebModules : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/webmodules", ExecuteGet);
-        group.MapPost("/webmodule/{modulekey}", ([FromRoute] string modulekey, [FromBody] Dictionary<string, string> options) => ExecutePost(modulekey, options));
+        group.MapGet("/webmodules", ExecuteGet).RequireAuthorization();
+        group.MapPost("/webmodule/{modulekey}", ([FromRoute] string modulekey, [FromBody] Dictionary<string, string> options) => ExecutePost(modulekey, options)).RequireAuthorization();
     }
 
     private static IEnumerable<IWebModule> ExecuteGet()

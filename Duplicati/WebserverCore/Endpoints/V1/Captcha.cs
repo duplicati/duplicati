@@ -20,7 +20,8 @@ public class Captcha : IEndpointV1
         {
             var token = captchaProvider.CreateCaptcha(input.target);
             return new { token };
-        });
+        })
+        .RequireAuthorization();
 
 
         group.MapPost("/captcha/{token}", ([FromServices] ICaptchaProvider captchaProvider, [FromRoute] string token, [FromBody] Dto.SolveCaptchaInputDto input) =>
@@ -28,7 +29,8 @@ public class Captcha : IEndpointV1
             if (captchaProvider.SolvedCaptcha(token, input.target, input.answer ?? ""))
                 return new { success = true };
             return new { success = false };
-        });
+        })
+        .RequireAuthorization();
 
     }
 }

@@ -7,7 +7,7 @@ public class Acknowledgements : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/acknowledgements", () => Execute());
+        group.MapGet("/acknowledgements", () => Execute()).RequireAuthorization();
     }
 
     private static Dto.AcknowlegdementDto Execute()

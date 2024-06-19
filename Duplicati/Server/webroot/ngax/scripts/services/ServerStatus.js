@@ -253,10 +253,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     }
 
     function handleConnectionError(response) {
-        var oldxsfrstate = state.xsfrerror;
         state.failedConnectionAttempts++;
         var errorMessage = AppService.responseErrorMessage(response);
-        state.xsfrerror = errorMessage.toLowerCase().indexOf('xsrf') >= 0;
 
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
@@ -270,14 +268,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         } else {
             state.connectionState = 'disconnected';
 
-            //If we got a new XSRF token this time, quickly retry
-            if (state.xsfrerror && !oldxsfrstate) {
-                updateServerState();
-            }
-            else {
-                // Notify
-                $rootScope.$broadcast('serverstatechanged');
-            }
+            // Notify
+            $rootScope.$broadcast('serverstatechanged');
         }
     }
 
@@ -295,7 +287,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     updateServerState();
 
-    const reconnect = function () {
+    this.reconnect = function () {
         window.clearInterval(longPollRetryTimer);
         const w = new WebSocket('ws://' + window.location.host + '/notifications');
         w.addEventListener("open", (event) => {
@@ -316,6 +308,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         return w;
     };
 
-    let websocket = reconnect()
+    let websocket = this.reconnect()
     window.websocket = websocket;
 });

@@ -19,25 +19,32 @@ public class BackupGet : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/backup/{id}", ([FromServices] Connection connection, [FromRoute] string id)
-            => ExecuteGet(connection, GetBackup(connection, id)));
+            => ExecuteGet(connection, GetBackup(connection, id)))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/files", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] string filter, [FromQuery] string? time, [FromQuery(Name = "all-versions")] bool? allVersions, [FromQuery(Name = "prefix-only")] bool? prefixOnly, [FromQuery(Name = "folder-contents")] bool? folderContents)
-            => ExecuteGetFiles(GetBackup(connection, id), filter, time, allVersions ?? false, prefixOnly ?? false, folderContents ?? false, new Dictionary<string, string>()));
+            => ExecuteGetFiles(GetBackup(connection, id), filter, time, allVersions ?? false, prefixOnly ?? false, folderContents ?? false, new Dictionary<string, string>()))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/log", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
-            => ExecuteGetLog(connection, GetBackup(connection, id), offset ?? 0, pagesize ?? 100));
+            => ExecuteGetLog(connection, GetBackup(connection, id), offset ?? 0, pagesize ?? 100))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/remotelog", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
-            => ExecuteGetRemotelog(connection, GetBackup(connection, id), offset ?? 0, pagesize ?? 100));
+            => ExecuteGetRemotelog(connection, GetBackup(connection, id), offset ?? 0, pagesize ?? 100))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/filesets", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = "include-metadata")] bool? includeMetadata, [FromQuery(Name = "from-remote-only")] bool? fromRemoteOnly)
-            => ExecuteGetFilesets(GetBackup(connection, id), includeMetadata ?? false, fromRemoteOnly ?? false));
+            => ExecuteGetFilesets(GetBackup(connection, id), includeMetadata ?? false, fromRemoteOnly ?? false))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/export-argsonly", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase)
-            => ExecuteGetExportArgsOnly(GetBackup(connection, id), exportPasswords ?? false));
+            => ExecuteGetExportArgsOnly(GetBackup(connection, id), exportPasswords ?? false))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/export-cmdline", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase)
-            => ExecuteGetExportCmdline(GetBackup(connection, id), exportPasswords ?? false));
+            => ExecuteGetExportCmdline(GetBackup(connection, id), exportPasswords ?? false))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/export", ([FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase, CancellationToken ct) =>
         {
@@ -48,13 +55,16 @@ public class BackupGet : IEndpointV1
             resp.ContentType = "application/octet-stream";
             resp.Headers.Append("Content-Disposition", $"attachment; filename={filename}");
             resp.Body.WriteAsync(data, ct);
-        });
+        })
+        .RequireAuthorization();
 
         group.MapGet("/backup/{id}/isdbusedelsewhere", ([FromServices] Connection connection, [FromRoute] string id)
-            => ExecuteGetIsdbUsedElsewhere(GetBackup(connection, id)));
+            => ExecuteGetIsdbUsedElsewhere(GetBackup(connection, id)))
+            .RequireAuthorization();
 
         group.MapGet("/backup/{id}/isactive", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteGetIsActive(workerThreadsManager, GetBackup(connection, id)));
+            => ExecuteGetIsActive(workerThreadsManager, GetBackup(connection, id)))
+            .RequireAuthorization();
     }
 
     private static IBackup GetBackup(Connection connection, string id)

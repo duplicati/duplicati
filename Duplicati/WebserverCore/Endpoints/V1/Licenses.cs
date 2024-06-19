@@ -6,7 +6,7 @@ public class Licenses : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/licenses", () => Execute());
+        group.MapGet("/licenses", () => Execute()).RequireAuthorization();
     }
 
     private static IEnumerable<Dto.LicenseDto> Execute()

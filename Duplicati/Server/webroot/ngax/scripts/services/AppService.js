@@ -1,8 +1,8 @@
 backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogService, appConfig) {
     this.apiurl = '../api/v1';
     this.proxy_url = null;
-    this.xsrftoken = null;
-    this.xsrfpromise = null;
+    this.access_token = null;
+    this.access_token_promise = null;
 
     var self = this;
 
@@ -14,9 +14,10 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         options = options || {};
         options.method = options.method || method;
         options.responseType = options.responseType || 'json';
-        options.xsrfHeaderName = 'X-XSRF-Token';
-        options.xsrfCookieName = 'xsrf-token';
         options.headers = options.headers || {};
+        if (this.access_token != null) {
+            options.headers['Authorization'] = `Bearer ${self.access_token}`;
+        }
 
         if ((method == "POST" || method == "PATCH" || method == "PUT") && options.headers['Content-Type'] == null && data != null && typeof (data) != typeof ('')) {
             options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
@@ -47,6 +48,7 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
 
     var installResponseHook = function (promiseAction) {
         var deferred = $q.defer();
+        var self = this;
 
         function successCallback(response) {
             deferred.resolve(response);
@@ -54,15 +56,20 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
 
         function errorCallback(response) {
             if (response.status == 401) {
+                // If we are actully logged in, we should log out and obtain a new token
+                if (self.access_token != null) {
+                    self.access_token = null;
+                    self.access_token_promise = null;
+
+                    self.injectAccessToken({}, () => { promiseAction().then(successCallback, errorCallback); });
+                    return;
+                }
+
                 DialogService.dismissAll();
                 DialogService.accept('Not logged in', function () {
                     window.location = appConfig.login_url;
                 });
                 deferred.reject(response);
-            } else if (response.status == 400) {
-                if (self.responseErrorMessage(response) === "Missing XSRF Token. Please reload the page") {
-                    promiseAction().then(successCallback, errorCallback);
-                }
             } else {
                 deferred.reject(response);
             }
@@ -81,35 +88,41 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         });        
     };
 
-    this.injectXsrf = function (options, callback) {
+    this.injectAccessToken = function (options, callback) {
+        var self = this;
         options.headers = options.headers || {};
-        if (this.xsrftoken != null) {
-            options.headers['X-XSRF-Token'] = this.xsrftoken;
+        if (this.access_token != null) {
+            options.headers['Authorization'] = `Bearer ${self.access_token}`;
             return callback();
         }
 
         var deferred = $q.defer();
-        var self = this;
-        if (this.xsrfpromise == null) {
-            this.xsrfpromise = deferred.promise;
-            var url = this.apiurl + '/antiforgery/token';
-            installResponseHook(() => $http.get(this.proxy_url == null ? url : this.proxy_url, setupConfig('GET', {'responseType': 'text'}, null, url)))
+        if (self.access_token_promise == null) {
+            self.access_token_promise = deferred.promise;
+            var url = self.apiurl + '/auth/refresh';
+            $http.post(self.proxy_url == null ? url : self.proxy_url)
                 .then(function (response) {
-                    self.xsrftoken = response.data;
-                    options.headers['X-XSRF-Token'] = self.xsrftoken;
+                    self.access_token = response.data.AccessToken;
+                    self.access_token_promise = null;
+                    options.headers['Authorization'] = `Bearer ${self.access_token}`;
                     chainPromise(deferred, callback);
                 }, function (response) {
+                    DialogService.dismissAll();
+                    DialogService.accept('Not logged in', function () {
+                        window.location = appConfig.login_url;
+                    });
+
                     deferred.reject(response);
                 });
 
         } else {            
-            this.xsrfpromise.then(() => { 
-                options.headers['X-XSRF-Token'] = self.xsrftoken;
+            self.access_token_promise.then(() => { 
+                options.headers['Authorization'] = `Bearer ${self.access_token}`;
                 chainPromise(deferred, callback);
             }, (response) => deferred.reject(response));
         }
         return deferred.promise;
-    };
+    }
     
     this.get = function (url, options) {
         let rurl = url;
@@ -118,19 +131,19 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         }
 
         options = options || {};
-        return this.injectXsrf(options, () => installResponseHook(() => $http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl))));
+        return this.injectAccessToken(options, () => installResponseHook(() => $http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl))));
     };
 
     this.patch = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectXsrf(options, () => installResponseHook(() => $http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl))));
+        return this.injectAccessToken(options, () => installResponseHook(() => $http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl))));
     };
 
     this.post = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectXsrf(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
+        return this.injectAccessToken(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
     };
 
     this.postJson = function (url, data, options) {     
@@ -139,26 +152,26 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         options = options || {};
         options.headers = options.headers || {};
         options.headers['Content-Type'] = 'application/json; charset=utf-8';
-        return this.injectXsrf(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
+        return this.injectAccessToken(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
     };
 
     this.put = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectXsrf(options, () => installResponseHook(() => $http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl))));
+        return this.injectAccessToken(options, () => installResponseHook(() => $http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl))));
     };
 
     this.delete = function (url, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectXsrf(options, () => installResponseHook(() => $http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl))));
+        return this.injectAccessToken(options, () => installResponseHook(() => $http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl))));
     };
 
-    this.get_xsrf_token = function () {
+    this.get_access_token = function () {
         var deferred = $q.defer();
         const self = this;
-        this.injectXsrf({}, () => {             
-            deferred.resolve(self.xsrftoken); 
+        this.injectAccessToken({}, () => {             
+            deferred.resolve(self.access_token); 
             return $q.resolve();
         });
         return deferred.promise;
@@ -186,7 +199,7 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
     };
 
     this.get_bugreport_url = function (reportid) {
-        var rurl = this.apiurl + '/bugreport/' + reportid + '?x-xsrf-token=' + encodeURIComponent($cookies.get('xsrf-token'));
+        var rurl = this.apiurl + '/bugreport/' + reportid;
 
         if (this.proxy_url != null)
             return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);

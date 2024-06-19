@@ -9,12 +9,36 @@ public class ServerSetting : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/serversettings", ([FromServices] Connection connection) => GetSettings(connection));
-        group.MapPatch("/serversettings", ([FromServices] Connection connection, [FromBody] Dictionary<string, object?> values) => UpdateSettings(connection, values));
+        group.MapGet("/serversettings", ([FromServices] Connection connection) => GetSettings(connection)).RequireAuthorization();
+        group.MapPatch("/serversettings", ([FromServices] Connection connection, [FromBody] Dictionary<string, object?> values) => UpdateSettings(connection, values)).RequireAuthorization();
 
-        group.MapGet("/serversetting/{key}", ([FromRoute] string key, [FromServices] Connection connection, [FromServices] ISettingsService settingsService) => GetSetting(key, connection, settingsService));
-        group.MapPut("/serversetting/{key}", ([FromRoute] string key, [FromBody] string value, [FromServices] Connection connection) => UpdateSetting(key, value, connection));
+        group.MapGet("/serversetting/{key}", ([FromRoute] string key, [FromServices] Connection connection, [FromServices] ISettingsService settingsService) => GetSetting(key, connection, settingsService)).RequireAuthorization();
+        group.MapPut("/serversetting/{key}", ([FromRoute] string key, [FromBody] string value, [FromServices] Connection connection) => UpdateSetting(key, value, connection)).RequireAuthorization();
     }
+
+    // Remove sensitive information from the output
+    private static readonly string[] GUARDED_OUTPUT = [
+        Server.Database.ServerSettings.CONST.JWT_CONFIG,
+        Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        // Not used anymore, but not completely removed
+        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
+        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
+        // Completely removed, but no need to expose
+        "server-passphrase-trayicon-hash",
+        "server-passphrase-trayicon-salt"
+    ];
+
+    private static readonly string[] GUARDED_INPUT = [
+        Server.Database.ServerSettings.CONST.JWT_CONFIG,
+        Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
+        Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
+        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
+        "ServerSSLCertificate",
+        "server-passphrase-trayicon-hash",
+        "server-passphrase-trayicon-salt"
+    ];
+
 
     private static Dictionary<string, string> GetSettings(Connection connection)
     {
@@ -33,6 +57,9 @@ public class ServerSetting : IEndpointV1
         dict.TryGetValue("server-ssl-certificate", out var sslcert);
         dict["server-ssl-certificate"] = (!string.IsNullOrWhiteSpace(sslcert)).ToString();
 
+        foreach (var key in GUARDED_OUTPUT)
+            dict.Remove(key);
+
         return dict;
     }
 
@@ -41,15 +68,18 @@ public class ServerSetting : IEndpointV1
         if (values == null)
             throw new BadRequestException("No values provided");
 
+        var passphrase = values.GetValueOrDefault(Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)?.ToString();
+        foreach (var key in GUARDED_INPUT)
+            values.Remove(key);
+
         // Split into server settings and global settings
         var serversettings = values.Where(x => !string.IsNullOrWhiteSpace(x.Key) && !x.Key.StartsWith("--", StringComparison.Ordinal))
             .ToDictionary(x => x.Key, x => x.Value?.ToString());
 
         var globalsettings = values.Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Key.StartsWith("--", StringComparison.Ordinal));
 
-        serversettings.Remove("server-ssl-certificate");
-        serversettings.Remove("ServerSSLCertificate");
-
+        if (!string.IsNullOrWhiteSpace(passphrase))
+            connection.ApplicationSettings.SetWebserverPassword(passphrase);
         if (serversettings.Any())
             connection.ApplicationSettings.UpdateSettings(serversettings, false);
 
@@ -77,6 +107,10 @@ public class ServerSetting : IEndpointV1
         if (key.Equals("server-ssl-certificate", StringComparison.OrdinalIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.OrdinalIgnoreCase))
             return settingsService.GetSettings().HasSSLCertificate.ToString();
 
+        if (GUARDED_OUTPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
+            throw new NotFoundException("Key not found");
+
+
         if (key.StartsWith("--", StringComparison.Ordinal))
         {
             return connection.Settings.FirstOrDefault(x => string.Equals(key, x.Name, StringComparison.OrdinalIgnoreCase))?.Value;
@@ -93,8 +127,8 @@ public class ServerSetting : IEndpointV1
 
     private static void UpdateSetting(string key, string value, Connection connection)
     {
-        if (key.Equals("server-ssl-certificate", StringComparison.OrdinalIgnoreCase) || key.Equals("ServerSSLCertificate", StringComparison.OrdinalIgnoreCase))
-            throw new BadRequestException("Cannot update server-ssl-certificate");
+        if (GUARDED_INPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
+            throw new BadRequestException($"Cannot update {key} setting");
 
         if (key.StartsWith("--", StringComparison.Ordinal))
         {

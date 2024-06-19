@@ -13,10 +13,12 @@ public class Filesystem : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapPost("/filesystem", ([FromQuery] bool? onlyFolders, [FromQuery] bool? showHidden, [FromBody] FilesystemInput input)
-            => Execute(input.path, onlyFolders ?? false, showHidden ?? false));
+            => Execute(input.path, onlyFolders ?? false, showHidden ?? false))
+            .RequireAuthorization();
 
         group.MapPost("/filesystem/validate", ([FromBody] FilesystemInput input)
-            => Validate(input.path));
+            => Validate(input.path))
+            .RequireAuthorization();
     }
 
     private static string ExpandPath(string path)

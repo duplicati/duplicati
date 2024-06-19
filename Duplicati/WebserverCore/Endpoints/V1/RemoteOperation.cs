@@ -13,11 +13,16 @@ namespace Duplicati.WebserverCore.Endpoints.V1
         public static void Map(RouteGroupBuilder group)
         {
             group.MapPost("/remoteoperation/dbpath", ([FromBody] RemoteOperationInput input)
-                => ExecuteDbPath(input.path));
+                => ExecuteDbPath(input.path))
+                .RequireAuthorization();
+
             group.MapPost("/remoteoperation/test", ([FromQuery] bool? autocreate, [FromBody] RemoteOperationInput input)
-                => ExecuteTest(input.path, autocreate ?? false));
+                => ExecuteTest(input.path, autocreate ?? false))
+                .RequireAuthorization();
+
             group.MapPost("/remoteoperation/create", ([FromBody] RemoteOperationInput input)
-                => ExecuteCreate(input.path));
+                => ExecuteCreate(input.path))
+                .RequireAuthorization();
         }
 
         private static Dto.GetDbPathDto ExecuteDbPath(string uri)

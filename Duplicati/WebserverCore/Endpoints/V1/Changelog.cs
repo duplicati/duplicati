@@ -9,7 +9,7 @@ public class Changelog : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/changelog", ([FromQuery(Name = "from-update")] bool? fromUpdate, [FromServices] Connection connection) => Execute(connection, fromUpdate ?? false));
+        group.MapGet("/changelog", ([FromQuery(Name = "from-update")] bool? fromUpdate, [FromServices] Connection connection) => Execute(connection, fromUpdate ?? false)).RequireAuthorization();
     }
 
     private static Dto.ChangelogDto Execute(Connection connection, bool fromUpdate)

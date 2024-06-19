@@ -27,7 +27,8 @@ public class Bugreport : IEndpointV1
                 response.Headers.Append("Content-Disposition", $"attachment; filename={filename}");
                 fs.CopyTo(response.Body);
             }
-        });
+        })
+        .RequireAuthorization();
     }
 
 }

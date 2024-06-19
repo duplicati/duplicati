@@ -11,13 +11,14 @@ public class ServerState : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/serverstate", ([FromQuery] long? lastEventId, [FromQuery] bool? longpoll, string? duration, [FromServices] IStatusService statusService)
-            => Execute(lastEventId, longpoll, duration, statusService));
+            => Execute(lastEventId, longpoll ?? false, duration, statusService))
+            .RequireAuthorization();
 
-        group.MapPost("/serverstate/pause", ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls, [FromQuery] string? duration) => ExecutePause(statusService, liveControls, duration));
-        group.MapPost("/serverstate/resume", ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls) => ExecuteResume(statusService, liveControls));
+        group.MapPost("/serverstate/pause", ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls, [FromQuery] string? duration) => ExecutePause(statusService, liveControls, duration)).RequireAuthorization();
+        group.MapPost("/serverstate/resume", ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls) => ExecuteResume(statusService, liveControls)).RequireAuthorization();
     }
 
-    private static Dto.ServerStatusDto Execute(long? lastEventId, bool? longpoll, string? duration, IStatusService statusService)
+    private static Dto.ServerStatusDto Execute(long? lastEventId, bool longpoll, string? duration, IStatusService statusService)
     {
         var status = statusService.GetStatus();
         if (longpoll == true)

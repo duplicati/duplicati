@@ -1,11 +1,12 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Duplicati.Server;
 using Duplicati.Server.Database;
+using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
@@ -74,16 +75,35 @@ public partial class DuplicatiWebserver
                 opt.JsonSerializerOptions.Converters.Add(new DayOfWeekStringEnumConverter());
             });
 
+        // Generate JWTConfig with signing key if not present
+        if (string.IsNullOrWhiteSpace(connection.ApplicationSettings.JWTConfig))
+            connection.ApplicationSettings.JWTConfig = JsonSerializer.Serialize(JWTConfig.Create());
+
+        var jwtConfig = JsonSerializer.Deserialize<JWTConfig>(connection.ApplicationSettings.JWTConfig)
+            ?? throw new Exception("Failed to deserialize JWTConfig");
+
         builder.Services
             .AddHostedService<ApplicationPartsLogger>()
             .AddEndpointsApiExplorer()
             .AddSwaggerGen()
             .AddHttpContextAccessor()
-            .AddAntiforgery(options =>
+            .AddSingleton(jwtConfig)
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
             {
-                options.HeaderName = "X-XSRF-TOKEN";
-                options.Cookie.Name = "xsrf-token";
-                options.FormFieldName = "x-xsrf-token";
+                options.Authority = jwtConfig.Authority;
+                options.Audience = jwtConfig.Audience;
+                options.SaveToken = true;
+                options.TokenValidationParameters = JWTTokenProvider.GetTokenValidationParameters(jwtConfig);
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = context =>
+                    {
+                        var repo = context.HttpContext.RequestServices.GetRequiredService<ITokenFamilyStore>();
+                        return JWTTokenProvider.ValidateAccessToken(context, repo);
+                    }
+                };
             });
 
         builder.Services.AddDuplicati(connection);
@@ -92,24 +112,7 @@ public partial class DuplicatiWebserver
         App = builder.Build();
         Provider = App.Services;
 
-        App.UseStaticFiles(new StaticFileOptions()
-        {
-            RequestPath = "",
-            FileProvider = new PhysicalFileProvider(Path.GetFullPath(settings.WebRoot)),
-            ContentTypeProvider = new FileExtensionContentTypeProvider()
-            {
-                Mappings = {
-                    ["htc"] = "text/x-component",
-                    ["json"] = "application/json",
-                    ["map"] = "application/json",
-                    ["htm"] = "text/html; charset=utf-8",
-                    ["html"] = "text/html; charset=utf-8",
-                    ["hbs"] = "application/x-handlebars-template",
-                    ["woff"] = "application/font-woff",
-                    ["woff2"] = "application/font-woff",
-                }
-            }
-        });
+        App.UseDefaultStaticFiles(settings.WebRoot);
 
         App.UseExceptionHandler(app =>
         {
@@ -135,7 +138,6 @@ public partial class DuplicatiWebserver
         });
     }
 
-
     public void Start(InitSettings settings)
     {
         // App.UseAuthMiddleware();
@@ -146,7 +148,6 @@ public partial class DuplicatiWebserver
         App.AddEndpoints()
             .UseNotifications(settings.AllowedHostnames, "/notifications");
 
-        App.UseAntiforgery();
         App.RunAsync();
     }
 

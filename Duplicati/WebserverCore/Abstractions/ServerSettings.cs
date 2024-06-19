@@ -46,23 +46,6 @@ public class ServerSettings
         get => applicationSettings.ServerPortChanged;
         set => applicationSettings.ServerPortChanged = value;
     }
-    public string ServerPassphrase
-    {
-        get => applicationSettings.WebserverPassword;
-        set => applicationSettings.SetWebserverPassword(value);
-    }
-    public string ServerPassphraseSalt
-    {
-        get => applicationSettings.WebserverPasswordSalt;
-    }
-    public string ServerPassphraseTrayIcon
-    {
-        get => applicationSettings.WebserverPasswordTrayIcon;
-    }
-    public string ServerPassphraseTrayIconHash
-    {
-        get => applicationSettings.WebserverPasswordTrayIconHash;
-    }
     public DateTime UpdateCheckLast
     {
         get => applicationSettings.LastUpdateCheck;
@@ -106,11 +89,6 @@ public class ServerSettings
     {
         get => applicationSettings.UsageReporterLevel;
         set => applicationSettings.UsageReporterLevel = value;
-    }
-    public bool HasAskedForPasswordProtection
-    {
-        get => applicationSettings.HasAskedForPasswordProtection;
-        set => applicationSettings.HasAskedForPasswordProtection = value;
     }
     public bool DisableTrayIconLogin
     {

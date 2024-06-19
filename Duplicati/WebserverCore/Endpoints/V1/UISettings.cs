@@ -8,9 +8,9 @@ public class UISettings : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/uisettings", ([FromServices] Connection connection) => ExecuteGet(connection));
-        group.MapGet("/uisettings/{scheme}", ([FromServices] Connection connection, [FromRoute] string scheme) => ExecuteSchemeGet(connection, scheme));
-        group.MapPatch("/uisettings/{scheme}/stopnow", ([FromServices] Connection connection, [FromRoute] string scheme, [FromBody] Dictionary<string, string> settings) => ExecutePatch(connection, scheme, settings));
+        group.MapGet("/uisettings", ([FromServices] Connection connection) => ExecuteGet(connection)).RequireAuthorization();
+        group.MapGet("/uisettings/{scheme}", ([FromServices] Connection connection, [FromRoute] string scheme) => ExecuteSchemeGet(connection, scheme)).RequireAuthorization();
+        group.MapPatch("/uisettings/{scheme}", ([FromServices] Connection connection, [FromRoute] string scheme, [FromBody] Dictionary<string, string> settings) => ExecutePatch(connection, scheme, settings)).RequireAuthorization();
     }
 
     private static IEnumerable<string> ExecuteGet(Connection connection)

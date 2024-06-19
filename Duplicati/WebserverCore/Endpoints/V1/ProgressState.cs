@@ -8,7 +8,8 @@ public class ProgressState : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/progressstate", Execute);
+        group.MapGet("/progressstate", Execute)
+        .RequireAuthorization();
     }
 
     private static Server.Serialization.Interface.IProgressEventData Execute()

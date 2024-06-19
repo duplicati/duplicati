@@ -15,46 +15,60 @@ public class BackupPost : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapPost("/backup/{id}/deletedb", ([FromServices] Connection connection, [FromRoute] string id)
-            => ExecuteDeleteDb(GetBackup(connection, id)));
+            => ExecuteDeleteDb(GetBackup(connection, id)))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/movedb", ([FromServices] Connection connection, [FromRoute] string id, [FromBody] Dto.UpdateDbPathInputDto input)
-            => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, true));
+            => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, true))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/updatedb", ([FromServices] Connection connection, [FromRoute] string id, [FromBody] Dto.UpdateDbPathInputDto input)
-            => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, false));
+            => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, false))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input)
-            => ExecuteRestore(GetBackup(connection, id), workerThreadsManager, input));
+            => ExecuteRestore(GetBackup(connection, id), workerThreadsManager, input))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/createreport", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteCreateReport(GetBackup(connection, id), workerThreadsManager));
+            => ExecuteCreateReport(GetBackup(connection, id), workerThreadsManager))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/repair", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto input)
-            => ExecuteRepair(GetBackup(connection, id), workerThreadsManager, input));
+            => ExecuteRepair(GetBackup(connection, id), workerThreadsManager, input))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/repairupdate", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto input)
-            => ExecuteRepairUpdate(GetBackup(connection, id), workerThreadsManager, input));
+            => ExecuteRepairUpdate(GetBackup(connection, id), workerThreadsManager, input))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/vacuum", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteVacuum(GetBackup(connection, id), workerThreadsManager));
+            => ExecuteVacuum(GetBackup(connection, id), workerThreadsManager))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/verify", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteVerify(GetBackup(connection, id), workerThreadsManager));
+            => ExecuteVerify(GetBackup(connection, id), workerThreadsManager))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/compact", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteCompact(GetBackup(connection, id), workerThreadsManager));
+            => ExecuteCompact(GetBackup(connection, id), workerThreadsManager))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteRunBackup(GetBackup(connection, id), workerThreadsManager));
+            => ExecuteRunBackup(GetBackup(connection, id), workerThreadsManager))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteRunBackup(GetBackup(connection, id), workerThreadsManager));
+            => ExecuteRunBackup(GetBackup(connection, id), workerThreadsManager))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/report-remote-size", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteReportRemoteSize(GetBackup(connection, id), workerThreadsManager));
+            => ExecuteReportRemoteSize(GetBackup(connection, id), workerThreadsManager))
+            .RequireAuthorization();
 
         group.MapPost("/backup/{id}/copytotemp", ([FromServices] Connection connection, [FromRoute] string id)
-            => ExecuteCopyToTemp(GetBackup(connection, id), connection));
+            => ExecuteCopyToTemp(GetBackup(connection, id), connection))
+            .RequireAuthorization();
     }
 
     private static IBackup GetBackup(Connection connection, string id)

@@ -11,13 +11,16 @@ public class Commandline : IEndpointV1
         group.MapGet("/commandline", ExecuteGetCommands);
 
         group.MapGet("/commandline/{runid}", ([FromServices] ICommandlineRunService commandlineRunService, [FromRoute] string runid, int? offset, int? pagesize)
-            => ExecuteGetLogCommand(commandlineRunService, runid, offset ?? 0, pagesize ?? 100));
+            => ExecuteGetLogCommand(commandlineRunService, runid, offset ?? 0, pagesize ?? 100))
+            .RequireAuthorization();
 
         group.MapPost("/commandline/{runid}/abort", ([FromServices] ICommandlineRunService commandlineRunService, [FromRoute] string runid)
-            => ExecuteAbortCommand(commandlineRunService, runid));
+            => ExecuteAbortCommand(commandlineRunService, runid))
+            .RequireAuthorization();
 
         group.MapPost("/commandline", ([FromServices] ICommandlineRunService commandlineRunService, [FromBody] string[] input)
-            => ExecuteRunCommand(commandlineRunService, input));
+            => ExecuteRunCommand(commandlineRunService, input))
+            .RequireAuthorization();
     }
 
     private static IEnumerable<string> ExecuteGetCommands()

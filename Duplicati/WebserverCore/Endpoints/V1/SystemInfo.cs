@@ -10,8 +10,8 @@ public class SystemInfo : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/systeminfo", ([FromServices] ILanguageService languageService) => Execute(languageService.GetLanguage()));
-        group.MapGet("/systeminfo/filtergroups", () => ExecuteFilterGroups());
+        group.MapGet("/systeminfo", ([FromServices] ILanguageService languageService) => Execute(languageService.GetLanguage())).RequireAuthorization();
+        group.MapGet("/systeminfo/filtergroups", () => ExecuteFilterGroups()).RequireAuthorization();
     }
 
     private static Dto.SystemInfoDto Execute(CultureInfo? browserlanguage)
