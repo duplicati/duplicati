@@ -12,16 +12,22 @@ public partial class Auth : IEndpointV1
 {
     private static readonly string LOGTAG = Log.LogTagFromType<Auth>();
 
+    private const string COOKIE_NAME = "RefreshToken";
+
+    private static string GetCookieName(IHttpContextAccessor httpContextAccessor)
+        => $"{COOKIE_NAME}_{httpContextAccessor.HttpContext?.Request.Host.Port ?? 0}";
+
     public static void Map(RouteGroupBuilder group)
     {
         group.MapPost("auth/refresh", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, CancellationToken ct) =>
         {
-            if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue("RefreshToken", out var refreshTokenString))
+            var cookieName = GetCookieName(httpContextAccessor);
+            if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
             {
                 try
                 {
                     var result = await loginProvider.PerformLoginWithRefreshToken(refreshTokenString, ct);
-                    AddCookie(httpContextAccessor.HttpContext, "RefreshToken", result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
+                    AddCookie(httpContextAccessor.HttpContext, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
                     return new Dto.AccessTokenOutput(result.AccessToken);
                 }
                 catch (Exception ex)
@@ -38,11 +44,12 @@ public partial class Auth : IEndpointV1
 
         group.MapPost("auth/signin", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, [FromBody] Dto.SigninInputDto input, CancellationToken ct) =>
         {
+            var cookieName = GetCookieName(httpContextAccessor);
             try
             {
                 var result = await loginProvider.PerformLoginWithSigninToken(input.SigninToken, input.RememberMe ?? false, ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
-                    AddCookie(httpContextAccessor.HttpContext!, "RefreshToken", result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
+                    AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
                 return new Dto.AccessTokenOutput(result.AccessToken);
             }
             catch (Exception ex)
@@ -59,11 +66,12 @@ public partial class Auth : IEndpointV1
 
         group.MapPost("auth/login", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, [FromBody] Dto.LoginInputDto input, CancellationToken ct) =>
         {
+            var cookieName = GetCookieName(httpContextAccessor);
             try
             {
                 var result = await loginProvider.PerformLoginWithPassword(input.Password, input.RememberMe ?? false, ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
-                    AddCookie(httpContextAccessor.HttpContext!, "RefreshToken", result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
+                    AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
                 return new Dto.AccessTokenOutput(result.AccessToken);
             }
             catch (Exception ex)
@@ -86,7 +94,8 @@ public partial class Auth : IEndpointV1
 
         group.MapPost("auth/logout", ([FromServices] ILoginProvider loginProvider, [FromServices] IHttpContextAccessor httpContextAccessor) =>
         {
-            if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue("RefreshToken", out var refreshTokenString))
+            var cookieName = GetCookieName(httpContextAccessor);
+            if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
             {
                 try
                 {
@@ -98,7 +107,7 @@ public partial class Auth : IEndpointV1
                 }
             }
 
-            httpContextAccessor.HttpContext!.Response.Cookies.Delete("RefreshToken");
+            httpContextAccessor.HttpContext!.Response.Cookies.Delete(cookieName);
             return new { success = true };
         });
     }
