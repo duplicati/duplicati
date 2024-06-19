@@ -35,44 +35,44 @@ public interface IJWTTokenProvider
     /// </summary>
     /// <param name="userId">The user ID the token is for.</param>
     /// <returns>The JWT token.</returns>
-    public string CreateSigninToken(string userId);
+    string CreateSigninToken(string userId);
     /// <summary>
     /// Creates a JWT token that can be used to access resources.
     /// </summary>
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
-    public string CreateAccessToken(string userId, string tokenFamilyId);
+    string CreateAccessToken(string userId, string tokenFamilyId);
     /// <summary>
     /// Creates a JWT token that can be used to refresh an access token.
     /// </summary>
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
     /// <param name="counter">The counter of the token family the token is for.</param>
-    public string CreateRefreshToken(string userId, string tokenFamilyId, int counter);
+    string CreateRefreshToken(string userId, string tokenFamilyId, int counter);
 
     /// <summary>
     /// Reads a JWT token that can be used to sign in, instead of using a password.
     /// </summary>
     /// <param name="token">The JWT token.</param>
     /// <returns>The parsed and validated sign-in token.</returns>    
-    public SigninToken ReadSigninToken(string token);
+    SigninToken ReadSigninToken(string token);
 
     /// <summary>
     /// Reads a JWT token that can be used to access resources.
     /// </summary>
     /// <param name="token">The JWT token.</param>
     /// <returns>The parsed and validated access token.</returns>
-    public AccessToken ReadAccessToken(string token);
+    AccessToken ReadAccessToken(string token);
 
     /// <summary>
     /// Reads a JWT token that can be used to refresh an access token.
     /// </summary>
     /// <param name="token">The JWT token.</param>
     /// <returns>The parsed and validated refresh token.</returns>
-    public RefreshToken ReadRefreshToken(string token);
+    RefreshToken ReadRefreshToken(string token);
 
     /// <summary>
     /// Gets the family ID from a JWT token with no family counter.
     /// </summary>
-    public string TemporaryFamilyId { get; }
+    string TemporaryFamilyId { get; }
 }
