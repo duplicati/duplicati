@@ -99,9 +99,8 @@ public partial class DuplicatiWebserver
                 {
                     OnTokenValidated = context =>
                     {
-                        var provider = context.HttpContext.RequestServices.GetRequiredService<IJWTTokenProvider>();
                         var store = context.HttpContext.RequestServices.GetRequiredService<ITokenFamilyStore>();
-                        return provider.ValidateAccessToken(context, store);
+                        return JWTTokenProvider.ValidateAccessToken(context, store);
                     }
                 };
             });

@@ -16,7 +16,7 @@ public record JWTConfig
     public int AccessTokenDurationInMinutes { get; init; } = 15;
     public int RefreshTokenDurationInMinutes { get; init; } = 60 * 24 * 30;
     public int SigninTokenDurationInMinutes { get; init; } = 5;
-    public SymmetricSecurityKey SymmetricSecurityKey => new(Encoding.UTF8.GetBytes(SigningKey));
+    public SymmetricSecurityKey SymmetricSecurityKey() => new(Encoding.UTF8.GetBytes(SigningKey));
 
     public static JWTConfig Create() => new()
     {
@@ -47,12 +47,13 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
             new Claim(Claims.Type, TokenType.RefreshToken.ToString()),
             new Claim(Claims.UserId, userId),
             new Claim(Claims.Family, tokenFamilyId),
-            new Claim(Claims.Counter, counter.ToString())
+            new Claim(Claims.Counter, counter.ToString()),
+            new Claim(Claims.IssuedAt, (DateTime.UnixEpoch - DateTime.UtcNow).TotalSeconds.ToString())
         ], DateTime.Now, expires: DateTime.Now.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
 
     private string GenerateToken(IEnumerable<Claim> claims, DateTime notBefore, DateTime expires)
     {
-        var creds = new SigningCredentials(jWTConfig.SymmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+        var creds = new SigningCredentials(jWTConfig.SymmetricSecurityKey(), SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(jWTConfig.Authority, jWTConfig.Audience, claims, notBefore: notBefore, expires: expires, signingCredentials: creds);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -109,10 +110,12 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = jWTConfig.Authority,
             ValidAudience = jWTConfig.Audience,
-            IssuerSigningKey = jWTConfig.SymmetricSecurityKey
+            IssuerSigningKey = jWTConfig.SymmetricSecurityKey(),
         };
     }
 
@@ -166,6 +169,7 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
         public const string UserId = "sid";
         public const string Family = "fam";
         public const string Counter = "cnt";
+        public const string IssuedAt = "iat";
     }
 
 }
