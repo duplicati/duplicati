@@ -37,7 +37,6 @@ public partial class DuplicatiWebserver
         System.Net.IPAddress Interface,
         X509Certificate2? Certificate,
         string Servername,
-        string Password,
         IEnumerable<string> AllowedHostnames
     );
 
@@ -100,8 +99,9 @@ public partial class DuplicatiWebserver
                 {
                     OnTokenValidated = context =>
                     {
-                        var repo = context.HttpContext.RequestServices.GetRequiredService<ITokenFamilyStore>();
-                        return JWTTokenProvider.ValidateAccessToken(context, repo);
+                        var provider = context.HttpContext.RequestServices.GetRequiredService<IJWTTokenProvider>();
+                        var store = context.HttpContext.RequestServices.GetRequiredService<ITokenFamilyStore>();
+                        return provider.ValidateAccessToken(context, store);
                     }
                 };
             });

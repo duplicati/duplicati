@@ -327,7 +327,6 @@ namespace Duplicati.Server
                     parsedOptions.Interface,
                     parsedOptions.Certificate,
                     parsedOptions.Servername,
-                    parsedOptions.Password,
                     parsedOptions.AllowedHostnames);
 
                 var server = new DuplicatiWebserver();
