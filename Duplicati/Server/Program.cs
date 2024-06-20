@@ -332,7 +332,13 @@ namespace Duplicati.Server
                 var server = new DuplicatiWebserver();
 
                 server.InitWebServer(mappedSettings, connection);
-                server.Start(mappedSettings);
+
+                // Start the server, but catch any configuration issues
+                var task = server.Start(mappedSettings);
+                await Task.WhenAny(task, Task.Delay(500));
+                if (task.IsCompleted)
+                    await task;
+
                 return server;
             }).ConfigureAwait(false);
 

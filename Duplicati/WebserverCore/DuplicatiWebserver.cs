@@ -142,7 +142,7 @@ public partial class DuplicatiWebserver
         });
     }
 
-    public void Start(InitSettings settings)
+    public Task Start(InitSettings settings)
     {
         // App.UseAuthMiddleware();
 
@@ -152,7 +152,7 @@ public partial class DuplicatiWebserver
         App.AddEndpoints()
             .UseNotifications(settings.AllowedHostnames, "/notifications");
 
-        App.RunAsync();
+        return App.RunAsync();
     }
 
     public async Task Stop()
