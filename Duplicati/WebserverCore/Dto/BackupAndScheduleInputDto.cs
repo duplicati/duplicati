@@ -23,7 +23,7 @@ public sealed record BackupAndScheduleInputDto
         /// <summary>
         /// The backup name
         /// </summary>
-        public required string Name { get; init; }
+        public string Name { get; init; } = "";
         /// <summary>
         /// The backup description
         /// </summary>
@@ -39,12 +39,12 @@ public sealed record BackupAndScheduleInputDto
         /// <summary>
         /// The backup target url
         /// </summary>
-        public required string TargetURL { get; init; }
+        public string TargetURL { get; init; } = "";
 
         /// <summary>
         /// The backup source folders and files
         /// </summary>
-        public required string[] Sources { get; init; }
+        public string[] Sources { get; init; } = [];
 
         /// <summary>
         /// The backup settings
