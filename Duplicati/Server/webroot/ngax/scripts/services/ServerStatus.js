@@ -13,7 +13,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         programState: null,
         lastErrorMessage: null,
         connectionState: 'connected',
-        xsfrerror: false,
         connectionAttemptTimer: 0,
         failedConnectionAttempts: 0,
         lastPgEvent: null,
@@ -152,7 +151,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             longPollRetryTimer = null;
         }
 
-        var retryAt = new Date(new Date().getTime() + (state.xsfrerror ? 5000 : 15000));
+        var retryAt = new Date(new Date().getTime() + 15000);
         state.connectionAttemptTimer = new Date() - retryAt;
         $rootScope.$broadcast('serverstatechanged');
 
@@ -231,7 +230,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
         // Clear error indicators
         state.failedConnectionAttempts = 0;
-        state.xsfrerror = false;
 
         if (state.connectionState != 'connected') {
             state.connectionState = 'connected';
