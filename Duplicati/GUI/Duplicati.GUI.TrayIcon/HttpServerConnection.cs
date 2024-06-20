@@ -195,14 +195,24 @@ namespace Duplicati.GUI.TrayIcon
 
         private void LongPollRunner()
         {
+            var started = DateTime.Now;
+            var errorCount = 0;
+
             while (!m_shutdown)
             {
+                var waitTime = TimeSpan.FromSeconds(Math.Min(10, errorCount * 2)) - (DateTime.Now - started);
+                if (waitTime.TotalSeconds > 0)
+                    Thread.Sleep(waitTime);
+
                 try
                 {
+                    started = DateTime.Now;
                     UpdateStatus(true);
+                    errorCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    errorCount++;
                     System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", ex, "Failed to get response");
                 }
