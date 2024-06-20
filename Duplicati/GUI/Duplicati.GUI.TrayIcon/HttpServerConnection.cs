@@ -275,12 +275,14 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     return PerformRequestInternal<T>(method, urlfragment, body, timeout);
                 }
-                catch (HttpRequestException hex)
+                catch (AggregateException aex)
                 {
-                    if (hasTriedPassword || hex.StatusCode != HttpStatusCode.Unauthorized)
+                    if (hasTriedPassword || !aex.InnerExceptions.Any(x => x is HttpRequestException hex && hex.StatusCode == HttpStatusCode.Unauthorized))
                         throw;
 
+                    // Only try once, and clear the token for the next try
                     hasTriedPassword = true;
+                    m_accesstoken = null;
                     ObtainAccessToken();
                 }
             }
