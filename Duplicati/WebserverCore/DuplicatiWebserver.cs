@@ -8,8 +8,6 @@ using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.FileProviders;
 
 namespace Duplicati.WebserverCore;
 
@@ -44,7 +42,9 @@ public partial class DuplicatiWebserver
     {
         var builder = WebApplication.CreateBuilder();
         var allowedHostnames = settings.AllowedHostnames;
-        if (allowedHostnames.Any() && allowedHostnames.Any(x => x == "*"))
+        if (!allowedHostnames.Any())
+            allowedHostnames = ["localhost", "127.0.0.1", "::1"];
+        if (!allowedHostnames.Any(x => x == "*"))
             builder.WebHost.UseUrls(allowedHostnames.Select(hostname => $"{(settings.Certificate == null ? "http" : "https")}://{hostname}:{settings.Port}").ToArray());
 
         builder.WebHost.ConfigureKestrel(options =>
@@ -86,6 +86,11 @@ public partial class DuplicatiWebserver
             .AddEndpointsApiExplorer()
             .AddSwaggerGen()
             .AddHttpContextAccessor()
+            .AddHostFiltering(options =>
+            {
+                if (!allowedHostnames.Any(x => x == "*"))
+                    options.AllowedHosts = allowedHostnames.ToArray();
+            })
             .AddSingleton(jwtConfig)
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
