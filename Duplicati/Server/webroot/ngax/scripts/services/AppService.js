@@ -4,33 +4,28 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
     this.access_token = null;
     this.access_token_promise = null;
 
-    var self = this;
+    const self = this;
 
-    var dummyconfig = function (method, options, data, targeturl) {
-    };
-    this.proxy_config = dummyconfig;
+    this.proxy_config = null;
+
+    function loginRequired() {
+        DialogService.dismissAll();
+        DialogService.accept('Not logged in', function () {
+            window.location = appConfig.login_url;
+        });
+    }
+
 
     var setupConfig = function (method, options, data, targeturl) {
         options = options || {};
         options.method = options.method || method;
         options.responseType = options.responseType || 'json';
         options.headers = options.headers || {};
-        if (this.access_token != null) {
+        if (options.headers['Content-Type'] == null) 
+            options.headers['Content-Type'] = 'application/json; charset=utf-8';        
+        if (self.access_token != null) 
             options.headers['Authorization'] = `Bearer ${self.access_token}`;
-        }
-
-        if ((method == "POST" || method == "PATCH" || method == "PUT") && options.headers['Content-Type'] == null && data != null && typeof (data) != typeof ('')) {
-            options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
-            options.transformRequest = function (obj) {
-                var str = [];
-                for (var p in obj) {
-                    var arg = obj[p] == null ? '' : encodeURIComponent(obj[p]);
-                    str.push(encodeURIComponent(p) + "=" + arg);
-                }
-                return str.join("&");
-            };
-        }
-
+        
         // Disable cache in IE
         if (method == "GET" || method == "HEAD") {
             options.headers['Cache-Control'] = 'no-cache';
@@ -46,82 +41,85 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         return options;
     };
 
+    // Input is a function that returns a promise (e.g. $http.get)
+    // The function is called and the promise is returned, but if the response is 401, 
+    // the current token is removed and a new is obtained
+    // If the new token is obtained, the input function is called again, retrying the operation
+    // If the new token is not obtained, the user is redirected to the login page
     var installResponseHook = function (promiseAction) {
         var deferred = $q.defer();
-        var self = this;
 
-        function successCallback(response) {
-            deferred.resolve(response);
-        }
+        promiseAction().then(
+            response => { deferred.resolve(response) },
 
-        function errorCallback(response) {
+            response => {
             if (response.status == 401) {
-                // If we are actully logged in, we should log out and obtain a new token
+                // If we are currently logged in, we should obtain a new token
                 if (self.access_token != null) {
                     self.access_token = null;
                     self.access_token_promise = null;
 
-                    self.injectAccessToken({}, () => { promiseAction().then(successCallback, errorCallback); });
+                    self.getAccessToken().then(
+                        () => { 
+                            // Retry the operation
+                            promiseAction().then(
+                                response2 => deferred.resolve(response2),
+                                response2 => { 
+                                    loginRequired();
+                                    deferred.reject(response2);
+                                }
+                            ); 
+                        }, 
+                        () => { 
+                            // Fail, but use the original failed response, not the refresh response
+                            loginRequired();
+                            deferred.reject(response);
+                        }
+                    );
+
                     return;
                 }
 
-                DialogService.dismissAll();
-                DialogService.accept('Not logged in', function () {
-                    window.location = appConfig.login_url;
-                });
+                // Not logged in for some reason
+                loginRequired();
                 deferred.reject(response);
             } else {
+                // Non-authentication error
                 deferred.reject(response);
             }
-        }
-
-        promiseAction().then(successCallback, errorCallback);
+        });
 
         return deferred.promise;
     };
 
-    var chainPromise = function (deferred, callback) {
-        callback().then(function (response) {
-            deferred.resolve(response);
-        }, function (response) { 
-            deferred.reject(response); 
-        });        
-    };
 
-    this.injectAccessToken = function (options, callback) {
+    // Returns a promise that resolves to the access token
+    this.getAccessToken = function () {
         var self = this;
-        options.headers = options.headers || {};
-        if (this.access_token != null) {
-            options.headers['Authorization'] = `Bearer ${self.access_token}`;
-            return callback();
-        }
 
-        var deferred = $q.defer();
-        if (self.access_token_promise == null) {
+        if (self.access_token != null) {
+            var deferred = $q.defer();
+            deferred.resolve(this.access_token);    
+            return deferred.promise;
+
+        } else if (self.access_token_promise != null) {
+            return self.access_token_promise;
+        } else {
+            var deferred = $q.defer();
             self.access_token_promise = deferred.promise;
             var url = self.apiurl + '/auth/refresh';
             $http.post(self.proxy_url == null ? url : self.proxy_url)
                 .then(function (response) {
                     self.access_token = response.data.AccessToken;
                     self.access_token_promise = null;
-                    options.headers['Authorization'] = `Bearer ${self.access_token}`;
-                    chainPromise(deferred, callback);
+                    deferred.resolve(self.access_token);
                 }, function (response) {
-                    DialogService.dismissAll();
-                    DialogService.accept('Not logged in', function () {
-                        window.location = appConfig.login_url;
-                    });
-
+                    loginRequired();
                     deferred.reject(response);
                 });
 
-        } else {            
-            self.access_token_promise.then(() => { 
-                options.headers['Authorization'] = `Bearer ${self.access_token}`;
-                chainPromise(deferred, callback);
-            }, (response) => deferred.reject(response));
+            return deferred.promise;
         }
-        return deferred.promise;
     }
     
     this.get = function (url, options) {
@@ -130,52 +128,40 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
             rurl = this.apiurl + url;
         }
 
-        options = options || {};
-        return this.injectAccessToken(options, () => installResponseHook(() => $http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl))));
     };
 
     this.patch = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectAccessToken(options, () => installResponseHook(() => $http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl))));
     };
 
     this.post = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectAccessToken(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
     };
 
-    this.postJson = function (url, data, options) {     
-   
+    this.postJson = function (url, data, options) {        
         var rurl = this.apiurl + url;
         options = options || {};
         options.headers = options.headers || {};
         options.headers['Content-Type'] = 'application/json; charset=utf-8';
-        return this.injectAccessToken(options, () => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
     };
 
     this.put = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectAccessToken(options, () => installResponseHook(() => $http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl))));
     };
 
     this.delete = function (url, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.injectAccessToken(options, () => installResponseHook(() => $http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl))));
     };
-
-    this.get_access_token = function () {
-        var deferred = $q.defer();
-        const self = this;
-        this.injectAccessToken({}, () => {             
-            deferred.resolve(self.access_token); 
-            return $q.resolve();
-        });
-        return deferred.promise;
-    }
 
     this.get_export_url = function (backupid, passphrase, exportPasswords) {
         var rurl = this.apiurl + '/backup/' + backupid + '/export';
@@ -205,12 +191,6 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
             return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
 
         return rurl;
-    };
-
-    this.log_out = function () {
-        var rurl = '/logout.cgi';
-
-        return installResponseHook($http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', {}, null, rurl)));
     };
 
     this.responseErrorMessage = function (resp) {
