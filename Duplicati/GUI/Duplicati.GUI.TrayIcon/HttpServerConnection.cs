@@ -74,6 +74,20 @@ namespace Duplicati.GUI.TrayIcon
             double UpdateDownloadProgress
         ) : IServerStatus;
 
+        private record NotificationImpl(
+            long ID,
+            Server.Serialization.NotificationType Type,
+            string Title,
+            string Message,
+            string Exception,
+            string BackupID,
+            string Action,
+            DateTime Timestamp,
+            string LogEntryID,
+            string MessageID,
+            string MessageLogTag
+        ) : INotification;
+
         private readonly JsonSerializerOptions serializerOptions = new()
         {
             PropertyNamingPolicy = null,
@@ -174,7 +188,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private void UpdateNotifications()
         {
-            var notifications = PerformRequest<INotification[]>("GET", "/notifications", null, null);
+            var notifications = PerformRequest<NotificationImpl[]>("GET", "/notifications", null, null);
             if (notifications != null)
             {
                 foreach (var n in notifications.Where(x => x.Timestamp > m_firstNotificationTime))

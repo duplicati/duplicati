@@ -41,11 +41,8 @@ public partial class DuplicatiWebserver
     public void InitWebServer(InitSettings settings, Connection connection)
     {
         var builder = WebApplication.CreateBuilder();
-        var allowedHostnames = settings.AllowedHostnames;
-        if (!allowedHostnames.Any())
-            allowedHostnames = ["localhost", "127.0.0.1", "::1"];
-        if (!allowedHostnames.Any(x => x == "*"))
-            builder.WebHost.UseUrls(allowedHostnames.Select(hostname => $"{(settings.Certificate == null ? "http" : "https")}://{hostname}:{settings.Port}").ToArray());
+        if (!settings.AllowedHostnames.Any(x => x == "*"))
+            builder.WebHost.UseUrls(settings.AllowedHostnames.Select(hostname => $"{(settings.Certificate == null ? "http" : "https")}://{hostname}:{settings.Port}").ToArray());
 
         builder.WebHost.ConfigureKestrel(options =>
         {
@@ -88,8 +85,8 @@ public partial class DuplicatiWebserver
             .AddHttpContextAccessor()
             .AddHostFiltering(options =>
             {
-                if (!allowedHostnames.Any(x => x == "*"))
-                    options.AllowedHosts = allowedHostnames.ToArray();
+                if (!settings.AllowedHostnames.Any(x => x == "*"))
+                    options.AllowedHosts = settings.AllowedHostnames.ToArray();
             })
             .AddSingleton(jwtConfig)
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
