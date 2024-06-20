@@ -3,7 +3,7 @@ backupApp.controller('ImportController', function($rootScope, $scope, $timeout, 
     $scope.Completed = false;
     $scope.ImportURL = AppService.get_import_url();
     $scope.AccessToken = '';
-    AppService.get_access_token().then((token) => { $scope.AccessToken = token;});
+    AppService.getAccessToken().then((token) => { $scope.AccessToken = token;});
 
     $scope.restoremode = $location.$$path.indexOf('/restore-import') == 0;
 
