@@ -141,13 +141,9 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
-        // App.UseAuthMiddleware();
-
-        //TODO: remove
-        App.MapControllers();
-
-        App.AddEndpoints()
-            .UseNotifications(settings.AllowedHostnames, "/notifications");
+        App.AddEndpoints();
+        // Disable WebSockets until it is correctly implemented
+        //     .UseNotifications(settings.AllowedHostnames, "/notifications");
 
         return App.RunAsync();
     }

@@ -248,6 +248,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
         if (state.activeTask != null)
             startUpdateProgressPoll();
+
+         updateServerState(false);
     }
 
     function handleConnectionError(response) {
@@ -268,44 +270,49 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
             // Notify
             $rootScope.$broadcast('serverstatechanged');
+            countdownForReconnect(function() { longpoll(true); });
         }
     }
 
-    var updateServerState = function () {
+    var updateServerState = function (fastcall) {
         if (state.connectionState !== 'connected') {
             state.connectionState = 'connecting';
             $rootScope.$broadcast('serverstatechanged');
         }
 
-        const url = window.location.origin + '/api/v1/serverstate';
-        AppService.get(url, {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
+        const url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (((!fastcall) && (state.lastEventId > 0)) ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
+        AppService.get(url, fastcall ? null : {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
             handleServerState, handleConnectionError
         );
     };
 
-    updateServerState();
+    this.reconnect = function() { updateServerState(true); };
+    updateServerState(true);
 
-    this.reconnect = function () {
-        window.clearInterval(longPollRetryTimer);
-        const w = new WebSocket('ws://' + window.location.host + '/notifications');
-        w.addEventListener("open", (event) => {
-            state.connectionState = 'connected';
-            $rootScope.$broadcast('serverstatechanged.connectionState', state.connectionState);
-            $rootScope.$broadcast('serverstatechanged');
-        });
-        w.addEventListener("message", (event) => {
-            console.log("Message from server ", event.data);
-            const status = JSON.parse(event.data);
-            handleServerState({data: status});
-        });
-        w.addEventListener("close", (event) => {
-            console.log("Websocket closed. Reconnecting...", event);
-            handleConnectionError("Websocket disconnected.");
-            countdownForReconnect(() => websocket = reconnect());
-        });
-        return w;
-    };
 
-    let websocket = this.reconnect()
-    window.websocket = websocket;
+    // this.reconnect = function () {
+    //     console.log("Reconnecting websocket");
+    //     window.clearInterval(longPollRetryTimer);
+    //     const w = new WebSocket('ws://' + window.location.host + '/notifications');
+    //     w.addEventListener("open", (event) => {
+    //         console.log("Websocket connected", event);
+    //         state.connectionState = 'connected';
+    //         $rootScope.$broadcast('serverstatechanged.connectionState', state.connectionState);
+    //         $rootScope.$broadcast('serverstatechanged');
+    //     });
+    //     w.addEventListener("message", (event) => {
+    //         console.log("Message from server ", event.data);
+    //         const status = JSON.parse(event.data);
+    //         handleServerState({data: status});
+    //     });
+    //     w.addEventListener("close", (event) => {
+    //         console.log("Websocket closed. Reconnecting...", event);
+    //         handleConnectionError("Websocket disconnected.");
+    //         countdownForReconnect(() => websocket = self.reconnect());
+    //     });
+    //     return w;
+    // };
+
+    // let websocket = this.reconnect()
+    // window.websocket = websocket;
 });

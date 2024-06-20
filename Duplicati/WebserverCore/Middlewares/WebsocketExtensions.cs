@@ -22,6 +22,10 @@ public static class WebsocketExtensions
             }
             else
             {
+                // var jwtProvider = context.RequestServices.GetRequiredService<IJWTTokenProvider>();
+                // // Reading has implicit validation
+                // jwtProvider.ReadAccessToken(context.Request.Headers["Authorization"].ToString().Split("Bearer: ").LastOrDefault() ?? throw new UnauthorizedException("No token provided"));
+
                 var websocketAccessor = context.RequestServices.GetRequiredService<IWebsocketAccessor>();
                 if (context.WebSockets.IsWebSocketRequest)
                 {
