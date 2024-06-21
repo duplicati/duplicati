@@ -64,6 +64,13 @@ Restores all files to their respective destinations. Use --targetpath to choose 
 Use the filters, --exclude, to perform a partial restore.
 Version can be either a number, a filename or a date. If omitted the most recent backup is used.
 
+The restore process can be memory intensive and requires appx. 4 GiB of memory pr. 1TiB of data.
+Use the option to --reduce-memory-use=true to toggle a slower low-memory restore.
+
+Advanced performance options are:
+  --reduce-memory-use: Disables keeping all hashes in memory; use if memory is limited on the restoring machine
+  --disable-file-verify: Disables the initial hashing of the restored file
+  --disable-wrapped-zip: Disable using the faster .NET native Zip archive in favor of the more resilient one in Duplicati
 
 
 List
