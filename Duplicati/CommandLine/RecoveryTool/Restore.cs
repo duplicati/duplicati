@@ -100,6 +100,12 @@ namespace Duplicati.CommandLine.RecoveryTool
             var useIndexMap = !Library.Utility.Utility.ParseBoolOption(options, "reduce-memory-use");
             var disableFileVerify = Library.Utility.Utility.ParseBoolOption(options, "disable-file-verify");
 
+            var startedCount = 0L;
+            var restoredCount = 0L;
+            var errorCount = 0L;
+            var fileErrors = 0L;
+            var totalSize = 0L;
+
             using (var blockhasher = HashFactory.CreateHasher(blockhash_str))
             using (var filehasher = HashFactory.CreateHasher(filehash_str))
             using (var mru = new CompressedFileMRUCache(options))
@@ -130,13 +136,15 @@ namespace Duplicati.CommandLine.RecoveryTool
                     var blocklistbuffer = new byte[blocksize];
                     foreach (var f in List.EnumerateFilesInDList(filelist, filter, options))
                     {
+                        startedCount++;
                         try
                         {
                             var targetfile = MapToRestorePath(f.Path, largestprefix, targetpath, sourceDirsep);
                             if (!systemIO.DirectoryExists(systemIO.PathGetDirectoryName(targetfile)))
                                 systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(targetfile));
 
-                            Console.Write("{0}: {1} ({2})", i, targetfile, Library.Utility.Utility.FormatSizeString(f.Size));
+                            Console.Write($"{i} ({Utility.FormatSizeString(totalSize)}): {targetfile} ({Utility.FormatSizeString(f.Size)})");
+                            totalSize += f.Size;
 
                             using (var tf = new Library.Utility.TempFile())
                             {
@@ -167,6 +175,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                                     }
                                                     catch (Exception ex)
                                                     {
+                                                        errorCount++;
                                                         Console.WriteLine("Failed to read hash: {0}{1}{2}", h, Environment.NewLine, ex);
                                                     }
 
@@ -175,6 +184,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                             }
                                             catch (Exception ex)
                                             {
+                                                errorCount++;
                                                 Console.WriteLine("Failed to read Blocklist hash: {0}{1}{2}", blh, Environment.NewLine, ex);
                                             }
 
@@ -182,6 +192,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                                         }
                                     }
                                 }
+
+                                restoredCount++;
 
                                 if (disableFileVerify)
                                 {
@@ -207,6 +219,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                     }
                                     else
                                     {
+                                        fileErrors++;
                                         Console.Write(" - Restored file hash mismatch");
                                         if (systemIO.FileExists(targetfile))
                                             Console.WriteLine(" - not overwriting existing file: {0}", targetfile);
@@ -218,6 +231,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         }
                         catch (Exception ex)
                         {
+                            errorCount++;
                             Console.WriteLine(" error: {0}", ex);
                         }
                         i++;
@@ -225,7 +239,17 @@ namespace Duplicati.CommandLine.RecoveryTool
                 }
             }
 
-            return 0;
+            if (fileErrors > 0 || restoredCount != startedCount)
+                Console.WriteLine($"Restored {restoredCount} files of {startedCount} attempted ({Library.Utility.Utility.FormatSizeString(totalSize)}); {fileErrors} files had verification errors");
+            else
+                Console.WriteLine($"Restored {restoredCount} files ({Library.Utility.Utility.FormatSizeString(totalSize)})");
+
+            if (errorCount > 0)
+                Console.WriteLine("Errors: {0}", errorCount);
+
+            return errorCount != 0 || restoredCount != startedCount || fileErrors > 0
+                ? 1
+                : 0;
         }
 
         public static string GetLargestPrefix(IEnumerable<string> filePaths, out string sourceDirsep, out long filecount)
