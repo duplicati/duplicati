@@ -27,6 +27,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using System.IO.Compression;
 using Duplicati.Library.Interface;
+using System.Data;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -115,7 +116,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 Console.WriteLine("Building lookup table for file hashes");
                 // Source OS can have different directory separator
                 string sourceDirsep = null;
-                using (HashLookupHelper lookup = new HashLookupHelper(ixfile, mru, (int)blocksize, blockhasher.HashSize / 8, useIndexMap))
+                using (HashLookupHelper lookup = new HashLookupHelper(ixfile, mru, blockhasher.HashSize / 8, useIndexMap))
                 {
                     var filecount = 0L;
 
@@ -338,92 +339,87 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             private readonly CompressedFileMRUCache m_cache;
             private readonly int m_hashsize;
-            private readonly int m_blocksize;
-            private Stream m_indexfile;
-            private readonly List<string> m_lookup = new List<string>();
-            private readonly List<long> m_offsets = new List<long>();
+            private readonly IDbConnection m_dbcon;
+            private readonly IDbCommand m_dbcmd;
+            private readonly IDbDataParameter m_dbparam;
+            private readonly TempFile m_dbfile;
             private readonly Dictionary<string, string> m_indexMap;
-            private readonly byte[] m_linebuf = new byte[128];
-            private readonly byte[] m_newline = Environment.NewLine.Select(x => (byte)x).ToArray();
 
-            public HashLookupHelper(string indexfile, CompressedFileMRUCache cache, int blocksize, int hashsize, bool useIndexMap)
+            public HashLookupHelper(string indexfilepath, CompressedFileMRUCache cache, int hashsize, bool useIndexMap)
             {
                 m_cache = cache;
-                m_blocksize = blocksize;
                 m_hashsize = hashsize;
-                m_indexfile = File.OpenRead(indexfile);
+                using var indexfile = File.OpenRead(indexfilepath);
 
                 if (useIndexMap)
                 {
                     m_indexMap = new Dictionary<string, string>();
                     Console.WriteLine("Building in-memory index table ... ");
 
-                    m_indexfile.Position = 0;
-                    foreach (var n in AllFileLines())
+                    foreach (var n in AllFileLines(indexfile))
                         m_indexMap[n.Key] = n.Value;
 
                     Console.WriteLine("Index table has {0} unique hashes", m_indexMap.Count);
                 }
                 else
                 {
-                    // Build index ....
-                    var hashes = 0L;
-                    string prev = null;
-                    m_indexfile.Position = 0;
-                    foreach (var n in AllFileLines())
+                    m_dbfile = new TempFile();
+                    m_dbcon = new System.Data.SQLite.SQLiteConnection($"Data Source={m_dbfile.Name};Version=3;");
+                    m_dbcon.Open();
+
+                    using (var cmd = m_dbcon.CreateCommand())
                     {
-                        if (n.Key != prev)
+                        cmd.CommandText = "CREATE TABLE hashes (hash TEXT PRIMARY KEY, filename TEXT NOT NULL)";
+                        cmd.ExecuteNonQuery();
+
+                        cmd.Transaction = m_dbcon.BeginTransaction();
+                        cmd.CommandText = "INSERT OR IGNORE INTO hashes (hash, filename) VALUES (@hash, @filename)";
+                        var p1 = cmd.CreateParameter();
+                        p1.ParameterName = "@hash";
+                        cmd.Parameters.Add(p1);
+
+                        var p2 = cmd.CreateParameter();
+                        p2.ParameterName = "@filename";
+                        cmd.Parameters.Add(p2);
+
+                        Console.WriteLine("Building SQLite index table ... ");
+                        foreach (var n in AllFileLines(indexfile))
                         {
-                            hashes++;
-                            prev = n.Key;
+                            p1.Value = n.Key;
+                            p2.Value = n.Value;
+                            cmd.ExecuteNonQuery();
                         }
+
+                        cmd.CommandText = "SELECT COUNT(*) FROM hashes";
+                        Console.WriteLine("Index table has {0} unique hashes", cmd.ExecuteScalar());
+                        cmd.Transaction.Commit();
+
+                        Console.WriteLine("Index table built");
                     }
 
-                    Console.WriteLine("Index file has {0} hashes in total", hashes);
-
-                    var lookuptablesize = Math.Max(1, Math.Min(LOOKUP_TABLE_SIZE, hashes) - 1);
-                    var lookupincrements = hashes / lookuptablesize;
-
-                    Console.WriteLine("Building lookup table with {0} entries, giving increments of {1}", lookuptablesize, lookupincrements);
-
-                    m_indexfile.Position = 0;
-                    prev = null;
-                    var prevoff = 0L;
-                    var hc = 0L;
-
-                    foreach (var n in AllFileLines())
-                    {
-                        if (n.Key != prev)
-                        {
-                            if ((hc % lookupincrements) == 0)
-                            {
-                                m_lookup.Add(n.Key);
-                                m_offsets.Add(prevoff);
-                            }
-
-                            hc++;
-                            prev = n.Key;
-                            prevoff = m_indexfile.Position;
-                        }
-                    }
+                    m_dbcmd = m_dbcon.CreateCommand();
+                    m_dbcmd.CommandText = "SELECT filename FROM hashes WHERE hash = @hash";
+                    m_dbparam = m_dbcmd.CreateParameter();
+                    m_dbparam.ParameterName = "@hash";
+                    m_dbcmd.Parameters.Add(m_dbparam);
                 }
             }
 
-            private string ReadNextLine()
+            private static string ReadNextLine(Stream source, byte[] linebuf, byte[] newline)
             {
-                var p = m_indexfile.Position;
-                var max = m_indexfile.Read(m_linebuf, 0, m_linebuf.Length);
+                var p = source.Position;
+                var max = source.Read(linebuf, 0, linebuf.Length);
                 if (max == 0)
                     return null;
 
                 var lfi = 0;
                 for (int i = 0; i < max; i++)
-                    if (m_linebuf[i] == m_newline[lfi])
+                    if (linebuf[i] == newline[lfi])
                     {
-                        if (lfi == m_newline.Length - 1)
+                        if (lfi == newline.Length - 1)
                         {
-                            m_indexfile.Position = p + i + 1;
-                            return System.Text.Encoding.Default.GetString(m_linebuf, 0, i - m_newline.Length + 1);
+                            source.Position = p + i + 1;
+                            return System.Text.Encoding.Default.GetString(linebuf, 0, i - newline.Length + 1);
 
                         }
                         else
@@ -436,14 +432,17 @@ namespace Duplicati.CommandLine.RecoveryTool
                         lfi = 0;
                     }
 
-                throw new Exception(string.Format("Unexpected long line starting at offset {0}, read {1} bytes without a newline", p, m_linebuf.Length));
+                throw new Exception(string.Format("Unexpected long line starting at offset {0}, read {1} bytes without a newline", p, linebuf.Length));
             }
 
-            private IEnumerable<KeyValuePair<string, string>> AllFileLines()
+            private static IEnumerable<KeyValuePair<string, string>> AllFileLines(Stream source)
             {
+                var linebuf = new byte[128];
+                var newline = Environment.NewLine.Select(x => (byte)x).ToArray();
+
                 while (true)
                 {
-                    var str = ReadNextLine();
+                    var str = ReadNextLine(source, linebuf, newline);
                     if (str == null)
                         break;
 
@@ -452,7 +451,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                     var ix = str.IndexOf(", ", StringComparison.Ordinal);
                     if (ix < 0)
-                        Console.WriteLine("Failed to parse line starting at offset {0} in index file, string: {1}", m_indexfile.Position - str.Length - m_newline.Length, str);
+                        Console.WriteLine("Failed to parse line starting at offset {0} in index file, string: {1}", source.Position - str.Length - newline.Length, str);
                     yield return new KeyValuePair<string, string>(str.Substring(0, ix), str.Substring(ix + 2));
                 }
             }
@@ -477,28 +476,13 @@ namespace Duplicati.CommandLine.RecoveryTool
                 }
                 else
                 {
-                    var ix = m_lookup.BinarySearch(hash, StringComparer.Ordinal);
-                    if (ix < 0)
-                    {
-                        ix = ~ix;
-                        if (ix != 0)
-                            ix--;
-                    }
+                    m_dbparam.Value = hash;
+                    var filename = m_dbcmd.ExecuteScalar();
+                    if (filename == null)
+                        throw new Exception(string.Format("Unable to locate block with hash: {0}", hash));
 
-                    m_indexfile.Position = m_offsets[ix];
-
-                    foreach (var v in AllFileLines())
-                    {
-                        if (v.Key == hash)
-                            using (var fs = m_cache.ReadBlock(v.Value, hash))
-                                return Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length);
-
-
-                        if (StringComparer.Ordinal.Compare(hash, v.Key) < 0)
-                            break;
-                    }
-
-                    throw new Exception(string.Format("Unable to locate block with hash: {0}", hash));
+                    using (var fs = m_cache.ReadBlock(filename.ToString(), hash))
+                        return Duplicati.Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length);
                 }
             }
 
@@ -511,9 +495,10 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             public void Dispose()
             {
-                if (m_indexfile != null)
-                    m_indexfile.Dispose();
-                m_indexfile = null;
+                m_dbcmd?.Dispose();
+                m_dbcon?.Dispose();
+                m_dbfile?.Dispose();
+                m_indexMap?.Clear();
             }
         }
 
