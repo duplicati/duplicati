@@ -270,7 +270,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
             // Notify
             $rootScope.$broadcast('serverstatechanged');
-            countdownForReconnect(function() { longpoll(true); });
+            countdownForReconnect(function() { updateServerState(true); });
         }
     }
 
