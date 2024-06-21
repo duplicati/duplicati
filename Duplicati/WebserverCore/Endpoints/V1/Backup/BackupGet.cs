@@ -22,7 +22,7 @@ public class BackupGet : IEndpointV1
             => ExecuteGet(connection, GetBackup(connection, id)))
             .RequireAuthorization();
 
-        group.MapGet("/backup/{id}/files", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] string filter, [FromQuery] string? time, [FromQuery(Name = "all-versions")] bool? allVersions, [FromQuery(Name = "prefix-only")] bool? prefixOnly, [FromQuery(Name = "folder-contents")] bool? folderContents)
+        group.MapGet("/backup/{id}/files", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] string? filter, [FromQuery] string? time, [FromQuery(Name = "all-versions")] bool? allVersions, [FromQuery(Name = "prefix-only")] bool? prefixOnly, [FromQuery(Name = "folder-contents")] bool? folderContents)
             => ExecuteGetFiles(GetBackup(connection, id), filter, time, allVersions ?? false, prefixOnly ?? false, folderContents ?? false, new Dictionary<string, string>()))
             .RequireAuthorization();
 
@@ -119,7 +119,7 @@ public class BackupGet : IEndpointV1
         );
     }
 
-    private static Dictionary<string, object> SearchFiles(IBackup backup, string filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
+    private static Dictionary<string, object> SearchFiles(IBackup backup, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
     {
         if (string.IsNullOrWhiteSpace(timestring) && !allVersions)
             throw new BadRequestException("Invalid or missing time");
@@ -128,7 +128,7 @@ public class BackupGet : IEndpointV1
         if (!allVersions)
             time = Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
 
-        var r = Runner.Run(Runner.CreateListTask(backup, new string[] { filter }, prefixOnly, allVersions, folderContents, time), false) as Duplicati.Library.Interface.IListResults;
+        var r = Runner.Run(Runner.CreateListTask(backup, [filter], prefixOnly, allVersions, folderContents, time), false) as Duplicati.Library.Interface.IListResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -147,7 +147,7 @@ public class BackupGet : IEndpointV1
         return result;
     }
 
-    private static Dictionary<string, object> ExecuteGetFiles(IBackup bk, string filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
+    private static Dictionary<string, object> ExecuteGetFiles(IBackup bk, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
         => SearchFiles(bk, filter, timestring, allVersions, prefixOnly, folderContents, extraValues);
 
     private static List<Dictionary<string, object>> ExecuteGetLog(Connection connection, IBackup bk, long offset, long pagesize)
