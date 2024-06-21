@@ -35,9 +35,9 @@ public class BackupPutDelete : IEndpointV1
         .RequireAuthorization();
 
 
-        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] ICaptchaProvider captchaProvider, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery] bool? delete_remote_files, [FromQuery] bool? delete_local_db, [FromQuery] string captcha_token, [FromQuery] string captcha_answer, [FromQuery] bool force) =>
+        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] ICaptchaProvider captchaProvider, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery(Name = "captcha-token")] string? captcha_token, [FromQuery(Name = "captcha-answer")] string? captcha_answer, [FromQuery] bool? force) =>
         {
-            var res = ExecuteDelete(GetBackup(connection, id), connection, workerThreadsManager, captchaProvider, liveControls, delete_remote_files ?? false, delete_local_db, captcha_token, captcha_answer, force);
+            var res = ExecuteDelete(GetBackup(connection, id), workerThreadsManager, captchaProvider, liveControls, delete_remote_files ?? false, delete_local_db, captcha_token, captcha_answer, force ?? false);
             if (res.Status != "OK" && httpContextAccessor.HttpContext != null)
                 httpContextAccessor.HttpContext.Response.StatusCode = 500;
             return res;
@@ -130,7 +130,7 @@ public class BackupPutDelete : IEndpointV1
         }
     }
 
-    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, Connection connection, IWorkerThreadsManager workerThreadsManager, ICaptchaProvider captchaProvider, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, string captcha_token, string captcha_answer, bool force)
+    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, IWorkerThreadsManager workerThreadsManager, ICaptchaProvider captchaProvider, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, string? captcha_token, string? captcha_answer, bool force)
     {
         if (delete_remote_files)
         {

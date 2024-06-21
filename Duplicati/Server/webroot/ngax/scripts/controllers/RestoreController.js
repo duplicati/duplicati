@@ -120,7 +120,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                 $scope.ConnectionProgress = gettextCatalog.getString('Fetching path information …');
                 inProgress[version] = true;
 
-                AppService.postJson('/backup/' + $scope.BackupID + '/repairupdate', { 'only-paths': true, 'time': filesetStamps[version + '']}).then(
+                AppService.postJson('/backup/' + $scope.BackupID + '/repairupdate', { 'only_paths': true, 'time': filesetStamps[version + '']}).then(
                     function(resp) {
 
                         var taskid = resp.data.ID;
@@ -334,7 +334,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
 
         var p = {
             'time': stamp,
-            'restore-path': $scope.RestoreLocation == 'custom' ? $scope.RestorePath : null,
+            'restore_path': $scope.RestoreLocation == 'custom' ? $scope.RestorePath : null,
             'overwrite': $scope.RestoreMode == 'overwrite',
             'permissions': $scope.RestorePermissions == null ? false : $scope.RestorePermissions,
             'passphrase' : $scope.passphrase
@@ -361,9 +361,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             }
         }
 
-        if (paths.length > 0)
-            p.paths = JSON.stringify(paths);
-
+        p.paths = paths;
         if ($scope.IsBackupTemporary) {
 
             $scope.connecting = true;
