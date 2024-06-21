@@ -127,13 +127,13 @@ public partial class DuplicatiWebserver
                     if (context.Response.ContentType == "text/plain")
                         await context.Response.WriteAsync(userReportedHttpException.Message);
                     else
-                        await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userReportedHttpException.Message }));
+                        await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userReportedHttpException.Message, Code = userReportedHttpException.StatusCode }));
                 }
                 else
                 {
                     context.Response.StatusCode = 500;
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = "An error occurred" }));
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = "An error occurred", Code = 500 }));
                 }
             });
         });
