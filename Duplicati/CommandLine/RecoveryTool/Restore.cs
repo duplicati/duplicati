@@ -83,6 +83,10 @@ namespace Duplicati.CommandLine.RecoveryTool
             options.TryGetValue("blocksize", out var blocksize_str);
             options.TryGetValue("block-hash-algorithm", out var blockhash_str);
             options.TryGetValue("block-hash-algorithm", out var filehash_str);
+            var offset = 0L;
+            if (options.TryGetValue("offset", out var offset_str))
+                offset = long.Parse(offset_str);
+
 
             long blocksize = string.IsNullOrWhiteSpace(blocksize_str) ? 0 : Library.Utility.Sizeparser.ParseSize(blocksize_str);
 
@@ -136,6 +140,13 @@ namespace Duplicati.CommandLine.RecoveryTool
                     var blocklistbuffer = new byte[blocksize];
                     foreach (var f in List.EnumerateFilesInDList(filelist, filter, options))
                     {
+                        if (i < offset)
+                        {
+                            Console.WriteLine($"Skipping {i}: {f.Path} ({Utility.FormatSizeString(f.Size)})");
+                            i++;
+                            continue;
+                        }
+
                         startedCount++;
                         try
                         {

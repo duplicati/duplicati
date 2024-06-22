@@ -66,6 +66,7 @@ Version can be either a number, a filename or a date. If omitted the most recent
 
 The restore process can be memory intensive and requires appx. 4 GiB of memory pr. 1TiB of data.
 Use the option to --reduce-memory-use=true to toggle a slower low-memory restore.
+If the process is interrupted for any reason, note the file counter and use --offset=1 to start the restore after the first file.
 
 Advanced performance options are:
   --reduce-memory-use: Disables keeping all hashes in memory; use if memory is limited on the restoring machine
