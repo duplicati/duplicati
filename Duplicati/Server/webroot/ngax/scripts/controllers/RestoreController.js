@@ -381,7 +381,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                             {
                                 AppService.post('/backup/' + backupid + '/restore', p).then(function(resp) {
                                     $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
-                                    var t2 = $scope.taskid = resp.data.TaskID;
+                                    var t2 = $scope.taskid = resp.data.ID;
                                     ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
                                 }, handleError);
                             }
@@ -403,7 +403,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process …');
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
                 $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
-                var t2 = $scope.taskid = resp.data.TaskID;
+                var t2 = $scope.taskid = resp.data.ID;
                 ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
             }, handleError);
         }

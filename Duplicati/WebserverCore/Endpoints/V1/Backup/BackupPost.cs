@@ -127,12 +127,6 @@ public class BackupPost : IEndpointV1
     private static Dto.TaskStartedDto ExecuteCompact(IBackup backup, IWorkerThreadsManager workerThreadsManager)
         => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.Compact, backup)));
 
-    private static IEnumerable<string> ParsePaths(string paths)
-        => string.IsNullOrWhiteSpace(paths)
-            ? []
-            : JsonSerializer.Deserialize<IEnumerable<string>>(paths) ?? [];
-
-
     private static Dto.TaskStartedDto DoRepair(IBackup backup, bool repairUpdate, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto input)
     {
         // These are all props on the input object
@@ -183,6 +177,6 @@ public class BackupPost : IEndpointV1
         ipx.ID = null;
 
         connection.RegisterTemporaryBackup(ipx);
-        return new Dto.CreateBackupDto(backup.ID, backup.IsTemporary);
+        return new Dto.CreateBackupDto(ipx.ID, ipx.IsTemporary);
     }
 }
