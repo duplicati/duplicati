@@ -152,6 +152,9 @@ public class BackupGet : IEndpointV1
 
     private static List<Dictionary<string, object>> ExecuteGetLog(Connection connection, IBackup bk, long offset, long pagesize)
     {
+        if (!File.Exists(bk.DBPath))
+            return new List<Dictionary<string, object>>();
+
         using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
         using (var cmd = con.CreateCommand())
             return LogData.DumpTable(cmd, "LogData", "ID", offset, pagesize);
@@ -159,6 +162,9 @@ public class BackupGet : IEndpointV1
 
     private static List<Dictionary<string, object>> ExecuteGetRemotelog(Connection connection, IBackup bk, long offset, long pagesize)
     {
+        if (!File.Exists(bk.DBPath))
+            return new List<Dictionary<string, object>>();
+
         using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
         using (var cmd = con.CreateCommand())
         {
