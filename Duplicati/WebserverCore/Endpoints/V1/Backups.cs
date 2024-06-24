@@ -31,17 +31,16 @@ public class Backups : IEndpointV1
             })
             .RequireAuthorization();
 
-        // TODO: This is still using form due to file upload, but should be fixed as we are only sending a small file that could be base64 encoded
-        group.MapPost("/backups/import", ([FromForm] IFormFile config, [FromForm] bool? cmdline, [FromForm] bool? import_metadata, [FromForm] bool? direct, [FromForm] string? callback, [FromForm] string? passphrase, [FromForm] string access_token, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor) =>
+        group.MapPost("/backups/import", ([FromBody] Dto.ImportBackupInputDto input, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor) =>
         {
-            // Manually verify the access token
-            if (jWTTokenProvider.ReadAccessToken(access_token) == null)
-                throw new UnauthorizedException("Invalid access token");
+            using var tempfile = new Library.Utility.TempFile();
+            File.WriteAllBytes(tempfile, Convert.FromBase64String(input.config));
 
-            var html = ExecuteImport(connection, cmdline ?? false, import_metadata ?? false, direct ?? false, callback ?? "", passphrase ?? "", config);
+            var html = ExecuteImport(connection, input.cmdline ?? false, input.import_metadata ?? false, input.direct ?? false, input.passphrase ?? "", tempfile);
             httpContextAccessor.HttpContext!.Response.ContentType = "text/html";
             return html;
-        });
+
+        }).RequireAuthorization();
     }
 
     private static IEnumerable<Dto.BackupAndScheduleOutputDto> ExecuteGet(Connection connection)
@@ -96,22 +95,12 @@ public class Backups : IEndpointV1
             }
         });
     }
-    private static string ExecuteImport(Connection connection, bool cmdline, bool import_metadata, bool direct, string callback, string passphrase, IFormFile? file)
+    private static Dto.ImportBackupOutputDto ExecuteImport(Connection connection, bool cmdline, bool import_metadata, bool direct, string passphrase, string tempfile)
     {
-        var output_template = "<html><body><script type=\"text/javascript\">var jso = 'JSO'; var rp = null; try { rp = parent['CBM']; } catch (e) {}; if (rp) { rp('MSG', jso); } else { alert; rp('MSG'); };</script></body></html>";
-        //output_template = "<html><body><script type=\"text/javascript\">alert('MSG');</script></body></html>";
         try
         {
-            output_template = output_template.Replace("CBM", callback);
             if (cmdline)
-                throw new TextOutputErrorException("Import from commandline not yet implemented");
-
-            if (file == null)
-                throw new TextOutputErrorException("No file uploaded");
-
-            using var tempfile = new Library.Utility.TempFile();
-            using (var fs = File.OpenWrite(tempfile))
-                file.CopyTo(fs);
+                throw new BadRequestException("Import from commandline not yet implemented");
 
             var ipx = BackupImportExportHandler.LoadConfiguration(tempfile, import_metadata, () => passphrase);
             if (direct)
@@ -124,29 +113,26 @@ public class Backups : IEndpointV1
                         ipx.Backup.Name = basename + " (" + c.ToString() + ")";
 
                     if (connection.Backups.Any(x => x.Name.Equals(ipx.Backup.Name, StringComparison.OrdinalIgnoreCase)))
-                        return output_template.Replace("MSG", $"There already exists a backup with the name: {basename}");
+                        throw new BadRequestException("There already exists a backup with that name");
 
                     var err = connection.ValidateBackup(ipx.Backup, ipx.Schedule);
                     if (!string.IsNullOrWhiteSpace(err))
-                        return output_template.Replace("MSG", err);
+                        throw new BadRequestException(err);
 
                     connection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
                 }
 
-                return output_template.Replace("MSG", "OK");
+                return new Dto.ImportBackupOutputDto(ipx.Backup.ID, null);
             }
             else
             {
-                return output_template
-                    .Replace("'JSO'", JsonSerializer.Serialize(ipx))
-                    .Replace("MSG", "Import completed, but a browser issue prevents loading the contents. Try using the direct import method instead.");
+                return new Dto.ImportBackupOutputDto(null, ipx);
             }
-
         }
         catch (Exception ex)
         {
             connection.LogError("", "Failed to import backup", ex);
-            throw new TextOutputErrorException(output_template.Replace("MSG", ex.Message.Replace("\'", "\\'").Replace("\r", "\\r").Replace("\n", "\\n")), contentType: "text/html");
+            throw new ServerErrorException($"Failed to import backup: {ex.Message}");
         }
     }
 
