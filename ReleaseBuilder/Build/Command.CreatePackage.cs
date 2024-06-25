@@ -626,7 +626,8 @@ public static partial class Command
                     "docker", "run",
                     "--workdir", $"/build",
                     "--volume", $"{debroot}:/build:rw", "duplicati/debian-build:latest",
-                    "dpkg-deb", "--build", "--root-owner-group", debpkgdir
+                    // Using gzip compression for compatibility with older Debian versions
+                    "dpkg-deb", "-Zgzip", "--build", "--root-owner-group", debpkgdir
             ]);
 
             File.Move(Path.Combine(debroot, debpkgname), debFile);
