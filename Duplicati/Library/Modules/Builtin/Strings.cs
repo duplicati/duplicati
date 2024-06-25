@@ -93,6 +93,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string StdErrorReport(string script, string message) { return LC.L(@"The script ""{0}"" reported error messages: {1}", script, message); }
         public static string TimeoutoptionLong { get { return LC.L(@"Sets the maximum time a script is allowed to execute. If the script has not completed within this time, it will continue to execute but the operation will continue too, and no script output will be processed."); } }
         public static string TimeoutoptionShort { get { return LC.L(@"Sets the script timeout"); } }
+        public static string EnableArgumentsShort { get { return LC.L(@"Enable script arguments"); } }
+        public static string EnableArgumentsLong { get { return LC.L(@"This option enables the use of script arguments. If this option is enabled, the script arguments are treated as commandline strings. Use single or double quotes to separate arguments."); } }
     }
     internal static class SendMail
     {
