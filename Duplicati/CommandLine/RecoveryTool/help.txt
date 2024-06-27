@@ -72,7 +72,7 @@ Advanced performance options are:
   --reduce-memory-use: Disables keeping all hashes in memory; use if memory is limited on the restoring machine
   --disable-file-verify: Disables the initial hashing of the restored file
   --disable-wrapped-zip: Disable using the faster .NET native Zip archive in favor of the more resilient one in Duplicati
-
+  --max-open-archives: Sets the number of archives to keep open for faster access (uses some memory pr. archive); default 200
 
 List
 ----

@@ -560,12 +560,14 @@ namespace Duplicati.CommandLine.RecoveryTool
             private readonly Dictionary<string, string> m_options;
             private readonly bool m_useWrappedZip;
 
-            private const int MAX_OPEN_ARCHIVES = 200;
+            private readonly int MAX_OPEN_ARCHIVES = 200;
 
             public CompressedFileMRUCache(Dictionary<string, string> options)
             {
                 m_options = options;
                 m_useWrappedZip = !Library.Utility.Utility.ParseBoolOption(options, "disable-wrapped-zip");
+                if (options.TryGetValue("max-open-archives", out var maxopenarchives))
+                    MAX_OPEN_ARCHIVES = int.Parse(maxopenarchives);
             }
 
             public Stream ReadBlock(string filename, string hash)
