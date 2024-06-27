@@ -1,3 +1,55 @@
+2024-05-30 - 2.0.9.100_canary_2024-05-30
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+## These are some of the major changes that can cause surprises, so please review and see if any are relevant for your usage:
+
+- Changed runtime to .NET8, shipping with dependencies, no more Mono or .NET install required
+- Changed from portable executable to operating system and CPU architecture dependent packages
+- Server database with SQLite is no longer "encrypted" with RC4, running a new canary or later will decrypt the database
+- The executable `Duplicati.Library.AutoUpdater.exe` is renamed to `Duplicati.CommandLine.AutoUpdater.exe` and has limited functionality
+- The Windows MSI installer has been reduced, it offers essentially no options for now and no UI
+- The updater has been rewritten to rely on installing the packages, instead of having the "in-place" updates
+  - There are now longer a spawned secondary process
+  - The updates folder can be deleted
+  - Installing an update now requires manually downloading and running the installer (you still get a notice)
+ - To fit better with non-Windows systems the executables on non-Windows are all lower-case and prefixed with `duplicati`:
+    - `Duplicati.GUI.TrayIcon.exe` -> `duplicati`
+    - `Duplicati.CommandLine.exe` -> `duplicati-cli`
+    - `Duplicati.RecoveryTool.exe` -> `duplicati-recovery-tool`
+    - ... and similar for others
+
+## More detailed list of changes:
+- More than 300 commits for the change to .NET8, credits to @mnaiman, @tsuckow, @Jojo-1000, @npodbielski and many others
+    - These commits were done over many years an accumulated, so here is a summary
+    - Changes to support new .NET framework methods
+    - Changed to use Avalonia UI instead of WinForms
+    - Removed `mono` support and requirement
+    - Upgraded packages
+    - Reworked binaries and some queries for SQLite
+- 1MiB blocksize default, thanks @mr-russ
+- IOScheduling for RPM packages, thanks @achims311
+- Selective dynamic loading of modules to avoid loader errors
+- New manifest for updater
+- Added GNUGP to Docker, thanks @wjansenw
+- Improved cross-platform support, thanks @SimonNyvall
+- Fixed issue with custom reporting message for http-modules
+- RC4 database encryption
+- Fixed issues with recoverytool, thanks @Jojo-1000
+- Additional quota control options, thanks @Jojo-1000
+- Improved file-source picker with filters, thanks @Jojo-1000
+- Fixes to forced local, thanks @Jojo-1000
+- Fixed an issue with OpenStack loosing username and password, thanks @Jojo-1000
+- Improved handling of boolean options in the UI, thanks @Jojo-1000
+- Fixed issues with missing executables and permissions on non-Windows
+- Fixed an issue when restoring without a localdatabase, using non-default blocksize, and no parameters
+- Rebuilt the MSI proces for `wixl` support
+- Added Win-Arm64 support
+
 2024-04-19 - 2.0.7.103_canary_2024-04-19
 ==========
 - Added microfix that adds a missing default value to the backup reports.
