@@ -173,11 +173,11 @@ public static class WebServerLoader
 #if DEBUG
             //In debug mode we do not care where the path points
 #else
-                //In release mode we check that the user supplied path is located
-                // in the same folders as the running application, to avoid users
-                // that inadvertently expose top level folders
-                if (!string.IsNullOrWhiteSpace(userroot) && userroot.StartsWith(Util.AppendDirSeparator(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison))
-                    webroot = userroot;
+            //In release mode we check that the user supplied path is located
+            // in the same folders as the running application, to avoid users
+            // that inadvertently expose top level folders
+            if (!string.IsNullOrWhiteSpace(userroot) && userroot.StartsWith(Duplicati.Library.Common.IO.Util.AppendDirSeparator(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison))
+                webroot = userroot;
 #endif
         }
 
