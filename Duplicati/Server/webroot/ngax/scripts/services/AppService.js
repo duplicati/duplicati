@@ -53,41 +53,42 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
             response => { deferred.resolve(response) },
 
             response => {
-            if (response.status == 401) {
-                // If we are currently logged in, we should obtain a new token
-                if (self.access_token != null) {
-                    self.access_token = null;
-                    self.access_token_promise = null;
+                if (response.status == 401) {
+                    // If we are currently logged in, we should obtain a new token
+                    if (self.access_token != null) {
+                        self.access_token = null;
+                        self.access_token_promise = null;
 
-                    self.getAccessToken().then(
-                        () => { 
-                            // Retry the operation
-                            promiseAction().then(
-                                response2 => deferred.resolve(response2),
-                                response2 => { 
-                                    loginRequired();
-                                    deferred.reject(response2);
-                                }
-                            ); 
-                        }, 
-                        () => { 
-                            // Fail, but use the original failed response, not the refresh response
-                            loginRequired();
-                            deferred.reject(response);
-                        }
-                    );
+                        self.getAccessToken().then(
+                            () => { 
+                                // Retry the operation
+                                promiseAction().then(
+                                    response2 => deferred.resolve(response2),
+                                    response2 => { 
+                                        loginRequired();
+                                        deferred.reject(response2);
+                                    }
+                                ); 
+                            }, 
+                            () => { 
+                                // Fail, but use the original failed response, not the refresh response
+                                loginRequired();
+                                deferred.reject(response);
+                            }
+                        );
 
-                    return;
+                        return;
+                    }
+
+                    // Not logged in for some reason
+                    loginRequired();
+                    deferred.reject(response);
+                } else {
+                    // Non-authentication error
+                    deferred.reject(response);
                 }
-
-                // Not logged in for some reason
-                loginRequired();
-                deferred.reject(response);
-            } else {
-                // Non-authentication error
-                deferred.reject(response);
             }
-        });
+        );
 
         return deferred.promise;
     };
@@ -95,8 +96,6 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
 
     // Returns a promise that resolves to the access token
     this.getAccessToken = function () {
-        var self = this;
-
         if (self.access_token != null) {
             var deferred = $q.defer();
             deferred.resolve(this.access_token);    
