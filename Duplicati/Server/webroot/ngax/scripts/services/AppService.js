@@ -1,12 +1,9 @@
 backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogService, appConfig) {
     this.apiurl = '../api/v1';
-    this.proxy_url = null;
     this.access_token = null;
     this.access_token_promise = null;
 
     const self = this;
-
-    this.proxy_config = null;
 
     function loginRequired() {
         DialogService.dismissAll();
@@ -34,9 +31,6 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
 
         if (($cookies.get('ui-locale') || '').trim().length > 0)
             options.headers['X-UI-Language'] = $cookies.get('ui-locale');
-
-        if (self.proxy_config != null)
-            self.proxy_config(method, options, data, targeturl);
 
         return options;
     };
@@ -106,8 +100,7 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         } else {
             var deferred = $q.defer();
             self.access_token_promise = deferred.promise;
-            var url = self.apiurl + '/auth/refresh';
-            $http.post(self.proxy_url == null ? url : self.proxy_url)
+            $http.post(self.apiurl + '/auth/refresh')
                 .then(function (response) {
                     self.access_token = response.data.AccessToken;
                     self.access_token_promise = null;
@@ -127,19 +120,19 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
             rurl = this.apiurl + url;
         }
 
-        return this.getAccessToken().then(() => installResponseHook(() => $http.get(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('GET', options, null, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.get(rurl, setupConfig('GET', options, null, rurl))));
     };
 
     this.patch = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.getAccessToken().then(() => installResponseHook(() => $http.patch(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PATCH', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.patch(rurl, data, setupConfig('PATCH', options, data, rurl))));
     };
 
     this.post = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.getAccessToken().then(() => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.post(rurl, data, setupConfig('POST', options, data, rurl))));
     };
 
     this.postJson = function (url, data, options) {        
@@ -147,19 +140,19 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         options = options || {};
         options.headers = options.headers || {};
         options.headers['Content-Type'] = 'application/json; charset=utf-8';
-        return this.getAccessToken().then(() => installResponseHook(() => $http.post(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('POST', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.post(rurl, data, setupConfig('POST', options, data, rurl))));
     };
 
     this.put = function (url, data, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.getAccessToken().then(() => installResponseHook(() => $http.put(this.proxy_url == null ? rurl : this.proxy_url, data, setupConfig('PUT', options, data, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.put(rurl, data, setupConfig('PUT', options, data, rurl))));
     };
 
     this.delete = function (url, options) {
         var rurl = this.apiurl + url;
         options = options || {};
-        return this.getAccessToken().then(() => installResponseHook(() => $http.delete(this.proxy_url == null ? rurl : this.proxy_url, setupConfig('DELETE', options, null, rurl))));
+        return this.getAccessToken().then(() => installResponseHook(() => $http.delete(rurl, setupConfig('DELETE', options, null, rurl))));
     };
 
     this.get_export_url = function (backupid, passphrase, exportPasswords) {
@@ -172,8 +165,6 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
                 if ((passphrase || '').trim().length > 0)
                     rurl += '&passphrase=' + encodeURIComponent(passphrase);        
 
-                if (this.proxy_url != null)
-                    return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
                 deferred.resolve(rurl);
             },
             resp => deferred.reject(resp)
@@ -189,9 +180,6 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
             resp => {
                 var rurl = this.apiurl + '/bugreport/' + reportid;
                 rurl += '?token=' + encodeURIComponent(resp.data.Token);
-
-                if (this.proxy_url != null)
-                    return this.proxy_url + '&x-proxy-path=' + encodeURIComponent(rurl);
                 deferred.resolve(rurl);
             },
             resp => deferred.reject(resp)
