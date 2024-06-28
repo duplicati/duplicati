@@ -109,6 +109,11 @@ public partial class DuplicatiWebserver
 
         builder.Services.AddDuplicati(connection);
 
+        // Prevent logs from spamming the console
+        builder.Logging
+            .AddFilter("Microsoft", LogLevel.Warning)
+            .AddFilter("System", LogLevel.Warning);
+
         Configuration = builder.Configuration;
         App = builder.Build();
         Provider = App.Services;
