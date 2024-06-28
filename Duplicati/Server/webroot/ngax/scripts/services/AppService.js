@@ -48,14 +48,21 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
 
             response => {
                 if (response.status == 401) {
-                    // If we are currently logged in, we should obtain a new token
-                    if (self.access_token != null) {
-                        self.access_token = null;
-                        self.access_token_promise = null;
 
+                    // Most likely, the access token has expired
+                    // Calling refresh should get us a new token, but we may already be trying to get a new token
+                    if (self.access_token != null || (self.access_token == null && self.access_token_promise != null)) {
+                        
+                        // If we have a token, we should remove it and obtain a new one
+                        if (self.access_token != null) {
+                            self.access_token = null;
+                            self.access_token_promise = null;
+                        }
+
+                        // If we are already getting a token, this call will return a shared promise
                         self.getAccessToken().then(
                             () => { 
-                                // Retry the operation
+                                // Got a new token, retry the operation
                                 promiseAction().then(
                                     response2 => deferred.resolve(response2),
                                     response2 => { 
@@ -65,7 +72,7 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
                                 ); 
                             }, 
                             () => { 
-                                // Fail, but use the original failed response, not the refresh response
+                                // Fail, but report the original failed response, not the refresh response
                                 loginRequired();
                                 deferred.reject(response);
                             }
@@ -106,6 +113,8 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
                     self.access_token_promise = null;
                     deferred.resolve(self.access_token);
                 }, function (response) {
+                    self.access_token = null;
+                    self.access_token_promise = null;
                     loginRequired();
                     deferred.reject(response);
                 });
