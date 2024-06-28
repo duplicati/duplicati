@@ -27,7 +27,7 @@ backupApp.controller('ImportController', function($rootScope, $scope, $timeout, 
                 .then(function (response) {
                     $scope.Connecting = false;
 
-                    if (response.data != null && response.data.id != null) {
+                    if (response.data != null && response.data.Id != null) {
                         $location.path('/');
                     } else if (response.data != null && response.data.data != null) {
                         $rootScope.importConfig = response.data.data;
@@ -38,7 +38,7 @@ backupApp.controller('ImportController', function($rootScope, $scope, $timeout, 
                     } else {
                         DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to import: {{message}}', { message: AppService.responseErrorMessage(response) }));
                     }
-                }, function (error) {
+                }, function (response) {
                     $scope.Connecting = false;
                     DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to import: {{message}}', { message: AppService.responseErrorMessage(response) }));
                 });
