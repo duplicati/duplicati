@@ -101,7 +101,11 @@ def wait_for_text(time, xpath, text):
 
 def wait_for_load(time, by, target):
     return WebDriverWait(driver, time).until(expected_conditions.presence_of_element_located((by, target)))
-    
+
+def wait_for_redirect(expected_url, timeout=10):
+    WebDriverWait(driver, timeout).until(lambda driver: driver.current_url == expected_url)
+
+WEBSERVICE_PASSWORD = "easy1234"
 BACKUP_NAME = "BackupName"
 PASSWORD = "the_backup_password_is_really_long_and_safe"
 SOURCE_FOLDER = os.path.abspath("duplicati_gui_test_source")
@@ -115,8 +119,11 @@ time.sleep(5)
 
 driver.implicitly_wait(10)
 driver.maximize_window()
-driver.get("http://localhost:8200/ngax/index.html")
+driver.get("http://localhost:8200/login.html")
+wait_for_load(10, By.ID, "login-password").send_keys(WEBSERVICE_PASSWORD)
+wait_for_load(10, By.ID, "login-button").click()
 
+wait_for_redirect("http://localhost:8200/ngax/index.html")
 if "Duplicati" not in driver.title:
     raise Exception("Unable to load duplicati GUI! Got: " + driver.title)
 
