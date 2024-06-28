@@ -27,11 +27,11 @@ public class BackupGet : IEndpointV1
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/log", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
-            => ExecuteGetLog(connection, GetBackup(connection, id), offset ?? 0, pagesize ?? 100))
+            => ExecuteGetLog(connection, GetBackup(connection, id), offset, pagesize ?? 100))
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/remotelog", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
-            => ExecuteGetRemotelog(connection, GetBackup(connection, id), offset ?? 0, pagesize ?? 100))
+            => ExecuteGetRemotelog(connection, GetBackup(connection, id), offset, pagesize ?? 100))
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/filesets", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = "include-metadata")] bool? includeMetadata, [FromQuery(Name = "from-remote-only")] bool? fromRemoteOnly)
@@ -154,7 +154,7 @@ public class BackupGet : IEndpointV1
     private static Dictionary<string, object> ExecuteGetFiles(IBackup bk, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
         => SearchFiles(bk, filter, timestring, allVersions, prefixOnly, folderContents, extraValues);
 
-    private static List<Dictionary<string, object>> ExecuteGetLog(Connection connection, IBackup bk, long offset, long pagesize)
+    private static List<Dictionary<string, object>> ExecuteGetLog(Connection connection, IBackup bk, long? offset, long pagesize)
     {
         if (!File.Exists(bk.DBPath))
             return new List<Dictionary<string, object>>();
@@ -164,7 +164,7 @@ public class BackupGet : IEndpointV1
             return LogData.DumpTable(cmd, "LogData", "ID", offset, pagesize);
     }
 
-    private static List<Dictionary<string, object>> ExecuteGetRemotelog(Connection connection, IBackup bk, long offset, long pagesize)
+    private static List<Dictionary<string, object>> ExecuteGetRemotelog(Connection connection, IBackup bk, long? offset, long pagesize)
     {
         if (!File.Exists(bk.DBPath))
             return new List<Dictionary<string, object>>();
