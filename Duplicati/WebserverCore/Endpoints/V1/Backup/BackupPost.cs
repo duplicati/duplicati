@@ -34,11 +34,11 @@ public class BackupPost : IEndpointV1
             => ExecuteCreateReport(GetBackup(connection, id), workerThreadsManager))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/repair", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto input)
+        group.MapPost("/backup/{id}/repair", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto? input)
             => ExecuteRepair(GetBackup(connection, id), workerThreadsManager, input))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/repairupdate", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto input)
+        group.MapPost("/backup/{id}/repairupdate", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto? input)
             => ExecuteRepairUpdate(GetBackup(connection, id), workerThreadsManager, input))
             .RequireAuthorization();
 
@@ -112,10 +112,10 @@ public class BackupPost : IEndpointV1
     private static Dto.TaskStartedDto ExecuteReportRemoteSize(IBackup backup, IWorkerThreadsManager workerThreadsManager)
         => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.ListRemote, backup)));
 
-    private static Dto.TaskStartedDto ExecuteRepair(IBackup backup, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto input)
+    private static Dto.TaskStartedDto ExecuteRepair(IBackup backup, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto? input)
         => DoRepair(backup, false, workerThreadsManager, input);
 
-    private static Dto.TaskStartedDto ExecuteRepairUpdate(IBackup backup, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto input)
+    private static Dto.TaskStartedDto ExecuteRepairUpdate(IBackup backup, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto? input)
         => DoRepair(backup, true, workerThreadsManager, input);
 
     private static Dto.TaskStartedDto ExecuteVacuum(IBackup backup, IWorkerThreadsManager workerThreadsManager)
@@ -127,18 +127,21 @@ public class BackupPost : IEndpointV1
     private static Dto.TaskStartedDto ExecuteCompact(IBackup backup, IWorkerThreadsManager workerThreadsManager)
         => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.Compact, backup)));
 
-    private static Dto.TaskStartedDto DoRepair(IBackup backup, bool repairUpdate, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto input)
+    private static Dto.TaskStartedDto DoRepair(IBackup backup, bool repairUpdate, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto? input)
     {
         // These are all props on the input object
         var extra = new Dictionary<string, string>();
-        if (input.only_paths.HasValue)
-            extra["repair-only-paths"] = input.only_paths.Value.ToString();
-        if (!string.IsNullOrWhiteSpace(input.time))
-            extra["time"] = input.time;
-        if (!string.IsNullOrWhiteSpace(input.version))
-            extra["version"] = input.version;
+        if (input != null)
+        {
+            if (input.only_paths.HasValue)
+                extra["repair-only-paths"] = input.only_paths.Value.ToString();
+            if (!string.IsNullOrWhiteSpace(input.time))
+                extra["time"] = input.time;
+            if (!string.IsNullOrWhiteSpace(input.version))
+                extra["version"] = input.version;
+        }
 
-        var filters = input.paths ?? [];
+        var filters = input?.paths ?? [];
 
         return new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(repairUpdate ? DuplicatiOperation.RepairUpdate : DuplicatiOperation.Repair, backup, extra, filters)));
     }
