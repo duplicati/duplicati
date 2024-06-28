@@ -16,6 +16,7 @@ public record JWTConfig
     public int AccessTokenDurationInMinutes { get; init; } = 15;
     public int RefreshTokenDurationInMinutes { get; init; } = 60 * 24 * 30;
     public int SigninTokenDurationInMinutes { get; init; } = 5;
+    public int SingleOperationTokenDurationInMinutes { get; init; } = 1;
     public SymmetricSecurityKey SymmetricSecurityKey() => new(Encoding.UTF8.GetBytes(SigningKey));
 
     public static JWTConfig Create() => new()
@@ -29,6 +30,13 @@ public record JWTConfig
 public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
 {
     private const string TemporaryFamilyId = "temporary";
+    public string CreateSingleOperationToken(string userId, string operation)
+        => GenerateToken([
+            new Claim(Claims.Type, TokenType.SingleOperationToken.ToString()),
+            new Claim(Claims.UserId, userId),
+            new Claim(Claims.Operation, operation)
+        ], DateTime.Now, expires: DateTime.Now.AddMinutes(jWTConfig.SingleOperationTokenDurationInMinutes));
+
     public string CreateSigninToken(string userId)
         => GenerateToken([
             new Claim(Claims.Type, TokenType.SigninToken.ToString()),
@@ -56,6 +64,18 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
         var creds = new SigningCredentials(jWTConfig.SymmetricSecurityKey(), SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(jWTConfig.Authority, jWTConfig.Audience, claims, notBefore: notBefore, expires: expires, signingCredentials: creds);
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public IJWTTokenProvider.SingleOperationToken ReadSingleOperationToken(string token)
+    {
+        var jwtToken = ParseAndValidateToken(token, TokenType.SingleOperationToken);
+
+        return new IJWTTokenProvider.SingleOperationToken(
+            jwtToken.ValidFrom,
+            jwtToken.ValidTo,
+            jwtToken.Claims.First(c => c.Type == Claims.UserId).Value,
+            jwtToken.Claims.First(c => c.Type == Claims.Operation).Value
+        );
     }
 
     public IJWTTokenProvider.SigninToken ReadSigninToken(string token)
@@ -116,6 +136,7 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
             ValidIssuer = jWTConfig.Authority,
             ValidAudience = jWTConfig.Audience,
             IssuerSigningKey = jWTConfig.SymmetricSecurityKey(),
+            ClockSkew = TimeSpan.FromSeconds(5)
         };
     }
 
@@ -160,7 +181,8 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
     {
         AccessToken,
         RefreshToken,
-        SigninToken
+        SigninToken,
+        SingleOperationToken
     }
 
     private static class Claims
@@ -170,6 +192,7 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
         public const string Family = "fam";
         public const string Counter = "cnt";
         public const string IssuedAt = "iat";
+        public const string Operation = "sop";
     }
 
 }

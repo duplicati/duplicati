@@ -110,6 +110,21 @@ public partial class Auth : IEndpointV1
             httpContextAccessor.HttpContext!.Response.Cookies.Delete(cookieName);
             return new { success = true };
         });
+
+        group.MapPost("auth/issuetoken/{operation}", ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider, [FromRoute] string operation) =>
+        {
+            switch (operation)
+            {
+                case "export":
+                case "bugreport":
+                    break;
+
+                default:
+                    throw new BadRequestException("Invalid operation");
+            }
+            var singleOperationToken = tokenProvider.CreateSingleOperationToken("web-api", operation);
+            return new Dto.SingleOperationTokenOutputDto(singleOperationToken);
+        }).RequireAuthorization();
     }
 
     private static void AddCookie(HttpContext context, string name, string value, DateTimeOffset expires)

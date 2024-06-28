@@ -164,34 +164,42 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
     };
 
     this.get_export_url = function (backupid, passphrase, exportPasswords) {
-        var rurl = this.apiurl + '/backup/' + backupid + '/export';
-        rurl += '?export-passwords=' + encodeURIComponent(exportPasswords);
-        if ((passphrase || '').trim().length > 0)
-            rurl += '&passphrase=' + encodeURIComponent(passphrase);
+        var deferred = $q.defer();
+        this.post("/auth/issuetoken/export").then(
+            resp => {
+                var rurl = this.apiurl + '/backup/' + backupid + '/export';
+                rurl += '?export-passwords=' + encodeURIComponent(exportPasswords);
+                rurl += '&token=' + encodeURIComponent(resp.data.Token);
+                if ((passphrase || '').trim().length > 0)
+                    rurl += '&passphrase=' + encodeURIComponent(passphrase);        
 
-        if (this.proxy_url != null)
-            return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
-        return rurl;
-    };
+                if (this.proxy_url != null)
+                    return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
+                deferred.resolve(rurl);
+            },
+            resp => deferred.reject(resp)
+        );
 
-    this.get_import_url = function (passphrase) {
-        var rurl = this.apiurl + '/backups/import';
-        if ((passphrase || '').trim().length > 0)
-            rurl += '&passphrase=' + encodeURIComponent(passphrase);
+        return deferred.promise;
+    }
 
-        if (this.proxy_url != null)
-            return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
-        return rurl;
-    };
-
+    
     this.get_bugreport_url = function (reportid) {
-        var rurl = this.apiurl + '/bugreport/' + reportid;
+        var deferred = $q.defer();
+        this.post("/auth/issuetoken/bugreport").then(
+            resp => {
+                var rurl = this.apiurl + '/bugreport/' + reportid;
+                rurl += '?token=' + encodeURIComponent(resp.data.Token);
 
-        if (this.proxy_url != null)
-            return this.proxy_url + '?x-proxy-path=' + encodeURIComponent(rurl);
+                if (this.proxy_url != null)
+                    return this.proxy_url + '&x-proxy-path=' + encodeURIComponent(rurl);
+                deferred.resolve(rurl);
+            },
+            resp => deferred.reject(resp)
+        );
 
-        return rurl;
-    };
+        return deferred.promise;
+    }
 
     this.responseErrorMessage = function (resp) {
         if (resp == null) {

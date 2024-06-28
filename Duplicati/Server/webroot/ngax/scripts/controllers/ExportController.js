@@ -41,10 +41,23 @@ backupApp.controller("ExportController", function($scope, $routeParams, AppServi
                     }
                 );
             } else {
-                $scope.DownloadURL = AppService.get_export_url($scope.BackupID, $scope.UseEncryption ? $scope.Passphrase : null, $scope.ExportPasswords);
-                $scope.Completed = true;
-            }
+                $scope.Connecting = true;                
+                AppService.get_export_url($scope.BackupID, $scope.UseEncryption ? $scope.Passphrase : null, $scope.ExportPasswords).then(
+                    resp => {
+                        $scope.Connecting = false;
+                        $scope.DownloadURL = resp;
+                        $scope.Completed = true;
+                        // Some browsers support download with click
+                        AppService.get($scope.DownloadURL);
 
+                    },
+                    resp => {
+                        $scope.Connecting = false;
+                        var message = AppService.responseErrorMessage(resp);
+                        DialogService.dialog(gettextCatalog.getString("Error"), gettextCatalog.getString("Failed to connect: {{message}}", { message: message }));
+                    }
+                );                
+            }
         }
 
         // Make checks that do not require user input

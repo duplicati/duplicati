@@ -46,8 +46,13 @@ public class BackupGet : IEndpointV1
             => ExecuteGetExportCmdline(GetBackup(connection, id), exportPasswords ?? false))
             .RequireAuthorization();
 
-        group.MapGet("/backup/{id}/export", ([FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase, CancellationToken ct) =>
+        group.MapGet("/backup/{id}/export", ([FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase, [FromQuery] string token, CancellationToken ct) =>
         {
+            // Custom authorization check
+            var singleOperationToken = jWTTokenProvider.ReadSingleOperationToken(token);
+            if (singleOperationToken.Operation != "export")
+                throw new UnauthorizedException("Invalid operation");
+
             var (data, filename) = ExecuteGetExport(connection, GetBackup(connection, id), exportPasswords ?? false, passphrase);
             var resp = httpContextAccessor.HttpContext!.Response;
 
@@ -55,8 +60,7 @@ public class BackupGet : IEndpointV1
             resp.ContentType = "application/octet-stream";
             resp.Headers.Append("Content-Disposition", $"attachment; filename={filename}");
             resp.Body.WriteAsync(data, ct);
-        })
-        .RequireAuthorization();
+        });
 
         group.MapGet("/backup/{id}/isdbusedelsewhere", ([FromServices] Connection connection, [FromRoute] string id)
             => ExecuteGetIsdbUsedElsewhere(GetBackup(connection, id)))
