@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Server.Database;
@@ -41,9 +41,6 @@ public partial class DuplicatiWebserver
     public void InitWebServer(InitSettings settings, Connection connection)
     {
         var builder = WebApplication.CreateBuilder();
-        if (!settings.AllowedHostnames.Any(x => x == "*"))
-            builder.WebHost.UseUrls(settings.AllowedHostnames.Select(hostname => $"{(settings.Certificate == null ? "http" : "https")}://{hostname}:{settings.Port}").ToArray());
-
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Listen(settings.Interface, settings.Port, listenOptions =>
