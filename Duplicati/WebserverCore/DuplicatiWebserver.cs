@@ -1,4 +1,4 @@
-using System.Security.Cryptography.X509Certificates;
+﻿using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Server.Database;
@@ -106,10 +106,15 @@ public partial class DuplicatiWebserver
 
         builder.Services.AddDuplicati(connection);
 
-        // Prevent logs from spamming the console
-        builder.Logging
-            .AddFilter("Microsoft", LogLevel.Warning)
-            .AddFilter("System", LogLevel.Warning);
+        // Prevent logs from spamming the console, but allow enabling for debugging
+        if (Environment.GetEnvironmentVariable("DUPLICATI_WEBSERVER_LOGGING") != "1")
+        {
+            builder.Logging
+                .AddFilter("Microsoft", LogLevel.Warning)
+                .AddFilter("Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager", LogLevel.Error)
+                .AddFilter("System", LogLevel.Warning)
+                .AddFilter("Duplicati", LogLevel.Warning);
+        }
 
         Configuration = builder.Configuration;
         App = builder.Build();
