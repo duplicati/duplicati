@@ -48,42 +48,30 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
 
             response => {
                 if (response.status == 401) {
-
-                    // Most likely, the access token has expired
-                    // Calling refresh should get us a new token, but we may already be trying to get a new token
-                    if (self.access_token != null || (self.access_token == null && self.access_token_promise != null)) {
                         
-                        // If we have a token, we should remove it and obtain a new one
-                        if (self.access_token != null) {
-                            self.access_token = null;
-                            self.access_token_promise = null;
-                        }
-
-                        // If we are already getting a token, this call will return a shared promise
-                        self.getAccessToken().then(
-                            () => { 
-                                // Got a new token, retry the operation
-                                promiseAction().then(
-                                    response2 => deferred.resolve(response2),
-                                    response2 => { 
-                                        loginRequired();
-                                        deferred.reject(response2);
-                                    }
-                                ); 
-                            }, 
-                            () => { 
-                                // Fail, but report the original failed response, not the refresh response
-                                loginRequired();
-                                deferred.reject(response);
-                            }
-                        );
-
-                        return;
+                    // If we have a token, we should remove it and obtain a new one
+                    if (self.access_token != null) {
+                        self.access_token = null;
+                        self.access_token_promise = null;
                     }
 
-                    // Not logged in for some reason
-                    loginRequired();
-                    deferred.reject(response);
+                    // If we are already getting a token, this call will return a shared promise
+                    self.getAccessToken().then(
+                        () => { 
+                            // Got a new token, retry the operation
+                            promiseAction().then(
+                                response2 => deferred.resolve(response2),
+                                response2 => { 
+                                    deferred.reject(response2);
+                                }
+                            ); 
+                        }, 
+                        () => { 
+                            // Fail, but report the original failed response, not the refresh response
+                            deferred.reject(response);
+                        }
+                    );
+
                 } else {
                     // Non-authentication error
                     deferred.reject(response);
@@ -113,9 +101,14 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
                     self.access_token_promise = null;
                     deferred.resolve(self.access_token);
                 }, function (response) {
+                    // Failed to get a new token, clear the old one
                     self.access_token = null;
                     self.access_token_promise = null;
-                    loginRequired();
+                    
+                    // Auth error, refresh token invalid
+                    if (response.status == 401)
+                        loginRequired();
+
                     deferred.reject(response);
                 });
 
