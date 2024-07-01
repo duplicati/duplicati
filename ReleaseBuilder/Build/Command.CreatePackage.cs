@@ -837,7 +837,7 @@ public static partial class Command
 
         // Build the images
         var args = new List<string> { Program.Configuration.Commands.Docker!, "buildx", "build" };
-        args.AddRange(tags.SelectMany(x => new[] { "-t", $"{rtcfg.DockerRepo}:{x}" }));
+        args.AddRange(tags.SelectMany(x => new[] { "-t", $"{rtcfg.DockerRepo}:{x.ToLowerInvariant()}" }));
         args.AddRange([
             "--platform", string.Join(",", dockerArchs),
             "--build-arg", $"VERSION={rtcfg.ReleaseInfo.Version}",
