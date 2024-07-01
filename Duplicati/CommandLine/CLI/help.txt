@@ -16,7 +16,7 @@ See %CLI_EXE% help <topic> for more information.
   Debug: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
-  Formats: date, time, size, encryption, compression
+  Formats: date, time, size, decimal, encryption, compression
   Advanced: mail, advanced, returncodes, filter, filter-groups, <option>
 
 https://duplicati.com/                 Version: %VERSION%
@@ -433,6 +433,15 @@ Whenever a size is required, you can use any of the following suffixes:
   GB - Gigabytes
   
 For speed limits, use the same format. If you enter 1MB this will be 1MB/sec.
+
+# =============================================================================
+> duplicati.commandline.exe help decimal
+
+For entering decimal values you must use the English notation, with a period as decimal separator:
+
+  0.1
+  12.34
+
 
 # =============================================================================
 > duplicati.commandline.exe help filter

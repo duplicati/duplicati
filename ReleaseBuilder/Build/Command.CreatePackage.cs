@@ -626,7 +626,8 @@ public static partial class Command
                     "docker", "run",
                     "--workdir", $"/build",
                     "--volume", $"{debroot}:/build:rw", "duplicati/debian-build:latest",
-                    "dpkg-deb", "--build", "--root-owner-group", debpkgdir
+                    // Using gzip compression for compatibility with older Debian versions
+                    "dpkg-deb", "-Zgzip", "--build", "--root-owner-group", debpkgdir
             ]);
 
             File.Move(Path.Combine(debroot, debpkgname), debFile);
@@ -836,7 +837,7 @@ public static partial class Command
 
         // Build the images
         var args = new List<string> { Program.Configuration.Commands.Docker!, "buildx", "build" };
-        args.AddRange(tags.SelectMany(x => new[] { "-t", $"{rtcfg.DockerRepo}:{x}" }));
+        args.AddRange(tags.SelectMany(x => new[] { "-t", $"{rtcfg.DockerRepo}:{x.ToLowerInvariant()}" }));
         args.AddRange([
             "--platform", string.Join(",", dockerArchs),
             "--build-arg", $"VERSION={rtcfg.ReleaseInfo.Version}",

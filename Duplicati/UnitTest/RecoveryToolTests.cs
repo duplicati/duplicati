@@ -206,9 +206,10 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RecoveryTool")]
-        [TestCase("false")]
-        [TestCase("true")]
-        public void Recover(string buildIndexWithFiles)
+        [TestCase("false", "true")]
+        [TestCase("true", "false")]
+        [TestCase("false", "false")]
+        public void Recover(string buildIndexWithFiles, bool reducedMemoryUsage)
         {
             // Files to create in MB.
             int[] fileSizes = { 0, 10, 20, 30 };
@@ -244,17 +245,17 @@ namespace Duplicati.UnitTest
             // Download the backend files.
             string downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
             Directory.CreateDirectory(downloadFolder);
-            int status = CommandLine.RecoveryTool.Program.Main(new[] {"download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}"});
+            int status = CommandLine.RecoveryTool.Program.Main(new[] { "download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}" });
             Assert.AreEqual(0, status);
 
             // Create the index.
-            status = CommandLine.RecoveryTool.Program.Main(new[] {"index", $"{downloadFolder}", $"--build-index-with-files={buildIndexWithFiles}"});
+            status = CommandLine.RecoveryTool.Program.Main(new[] { "index", $"{downloadFolder}", $"--build-index-with-files={buildIndexWithFiles}" });
             Assert.AreEqual(0, status);
 
             // Restore to a different folder.
             string restoreFolder = Path.Combine(this.RESTOREFOLDER, "restoredFiles");
             Directory.CreateDirectory(restoreFolder);
-            status = CommandLine.RecoveryTool.Program.Main(new[] {"restore", $"{downloadFolder}", $"--targetpath={restoreFolder}"});
+            status = CommandLine.RecoveryTool.Program.Main(new[] { "restore", $"{downloadFolder}", $"--targetpath={restoreFolder}", $"--reduce-memory-use={reducedMemoryUsage}" });
             Assert.AreEqual(0, status);
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, restoreFolder, false, "Verifying restore using RecoveryTool.");

@@ -37,6 +37,8 @@
                 "--targets", "linux-x64-cli.deb", 
                 "--targets", "linux-arm64-gui.deb", 
                 "--targets", "linux-arm64-cli.deb", 
+                "--targets", "linux-arm7-gui.deb", 
+                "--targets", "linux-arm7-cli.deb", 
                 "--targets", "linux-x64-cli.docker", 
                 "--targets", "linux-arm64-cli.docker", 
                 "--targets", "linux-arm7-cli.docker", 

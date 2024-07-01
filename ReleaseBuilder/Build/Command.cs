@@ -578,12 +578,6 @@ public static partial class Command
             await Upload.PostToForum(rtcfg);
         }
 
-        // Clean up the source tree
-        await ProcessHelper.Execute(new[] {
-                "git", "checkout",
-            }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
-         , workingDirectory: baseDir);
-
         if (input.GitStashPush)
         {
             await GitPush.TagAndPush(baseDir, releaseInfo);
@@ -591,6 +585,12 @@ public static partial class Command
             // Contents are added to changelog, so we can remove the file
             input.ChangelogFile.Delete();
         }
+
+        // Clean up the source tree
+        await ProcessHelper.Execute(new[] {
+                "git", "checkout",
+            }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
+         , workingDirectory: baseDir);
 
         Console.WriteLine("All done!");
     }
