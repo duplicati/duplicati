@@ -142,14 +142,17 @@ def runTests():
     time.sleep(1)
 
     # Load attempts
-    attempts = 10
+    attempts = 3
 
     # When running in headless mode the requests are too fast
     # and index.html loads multiple .js files which exhaust the
-    # Chrome pending request queue, 
+    # Chrome pending request queue (but only in headless mode)
     # So we re-issue the "get" to depend on cached results
     # meaning less requests and less chance of exhausting the queue
     # Upgrading to a newer Angular version will fix this issue
+    #
+    # After the initial load is complete, caching will ensure
+    # that only a few files are loaded
     while attempts > 0:
         try:
             wait_for_title("Duplicati")
@@ -200,19 +203,6 @@ def runTests():
     # Add new backup - Options page
     wait_for_load(By.ID, "save").click()
 
-    while attempts > 0:
-        try:
-            wait_for_title("Duplicati")
-            wait_for_clickable(By.LINK_TEXT, BACKUP_NAME)            
-            if driver.find_element(By.ID, "connection-lost-dialog").is_displayed():
-                raise Exception("connection-lost-dialog is displayed")
-            break
-        except:
-            print("Loading failed, retrying")
-            attempts -= 1
-            driver.get(HOME_URL)
-            time.sleep(1)
-
     # Run the backup job and wait for finish
     wait_for_clickable(By.LINK_TEXT, BACKUP_NAME).click()
     [n for n in driver.find_elements("xpath", "//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
@@ -244,19 +234,6 @@ def runTests():
     if os.path.exists(RESTORE_FOLDER):
         shutil.rmtree(RESTORE_FOLDER)
     os.rename(DESTINATION_FOLDER, DESTINATION_FOLDER_DIRECT_RESTORE)
-
-    while attempts > 0:
-        try:
-            wait_for_title("Duplicati")
-            wait_for_clickable(By.LINK_TEXT, "Restore")
-            if driver.find_element(By.ID, "connection-lost-dialog").is_displayed():
-                raise Exception("connection-lost-dialog is displayed")
-            break
-        except:
-            print("Loading failed, retrying")
-            attempts -= 1
-            driver.get(HOME_URL)
-            time.sleep(1)
 
     # direct restore
     wait_for_clickable(By.LINK_TEXT, "Restore").click()
