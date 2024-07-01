@@ -1,10 +1,33 @@
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Net.Http.Headers;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
 public static class StaticFilesExtensions
 {
+    private static readonly HashSet<string> _nonCachePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "/",
+        "/index.html",
+        "/login.html",
+        "/signin.html"
+    };
+
+    private static readonly CacheControlHeaderValue _noCache = new CacheControlHeaderValue
+    {
+        NoCache = true,
+        NoStore = true,
+        MustRevalidate = true
+    };
+
+    private static readonly CacheControlHeaderValue _allowCache = new CacheControlHeaderValue
+    {
+        Public = true,
+        MaxAge = TimeSpan.FromDays(7)
+    };
+
+
     public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, string webroot)
     {
         var fileProvider = new PhysicalFileProvider(Path.GetFullPath(webroot));
@@ -15,6 +38,15 @@ public static class StaticFilesExtensions
         {
             FileProvider = fileProvider,
             RequestPath = "",
+            OnPrepareResponse = (context) =>
+            {
+                var headers = context.Context.Response.GetTypedHeaders();
+                var path = context.Context.Request.Path.Value ?? string.Empty;
+                headers.CacheControl =
+                    (path.EndsWith("/index.html") || _nonCachePaths.Contains(path))
+                        ? _noCache
+                        : _allowCache;
+            },
             ContentTypeProvider = new FileExtensionContentTypeProvider()
             {
                 Mappings = {
