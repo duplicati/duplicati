@@ -154,6 +154,8 @@ def runTests():
         try:
             wait_for_title("Duplicati")
             wait_for_clickable(By.LINK_TEXT, "Add backup")
+            if driver.find_element(By.ID, "connection-lost-dialog").is_displayed():
+                raise Exception("connection-lost-dialog is displayed")
             break
         except:
             print("Loading failed, retrying")
@@ -201,7 +203,9 @@ def runTests():
     while attempts > 0:
         try:
             wait_for_title("Duplicati")
-            wait_for_clickable(By.LINK_TEXT, BACKUP_NAME)
+            wait_for_clickable(By.LINK_TEXT, BACKUP_NAME)            
+            if driver.find_element(By.ID, "connection-lost-dialog").is_displayed():
+                raise Exception("connection-lost-dialog is displayed")
             break
         except:
             print("Loading failed, retrying")
@@ -243,7 +247,10 @@ def runTests():
 
     while attempts > 0:
         try:
+            wait_for_title("Duplicati")
             wait_for_clickable(By.LINK_TEXT, "Restore")
+            if driver.find_element(By.ID, "connection-lost-dialog").is_displayed():
+                raise Exception("connection-lost-dialog is displayed")
             break
         except:
             print("Loading failed, retrying")
