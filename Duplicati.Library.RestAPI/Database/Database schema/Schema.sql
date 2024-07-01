@@ -154,5 +154,15 @@ CREATE TABLE "TempFile" (
     "Expires" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (6);
+/*
+Token Family table
+*/
+CREATE TABLE "TokenFamily" (
+    "ID" TEXT PRIMARY KEY,
+    "UserId" TEXT NOT NULL,
+    "Counter" INTEGER NOT NULL,
+    "LastUpdated" INTEGER NOT NULL
+);
+
+INSERT INTO "Version" ("Version") VALUES (7);
 

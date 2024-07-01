@@ -29,6 +29,9 @@ using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.Library.RestAPI;
 
+// TODO: Rewrite this class.
+// It should just signal what new backups to run, and not mix with the worker thread.
+
 namespace Duplicati.Server
 {
     /// <summary>
@@ -41,19 +44,23 @@ namespace Duplicati.Server
         /// <summary>
         /// The thread that runs the scheduler
         /// </summary>
-        private readonly Thread m_thread;
+        private Thread m_thread;
+
         /// <summary>
         /// A termination flag
         /// </summary>
         private volatile bool m_terminate;
+
         /// <summary>
         /// The worker thread that is invoked to do work
         /// </summary>
-        private readonly WorkerThread<Runner.IRunnerData> m_worker;
+        private WorkerThread<Runner.IRunnerData> m_worker;
+
         /// <summary>
         /// The wait event
         /// </summary>
-        private readonly AutoResetEvent m_event;
+        private AutoResetEvent m_event;
+
         /// <summary>
         /// The data synchronization lock
         /// </summary>
@@ -72,13 +79,20 @@ namespace Duplicati.Server
         /// <summary>
         /// List of update tasks, used to set the timestamp on the schedule once completed
         /// </summary>
-        private readonly Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
+        private Dictionary<Server.Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
 
         /// <summary>
         /// Constructs a new scheduler
         /// </summary>
+        public Scheduler()
+        {
+        }
+
+        /// <summary>
+        /// Initializes scheduler
+        /// </summary>
         /// <param name="worker">The worker thread</param>
-        public Scheduler(WorkerThread<Server.Runner.IRunnerData> worker)
+        public void Init(WorkerThread<Runner.IRunnerData> worker)
         {
             m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
@@ -91,6 +105,13 @@ namespace Duplicati.Server
             m_thread.IsBackground = true;
             m_thread.Name = "TaskScheduler";
             m_thread.Start();
+        }
+
+        public IList<Tuple<long, string>> GetSchedulerQueueIds()
+        {
+            return (from n in WorkerQueue
+                    where n.Backup != null
+                    select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList();
         }
 
         /// <summary>
@@ -119,10 +140,7 @@ namespace Duplicati.Server
         /// </summary>
         public List<Runner.IRunnerData> WorkerQueue
         {
-            get
-            {
-                return (from t in m_worker.CurrentTasks where t != null select t).ToList();
-            }
+            get { return (from t in m_worker.CurrentTasks where t != null select t).ToList(); }
         }
 
         /// <summary>
@@ -136,8 +154,13 @@ namespace Duplicati.Server
 
             if (wait)
             {
-                try { m_thread.Join(); }
-                catch { }
+                try
+                {
+                    m_thread.Join();
+                }
+                catch
+                {
+                }
             }
         }
 
@@ -149,7 +172,8 @@ namespace Duplicati.Server
         /// <param name="repetition">The repetition interval</param>
         /// <param name="allowedDays">The days the backup is allowed to run</param>
         /// <returns>The next valid date, or throws an exception if no such date can be found</returns>
-        public static DateTime GetNextValidTime(DateTime basetime, DateTime firstdate, string repetition, DayOfWeek[] allowedDays)
+        public static DateTime GetNextValidTime(DateTime basetime, DateTime firstdate, string repetition,
+            DayOfWeek[] allowedDays)
         {
             var res = basetime;
 
@@ -215,7 +239,6 @@ namespace Duplicati.Server
                 t.Item1.LastRun = t.Item3;
                 FIXMEGlobal.DataConnection.AddOrUpdateSchedule(t.Item1);
             }
-
         }
 
         private void OnStartingWork(WorkerThread<Runner.IRunnerData> worker, Runner.IRunnerData task)
@@ -277,11 +300,13 @@ namespace Duplicati.Server
                                 start = DateTime.UtcNow;
                                 last = DateTime.UtcNow;
                             }
+
                             start = GetNextValidTime(start, last, sc.Repeat, sc.AllowedDays);
                         }
                         catch (Exception ex)
                         {
-                            FIXMEGlobal.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date", ex);
+                            FIXMEGlobal.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date",
+                                ex);
                         }
 
                         //If time is exceeded, run it now
@@ -289,14 +314,16 @@ namespace Duplicati.Server
                         {
                             var jobsToRun = new List<Server.Runner.IRunnerData>();
                             //TODO: Cache this to avoid frequent lookups
-                            foreach (var id in FIXMEGlobal.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct().Select(x => x.ToString()))
+                            foreach (var id in FIXMEGlobal.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct()
+                                         .Select(x => x.ToString()))
                             {
                                 //See if it is already queued
                                 var tmplst = from n in m_worker.CurrentTasks
                                              where n.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup
                                              select n.Backup;
                                 var tastTemp = m_worker.CurrentTask;
-                                if (tastTemp != null && tastTemp.Operation == Duplicati.Server.Serialization.DuplicatiOperation.Backup)
+                                if (tastTemp != null && tastTemp.Operation ==
+                                    Duplicati.Server.Serialization.DuplicatiOperation.Backup)
                                     tmplst = tmplst.Union(new[] { tastTemp.Backup });
 
                                 //If it is not already in queue, put it there
@@ -307,13 +334,18 @@ namespace Duplicati.Server
                                     {
                                         Dictionary<string, string> options = Duplicati.Server.Runner.GetCommonOptions();
                                         Duplicati.Server.Runner.ApplyOptions(entry, options);
-                                        if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery && (Duplicati.Library.Utility.Power.PowerSupply.GetSource() == Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
+                                        if ((new Duplicati.Library.Main.Options(options)).DisableOnBattery &&
+                                            (Duplicati.Library.Utility.Power.PowerSupply.GetSource() ==
+                                             Duplicati.Library.Utility.Power.PowerSupply.Source.Battery))
                                         {
-                                            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "BackupDisabledOnBattery", "Scheduled backup disabled while on battery power.");
+                                            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                                                "BackupDisabledOnBattery",
+                                                "Scheduled backup disabled while on battery power.");
                                         }
                                         else
                                         {
-                                            jobsToRun.Add(Server.Runner.CreateTask(Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
+                                            jobsToRun.Add(Server.Runner.CreateTask(
+                                                Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
                                         }
                                     }
                                 }
@@ -322,11 +354,15 @@ namespace Duplicati.Server
                             // Calculate next time, by finding the first entry later than now
                             try
                             {
-                                start = GetNextValidTime(start, new DateTime(Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks), DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
+                                start = GetNextValidTime(start,
+                                    new DateTime(
+                                        Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks),
+                                        DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
                             }
                             catch (Exception ex)
                             {
-                                FIXMEGlobal.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date", ex);
+                                FIXMEGlobal.DataConnection.LogError(sc.ID.ToString(),
+                                    "Scheduler failed to find next date", ex);
                                 continue;
                             }
 
@@ -336,7 +372,8 @@ namespace Duplicati.Server
                                 lock (m_lock)
                                 {
                                     // The actual last run time will be updated when the StartingWork event is raised.
-                                    m_updateTasks[lastJob] = new Tuple<ISchedule, DateTime, DateTime>(sc, start, DateTime.UtcNow);
+                                    m_updateTasks[lastJob] =
+                                        new Tuple<ISchedule, DateTime, DateTime>(sc, start, DateTime.UtcNow);
                                 }
                             }
 
@@ -367,6 +404,7 @@ namespace Duplicati.Server
                     scheduled.Remove(c);
 
                 //Raise event if needed
+                // TODO: This triggers a new data event and a reconnect with long-poll
                 if (NewSchedule != null)
                     NewSchedule(this, null);
 
@@ -385,6 +423,7 @@ namespace Duplicati.Server
                 }
                 else
                 {
+                    // TODO: This should be handled with events, instead of one wakeup per minute
                     //No tasks, check back later
                     waittime = 60 * 1000;
                 }
@@ -409,6 +448,5 @@ namespace Duplicati.Server
             else
                 return Array.IndexOf<DayOfWeek>(allowedDays, localTime.DayOfWeek) >= 0;
         }
-
     }
 }

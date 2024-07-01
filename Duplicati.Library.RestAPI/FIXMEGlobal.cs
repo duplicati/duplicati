@@ -2,6 +2,10 @@
 using Duplicati.Server;
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.RestAPI.Abstractions;
+using Duplicati.Library.Utility;
+using Duplicati.WebserverCore.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Duplicati.Library.RestAPI
 {
@@ -11,16 +15,17 @@ namespace Duplicati.Library.RestAPI
      */
     public static class FIXMEGlobal
     {
+        /// <summary>
+        /// The placeholder for passwords in the UI
+        /// </summary>
+        public const string PASSWORD_PLACEHOLDER = "**********";
+
+        public static IServiceProvider Provider { get; set; }
 
         /// <summary>
         /// This is the only access to the database
         /// </summary>
         public static Server.Database.Connection DataConnection;
-
-        /// <summary>
-        /// The controller interface for pause/resume and throttle options
-        /// </summary>
-        public static LiveControls LiveControl;
 
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
@@ -30,23 +35,27 @@ namespace Duplicati.Library.RestAPI
         /// <summary>
         /// The status event signaler, used to control long polling of status updates
         /// </summary>
-        public static readonly EventPollNotify StatusEventNotifyer = new EventPollNotify();
+        public static EventPollNotify StatusEventNotifyer => Provider.GetRequiredService<EventPollNotify>();
+
+        /// <summary>
+        /// For keeping and incrementing last last events Ids of db save and last notification
+        /// </summary>
+        public static INotificationUpdateService NotificationUpdateService => Provider.GetRequiredService<INotificationUpdateService>();
+        /// <summary>
+        /// Checks if the server has started and is listening for events
+        /// </summary>
+        public static bool IsServerStarted => Provider != null;
 
         /// <summary>
         /// This is the working thread
         /// </summary>
-        public static Duplicati.Library.Utility.WorkerThread<Runner.IRunnerData> WorkThread;
+        public static WorkerThread<Runner.IRunnerData> WorkThread =>
+            Provider.GetRequiredService<IWorkerThreadsManager>().WorkerThread;
 
-        public static Func<long> PeekLastDataUpdateID;
-        public static Func<long> PeekLastNotificationUpdateID;
-
-        public static Action IncrementLastDataUpdateID;
-
-        public static Action IncrementLastNotificationUpdateID;
+        public static IWorkerThreadsManager WorkerThreadsManager =>
+            Provider.GetRequiredService<IWorkerThreadsManager>();
 
         public static Action StartOrStopUsageReporter;
-
-        public static Action UpdateThrottleSpeeds;
 
         /// <summary>
         /// Gets the folder where Duplicati data is stored
@@ -56,7 +65,7 @@ namespace Duplicati.Library.RestAPI
         /// <summary>
         /// This is the scheduling thread
         /// </summary>
-        public static Scheduler Scheduler;
+        public static IScheduler Scheduler => Provider.GetRequiredService<IScheduler>();
 
         /// <summary>
         /// The log redirect handler
@@ -68,7 +77,7 @@ namespace Duplicati.Library.RestAPI
         /// <summary>
         /// The update poll thread.
         /// </summary>
-        public static UpdatePollThread UpdatePoller;
+        public static UpdatePollThread UpdatePoller => Provider.GetRequiredService<UpdatePollThread>();
 
 
         /// <summary>
@@ -93,5 +102,6 @@ namespace Duplicati.Library.RestAPI
         /// This is the lock to be used before manipulating the shared resources
         /// </summary>
         public static readonly object MainLock = new object();
+
     }
 }

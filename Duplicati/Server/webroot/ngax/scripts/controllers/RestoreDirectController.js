@@ -58,7 +58,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
                 });
             }
 
-            AppService.post('/backups?temporary=true', obj, {'headers': {'Content-Type': 'application/json'}}).then(
+            AppService.postJson('/backups?temporary=true', obj).then(
                 function(resp) {
 
                     $scope.ConnectionProgress = gettextCatalog.getString('Listing backup dates …');

@@ -6,19 +6,19 @@
     	<ul>
     		<li class="input" ng-click="selection.style = 'blank'">
 	    		<input type="radio" name="blank" id="blank" ng-model="selection.style" value="blank">
-    			<label for="direct" translate>Configure a new backup</label>
+    			<label for="blank" translate>Configure a new backup</label>
     			<div class="subtext" translate>Enter configuration details</div>
     		</li>
 
             <li class="input" ng-click="selection.style = 'importfile'">
-                <input type="radio" name="blank" id="blank" ng-model="selection.style" value="importfile">
-                <label for="direct" translate>Import from a file</label>
+                <input type="radio" name="blank" id="importfile" ng-model="selection.style" value="importfile">
+                <label for="importfile" translate>Import from a file</label>
                 <div class="subtext" translate>Load a configuration from an exported job or a storage provider</div>
             </li>
 
             <!--<li class="input" ng-click="selection.style = 'importremote'">
-                <input type="radio" name="blank" id="blank" ng-model="selection.style" value="importremote">
-                <label for="direct">From a remote backup</label>
+                <input type="radio" name="blank" id="importremote" ng-model="selection.style" value="importremote">
+                <label for="importremote">From a remote backup</label>
                 <div class="subtext">Import configuration from a backup folder</div>
             </li> -->
 

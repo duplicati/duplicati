@@ -70,6 +70,8 @@ namespace Duplicati.Server.Database
             }
         }
 
+        protected void SetDBPath(string path) => this.DBPath = path;
+
         /// <summary>
         /// The backup ID
         /// </summary>

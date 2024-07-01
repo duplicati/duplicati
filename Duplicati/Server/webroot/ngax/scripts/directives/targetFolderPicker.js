@@ -63,7 +63,8 @@ backupApp.directive('destinationFolderPicker', function() {
             if (!node.children && !node.loading) {
                 node.loading = true;
 
-                AppService.post('/filesystem?onlyfolders=true&showhidden=true', {path: node.id}).then(function(data) {
+                AppService.postJson('/filesystem?onlyfolders=true&showhidden=true', {path: node.id}).then(function(data) {
+                    console.log(data);
                     node.children = data.data;
                     node.loading = false;
 
@@ -102,7 +103,7 @@ backupApp.directive('destinationFolderPicker', function() {
 
         $scope.$watch('ngHideUserNode', updateHideUserNode);
         
-        AppService.post('/filesystem?onlyfolders=true&showhidden=true', {path: '/'}).then(function(data) {
+        AppService.postJson('/filesystem?onlyfolders=true&showhidden=true', {path: '/'}).then(function(data) {
 
             var usernode = {
                 text: 'User data',

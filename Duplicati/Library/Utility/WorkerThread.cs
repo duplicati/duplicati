@@ -24,6 +24,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
+
+// TODO: Delete this class.
+// It is essentially a queue that is processed by a worker thread, and can be implemented using a BlockingCollection or similar.
+
 namespace Duplicati.Library.Utility
 {
     /// <summary>
@@ -134,7 +138,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                lock(m_lock)
+                lock (m_lock)
                     return new List<Tx>(m_tasks);
             }
 
@@ -174,7 +178,8 @@ namespace Duplicati.Library.Utility
         /// <param name="skipQueue">If set to <c>true</c> skip queue.</param>
         public void AddTask(Tx task, bool skipQueue)
         {
-            if (!skipQueue) {
+            if (!skipQueue)
+            {
                 // Fall back to default AddTask method
                 AddTask(task);
                 return;
@@ -280,7 +285,7 @@ namespace Duplicati.Library.Utility
             {
                 m_currentTask = null;
 
-                lock(m_lock)
+                lock (m_lock)
                     if (m_state == WorkerThread<Tx>.RunState.Run && m_tasks.Count > 0)
                         m_currentTask = m_tasks.Dequeue();
 
@@ -311,7 +316,7 @@ namespace Duplicati.Library.Utility
                     return;
 
                 if (m_currentTask == null && m_state == WorkerThread<Tx>.RunState.Run)
-                    lock(m_lock)
+                    lock (m_lock)
                         if (m_tasks.Count > 0)
                             m_currentTask = m_tasks.Dequeue();
 
@@ -348,7 +353,7 @@ namespace Duplicati.Library.Utility
 
                 if (CompletedWork != null)
                     try { CompletedWork(this, task); }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         try { OnError(this, task, ex); }
                         catch { }

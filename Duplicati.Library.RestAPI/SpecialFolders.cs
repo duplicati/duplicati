@@ -151,7 +151,7 @@ namespace Duplicati.Server
             Nodes = lst.ToArray();
         }
 
-        internal static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
+        public static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
         {
             if (backup.Sources == null || backup.Sources.Length == 0)
                 return new Dictionary<string, string>();

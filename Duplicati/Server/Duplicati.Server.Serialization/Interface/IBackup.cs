@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
 
 namespace Duplicati.Server.Serialization.Interface
@@ -53,27 +52,27 @@ namespace Duplicati.Server.Serialization.Interface
         /// The path to the local database
         /// </summary>
         string DBPath { get; }
-        
+
         /// <summary>
         /// The backup source folders and files
         /// </summary>
         string[] Sources { get; set; }
-        
+
         /// <summary>
         /// The backup settings
         /// </summary>
         ISetting[] Settings { get; set; }
-        
+
         /// <summary>
         /// The filters applied to the source files
         /// </summary>
         IFilter[] Filters { get; set; }
-        
+
         /// <summary>
         /// The backup metadata
         /// </summary>
         IDictionary<string, string> Metadata { get; set; }
-        
+
         /// <summary>
         /// Gets a value indicating if this instance is not persisted to the database
         /// </summary>

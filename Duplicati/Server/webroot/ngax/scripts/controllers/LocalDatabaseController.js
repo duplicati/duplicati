@@ -13,7 +13,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
             $scope.DBPath = $scope.Backup.Backup.DBPath;
 
             if ($scope.DBPath != prev || force)
-                AppService.post('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
+                AppService.postJson('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
                     $scope.NoLocalDB = false;
                 }, function() {
                     $scope.NoLocalDB = true;
@@ -42,7 +42,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
     };
 
     $scope.doRepair = function() {
-        AppService.post('/backup/' + $scope.BackupID + '/repair');
+        AppService.postJson('/backup/' + $scope.BackupID + '/repair');
         $location.path('/');
     };
 
@@ -55,7 +55,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
     $scope.doSave = function(continuation, move) {
 
         function doUpdate() {
-            AppService.post('/backup/' + $scope.BackupID + '/' + (move ? 'movedb' : 'updatedb'), {path: $scope.DBPath}).then(
+            AppService.postJson('/backup/' + $scope.BackupID + '/' + (move ? 'movedb' : 'updatedb'), {path: $scope.DBPath}).then(
                 function(resp) {
                     $scope.Backup.Backup.DBPath = $scope.DBPath;
                     resetBackupItem(true);
@@ -68,7 +68,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
         };
 
         function doCheckTarget() {
-            AppService.post('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
+            AppService.postJson('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
                 DialogService.dialog(gettextCatalog.getString('Existing file found'), gettextCatalog.getString('An existing file was found at the new location\nAre you sure you want the database to point to an existing file?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                     if (ix == 2) {
                         doUpdate();
@@ -99,7 +99,7 @@ backupApp.controller('LocalDatabaseController', function($scope, $routeParams, $
     };
 
     $scope.doMove = function() {
-        AppService.post('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
+        AppService.postJson('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
             DialogService.dialog(gettextCatalog.getString('Cannot move to existing file'), gettextCatalog.getString('An existing file was found at the new location'));
         }, function() {
             $scope.doSave(null, true);

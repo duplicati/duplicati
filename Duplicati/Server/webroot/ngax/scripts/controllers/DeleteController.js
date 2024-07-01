@@ -16,7 +16,7 @@ backupApp.controller('DeleteController', function($scope, $routeParams, $locatio
             $scope.DBPath = $scope.Backup.Backup.DBPath;
 
             if ($scope.DBPath != prev || force)
-                AppService.post('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
+                AppService.postJson('/filesystem/validate', {path: $scope.DBPath}).then(function(resp) {
                     $scope.NoLocalDB = false;
                 }, function() {
                     $scope.NoLocalDB = true;

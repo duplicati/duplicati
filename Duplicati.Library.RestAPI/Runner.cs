@@ -690,7 +690,7 @@ namespace Duplicati.Server
             if (ex is UserInformationException exception)
                 messageid = exception.HelpID;
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.DataConnection.RegisterNotification(
                 NotificationType.Error,
                 backup.IsTemporary ?
@@ -856,6 +856,12 @@ namespace Duplicati.Server
                                     ? string.Format("Got {0} warning(s)", result.Warnings.Count())
                                     : string.Format("Got {0} error(s)", result.Errors.Count());
 
+                // If there is only one error or warning, show the message
+                if (result.ParsedResult == ParsedResultType.Warning && result.Warnings.Count() == 1)
+                    message = $"Warning: {result.Warnings.Single()}";
+                else if (result.ParsedResult == ParsedResultType.Error && result.Errors.Count() == 1)
+                    message = $"Error: {result.Errors.Single()}";
+
                 FIXMEGlobal.DataConnection.RegisterNotification(
                     type,
                     title,
@@ -873,7 +879,7 @@ namespace Duplicati.Server
             if (!backup.IsTemporary)
                 FIXMEGlobal.DataConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -942,7 +948,7 @@ namespace Duplicati.Server
             return filter;
         }
 
-        internal static Dictionary<string, string> GetCommonOptions()
+        public static Dictionary<string, string> GetCommonOptions()
         {
             return
                 (from n in FIXMEGlobal.DataConnection.Settings

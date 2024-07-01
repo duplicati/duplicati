@@ -29,21 +29,21 @@ namespace Duplicati.Server.Serializable
     /// <summary>
     /// This class collects all reportable status properties into a single class that can be exported as JSON
     /// </summary>
-    public class ServerStatus : Duplicati.Server.Serialization.Interface.IServerStatus
+    public class ServerStatus(LiveControls liveControls) : Duplicati.Server.Serialization.Interface.IServerStatus
     {
         public LiveControlState ProgramState
         {
-            get { return EnumConverter.Convert<LiveControlState>(FIXMEGlobal.LiveControl.State); }
+            get { return EnumConverter.Convert<LiveControlState>(liveControls.State); }
         }
 
-        public string UpdatedVersion 
-        { 
-            get 
-            { 
+        public string UpdatedVersion
+        {
+            get
+            {
                 var u = FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion;
                 if (u == null)
                     return null;
-                
+
                 Version v;
                 if (!Version.TryParse(u.Version, out v))
                     return null;
@@ -51,7 +51,7 @@ namespace Duplicati.Server.Serializable
                 if (v <= System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     return null;
 
-                return u.Displayname; 
+                return u.Displayname;
             }
         }
 
@@ -64,8 +64,8 @@ namespace Duplicati.Server.Serializable
 
         public Tuple<long, string> ActiveTask
         {
-            get 
-            { 
+            get
+            {
                 var t = FIXMEGlobal.WorkThread.CurrentTask;
                 if (t == null)
                     return null;
@@ -85,18 +85,18 @@ namespace Duplicati.Server.Serializable
             {
                 return (
                     from n in FIXMEGlobal.Scheduler.Schedule
-                                let backupid = (from t in n.Value.Tags
-                                                where t != null && t.StartsWith("ID=", StringComparison.Ordinal)
-                                                select t.Substring("ID=".Length)).FirstOrDefault()
-                                where !string.IsNullOrWhiteSpace(backupid)
-                                select new Tuple<string, DateTime>(backupid, n.Key)
+                    let backupid = (from t in n.Value.Tags
+                                    where t != null && t.StartsWith("ID=", StringComparison.Ordinal)
+                                    select t.Substring("ID=".Length)).FirstOrDefault()
+                    where !string.IsNullOrWhiteSpace(backupid)
+                    select new Tuple<string, DateTime>(backupid, n.Key)
                 ).ToList();
             }
         }
-        
+
         public bool HasWarning { get { return FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning; } }
         public bool HasError { get { return FIXMEGlobal.DataConnection.ApplicationSettings.UnackedError; } }
-        
+
         public SuggestedStatusIcon SuggestedStatusIcon
         {
             get
@@ -105,12 +105,12 @@ namespace Duplicati.Server.Serializable
                 {
                     if (this.ProgramState == LiveControlState.Paused)
                         return SuggestedStatusIcon.Paused;
-                    
+
                     if (this.HasError)
                         return SuggestedStatusIcon.ReadyError;
                     if (this.HasWarning)
                         return SuggestedStatusIcon.ReadyWarning;
-                    
+
                     return SuggestedStatusIcon.Ready;
                 }
                 else
@@ -123,26 +123,25 @@ namespace Duplicati.Server.Serializable
             }
         }
 
-        public DateTime EstimatedPauseEnd 
+        public DateTime EstimatedPauseEnd
         {
-            get 
-            { 
-                return FIXMEGlobal.LiveControl.EstimatedPauseEnd; 
+            get
+            {
+                return liveControls.EstimatedPauseEnd;
             }
         }
 
         private long m_lastEventID = FIXMEGlobal.StatusEventNotifyer.EventNo;
 
-        public long LastEventID 
-        { 
+        public long LastEventID
+        {
             get { return m_lastEventID; }
             set { m_lastEventID = value; }
         }
 
-        public long LastDataUpdateID { get { return FIXMEGlobal.PeekLastDataUpdateID(); } }
+        public long LastDataUpdateID => FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
 
-        public long LastNotificationUpdateID { get { return FIXMEGlobal.PeekLastNotificationUpdateID(); } }
-
+        public long LastNotificationUpdateID => FIXMEGlobal.NotificationUpdateService.LastNotificationUpdateId;
     }
 }
 
