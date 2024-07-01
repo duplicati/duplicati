@@ -152,6 +152,7 @@ def runTests():
     # Upgrading to a newer Angular version will fix this issue
     while attempts > 0:
         try:
+            wait_for_title("Duplicati")
             wait_for_clickable(By.LINK_TEXT, "Add backup")
             break
         except:
@@ -166,7 +167,6 @@ def runTests():
     sha1_source = sha1_folder(SOURCE_FOLDER)
 
     # Add new backup
-    wait_for_load(By.LINK_TEXT, "Add backup")
     wait_for_clickable(By.LINK_TEXT, "Add backup").click()
 
     # Choose the "add new" option
@@ -200,6 +200,7 @@ def runTests():
 
     while attempts > 0:
         try:
+            wait_for_title("Duplicati")
             wait_for_clickable(By.LINK_TEXT, BACKUP_NAME)
             break
         except:
