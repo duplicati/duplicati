@@ -152,7 +152,6 @@ def runTests():
     # Upgrading to a newer Angular version will fix this issue
     while attempts > 0:
         try:
-            wait_for_title("Duplicati")
             wait_for_clickable(By.LINK_TEXT, "Add backup")
             break
         except:
@@ -199,6 +198,16 @@ def runTests():
     # Add new backup - Options page
     wait_for_load(By.ID, "save").click()
 
+    while attempts > 0:
+        try:
+            wait_for_clickable(By.LINK_TEXT, BACKUP_NAME)
+            break
+        except:
+            print("Loading failed, retrying")
+            attempts -= 1
+            driver.get(HOME_URL)
+            time.sleep(1)
+
     # Run the backup job and wait for finish
     wait_for_clickable(By.LINK_TEXT, BACKUP_NAME).click()
     [n for n in driver.find_elements("xpath", "//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
@@ -231,8 +240,18 @@ def runTests():
         shutil.rmtree(RESTORE_FOLDER)
     os.rename(DESTINATION_FOLDER, DESTINATION_FOLDER_DIRECT_RESTORE)
 
+    while attempts > 0:
+        try:
+            wait_for_clickable(By.LINK_TEXT, "Restore")
+            break
+        except:
+            print("Loading failed, retrying")
+            attempts -= 1
+            driver.get(HOME_URL)
+            time.sleep(1)
+
     # direct restore
-    wait_for_load(By.LINK_TEXT, "Restore").click()
+    wait_for_clickable(By.LINK_TEXT, "Restore").click()
 
     # Choose the "restore direct" option
     wait_for_load(By.ID, "direct").click()
