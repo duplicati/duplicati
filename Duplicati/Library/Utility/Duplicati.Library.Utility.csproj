@@ -6,6 +6,10 @@
     <RootNamespace>Duplicati.Library.Utility</RootNamespace>
   </PropertyGroup>
 
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />

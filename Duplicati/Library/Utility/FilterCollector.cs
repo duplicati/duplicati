@@ -41,7 +41,7 @@ namespace Duplicati.Library.Utility
             }
         }
 
-        private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
+        private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool>? callbackHandler = null)
         {
             return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) =>
             {
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Utility
             });
         }
 
-        public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
+        public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool>? callbackHandler = null)
         {
             var fc = new FilterCollector();
             var opts = fc.DoExtractOptions(args, callbackHandler);

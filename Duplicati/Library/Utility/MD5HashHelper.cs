@@ -62,7 +62,7 @@ namespace Duplicati.Library.Utility
                 }
  
                 md5.TransformFinalBlock(new byte[0], 0, 0);
-                return md5.Hash;
+                return md5.Hash ?? throw new InvalidOperationException("Hash is null");
             }
         }
     }

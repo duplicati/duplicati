@@ -71,11 +71,11 @@ namespace Duplicati.Library.Utility
             /// <summary>
             /// The filter string
             /// </summary>
-            public readonly string Filter;
+            public readonly string? Filter;
             /// <summary>
             /// The regular expression version of the filter
             /// </summary>
-            public readonly Regex Regexp;
+            public readonly Regex? Regexp;
             
             /// <summary>
             /// The single wildcard character (DOS style)
@@ -148,7 +148,7 @@ namespace Duplicati.Library.Utility
             private static Regex GetFilterGroupRegex(string filterGroupName)
             {
                 FilterGroup filterGroup = FilterGroups.ParseFilterList(filterGroupName, FilterGroup.None);
-                Regex result;
+                Regex? result;
                 if (FilterEntry.filterGroupRegexCache.TryGetValue(filterGroup, out result))
                 {
                     return result;
@@ -283,9 +283,11 @@ namespace Duplicati.Library.Utility
                     case FilterType.Simple:
                         return string.Equals(this.Filter, path, Library.Utility.Utility.ClientFilenameStringComparison);
                     case FilterType.Wildcard:
+                        if(this.Filter == null) throw new InvalidOperationException("Filter is null");
                         return IsWildcardMatch(!Utility.IsFSCaseSensitive ? path.ToUpper(CultureInfo.InvariantCulture) : path, this.Filter);
                     case FilterType.Regexp:
                     case FilterType.Group:
+                        if(this.Regexp == null) throw new InvalidOperationException("Regexp is null");
                         var m = this.Regexp.Match(path);
                         return m.Success && m.Length == path.Length;
                     default:
@@ -304,7 +306,7 @@ namespace Duplicati.Library.Utility
                     case FilterType.Simple:
                         return "@" + this.Filter;
                     default:
-                        return this.Filter;
+                        return this.Filter ?? throw new InvalidOperationException("Filter is null");
                 }
             }
         }
@@ -708,7 +710,7 @@ namespace Duplicati.Library.Utility
             if (filters == null || filters.Length == 0)
                 return null;
 
-            IFilter res = null;
+            IFilter? res = null;
             foreach(var n in filters) 
             {
                 bool include;
@@ -718,7 +720,6 @@ namespace Duplicati.Library.Utility
                     include = false;
                 else
                     continue;
-
                 res = Combine(res, new FilterExpression(n.Substring(1), include));
             }
 
