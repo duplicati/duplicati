@@ -75,9 +75,9 @@ namespace Duplicati.Library.Utility
         public override string ToString()
         {
             if (this.First.Empty)
-                return this.Second.ToString() ?? throw new InvalidOperationException("Second is null");
+                return this.Second.ToString();
             else if (this.Second.Empty)
-                return this.First.ToString() ?? throw new InvalidOperationException("First is null");
+                return this.First.ToString();
             else
                 return "(" + this.First + ") || (" + this.Second + ")";
         }

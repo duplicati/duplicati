@@ -254,7 +254,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                return m_currentTask ?? throw new InvalidOperationException("m_currentTask is null");
+                return m_currentTask;
             }
         }
 

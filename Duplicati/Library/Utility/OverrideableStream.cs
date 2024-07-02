@@ -33,7 +33,7 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class OverrideableStream : Stream
     {
-        protected System.IO.Stream? m_basestream;
+        protected System.IO.Stream m_basestream;
 
         public OverrideableStream(Stream basestream)
         {

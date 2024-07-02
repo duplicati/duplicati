@@ -36,7 +36,7 @@ namespace Duplicati.Library.Utility
     {
         private class StreamEnumerator : IEnumerator<T>, System.Collections.IEnumerator
         {
-            private Stream? m_stream;
+            private Stream m_stream;
             private readonly Func<Stream, long, T> m_deserialize;
             private long m_position;
             private readonly byte[] m_sizebuffer;

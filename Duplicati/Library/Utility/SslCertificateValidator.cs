@@ -38,7 +38,7 @@ namespace Duplicati.Library.Utility
             {
                 get
                 {
-                    return m_certificate ?? throw new InvalidOperationException("Certificate is null");
+                    return m_certificate;
                 }
             }
             public SslPolicyErrors SslError { get { return m_errors; } }

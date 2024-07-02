@@ -165,7 +165,6 @@ namespace Duplicati.Library.Utility
                 UpdateLimits();
 				var chunksize = (int)Math.Min(count, m_writespeed <= 0 ? count : m_writespeed * 2);
 				DelayIfRequired(ref m_writespeed, chunksize, ref m_last_write_sample, ref m_current_write_counter, ref m_current_write_speed);
-				if (m_basestream == null) throw new InvalidOperationException("m_basestream is null");
 				m_basestream.Write(buffer, offset + bytesWritten, chunksize);
 
 				m_current_write_counter += chunksize;

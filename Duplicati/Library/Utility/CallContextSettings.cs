@@ -236,7 +236,7 @@ namespace Duplicati.Library.Utility
         /// The context setting types that are used and need their private setting key
         /// to prevent overwriting each others settings.
         /// </summary>
-        private static string? contextSettingsType = null;
+        private static string contextSettingsType = null;
 
         /// <summary>
         /// Lock for protecting the dictionary
@@ -253,13 +253,13 @@ namespace Duplicati.Library.Utility
             {
                 var key = ContextID;
                 if (string.IsNullOrWhiteSpace(key))
-                    return default(T) ?? throw new InvalidOperationException("The key is null");
+                    return default(T);
 
 
                 if (!_settings.TryGetValue(key, out T? res))
                     lock (_lock) // if not present but context id is not null, wait
                         if (!_settings.TryGetValue(key, out res))
-                            return default(T) ?? throw new InvalidOperationException("The key is null");
+                            return default(T) ?? throw new InvalidOperationException("The value is null");
                 return res;
             }
             set
@@ -280,7 +280,15 @@ namespace Duplicati.Library.Utility
         {
             contextSettingsType = settingsKey;
             var res = new ContextGuard();
-            Settings = initial ?? throw new ArgumentNullException(nameof(initial), "The initial value cannot be null.");
+            if (typeof(T).IsValueType || initial != null)
+            {
+                Settings = initial!;
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(initial), "The initial value cannot be null.");
+            }
+
             return res;
         }
 
