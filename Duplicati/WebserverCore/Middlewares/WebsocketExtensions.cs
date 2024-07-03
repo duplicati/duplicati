@@ -1,6 +1,8 @@
 using System.Net.WebSockets;
 using System.Text;
+using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Abstractions.Notifications;
+using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
@@ -22,9 +24,11 @@ public static class WebsocketExtensions
             }
             else
             {
-                // var jwtProvider = context.RequestServices.GetRequiredService<IJWTTokenProvider>();
-                // // Reading has implicit validation
-                // jwtProvider.ReadAccessToken(context.Request.Headers["Authorization"].ToString().Split("Bearer: ").LastOrDefault() ?? throw new UnauthorizedException("No token provided"));
+                if (context.User.Identity?.IsAuthenticated == false)
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return;
+                }
 
                 var websocketAccessor = context.RequestServices.GetRequiredService<IWebsocketAccessor>();
                 if (context.WebSockets.IsWebSocketRequest)
