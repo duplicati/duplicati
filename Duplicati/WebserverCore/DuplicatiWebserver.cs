@@ -96,6 +96,20 @@ public partial class DuplicatiWebserver
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["token"];
+
+                        // If the request is for our hub...
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            path.StartsWithSegments("/notifications"))
+                        {
+                            // Read the token out of the query string
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    },
                     OnTokenValidated = context =>
                     {
                         var store = context.HttpContext.RequestServices.GetRequiredService<ITokenFamilyStore>();
@@ -148,9 +162,8 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
-        App.AddEndpoints();
-        // Disable WebSockets until it is correctly implemented
-        //     .UseNotifications(settings.AllowedHostnames, "/notifications");
+        App.AddEndpoints()
+            .UseNotifications(settings.AllowedHostnames, "/notifications");
 
         return App.RunAsync();
     }
