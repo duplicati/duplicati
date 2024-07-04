@@ -1,19 +1,17 @@
 using System.Net.WebSockets;
 using System.Text;
-using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Abstractions.Notifications;
-using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
 public static class WebsocketExtensions
 {
-    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IEnumerable<string> allowedHostnames, string notificationPath)
+    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IEnumerable<string> allowedOrigins, string notificationPath)
     {
         var opts = new WebSocketOptions();
-        if (!allowedHostnames.Any(x => x == "*"))
-            foreach (var allowedHostname in allowedHostnames)
-                opts.AllowedOrigins.Add(allowedHostname);
+        if (allowedOrigins.Any())
+            foreach (var origin in allowedOrigins)
+                opts.AllowedOrigins.Add(origin);
 
         app.UseWebSockets(opts);
         return app.Use(async (context, next) =>

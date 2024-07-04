@@ -330,7 +330,7 @@ namespace Duplicati.Server
                     parsedOptions.AllowedHostnames);
 
                 if (mappedSettings.AllowedHostnames == null || !mappedSettings.AllowedHostnames.Any())
-                    mappedSettings = mappedSettings with { AllowedHostnames = ["localhost", "127.0.0.1", "::1", "http://localhost:8200"] };
+                    mappedSettings = mappedSettings with { AllowedHostnames = ["localhost", "127.0.0.1", "::1"] };
 
                 var server = new DuplicatiWebserver();
 

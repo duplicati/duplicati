@@ -162,8 +162,12 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
+        var allowedOrigins = settings.AllowedHostnames.Any(x => x == "*")
+            ? []
+            : settings.AllowedHostnames.Select(x => settings.Certificate == null ? $"http://{x}:{settings.Port}" : $"https://{x}:{settings.Port}");
+
         App.AddEndpoints()
-            .UseNotifications(settings.AllowedHostnames, "/notifications");
+            .UseNotifications(allowedOrigins, "/notifications");
 
         return App.RunAsync();
     }
