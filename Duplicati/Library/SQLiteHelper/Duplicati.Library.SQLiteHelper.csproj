@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,7 +6,8 @@
     <AssemblyName>SQLiteHelper</AssemblyName>
     <Description>SQLiteHelper for Duplicati</Description>
     <RootNamespace>Duplicati.Library.SQLiteHelper</RootNamespace>
-	</PropertyGroup>
+	  <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+  </PropertyGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
@@ -39,3 +40,4 @@
   </ItemGroup>
 
 </Project>
+
