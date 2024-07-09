@@ -9,15 +9,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="uplink.NET" Version="2.12.3363" />
-
-		<!-- There is a packaging issue, in the way the Storj binaries are included: https://github.com/TopperDEL/uplink.net/issues/39 -->
-		<!-- The release build process now manually injects the correct binary components based on the runtime target until resolved. -->
-		<!-- The conditionals below ensure that building locally and debugging should still work -->
-		
-		<PackageReference Condition="$(RuntimeIdentifier.StartsWith('win-'))" Include="uplink.NET.Win" Version="2.12.3363" />
-		<PackageReference Condition="$(RuntimeIdentifier.StartsWith('linux-'))" Include="uplink.NET.Linux" Version="2.12.3363" />
-		<PackageReference Condition="$(RuntimeIdentifier.StartsWith('osx-'))" Include="uplink.NET.Mac" Version="2.12.3363" />		
+		<PackageReference Include="uplink.NET" Version="2.12.3441-pre" />
+		<PackageReference Include="uplink.NET.Win" Version="2.13.3448" />
+		<PackageReference Include="uplink.NET.Linux" Version="2.13.3448" />
+		<PackageReference Include="uplink.NET.Mac" Version="2.13.3448" />		
 	</ItemGroup>
 
 	<ItemGroup>
