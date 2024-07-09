@@ -5,10 +5,6 @@
     <Description>Dropbox backend for Duplicati</Description>
     <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
-  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
