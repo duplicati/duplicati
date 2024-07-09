@@ -8,7 +8,8 @@ namespace Duplicati.WebserverCore.Middlewares;
 
 public static class WebsocketExtensions
 {
-    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IEnumerable<string> allowedHostnames, string notificationPath)
+    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app,
+        IEnumerable<string> allowedHostnames, string notificationPath)
     {
         var opts = new WebSocketOptions();
         if (!allowedHostnames.Any(x => x == "*"))
@@ -26,7 +27,9 @@ public static class WebsocketExtensions
             {
                 if (context.User.Identity?.IsAuthenticated == false)
                 {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                    await webSocket.CloseAsync((WebSocketCloseStatus)4401, "User is not authenticated!",
+                        CancellationToken.None);
                     return;
                 }
 
@@ -45,7 +48,8 @@ public static class WebsocketExtensions
         });
     }
 
-    private static async Task HandleClientData(WebSocket webSocket, IWebsocketAccessor websocketAccessor, CancellationToken cancellationToken = default)
+    private static async Task HandleClientData(WebSocket webSocket, IWebsocketAccessor websocketAccessor,
+        CancellationToken cancellationToken = default)
     {
         var buffer = new byte[1024 * 4];
 

@@ -257,10 +257,12 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             // Try again
-            countdownForReconnect(function() { updateServerState(); });
+            countdownForReconnect(function () {
+                updateServerState();
+            });
         } else if (response.status == 401) {
             // Change state to connected to hide the connecting message, which is on top of the login message from the AppService
-            state.connectionState = 'connected';
+            state.connectionState = 'unauthorized';
             // Notify
             $rootScope.$broadcast('serverstatechanged');
         } else {
@@ -268,7 +270,9 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
             // Notify
             $rootScope.$broadcast('serverstatechanged');
-            countdownForReconnect(function() { updateServerState(); });
+            countdownForReconnect(function () {
+                updateServerState();
+            });
         }
     }
 
@@ -287,9 +291,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     updateServerState();
 
     this.reconnect = function () {
-        console.log("Reconnecting websocket");
         window.clearInterval(longPollRetryTimer);
-        console.log('ws://' + window.location.host + '/notifications?token=' + AppService.access_token)
         const w = new WebSocket('ws://' + window.location.host + '/notifications?token=' + AppService.access_token)
         w.addEventListener("open", (event) => {
             state.connectionState = 'connected';
@@ -297,18 +299,18 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             $rootScope.$broadcast('serverstatechanged');
         });
         w.addEventListener("message", (event) => {
-            console.log("Message from server ", event.data);
             const status = JSON.parse(event.data);
             handleServerState({data: status});
         });
         w.addEventListener("close", (event) => {
-            console.log("Websocket closed. Reconnecting...", event);
-            handleConnectionError("Websocket disconnected.");
-            countdownForReconnect(() => websocket = this.reconnect());
+            if (event.code === 4401) {
+                state.connectionState = 'unauthorized';
+                $rootScope.$broadcast('serverstatechanged');
+            }
         });
         return w;
     };
-    
+
     AppService.access_token_promise.then(() => {
         let websocket = this.reconnect()
         window.websocket = websocket;
