@@ -38,7 +38,7 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
 
             family = new ITokenFamilyStore.TokenFamily(reader.GetString(0), reader.GetString(1), reader.GetInt32(2));
         });
-        return Task.FromResult(family ?? throw new Exceptions.NotFoundException("Token family not found"));
+        return Task.FromResult(family ?? throw new Exceptions.UnauthorizedException("Token family not found"));
     }
 
     public Task<ITokenFamilyStore.TokenFamily> IncrementTokenFamily(ITokenFamilyStore.TokenFamily tokenFamily, CancellationToken ct)

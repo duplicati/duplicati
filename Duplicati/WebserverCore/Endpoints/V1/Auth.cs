@@ -33,8 +33,7 @@ public partial class Auth : IEndpointV1
                 catch (Exception ex)
                 {
                     Log.WriteErrorMessage(LOGTAG, "RefreshTokenError", ex, "Failed to refresh token");
-                    if (ex is UserReportedHttpException)
-                        throw;
+                    // Any error with the refresh token should be treated as unauthorized
                     throw new UnauthorizedException("Failed to refresh token");
                 }
             }
@@ -55,8 +54,8 @@ public partial class Auth : IEndpointV1
             catch (Exception ex)
             {
                 Log.WriteErrorMessage(LOGTAG, "SigninTokenError", ex, "Failed to sign in");
-                if (ex is UserReportedHttpException)
-                    throw;
+
+                // Any error with the signin token should be treated as unauthorized
                 if (ex is SecurityTokenExpiredException)
                     throw new UnauthorizedException("Signin token expired");
 
@@ -77,8 +76,7 @@ public partial class Auth : IEndpointV1
             catch (Exception ex)
             {
                 Log.WriteErrorMessage(LOGTAG, "PasswordLoginError", ex, "Failed to log in");
-                if (ex is UserReportedHttpException)
-                    throw;
+                // Any error with the password should be treated as unauthorized
                 throw new UnauthorizedException("Failed to log in");
             }
         });
