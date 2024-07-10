@@ -31,8 +31,8 @@ using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
 using Duplicati.Library.Logging;
+using System.Buffers;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -190,16 +190,19 @@ namespace Duplicati.Library.Main.Operation
             {
                 // Make sure the CompressionHints table is initialized, otherwise all workers will initialize it
                 var unused = options.CompressionHints.Count;
+                var arrayPool = ArrayPool<byte>.Shared;
 
                 Task all;
+
                 using (new ChannelScope())
                 {
                     all = Task.WhenAll(
                         new[]
                             {
+                                    Backup.DataBlockProcessor.RunBatcher(options.ConcurrencyDataBlocks),
                                     Backup.DataBlockProcessor.Run(database, options, taskreader),
                                     Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader, token),
-                                    Backup.StreamBlockSplitter.Run(options, database, taskreader),
+                                    Backup.StreamBlockSplitter.Run(options, database, taskreader, arrayPool),
                                     Backup.FileEnumerationProcess.Run(sources, snapshot, journalService,
                                         options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy,
                                         options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
@@ -212,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
                             // Spawn additional block hashers
                             .Union(
                                 Enumerable.Range(0, options.ConcurrencyBlockHashers - 1).Select(x =>
-                                    Backup.StreamBlockSplitter.Run(options, database, taskreader))
+                                    Backup.StreamBlockSplitter.Run(options, database, taskreader, arrayPool))
                             )
                             // Spawn additional compressors
                             .Union(

@@ -19,7 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
+using System.Collections.Generic;
 using CoCoL;
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -41,6 +41,10 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// All data blocks are sent during the scanning to the <see cref="DataBlockProcessor"/> who bundles them in compressed archives
         /// </summary>
         public static readonly ChannelMarkerWrapper<DataBlock> OutputBlocks = new ChannelMarkerWrapper<DataBlock>(new ChannelNameAttribute("OutputBlocks"));
+        /// <summary>
+        /// All data blocks are sent during the scanning to the <see cref="DataBlockProcessor"/> who bundles them in compressed archives
+        /// </summary>
+        public static readonly ChannelMarkerWrapper<IList<DataBlock>> OutputBlocksChunked = new ChannelMarkerWrapper<IList<DataBlock>>(new ChannelNameAttribute("OutputBlocksChunked"));
         /// <summary>
         /// If a file has changes in the metadata, it is sent to the <see cref="FileBlockProcessor"/> where it is read
         /// </summary>

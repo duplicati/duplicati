@@ -78,6 +78,11 @@ namespace Duplicati.Library.Main
         private readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
+        /// The default number of data blocks to batch
+        /// </summary>
+        private readonly int DEFAULT_CONCURRENCY_DATA_BLOCKS = 1000;
+
+        /// <summary>
         /// The default threshold for warning about coming close to quota
         /// </summary>
         private const int DEFAULT_QUOTA_WARNING_THRESHOLD = 10;
@@ -401,6 +406,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("concurrency-max-threads", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencymaxthreadsShort, Strings.Options.ConcurrencymaxthreadsLong, "0"),
                     new CommandLineArgument("concurrency-block-hashers", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencyblockhashersShort, Strings.Options.ConcurrencyblockhashersLong, DEFAULT_BLOCK_HASHERS.ToString()),
                     new CommandLineArgument("concurrency-compressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencycompressorsShort, Strings.Options.ConcurrencycompressorsLong, DEFAULT_COMPRESSORS.ToString()),
+                    new CommandLineArgument("concurrency-data-blocks", CommandLineArgument.ArgumentType.Integer, Strings.Options.ConcurrencydatablocksShort, Strings.Options.ConcurrencydatablocksLong, DEFAULT_CONCURRENCY_DATA_BLOCKS.ToString()),
 
                     new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
                     new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
@@ -1862,6 +1868,21 @@ namespace Duplicati.Library.Main
 
                 if (string.IsNullOrEmpty(value))
                     return 0;
+                else
+                    return int.Parse(value);
+            }
+        }
+
+        public int ConcurrencyDataBlocks
+        {
+            get
+            {
+                string value;
+                if (!m_options.TryGetValue("concurrency-data-blocks", out value))
+                    value = null;
+
+                if (string.IsNullOrEmpty(value))
+                    return DEFAULT_CONCURRENCY_DATA_BLOCKS;
                 else
                     return int.Parse(value);
             }

@@ -25,10 +25,9 @@ using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
-using System.Linq;
 using Duplicati.Library.Interface;
 using System.IO;
-using System.Security.Cryptography;
+using System.Buffers;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -37,10 +36,10 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <summary>
         /// The tag used for log messages
         /// </summary>
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(StreamBlockSplitter)) ;
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(StreamBlockSplitter));
         private static readonly string FILELOGTAG = LOGTAG + ".FileEntry";
 
-        public static Task Run(Options options, BackupDatabase database, ITaskReader taskreader)
+        public static Task Run(Options options, BackupDatabase database, ITaskReader taskreader, ArrayPool<byte> arrayPool)
         {
             return AutomationExtensions.RunTask(
             new
@@ -54,10 +53,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var blocksize = options.Blocksize;
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-                var maxmetadatasize = (options.Blocksize / (long) options.BlockhashSize) * options.Blocksize;
+                var maxmetadatasize = (options.Blocksize / (long)options.BlockhashSize) * options.Blocksize;
 
-                using(var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
-                using(var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
+                using (var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
+                using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
                 using (var empty_metadata_stream = new MemoryStream(emptymetadata.Blob))
                 {
                     while (await taskreader.ProgressAsync)
@@ -67,6 +66,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         var e = await self.Input.ReadAsync();
                         var cur = e.Result;
+                        var tasks = new List<Task>();
 
                         try
                         {
@@ -75,7 +75,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             using (var blocklisthashes = new Library.Utility.FileBackedStringList())
                             using (var hashcollector = new Library.Utility.FileBackedStringList())
                             {
-                                var blocklistbuffer = new byte[blocksize];
+                                var blocklistbuffer = arrayPool.Rent(blocksize);
                                 var blocklistoffset = 0L;
 
                                 long fslen = -1;
@@ -105,13 +105,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // Don't send progress reports for metadata
                                 if (!e.IsMetadata)
                                 {
-                                    await self.ProgressChannel.WriteAsync(new ProgressEvent() {Filepath = e.Path, Length = fslen, Type = EventType.FileStarted});
+                                    await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
                                     send_close = true;
                                 }
 
                                 filehasher.Initialize();
                                 var lastread = 0;
-                                var buf = new byte[blocksize];
+                                var buf = arrayPool.Rent(blocksize);
                                 var lastupdate = DateTime.Now;
 
                                 // Core processing loop, read blocks of data and hash individually
@@ -124,13 +124,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     var hashkey = Convert.ToBase64String(hashdata);
 
                                     // If we have too many hashes, flush the blocklist
-                                    if (blocklistbuffer.Length - blocklistoffset < hashdata.Length)
+                                    if (blocksize - blocklistoffset < hashdata.Length)
                                     {
-                                        var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int) blocklistoffset));
+                                        var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                         blocklisthashes.Add(blkey);
-                                        await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
+                                        tasks.Add(DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, arrayPool, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true));
                                         blocklistoffset = 0;
-                                        blocklistbuffer = new byte[blocksize];
+                                        blocklistbuffer = arrayPool.Rent(blocksize);
                                     }
 
                                     // Store the current hash in the blocklist
@@ -142,28 +142,33 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     // Don't spam updates
                                     if (send_close && (DateTime.Now - lastupdate).TotalSeconds > 5)
                                     {
-                                        await self.ProgressChannel.WriteAsync(new ProgressEvent() {Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate});
+                                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate });
                                         lastupdate = DateTime.Now;
                                     }
 
                                     // Make sure the filehasher is done with the buf instance before we pass it on
                                     await pftask.ConfigureAwait(false);
-                                    await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, e.Hint, false);
-                                    buf = new byte[blocksize];
+                                    tasks.Add(DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, arrayPool, buf, 0, lastread, e.Hint, false));
+                                    buf = arrayPool.Rent(blocksize);
                                 }
 
                                 // If we have more than a single block of data, output the (trailing) blocklist
                                 if (hashcollector.Count > 1)
                                 {
-                                    var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int) blocklistoffset));
+                                    var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                     blocklisthashes.Add(blkey);
-                                    await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
+                                    tasks.Add(DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, arrayPool, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true));
                                 }
+
+                                // TOOD: A bit clunky, but all hashes must be added to the database before we can add the blockset,
+                                // and the blocks can be split across multiple volumes
+                                await self.BlockOutput.WriteAsync(null);
+                                await Task.WhenAll(tasks);
 
                                 filehasher.TransformFinalBlock(new byte[0], 0, 0);
                                 var filehash = Convert.ToBase64String(filehasher.Hash);
                                 var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes);
-                                cur.SetResult(new StreamProcessResult() {Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid});
+                                cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
                                 cur = null;
                             }
                         }
@@ -198,7 +203,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
 
                             if (send_close)
-                                await self.ProgressChannel.WriteAsync(new ProgressEvent() {Filepath = e.Path, Length = filesize, Type = EventType.FileClosed});
+                                await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileClosed });
                             send_close = false;
                         }
                     }

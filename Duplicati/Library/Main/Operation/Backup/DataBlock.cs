@@ -23,38 +23,63 @@ using System;
 using Duplicati.Library.Interface;
 using System.Threading.Tasks;
 using CoCoL;
+using System.Buffers;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
     /// <summary>
     /// The data block represents a single blob of data read from a file
     /// </summary>
-    internal struct DataBlock
+    internal sealed record DataBlock : IDisposable
     {
-        public string HashKey;
-        public byte[] Data;
-        public int Offset;
-        public long Size;
-        public CompressionHint Hint;
-        public bool IsBlocklistHashes;
-        public TaskCompletionSource<bool> TaskCompletion;
+        public DataBlock(ArrayPool<byte> arrayPool)
+            => _arrayPool = arrayPool;
 
-        public static async Task<bool> AddBlockToOutputAsync(IWriteChannel<DataBlock> channel, string hash, byte[] data, int offset, long size, CompressionHint hint, bool isBlocklistHashes)
+        public required string HashKey { get; init; }
+        public required byte[] Data { get; init; }
+        public required int Offset { get; init; }
+        public required long Size { get; init; }
+        public required CompressionHint Hint { get; init; }
+        public required bool IsBlocklistHashes { get; init; }
+        public TaskCompletionSource<bool> TaskCompletion { get; } = new TaskCompletionSource<bool>();
+        private readonly ArrayPool<byte> _arrayPool;
+        private bool _disposed;
+
+        public static async Task AddBlockToOutputAsync(IWriteChannel<DataBlock> channel, string hash, ArrayPool<byte> arrayPool, byte[] data, int offset, long size, CompressionHint hint, bool isBlocklistHashes)
         {
-            var tcs = new TaskCompletionSource<bool>();
-
-            await channel.WriteAsync(new DataBlock() {
+            var b = new DataBlock(arrayPool)
+            {
                 HashKey = hash,
                 Data = data,
                 Offset = offset,
                 Size = size,
                 Hint = hint,
                 IsBlocklistHashes = isBlocklistHashes,
-                TaskCompletion = tcs
-            });
+            };
+            await channel.WriteAsync(b);
 
-            var r = await tcs.Task.ConfigureAwait(false);
-            return r;
+            await b.TaskCompletion.Task.ConfigureAwait(false);
+        }
+
+        public void CompleteSuccess()
+        {
+            Dispose();
+            TaskCompletion.SetResult(true);
+        }
+
+        public void CompleteFailure(Exception ex)
+        {
+            Dispose();
+            TaskCompletion.TrySetException(ex);
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _arrayPool.Return(Data);
+                _disposed = true;
+            }
         }
     }
 }
