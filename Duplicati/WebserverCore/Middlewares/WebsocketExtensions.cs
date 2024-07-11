@@ -1,8 +1,6 @@
 using System.Net.WebSockets;
 using System.Text;
-using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Abstractions.Notifications;
-using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
@@ -37,8 +35,9 @@ public static class WebsocketExtensions
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    websocketAccessor.AddConnection(webSocket);
+                    var initial = websocketAccessor.AddConnection(webSocket);
                     await HandleClientData(webSocket, websocketAccessor);
+                    await initial;
                 }
                 else
                 {
