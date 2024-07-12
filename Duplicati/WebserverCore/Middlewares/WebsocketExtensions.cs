@@ -7,10 +7,10 @@ namespace Duplicati.WebserverCore.Middlewares;
 public static class WebsocketExtensions
 {
     public static IApplicationBuilder UseNotifications(this IApplicationBuilder app,
-        IEnumerable<string> allowedHostnames, string notificationPath)
+        string[] allowedHostnames, string notificationPath)
     {
         var opts = new WebSocketOptions();
-        if (!allowedHostnames.Any(x => x == "*"))
+        if (allowedHostnames.All(x => x != "*"))
             foreach (var allowedHostname in allowedHostnames)
                 opts.AllowedOrigins.Add(allowedHostname);
 
@@ -35,9 +35,8 @@ public static class WebsocketExtensions
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    var initial = websocketAccessor.AddConnection(webSocket);
+                    await websocketAccessor.AddConnection(webSocket);
                     await HandleClientData(webSocket, websocketAccessor);
-                    await initial;
                 }
                 else
                 {

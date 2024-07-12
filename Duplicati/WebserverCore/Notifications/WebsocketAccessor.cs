@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
@@ -9,39 +10,40 @@ namespace Duplicati.WebserverCore.Notifications;
 
 public class WebsocketAccessor : IWebsocketAccessor
 {
-    private object _lock = new object();
-    private List<WebSocket> _connections = new();
+    private readonly ConcurrentBag<WebSocket> _connections = new();
     private readonly JsonSerializerSettings m_jsonSettings;
-    private readonly IServiceProvider m_serviceProvider;
+    private readonly IStatusService _statusService;
 
-    public WebsocketAccessor(JsonSerializerSettings jsonSettings, EventPollNotify eventPollNotify, IServiceProvider serviceProvider)
+    public WebsocketAccessor(JsonSerializerSettings jsonSettings, EventPollNotify eventPollNotify,
+        IStatusService statusService)
     {
         m_jsonSettings = jsonSettings;
-        m_serviceProvider = serviceProvider;
+        _statusService = statusService;
 
-        eventPollNotify.NewEvent += async (_, _) =>
-        {
-            await Send(StatusService.GetStatus());
-        };
+        eventPollNotify.NewEvent += async (_, _) => { await Send(_statusService.GetStatus()); };
     }
-
-    private IStatusService StatusService => m_serviceProvider.GetService<IStatusService>() ?? throw new Exception("StatusService not found");
 
     public async Task AddConnection(WebSocket newConnection)
     {
         await SendInitialStatus(newConnection);
-        lock (_lock)
-            _connections.Add(newConnection);
+        _connections.Add(newConnection);
         ClearClosed();
     }
 
     private async Task SendInitialStatus(WebSocket connection)
-        => await Send(StatusService.GetStatus(), [connection]);
+        => await Send(_statusService.GetStatus(), [connection]);
 
     private void ClearClosed()
     {
-        lock (_lock)
-            _connections = _connections.Where(c => c.State == WebSocketState.Open).ToList();
+        var openConnections = _connections.Where(c => c.State == WebSocketState.Open).ToArray();
+        _connections.Clear();
+        foreach (var connection in openConnections)
+        {
+            if (!_connections.Contains(connection))
+            {
+                _connections.Add(connection);
+            }
+        }
     }
 
     private IEnumerable<WebSocket> Connections
@@ -58,19 +60,14 @@ public class WebsocketAccessor : IWebsocketAccessor
         var json = JsonConvert.SerializeObject(data, m_jsonSettings);
         var bytes = json.GetBytes();
 
-        lock (_lock)
-            connections = connections.ToList();
-
         return Task.WhenAll(
             connections
-            .Where(c => c.State == WebSocketState.Open)
-            .Select(c => c.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None))
+                .Where(c => c.State == WebSocketState.Open)
+                .Select(c => c.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None))
         );
     }
 
-
-    public Task Send<T>(T data)
-        => Send(data, Connections);
+    public Task Send<T>(T data) => Send(data, Connections);
 
     public Task HandleClientMessage(string message)
     {

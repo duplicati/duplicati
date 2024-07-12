@@ -163,7 +163,7 @@ public partial class DuplicatiWebserver
     public Task Start(InitSettings settings)
     {
         App.AddEndpoints()
-            .UseNotifications(settings.AllowedHostnames, "/notifications");
+            .UseNotifications([..settings.AllowedHostnames], "/notifications");
 
         return App.RunAsync();
     }

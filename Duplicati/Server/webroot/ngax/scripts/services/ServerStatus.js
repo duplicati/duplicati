@@ -144,18 +144,18 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         }
     };
 
-    var longPollRetryTimer = null;
-    var countdownForReconnect = function (m) {
-        if (longPollRetryTimer != null) {
-            window.clearInterval(longPollRetryTimer);
-            longPollRetryTimer = null;
+    let websocketReconnectTimer = null;
+    const countdownForReconnect = function (m) {
+        if (websocketReconnectTimer != null) {
+            window.clearInterval(websocketReconnectTimer);
+            websocketReconnectTimer = null;
         }
 
-        var retryAt = new Date(new Date().getTime() + 15000);
+        const retryAt = new Date(new Date().getTime() + 15000);
         state.connectionAttemptTimer = new Date() - retryAt;
         $rootScope.$broadcast('serverstatechanged');
 
-        longPollRetryTimer = window.setInterval(function () {
+        websocketReconnectTimer = window.setInterval(function () {
             state.connectionAttemptTimer = retryAt - new Date();
             if (state.connectionAttemptTimer <= 0)
                 m();
@@ -250,13 +250,15 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             startUpdateProgressPoll();
     }
 
+    const webSocketUnauthorizedCode = 4401;
+
     function handleConnectionError(response) {
         state.failedConnectionAttempts++;
 
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             updateServerState();
-        } else if (response.status == 401) {
+        } else if (response.status == webSocketUnauthorizedCode) {
             state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
@@ -277,27 +279,26 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         self.reconnect();
     };
 
-    var reconnect_websocket = function () {
-        window.clearInterval(longPollRetryTimer);
-        const w = new WebSocket('ws://' + window.location.host + '/notifications?token=' + AppService.access_token)
+    const reconnect_websocket = function () {
+        window.clearInterval(websocketReconnectTimer);
+        const w = new WebSocket(`ws://${window.location.host}/notifications?token=${AppService.access_token}`)
         w.addEventListener("message", (event) => {
             const status = JSON.parse(event.data);
             handleServerState({data: status});
         });
         w.addEventListener("close", (event) => {
             window.websocket = null;
-            if (event.code === 4401)
+            if (event.code === webSocketUnauthorizedCode)
                 AppService.clearAccessToken();
-            
-            handleConnectionError({status: event.code});            
+
+            handleConnectionError({status: event.code});
         });
         return w;
     };
 
     this.reconnect = function () {
         AppService.getAccessToken().then(() => {
-            let websocket = reconnect_websocket()
-            window.websocket = websocket;
+            window.websocket = reconnect_websocket();
         }, resp => {
             handleConnectionError(resp);
         });
