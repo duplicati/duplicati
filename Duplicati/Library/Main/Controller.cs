@@ -574,7 +574,7 @@ namespace Duplicati.Library.Main
                 m_resetPriority = null;
             }
 
-            if(m_localeChange != null)
+            if (m_localeChange != null)
             {
                 m_localeChange.Dispose();
                 m_localeChange = null;
@@ -649,10 +649,12 @@ namespace Duplicati.Library.Main
                                 m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
                         }
                     }
-
-                    if (mx.Value is IGenericCallbackModule module)
-                        module.OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
                 }
+
+            // After modules are configured, start them
+            foreach (var mx in LoadedModules)
+                if (mx.Key && mx.Value is IGenericCallbackModule module)
+                    module.OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
 
             // If the filters were changed by a module, read them back in
             if (pristinefilter != m_options.RawOptions["filter"])
