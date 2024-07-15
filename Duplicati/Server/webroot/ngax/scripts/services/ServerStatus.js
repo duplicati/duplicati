@@ -251,6 +251,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     }
 
     const webSocketUnauthorizedCode = 4401;
+    const unauthorizedCode = 401;
 
     function handleConnectionError(response) {
         state.failedConnectionAttempts++;
@@ -258,7 +259,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             updateServerState();
-        } else if (response.status == webSocketUnauthorizedCode) {
+        } else if (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode) {
             state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
