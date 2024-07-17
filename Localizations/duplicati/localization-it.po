@@ -7,9 +7,9 @@
 # Andrea Ricci <rccndr+github@gmail.com>, 2016
 # Andrea De Lunardi <a.delunardi@arca.com>, 2017
 # Francesco Infantini <infantini.francesco@gmail.com>, 2018
-# albanobattistella <albano_battistella@hotmail.com>, 2019
 # Antonio Mazzarino <mzzntn95@gmail.com>, 2020
-# Folgore101 <andrea.gramegna@gmail.com>, 2020
+# albanobattistella <albanobattistella@gmail.com>, 2020
+# Folgore101 <andrea.gramegna@gmail.com>, 2024
 # 
 #, fuzzy
 msgid ""
@@ -18,13 +18,13 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-05-21 17:27+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2020\n"
-"Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
+"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2024\n"
+"Language-Team: Italian (https://app.transifex.com/duplicati/teams/67655/it/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: it\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
 
 #: Server/Strings.cs:7
 msgid "Another instance is running, and was notified"
@@ -919,7 +919,7 @@ msgstr "Devi fornire un ID progetto con --{0} per creare un bucket"
 #: Library/Backend/GoogleServices/Strings.cs:26
 #: Library/Backend/GoogleServices/Strings.cs:42
 #: Library/Backend/Box/Strings.cs:23 Library/Backend/OneDrive/Strings.cs:6
-#: Library/Backend/Dropbox/Strings.cs:24
+#: Library/Backend/HubiC/Strings.cs:23 Library/Backend/Dropbox/Strings.cs:24
 #: Library/Backend/OAuthHelper/Strings.cs:9
 msgid "The authorization code"
 msgstr "Il codice di autorizzazione"
@@ -927,7 +927,7 @@ msgstr "Il codice di autorizzazione"
 #: Library/Backend/GoogleServices/Strings.cs:27
 #: Library/Backend/GoogleServices/Strings.cs:43
 #: Library/Backend/Box/Strings.cs:24 Library/Backend/OneDrive/Strings.cs:7
-#: Library/Backend/Dropbox/Strings.cs:25
+#: Library/Backend/HubiC/Strings.cs:24 Library/Backend/Dropbox/Strings.cs:25
 #: Library/Backend/OAuthHelper/Strings.cs:10
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
@@ -1164,14 +1164,14 @@ msgstr "Impossibile determinare il nome del bucket per l'host: {0}"
 msgid ""
 "This flag toggles the use of the special RRS header. Files stored using RRS "
 "are more likely to disappear than those stored normally, but also costs less"
-" to store. See the full description here: http://aws.amazon.com/about-aws"
-"/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
+" to store. See the full description here: http://aws.amazon.com/about-"
+"aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
 msgstr ""
 "Questo flag attiva/disattiva l'utilizzo dell'intestazione speciale RRS. I "
 "file archiviati utilizzando RRS hanno maggiori probabilità di essere persi "
 "rispetto a quelli archiviati normalmente, ma anche costi di archiviazione "
-"minori. Guarda la descrizione completa qui: http://aws.amazon.com/about-aws"
-"/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
+"minori. Guarda la descrizione completa qui: http://aws.amazon.com/about-"
+"aws/whats-new/2010/05/19/announcing-amazon-s3-reduced-redundancy-storage/"
 
 #: Library/Backend/S3/Strings.cs:21
 msgid "Use Reduced Redundancy Storage"
@@ -1681,6 +1681,17 @@ msgid ""
 " a username and password is supplied, the same credentials are used for all "
 "destinations."
 msgstr ""
+"Questa opzione consente di specificare più target. Il percorso di "
+"destinazione principale viene posizionato prima dell'elenco dei percorsi "
+"forniti con questa opzione. Prima di avviare il backup, viene verificata "
+"l'esistenza di ogni cartella nell'elenco e, facoltativamente, la presenza "
+"del file marker fornito da - {0}. Il primo percorso esistente che contiene "
+"facoltativamente il file marker viene quindi utilizzato come destinazione. "
+"Più destinazioni sono separate da un \"{1}\". Su Windows, il percorso può "
+"essere un percorso UNC e la lettera dell'unità può essere sostituita da un "
+"asterisco (*), ad esempio: \"*: \\ backup\", che esaminerà tutte le lettere "
+"dell'unità. Se vengono forniti un nome utente e una password, vengono "
+"utilizzate le stesse credenziali per tutte le destinazioni."
 
 #: Library/Backend/File/Strings.cs:7
 msgid "A list of secondary target paths"
@@ -1726,6 +1737,12 @@ msgid ""
 "to fail.  This option has no effect unless the --disable-streaming-transfers"
 " option is activated."
 msgstr ""
+"Quando si memorizza il file, l'operazione standard è quella di copiare il "
+"file ed eliminare l'originale. Questa sequenza assicura che l'operazione "
+"possa essere ritentata se qualcosa va storto. L'attivazione di questa "
+"opzione potrebbe non riuscire a ripetere l'operazione. Questa opzione non ha"
+" effetto a meno che non sia attivata l'opzione --disabilita-trasferimento-"
+"streaming."
 
 #: Library/Backend/File/Strings.cs:17
 msgid "Move the file instead of copying it"
@@ -2045,6 +2062,18 @@ msgstr "Sono stati trovati più gruppi con l'indirizzo email specificato: {0}"
 msgid "Conflicting group IDs used: given {0} but found {1}"
 msgstr "Conflitto ID utilizzati per il gruppo: dato {0} ma trovato {1}"
 
+#: Library/Backend/HubiC/Strings.cs:21
+msgid ""
+"This backend can read and write data to HubiC. Supported format is "
+"\"hubic://container/folder\"."
+msgstr ""
+"Questo backend può leggere e scrivere dati su HubiC. Il formato supportato è"
+" \"hubic://container/folder\"."
+
+#: Library/Backend/HubiC/Strings.cs:22
+msgid "HubiC"
+msgstr "HubiC"
+
 #: Library/Backend/AzureBlob/Strings.cs:4
 msgid "All files will be written to the container specified"
 msgstr "Tutti i file saranno scritti nel contenitore specificato"
@@ -2123,6 +2152,8 @@ msgid ""
 "The authentication method describes which way to use to connect to the "
 "network - either via API key or via an access grant."
 msgstr ""
+"Il metodo di autenticazione descrive quale modo utilizzare per connettersi "
+"alla rete - tramite chiave API o tramite una concessione di accesso."
 
 #: Library/Backend/Tardigrade/Strings.cs:17
 msgid "The satellite"
@@ -2148,6 +2179,9 @@ msgid ""
 "Head over to the dashboard of your satellite to create one if you do not "
 "already have an API key."
 msgstr ""
+"La chiave API consente l'accesso a un progetto specifico sul satellite "
+"scelto. Vai al pannello di controllo del tuo satellite per crearne uno se "
+"non disponi già di una chiave API."
 
 #: Library/Backend/Tardigrade/Strings.cs:21
 msgid "The encryption passphrase"
@@ -2174,6 +2208,9 @@ msgid ""
 "An access grant contains all information in one encrypted string. You may "
 "use it instead of a satellite, API key and secret."
 msgstr ""
+"Una concessione di accesso contiene tutte le informazioni in una stringa "
+"crittografata. È possibile utilizzarla al posto di un satellite, chiave API "
+"e segreto."
 
 #: Library/Backend/Tardigrade/Strings.cs:25
 msgid "The bucket"
@@ -2886,13 +2923,13 @@ msgid ""
 "when encountered."
 msgstr ""
 "Se un backup è interrotto ci saranno probabilmente file parziali presenti "
-"sul backend. Usa questo flag, Duplicati rimuoverà automaticamente questi "
+"sul backend. Usando questo flag, Duplicati rimuoverà automaticamente questi "
 "file quando saranno rilevati."
 
 #: Library/Main/Strings.cs:37
 msgid "A flag indicating that Duplicati should remove unused files"
 msgstr ""
-"Un flag che indica che Duplicati dovrebbero rimuovere i file inutilizzati"
+"Un flag che indica che Duplicati dovrebbe rimuovere i file inutilizzati"
 
 #: Library/Main/Strings.cs:38
 msgid ""
@@ -2997,9 +3034,9 @@ msgid ""
 "If an upload or download fails, Duplicati will retry a number of times "
 "before failing. Use this to handle unstable network connections better."
 msgstr ""
-"Se l'operazione di caricare o scaricare non riesce, Duplicati ritenterà per "
-"un certo numero di volte prima di fallire. Usa questo per gestire meglio le "
-"connessioni di rete instabili."
+"Se l'operazione di caricare o scaricare fallisce, Duplicati riproverà più "
+"volte prima di fallire. Usalo per gestire meglio le connessioni di rete "
+"instabili."
 
 #: Library/Main/Strings.cs:53
 msgid "Number of times to retry a failed transmission"
@@ -3261,8 +3298,8 @@ msgstr ""
 "se non è consentita o supportata, in caso di errore non sarà prodotta "
 "nessuna notifica (si noti che il sistema operativo può ancora registrare gli"
 " avvisi di sistema). Impostandola su \"On\" Duplicati tenterà di creare "
-"un'istantanea ma se fallisce, mostrerà un messaggio di avviso nel registro."
-"  Impostandola su \"Required\", Duplicati interromperà il backup se la "
+"un'istantanea ma se fallisce, mostrerà un messaggio di avviso nel registro. "
+" Impostandola su \"Required\", Duplicati interromperà il backup se la "
 "creazione dell'istantanea fallisce. Su Windows questa funzione utilizza il "
 "Volume Shadow Copy Services (VSS) e richiede privilegi amministrativi. Su "
 "Linux questa funzione utilizza Logical Volume Management (LVM) e richiede i "
@@ -4514,7 +4551,7 @@ msgstr "La passphrase non può essere modificata per un backup esistente"
 #: Library/Main/Strings.cs:282
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
-msgstr "Creare dell'istantanea fallita: {0}"
+msgstr "Impossibile creare un'istantanea: {0}"
 
 #: Library/Main/BackendManager.cs:589
 #, csharp-format
@@ -4997,8 +5034,8 @@ msgid ""
 msgstr ""
 "Puoi specificare uno di questi \"{0}\", \"{1}\", \"{2}\", \"{3}\". Puoi "
 "fornire più opzioni separandole con una virgola, es. \"{0},{1}\". Il valore "
-"speciale \"{4}\" è una scorciatoia per \"{0},{1},{2},{3}\" e avvierà tutte "
-"le operazioni di backup per inviare una email."
+"speciale \"{4}\" è una scorciatoia per \"{0},{1},{2},{3}\" e invierà una "
+"email per tutte le operazioni di backup."
 
 #: Library/Modules/Builtin/Strings.cs:103
 #: Library/Modules/Builtin/Strings.cs:135
@@ -5133,7 +5170,7 @@ msgid ""
 "You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
 msgstr ""
 "Puoi specificare uno di \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
-"Puoi fornire più opzioni con una  virgola come separatore, es. \"{0},{1}\". Il valore speciale \"{4}\" è una scorciatoia per \"{0},{1},{2},{3}\" e avvierà tutte le operazioni di backup per inviare un messaggio."
+"Puoi fornire più opzioni con una  virgola come separatore, es. \"{0},{1}\". Il valore speciale \"{4}\" è una scorciatoia per \"{0},{1},{2},{3}\" e invierà una messaggio per tutte le operazioni di backup."
 
 #: Library/Modules/Builtin/Strings.cs:138
 #: Library/Modules/Builtin/Strings.cs:168
