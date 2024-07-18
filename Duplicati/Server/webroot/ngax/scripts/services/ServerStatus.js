@@ -1,6 +1,6 @@
 backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
 
-    const useWebsocket = false;
+    const useWebsocket = true;
     var longpolltime = 5 * 60 * 1000;
 
     var waitingfortask = {};
