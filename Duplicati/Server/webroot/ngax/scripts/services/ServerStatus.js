@@ -90,22 +90,43 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         return AppService.post('/serverstate/pause' + (duration == null ? '' : '?duration=' + duration));
     };
 
+    function notifyTaskCompleted(taskid) {
+        if (waitingfortask[taskid] != null) {
+            for(var i in waitingfortask[taskid])
+                waitingfortask[taskid][i]();
+            delete waitingfortask[taskid];
+        }
+    }
+
     this.callWhenTaskCompletes = function (taskid, callback) {
         if (waitingfortask[taskid] == null)
             waitingfortask[taskid] = [];
         waitingfortask[taskid].push(callback);
+
+        // Guard against really fast completion, where the state misses the
+        // task being active and never registers the completion
+        window.setTimeout(() => {
+            if (waitingfortask[taskid] == null)
+                return;
+
+            AppService.get('/task/' + taskid).then(
+                resp => {
+                    if (resp.data.Status == 'Completed')
+                        notifyTaskCompleted(taskid, callback);
+                },
+                // Ignore errors
+                () => {}
+            );
+        }, 1000);
     };
 
     var lastTaskId = null;
     $rootScope.$on('serverstatechanged.activeTask', function () {
         var currentTaskId = state.activeTask == null ? null : state.activeTask.Item1;
 
-        if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null) {
-            for (var i in waitingfortask[lastTaskId])
-                waitingfortask[lastTaskId][i]();
-            delete waitingfortask[lastTaskId];
-        }
-
+        if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null) 
+            notifyTaskCompleted(lastTaskId);
+        
         lastTaskId = currentTaskId;
     });
 
