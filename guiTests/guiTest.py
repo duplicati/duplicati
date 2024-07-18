@@ -278,10 +278,10 @@ def runTests():
 
     wait_for_load(By.ID, "restoretonewpath").click()
     wait_for_load(By.ID, "restore_path").send_keys(DIRECT_RESTORE_FOLDER)
-    wait_for_load(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
+    wait_for_clickable(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
     # wait for restore to finish
-    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 60)
+    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 90)
 
     # hash direct restore files
     sha1_direct_restore = sha1_folder(DIRECT_RESTORE_FOLDER)
