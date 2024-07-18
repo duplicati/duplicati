@@ -23,6 +23,7 @@ using System;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using System.Linq;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.OpenStack
 {
@@ -63,19 +64,19 @@ namespace Duplicati.Library.Backend.OpenStack
 
         public string Key { get { return "openstack-getconfig"; } }
 
-        public string DisplayName { get { return "OpenStack configuration module"; } }
+        public string DisplayName { get { return LC.L("OpenStack configuration module"); } }
 
-        public string Description { get { return "Exposes OpenStack configuration as a web module"; } }
+        public string Description { get { return LC.L("Exposes OpenStack configuration as a web module"); } }
 
 
         public System.Collections.Generic.IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, "The config to get", "Provides different config values", DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
+                return new List<ICommandLineArgument>([
+                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provides different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
 
-                });
+                ]);
             }
         }
     }
