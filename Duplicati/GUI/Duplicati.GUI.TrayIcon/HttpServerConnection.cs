@@ -338,6 +338,9 @@ namespace Duplicati.GUI.TrayIcon
             var response = await HTTPCLIENT.SendAsync(request, cts.Token);
             response.EnsureSuccessStatusCode();
 
+            if (typeof(T) == typeof(string))
+                return (T)(object)await response.Content.ReadAsStringAsync();
+
             using (var stream = await response.Content.ReadAsStreamAsync())
                 return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions);
         }
