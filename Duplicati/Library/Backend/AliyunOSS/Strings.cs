@@ -4,8 +4,8 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class OSSBackend
     {
-        public static string DisplayName { get { return LC.L(@"Aliyun OSS"); } }
-        public static string Description { get { return LC.L(@"Aliyun Object Storage Service (OSS) is a massive, secure, low-cost, and highly reliable cloud storage service, offering up to 99.995% service availability."); } }
+        public static string DisplayName { get { return LC.L(@"Aliyun OSS (Object Storage Service)"); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Aliyun OSS."); } }
 
         public static string OSSAccessKeyIdDescriptionShort { get { return LC.L(@"Access Key Id"); } }
         public static string OSSAccessKeyIdDescriptionLong { get { return LC.L(@"AccessKeyId is used to identify the user."); } }
