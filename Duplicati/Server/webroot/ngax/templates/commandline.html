@@ -14,22 +14,22 @@
 
             <div class="input textarea linklabel">
                 <label for="target"><a href class="target" ng-click="EditUriState = true">Target URL &gt;</a></label>
-                <textarea name="target" id="target" ng-model="TargetURL" placeholder="Enter a url, or click the 'Target URL &gt;' link"></textarea>
+                <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the \'Target URL &gt;\' link | translate}}"></textarea>
             </div>
 
             <div class="input textarea">
                 <label for="arguments">Commandline arguments</label>
-                <textarea id="arguments" ng-model="Arguments" string-array-as-text placeholder="Enter one argument per line without quotes, e.g. *.txt"></textarea>
+                <textarea id="arguments" ng-model="Arguments" string-array-as-text placeholder="{{'Enter one argument per line without quotes, e.g. *.txt' | translate}}"></textarea>
             </div>
 
             <div class="input textarea" ng-show="ShowAdvancedTextArea">
                 <label for="backupOptions">Advanced options</label>
                 <div>
                     <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> Edit as text</a>
-                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. --dblock-size=100MB' | translate}}"></textarea>
                 </div>
             </div>
-            
+
             <div class="input" ng-hide="ShowAdvancedTextArea">
                 <label for="backupOptions">Advanced options</label>
                 <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> Edit as text</a>
