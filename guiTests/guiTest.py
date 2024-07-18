@@ -186,11 +186,16 @@ def runTests():
     # Wait for all resources to load
     time.sleep(2)
 
+    print("Browser log lines before test: ")
+    for entry in driver.get_log('browser'):
+        print(entry)
+
     # Create and hash random files in the source folder
     write_random_file(1024 * 1024, SOURCE_FOLDER + os.sep + "1MB.test")
     write_random_file(100 * 1024, SOURCE_FOLDER + os.sep + "subfolder" + os.sep + "100KB.test")
     sha1_source = sha1_folder(SOURCE_FOLDER)
 
+    print("Adding new backup")
     # Add new backup
     wait_for_clickable(By.LINK_TEXT, "Add backup").click()
 
@@ -225,11 +230,13 @@ def runTests():
     time.sleep(1) # Delay so page has time to load
 
     # Run the backup job and wait for finish
+    print("Running backup job")
     wait_for_clickable(By.LINK_TEXT, BACKUP_NAME).click()
     [n for n in driver.find_elements("xpath", "//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
     wait_for_text("//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ", 120)
 
     # Restore
+    print("Restoring")
     if len([n for n in driver.find_elements("xpath", u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()]) == 0:
         wait_for_clickable(By.LINK_TEXT, BACKUP_NAME).click()
 
@@ -244,9 +251,11 @@ def runTests():
     wait_for_load(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
     # wait for restore to finish
+    print("Waiting for restore to finish")
     wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 120)
 
     # hash restored files
+    print("Restore completed, verifying hashes")
     sha1_restore = sha1_folder(RESTORE_FOLDER)
 
     # cleanup: delete source and restore folder and rename destination folder for direct restore
@@ -257,6 +266,7 @@ def runTests():
     os.rename(DESTINATION_FOLDER, DESTINATION_FOLDER_DIRECT_RESTORE)
 
     # direct restore
+    print("Starting direct restore")
     wait_for_clickable(By.LINK_TEXT, "Restore").click()
 
     # Choose the "restore direct" option
@@ -267,22 +277,27 @@ def runTests():
     wait_for_load(By.ID, "file_path").send_keys(DESTINATION_FOLDER_DIRECT_RESTORE)
     wait_for_load(By.ID, "nextStep1").click()
 
+    print("Connecting to destination")
     wait_for_load(By.ID, "password").send_keys(PASSWORD)
     wait_for_load(By.ID, "connect").click()
 
     time.sleep(2) # Delay so page has time to load
+    print("Waiting for filelist")
     wait_for_load(By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
     wait_for_load(By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
     wait_for_load(By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
 
+    print("Restoring files with direct restore")
     wait_for_load(By.ID, "restoretonewpath").click()
     wait_for_load(By.ID, "restore_path").send_keys(DIRECT_RESTORE_FOLDER)
     wait_for_clickable(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
     # wait for restore to finish
+    print("Waiting for direct restore to finish")
     wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 120)
 
     # hash direct restore files
+    print("Direct restore completed, verifying hashes")
     sha1_direct_restore = sha1_folder(DIRECT_RESTORE_FOLDER)
 
     print("Source hashes: " + str(sha1_source))
