@@ -1,5 +1,6 @@
 backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, AppUtils, gettextCatalog) {
 
+    const useWebsocket = false;
     var longpolltime = 5 * 60 * 1000;
 
     var waitingfortask = {};
@@ -275,6 +276,9 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
         if (state.activeTask != null)
             startUpdateProgressPoll();
+
+        if (!useWebsocket)
+            updateServerState(false);
     }
 
     const webSocketUnauthorizedCode = 4401;
@@ -298,18 +302,18 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             state.connectionState = 'disconnected';
             $rootScope.$broadcast('serverstatechanged');
             countdownForReconnect(function () {
-                updateServerState();
+                updateServerState(true);
             });
         }
     }
 
-    var updateServerState = function () {
+    var updateServerState = function (fastcall) {
         if (state.connectionState !== 'connected') {
             state.connectionState = 'connecting';
             $rootScope.$broadcast('serverstatechanged');
         }
 
-        self.reconnect();
+        self.reconnect(fastcall);
     };
 
     const reconnect_websocket = function () {
@@ -326,9 +330,20 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         return w;
     };
 
-    this.reconnect = function () {
+    const reconnect_longpoll = function (fastcall) {
+        const url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (((!fastcall) && (state.lastEventId > 0)) ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
+        AppService.get(url, fastcall ? null : {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
+            handleServerState, handleConnectionError
+        );
+
+    }
+
+    this.reconnect = function (fastcall) {        
         AppService.getAccessToken().then(() => {
-            window.websocket = reconnect_websocket();
+            if (useWebsocket)
+                window.websocket = reconnect_websocket();
+            else
+                reconnect_longpoll(fastcall);
         }, resp => {
             handleConnectionError(resp);
         });
