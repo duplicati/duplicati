@@ -6,10 +6,11 @@ namespace Duplicati.WebserverCore.Middlewares;
 
 public static class WebsocketExtensions
 {
-    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IEnumerable<string> allowedHostnames, string notificationPath)
+    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app,
+        string[] allowedHostnames, string notificationPath)
     {
         var opts = new WebSocketOptions();
-        if (!allowedHostnames.Any(x => x == "*"))
+        if (allowedHostnames.All(x => x != "*"))
             foreach (var allowedHostname in allowedHostnames)
                 opts.AllowedOrigins.Add(allowedHostname);
 
@@ -22,15 +23,19 @@ public static class WebsocketExtensions
             }
             else
             {
-                // var jwtProvider = context.RequestServices.GetRequiredService<IJWTTokenProvider>();
-                // // Reading has implicit validation
-                // jwtProvider.ReadAccessToken(context.Request.Headers["Authorization"].ToString().Split("Bearer: ").LastOrDefault() ?? throw new UnauthorizedException("No token provided"));
+                if (context.User.Identity?.IsAuthenticated == false)
+                {
+                    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                    await webSocket.CloseAsync((WebSocketCloseStatus)4401, "User is not authenticated!",
+                        CancellationToken.None);
+                    return;
+                }
 
                 var websocketAccessor = context.RequestServices.GetRequiredService<IWebsocketAccessor>();
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    websocketAccessor.AddConnection(webSocket);
+                    await websocketAccessor.AddConnection(webSocket);
                     await HandleClientData(webSocket, websocketAccessor);
                 }
                 else
@@ -41,7 +46,8 @@ public static class WebsocketExtensions
         });
     }
 
-    private static async Task HandleClientData(WebSocket webSocket, IWebsocketAccessor websocketAccessor, CancellationToken cancellationToken = default)
+    private static async Task HandleClientData(WebSocket webSocket, IWebsocketAccessor websocketAccessor,
+        CancellationToken cancellationToken = default)
     {
         var buffer = new byte[1024 * 4];
 

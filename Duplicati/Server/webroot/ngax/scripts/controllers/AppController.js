@@ -17,6 +17,10 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
         ServerStatus.reconnect();
     };
 
+    $scope.reload = function() {
+        location.reload();
+    };
+
     $scope.resume = function() {
         ServerStatus.resume().then(function() {}, AppUtils.connectionError);
     };

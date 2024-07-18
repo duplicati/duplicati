@@ -144,18 +144,18 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         }
     };
 
-    var longPollRetryTimer = null;
-    var countdownForReconnect = function (m) {
-        if (longPollRetryTimer != null) {
-            window.clearInterval(longPollRetryTimer);
-            longPollRetryTimer = null;
+    let websocketReconnectTimer = null;
+    const countdownForReconnect = function (m) {
+        if (websocketReconnectTimer != null) {
+            window.clearInterval(websocketReconnectTimer);
+            websocketReconnectTimer = null;
         }
 
-        var retryAt = new Date(new Date().getTime() + 15000);
+        const retryAt = new Date(new Date().getTime() + 15000);
         state.connectionAttemptTimer = new Date() - retryAt;
         $rootScope.$broadcast('serverstatechanged');
 
-        longPollRetryTimer = window.setInterval(function () {
+        websocketReconnectTimer = window.setInterval(function () {
             state.connectionAttemptTimer = retryAt - new Date();
             if (state.connectionAttemptTimer <= 0)
                 m();
@@ -248,71 +248,63 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
         if (state.activeTask != null)
             startUpdateProgressPoll();
-
-         updateServerState(false);
     }
+
+    const webSocketUnauthorizedCode = 4401;
+    const unauthorizedCode = 401;
 
     function handleConnectionError(response) {
         state.failedConnectionAttempts++;
-        var errorMessage = AppService.responseErrorMessage(response);
 
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
-            // Try again
             updateServerState();
-        } else if (response.status == 401) {
-            // Change state to connected to hide the connecting message, which is on top of the login message from the AppService
-            state.connectionState = 'connected';
-            // Notify
+        } else if (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode) {
+            state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
             state.connectionState = 'disconnected';
-
-            // Notify
             $rootScope.$broadcast('serverstatechanged');
-            countdownForReconnect(function() { updateServerState(true); });
+            countdownForReconnect(function () {
+                updateServerState();
+            });
         }
     }
 
-    var updateServerState = function (fastcall) {
+    var updateServerState = function () {
         if (state.connectionState !== 'connected') {
             state.connectionState = 'connecting';
             $rootScope.$broadcast('serverstatechanged');
         }
 
-        const url = '/serverstate/?lasteventid=' + parseInt(state.lastEventId) + '&longpoll=' + (((!fastcall) && (state.lastEventId > 0)) ? 'true' : 'false') + '&duration=' + parseInt((longpolltime-1000) / 1000) + 's';
-        AppService.get(url, fastcall ? null : {timeout: state.lastEventId > 0 ? longpolltime : 5000}).then(
-            handleServerState, handleConnectionError
-        );
+        self.reconnect();
     };
 
-    this.reconnect = function() { updateServerState(true); };
-    updateServerState(true);
+    const reconnect_websocket = function () {
+        window.clearInterval(websocketReconnectTimer);
+        const w = new WebSocket(`ws://${window.location.host}/notifications?token=${AppService.access_token}`)
+        w.addEventListener("message", (event) => {
+            const status = JSON.parse(event.data);
+            handleServerState({data: status});
+        });
+        w.addEventListener("close", (event) => {
+            window.websocket = null;
+            if (event.code === webSocketUnauthorizedCode)
+                AppService.clearAccessToken();
 
+            handleConnectionError({status: event.code});
+        });
+        return w;
+    };
 
-    // this.reconnect = function () {
-    //     console.log("Reconnecting websocket");
-    //     window.clearInterval(longPollRetryTimer);
-    //     const w = new WebSocket('ws://' + window.location.host + '/notifications');
-    //     w.addEventListener("open", (event) => {
-    //         console.log("Websocket connected", event);
-    //         state.connectionState = 'connected';
-    //         $rootScope.$broadcast('serverstatechanged.connectionState', state.connectionState);
-    //         $rootScope.$broadcast('serverstatechanged');
-    //     });
-    //     w.addEventListener("message", (event) => {
-    //         console.log("Message from server ", event.data);
-    //         const status = JSON.parse(event.data);
-    //         handleServerState({data: status});
-    //     });
-    //     w.addEventListener("close", (event) => {
-    //         console.log("Websocket closed. Reconnecting...", event);
-    //         handleConnectionError("Websocket disconnected.");
-    //         countdownForReconnect(() => websocket = self.reconnect());
-    //     });
-    //     return w;
-    // };
+    this.reconnect = function () {
+        AppService.getAccessToken().then(() => {
+            window.websocket = reconnect_websocket();
+        }, resp => {
+            handleConnectionError(resp);
+        });
+    }
 
-    // let websocket = this.reconnect()
-    // window.websocket = websocket;
+    this.reconnect();
+
 });

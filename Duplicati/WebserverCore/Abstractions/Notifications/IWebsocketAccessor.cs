@@ -4,8 +4,7 @@ namespace Duplicati.WebserverCore.Abstractions.Notifications;
 
 public interface IWebsocketAccessor
 {
-    void AddConnection(WebSocket newConnection);
-    WebSocket[] OpenConnections { get; }
+    Task AddConnection(WebSocket newConnection);
     Task Send<T>(T data);
     Task HandleClientMessage(string message);
 }

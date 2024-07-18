@@ -38,7 +38,7 @@ public partial class Auth : IEndpointV1
                 }
             }
 
-            throw new UnauthorizedException("Failed to refresh token");
+            throw new UnauthorizedException("Authorization failed due to missing cookie.");
         });
 
         group.MapPost("auth/signin", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, [FromBody] Dto.SigninInputDto input, CancellationToken ct) =>

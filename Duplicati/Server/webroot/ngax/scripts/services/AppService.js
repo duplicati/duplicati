@@ -82,6 +82,10 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         return deferred.promise;
     };
 
+    this.clearAccessToken = function () {
+        self.access_token = null;
+        self.access_token_promise = null;
+    }
 
     // Returns a promise that resolves to the access token
     this.getAccessToken = function () {
