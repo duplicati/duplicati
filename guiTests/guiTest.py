@@ -144,6 +144,9 @@ def runTests():
     print("Reloading page to trigger caching...")
     driver.get(HOME_URL)
     time.sleep(1)
+    print("Reloading page a second time to trigger caching...")
+    driver.get(HOME_URL)
+    time.sleep(1)
 
     # Load attempts
     attempts = 3
