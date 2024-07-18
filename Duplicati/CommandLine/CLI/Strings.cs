@@ -20,8 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.CommandLine.Strings {
-    internal static class Program {
+namespace Duplicati.CommandLine.Strings
+{
+    internal static class Program
+    {
         public static string DeleteCommandNeedsOptions(string commandname, string[] options) { return LC.L(@"The command {0} needs at least one of the following options set: {1}", commandname, string.Join(", ", options)); }
         public static string WrongNumberOfCommandsError_v2(int actualcommands, int expectedcommands, string[] commands) { return LC.L(@"Found {0} commands but expected {1}, commands: 
 {2}", actualcommands, expectedcommands, string.Join(System.Environment.NewLine, commands ?? new string[0])); }
@@ -47,13 +49,12 @@ namespace Duplicati.CommandLine.Strings {
         public static string IncludeShort { get { return LC.L(@"Include files"); } }
         public static string ExcludeLong { get { return LC.L(@"Exclude files that match this filter. The special character * means any number of character, and the special character ? means any single character, use *.txt to exclude all files with a txt extension. Regular expressions are also supported and can be supplied by using hard braces, i.e. [.*\.txt]. Filter groups (which encapsulate a built-in set of well-known files and folders) can be specified by using curly braces, i.e. {{TemporaryFiles}}."); } }
         public static string ExcludeShort { get { return LC.L(@"Exclude files"); } }
-        public static string ControlFilesOptionShort { get { return LC.L(@"If this option is used with a backup operation, it is interpreted as a list of files to add to the filesets. When used with list or restore, it will list or restore the control files instead of the normal files."); } }
-        public static string ControlFilesOptionLong { get { return LC.L(@"Use control files"); } }
+        public static string ControlFilesOptionShort { get { return LC.L(@"Use control files"); } }
+        public static string ControlFilesOptionLong { get { return LC.L(@"If this option is used with a backup operation, it is interpreted as a list of files to add to the filesets. When used with list or restore, it will list or restore the control files instead of the normal files."); } }
         public static string QuietConsoleOptionLong { get { return LC.L(@"If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log."); } }
         public static string QuietConsoleOptionShort { get { return LC.L(@"Disable console output"); } }
         public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored"; } }
-        
-        
+
         // ReSharper disable once UnusedMember.Global
         // This is a placeholder message that is intended to be used with the code
         // for each error and log message. The idea is that the commandline will

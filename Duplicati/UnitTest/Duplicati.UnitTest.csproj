@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
     <RootNamespace>Duplicati.UnitTest</RootNamespace>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
   
   <ItemGroup>
@@ -44,3 +45,4 @@
   </ItemGroup>
  
 </Project>
+
