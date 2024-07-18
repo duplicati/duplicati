@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-17 20:30+0200\n"
+"POT-Creation-Date: 2024-07-18 09:56+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -421,6 +421,26 @@ msgstr ""
 msgid "Supplies the region used for creating a container"
 msgstr ""
 
+#: Library/Backend/OpenStack/OpenStackConfig.cs:67
+msgid "OpenStack configuration module"
+msgstr ""
+
+#: Library/Backend/OpenStack/OpenStackConfig.cs:69
+msgid "Exposes OpenStack configuration as a web module"
+msgstr ""
+
+#: Library/Backend/OpenStack/OpenStackConfig.cs:77
+#: Library/Backend/GoogleServices/GCSConfig.cs:81
+#: Library/Backend/S3/S3Config.cs:84 Library/Backend/Storj/StorjConfig.cs:53
+msgid "The config to get"
+msgstr ""
+
+#: Library/Backend/OpenStack/OpenStackConfig.cs:77
+#: Library/Backend/GoogleServices/GCSConfig.cs:81
+#: Library/Backend/S3/S3Config.cs:84 Library/Backend/Storj/StorjConfig.cs:53
+msgid "Provides different config values"
+msgstr ""
+
 #: Library/Backend/FTP/Strings.cs:27
 msgid ""
 "This backend can read and write data to an FTP based backend. Allowed "
@@ -503,6 +523,14 @@ msgid ""
 "To protect against network failures, every upload will be attempted "
 "verified. Use this option to disable this verification to make the upload "
 "faster but less reliable."
+msgstr ""
+
+#: Library/Backend/GoogleServices/GCSConfig.cs:71
+msgid "Google Cloud Storage configuration module"
+msgstr ""
+
+#: Library/Backend/GoogleServices/GCSConfig.cs:73
+msgid "Exposes Google Cloud Storage configuration as a web module"
 msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:27
@@ -682,6 +710,14 @@ msgstr ""
 msgid "Unexpected CloudFiles response, perhaps the API has changed?"
 msgstr ""
 
+#: Library/Backend/S3/S3Config.cs:75
+msgid "S3 configuration module"
+msgstr ""
+
+#: Library/Backend/S3/S3Config.cs:77
+msgid "Exposes S3 configuration as a web module"
+msgstr ""
+
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
 "The AWS \"Secret Access Key\" can be obtained after logging into your AWS "
@@ -786,6 +822,38 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:51
 msgid "Specify storage class"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:71
+msgid "S3 IAM support module"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:73
+msgid "Exposes S3 IAM manipulation as a web module"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:81
+msgid "The operation to perform"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:81
+msgid "Selects the operation to perform"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:82
+msgid "The username"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:82
+msgid "The Amazon Access Key ID"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:83
+msgid "The password"
+msgstr ""
+
+#: Library/Backend/S3/S3IAM.cs:83
+msgid "The Amazon Secret Key"
 msgstr ""
 
 #: Library/Backend/AlternativeFTP/Strings.cs:30
@@ -1954,6 +2022,14 @@ msgstr ""
 
 #: Library/Backend/TahoeLAFS/Strings.cs:29
 msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
+msgstr ""
+
+#: Library/Backend/Storj/StorjConfig.cs:44
+msgid "Storj DCS configuration module"
+msgstr ""
+
+#: Library/Backend/Storj/StorjConfig.cs:46
+msgid "Exposes Storj DCS configuration as a web module"
 msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:27
@@ -3598,6 +3674,14 @@ msgid ""
 "will interfere less with other operations running at the same time"
 msgstr ""
 
+#: Library/Main/Strings.cs:290
+msgid "Excludes empty folders"
+msgstr ""
+
+#: Library/Main/Strings.cs:291
+msgid "Use this option to remove all empty folders from a backup."
+msgstr ""
+
 #: Library/Main/Strings.cs:292
 msgid "List of filenames that exclude folders"
 msgstr ""
@@ -3608,6 +3692,30 @@ msgid ""
 "exclusion of a folder which contains it. A common use would be to have a "
 "file named something like \".nobackup\" and place this file into folders "
 "that should not be backed up."
+msgstr ""
+
+#: Library/Main/Strings.cs:294
+msgid "Apply metadata to symlinks"
+msgstr ""
+
+#: Library/Main/Strings.cs:295
+msgid ""
+"If symlink metadata is applied, it will usually mean changing the symlink "
+"target, instead of the symlink itself. For this reason, metadata is not "
+"applied to symlinks, but this option can be used to override this, such that "
+"metadata is applied to symlinks as well."
+msgstr ""
+
+#: Library/Main/Strings.cs:296
+msgid "Activate unittest mode"
+msgstr ""
+
+#: Library/Main/Strings.cs:297
+msgid ""
+"When running in unittest mode, no automatic fixes are applied, which assumes "
+"that the input data is always in perfect shape. This option is not intended "
+"for use in daily backups, but required for testing purposes to reveal "
+"potential problems."
 msgstr ""
 
 #: Library/Main/Strings.cs:299
@@ -3621,6 +3729,43 @@ msgid ""
 "logged by default. Enable this option to log all database queries, and "
 "remember to set either --{0}={2} or --{1}={2} to report the additional log "
 "data"
+msgstr ""
+
+#: Library/Main/Strings.cs:301
+msgid "Rebuild dblock files when missing"
+msgstr ""
+
+#: Library/Main/Strings.cs:302
+msgid ""
+"If dblock files are missing from the destination, you can attempt to rebuild "
+"them using local source data. However, since the local data may have "
+"changed, it may not be possible to retrieve all the required data and the "
+"process may be slow. Use this option to attempt to rebuild missing dblock "
+"files."
+msgstr ""
+
+#: Library/Main/Strings.cs:304
+msgid "Minimum time between auto compactions"
+msgstr ""
+
+#: Library/Main/Strings.cs:305
+msgid ""
+"The minimum amount of time that must elapse after the last compaction before "
+"another will be automatically triggered at the end of a backup job. "
+"Automatic compaction can be a long-running process and may not be desirable "
+"to run after every single backup."
+msgstr ""
+
+#: Library/Main/Strings.cs:306
+msgid "Minimum time between auto vacuums"
+msgstr ""
+
+#: Library/Main/Strings.cs:307
+msgid ""
+"The minimum amount of time that must elapse after the last vacuum before "
+"another will be automatically triggered at the end of a backup job. "
+"Automatic vacuum can be a long-running process and may not be desirable to "
+"run after every single backup."
 msgstr ""
 
 #: Library/Main/Strings.cs:312
