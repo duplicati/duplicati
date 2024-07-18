@@ -226,7 +226,7 @@ def runTests():
     wait_for_load(By.ID, "nextStep4").click()
 
     # Add new backup - Options page
-    wait_for_load(By.ID, "save").click()
+    wait_for_clickable(By.ID, "save").click()
     time.sleep(1) # Delay so page has time to load
 
     # Run the backup job and wait for finish
@@ -243,12 +243,12 @@ def runTests():
     [n for n in driver.find_elements("xpath", u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()][0].click()
     wait_for_load(By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
     time.sleep(1) # Delay so page has time to load
-    wait_for_load(By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
+    wait_for_clickable(By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
 
-    wait_for_load(By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
-    wait_for_load(By.ID, "restoretonewpath").click()
+    wait_for_clickable(By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
+    wait_for_clickable(By.ID, "restoretonewpath").click()
     wait_for_load(By.ID, "restore_path").send_keys(RESTORE_FOLDER)
-    wait_for_load(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
+    wait_for_clickable(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
     # wait for restore to finish
     print("Waiting for restore to finish")
@@ -270,26 +270,26 @@ def runTests():
     wait_for_clickable(By.LINK_TEXT, "Restore").click()
 
     # Choose the "restore direct" option
-    wait_for_load(By.ID, "direct").click()
-    wait_for_load(By.XPATH, "//input[@class='submit next']").click()
+    wait_for_clickable(By.ID, "direct").click()
+    wait_for_clickable(By.XPATH, "//input[@class='submit next']").click()
 
-    wait_for_load(By.LINK_TEXT, "Manually type path").click()
+    wait_for_clickable(By.LINK_TEXT, "Manually type path").click()
     wait_for_load(By.ID, "file_path").send_keys(DESTINATION_FOLDER_DIRECT_RESTORE)
-    wait_for_load(By.ID, "nextStep1").click()
+    wait_for_clickable(By.ID, "nextStep1").click()
 
     print("Connecting to destination")
     wait_for_load(By.ID, "password").send_keys(PASSWORD)
-    wait_for_load(By.ID, "connect").click()
+    wait_for_clickable(By.ID, "connect").click()
 
     print("Waiting for filelist")
     wait_for_load(By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 
     time.sleep(1) # Delay so page has time to load
-    wait_for_load(By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
+    wait_for_clickable(By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
     wait_for_load(By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
 
     print("Restoring files with direct restore")
-    wait_for_load(By.ID, "restoretonewpath").click()
+    wait_for_clickable(By.ID, "restoretonewpath").click()
     wait_for_load(By.ID, "restore_path").send_keys(DIRECT_RESTORE_FOLDER)
     wait_for_clickable(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
