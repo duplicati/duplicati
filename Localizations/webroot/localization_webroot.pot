@@ -729,6 +729,10 @@ msgstr ""
 msgid "Custom backup retention"
 msgstr ""
 
+#: templates/backends/s3.html:56
+msgid "Custom bucket storage class"
+msgstr ""
+
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
 msgstr ""
@@ -1050,6 +1054,14 @@ msgstr ""
 
 #: templates/backends/mega.html:3
 msgid "Enter folder path name"
+msgstr ""
+
+#: templates/commandline.html:22
+msgid "Enter one argument per line without quotes, e.g. *.txt"
+msgstr ""
+
+#: templates/commandline.html:29
+msgid "Enter one option per line in command-line format, eg. --dblock-size=100MB"
 msgstr ""
 
 #: scripts/services/AppUtils.js:122
@@ -1957,12 +1969,24 @@ msgstr ""
 msgid "Operations:"
 msgstr ""
 
+#: templates/backends/openstack.html:45
+msgid "Optional api key"
+msgstr ""
+
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
 msgstr ""
 
 #: templates/backends/file.html:30
 msgid "Optional authentication username"
+msgstr ""
+
+#: templates/backends/openstack.html:50
+msgid "Optional region"
+msgstr ""
+
+#: templates/backends/openstack.html:40
+msgid "Optional tenant name"
 msgstr ""
 
 #: templates/addoredit.html:28
@@ -2665,6 +2689,11 @@ msgstr ""
 msgid "The API key"
 msgstr ""
 
+#: templates/backends/storj.html:34
+#: templates/backends/tardigrade.html:34
+msgid "The access grant instead of the info above"
+msgstr ""
+
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
 msgstr ""
@@ -2678,6 +2707,11 @@ msgid ""
 "The backups will be split up into multiple files called volumes. Here\n"
 "\t\t\tyou can set the maximum size of the individual volume files.\n"
 "                        <external-link link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'\">See this page for more information.</external-link>"
+msgstr ""
+
+#: templates/backends/storj.html:38
+#: templates/backends/tardigrade.html:38
+msgid "The bucket for storing the backup"
 msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1151
@@ -2721,6 +2755,11 @@ msgstr ""
 
 #: scripts/directives/sourceFolderPicker.js:410
 msgid "The file size is {{size}}, larger than the maximum specified size. If the file size decreases, it will be included in future backups."
+msgstr ""
+
+#: templates/backends/storj.html:42
+#: templates/backends/tardigrade.html:42
+msgid "The folder within the bucket for storing the backup"
 msgstr ""
 
 #: scripts/directives/backupEditUri.js:130
@@ -3269,6 +3308,10 @@ msgstr ""
 msgid "failed"
 msgstr ""
 
+#: templates/backends/rclone.html:3
+msgid "local repository, eg local"
+msgstr ""
+
 #: scripts/services/EditUriBuiltins.js:1330
 msgid "oss_access_key_id"
 msgstr ""
@@ -3291,6 +3334,14 @@ msgstr ""
 
 #: templates/settings.html:125
 msgid "public usage statistics"
+msgstr ""
+
+#: templates/backends/rclone.html:11
+msgid "remote path, eg backup"
+msgstr ""
+
+#: templates/backends/rclone.html:7
+msgid "remote repository, eg. remote"
 msgstr ""
 
 #: templates/commandline.html:49
