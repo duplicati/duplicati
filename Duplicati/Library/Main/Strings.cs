@@ -287,24 +287,24 @@ namespace Duplicati.Library.Main.Strings
         public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the process to use low IO priority"); } }
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructions the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time"); } }
 
-        public static string ExcludeemptyfoldersShort { get { return "Excludes empty folders"; } }
-        public static string ExcludeemptyfoldersLong { get { return "Use this option to remove all empty folders from a backup."; } }
+        public static string ExcludeemptyfoldersShort { get { return LC.L("Excludes empty folders"); } }
+        public static string ExcludeemptyfoldersLong { get { return LC.L("Use this option to remove all empty folders from a backup."); } }
         public static string IgnorefilenamesShort { get { return LC.L("List of filenames that exclude folders"); } }
         public static string IgnorefilenamesLong { get { return LC.L("Use this option to set a filename, or list of filenames, that indicate exclusion of a folder which contains it. A common use would be to have a file named something like \".nobackup\" and place this file into folders that should not be backed up."); } }
-        public static string RestoresymlinkmetadataShort { get { return "Apply metadata to symlinks"; } }
-        public static string RestoresymlinkmetadataLong { get { return "If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."; } }
-        public static string UnittestmodeShort { get { return "Activate unittest mode"; } }
-        public static string UnittestmodeLong { get { return "When running in unittest mode, no automatic fixes are applied, which assumes that the input data is always in perfect shape. This option is not intended for use in daily backups, but required for testing purposes to reveal potential problems."; } }
+        public static string RestoresymlinkmetadataShort { get { return LC.L("Apply metadata to symlinks"); } }
+        public static string RestoresymlinkmetadataLong { get { return LC.L("If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."); } }
+        public static string UnittestmodeShort { get { return LC.L("Activate unittest mode"); } }
+        public static string UnittestmodeLong { get { return LC.L("When running in unittest mode, no automatic fixes are applied, which assumes that the input data is always in perfect shape. This option is not intended for use in daily backups, but required for testing purposes to reveal potential problems."); } }
 
         public static string ProfilealldatabasequeriesShort { get { return LC.L("Activates logging of all database queries"); } }
         public static string ProfilealldatabasequeriesLong { get { return LC.L("To improve performance of the backups, frequent database queries are not logged by default. Enable this option to log all database queries, and remember to set either --{0}={2} or --{1}={2} to report the additional log data", "console-log-level", "log-file-log-level", nameof(Logging.LogMessageType.Profiling)); } }
-        public static string RebuildmissingdblockfilesShort { get { return "Rebuild dblock files when missing"; } }
-        public static string RebuildmissingdblockfilesLong { get { return "If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."; } }
+        public static string RebuildmissingdblockfilesShort { get { return LC.L("Rebuild dblock files when missing"); } }
+        public static string RebuildmissingdblockfilesLong { get { return LC.L("If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."); } }
 
-        public static string AutoCompactIntervalShort { get { return "Minimum time between auto compactions"; } }
-        public static string AutoCompactIntervalLong { get { return "The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."; } }
-        public static string AutoVacuumIntervalShort { get { return "Minimum time between auto vacuums"; } }
-        public static string AutoVacuumIntervalLong { get { return "The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."; } }
+        public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }
+        public static string AutoCompactIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."); } }
+        public static string AutoVacuumIntervalShort { get { return LC.L("Minimum time between auto vacuums"); } }
+        public static string AutoVacuumIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."); } }
     }
 
     internal static class Common

@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Description>Commandline implementation of Duplicati</Description>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>	
@@ -18,3 +19,4 @@
   </ItemGroup>
 
 </Project>
+

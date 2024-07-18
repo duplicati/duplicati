@@ -286,6 +286,8 @@ namespace Duplicati.Library.Modules.Builtin
                     response.ReasonPhrase,
                     responseContent
                 );
+
+                response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {

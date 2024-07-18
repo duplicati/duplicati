@@ -76,7 +76,7 @@ public static class BackendModules
     private static bool IsStorjSupported =>
         (OperatingSystem.IsWindows() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.X86 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64))
         ||
-        (OperatingSystem.IsLinux() && (RuntimeInformation.ProcessArchitecture == Architecture.X64))
+        (OperatingSystem.IsLinux() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64 || RuntimeInformation.ProcessArchitecture == Architecture.Arm))
         ||
         (OperatingSystem.IsMacOS() && (RuntimeInformation.ProcessArchitecture == Architecture.X64 || RuntimeInformation.ProcessArchitecture == Architecture.Arm64));
 }

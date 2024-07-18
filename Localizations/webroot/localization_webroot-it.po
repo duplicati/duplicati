@@ -5,18 +5,18 @@
 # Devis Cerri <cerride@gmail.com>, 2017
 # Andrea De Lunardi <a.delunardi@arca.com>, 2018
 # Francesco Infantini <infantini.francesco@gmail.com>, 2019
-# albanobattistella <albano_battistella@hotmail.com>, 2019
-# Folgore101 <andrea.gramegna@gmail.com>, 2020
+# albanobattistella <albanobattistella@gmail.com>, 2019
+# Folgore101 <andrea.gramegna@gmail.com>, 2024
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2020\n"
-"Language-Team: Italian (https://www.transifex.com/duplicati/teams/67655/it/)\n"
+"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2024\n"
+"Language-Team: Italian (https://app.transifex.com/duplicati/teams/67655/it/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: it\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
 
 #: templates/advancedoptionseditor.html:48
 msgid "- pick an option -"
@@ -865,15 +865,15 @@ msgstr "File scaricati"
 
 #: scripts/services/ServerStatus.js:53
 msgid "Downloading files …"
-msgstr "Download di file ..."
+msgstr "Download di file..."
 
 #: templates/notificationarea.html:24
 msgid "Downloading update…"
-msgstr "Download aggiornamento in corso ..."
+msgstr "Download dell'aggiornamento..."
 
 #: templates/notificationarea.html:30
 msgid "Downloading …"
-msgstr "Download in corso ..."
+msgstr "Download in corso..."
 
 #: scripts/services/AppUtils.js:301
 msgid "Duplicate option {{opt}}"
@@ -2689,6 +2689,16 @@ msgstr ""
 "Il percorso deve essere un percorso assoluto, cioè deve iniziare con una "
 "barra '/'"
 
+#: scripts/services/EditUriBuiltins.js:871
+msgid ""
+"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
+"\n"
+"Do you want to add the prefix to the path automatically?"
+msgstr ""
+"Il percorso deve iniziare con \"{{prefix1}}\" o \"{{prefix2}}\", altrimenti non sarà possibile visualizzare i file nell'interfaccia Web di HubiC.\n"
+"\n"
+"Vuoi aggiungere automaticamente il prefisso al percorso?"
+
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
 msgstr "Il parametro area è applicato solo quando si crea un nuovo bucket"
@@ -2753,8 +2763,8 @@ msgid ""
 msgstr ""
 "Questa opzione non è riferita al numero massimo dei tuoi backup o alle "
 "dimensioni del file, né influisce sulla valutazione della deduplicazione. "
-"<external-link link=\"'https://www.duplicati.com/articles/Choosing-Sizes"
-"/#remote-volume-size'\">Guarda questa pagina prima di modificare le "
+"<external-link link=\"'https://www.duplicati.com/articles/Choosing-"
+"Sizes/#remote-volume-size'\">Guarda questa pagina prima di modificare le "
 "dimensioni del volume remoto.</external-link>"
 
 #: scripts/controllers/RestoreController.js:36
@@ -2874,14 +2884,14 @@ msgstr "Caricamento file di verifica ..."
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | translate"
-"}}</external-link>"
+"reporter.duplicati.com/'\">{{'public usage statistics' | "
+"translate}}</external-link>"
 msgstr ""
 "I report sull'utilizzo ci aiutano a migliorare l'esperienza dell'utente e a "
 "valutare l'impatto delle nuove funzionalità. Li usiamo per generare "
 "<external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{\"statistiche sull'uso pubblico\" | tradurre"
-"}}</external-link>"
+"reporter.duplicati.com/'\">{{\"statistiche sull'uso pubblico\" | "
+"tradurre}}</external-link>"
 
 #: templates/settings.html:120
 msgid "Usage statistics"
@@ -3190,7 +3200,7 @@ msgstr "Devi inserire un nome di dominio per utilizzare l'API v3"
 
 #: scripts/controllers/EditBackupController.js:239
 msgid "You must enter a name for the backup"
-msgstr "Devi inserire un nome un nome per il backup"
+msgstr "Devi inserire un nome per il backup"
 
 #: scripts/controllers/EditBackupController.js:246
 msgid "You must enter a passphrase or disable encryption"
@@ -3324,6 +3334,7 @@ msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versione"
 msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versioni"
+msgstr[2] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versioni"
 
 #: templates/pause.html:26
 msgid "{{number}} Hour"
