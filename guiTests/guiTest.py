@@ -138,7 +138,11 @@ def runTests():
     wait_for_load(By.ID, "login-password").send_keys(WEBSERVICE_PASSWORD)
     wait_for_load(By.ID, "login-button").click()
 
+    print("Initial page loading ...")
     wait_for_redirect(HOME_URL)
+    time.sleep(1)
+    print("Reloading page to trigger caching...")
+    driver.get(HOME_URL)
     time.sleep(1)
 
     # Load attempts
@@ -155,14 +159,16 @@ def runTests():
     # that only a few files are loaded
     while attempts > 0:
         try:
+            attempts -= 1
             wait_for_title("Duplicati")
             wait_for_clickable(By.LINK_TEXT, "Add backup")
             if driver.find_element(By.ID, "connection-lost-dialog").is_displayed():
                 raise Exception("connection-lost-dialog is displayed")
+            
+            print("Loaded page, assuming all resources are now ready")
             break
         except:
             print("Loading failed, retrying")
-            attempts -= 1
             driver.get(HOME_URL)
             time.sleep(1)
 
