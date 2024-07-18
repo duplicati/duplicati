@@ -270,10 +270,8 @@ def runTests():
     wait_for_load(By.ID, "password").send_keys(PASSWORD)
     wait_for_load(By.ID, "connect").click()
 
-    time.sleep(1) # Delay so page has time to load
+    time.sleep(2) # Delay so page has time to load
     wait_for_load(By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
-
-    time.sleep(1) # Delay so page has time to load
     wait_for_load(By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
     wait_for_load(By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
 
