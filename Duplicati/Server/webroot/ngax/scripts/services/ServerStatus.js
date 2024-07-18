@@ -15,6 +15,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         connectionState: 'connected',
         connectionAttemptTimer: 0,
         failedConnectionAttempts: 0,
+        failedAuthAttempts: 0,
         lastPgEvent: null,
         updaterState: 'waiting',
         updateDownloadLink: null,
@@ -251,6 +252,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
         // Clear error indicators
         state.failedConnectionAttempts = 0;
+        state.failedAuthAttempts = 0;
 
         if (state.connectionState != 'connected') {
             state.connectionState = 'connected';
@@ -276,11 +278,16 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     function handleConnectionError(response) {
         state.failedConnectionAttempts++;
+        if (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)
+        {
+            AppService.clearAccessToken();
+            state.failedAuthAttempts++;
+        }
 
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             updateServerState();
-        } else if (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode) {
+        } else if (state.failedAuthAttempts > 2 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) { 
             state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
@@ -310,9 +317,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         });
         w.addEventListener("close", (event) => {
             window.websocket = null;
-            if (event.code === webSocketUnauthorizedCode)
-                AppService.clearAccessToken();
-
             handleConnectionError({status: event.code});
         });
         return w;
