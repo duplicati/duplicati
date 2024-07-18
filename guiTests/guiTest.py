@@ -283,7 +283,7 @@ def runTests():
 
     time.sleep(2) # Delay so page has time to load
     print("Waiting for filelist")
-    wait_for_load(By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
+    wait_for_load(By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]", 120)  # wait for filelist
     wait_for_load(By.XPATH, "//restore-file-picker/ul/li/div/a[2]").click()  # select root folder checkbox
     wait_for_load(By.XPATH, "//form[@id='restore']/div[1]/div[@class='buttons']/a/span[contains(text(), 'Continue')]").click()
 
