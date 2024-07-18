@@ -166,6 +166,9 @@ def runTests():
             driver.get(HOME_URL)
             time.sleep(1)
 
+    # Wait for all resources to load
+    time.sleep(2)
+
     # Create and hash random files in the source folder
     write_random_file(1024 * 1024, SOURCE_FOLDER + os.sep + "1MB.test")
     write_random_file(100 * 1024, SOURCE_FOLDER + os.sep + "subfolder" + os.sep + "100KB.test")
