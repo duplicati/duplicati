@@ -222,6 +222,7 @@ def runTests():
 
     # Add new backup - Options page
     wait_for_load(By.ID, "save").click()
+    time.sleep(1) # Delay so page has time to load
 
     # Run the backup job and wait for finish
     wait_for_clickable(By.LINK_TEXT, BACKUP_NAME).click()
