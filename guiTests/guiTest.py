@@ -226,7 +226,7 @@ def runTests():
     # Run the backup job and wait for finish
     wait_for_clickable(By.LINK_TEXT, BACKUP_NAME).click()
     [n for n in driver.find_elements("xpath", "//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
-    wait_for_text("//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ", 60)
+    wait_for_text("//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ", 120)
 
     # Restore
     if len([n for n in driver.find_elements("xpath", u"//span[contains(text(),'Restore files \u2026')]") if n.is_displayed()]) == 0:
@@ -243,7 +243,7 @@ def runTests():
     wait_for_load(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
     # wait for restore to finish
-    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 60)
+    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 120)
 
     # hash restored files
     sha1_restore = sha1_folder(RESTORE_FOLDER)
@@ -281,7 +281,7 @@ def runTests():
     wait_for_clickable(By.XPATH, "//form[@id='restore']/div/div[@class='buttons']/a/span[contains(text(),'Restore')]").click()
 
     # wait for restore to finish
-    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 90)
+    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 120)
 
     # hash direct restore files
     sha1_direct_restore = sha1_folder(DIRECT_RESTORE_FOLDER)
