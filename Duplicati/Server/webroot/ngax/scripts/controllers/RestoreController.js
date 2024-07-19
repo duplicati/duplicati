@@ -417,7 +417,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         AppService.get('/task/' + taskid).then(function(resp) {
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
-            console.log('Restore complete message: ', resp);
+            console.log('Restore complete message: ', JSON.stringify(resp.data));
 
             if (resp.data.Status == 'Completed')
             {
