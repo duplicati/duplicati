@@ -62,14 +62,14 @@ namespace Duplicati.Server.Database
             }
         }
 
-        internal void ExecuteWithCommand(Action<System.Data.IDbCommand> f)
+        public void ExecuteWithCommand(Action<System.Data.IDbCommand> f)
         {
             lock (m_lock)
                 using (var cmd = m_connection.CreateCommand())
                     f(cmd);
         }
 
-        internal Serializable.ImportExportStructure PrepareBackupForExport(IBackup backup)
+        public Serializable.ImportExportStructure PrepareBackupForExport(IBackup backup)
         {
             var scheduleId = GetScheduleIDsFromTags(new string[] { "ID=" + backup.ID });
             return new Serializable.ImportExportStructure()
@@ -213,7 +213,7 @@ namespace Duplicati.Server.Database
                         @"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (?, ?, ?, ?)",
                         (f) =>
                         {
-                            if (Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER.Equals(f.Value))
+                            if (FIXMEGlobal.PASSWORD_PLACEHOLDER.Equals(f.Value))
                                 throw new Exception("Attempted to save a property with the placeholder password");
                             return new object[] { id, f.Filter ?? "", f.Name, f.Value ?? "" };
                         }
@@ -281,7 +281,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        internal IBackup GetBackup(string id)
+        public IBackup GetBackup(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentNullException(nameof(id));
@@ -313,7 +313,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        internal ISchedule GetSchedule(long id)
+        public ISchedule GetSchedule(long id)
         {
             lock (m_lock)
             {
@@ -334,7 +334,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        internal Boolean IsUnencryptedOrPassphraseStored(long id)
+        public bool IsUnencryptedOrPassphraseStored(long id)
         {
             lock (m_lock)
             {
@@ -355,7 +355,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        internal long[] GetScheduleIDsFromTags(string[] tags)
+        public long[] GetScheduleIDsFromTags(string[] tags)
         {
             if (tags == null || tags.Length == 0)
                 return new long[0];
@@ -486,7 +486,7 @@ namespace Duplicati.Server.Database
             return null;
         }
 
-        internal void UpdateBackupDBPath(IBackup item, string path)
+        public void UpdateBackupDBPath(IBackup item, string path)
         {
             lock (m_lock)
             {
@@ -507,7 +507,7 @@ namespace Duplicati.Server.Database
                 }
             }
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -549,7 +549,7 @@ namespace Duplicati.Server.Database
                         (n) =>
                         {
 
-                            if (n.TargetURL.IndexOf(Duplicati.Server.WebServer.Server.PASSWORD_PLACEHOLDER, StringComparison.Ordinal) >= 0)
+                            if (n.TargetURL.IndexOf(FIXMEGlobal.PASSWORD_PLACEHOLDER, StringComparison.Ordinal) >= 0)
                                 throw new Exception("Attempted to save a backup with the password placeholder");
                             if (update && long.Parse(n.ID) <= 0)
                                 throw new Exception("Invalid update, cannot update application settings through update method");
@@ -610,7 +610,7 @@ namespace Duplicati.Server.Database
                     }
 
                     tr.Commit();
-                    FIXMEGlobal.IncrementLastDataUpdateID();
+                    FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
                     FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                 }
             }
@@ -623,7 +623,7 @@ namespace Duplicati.Server.Database
                 {
                     AddOrUpdateSchedule(item, tr);
                     tr.Commit();
-                    FIXMEGlobal.IncrementLastDataUpdateID();
+                    FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
                     FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                 }
         }
@@ -686,7 +686,7 @@ namespace Duplicati.Server.Database
                 }
             }
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -706,7 +706,7 @@ namespace Duplicati.Server.Database
             lock (m_lock)
                 DeleteFromDb("Schedule", ID);
 
-            FIXMEGlobal.IncrementLastDataUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 
@@ -796,7 +796,7 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
             }
 
-            FIXMEGlobal.IncrementLastNotificationUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
 
             return true;
@@ -836,7 +836,7 @@ namespace Duplicati.Server.Database
                     FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = true;
             }
 
-            FIXMEGlobal.IncrementLastNotificationUpdateID();
+            FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 

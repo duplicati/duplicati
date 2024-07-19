@@ -72,12 +72,12 @@
     <Content Include="..\..\thirdparty\uplink.NET\license.txt">
       <Link>licenses\uplink.NET\license.txt</Link>
     </Content>
-    <Content Include="..\license.txt">
+    <Content Include="..\..\LICENSE.txt">
       <Link>licenses\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="duplicati-url.txt">
-      <Link>licenses\duplicat-url.txt</Link>
+      <Link>licenses\duplicati-url.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SSH.NET\Homepage.txt">
@@ -114,18 +114,6 @@
     </Content>
     <Content Include="..\..\thirdparty\AWS SDK\license.txt">
       <Link>licenses\AWSSDK\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\HttpServer\licensedata.json">
-      <Link>licenses\HttpServer\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\HttpServer\Homepage.txt">
-      <Link>licenses\HttpServer\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\HttpServer\license.txt">
-      <Link>licenses\HttpServer\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\Json.NET\licensedata.json">

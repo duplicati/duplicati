@@ -144,7 +144,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         function continuation() {
             scope.validatingSourcePath = true;
 
-            AppService.post('/filesystem/validate', {path: scope.manualSourcePath}).then(function() {
+            AppService.postJson('/filesystem/validate', {path: scope.manualSourcePath}).then(function() {
                 scope.validatingSourcePath = false;
                 scope.Backup.Sources.push(scope.manualSourcePath);
                 scope.manualSourcePath = null;
@@ -439,13 +439,13 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         if ($routeParams.backupid == null) {
 
             function postDb() {
-                AppService.post('/backups', result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
+                AppService.postJson('/backups', result).then(function() {
                     $location.path('/');
                 }, AppUtils.connectionError);
             };
 
             function checkForExistingDb(continuation) {
-                AppService.post('/remoteoperation/dbpath', $scope.Backup.TargetURL, {'headers': {'Content-Type': 'application/text'}}).then(
+                AppService.postJson('/remoteoperation/dbpath', { path: $scope.Backup.TargetURL }).then(
                     function(resp) {
                         if (resp.data.Exists) {
                             DialogService.dialog(gettextCatalog.getString('Use existing database?'), gettextCatalog.getString('An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('Yes'), gettextCatalog.getString('No')], function(ix) {
@@ -696,7 +696,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         AppService.get('/backupdefaults').then(function(data) {
 
-            $scope.rawddata = data.data.data;
+            $scope.rawddata = data.data;
 
             if ($location.$$path.indexOf('/add-import') == 0 && $rootScope.importConfig != null)
                 angular.merge($scope.rawddata, $rootScope.importConfig);
@@ -711,7 +711,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         AppService.get('/backup/' + $routeParams.backupid).then(function(data) {
 
-            $scope.rawddata = data.data.data;
+            $scope.rawddata = data.data;
             setupScope($scope.rawddata);
 
         }, function() {

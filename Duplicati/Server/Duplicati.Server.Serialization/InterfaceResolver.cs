@@ -19,9 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
 
@@ -106,12 +103,12 @@ namespace Duplicati.Server.Serialization
                 throw new JsonSerializationException(string.Format("Cannot convert null value to {0}", objectType));
             else if (reader.TokenType != JsonToken.String)
                 throw new JsonSerializationException(string.Format("Cannot convert {0} value to {1}", reader.TokenType, objectType));
-            
+
             var v = (string)reader.Value;
             DayOfWeek result;
             if (Enum.TryParse(v, out result))
                 return result;
-            
+
             switch (v.ToLowerInvariant())
             {
                 case "mon":
@@ -127,9 +124,9 @@ namespace Duplicati.Server.Serialization
                 case "sat":
                     return DayOfWeek.Saturday;
                 case "sun":
-                    return DayOfWeek.Sunday;                    
+                    return DayOfWeek.Sunday;
             }
-            
+
             throw new JsonSerializationException(string.Format("Cannot convert \"{0}\" to {1}", v, objectType));
         }
 
@@ -140,5 +137,5 @@ namespace Duplicati.Server.Serialization
 
         #endregion
     }
-    
+
 }
