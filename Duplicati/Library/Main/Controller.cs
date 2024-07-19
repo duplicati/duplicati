@@ -66,19 +66,9 @@ namespace Duplicati.Library.Main
         private System.Threading.ThreadPriority? m_resetPriority;
 
         /// <summary>
-        /// The localization culture to reset to
+        /// If not null, active locale change that needs to be reset
         /// </summary>
-        private System.Globalization.CultureInfo m_resetLocale;
-
-        /// <summary>
-        /// The localization UI culture to reset to
-        /// </summary>
-        private System.Globalization.CultureInfo m_resetLocaleUI;
-
-        /// <summary>
-        /// True if the locale should be reset
-        /// </summary>
-        private bool m_doResetLocale;
+        private LocaleChange m_localeChange = null;
 
         /// <summary>
         /// The multi-controller log target
@@ -584,14 +574,10 @@ namespace Duplicati.Library.Main
                 m_resetPriority = null;
             }
 
-            if (m_doResetLocale)
+            if(m_localeChange != null)
             {
-                // Wrap the call to avoid loading issues for the setLocale method
-                DoSetLocale(m_resetLocale, m_resetLocaleUI);
-
-                m_doResetLocale = false;
-                m_resetLocale = null;
-                m_resetLocaleUI = null;
+                m_localeChange.Dispose();
+                m_localeChange = null;
             }
 
             if (m_logTarget != null)
@@ -699,17 +685,11 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    var locale = m_options.ForcedLocale;
-                    DoGetLocale(out m_resetLocale, out m_resetLocaleUI);
-                    m_doResetLocale = true;
-                    // Wrap the call to avoid loading issues for the setLocale method
-                    DoSetLocale(locale, locale);
+                    m_localeChange = new LocaleChange(m_options.ForcedLocale);
                 }
-                catch (Exception ex) // or only: MissingMethodException
+                catch (Exception ex)
                 {
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LocaleChangeError", ex, Strings.Controller.FailedForceLocaleError(ex.Message));
-                    m_doResetLocale = false;
-                    m_resetLocale = m_resetLocaleUI = null;
                 }
             }
 
@@ -906,7 +886,7 @@ namespace Duplicati.Library.Main
             {
                 List<string> expandedSources = new List<string>();
 
-                if (Platform.IsClientWindows && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
+                if (OperatingSystem.IsWindows() && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
                 {
                     // *: drive paths are only supported on Windows clients
                     // Lazily load the drive info
@@ -921,7 +901,7 @@ namespace Duplicati.Library.Main
                         expandedSources.Add(expandedSource);
                     }
                 }
-                else if (Platform.IsClientWindows && inputsource.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
+                else if (OperatingSystem.IsWindows() && inputsource.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
                 {
                     // In order to specify a drive by it's volume name, adopt the volume guid path syntax:
                     //   \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}

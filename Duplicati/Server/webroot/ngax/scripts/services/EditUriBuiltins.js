@@ -47,7 +47,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         var dlg = null;
 
         dlg = DialogService.dialog(gettextCatalog.getString('Testing permissions...'), gettextCatalog.getString('Testing permissions …'), [], null, function () {
-            AppService.post('/webmodule/s3-iamconfig', {
+            AppService.postJson('/webmodule/s3-iamconfig', {
                 's3-operation': 'CanCreateUser',
                 's3-username': scope.Username,
                 's3-password': scope.Password
@@ -80,7 +80,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     // Loaders are a way for backends to request extra data from the server
     EditUriBackendConfig.loaders['s3'] = function (scope) {
         if (scope.s3_providers == null) {
-            AppService.post('/webmodule/s3-getconfig', {'s3-config': 'Providers'}).then(function (data) {
+            AppService.postJson('/webmodule/s3-getconfig', {'s3-config': 'Providers'}).then(function (data) {
                 scope.s3_providers = data.data.Result;
                 if (scope.s3_server == undefined && scope.s3_server_custom == undefined)
                     scope.s3_server = 's3.amazonaws.com';
@@ -92,7 +92,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.s3_regions == null) {
-            AppService.post('/webmodule/s3-getconfig', {'s3-config': 'Regions'}).then(function (data) {
+            AppService.postJson('/webmodule/s3-getconfig', {'s3-config': 'Regions'}).then(function (data) {
                 scope.s3_regions = data.data.Result;
                 if (scope.s3_region == null && scope.s3_region_custom == undefined)
                     scope.s3_region = '';
@@ -103,7 +103,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.s3_storageclasses == null) {
-            AppService.post('/webmodule/s3-getconfig', {'s3-config': 'StorageClasses'}).then(function (data) {
+            AppService.postJson('/webmodule/s3-getconfig', {'s3-config': 'StorageClasses'}).then(function (data) {
                 scope.s3_storageclasses = data.data.Result;
                 if (scope.s3_storageclass == null && scope.s3_storageclass_custom == undefined)
                     scope.s3_storageclass = '';
@@ -123,7 +123,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             dlg = DialogService.dialog(gettextCatalog.getString('Creating user...'), gettextCatalog.getString('Creating new user with limited access …'), [], null, function () {
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
-                AppService.post('/webmodule/s3-iamconfig', {
+                AppService.postJson('/webmodule/s3-iamconfig', {
                     's3-operation': 'CreateIAMUser',
                     's3-path': path,
                     's3-username': scope.Username,
@@ -147,7 +147,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.validaters['s3'](scope, function () {
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
-                AppService.post('/webmodule/s3-iamconfig', {
+                AppService.postJson('/webmodule/s3-iamconfig', {
                     's3-operation': 'GetPolicyDoc',
                     's3-path': path
                 }).then(function (data) {
@@ -162,7 +162,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 	
 	EditUriBackendConfig.loaders['storj'] = function (scope) {
         if (scope.storj_satellites == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
+            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
                 scope.storj_satellites = data.data.Result;
                 if (scope.storj_satellite == undefined && scope.storj_satellite_custom == undefined)
                     scope.storj_satellite = 'us1.storj.io:7777';
@@ -174,7 +174,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 		
 		if (scope.storj_auth_methods == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
+            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
                 scope.storj_auth_methods = data.data.Result;
                 if (scope.storj_auth_method == undefined)
                     scope.storj_auth_method = 'API key';
@@ -188,7 +188,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 	
 	EditUriBackendConfig.loaders['tardigrade'] = function (scope) {
         if (scope.tardigrade_satellites == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
+            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
                 scope.tardigrade_satellites = data.data.Result;
                 if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
                     scope.tardigrade_satellite = 'us1.storj.io:7777';
@@ -200,7 +200,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 		
 		if (scope.tardigrade_auth_methods == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
+            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
                 scope.tardigrade_auth_methods = data.data.Result;
                 if (scope.tardigrade_auth_method == undefined)
                     scope.tardigrade_auth_method = 'API key';
@@ -306,7 +306,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.loaders['openstack'] = function (scope) {
         if (scope.openstack_providers == null) {
-            AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function (data) {
+            AppService.postJson('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function (data) {
                 scope.openstack_providers = data.data.Result;
                 if (scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
                     scope.openstack_server = 'https://identity.api.rackspacecloud.com/';
@@ -318,7 +318,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.openstack_versions == null) {
-            AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Versions'}).then(function (data) {
+            AppService.postJson('/webmodule/openstack-getconfig', {'openstack-config': 'Versions'}).then(function (data) {
                 scope.openstack_versions = data.data.Result;
                 if (scope.openstack_version == undefined)
                     scope.openstack_version = 'v2.0';
@@ -333,7 +333,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.loaders['gcs'] = function (scope) {
         if (scope.gcs_locations == null) {
-            AppService.post('/webmodule/gcs-getconfig', {'gcs-config': 'Locations'}).then(function (data) {
+            AppService.postJson('/webmodule/gcs-getconfig', {'gcs-config': 'Locations'}).then(function (data) {
                 scope.gcs_locations = data.data.Result;
                 for (var k in scope.gcs_locations)
                     if (scope.gcs_locations[k] === null)
@@ -346,7 +346,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.gcs_storageclasses == null) {
-            AppService.post('/webmodule/gcs-getconfig', {'gcs-config': 'StorageClasses'}).then(function (data) {
+            AppService.postJson('/webmodule/gcs-getconfig', {'gcs-config': 'StorageClasses'}).then(function (data) {
                 scope.gcs_storageclasses = data.data.Result;
                 for (var k in scope.gcs_storageclasses)
                     if (scope.gcs_storageclasses[k] === null)
@@ -651,11 +651,15 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         else if (scope.s3_region_custom != null) {
             opts['s3-location-constraint'] = scope.s3_region_custom;
         }
+
+        // In case the user has selected a region, we need to choose the region specific endpoint for AWS
+        if (opts['s3-server-name'] == 's3.amazonaws.com' && opts['s3-location-constraint'] != null)
+            delete opts['s3-server-name'];
         
         if (scope.s3_storageclass != null)
             opts['s3-storage-class'] = AppUtils.contains_value(scope.s3_storageclasses, scope.s3_storageclass) ? scope.s3_storageclass : scope.s3_storageclass_custom;
 
-        opts['s3-client']=scope.s3_client.name;
+        opts['s3-client'] = scope.s3_client.name;
         
         EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
@@ -728,7 +732,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if ((opts['openstack-version'] || '') == '')
             delete opts['openstack-version'];
 
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
 
         var url = AppUtils.format('{0}://{1}{2}',
             scope.Backend.Key,

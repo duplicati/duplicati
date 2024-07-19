@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Duplicati.Service.Implementation</AssemblyName>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />

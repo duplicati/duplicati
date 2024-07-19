@@ -8,37 +8,54 @@ public static partial class Command
     private static class PackageSupport
     {
         /// <summary>
-        /// Introduces symbolic links for executables that have a different name
+        /// Sets the executable flags for the build output
         /// </summary>
-        /// <param name="buildDir">The build path to use</param>
-        /// <param name="targetDir">The target directory to create the symlinks in</param>
+        /// <param name="srcdir">The build directory</param>
+        /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>An awaitable task</returns>
-        public static Task MakeSymlinks(string buildDir, string? targetDir = null)
+        public static Task SetPermissionFlags(string srcdir, RuntimeConfig rtcfg)
         {
-            foreach (var k in ExecutableRenames)
-                if (File.Exists(Path.Combine(buildDir, k.Key)) && !File.Exists(Path.Combine(buildDir, k.Value)))
-                    File.CreateSymbolicLink(Path.Combine(buildDir, k.Value), Path.Combine(targetDir ?? ".", k.Key));
+            if (OperatingSystem.IsWindows())
+                throw new PlatformNotSupportedException("Setting executable flags is not supported on Windows, use WSL or Docker");
+
+            var roflags = UnixFileMode.OtherRead | UnixFileMode.GroupRead | UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            var exflags = roflags | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+
+            var exenames = ExecutableRenames.Values.Concat(ExecutableRenames.Keys).ToHashSet();
+
+            // Mark executables with the execute flag
+            var executables = ExecutableRenames.Values.Select(x => Path.Combine(srcdir, x))
+                .Concat(ExecutableRenames.Keys.Select(x => Path.Combine(srcdir, x)))
+                .Concat(Directory.EnumerateFiles(srcdir, "*.sh", SearchOption.AllDirectories))
+                .Concat(Directory.EnumerateFiles(srcdir, "*.py", SearchOption.AllDirectories))
+                .ToHashSet();
+
+            foreach (var f in Directory.EnumerateFileSystemEntries(srcdir, "*", SearchOption.AllDirectories))
+            {
+                if (File.Exists(f))
+                    File.SetUnixFileMode(f,
+                        executables.Contains(f)
+                            ? exflags
+                            : roflags);
+                else if (Directory.Exists(f))
+                    File.SetUnixFileMode(f, exflags);
+            }
 
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Sets the executable flags for the build output
+        /// Renames all executables to their shorter form
         /// </summary>
-        /// <param name="buildDir">The build directory</param>
-        /// <param name="rtcfg">The runtime configuration</param>
+        /// <param name="buildDir"></param>
         /// <returns>An awaitable task</returns>
-        public static Task SetExecutableFlags(string buildDir, RuntimeConfig rtcfg)
+        public static Task RenameExecutables(string buildDir)
         {
-            if (!OperatingSystem.IsWindows())
+            foreach (var exefile in ExecutableRenames.Keys)
             {
-                // Mark executables with the execute flag
-                var executables = ExecutableRenames.Keys.Select(x => Path.Combine(buildDir, x))
-                    .Concat(Directory.EnumerateFiles(buildDir, "*.sh", SearchOption.AllDirectories));
-                var filemode = EnvHelper.GetUnixFileMode("+x");
-                foreach (var x in executables)
-                    if (File.Exists(x))
-                        EnvHelper.AddFilemode(x, filemode);
+                var targetfile = Path.Combine(buildDir, exefile);
+                if (File.Exists(targetfile))
+                    File.Move(targetfile, Path.Combine(buildDir, ExecutableRenames[exefile]));
             }
 
             return Task.CompletedTask;

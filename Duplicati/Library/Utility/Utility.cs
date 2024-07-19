@@ -31,6 +31,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility
 {
@@ -40,7 +41,7 @@ namespace Duplicati.Library.Utility
         /// Size of buffers for copying stream
         /// </summary>
         public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
-        
+
         /// <summary>
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
         /// </summary>
@@ -92,15 +93,15 @@ namespace Duplicati.Library.Utility
                 }
 
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
-            
+
             int read;
-			long total = 0;
-			while ((read = source.Read(buf, 0, buf.Length)) != 0)
-			{
-				target.Write(buf, 0, read);
-				total += read;
+            long total = 0;
+            while ((read = source.Read(buf, 0, buf.Length)) != 0)
+            {
+                target.Write(buf, 0, read);
+                total += read;
             }
-            
+
             return total;
         }
 
@@ -127,7 +128,7 @@ namespace Duplicati.Library.Utility
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
-                catch {}
+                catch { }
 
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
 
@@ -437,7 +438,7 @@ namespace Duplicati.Library.Utility
         public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
         {
             var sanitizedParentFolder = Util.AppendDirSeparator(parentFolder);
-            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) && 
+            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) &&
                    !fileOrFolderPath.Equals(sanitizedParentFolder, ClientFilenameStringComparison);
         }
 
@@ -458,14 +459,14 @@ namespace Duplicati.Library.Utility
             var last = path.LastIndexOf(Path.DirectorySeparatorChar, len);
             if (last == -1 || last == 0 && len == 0)
                 return null;
-            
-            if (last == 0 && !Platform.IsClientWindows)
+
+            if (last == 0 && !OperatingSystem.IsWindows())
                 return Util.DirectorySeparatorString;
 
             var parent = path.Substring(0, last);
 
             if (forceTrailingDirectorySeparator ||
-                Platform.IsClientWindows && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
+                OperatingSystem.IsWindows() && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
             {
                 parent += Path.DirectorySeparatorChar;
             }
@@ -473,7 +474,7 @@ namespace Duplicati.Library.Utility
             return parent;
         }
 
-        
+
 
         /// <summary>
         /// Given a collection of unique folders, returns only parent-most folders
@@ -519,7 +520,7 @@ namespace Duplicati.Library.Utility
 
             return result.Distinct();
         }
-        
+
         /// <summary>
         /// Given a collection of file paths, return those NOT contained within specified collection of folders
         /// </summary>
@@ -689,7 +690,7 @@ namespace Duplicati.Library.Utility
             else if (sizeAbs >= 1024)
                 return Strings.Utility.FormatStringKB(size / 1024);
             else
-                return Strings.Utility.FormatStringB((long) size); // safe to cast because lower than 1024 and thus well within range of long
+                return Strings.Utility.FormatStringB((long)size); // safe to cast because lower than 1024 and thus well within range of long
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)
@@ -830,9 +831,15 @@ namespace Duplicati.Library.Utility
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
         }
 
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macos")]
+        /// <summary>
+        /// Invokes the &quot;which&quot; command to determine if a given application is available in the path
+        /// </summary>
+        /// <param name="appname">The name of the application to look for</param>
         public static bool Which(string appname)
         {
-            if (!Platform.IsClientPosix)
+            if (!(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
                 return false;
 
             try
@@ -873,7 +880,7 @@ namespace Duplicati.Library.Utility
 
                     // TODO: This should probably be determined by filesystem rather than OS,
                     // OSX can actually have the disks formatted as Case Sensitive, but insensitive is default
-                    CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientPosix && !Platform.IsClientOSX);
+                    CachedIsFSCaseSensitive = ParseBool(str, () => OperatingSystem.IsLinux());
                 }
 
                 return CachedIsFSCaseSensitive.Value;
@@ -893,7 +900,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The path to the users home directory
         /// </summary>
-        public static readonly string HOME_PATH = Environment.GetFolderPath(Platform.IsClientPosix ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
+        public static readonly string HOME_PATH = Environment.GetFolderPath(!OperatingSystem.IsWindows() ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)
@@ -918,7 +925,7 @@ namespace Duplicati.Library.Utility
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
-        
+
         /// <summary>
         /// Normalizes a DateTime instance by converting to UTC and flooring to seconds.
         /// </summary>
@@ -930,12 +937,12 @@ namespace Duplicati.Library.Utility
             ticks -= ticks % TimeSpan.TicksPerSecond;
             return new DateTime(ticks, DateTimeKind.Utc);
         }
-        
-	/// <summary>
-	/// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
-	/// </summary>
-	/// <returns>The number of elapsed seconds since the Unix epoch</returns>
-	/// <param name="input">The input time</param>
+
+        /// <summary>
+        /// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
+        /// </summary>
+        /// <returns>The number of elapsed seconds since the Unix epoch</returns>
+        /// <param name="input">The input time</param>
         public static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
             // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
@@ -943,9 +950,9 @@ namespace Duplicati.Library.Utility
             // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
             // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
             // and DateTimeOffset.MaxValue bounds.
-            return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
+            return (long)Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
         }
-        
+
         /// <summary>
         /// The format string for a DateTime
         /// </summary>
@@ -1314,6 +1321,7 @@ namespace Duplicati.Library.Utility
         /// <param name="volumeGuid">Volume guid</param>
         /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static string GetDriveLetterFromVolumeGuid(Guid volumeGuid)
         {
             // Based on this answer:
@@ -1348,6 +1356,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>Pairs of drive letter to volume guids</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static IEnumerable<KeyValuePair<string, string>> GetVolumeGuidsAndDriveLetters()
         {
             using (var searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
@@ -1389,7 +1398,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(arg))
                 return arg;
 
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 // We could consider using single quotes that prevents all expansions
                 //if (!allowEnvExpansion)

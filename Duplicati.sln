@@ -109,7 +109,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net8", "net8", "{6B46F6B1-1
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net8\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Executables\net8\Duplicati_Service\Duplicati.Service.csproj", "{34149709-F3ED-4FB5-A087-43EB195C948B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Executables\net8\Duplicati.Service\Duplicati.Service.csproj", "{34149709-F3ED-4FB5-A087-43EB195C948B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Executables\net8\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}"
 EndProject
@@ -147,6 +147,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.RestAPI", "Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj", "{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SharpAESCrypt", "Executables\net8\Duplicati.CommandLine.SharpAESCrypt\Duplicati.CommandLine.SharpAESCrypt.csproj", "{FE6FD36C-E171-4599-8D55-62DA579C0864}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Snapshots", "Executables\net8\Duplicati.CommandLine.Snapshots\Duplicati.CommandLine.Snapshots.csproj", "{0364E724-1929-445E-9145-90A70B01DDC0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -418,6 +422,14 @@ Global
 		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE6FD36C-E171-4599-8D55-62DA579C0864}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE6FD36C-E171-4599-8D55-62DA579C0864}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE6FD36C-E171-4599-8D55-62DA579C0864}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE6FD36C-E171-4599-8D55-62DA579C0864}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0364E724-1929-445E-9145-90A70B01DDC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0364E724-1929-445E-9145-90A70B01DDC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0364E724-1929-445E-9145-90A70B01DDC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0364E724-1929-445E-9145-90A70B01DDC0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -471,6 +483,8 @@ Global
 		{0F5A1F4E-25FA-4D02-920D-CA2138498081} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
 		{6B594D23-B629-465C-B799-70EE9E56C218} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
 		{D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B} = {FA88A246-EF8E-46E3-90AF-539B8C0A6ADE}
+		{FE6FD36C-E171-4599-8D55-62DA579C0864} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{0364E724-1929-445E-9145-90A70B01DDC0} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}

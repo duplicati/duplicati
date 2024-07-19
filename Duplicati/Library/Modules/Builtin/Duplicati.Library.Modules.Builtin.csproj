@@ -1,15 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Modules.Builtin</RootNamespace>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
   
   <ItemGroup>
+    <PackageReference Include="Artalk.Xmpp" Version="1.0.5" />
     <PackageReference Include="DnsClient" Version="1.4.0" />
-    <PackageReference Include="ARSoft.Tools.Net" Version="1.8.1" />
-    <PackageReference Include="Sharp.Xmpp" Version="1.0.2.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="MailKit" Version="2.4.1" />
     <PackageReference Include="MimeKit" Version="2.4.1" />
@@ -38,3 +38,4 @@
   </ItemGroup>
 
 </Project>
+

@@ -20,9 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility.Power
 {
+    [SupportedOSPlatform("windows")]
     public class WindowsPowerSupplyState : IPowerSupplyState
     {
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]

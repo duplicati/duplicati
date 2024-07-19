@@ -25,6 +25,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend
 {
@@ -67,20 +68,20 @@ namespace Duplicati.Library.Backend
 
         public string Key { get { return "s3-iamconfig"; } }
 
-        public string DisplayName { get { return "S3 IAM support module"; } }
+        public string DisplayName { get { return LC.L("S3 IAM support module"); } }
 
-        public string Description { get { return "Exposes S3 IAM manipulation as a web module"; } }
+        public string Description { get { return LC.L("Exposes S3 IAM manipulation as a web module"); } }
 
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(KEY_OPERATION, CommandLineArgument.ArgumentType.Enumeration, "The operation to perform", "Selects the operation to perform", null, Enum.GetNames(typeof(Operation))),
-                    new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.String, "The username", "The Amazon Access Key ID"),
-                    new CommandLineArgument(KEY_PASSWORD, CommandLineArgument.ArgumentType.String, "The password", "The Amazon Secret Key"),
-                });
+                return new List<ICommandLineArgument>([
+                    new CommandLineArgument(KEY_OPERATION, CommandLineArgument.ArgumentType.Enumeration, LC.L("The operation to perform"), LC.L("Selects the operation to perform"), null, Enum.GetNames(typeof(Operation))),
+                    new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.String, LC.L("The username"), LC.L("The Amazon Access Key ID")),
+                    new CommandLineArgument(KEY_PASSWORD, CommandLineArgument.ArgumentType.String, LC.L("The password"), LC.L("The Amazon Secret Key")),
+                ]);
             }
         }
 

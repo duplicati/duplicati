@@ -36,36 +36,36 @@ namespace Duplicati.Library.Main.Operation
         protected readonly string m_backendurl;
         protected readonly Options m_options;
         protected readonly CompactResults m_result;
-        
+
         public CompactHandler(string backend, Options options, CompactResults result)
         {
             m_backendurl = backend;
             m_options = options;
             m_result = result;
         }
-        
+
         public virtual void Run()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
-            
-            using(var db = new LocalDeleteDatabase(m_options.Dbpath, "Compact"))
+
+            using (var db = new LocalDeleteDatabase(m_options.Dbpath, "Compact"))
             {
                 var tr = db.BeginTransaction();
                 try
                 {
                     m_result.SetDatabase(db);
                     Utility.UpdateOptionsFromDb(db, m_options);
-                    Utility.VerifyParameters(db, m_options);
-                    
+                    Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+
                     var changed = DoCompact(db, false, ref tr, null);
-                    
+
                     if (changed && m_options.UploadVerificationFile)
                         FilelistProcessor.UploadVerificationFile(m_backendurl, m_options, m_result.BackendWriter, db, null);
-                    
+
                     if (!m_options.Dryrun)
                     {
-                        using(new Logging.Timer(LOGTAG, "CommitCompact", "CommitCompact"))
+                        using (new Logging.Timer(LOGTAG, "CommitCompact", "CommitCompact"))
                             tr.Commit();
                         if (changed)
                         {
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                     else
                         tr.Rollback();
-                    
+
                     tr = null;
                 }
                 finally
@@ -90,16 +90,16 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
         }
-        
+
         internal bool DoCompact(LocalDeleteDatabase db, bool hasVerifiedBackend, ref System.Data.IDbTransaction transaction, BackendManager sharedBackend)
         {
             var report = db.GetCompactReport(m_options.VolumeSize, m_options.Threshold, m_options.SmallFileSize, m_options.SmallFileMaxCount, transaction);
             report.ReportCompactData();
-            
+
             if (report.ShouldReclaim || report.ShouldCompact)
             {
-				// Workaround where we allow a running backendmanager to be used
-				using(var bk = sharedBackend == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
+                // Workaround where we allow a running backendmanager to be used
+                using (var bk = sharedBackend == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
                 {
                     var backend = bk ?? sharedBackend;
                     if (!hasVerifiedBackend)
@@ -109,7 +109,7 @@ namespace Duplicati.Library.Main.Operation
 
                     BlockVolumeWriter newvol = new BlockVolumeWriter(m_options);
                     newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
-    
+
                     IndexVolumeWriter newvolindex = null;
                     if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
                     {
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation
                     //We start by deleting unused volumes to save space before uploading new stuff
                     var fullyDeleteable = (from v in remoteList
                                            where report.DeleteableVolumes.Contains(v.Name)
-                                           select (IRemoteVolume)v).ToList();                    
+                                           select (IRemoteVolume)v).ToList();
                     deletedVolumes.AddRange(DoDelete(db, backend, fullyDeleteable, ref transaction));
 
                     // This list is used to pick up unused volumes,
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main.Operation
                                     deleteableVolumes.Add(entry);
                                 }
                             }
-                            
+
                             if (blocksInVolume > 0)
                             {
                                 FinishVolumeAndUpload(db, backend, newvol, newvolindex, uploadedVolumes);
@@ -228,10 +228,10 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
-                                        
-                    var downloadSize = downloadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
-                    var deletedSize = deletedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
-                    var uploadSize = uploadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a,x) => a + x.Value);
+
+                    var downloadSize = downloadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a, x) => a + x.Value);
+                    var deletedSize = deletedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a, x) => a + x.Value);
+                    var uploadSize = uploadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a, x) => a + x.Value);
 
                     m_result.DeletedFileCount = deletedVolumes.Count;
                     m_result.DownloadedFileCount = downloadedVolumes.Count;
@@ -240,19 +240,19 @@ namespace Duplicati.Library.Main.Operation
                     m_result.DownloadedFileSize = downloadSize;
                     m_result.UploadedFileSize = uploadSize;
                     m_result.Dryrun = m_options.Dryrun;
-                    
+
                     if (m_result.Dryrun)
                     {
                         if (downloadedVolumes.Count == 0)
                             Logging.Log.WriteDryrunMessage(LOGTAG, "CompactResults", "Would delete {0} files, which would reduce storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
                         else
-                            Logging.Log.WriteDryrunMessage(LOGTAG, "CompactResults", "Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}", 
-                                                                    m_result.DownloadedFileCount, 
-                                                                    Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize), 
-                                                                    m_result.DeletedFileCount, 
-                                                                    Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount, 
-                                                                    Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), 
-                                                                    m_result.DeletedFileCount - m_result.UploadedFileCount, 
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "CompactResults", "Would download {0} file(s) with a total size of {1}, delete {2} file(s) with a total size of {3}, and compact to {4} file(s) with a size of {5}, which would reduce storage by {6} file(s) and {7}",
+                                                                    m_result.DownloadedFileCount,
+                                                                    Library.Utility.Utility.FormatSizeString(m_result.DownloadedFileSize),
+                                                                    m_result.DeletedFileCount,
+                                                                    Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), m_result.UploadedFileCount,
+                                                                    Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize),
+                                                                    m_result.DeletedFileCount - m_result.UploadedFileCount,
                                                                     Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
                     }
                     else
@@ -260,17 +260,17 @@ namespace Duplicati.Library.Main.Operation
                         if (m_result.DownloadedFileCount == 0)
                             Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Deleted {0} files, which reduced storage by {1}", m_result.DeletedFileCount, Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize));
                         else
-                            Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}", 
-                                                              m_result.DownloadedFileCount, 
-                                                              Library.Utility.Utility.FormatSizeString(downloadSize), 
-                                                              m_result.DeletedFileCount, 
-                                                              Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize), 
-                                                              m_result.UploadedFileCount, 
-                                                              Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize), 
-                                                              m_result.DeletedFileCount - m_result.UploadedFileCount, 
+                            Logging.Log.WriteInformationMessage(LOGTAG, "CompactResults", "Downloaded {0} file(s) with a total size of {1}, deleted {2} file(s) with a total size of {3}, and compacted to {4} file(s) with a size of {5}, which reduced storage by {6} file(s) and {7}",
+                                                              m_result.DownloadedFileCount,
+                                                              Library.Utility.Utility.FormatSizeString(downloadSize),
+                                                              m_result.DeletedFileCount,
+                                                              Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize),
+                                                              m_result.UploadedFileCount,
+                                                              Library.Utility.Utility.FormatSizeString(m_result.UploadedFileSize),
+                                                              m_result.DeletedFileCount - m_result.UploadedFileCount,
                                                               Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
                     }
-                            
+
                     backend.WaitForComplete(db, transaction);
                 }
 
@@ -288,7 +288,7 @@ namespace Duplicati.Library.Main.Operation
         {
             // Mark all volumes and relevant index files as disposable
             List<IRemoteVolume> remoteFilesToRemove = db.GetDeletableVolumes(deleteableVolumes, transaction).ToList();
-            foreach(var f in remoteFilesToRemove)
+            foreach (var f in remoteFilesToRemove)
                 db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
 
             // Before we commit the current state, make sure the backend has caught up
@@ -305,7 +305,8 @@ namespace Duplicati.Library.Main.Operation
 
         private void FinishVolumeAndUpload(LocalDeleteDatabase db, BackendManager backend, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes)
         {
-            Action indexVolumeFinished = () => {
+            Action indexVolumeFinished = () =>
+            {
                 if (newvolindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                 {
                     foreach (var blocklist in db.GetBlocklists(newvol.VolumeID, m_options.Blocksize, m_options.BlockhashSize))
@@ -326,7 +327,7 @@ namespace Duplicati.Library.Main.Operation
 
         private IEnumerable<KeyValuePair<string, long>> PerformDelete(BackendManager backend, IEnumerable<IRemoteVolume> list)
         {
-            foreach(var f in list)
+            foreach (var f in list)
             {
                 if (!m_options.Dryrun)
                     backend.Delete(f.Name, f.Size);

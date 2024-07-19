@@ -4,7 +4,7 @@ backupApp.controller('CaptchaController', function($scope, CaptchaService, Dialo
 	function refreshImage() {
 		entry.imageurl = null;
 
-		AppService.post('/captcha', { 'target': entry.target}).then(function(resp) {
+		AppService.postJson('/captcha', { 'target': entry.target}).then(function(resp) {
     		entry.token = resp.data.token;
 			entry.imageurl = AppService.apiurl + '/captcha/' + entry.token;
 

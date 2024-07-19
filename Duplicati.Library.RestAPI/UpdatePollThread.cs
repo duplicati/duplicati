@@ -1,24 +1,28 @@
-//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
 using System.Threading;
-using Duplicati.Library.RestAPI;
+using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
 
 namespace Duplicati.Server
@@ -26,13 +30,13 @@ namespace Duplicati.Server
     /// <summary>
     /// The thread that checks on the update server if new versions are available
     /// </summary>
-    public class UpdatePollThread
+    public class UpdatePollThread(Connection connection, EventPollNotify eventPollNotify)
     {
-        private readonly Thread m_thread;
+        private Thread m_thread;
         private volatile bool m_terminated = false;
         private volatile bool m_forceCheck = false;
         private readonly object m_lock = new object();
-        private readonly AutoResetEvent m_waitSignal;
+        private AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
 
         public bool IsUpdateRequested { get; private set; } = false;
@@ -47,17 +51,19 @@ namespace Duplicati.Server
                 var oldv = m_downloadProgress;
                 m_downloadProgress = value;
                 if ((int)(oldv * 100) != (int)(value * 100))
-                    FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+                    eventPollNotify.SignalNewEvent();
             }
         }
 
-        public UpdatePollThread()
+        public void Init()
         {
             m_waitSignal = new AutoResetEvent(false);
             ThreadState = UpdatePollerStates.Waiting;
-            m_thread = new Thread(Run);
-            m_thread.IsBackground = true;
-            m_thread.Name = "UpdatePollThread";
+            m_thread = new Thread(Run)
+            {
+                IsBackground = true,
+                Name = "UpdatePollThread"
+            };
             m_thread.Start();
         }
 
@@ -91,12 +97,12 @@ namespace Duplicati.Server
 
             while (!m_terminated)
             {
-                var nextCheck = FIXMEGlobal.DataConnection.ApplicationSettings.NextUpdateCheck;
+                var nextCheck = connection.ApplicationSettings.NextUpdateCheck;
 
                 var maxcheck = TimeSpan.FromDays(7);
                 try
                 {
-                    maxcheck = Library.Utility.Timeparser.ParseTimeSpan(FIXMEGlobal.DataConnection.ApplicationSettings.UpdateCheckInterval);
+                    maxcheck = Library.Utility.Timeparser.ParseTimeSpan(connection.ApplicationSettings.UpdateCheckInterval);
                 }
                 catch
                 {
@@ -112,14 +118,14 @@ namespace Duplicati.Server
                         m_forceCheck = false;
 
                     ThreadState = UpdatePollerStates.Checking;
-                    FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+                    eventPollNotify.SignalNewEvent();
 
                     DateTime started = DateTime.UtcNow;
-                    FIXMEGlobal.DataConnection.ApplicationSettings.LastUpdateCheck = started;
-                    nextCheck = FIXMEGlobal.DataConnection.ApplicationSettings.NextUpdateCheck;
+                    connection.ApplicationSettings.LastUpdateCheck = started;
+                    nextCheck = connection.ApplicationSettings.NextUpdateCheck;
 
                     Library.AutoUpdater.ReleaseType rt;
-                    if (!Enum.TryParse<Library.AutoUpdater.ReleaseType>(FIXMEGlobal.DataConnection.ApplicationSettings.UpdateChannel, true, out rt))
+                    if (!Enum.TryParse<Library.AutoUpdater.ReleaseType>(connection.ApplicationSettings.UpdateChannel, true, out rt))
                         rt = Duplicati.Library.AutoUpdater.ReleaseType.Unknown;
 
                     // Choose the default channel in case we have unknown
@@ -129,7 +135,7 @@ namespace Duplicati.Server
                     {
                         var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate(rt);
                         if (update != null)
-                            FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion = update;
+                            connection.ApplicationSettings.UpdatedVersion = update;
                     }
                     catch
                     {
@@ -138,10 +144,10 @@ namespace Duplicati.Server
                     // It could be that we have registered an update from a more unstable channel, 
                     // but the user has switched to a more stable channel.
                     // In that case we discard the old update to avoid offering it.
-                    if (FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion != null)
+                    if (connection.ApplicationSettings.UpdatedVersion != null)
                     {
                         Library.AutoUpdater.ReleaseType updatert;
-                        var updatertstring = FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion.ReleaseType;
+                        var updatertstring = connection.ApplicationSettings.UpdatedVersion.ReleaseType;
                         if (string.Equals(updatertstring, "preview", StringComparison.OrdinalIgnoreCase))
                             updatertstring = Library.AutoUpdater.ReleaseType.Experimental.ToString();
 
@@ -152,15 +158,15 @@ namespace Duplicati.Server
                             updatert = Duplicati.Library.AutoUpdater.ReleaseType.Nightly;
 
                         if (updatert > rt)
-                            FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion = null;
+                            connection.ApplicationSettings.UpdatedVersion = null;
                     }
 
-                    var updatedinfo = FIXMEGlobal.DataConnection.ApplicationSettings.UpdatedVersion;
+                    var updatedinfo = connection.ApplicationSettings.UpdatedVersion;
                     if (updatedinfo != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(updatedinfo.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
                     {
                         var package = updatedinfo.FindPackage();
 
-                        FIXMEGlobal.DataConnection.RegisterNotification(
+                        connection.RegisterNotification(
                                     NotificationType.Information,
                                     "Found update",
                                     updatedinfo.Displayname,
@@ -183,7 +189,7 @@ namespace Duplicati.Server
                 if (ThreadState != UpdatePollerStates.Waiting)
                 {
                     ThreadState = UpdatePollerStates.Waiting;
-                    FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+                    eventPollNotify.SignalNewEvent();
                 }
 
                 var waitTime = nextCheck - DateTime.UtcNow;

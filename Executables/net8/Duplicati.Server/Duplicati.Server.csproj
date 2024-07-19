@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <Description>The Server Duplicati implementation</Description>
-    <AssemblyName>Duplicati.Server</AssemblyName>
+    <Description>The Duplicati Server implementation</Description>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>	

@@ -43,7 +43,7 @@
 
         <div ng-show="restore_step == 0 &amp;&amp; connecting == false">
             <h1 ng-show="IsBackupTemporary" translate>Restore files</h1>
-            <h1 ng-hide="IsBackupTemporary" translate translate-params-backupname="Backup.Backup.Name">Restore files from {{backupname}}</h1>
+            <h1 ng-hide="IsBackupTemporary"><span translate>Restore files from:</span> {{Backup.Backup.Name}}</h1>
             <div class="input timestamp">
                 <label for="restoreversion" translate>Restore from</label>
 

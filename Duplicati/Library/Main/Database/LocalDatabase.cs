@@ -147,7 +147,7 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand())
                 using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Operation"" ORDER BY ""Timestamp"" DESC LIMIT 1"))
                 {
-                    if(!rd.Read())
+                    if (!rd.Read())
                     {
                         throw new Exception("LocalDatabase does not contain a previous operation.");
                     }
@@ -268,13 +268,13 @@ namespace Duplicati.Library.Main.Database
                 RemoveRemoteVolume(name, transaction);
             }
         }
-        
+
         public IEnumerable<KeyValuePair<long, DateTime>> FilesetTimes
         {
             get
             {
                 using (var cmd = m_connection.CreateCommand())
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     while (rd.Read())
                         yield return new KeyValuePair<long, DateTime>(rd.GetInt64(0), ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime());
             }
@@ -870,9 +870,9 @@ ON
                                 anyError.Add(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist));
                             }
                         }
-		    if (anyError.Any())
+                    if (anyError.Any())
                     {
-                       throw new Interface.UserInformationException(string.Join("\n\r", anyError), "FilesetDifferences");
+                        throw new Interface.UserInformationException(string.Join("\n\r", anyError), "FilesetDifferences");
                     }
                 }
             }
@@ -1215,6 +1215,16 @@ ORDER BY
                 if (type != Library.Utility.FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))
                     type = Library.Utility.FilterType.Regexp;
 
+                if (filter.Empty)
+                {
+                    using (var cmd = m_connection.CreateCommand())
+                    {
+                        cmd.Transaction = transaction;
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Path"" FROM ""File"" ", Tablename));
+                        return;
+                    }
+                }
+
                 if (type == Library.Utility.FilterType.Regexp || type == Library.Utility.FilterType.Group)
                 {
                     using (var cmd = m_connection.CreateCommand())
@@ -1329,7 +1339,7 @@ ORDER BY
                 return id;
             }
         }
-        
+
         public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
         {
             m_insertIndexBlockLink.Transaction = transaction;

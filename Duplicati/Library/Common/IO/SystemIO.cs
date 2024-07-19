@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Runtime.Versioning;
 namespace Duplicati.Library.Common.IO
 {
     public static class SystemIO
@@ -28,17 +29,29 @@ namespace Duplicati.Library.Common.IO
         /// <summary>
         /// A cached lookup for windows methods for dealing with long filenames
         /// </summary>
+        [SupportedOSPlatform("windows")]
         public static readonly ISystemIO IO_WIN;
 
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macOS")]
         public static readonly ISystemIO IO_SYS;
 
         public static readonly ISystemIO IO_OS;
 
         static SystemIO()
         {
+            // TODO: These interfaces cannot be properly guarded by the supported platform attribute in this form.
+            // They are used in static methods of USNJournal on all platforms.
             IO_WIN = new SystemIOWindows();
             IO_SYS = new SystemIOLinux();
-            IO_OS = Platform.IsClientWindows ? IO_WIN : IO_SYS;
+            if (OperatingSystem.IsWindows())
+            {
+                IO_OS = IO_WIN;
+            }
+            else if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                IO_OS = IO_SYS;
+            }
         }
     }
 }

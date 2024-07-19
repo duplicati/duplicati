@@ -1,20 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
 using Duplicati.Library.Logging;
@@ -130,7 +134,7 @@ namespace Duplicati.Server
                     this.ExceptionID = exception.HelpID;
                 else
                     this.ExceptionID = entry.Exception.GetType().FullName;
-                    
+
             }
         }
 
@@ -150,15 +154,15 @@ namespace Duplicati.Server
             {
                 m_buffer = new T[size];
                 if (initial != null)
-                    foreach(var t in initial)
+                    foreach (var t in initial)
                         this.Enqueue(t);
             }
-                
+
             public int Length { get { return m_length; } }
 
             public void Enqueue(T item)
             {
-                lock(m_lock)
+                lock (m_lock)
                 {
                     m_key++;
                     m_buffer[m_head] = item;
@@ -174,7 +178,7 @@ namespace Duplicati.Server
             public IEnumerator<T> GetEnumerator()
             {
                 var k = m_key;
-                for(var i = 0; i < m_length; i++)
+                for (var i = 0; i < m_length; i++)
                     if (m_key != k)
                         throw new InvalidOperationException("Buffer was modified while reading");
                     else
@@ -190,7 +194,7 @@ namespace Duplicati.Server
 
             public T[] FlatArray(Func<T, bool> filter = null)
             {
-                lock(m_lock)
+                lock (m_lock)
                     if (filter == null)
                         return this.ToArray();
                     else
@@ -218,7 +222,7 @@ namespace Duplicati.Server
 
         public void RenewTimeout(LogMessageType type)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 m_timeouts[(int)type] = DateTime.Now.AddSeconds(30);
                 m_anytimeouts = true;
@@ -245,12 +249,12 @@ namespace Duplicati.Server
             UpdateLogLevel();
 
             offset = offset.ToUniversalTime();
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (m_buffer == null)
                     return new LogEntry[0];
-                
-                return m_buffer.FlatArray((x) => x.When > offset && x.Type >= level );
+
+                return m_buffer.FlatArray((x) => x.When > offset && x.Type >= level);
             }
         }
 
@@ -259,18 +263,20 @@ namespace Duplicati.Server
             RenewTimeout(level);
             UpdateLogLevel();
 
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (m_buffer == null)
                     return new LogEntry[0];
-                
-                var buffer = m_buffer.FlatArray((x) => x.ID > id && x.Type >= level );
+
+                var buffer = m_buffer.FlatArray((x) => x.ID > id && x.Type >= level);
                 // Return the <page_size> newest entries
-                if (buffer.Length > pagesize) {
+                if (buffer.Length > pagesize)
+                {
                     var index = buffer.Length - pagesize;
                     return buffer.Skip(index).Take(pagesize).ToArray();
                 }
-                else {
+                else
+                {
                     return buffer;
                 }
             }
@@ -280,13 +286,13 @@ namespace Duplicati.Server
         {
             var i = 0;
             return (from n in m_timeouts
-                                let ix = i++
-                                where n > DateTime.Now
-                                select ix).ToArray();
+                    let ix = i++
+                    where n > DateTime.Now
+                    select ix).ToArray();
         }
 
         private void UpdateLogLevel()
-        {   
+        {
             m_logLevel =
                 (LogMessageType)(GetActiveTimeouts().Union(new int[] { (int)m_serverloglevel }).Min());
         }
@@ -296,9 +302,9 @@ namespace Duplicati.Server
 
         public void WriteMessage(Duplicati.Library.Logging.LogEntry entry)
         {
-            if (entry.Level < m_logLevel) 
+            if (entry.Level < m_logLevel)
                 return;
-            
+
             if (m_serverfile != null && entry.Level >= m_serverloglevel)
                 try
                 {
@@ -308,7 +314,7 @@ namespace Duplicati.Server
                 {
                 }
 
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (m_anytimeouts)
                 {

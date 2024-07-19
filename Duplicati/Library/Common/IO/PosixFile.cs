@@ -20,10 +20,13 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using Mono.Unix.Native;
 
 namespace Duplicati.Library.Common.IO
 {
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macOS")]
     public static class PosixFile
     {
     

@@ -8,6 +8,7 @@
             <input ng-if="getInputType(item) == 'bool'" type="checkbox" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option-bool ></input>
             <input ng-if="getInputType(item) == 'password'" type="password" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
             <input ng-if="getInputType(item) == 'text'" type="text" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
+            <input ng-if="getInputType(item) == 'decimal'" type="text" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
             <input ng-if="getInputType(item) == 'int'" type="number" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option-integer ></input>
 
             <div ng-if="getInputType(item) == 'size'" class="input type multiple">

@@ -11,11 +11,18 @@
             "preLaunchTask": "dotnet: build",
             "program": "${workspaceFolder}/bin/Debug/net8.0/ReleaseBuilder.dll",
             // "args": ["create-key", "testfile.key1", "--password", "test1234"],
+
+            // "args": ["build", "canary"],
+            // "args": ["build", "experimental"],
+            // "args": ["build", "beta"],
+            // "args": ["build", "stable"],
+
             "args": [ 
                 "build", 
                 "debug",
                 "--git-stash-push", "false", 
                 "--targets", "win-arm64-gui.zip",
+                "--targets", "win-arm64-gui.msi",
                 "--targets", "win-x86-gui.zip",
                 "--targets", "win-x86-gui.msi",
                 "--targets", "win-x64-gui.msi",
@@ -30,6 +37,8 @@
                 "--targets", "linux-x64-cli.deb", 
                 "--targets", "linux-arm64-gui.deb", 
                 "--targets", "linux-arm64-cli.deb", 
+                "--targets", "linux-arm7-gui.deb", 
+                "--targets", "linux-arm7-cli.deb", 
                 "--targets", "linux-x64-cli.docker", 
                 "--targets", "linux-arm64-cli.docker", 
                 "--targets", "linux-arm7-cli.docker", 

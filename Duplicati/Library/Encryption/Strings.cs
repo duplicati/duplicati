@@ -28,8 +28,9 @@ namespace Duplicati.Library.Encryption.Strings
         public static string Description_v2 { get { return LC.L(@"This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption."); } }
         public static string DisplayName { get { return LC.L(@"AES-256 encryption, built in"); } }
         public static string EmptyKeyError { get { return LC.L(@"Empty passphrase not allowed"); } }
-        public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations. Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. multithreading)"); } }
-        public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting (0-4)"); } }
+        public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations."); } }
+        public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting"); } }
+        public static string AessetthreadlevelDeprecated { get { return LC.L(@"This option has no effect and should not be used"); } }
     }
     internal static class EncryptionBase
     {
@@ -41,14 +42,11 @@ namespace Duplicati.Library.Encryption.Strings
         public static string DisplayName { get { return LC.L(@"GNU Privacy Guard, external"); } }
         public static string GpgencryptiondecryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --decrypt option is always specified."); } }
         public static string GpgencryptiondecryptionswitchesShort { get { return LC.L(@"Extra GPG commandline options for decryption"); } }
-        public static string GpgencryptiondisablearmorLong { get { return LC.L(@"The GPG encryption/decryption will use the --armor option for GPG to protect the files with armor. Specify this switch to remove the --armor option."); } }
-        public static string GpgencryptiondisablearmorShort { get { return LC.L(@"Don't use GPG Armor"); } }
         public static string GpgencryptionencryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --encrypt option is always specified."); } }
         public static string GpgencryptionencryptionswitchesShort { get { return LC.L(@"Extra GPG commandline options for encryption"); } }
         public static string GPGExecuteError(string program, string args, string message) { return LC.L(@"Failed to execute GPG with ""{0} {1}"": {2}", program, args, message); }
-        public static string GpgprogrampathLong { get { return LC.L(@"The path to the GNU Privacy Guard program. If not supplied, Duplicati will assume that the program ""gpg"" is available in the system path."); } }
+        public static string GpgprogrampathLong { get { return LC.L(@"The path to the GNU Privacy Guard program. If not supplied, Duplicati will search for ""gpg2"" and ""gpg"" on the system."); } }
         public static string GpgprogrampathShort { get { return LC.L(@"The path to GnuPG"); } }
-        public static string Gpgencryptiondisablearmordeprecated(string optionname) { return LC.L(@"This option has non-standard handling, please use the --{0} option instead.", optionname); }
         public static string GpgencryptionenablearmorLong { get { return LC.L(@"Use this option to supply the --armor option to GPG. The files will be larger but can be sent as pure text files."); } }
         public static string GpgencryptionenablearmorShort { get { return LC.L(@"Use GPG Armor"); } }
         public static string GpgencryptiondecryptioncommandLong { get { return LC.L(@"Overrides the GPG command supplied for decryption"); } }

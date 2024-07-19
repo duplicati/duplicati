@@ -55,9 +55,11 @@ public static partial class Command
         /// Single entry in the installer json support file
         /// </summary>
         /// <param name="url">The remote package url</param>
+        /// <param name="filename">The filename of the package</param>
         /// <param name="md5">The MD5 hash of the file</param>
         /// <param name="sha256">The SHA256 hash of the file</param>
-        private record PackageEntry(string url, string md5, string sha256);
+        /// <param name="size">The size of the file</param>
+        private record PackageEntry(string url, string filename, string md5, string sha256, long size);
 
         /// <summary>
         /// Creates the package list in JSON format
@@ -69,8 +71,10 @@ public static partial class Command
         {
             var entries = packages.Select(f => (f.Target.PackageTargetString, Entry: new PackageEntry(
                 url: $"https://updates.duplicati.com/{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/{System.Web.HttpUtility.UrlEncode(Path.GetFileName(f.CreatedFile))}",
+                filename: Path.GetFileName(f.CreatedFile),
                 md5: CalculateHash(f.CreatedFile, "md5"),
-                sha256: CalculateHash(f.CreatedFile, "sha256")
+                sha256: CalculateHash(f.CreatedFile, "sha256"),
+                size: new FileInfo(f.CreatedFile).Length
             )))
             .ToDictionary(x => x.PackageTargetString, x => x.Entry);
 
@@ -138,6 +142,7 @@ public static partial class Command
             request.Headers.Add("Accept", "application/vnd.github+json");
             request.Headers.Add("Authorization", $"Bearer {ghtoken}");
             request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+            request.Headers.Add("User-Agent", "Duplicati Release Builder v1");
             request.Content = JsonContent.Create(new GhReleaseInfo(
                 tag_name: $"v{rtcfg.ReleaseInfo.ReleaseName}",
                 target_commitish: "master",
@@ -162,10 +167,11 @@ public static partial class Command
                 request.Headers.Add("Accept", "application/vnd.github+json");
                 request.Headers.Add("Authorization", $"Bearer {ghtoken}");
                 request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-                request.Headers.Add("Content-Type", "application/octet-stream");
+                request.Headers.Add("User-Agent", "Duplicati Release Builder v1");
 
                 using var fileStream = File.OpenRead(file.Path);
                 request.Content = new StreamContent(fileStream);
+                request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
 
                 response = await httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
@@ -214,11 +220,12 @@ public static partial class Command
             req.Headers.Add("Accept", "application/json");
             req.Content = new FormUrlEncodedContent([
                 new KeyValuePair<string, string>("category", "10"),
-                new KeyValuePair<string, string>("title", $"Release: ${rtcfg.ReleaseInfo.Version} (${rtcfg.ReleaseInfo.Channel}) ${rtcfg.ReleaseInfo.Timestamp:yyyy-MM-dd}"),
-                new KeyValuePair<string, string>("raw", $"# [${rtcfg.ReleaseInfo.ReleaseName}](https://github.com/duplicati/duplicati/releases/tag/v${rtcfg.ReleaseInfo.ReleaseName})\n\n{rtcfg.ChangelogNews}")
+                new KeyValuePair<string, string>("title", $"Release: {rtcfg.ReleaseInfo.Version} ({rtcfg.ReleaseInfo.Channel}) {rtcfg.ReleaseInfo.Timestamp:yyyy-MM-dd}"),
+                new KeyValuePair<string, string>("raw", $"# [{rtcfg.ReleaseInfo.ReleaseName}](https://github.com/duplicati/duplicati/releases/tag/v{rtcfg.ReleaseInfo.ReleaseName})\n\n{rtcfg.ChangelogNews}")
             ]);
 
-            await client.SendAsync(req);
+            var resp = await client.SendAsync(req);
+            resp.EnsureSuccessStatusCode();
         }
     }
 }

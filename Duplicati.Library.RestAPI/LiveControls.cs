@@ -1,27 +1,28 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Duplicati.Library.Common;
-using Duplicati.Library.RestAPI;
+using System.Runtime.Versioning;
+using Duplicati.Library.IO;
+using Duplicati.Server.Database;
 
 namespace Duplicati.Server
 {
@@ -29,7 +30,7 @@ namespace Duplicati.Server
     /// This class keeps track of the users modifications regarding
     /// throttling and pause/resume
     /// </summary>
-    public class LiveControls
+    public class LiveControls : ILiveControls
     {
         /// <summary>
         /// The tag used for logging
@@ -86,6 +87,8 @@ namespace Duplicati.Server
         /// </summary>
         public LiveControlState State { get { return m_state; } }
 
+        public bool IsPaused => State == LiveControlState.Paused;
+
         /// <summary>
         /// The internal variable that tracks the the priority
         /// </summary>
@@ -109,8 +112,8 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the current overridden thread priority
         /// </summary>
-        public System.Threading.ThreadPriority? ThreadPriority 
-        { 
+        public System.Threading.ThreadPriority? ThreadPriority
+        {
             get { return m_priority; }
             set
             {
@@ -126,8 +129,8 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the current upload limit in bps
         /// </summary>
-        public long? UploadLimit 
-        { 
+        public long? UploadLimit
+        {
             get { return m_uploadLimit; }
             set
             {
@@ -143,8 +146,8 @@ namespace Duplicati.Server
         /// <summary>
         /// Gets the download limit in bps
         /// </summary>
-        public long? DownloadLimit 
-        { 
+        public long? DownloadLimit
+        {
             get { return m_downloadLimit; }
             set
             {
@@ -160,7 +163,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The timer that is activated after a pause period.
         /// </summary>
-        private readonly System.Threading.Timer m_waitTimer;
+        private System.Threading.Timer m_waitTimer;
 
         /// <summary>
         /// The time that the current pause is expected to expire
@@ -168,10 +171,26 @@ namespace Duplicati.Server
         private DateTime m_waitTimeExpiration = new DateTime(0);
 
         /// <summary>
+        /// The connection to use
+        /// </summary>
+        private readonly Connection m_connection;
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
-        public LiveControls(Database.ServerSettings settings)
+        /// <param name="connection">The connection to use</param>
+        public LiveControls(Connection connection)
         {
+            m_connection = connection;
+            Init();
+        }
+
+        /// <summary>
+        /// Constructs a new instance of the LiveControl
+        /// </summary>
+        private void Init()
+        {
+            var settings = m_connection.ApplicationSettings;
             m_state = LiveControlState.Running;
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
 
@@ -179,7 +198,7 @@ namespace Duplicati.Server
             {
                 long milliseconds = 0;
                 try { milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds; }
-                catch {}
+                catch { }
 
                 if (milliseconds > 0)
                 {
@@ -212,7 +231,7 @@ namespace Duplicati.Server
 
             try
             {
-                if (!Platform.IsClientPosix)
+                if (OperatingSystem.IsWindows())
                     RegisterHibernateMonitor();
             }
             catch { }
@@ -222,7 +241,7 @@ namespace Duplicati.Server
         /// Event that occurs when the timeout duration is exceeded
         /// </summary>
         /// <param name="sender">The sender of the event</param>
-        private void  m_waitTimer_Tick(object sender)
+        private void m_waitTimer_Tick(object sender)
         {
             lock (m_lock)
                 Resume();
@@ -269,7 +288,7 @@ namespace Duplicati.Server
         /// </summary>
         public void Pause()
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 var fireEvent = m_waitTimeExpiration.Ticks != 0 && m_state == LiveControlState.Paused && StateChanged != null;
 
@@ -337,6 +356,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Method for calling a Win32 API
         /// </summary>
+        [SupportedOSPlatform("windows")]
         private void RegisterHibernateMonitor()
         {
             Microsoft.Win32.SystemEvents.PowerModeChanged += new Microsoft.Win32.PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
@@ -347,6 +367,7 @@ namespace Duplicati.Server
         /// </summary>
         /// <param name="sender">Unused sender parameter</param>
         /// <param name="_e">The event information</param>
+        [SupportedOSPlatform("windows")]
         private void SystemEvents_PowerModeChanged(object sender, object _e)
         {
             Microsoft.Win32.PowerModeChangedEventArgs e = _e as Microsoft.Win32.PowerModeChangedEventArgs;
@@ -380,7 +401,7 @@ namespace Duplicati.Server
                 {
                     long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
 
-                    var appset = FIXMEGlobal.DataConnection.ApplicationSettings;
+                    var appset = m_connection.ApplicationSettings;
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
                         try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
                         catch { }

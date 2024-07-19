@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -29,6 +30,7 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// Handler for providing a snapshot like access to files and folders
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public sealed class NoSnapshotWindows : SnapshotBase
     {
         /// <summary>

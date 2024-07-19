@@ -43,6 +43,8 @@ public static partial class Command
         { "Duplicati.CommandLine.BackendTool", "duplicati-backend-tool" },
         { "Duplicati.CommandLine.RecoveryTool", "duplicati-recovery-tool" },
         { "Duplicati.CommandLine.AutoUpdater", "duplicati-autoupdater" },
+        { "Duplicati.CommandLine.SharpAESCrypt", "duplicati-aescrypt" },
+        { "Duplicati.CommandLine.Snapshots", "duplicati-snapshots" },
         { "Duplicati.CommandLine.ConfigurationImporter", "duplicati-configuration-importer" },
         { "Duplicati.CommandLine", "duplicati-cli" },
         { "Duplicati.Server", "duplicati-server"},
@@ -74,7 +76,7 @@ public static partial class Command
     /// <summary>
     /// The packages that are required for GUI builds
     /// </summary>
-    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libICE", "libSM", "fontconfig", "libicu"];
+    private static readonly IReadOnlyList<string> FedoraGUIDepends = ["libICE", "libSM", "fontconfig", "libicu", "desktop-file-utils"];
     /// <summary>
     /// The packages that are required for CLI builds
     /// </summary>
@@ -94,24 +96,15 @@ public static partial class Command
         /// </summary>
         public string ReleaseName => $"{Version}_{Channel.ToString().ToLowerInvariant()}_{Timestamp:yyy-MM-dd}";
 
-
-        /// <summary>
-        /// Create a new release info
-        /// </summary>
-        /// <param name="type">The release type</param>
-        /// <param name="incVersion">The incremental version</param>
-        /// <returns>The release info</returns>
-        public static ReleaseInfo Create(ReleaseChannel type, int incVersion)
-            => new ReleaseInfo(new Version(2, 0, 0, incVersion), type, DateTime.Today);
-
         /// <summary>
         /// Create a new release info
         /// </summary>
         /// <param name="type">The release type</param>
         /// <param name="version">The version</param>
+        /// <param name="increment">The build version increment</param>
         /// <returns>The release info</returns>
-        public static ReleaseInfo Create(ReleaseChannel type, Version version)
-            => new ReleaseInfo(version, type, DateTime.Today);
+        public static ReleaseInfo Create(ReleaseChannel type, Version version, int increment)
+            => new ReleaseInfo(new Version(version.Major, version.Minor, version.Build, version.Revision + increment), type, DateTime.Today);
     }
 
     /// <summary>
@@ -252,6 +245,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var useHostedBuildsOption = new Option<bool>(
+            name: "--use-hosted-builds",
+            description: "Create hosted builds that require .NET installed, instead of self-contained builds with no .NET dependency",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -273,7 +272,8 @@ public static partial class Command
             disableS3UploadOption,
             disableGithubUploadOption,
             disableUpdateServerReloadOption,
-            disableDiscordAnnounceOption
+            disableDiscordAnnounceOption,
+            useHostedBuildsOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -304,6 +304,7 @@ public static partial class Command
     /// <param name="DisableGithubUpload">If Github upload should be disabled</param>
     /// <param name="DisableUpdateServerReload">If the update server should not be reloaded</param>
     /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
+    /// <param name="UseHostedBuilds">If hosted builds should be used</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -325,7 +326,8 @@ public static partial class Command
         bool DisableS3Upload,
         bool DisableGithubUpload,
         bool DisableUpdateServerReload,
-        bool DisableDiscordAnnounce
+        bool DisableDiscordAnnounce,
+        bool UseHostedBuilds
     );
 
     static async Task DoBuild(CommandInput input)
@@ -367,6 +369,7 @@ public static partial class Command
         var primaryGUI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryGUIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find tray icon executable");
         var primaryCLI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryCLIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find cli executable");
         var windowsOnly = sourceProjects.Where(x => WindowsOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var guiOnlyProjects = sourceProjects.Where(x => GUIProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // Put primary at the end
         sourceProjects.Remove(primaryGUI);
@@ -403,8 +406,8 @@ public static partial class Command
         var changelogNews = File.ReadAllText(input.ChangelogFile.FullName);
 
         var releaseInfo = string.IsNullOrWhiteSpace(input.Version)
-            ? ReleaseInfo.Create(input.Channel, int.Parse(File.ReadAllText(versionFilePath)) + 1)
-            : ReleaseInfo.Create(input.Channel, Version.Parse(input.Version));
+            ? ReleaseInfo.Create(input.Channel, Version.Parse(File.ReadAllText(versionFilePath)), 1)
+            : ReleaseInfo.Create(input.Channel, Version.Parse(input.Version), 0);
         Console.WriteLine($"Building {releaseInfo.ReleaseName} ...");
 
         var keyfilePassword = input.Password;
@@ -464,7 +467,7 @@ public static partial class Command
         revertableFiles.AddRange(InjectVersionIntoFiles(baseDir, releaseInfo));
 
         // Perform the main compilations
-        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, GUIProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg);
+        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, guiOnlyProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds);
 
         if (input.BuildOnly)
         {
@@ -549,7 +552,9 @@ public static partial class Command
                 var uploads = files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x)))
                    .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)))
                    .Append(new Upload.UploadFile(packageJson, Path.GetFileName(packageJson)))
-                   .Append(new Upload.UploadFile(packageJs, Path.GetFileName(packageJs)));
+                   .Append(new Upload.UploadFile(packageJs, Path.GetFileName(packageJs)))
+                   .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"))
+                   .Append(new Upload.UploadFile(packageJs, $"latest-v2-{releaseInfo.Version}.js"));
 
                 await Upload.UploadToS3(uploads, rtcfg);
             }
@@ -573,12 +578,6 @@ public static partial class Command
             await Upload.PostToForum(rtcfg);
         }
 
-        // Clean up the source tree
-        await ProcessHelper.Execute(new[] {
-                "git", "checkout",
-            }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
-         , workingDirectory: baseDir);
-
         if (input.GitStashPush)
         {
             await GitPush.TagAndPush(baseDir, releaseInfo);
@@ -586,6 +585,12 @@ public static partial class Command
             // Contents are added to changelog, so we can remove the file
             input.ChangelogFile.Delete();
         }
+
+        // Clean up the source tree
+        await ProcessHelper.Execute(new[] {
+                "git", "checkout",
+            }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
+         , workingDirectory: baseDir);
 
         Console.WriteLine("All done!");
     }
@@ -657,7 +662,7 @@ public static partial class Command
             .Replace("${FILENAME}", HttpUtility.UrlEncode("latest-v2.manifest"))
         ));
 
-        File.WriteAllText(Path.Combine(baseDir, "Duplicati", "License", "VersionTag.txt"), releaseInfo.Version.ToString());
+        File.WriteAllText(Path.Combine(baseDir, "Duplicati", "License", "VersionTag.txt"), releaseInfo.ReleaseName);
         File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateBuildChannel.txt"), releaseInfo.Channel.ToString().ToLowerInvariant());
         File.WriteAllText(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateURL.txt"), urlstring);
         File.WriteAllLines(Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateSignKeys.txt"), rtcfg.SignKeys.Select(x => x.ToXmlString(false)));

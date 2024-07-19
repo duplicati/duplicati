@@ -70,6 +70,10 @@ namespace Duplicati.Library.Interface
             /// </summary>
             Flags,
             /// <summary>
+            /// Indicates that the argument is a decimal value
+            /// </summary>
+            Decimal,
+            /// <summary>
             /// The argument type is unknown
             /// </summary>
             Unknown

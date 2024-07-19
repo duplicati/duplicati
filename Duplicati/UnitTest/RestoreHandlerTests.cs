@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -65,7 +66,7 @@ namespace Duplicati.UnitTest
             // if it's determined to be an absolute path.
             string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
             string newPathPart = filePath.Substring(rootString.Length);
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 // On Windows, the drive letter is included in the path when the dont-compress-restore-paths option is used.
                 // The drive letter is assumed to be the first character of the path root (e.g., C:\).
@@ -80,7 +81,7 @@ namespace Duplicati.UnitTest
         [Category("RestoreHandler")]
         public void RestoreInheritanceBreaks()
         {
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 return;
             }

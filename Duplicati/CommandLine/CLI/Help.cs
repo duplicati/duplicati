@@ -33,18 +33,17 @@ namespace Duplicati.CommandLine
     public static class Help
     {
         private static readonly Dictionary<string, string> _document;
-        private const string RESOURCE_NAME = "Duplicati.CommandLine.help.txt";
+        private const string RESOURCE_NAME = "help.txt";
         private static readonly System.Text.RegularExpressions.Regex NAMEDOPTION_REGEX = new System.Text.RegularExpressions.Regex("\\%OPTION\\:(?<name>[^\\%]+)\\%");
 
         static Help()
         {
-            _document = new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
-
-            using (System.IO.StreamReader sr = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(RESOURCE_NAME)))
+            _document = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            using (var sr = new StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(Help), RESOURCE_NAME)))
             {
                 List<string> keywords = new List<string>();
                 StringBuilder sb = new StringBuilder();
-                foreach(var line in sr.ReadToEnd().Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
+                foreach (var line in sr.ReadToEnd().Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
                 {
                     if (line.Trim().StartsWith("#", StringComparison.Ordinal))
                         continue;
@@ -54,14 +53,14 @@ namespace Duplicati.CommandLine
                         if (sb.Length > 0)
                         {
                             string s = sb.ToString();
-                            foreach(var k in keywords)
+                            foreach (var k in keywords)
                                 _document[k] = s;
 
                             keywords.Clear();
                             sb.Clear();
                         }
 
-                        string[] elems = line.Split(new string[] {" ", "\t"}, StringSplitOptions.RemoveEmptyEntries);
+                        string[] elems = line.Split(new string[] { " ", "\t" }, StringSplitOptions.RemoveEmptyEntries);
                         if (elems.Length >= 2 && string.Equals(elems[elems.Length - 2], "help", StringComparison.OrdinalIgnoreCase))
                             keywords.Add(elems[elems.Length - 1]);
                         else if (elems.Length == 3 && string.Equals(elems[elems.Length - 1], "help", StringComparison.OrdinalIgnoreCase))
@@ -76,7 +75,7 @@ namespace Duplicati.CommandLine
                 if (sb.Length > 0)
                 {
                     string s = sb.ToString();
-                    foreach(var k in keywords)
+                    foreach (var k in keywords)
                         _document[k] = s;
                 }
             }
@@ -116,13 +115,14 @@ namespace Duplicati.CommandLine
                 string tp = _document[topic];
                 Library.Main.Options opts = new Library.Main.Options(new Dictionary<string, string>());
 
+                tp = tp.Replace("%CLI_EXE%", PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine));
                 tp = tp.Replace("%VERSION%", License.VersionNumbers.Version);
                 tp = tp.Replace("%BACKENDS%", string.Join(", ", Library.DynamicLoader.BackendLoader.Keys));
                 tp = tp.Replace("%APP_PATH%", Path.Combine(UpdaterManager.INSTALLATIONDIR, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine)));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());
-                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", Platform.IsClientPosix ? "/source" : @"D:\source");
-                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", Platform.IsClientPosix ? "/source/myfile.txt" : @"D:\source\file.txt");
-                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", Platform.IsClientPosix ? "/restore" : @"D:\restore");
+                tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", !OperatingSystem.IsWindows() ? "/source" : @"D:\source");
+                tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", !OperatingSystem.IsWindows() ? "/source/myfile.txt" : @"D:\source\file.txt");
+                tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", !OperatingSystem.IsWindows() ? "/restore" : @"D:\restore");
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
                 tp = tp.Replace("%COMPRESSIONMODULES%", string.Join(", ", Library.DynamicLoader.CompressionLoader.Keys));
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
@@ -132,7 +132,7 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%FILTER_GROUPS_SHORT%", string.Join(Environment.NewLine + "  ", metaGroupNames.Concat(Enum.GetNames(typeof(FilterGroup)).Except(metaGroupNames, StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.OrdinalIgnoreCase)).Select(group => "{" + group + "}")));
                 tp = tp.Replace("%FILTER_GROUPS_LONG%", Library.Utility.FilterGroups.GetOptionDescriptions(4, true));
 
-                if (Platform.IsClientWindows)
+                if (OperatingSystem.IsWindows())
                 {
                     // These properties are only valid for Windows
                     tp = tp.Replace("%EXAMPLE_WILDCARD_DRIVE_SOURCE_PATH%", @"*:\source");
@@ -205,7 +205,7 @@ namespace Duplicati.CommandLine
 
                     tp = tp.Replace("%ALLOPTIONS%", string.Join(Environment.NewLine, lines.ToArray()));
                 }
-                
+
                 if (tp.Contains("%MODULEOPTIONS%"))
                 {
                     //Figure out which module we are in
@@ -261,7 +261,7 @@ namespace Duplicati.CommandLine
                 }
 
                 if (NAMEDOPTION_REGEX.IsMatch(tp))
-                    tp = NAMEDOPTION_REGEX.Replace(tp, new Matcher().MathEvaluator); 
+                    tp = NAMEDOPTION_REGEX.Replace(tp, new Matcher().MathEvaluator);
 
                 PrintFormatted(outwriter, tp.Split(new string[] { Environment.NewLine }, StringSplitOptions.None));
             }
@@ -398,15 +398,15 @@ namespace Duplicati.CommandLine
         private static void PrintFormatted(TextWriter outwriter, IEnumerable<string> lines)
         {
             int windowWidth = 80;
-            
-            try 
+
+            try
             {
                 // This can go wrong if we have no attached console
                 if (outwriter == Console.Out)
-                    windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth); 
+                    windowWidth = Math.Max(12, Console.WindowWidth == 0 ? 80 : Console.WindowWidth);
             }
             catch { }
-            
+
             foreach (string s in lines)
             {
                 if (string.IsNullOrEmpty(s) || s.Trim().Length == 0)
@@ -472,7 +472,7 @@ namespace Duplicati.CommandLine
                 foreach (Duplicati.Library.Interface.IGenericModule mod in Library.DynamicLoader.GenericLoader.Modules)
                     if (mod.SupportedCommands != null)
                         foundArgs.Add(mod.SupportedCommands);
-                
+
                 foreach (IEnumerable<Library.Interface.ICommandLineArgument> arglst in foundArgs)
                     if (arglst != null)
                     {
@@ -510,7 +510,7 @@ namespace Duplicati.CommandLine
                 return "";
 
             List<string> lines = new List<string>();
-            foreach(Duplicati.Library.Interface.ICommandLineArgument arg in args)
+            foreach (Duplicati.Library.Interface.ICommandLineArgument arg in args)
                 if (!arg.Deprecated)
                     lines.Add(PrintArgSimple(arg, arg.Name));
 

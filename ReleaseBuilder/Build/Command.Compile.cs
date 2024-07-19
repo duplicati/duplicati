@@ -20,7 +20,7 @@ public static partial class Command
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>A task that completes when the build is done</returns>
-        public static async Task BuildProjects(string baseDir, string buildDir, IEnumerable<string> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<string> guiProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg)
+        public static async Task BuildProjects(string baseDir, string buildDir, IEnumerable<string> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<string> guiProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds)
         {
             // For tracing, create a log folder and store all logs there
             var logFolder = Path.Combine(buildDir, "logs");
@@ -73,8 +73,9 @@ public static partial class Command
                             "-r", archstring,
                             $"/p:AssemblyVersion={releaseInfo.Version}",
                             $"/p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
-                            "--self-contained", "true"
+                            "--self-contained", useHostedBuilds ? "false" : "true"
                         };
+
                         await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
                     }
 

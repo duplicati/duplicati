@@ -21,6 +21,7 @@
 
 using System;
 using System.Linq;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.Service
 {
@@ -46,7 +47,7 @@ namespace Duplicati.Service
             m_onStoppedAction = onStoppedAction;
             m_reportMessage = logMessage;
             if (m_reportMessage == null)
-                m_reportMessage = (x,y) => Console.WriteLine(x);
+                m_reportMessage = (x, y) => Console.WriteLine(x);
 
             m_cmdargs = cmdargs;
             m_thread = new System.Threading.Thread(Run);
@@ -58,7 +59,7 @@ namespace Duplicati.Service
         private void Run()
         {
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            var exec = System.IO.Path.Combine(path, "Duplicati.Server.exe");
+            var exec = System.IO.Path.Combine(path, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.Server));
             var cmdargs = "--ping-pong-keepalive=true";
             if (m_cmdargs != null && m_cmdargs.Length > 0)
                 cmdargs = Duplicati.Library.Utility.Utility.WrapAsCommandLine(new string[] { cmdargs }.Concat(m_cmdargs));
@@ -143,9 +144,9 @@ namespace Duplicati.Service
 
         private void PingProcess()
         {
-            for(var n = 0; n < 5; n++)
+            for (var n = 0; n < 5; n++)
             {
-                lock(m_writelock)
+                lock (m_writelock)
                 {
                     m_process.StandardInput.WriteLine("ping");
                     m_process.StandardInput.Flush();

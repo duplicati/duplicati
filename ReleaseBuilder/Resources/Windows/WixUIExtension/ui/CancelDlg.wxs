@@ -1,0 +1,19 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.txt file in this directory for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <UI>
+            <Dialog Id="CancelDlg" Width="260" Height="85" Title="[ProductName] Setup">
+                <Control Id="No" Type="PushButton" X="132" Y="57" Width="56" Height="17" Default="yes" Cancel="yes" Text="No">
+                    <Publish Event="EndDialog" Value="Return" />
+                </Control>
+                <Control Id="Yes" Type="PushButton" X="72" Y="57" Width="56" Height="17" Text="Yes">
+                    <Publish Event="EndDialog" Value="Exit" />
+                </Control>
+                <Control Id="Text" Type="Text" X="48" Y="15" Width="194" Height="30" NoPrefix="yes" Text="Are you sure you want to cancel [ProductName] installation?" />
+                <Control Id="Icon" Type="Icon" X="15" Y="15" Width="24" Height="24" ToolTip="yes" FixedSize="yes" IconSize="32" Text="WixUI_Ico_Info" />
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>

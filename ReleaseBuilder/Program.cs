@@ -17,10 +17,12 @@ class Program
         "win-x86-gui.zip",
         "win-x86-gui.msi",
         "win-arm64-gui.zip",
-        // "win-arm64-gui.msi", // Not supported by wixl
+        "win-arm64-gui.msi",
         "linux-x64-gui.zip",
         "linux-x64-gui.deb",
         "linux-x64-gui.rpm",
+        "linux-arm7-gui.deb",
+        "linux-arm7-cli.deb",
         "linux-x64-cli.zip",
         "linux-x64-cli.deb",
         "linux-x64-cli.rpm",

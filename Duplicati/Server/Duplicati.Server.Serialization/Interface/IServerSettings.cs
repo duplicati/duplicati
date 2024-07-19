@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-
 namespace Duplicati.Server.Serialization.Interface
 {
     /// <summary>
@@ -44,7 +42,7 @@ namespace Duplicati.Server.Serialization.Interface
         /// The generic modules known by the server
         /// </summary>
         IDynamicModule[] GenericModules { get; }
-        
+
         /// <summary>
         /// The filters that are applied to all backups
         /// </summary>

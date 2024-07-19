@@ -11,6 +11,7 @@
 # --run-script-before-required = <filename>
 # --run-script-timeout = <time>
 # --run-script-after = <filename>
+# --run-script-with-arguments = <boolean>
 #
 # --run-script-before = <filename>
 # Duplicati will run the script before the backup job and waits for its 
@@ -44,6 +45,13 @@
 # The same exit codes as in --run-script-before are supported, but
 # the operation will always continue (i.e. 1 => 0, 3 => 2, 5 => 4)
 # as it has already completed so stopping it during stop is useless.
+#
+# --run-script-with-arguments = <boolean>
+# If set to true, the script path will be parsed as a command line, and the
+# arguments will be passed to the script. If set to false (default), 
+# the script path will used as a single path.
+# Use double- or single-quotes to pass arguments with spaces.
+# Example: --run-script-before="\"/path to/script.sh\" \"arg1 \" arg2"
 
 
 ###############################################################################

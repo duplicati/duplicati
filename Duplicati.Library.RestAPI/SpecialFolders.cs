@@ -1,20 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -31,7 +35,7 @@ namespace Duplicati.Server
 
         public static string ExpandEnvironmentVariables(string path)
         {
-            foreach(var n in Nodes)
+            foreach (var n in Nodes)
                 if (path.StartsWith(n.id, StringComparison.Ordinal))
                     path = path.Replace(n.id, n.resolvedpath);
             return Environment.ExpandEnvironmentVariables(path);
@@ -54,21 +58,21 @@ namespace Duplicati.Server
                 });
         }
 
-        public static string TranslateToPath(string str) 
+        public static string TranslateToPath(string str)
         {
             string res;
             if (PathMap.TryGetValue(str, out res))
                 return res;
-            
+
             return null;
         }
 
-        public static string TranslateToDisplayString(string str) 
+        public static string TranslateToDisplayString(string str)
         {
             string res;
             if (DisplayMap.TryGetValue(str, out res))
                 return res;
-            
+
             return null;
         }
 
@@ -109,12 +113,12 @@ namespace Duplicati.Server
             {
             }
         }
-        
+
         static SpecialFolders()
         {
             var lst = new List<Serializable.TreeNode>();
-            
-            if (Platform.IsClientWindows)
+
+            if (OperatingSystem.IsWindows())
             {
                 TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
                 TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
@@ -147,7 +151,7 @@ namespace Duplicati.Server
             Nodes = lst.ToArray();
         }
 
-        internal static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
+        public static Dictionary<string, string> GetSourceNames(Serialization.Interface.IBackup backup)
         {
             if (backup.Sources == null || backup.Sources.Length == 0)
                 return new Dictionary<string, string>();
@@ -181,7 +185,7 @@ namespace Duplicati.Server
 
             // Handle duplicates
             var result = new Dictionary<string, string>();
-            foreach(var x in sources)
+            foreach (var x in sources)
                 result[x.Key] = x.Value;
 
             return result;

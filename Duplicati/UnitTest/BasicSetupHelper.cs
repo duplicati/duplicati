@@ -203,7 +203,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected static void ZipFileExtractToDirectory(string sourceArchiveFileName, string destinationDirectoryName)
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 // Handle long paths under Windows by extracting to a
                 // temporary file and moving the resulting file to the

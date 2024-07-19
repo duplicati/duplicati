@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -83,7 +84,7 @@ namespace Duplicati.Library.Backend
                 paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 //On windows we expand the drive letter * to all drives
-                if (!Platform.IsClientPosix)
+                if (!OperatingSystem.IsWindows())
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
 
@@ -257,7 +258,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
                     new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
-                    new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationShort),
+                    new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationLong),
 
                 });
 
@@ -300,7 +301,7 @@ namespace Duplicati.Library.Backend
         private System.IO.DriveInfo GetDrive()
         {
             string root;
-            if (Platform.IsClientPosix)
+            if (OperatingSystem.IsWindows())
             {
                 string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
                 root = "/";
@@ -319,7 +320,7 @@ namespace Duplicati.Library.Backend
 
             // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)
             // So only attempt to get it if we aren't on Windows or if the root starts with a letter.
-            if (!Platform.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
+            if (!OperatingSystem.IsWindows() || (root.Length > 0 && char.IsLetter(root[0])))
             {
                 try
                 {
@@ -341,10 +342,15 @@ namespace Duplicati.Library.Backend
                 System.IO.DriveInfo driveInfo = this.GetDrive();
                 if (driveInfo != null)
                 {
-                    return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                    // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
+                    // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
+                    if (driveInfo.TotalSize > 0)
+                    {
+                        return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                    }
                 }
 
-                if (Platform.IsClientWindows)
+                if (OperatingSystem.IsWindows())
                 {
                     // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
                     // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
@@ -375,6 +381,7 @@ namespace Duplicati.Library.Backend
         /// <param name="directory">Directory</param>
         /// <returns>Quota info</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static QuotaInfo GetDiskFreeSpace(string directory)
         {
             ulong available;
@@ -389,6 +396,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        [SupportedOSPlatform("windows")]
         private static class WindowsDriveHelper
         {
             [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]

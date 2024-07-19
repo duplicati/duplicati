@@ -1,7 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,15 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="6.0.0" />
-    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />
   </ItemGroup>
-
-	<ItemGroup>
-		<Reference Include="HttpServer">
-			<HintPath>..\thirdparty\HttpServer\HttpServer.dll</HintPath>
-		</Reference>
-	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj" />
@@ -32,4 +26,9 @@
     <ProjectReference Include="..\Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="WebServer\Kestrel\" />
+  </ItemGroup>
+
 </Project>
+
