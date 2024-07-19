@@ -281,7 +281,6 @@ def runTests():
     wait_for_load(By.ID, "password").send_keys(PASSWORD)
     wait_for_load(By.ID, "connect").click()
 
-    time.sleep(1) # Delay so page has time to load
     print("Waiting for filelist")
     wait_for_load(By.XPATH, "//span[contains(text(),'" + SOURCE_FOLDER + "')]")  # wait for filelist
 
