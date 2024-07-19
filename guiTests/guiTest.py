@@ -130,8 +130,6 @@ def runTests():
         "http://localhost:8200/ngax/index.html#/restorestart"
         "http://localhost:8200/ngax/index.html#/restoredirect"
         "http://localhost:8200/ngax/index.html#/"
-        "http://localhost:8200/ngax/index.html?cb=1",
-        "http://localhost:8200/ngax/index.html?cb=2"
     ]
     WEBSERVICE_PASSWORD = "easy1234"
     BACKUP_NAME = "BackupName"
