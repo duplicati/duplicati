@@ -122,11 +122,13 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     this.callWhenTaskCompletes = function (taskid, callback) {
         if (waitingfortask[taskid] == null)
-        {
             waitingfortask[taskid] = [];
 
-            // Guard against cases where the taks state is incorrectly reported
-            // This happens on really fast completion, and also sometimes on longer running tasks
+        waitingfortask[taskid].push(callback);
+
+        // Guard against cases where the taks state is incorrectly reported
+        // This happens on really fast completion, and also sometimes on longer running tasks
+        if (waitingfortaskTimers[taskid] == null) {
             waitingfortaskTimers[taskid] = window.setInterval(() => {
                 if (waitingfortask[taskid] == null)
                 {
@@ -141,8 +143,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
                 checkTaskState(taskid);
             }, 1000);
         }
-            
-        waitingfortask[taskid].push(callback);
+
     };
 
     // This appears to be broken, and causes the UI to hang
