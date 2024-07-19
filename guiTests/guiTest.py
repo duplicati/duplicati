@@ -124,6 +124,13 @@ def wait_for_title(title, timeout=10):
 def runTests():
     HOME_URL = "http://localhost:8200/ngax/index.html"
     LOGIN_URL = "http://localhost:8200/login.html"
+    PRELOAD_URLS = [
+        "http://localhost:8200/ngax/index.html#/addstart",
+        "http://localhost:8200/ngax/index.html#/add",
+        "http://localhost:8200/ngax/index.html#/restorestart",
+        "http://localhost:8200/ngax/index.html#/restoredirect",
+        "http://localhost:8200/ngax/index.html#/"
+    ]
     WEBSERVICE_PASSWORD = "easy1234"
     BACKUP_NAME = "BackupName"
     PASSWORD = "the_backup_password_is_really_long_and_safe"
@@ -139,6 +146,14 @@ def runTests():
     wait_for_load(By.ID, "login-button").click()
 
     wait_for_redirect(HOME_URL)
+    time.sleep(1)
+
+    print("Preloading pages ...")
+    for url in PRELOAD_URLS:
+        driver.get(url)
+        time.sleep(1)
+
+    driver.get(HOME_URL)
     time.sleep(1)
 
     # Load attempts
