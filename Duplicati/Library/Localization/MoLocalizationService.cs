@@ -79,10 +79,10 @@ namespace Duplicati.Library.Localization
                 // Load the specialized version first
                 string.Format("localization-{0}.mo", ci.Name.Replace('-', '_')), 
                 // Then try the generic language version
-                string.Format("localization-{0}.mo", ci.TwoLetterISOLanguageName) 
+                string.Format("localization-{0}.mo", ci.TwoLetterISOLanguageName)
             };
 
-            foreach(var fn in filenames)
+            foreach (var fn in filenames)
             {
                 // search first in external files
                 foreach (var sp in SearchPaths)
@@ -91,7 +91,7 @@ namespace Duplicati.Library.Localization
                     {
                         using (var moFileStream = File.OpenRead(Path.Combine(sp, fn)))
                             catalog = new Catalog(moFileStream, ci);
-                        return; 
+                        return;
                     }
                 }
 
@@ -118,13 +118,21 @@ namespace Duplicati.Library.Localization
         }
 
         /// <summary>
+        /// Pre-processes the message to use Linux line endings
+        /// </summary>
+        /// <param name="message">The message to pre-process</param>
+        /// <returns>The pre-processed message</returns>
+        private static string PreFormat(string message)
+            => message?.Replace("\r\n", "\n");
+
+        /// <summary>
         /// Localizes the string similar to how string.Format works
         /// </summary>
         /// <param name="message">The string to localize</param>
         /// <returns>The localized string</returns>
         public string Localize(string message)
         {
-            return catalog.GetString(message);
+            return catalog.GetString(PreFormat(message));
         }
 
         /// <summary>
@@ -135,7 +143,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0)
         {
-            return catalog.GetString(message, arg0);
+            return catalog.GetString(PreFormat(message), arg0);
         }
 
         /// <summary>
@@ -147,7 +155,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1)
         {
-            return catalog.GetString(message, arg0, arg1);
+            return catalog.GetString(PreFormat(message), arg0, arg1);
         }
 
         /// <summary>
@@ -160,7 +168,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1, object arg2)
         {
-            return catalog.GetString(message, arg0, arg1, arg2);
+            return catalog.GetString(PreFormat(message), arg0, arg1, arg2);
         }
 
         /// <summary>
@@ -170,7 +178,7 @@ namespace Duplicati.Library.Localization
         /// <param name="args">The arguments</param>
         public string Localize(string message, params object[] args)
         {
-            return catalog.GetString(message, args);
+            return catalog.GetString(PreFormat(message), args);
         }
 
         private static IEnumerable<CultureInfo> m_supportedcultures = null;
@@ -219,7 +227,7 @@ namespace Duplicati.Library.Localization
                     .ToList();
             }
         }
-        
+
         /// <summary>
         /// Returns true if the culture has localization support
         /// </summary>
@@ -230,7 +238,7 @@ namespace Duplicati.Library.Localization
                 if (supportedCulture.TwoLetterISOLanguageName == culture.TwoLetterISOLanguageName)
                     return true;
             }
-            return false;            
+            return false;
         }
     }
 }
