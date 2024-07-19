@@ -377,9 +377,11 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
                         AppService.get('/task/' + taskid).then(function(resp) {
 
                             $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process …');
+                            console.log('Starting the restore process …', resp);
                             if (resp.data.Status == 'Completed')
                             {
                                 AppService.post('/backup/' + backupid + '/restore', p).then(function(resp) {
+                                    console.log('Restoring files …', resp);
                                     $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
                                     var t2 = $scope.taskid = resp.data.ID;
                                     ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
@@ -403,6 +405,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             $scope.ConnectionProgress = gettextCatalog.getString('Starting the restore process …');
             AppService.post('/backup/' + $scope.BackupID + '/restore', p).then(function(resp) {
                 $scope.ConnectionProgress = gettextCatalog.getString('Restoring files …');
+                console.log('Restoring files …', resp);
                 var t2 = $scope.taskid = resp.data.ID;
                 ServerStatus.callWhenTaskCompletes(t2, function() { $scope.onRestoreComplete(t2); });
             }, handleError);
@@ -410,9 +413,11 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
     };
 
     $scope.onRestoreComplete = function(taskid) {
+        console.log('onRestoreComplete: ', taskid);
         AppService.get('/task/' + taskid).then(function(resp) {
             $scope.connecting = false;
             $scope.ConnectionProgress = '';
+            console.log('Restore complete message: ', resp);
 
             if (resp.data.Status == 'Completed')
             {
