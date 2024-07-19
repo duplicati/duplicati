@@ -24,8 +24,8 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class COSBackend
     {
-        public static string DisplayName { get { return LC.L(@"Tencent COS"); } }
-        public static string Description { get { return LC.L(@"Object storage (Cloud Object Storage, COS) is a distributed storage service for storing massive files provided by Tencent Cloud, which has the advantages of high scalability, low cost, reliability and security."); } }
+        public static string DisplayName { get { return LC.L(@"Tencent COS (Cloud Object Storage)"); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to the Tencent COS."); } }
 
         public static string COSAccountDescriptionShort { get { return LC.L(@"Account ID"); } }
         public static string COSAccountDescriptionLong { get { return LC.L(@"Account ID of Tencent Cloud Account"); } }
