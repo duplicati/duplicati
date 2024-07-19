@@ -233,7 +233,7 @@ def runTests():
     print("Running backup job")
     wait_for_clickable(By.LINK_TEXT, BACKUP_NAME).click()
     [n for n in driver.find_elements("xpath", "//dl[@class='taskmenu']/dd/p/span[contains(text(),'Run now')]") if n.is_displayed()][0].click()
-    wait_for_text("//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ", 120)
+    wait_for_text("//div[@class='task ng-scope']/dl[2]/dd[1]", "(took ", 60)
 
     # Restore
     print("Restoring")
@@ -252,7 +252,7 @@ def runTests():
 
     # wait for restore to finish
     print("Waiting for restore to finish")
-    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 120)
+    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 60)
 
     # hash restored files
     print("Restore completed, verifying hashes")
@@ -296,7 +296,7 @@ def runTests():
 
     # wait for restore to finish
     print("Waiting for direct restore to finish")
-    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 120)
+    wait_for_text("//form[@id='restore']/div[3]/h3/div[1]", "Your files and folders have been restored successfully.", 60)
 
     # hash direct restore files
     print("Direct restore completed, verifying hashes")
