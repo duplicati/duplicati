@@ -4,6 +4,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     var longpolltime = 5 * 60 * 1000;
 
     var waitingfortask = {};
+    var waitingfortaskTimers = {};
 
     var state = {
         lastEventId: -1,
@@ -93,6 +94,11 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     };
 
     function notifyTaskCompleted(taskid) {
+        if (waitingfortaskTimers[taskid] != null) {
+            window.clearInterval(waitingfortaskTimers[taskid]);
+            delete waitingfortaskTimers[taskid];
+        }
+
         if (waitingfortask[taskid] != null) {
             for(var i in waitingfortask[taskid])
                 waitingfortask[taskid][i]();
@@ -100,41 +106,57 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         }
     }
 
+    function checkTaskState(taskid) {
+        AppService.get('/task/' + taskid).then(
+            resp => {
+                if (resp.data.Status == 'Completed' || resp.data.Status == 'Failed')
+                    notifyTaskCompleted(taskid);
+            },
+            // Ignore errors
+            resp => {
+                if (resp.status == 404)
+                    notifyTaskCompleted(taskid);
+            }
+        );
+    }
+
     this.callWhenTaskCompletes = function (taskid, callback) {
         if (waitingfortask[taskid] == null)
         {
             waitingfortask[taskid] = [];
 
-            // Guard against really fast completion, where the state misses the
-            // task being active and never registers the completion
-            window.setTimeout(() => {
+            // Guard against cases where the taks state is incorrectly reported
+            // This happens on really fast completion, and also sometimes on longer running tasks
+            waitingfortaskTimers[taskid] = window.setInterval(() => {
                 if (waitingfortask[taskid] == null)
-                    return;
+                {
+                    if (waitingfortaskTimers[taskid] != null) {
+                        window.clearInterval(waitingfortaskTimers[taskid]);
+                        delete waitingfortaskTimers[taskid];
+                    }
 
-                AppService.get('/task/' + taskid).then(
-                    resp => {
-                        if (resp.data.Status == 'Completed')
-                            notifyTaskCompleted(taskid, callback);
-                    },
-                    // Ignore errors
-                    () => {}
-                );
+                    return;
+                }
+                
+                checkTaskState(taskid);
             }, 1000);
         }
             
         waitingfortask[taskid].push(callback);
-
     };
 
-    var lastTaskId = null;
-    $rootScope.$on('serverstatechanged.activeTask', function () {
-        var currentTaskId = state.activeTask == null ? null : state.activeTask.Item1;
+    // This appears to be broken, and causes the UI to hang
+    // We should re-write the task check system to use websockets and not poll
 
-        if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null) 
-            notifyTaskCompleted(lastTaskId);
+    // var lastTaskId = null;
+    // $rootScope.$on('serverstatechanged.activeTask', function () {
+    //     var currentTaskId = state.activeTask == null ? null : state.activeTask.Item1;
+
+    //     if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null)
+    //         checkTaskState(lastTaskId);
         
-        lastTaskId = currentTaskId;
-    });
+    //     lastTaskId = currentTaskId;
+    // });
 
     var progressPollTimer = null;
     var progressPollInProgress = false;
