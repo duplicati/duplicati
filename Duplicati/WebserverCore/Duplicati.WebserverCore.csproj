@@ -16,7 +16,7 @@
 		
 	<ItemGroup>
 	  <PackageReference Include="Microsoft.AspNetCore.HostFiltering" Version="2.2.0" />
-	  <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
+	  <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
 	  <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.3" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.5.0" />
