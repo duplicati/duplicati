@@ -149,12 +149,12 @@ namespace Duplicati.Library.Main.Strings
         public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
         public static string QuotaDisableLong(string optionname) { return LC.L(@"Disable the quota reported by the backend. --{0} can still be used to set a manual quota", optionname); }
         public static string QuotaDisableShort { get { return LC.L(@"Disable backend quota"); } }
-        public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string SymlinkpolicyLong(string store, string ignore, string follow) { return LC.L(@"Use this option to handle symlinks differently. The ""{0}"" option will simply record a symlink with its name and destination, and a restore will recreate the symlink as a link. Use the option ""{1}"" to ignore all symlinks and not store any information about them. The option ""{2}"" will cause the symlinked target to be backed up and restored as a normal file with the symlink name. Early versions of Duplicati did not support this option and bevhaved as if ""{2}"" was specified.", store, ignore, follow); }
+        public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string HardlinkpolicyLong(string first, string all, string none) { return LC.L(@"Use this option to handle hardlinks (only works on Linux/OSX). The ""{0}"" option will record a hardlink ID for each hardlink to avoid storing hardlinked paths multiple times. The option ""{1}"" will ignore hardlink information, and treat each hardlink as a unique path. The option ""{2}"" will ignore all hardlinks with more than one link.", first, all, none); }
         public static string HardlinkpolicyShort { get { return LC.L(@"Hardlink handling"); } }
-        public static string ExcludefilesattributesShort { get { return LC.L(@"Exclude files by attribute"); } }
         public static string ExcludefilesattributesLong(string[] attributes) { return LC.L(@"Use this option to exclude files with certain attributes. Use a comma separated list of attribute names to specify more than one. Possible values are: {0}", string.Join(", ", attributes)); }
+        public static string ExcludefilesattributesShort { get { return LC.L(@"Exclude files by attribute"); } }
         public static string VssusemappingLong { get { return LC.L(@"Activate this option to map VSS snapshots to a drive (similar to SUBST, using Win32 DefineDosDevice). This will create temporary drives that are then used to access the contents of a snapshot. This workaround can speed up file access on Windows XP."); } }
         public static string VssusemappingShort { get { return LC.L(@"Map snapshots to a drive (Windows only)"); } }
         public static string BackupnameLong { get { return LC.L(@"A display name that is attached to this backup. Can be used to identify the backup when sending mail or running scripts."); } }
@@ -201,41 +201,41 @@ namespace Duplicati.Library.Main.Strings
         public static string PatchwithlocalblocksDeprecated(string optionname) { return LC.L(@"Use the option --{0} instead", optionname); }
         public static string NolocaldbLong { get { return LC.L(@"When listing contents or when restoring files, the local database can be skipped. This is usually slower, but can be used to verify the actual contents of the remote store"); } }
         public static string NolocaldbShort { get { return LC.L(@"Disables the local database"); } }
-        public static string KeepversionsShort { get { return LC.L(@"Keep a number of versions"); } }
         public static string KeepversionsLong { get { return LC.L(@"Use this option to set number of versions to keep, supply -1 to keep all versions"); } }
+        public static string KeepversionsShort { get { return LC.L(@"Keep a number of versions"); } }
         public static string KeeptimeLong { get { return LC.L(@"Use this option to set the timespan in which backups are kept."); } }
         public static string KeeptimeShort { get { return LC.L(@"Keep all versions within a timespan"); } }
-        public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string RetentionPolicyLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age by deleting most of the old backups. The expected format is a comma separated list of colon separated time frame and interval pairs. For example the value ""7D:0s,3M:1D,10Y:2M"" means ""For 7 day keep all backups, for 3 months keep one backup every day, for 10 years one backup every 2nd month and delete every backup older than this."". This option also supports using the specifier ""U"" to indicate an unlimited time interval."); } }
+        public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
-        public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring, if this option is not set the files will be restored with a timestamp and a number appended."); } }
+        public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }
         public static string VerboseShort { get { return LC.L(@"Output more progress information"); } }
         public static string VerboseDeprecated { get { return LC.L(@"Set a log-level for the desired output method instead"); } }
-        public static string FullresultShort { get { return LC.L(@"Output full results"); } }
         public static string FullresultLong { get { return LC.L(@"Use this option to increase the amount of output generated as the result of the operation, including all filenames."); } }
+        public static string FullresultShort { get { return LC.L(@"Output full results"); } }
         public static string UploadverificationfileLong { get { return LC.L(@"Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files."); } }
         public static string UploadverificationfileShort { get { return LC.L(@"Determine if verification files are uploaded"); } }
-        public static string BackendtestsamplesShort { get { return LC.L(@"The number of samples to test after a backup"); } }
         public static string BackendtestsamplesLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to change how many. If the backup-test-percentage option is also provided, the number of samples tested is the maximum implied by the two options. If this value is set to 0 or the option --{0} is set, no remote files are verified", optionname); }
+        public static string BackendtestsamplesShort { get { return LC.L(@"The number of samples to test after a backup"); } }
         public static string BackendtestpercentageLong { get { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to specify the percentage (between 0 and 100) of files to test. If the backup-test-samples option is also provided, the number of samples tested is the maximum implied by the two options. If the no-backend-verification option is provided, no remote files are verified."); } }
         public static string BackendtestpercentageShort { get { return LC.L(@"The percentage of samples to test after a backup"); } }
-        public static string FullremoteverificationShort { get { return LC.L(@"Activates in-depth verification of files"); } }
         public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly. ListAndIndexes is like True but only dlist and index volumes are handled.", optionname); }
-        public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
+        public static string FullremoteverificationShort { get { return LC.L(@"Activates in-depth verification of files"); } }
         public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes are read from a file before processing"); } }
+        public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
         public static string FilereadbuffersizeDeprecated { get { return LC.L(@"The ""file-read-buffer-size"" option is no longer used and has been deprecated."); } }
         public static string AllowpassphrasechangeLong { get { return LC.L(@"Use this option to allow the passphrase to change, note that this option is not permitted for a backup or repair operation"); } }
         public static string AllowpassphrasechangeShort { get { return LC.L(@"Allow the passphrase to change"); } }
-        public static string ListsetsonlyShort { get { return LC.L(@"List only filesets"); } }
         public static string ListsetsonlyLong { get { return LC.L(@"Use this option to only list filesets and avoid traversing file names and other metadata which slows down the process"); } }
+        public static string ListsetsonlyShort { get { return LC.L(@"List only filesets"); } }
 
         public static string SkipmetadataLong { get { return LC.L(@"Use this option to disable the storage of metadata, such as file timestamps. Disabling metadata storage will speed up the backup and restore operations, but does not affect file size much."); } }
         public static string SkipmetadataShort { get { return LC.L(@"Don't store metadata"); } }
-        public static string RestorepermissionsShort { get { return LC.L(@"Restore file permissions"); } }
         public static string RestorepermissionsLong { get { return LC.L(@"By default permissions are not restored as they might prevent you from accessing your files. Use this option to restore the permissions as well."); } }
+        public static string RestorepermissionsShort { get { return LC.L(@"Restore file permissions"); } }
         public static string SkiprestoreverificationLong { get { return LC.L(@"After restoring files, the file hash of all restored files are checked to verify that the restore was successful. Use this option to disable the check and avoid waiting for the verification."); } }
         public static string SkiprestoreverificationShort { get { return LC.L(@"Skip restored file check"); } }
         public static string NolocalblocksShort { get { return LC.L(@"Do not use local data"); } }
