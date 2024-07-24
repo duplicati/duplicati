@@ -125,7 +125,8 @@ sender@example.com
 Mail Sender <sender>
 Mail Sender <sender@example.com>"); } }
         public static string OptionSenderShort { get { return LC.L(@"Email sender"); } }
-        public static string OptionSendlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send an email.", success, warning, error, fatal, all); }
+        public static string OptionSendlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send an email.", success, warning, error, fatal, all); }
         public static string OptionSendlevelShort { get { return LC.L(@"The messages to send"); } }
         public static string OptionServerLong { get { return LC.L(@"A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
 If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.
