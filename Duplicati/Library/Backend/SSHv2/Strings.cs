@@ -25,21 +25,21 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string Description { get { return LC.L(@"Module for generating SSH private/public keys"); } }
         public static string DisplayName { get { return LC.L(@"SSH Key Generator"); } }
-        public static string KeyUsernameShort { get { return LC.L(@"Public key username"); } }
         public static string KeyUsernameLong { get { return LC.L(@"A username to append to the public key"); } }
-        public static string KeyTypeShort { get { return LC.L(@"The key type"); } }
+        public static string KeyUsernameShort { get { return LC.L(@"Public key username"); } }
         public static string KeyTypeLong { get { return LC.L(@"Determines the type of key to generate"); } }
-        public static string KeyLenShort { get { return LC.L(@"The key length"); } }
+        public static string KeyTypeShort { get { return LC.L(@"The key type"); } }
         public static string KeyLenLong { get { return LC.L(@"The length of the key in bits"); } }
+        public static string KeyLenShort { get { return LC.L(@"The key length"); } }
     }
     internal static class KeyUploader
     {
         public static string Description { get { return LC.L(@"Module for uploading SSH public keys"); } }
         public static string DisplayName { get { return LC.L(@"SSH Key Uploader"); } }
-        public static string UrlShort { get { return LC.L(@"The SSH connection URL"); } }
         public static string UrlLong { get { return LC.L(@"The SSH connection URL used to establish the connection"); } }
-        public static string PubkeyShort { get { return LC.L(@"The SSH public key to append"); } }
+        public static string UrlShort { get { return LC.L(@"The SSH connection URL"); } }
         public static string PubkeyLong { get { return LC.L(@"The SSH public key must be a valid SSH string, which is appended to the .ssh/authorized_keys file"); } }
+        public static string PubkeyShort { get { return LC.L(@"The SSH public key to append"); } }
     }
     internal static class SSHv2Backend
     {
