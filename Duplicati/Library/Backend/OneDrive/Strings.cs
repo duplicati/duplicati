@@ -28,12 +28,12 @@ namespace Duplicati.Library.Backend.Strings
         public static string MissingAuthId(string url) { return LC.L(@"No Auth-ID was provided - you can get one from {0}", url); }
         public static string FragmentSizeLong { get { return LC.L(@"Size of individual fragments which are uploaded separately for large files. It is recommended to be between 5-10 MiB (though a smaller value may work better on a slower or less reliable connection), and to be a multiple of 320 KiB."); } }
         public static string FragmentSizeShort { get { return LC.L(@"Fragment size for large uploads"); } }
-        public static string FragmentRetryCountShort { get { return LC.L(@"Number of retries for each fragment"); } }
         public static string FragmentRetryCountLong { get { return LC.L(@"Number of retry attempts made for each fragment before failing the overall file upload"); } }
+        public static string FragmentRetryCountShort { get { return LC.L(@"Number of retries for each fragment"); } }
         public static string FragmentRetryDelayLong { get { return LC.L(@"Amount of time (in milliseconds) to wait between failures when uploading fragments"); } }
         public static string FragmentRetryDelayShort { get { return LC.L(@"Millisecond delay between fragment errors"); } }
-        public static string UseHttpClientShort { get { return LC.L(@"Whether the HttpClient class should be used"); } }
         public static string UseHttpClientLong { get { return LC.L(@"Use this option to set HttpClient class to perform HTTP requests"); } }
+        public static string UseHttpClientShort { get { return LC.L(@"Whether the HttpClient class should be used"); } }
     }
 
     internal static class OneDriveV2
@@ -60,8 +60,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. Allowed formats are ""sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder"" (with ""//"" being optionally used to indicate the root document folder), or just ""sharepoint://subfolder"" (in which case you must also explicitly specify the SharePoint site's ID via --site-id). Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3})", mssadescription, mssalink, msopdescription, msoplink); }
         public static string GroupIdLong { get { return LC.L(@"ID of the group to store data in"); } }
         public static string GroupIdShort { get { return LC.L(@"ID of the group"); } }
-        public static string GroupEmailShort { get { return LC.L(@"Email address of the group"); } }
         public static string GroupEmailLong { get { return LC.L(@"Email address of the group to store data in"); } }
+        public static string GroupEmailShort { get { return LC.L(@"Email address of the group"); } }
         public static string MissingGroupIdAndEmailAddress { get { return LC.L(@"No group ID or group email address was provided"); } }
         public static string NoGroupsWithEmail(string email) { return LC.L(@"No groups were found with the given email address: {0}", email); }
         public static string MultipleGroupsWithEmail(string email) { return LC.L(@"Multiple groups were found with the given email address: {0}", email); }
