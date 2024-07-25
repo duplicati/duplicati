@@ -159,7 +159,7 @@ namespace Duplicati.Library.Modules.Builtin
                         resultOutputFormatOptions),
                     new CommandLineArgument(TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
 
-                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
                     new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
                 ]);
             }
