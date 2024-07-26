@@ -30,7 +30,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
-    EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
 	  EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
     EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
 	  EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
@@ -183,32 +182,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         } else {
             if (scope.storj_auth_method == undefined)
                 scope.storj_auth_method = 'API key';
-        }
-    };
-	
-	EditUriBackendConfig.loaders['tardigrade'] = function (scope) {
-        if (scope.tardigrade_satellites == null) {
-            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
-                scope.tardigrade_satellites = data.data.Result;
-                if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
-                    scope.tardigrade_satellite = 'us1.storj.io:7777';
-
-            }, AppUtils.connectionError);
-        } else {
-            if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
-                scope.tardigrade_satellite = 'us1.storj.io:7777';
-        }
-		
-		if (scope.tardigrade_auth_methods == null) {
-            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
-                scope.tardigrade_auth_methods = data.data.Result;
-                if (scope.tardigrade_auth_method == undefined)
-                    scope.tardigrade_auth_method = 'API key';
-
-            }, AppUtils.connectionError);
-        } else {
-            if (scope.tardigrade_auth_method == undefined)
-                scope.tardigrade_auth_method = 'API key';
         }
     };
 
@@ -576,30 +549,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
-	
-    EditUriBackendConfig.parsers['tardigrade'] = function (scope, module, server, port, path, options) {
-        if (options['--tardigrade-auth-method'])
-            scope.tardigrade_auth_method = options['--tardigrade-auth-method'];
-        if (options['--tardigrade-satellite'])
-            scope.tardigrade_satellite = options['--tardigrade-satellite'];
-        if (options['--tardigrade-api-key'])
-            scope.tardigrade_api_key = options['--tardigrade-api-key'];
-        if (options['--tardigrade-secret'])
-            scope.tardigrade_secret = options['--tardigrade-secret'];
-        if (options['--tardigrade-secret-verify'])
-            scope.tardigrade_secret_verify = options['--tardigrade-secret-verify'];
-        if (options['--tardigrade-shared-access'])
-            scope.tardigrade_shared_access = options['--tardigrade-shared-access'];
-        if (options['--tardigrade-bucket'])
-            scope.tardigrade_bucket = options['--tardigrade-bucket'];
-        if (options['--tardigrade-folder'])
-            scope.tardigrade_folder = options['--tardigrade-folder'];
-		
-        var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-secret-verify', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder'];
-        for (var x in nukeopts)
-            delete options[nukeopts[x]];
-    };
-
 
     EditUriBackendConfig.parsers['cos'] = function (scope, module, server, port, path, options) {
         if (options['--cos-app-id'])
@@ -899,27 +848,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         return url;
     };
 	
-	EditUriBackendConfig.builders['tardigrade'] = function (scope) {
-        var opts = {
-            'tardigrade-auth-method': scope.tardigrade_auth_method,
-            'tardigrade-satellite': scope.tardigrade_satellite,
-            'tardigrade-api-key': scope.tardigrade_api_key,
-            'tardigrade-secret': scope.tardigrade_secret,
-            'tardigrade-shared-access': scope.tardigrade_shared_access,
-            'tardigrade-bucket': scope.tardigrade_bucket,
-            'tardigrade-folder': scope.tardigrade_folder
-        };
-
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
-
-        var url = AppUtils.format('{0}://tardigrade.io/config{1}',
-            scope.Backend.Key,
-            AppUtils.encodeDictAsUrl(opts)
-        );
-
-        return url;
-    };
-
     EditUriBackendConfig.builders['rclone'] = function (scope) {
 
         var opts = {
@@ -1257,40 +1185,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             continuation();
     };
 	
-	EditUriBackendConfig.validaters['tardigrade'] = function (scope, continuation) {
-		var res = true;
-		
-		if(res && !scope['tardigrade_auth_method']){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_auth_method', gettextCatalog.getString('Authentication method'));
-		}
-
-		if(res && scope['tardigrade_auth_method'] == 'Access grant'){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_shared_access', gettextCatalog.getString('tardigrade_shared_access')) &&
-				  EditUriBackendConfig.require_field(scope, 'tardigrade_bucket', gettextCatalog.getString('Bucket'));
-		}
-		
-		if(res && scope['tardigrade_auth_method'] == 'API key'){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_api_key', gettextCatalog.getString('API key')) &&
-				  EditUriBackendConfig.require_field(scope, 'tardigrade_secret', gettextCatalog.getString('Encryption passphrase')) &&
-				  EditUriBackendConfig.require_field(scope, 'tardigrade_bucket', gettextCatalog.getString('Bucket'));
-		}
-		
-		if(res && scope['tardigrade_auth_method'] == 'API key' && !scope['tardigrade_satellite']){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_satellite_custom', gettextCatalog.getString('Custom Satellite'));
-		}
-
-		if(res && scope['tardigrade_auth_method'] == 'API key' && scope['tardigrade_secret'] != scope['tardigrade_secret_verify'])
-			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The encryption passphrases do not match'));
-		
-		var re = new RegExp('^([a-z0-9]+([a-z0-9\-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9\-][a-z0-9])*)*$');
-		if(res && scope['tardigrade_bucket'] && (!re.test(scope['tardigrade_bucket']) || !(scope['tardigrade_bucket'].length > 2 && scope['tardigrade_bucket'].length < 64))){
-			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Bucket name can only be between 3 and 63 characters long and contain only lower-case characters, numbers, periods and dashes'));
-		}
-		
-		if (res)
-            continuation();
-    };
-
     EditUriBackendConfig.validaters['rclone'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Remote Repository')) &&
