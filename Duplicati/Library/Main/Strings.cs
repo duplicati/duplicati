@@ -101,8 +101,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DblocksizeShort { get { return LC.L(@"Limit the size of the volumes"); } }
         public static string DisableStreamingLong { get { return LC.L(@"Enabling this option will disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored."); } }
         public static string DisableStreamingShort { get { return LC.L(@"Disables use of the streaming transfer method"); } }
-        public static string DontreadmanifestsLong { get { return LC.L(@"This option will make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery."); } }
-        public static string DontreadmanifestsShort { get { return LC.L(@"An option that prevents verifying the manifests"); } }
+        public static string DontreadmanifestsLong { get { return LC.L(@"Use this option to make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery."); } }
+        public static string DontreadmanifestsShort { get { return LC.L(@"Disables manifests verification"); } }
         public static string CompressionmoduleLong { get { return LC.L(@"Duplicati supports pluggable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module."); } }
         public static string CompressionmoduleShort { get { return LC.L(@"Select what module to use for compression"); } }
         public static string EncryptionmoduleLong { get { return LC.L(@"Duplicati supports pluggable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module."); } }
