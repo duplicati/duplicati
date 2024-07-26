@@ -40,8 +40,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found. Message: {1}", foldername, message); }
         public static string ListVerifyFailure(string filename, IEnumerable<string> files) { return LC.L(@"The file {0} was uploaded but not found afterwards, the file listing returned {1}", filename, string.Join(Environment.NewLine, files)); }
         public static string ListVerifySizeFailure(string filename, long actualsize, long expectedsize) { return LC.L(@"The file {0} was uploaded but the returned size was {1} and it was expected to be {2}", filename, actualsize, expectedsize); }
-        public static string DescriptionDisableUploadVerifyShort { get { return LC.L(@"Disable upload verification"); } }
         public static string DescriptionDisableUploadVerifyLong { get { return LC.L(@"To protect against network or server failures, every upload will be attempted to be verified. Use this option to disable this verification to make the upload faster but less reliable."); } }
+        public static string DescriptionDisableUploadVerifyShort { get { return LC.L(@"Disable upload verification"); } }
         public static string DescriptionFtpDataConnectionTypeLong { get { return LC.L(@"If this flag is set, the FTP data connection type will be changed to the selected option."); } }
         public static string DescriptionFtpDataConnectionTypeShort { get { return LC.L(@"Configure the FTP data connection type"); } }
         public static string DescriptionFtpEncryptionModeLong { get { return LC.L(@"If this flag is set, the FTP encryption mode will be changed to the selected option."); } }
