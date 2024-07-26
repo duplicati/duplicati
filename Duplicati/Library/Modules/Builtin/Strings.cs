@@ -205,8 +205,8 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
     internal static class ReportHelper
     {
         public static string SendMessageFailedError(string message) { return LC.L(@"Failed to send message: {0}", message); }
-        public static string OptionLoglevellShort { get { return LC.L("Defines a log level for messages"); } }
         public static string OptionLoglevelLong { get { return LC.L("Use this option to set the log level for messages to include in the report"); } }
+        public static string OptionLoglevelShort { get { return LC.L("Defines a log level for messages"); } }
         public static string OptionLogfilterShort { get { return LC.L("Log message filter"); } }
         public static string OptionLogfilterLong { get { return LC.L("Use this option to set a filter expression that defines what options are included in the report"); } }
         public static string OptionmaxloglinesShort { get { return LC.L("Limits log lines"); } }
