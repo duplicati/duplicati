@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string FragmentRetryDelayShort { get { return LC.L(@"Millisecond delay between fragment errors"); } }
         public static string FragmentRetryDelayLong { get { return LC.L(@"Amount of time (in milliseconds) to wait between failures when uploading fragments"); } }
         public static string UseHttpClientShort { get { return LC.L(@"Whether the HttpClient class should be used"); } }
-        public static string UseHttpClientLong { get { return LC.L(@"Whether the HttpClient class should be used to perform HTTP requests"); } }
+        public static string UseHttpClientLong { get { return LC.L(@"Use this option to set HttpClient class to perform HTTP requests"); } }
     }
 
     internal static class OneDriveV2
@@ -68,4 +68,3 @@ namespace Duplicati.Library.Backend.Strings
         public static string ConflictingGroupId(string given, string found) { return LC.L(@"Conflicting group IDs used: given {0} but found {1}", given, found); }
     }
 }
-
