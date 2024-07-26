@@ -2497,6 +2497,10 @@ msgstr ""
 msgid "Server state properties"
 msgstr ""
 
+#: templates/backends/sia.html:7
+msgid "Set the target path. Example: /backup"
+msgstr ""
+
 #: index.html:220
 #: templates/settings.html:2
 msgid "Settings"
@@ -2697,10 +2701,6 @@ msgstr ""
 msgid "TByte/s"
 msgstr ""
 
-#: templates/backends/sia.html:7
-msgid "Target path, ie /backup"
-msgstr ""
-
 #: templates/waitarea.html:5
 msgid "Task is running"
 msgstr ""
@@ -2767,7 +2767,7 @@ msgstr ""
 
 #: templates/backends/storj.html:34
 #: templates/backends/tardigrade.html:34
-msgid "The access grant instead of the info above"
+msgid "The access grant"
 msgstr ""
 
 #: scripts/directives/notificationArea.js:43
