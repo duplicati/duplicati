@@ -105,12 +105,12 @@ namespace Duplicati.Library.Common.IO
 
         /// <summary>
         /// Returns true if the path specified is relative to the current drive or working directory.
-        /// Returns false if the path is fixed to a specific drive or UNC path.  This method does no
+        /// Returns false if the path is fixed to a specific drive or UNC path. This method does no
         /// validation of the path (URIs will be returned as relative as a result).
         /// </summary>
         /// <remarks>
-        /// Handles paths that use the alternate directory separator.  It is a frequent mistake to
-        /// assume that rooted paths (Path.IsPathRooted) are not relative.  This isn't the case.
+        /// Handles paths that use the alternate directory separator. It is a frequent mistake to
+        /// assume that rooted paths (Path.IsPathRooted) are not relative. This isn't the case.
         /// "C:a" is drive relative- meaning that it will be resolved against the current directory
         /// for C: (rooted, but relative). "C:\a" is rooted and not relative (the current directory
         /// will not be used to modify the path).
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Common.IO
         {
             if (path.Length < 2)
             {
-                // It isn't fixed, it must be relative.  There is no way to specify a fixed
+                // It isn't fixed, it must be relative. There is no way to specify a fixed
                 // path with one character (or less).
                 return true;
             }

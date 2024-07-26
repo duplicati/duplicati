@@ -61,7 +61,7 @@ namespace Duplicati.UnitTest
             catch (Exception e)
             {
                 // If client cannot create symlinks, mark test as ignored
-                Assert.Ignore($"Client could not create a symbolic link.  Error reported: {e.Message}");
+                Assert.Ignore($"Client could not create a symbolic link. Error reported: {e.Message}");
             }
 
             // Backup all files with given symlink policy

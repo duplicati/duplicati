@@ -132,7 +132,7 @@ namespace Duplicati.Server.Database
             if (url.Query != null)
             {
                 // We cannot use url.QueryParameters since it contains decoded parameter values, which
-                // breaks assumptions made by the decode_uri function in AppUtils.js.  Since we are simply
+                // breaks assumptions made by the decode_uri function in AppUtils.js. Since we are simply
                 // removing password parameters, we will leave the parameters as they are in the target URL.
                 filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
                 foreach (string field in this.UrlPasswords)

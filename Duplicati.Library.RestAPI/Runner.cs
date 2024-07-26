@@ -334,7 +334,7 @@ namespace Duplicati.Server
 
             public void WriteMessage(Library.Logging.LogEntry entry)
             {
-                // Do nothing.  Implementation needed for ILogDestination interface.
+                // Do nothing. Implementation needed for ILogDestination interface.
             }
             #endregion
         }

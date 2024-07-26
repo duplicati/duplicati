@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, restoreResults.Warnings.Count());
             }
 
-            // We need to strip the root part of the path.  Otherwise, Path.Combine will simply return the second argument
+            // We need to strip the root part of the path. Otherwise, Path.Combine will simply return the second argument
             // if it's determined to be an absolute path.
             string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
             string newPathPart = filePath.Substring(rootString.Length);

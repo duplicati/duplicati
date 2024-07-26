@@ -37,6 +37,6 @@ namespace Duplicati.Library.Backend.AzureBlob.Strings {
         public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
-        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to Azure blob storage.  Allowed formats are: ""azure://bucketname"""); } }
+        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to Azure blob storage. Allowed formats are: ""azure://bucketname"""); } }
     }
 }

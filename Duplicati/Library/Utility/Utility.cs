@@ -947,7 +947,7 @@ namespace Duplicati.Library.Utility
         {
             // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
             // The DateTimeOffset constructor will convert the provided DateTime to the UTC
-            // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
+            // equivalent. However, if DateTime.MinValue is provided (for example, when creating
             // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
             // and DateTimeOffset.MaxValue bounds.
             return (long)Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
@@ -1028,7 +1028,7 @@ namespace Duplicati.Library.Utility
 
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
-        // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
+        // This is the case in NUnit tests. The following approach does not work w/ Mono due to unimplemented members:
         // http://social.msdn.microsoft.com/Forums/nb-NO/clr/thread/db44fe1a-3bb4-41d4-a0e0-f3021f30e56f
         // so this layer of indirection is necessary
         // </summary>
