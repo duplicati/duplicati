@@ -1049,7 +1049,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         EditUriBackendConfig.validaters['authid-base'](scope, function () {
             var res =
-                EditUriBackendConfig.recommend_field(scope, 'msgroup_group_email', gettextCatalog.getString('Group email'), gettextCatalog.getString(' unless you are explicitly specifying --group-id'), continuation);
+                EditUriBackendConfig.recommend_field(scope, 'msgroup_group_email', gettextCatalog.getString('Group email'), gettextCatalog.getString('unless you are explicitly specifying --group-id'), continuation);
 
             if (res)
                 continuation();
@@ -1060,7 +1060,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         EditUriBackendConfig.validaters['authid-base'](scope, function () {
             var res =
-                EditUriBackendConfig.recommend_field(scope, 'msgroup_group_email', gettextCatalog.getString('Group email'), gettextCatalog.getString(' unless you are explicitly specifying --group-id'), continuation);
+                EditUriBackendConfig.recommend_field(scope, 'msgroup_group_email', gettextCatalog.getString('Group email'), gettextCatalog.getString('unless you are explicitly specifying --group-id'), continuation);
 
             if (res)
                 continuation();

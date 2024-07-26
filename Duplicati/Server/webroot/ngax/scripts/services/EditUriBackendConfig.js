@@ -89,7 +89,7 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 
     this.recommend_field = function (scope, field, label, reason, continuation) {
         if ((scope[field] || '').trim().length == 0)
-            return self.show_warning_dialog(gettextCatalog.getString('You should fill in {{field}}{{reason}}', { field: label || field, reason: reason }), continuation);
+            return self.show_warning_dialog(gettextCatalog.getString('You should fill in {{field}} {{reason}}', { field: label || field, reason: reason }), continuation);
         else
             continuation();
     };
