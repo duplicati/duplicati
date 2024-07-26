@@ -26,7 +26,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string DisplayName { get { return LC.L(@"Sia Decentralized Cloud"); } }
         public static string Description { get { return LC.L(@"This backend can read and write data to Sia."); } }
         public static string SiaPathDescriptionShort { get { return LC.L(@"Backup path"); } }
-        public static string SiaPathDescriptionLong { get { return LC.L(@"Target path, ie /backup"); } }
+        public static string SiaPathDescriptionLong { get { return LC.L(@"Set the target path. Example: /backup"); } }
         public static string SiaPasswordShort { get { return LC.L(@"Sia password"); } }
         public static string SiaPasswordLong { get { return LC.L(@"Sia password"); } }
         public static string SiaRedundancyDescriptionShort { get { return LC.L(@"3"); } }
