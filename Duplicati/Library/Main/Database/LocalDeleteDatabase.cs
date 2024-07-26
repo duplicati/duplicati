@@ -119,7 +119,7 @@ namespace Duplicati.Library.Main.Database
 
         /// <summary>
         /// Returns a collection of IListResultFilesets, where the Version is the backup version number
-        /// exposed to the user.  This is in contrast to other cases where the Version is the ID in the
+        /// exposed to the user. This is in contrast to other cases where the Version is the ID in the
         /// Fileset table.
         /// </summary>
         internal IEnumerable<IListResultFileset> FilesetsWithBackupVersion

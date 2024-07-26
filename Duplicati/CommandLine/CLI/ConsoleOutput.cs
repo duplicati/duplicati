@@ -83,7 +83,7 @@ namespace Duplicati.CommandLine
 
         public void SetBackendProgress(IBackendProgress progress)
         {
-            // Do nothing.  Implementation needed for IMessageSink interface.
+            // Do nothing. Implementation needed for IMessageSink interface.
         }
 
         public void SetOperationProgress(IOperationProgress progress)
