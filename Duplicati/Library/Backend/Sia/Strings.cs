@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string SiaPathDescriptionShort { get { return LC.L(@"Backup path"); } }
         public static string SiaPathDescriptionLong { get { return LC.L(@"Set the target path. Example: /backup"); } }
         public static string SiaPasswordShort { get { return LC.L(@"Sia password"); } }
-        public static string SiaPasswordLong { get { return LC.L(@"Sia password"); } }
+        public static string SiaPasswordLong { get { return LC.L(@"Supply a password for Sia server."); } }
         public static string SiaRedundancyDescriptionShort { get { return LC.L(@"3"); } }
         public static string SiaRedundancyDescriptionLong { get { return LC.L(@"Minimum value is 3."); } }
     }
