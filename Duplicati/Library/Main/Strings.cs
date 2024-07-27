@@ -238,28 +238,28 @@ namespace Duplicati.Library.Main.Strings
         public static string RestorepermissionsShort { get { return LC.L(@"Restore file permissions"); } }
         public static string SkiprestoreverificationLong { get { return LC.L(@"After restoring files, the file hash of all restored files are checked to verify that the restore was successful. Use this option to disable the check and avoid waiting for the verification."); } }
         public static string SkiprestoreverificationShort { get { return LC.L(@"Skip restored file check"); } }
-        public static string NolocalblocksShort { get { return LC.L(@"Do not use local data"); } }
         public static string NolocalblocksLong { get { return LC.L(@"Duplicati will attempt to use data from source files to minimize the amount of downloaded data. Use this option to skip this optimization and only use remote data."); } }
+        public static string NolocalblocksShort { get { return LC.L(@"Do not use local data"); } }
         public static string NolocalblocksDeprecated(string alternativeOptionName) { return LC.L(@"The default is now to not use local blocks for restore. To opt-in for using local blocks, set the option --{0}", alternativeOptionName); }
         public static string RestorewithlocalblocksLong { get { return LC.L(@"Use this option to allow Duplicati to use blocks found on disk when performing restores, instead of only using files in remote storage."); } }
         public static string RestorewithlocalblocksShort { get { return LC.L(@"Use existing data for restore"); } }
 
         public static string FullblockverificationLong { get { return LC.L(@"Use this option to increase verification by checking the hash of blocks read from a volume before patching restored files with the data."); } }
         public static string FullblockverificationShort { get { return LC.L(@"Check block hashes"); } }
-        public static string LogretentionShort { get { return LC.L(@"Clean up old log data"); } }
         public static string LogretentionLong { get { return LC.L(@"Set the time after which log data will be purged from the database."); } }
+        public static string LogretentionShort { get { return LC.L(@"Clean up old log data"); } }
         public static string RepaironlypathsLong { get { return LC.L(@"Use this option to build a searchable local database which only contains path information. This option is usable for quickly building a database to locate certain content without needing to reconstruct all information. The resulting database can be searched, but cannot be used to restore data with."); } }
         public static string RepaironlypathsShort { get { return LC.L(@"Repair database with paths"); } }
-        public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
         public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. This option can be used to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
+        public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
         public static string ForceActualDateLong { get { return LC.L(@"By default, dates are displayed in the calendar format, meaning ""Today"" or ""Last Thursday"". By setting this option, only the actual dates are displayed, ""Nov 12, 2018, 8:01 AM"" for example."); } }
         public static string ForceActualDateShort { get { return LC.L(@"Forces the display of the actual date instead of calendar date"); } }
-        public static string DisablepipingShort { get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
         public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads, that can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
+        public static string DisablepipingShort { get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
         public static string ConcurrencymaxthreadsLong { get { return LC.L(@"Use this option to set the maximum number of threads used. Setting this value to zero or less will dynamically balance the number of active threads to fit the hardware."); } }
         public static string ConcurrencymaxthreadsShort { get { return LC.L(@"Limit number of concurrent threads"); } }
-        public static string ConcurrencyblockhashersShort { get { return LC.L(@"Specify the number of concurrent hashing processes"); } }
         public static string ConcurrencyblockhashersLong { get { return LC.L(@"Use this option to set the number of processes that perform hashing of data."); } }
+        public static string ConcurrencyblockhashersShort { get { return LC.L(@"Specify the number of concurrent hashing processes"); } }
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
         public static string ConcurrencycompressorsShort { get { return LC.L(@"Specify the number of concurrent compression processes"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
@@ -268,16 +268,16 @@ namespace Duplicati.Library.Main.Strings
         public static string CheckfiletimeonlyShort { get { return LC.L(@"Checks only file lastmodified"); } }
         public static string DontcompressrestorepathsLong { get { return LC.L(@"When restore a subset of a backup into a new folder, the shortest possible path is used to avoid generating deep paths with empty folders. Use this flag to skip this compression, such that the entire original folder structure is preserved, including upper level empty folders."); } }
         public static string DontcompressrestorepathsShort { get { return LC.L(@"Disables path compression on restore"); } }
-        public static string AllowfullremovalShort { get { return LC.L(@"Allow removing all filesets"); } }
         public static string AllowfullremovalLong { get { return LC.L(@"By default, the last fileset cannot be removed. This is a safeguard to make sure that all remote data is not deleted by a configuration mistake. Use this flag to disable that protection, such that all filesets can be deleted."); } }
+        public static string AllowfullremovalShort { get { return LC.L(@"Allow removing all filesets"); } }
         public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
         public static string AutoVacuumShort { get { return LC.L(@"Allow automatic rebuilding of local database to save space"); } }
-        public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
         public static string DisablefilescannerLong { get { return LC.L(@"When this flag is enabled, the scanner that computes the size of source files is disabled, and instead the reported size is read from the database. Using this flag can speed up the backup by reducing disk access, but will give a less accurate progress indicator."); } }
+        public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
         public static string DisablefilelistconsistencychecksLong { get { return LC.L(@"In backups with a large number of filesets, the verification can take up a large part of the backup time. If you disable the checks, make sure you run regular check commands to ensure that everything is working as expected."); } }
         public static string DisablefilelistconsistencychecksShort { get { return LC.L(@"Disable filelist consistency checks"); } }
-        public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
         public static string DisableOnBatteryLong { get { return LC.L("When this flag is enabled, a scheduled backup will not run if the system is detected to be running on battery power (manual or command line backups will still be run). If the detected power source is mains (i.e., AC) or unknown, then scheduled backups will proceed as normal."); } }
+        public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
 
         public static string LogfileloglevelShort { get { return LC.L(@"Log file information level"); } }
         public static string LogfilelogfiltersLong(string delimiter) { return LC.L(@"This option accepts filters that removes or includes messages regardless of their log level. Multiple filters are supported by separating with {0}. Filters are matched against the log tag and assumed to be including, unless they start with '-'. Regular expressions are supported within hard braces. Example: ""+Path*{0}+*Mail*{0}-[.*DNS]"" ", delimiter); }
@@ -289,24 +289,24 @@ namespace Duplicati.Library.Main.Strings
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructions the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time"); } }
         public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the process to use low IO priority"); } }
 
-        public static string ExcludeemptyfoldersShort { get { return LC.L("Excludes empty folders"); } }
         public static string ExcludeemptyfoldersLong { get { return LC.L("Use this option to remove all empty folders from a backup."); } }
+        public static string ExcludeemptyfoldersShort { get { return LC.L("Excludes empty folders"); } }
         public static string IgnorefilenamesLong { get { return LC.L("Use this option to set a filename, or list of filenames, that indicate exclusion of a folder which contains it. A common use would be to have a file named something like \".nobackup\" and place this file into folders that should not be backed up."); } }
         public static string IgnorefilenamesShort { get { return LC.L("List of filenames that exclude folders"); } }
-        public static string RestoresymlinkmetadataShort { get { return LC.L("Apply metadata to symlinks"); } }
         public static string RestoresymlinkmetadataLong { get { return LC.L("If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."); } }
+        public static string RestoresymlinkmetadataShort { get { return LC.L("Apply metadata to symlinks"); } }
         public static string UnittestmodeLong { get { return LC.L("When running in unittest mode, no automatic fixes are applied, which assumes that the input data is always in perfect shape. This option is not intended for use in daily backups, but required for testing purposes to reveal potential problems."); } }
         public static string UnittestmodeShort { get { return LC.L("Activate unittest mode"); } }
 
         public static string ProfilealldatabasequeriesLong { get { return LC.L("To improve performance of the backups, frequent database queries are not logged by default. Enable this option to log all database queries, and remember to set either --{0}={2} or --{1}={2} to report the additional log data", "console-log-level", "log-file-log-level", nameof(Logging.LogMessageType.Profiling)); } }
         public static string ProfilealldatabasequeriesShort { get { return LC.L("Activates logging of all database queries"); } }
-        public static string RebuildmissingdblockfilesShort { get { return LC.L("Rebuild dblock files when missing"); } }
         public static string RebuildmissingdblockfilesLong { get { return LC.L("If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."); } }
+        public static string RebuildmissingdblockfilesShort { get { return LC.L("Rebuild dblock files when missing"); } }
 
         public static string AutoCompactIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."); } }
         public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }
-        public static string AutoVacuumIntervalShort { get { return LC.L("Minimum time between auto vacuums"); } }
         public static string AutoVacuumIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."); } }
+        public static string AutoVacuumIntervalShort { get { return LC.L("Minimum time between auto vacuums"); } }
     }
 
     internal static class Common
