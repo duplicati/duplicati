@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string RcloneRemoteRepoShort { get { return LC.L(@"Remote repository"); } }
         public static string RcloneRemoteRepoLong { get { return LC.L(@"Remote repository for Rclone. This can be any of the backends provided by Rclone. More info available on https://rclone.org/."); } }
         public static string RcloneRemotePathShort { get { return LC.L(@"Remote path"); } }
-        public static string RcloneRemotePathLong { get { return LC.L(@"Path on the Remote repository. "); } }
+        public static string RcloneRemotePathLong { get { return LC.L(@"Path on the Remote repository."); } }
         public static string RcloneOptionRcloneShort { get { return LC.L(@"Rclone options"); } }
         public static string RcloneOptionRcloneLong { get { return LC.L(@"Options will be transferred to rclone."); } }
         public static string RcloneExecutableShort { get { return LC.L(@"Rclone executable"); } }
