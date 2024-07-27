@@ -24,8 +24,8 @@ namespace Duplicati.Library.Backend.Strings
 {
     public static class Storj
     {
-        public static string DisplayName { get { return LC.L(@"Storj DCS (Decentralized Cloud Storage)"); } }
         public static string Description { get { return LC.L(@"This backend can read and write data to the Storj DCS."); } }
+        public static string DisplayName { get { return LC.L(@"Storj DCS (Decentralized Cloud Storage)"); } }
         public static string TestConnectionFailed { get { return LC.L(@"The connection-test failed."); } }
         public static string StorjAuthMethodDescriptionLong { get { return LC.L(@"The authentication method describes which way to use to connect to the network - either via API key or via an access grant."); } }
         public static string StorjAuthMethodDescriptionShort { get { return LC.L(@"The authentication method"); } }
