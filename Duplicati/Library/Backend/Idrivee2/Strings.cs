@@ -30,8 +30,8 @@ namespace Duplicati.Library.Backend.Strings {
         public static string BucketNameOrPathDescriptionShort { get { return LC.L(@"The ""Bucket Name or Complete Path"""); } }
 
         public static string DisplayName { get { return LC.L(@"IDrive e2"); } }
-        public static string NoKeySecretError { get { return LC.L(@"No Access key secret given"); } }
-        public static string NoKeyIdError { get { return LC.L(@"No Access key ID given"); } }
+        public static string NoKeySecretError { get { return LC.L(@"No Access Key Secret given"); } }
+        public static string NoKeyIdError { get { return LC.L(@"No Access Key ID given"); } }
         public static string Description { get; set; }
     }
 }
