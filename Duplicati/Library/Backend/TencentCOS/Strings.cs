@@ -28,8 +28,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string DisplayName { get { return LC.L(@"Tencent COS (Cloud Object Storage)"); } }
         public static string COSAccountDescriptionLong { get { return LC.L(@"Account ID of Tencent Cloud Account"); } }
         public static string COSAccountDescriptionShort { get { return LC.L(@"Account ID"); } }
-        public static string COSAPISecretIdDescriptionLong { get { return LC.L(@"Cloud API Secret Id"); } }
-        public static string COSAPISecretIdDescriptionShort { get { return LC.L(@"Secret Id"); } }
+        public static string COSAPISecretIdDescriptionLong { get { return LC.L(@"Cloud API Secret ID"); } }
+        public static string COSAPISecretIdDescriptionShort { get { return LC.L(@"Secret ID"); } }
         public static string COSAPISecretKeyDescriptionLong { get { return LC.L(@"Cloud API Secret Key"); } }
         public static string COSAPISecretKeyDescriptionShort { get { return LC.L(@"Secret Key"); } }
         public static string COSBucketDescriptionLong { get { return LC.L(@"Bucket, format: BucketName-APPID"); } }
