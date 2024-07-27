@@ -30,7 +30,6 @@ namespace Duplicati.Library.Backend.Strings
         public static string ProjectIDMissingError(string projectoption) { return LC.L(@"You must supply a project ID with --{0} for creating a bucket", projectoption); }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
-
         public static string LocationDescriptionLong(string regions) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:
 {0}", regions); }
         public static string LocationDescriptionShort { get { return LC.L(@"Specifies location option for creating a bucket"); } }
@@ -39,15 +38,14 @@ namespace Duplicati.Library.Backend.Strings
         public static string StorageclassDescriptionShort { get { return LC.L(@"Specifies storage class for creating a bucket"); } }
         public static string ProjectDescriptionLong { get { return LC.L(@"This option is only used when creating new buckets. Use this option to supply the project ID that the bucket is attached to. The project determines where usage charges are applied"); } }
         public static string ProjectDescriptionShort { get { return LC.L(@"Specifies project for creating a bucket"); } }
-
     }
 
     internal static class GoogleDrive {
         public static string Description { get { return LC.L(@"This backend can read and write data to Google Drive. Supported format is ""googledrive://folder/subfolder""."); } }
-        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string DisplayName { get { return LC.L(@"Google Drive"); } }
         public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}""", folder, parent); }
+        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
+        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string TeamDriveIdLong { get { return LC.L("This option sets the team drive to use. Leaving it empty uses the personal drive"); } }
         public static string TeamDriveIdShort { get { return LC.L("Team drive ID"); } }
     }
