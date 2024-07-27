@@ -37,7 +37,7 @@
         <div ng-hide="NoLocalDB">
             <h2 translate>Delete remote files</h2>
 
-            <div ng-show="Backup.Backup.Metadata.TargetFilesCount == null" translate>Loading remote storage usage ...</div>
+            <div ng-show="Backup.Backup.Metadata.TargetFilesCount == null" translate>Loading remote storage usage …</div>
             <div ng-show="Backup.Backup.Metadata.TargetFilesCount != null" translate translate-params-filecount="Backup.Backup.Metadata.TargetFilesCount" translate-params-filesize="Backup.Backup.Metadata.TargetSizeString">
                 Delete {{filecount}} files ({{filesize}}) from the remote storage?
             </div>

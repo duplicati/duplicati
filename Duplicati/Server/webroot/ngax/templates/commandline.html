@@ -49,13 +49,13 @@
             {{'Server is currently paused,' | translate}} <a style="cursor: pointer" ng-click="ServerStatus.resume()" translate>resume now</a>
         </div>
         <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == null" translate="">
-            Connecting to task ....
+            Connecting to task …
         </div>
         <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == false" translate="">
-            Waiting for task to start ....
+            Waiting for task to start …
         </div>
         <div ng-show="Started == true &amp;&amp; Finished == false">
-            <span translate>Running ....</span> <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
+            <span translate>Running …</span> <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
         </div>
         <div ng-show="Started == true &amp;&amp; Finished == true" translate>
             Finished!
