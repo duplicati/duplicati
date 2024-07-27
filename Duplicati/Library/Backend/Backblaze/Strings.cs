@@ -22,9 +22,9 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class B2 {
-        public static string B2applicationkeyDescriptionLong { get { return LC.L(@"B2 Cloud Storage Application Key can be obtained after logging into your Backblaze account, this can also be supplied through the ""auth-password"" property"); } }
+        public static string B2applicationkeyDescriptionLong { get { return LC.L(@"B2 Cloud Storage Application Key can be obtained after logging into your Backblaze account. This can also be supplied through the ""auth-password"" property"); } }
         public static string B2applicationkeyDescriptionShort { get { return LC.L(@"B2 Cloud Storage Application Key"); } }
-        public static string B2accountidDescriptionLong { get { return LC.L(@"B2 Cloud Storage Account ID can be obtained after logging into your Backblaze account, this can also be supplied through the ""auth-username"" property"); } }
+        public static string B2accountidDescriptionLong { get { return LC.L(@"B2 Cloud Storage Account ID can be obtained after logging into your Backblaze account. This can also be supplied through the ""auth-username"" property"); } }
         public static string B2accountidDescriptionShort { get { return LC.L(@"B2 Cloud Storage Account ID"); } }
         public static string DisplayName { get { return LC.L(@"B2 Cloud Storage"); } }
         public static string AuthPasswordDescriptionLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
