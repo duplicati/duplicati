@@ -6,9 +6,9 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string Description { get { return LC.L(@"This backend can read and write data to Aliyun OSS."); } }
         public static string DisplayName { get { return LC.L(@"Aliyun OSS (Object Storage Service)"); } }
-        public static string OSSAccessKeyIdDescriptionLong { get { return LC.L(@"AccessKeyID is used to identify the user."); } }
+        public static string OSSAccessKeyIdDescriptionLong { get { return LC.L(@"Access Key ID is used to identify the user."); } }
         public static string OSSAccessKeyIdDescriptionShort { get { return LC.L(@"Access Key ID"); } }
-        public static string OSSAccessKeySecretDescriptionLong { get { return LC.L(@"AccessKeySecret is the key used by the user to encrypt signature strings and by OSS to verify these signature strings"); } }
+        public static string OSSAccessKeySecretDescriptionLong { get { return LC.L(@"Access Key Secret is the key used by the user to encrypt signature strings and by OSS to verify these signature strings"); } }
         public static string OSSAccessKeySecretDescriptionShort { get { return LC.L(@"Access Key Secret"); } }
         public static string OSSBucketNameDescriptionLong { get { return LC.L(@"A storage space is a container used to store objects (Object), and all objects must belong to a specific storage space."); } }
         public static string OSSBucketNameDescriptionShort { get { return LC.L(@"Bucket Name"); } }
