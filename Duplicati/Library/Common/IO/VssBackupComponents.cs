@@ -48,13 +48,13 @@ namespace Duplicati.Library.Common.IO
         private IVssBackupComponents _vssBackupComponents;
 
         /// <summary>
-        /// The list of snapshot ids for each volume, key is the path root, eg C:\.
+        /// The list of snapshot ids for each volume, key is the path root, e.g. C:\.
         /// The dictionary is case insensitive
         /// </summary>
         private Dictionary<string, Guid> _volumes;
 
         /// <summary>
-        /// The mapping of snapshot sources to their snapshot entries , key is the path root, eg C:\.
+        /// The mapping of snapshot sources to their snapshot entries , key is the path root, e.g. C:\.
         /// The dictionary is case insensitive
         /// </summary>
         private Dictionary<string, string> _volumeMap;
