@@ -43,13 +43,12 @@ form.styled {
         overflow: hidden;
     }
 
-    .input.text,
-    .input.password {
-        input {
-            height: 35px;
-            line-height: 35px;
-            padding: 0 12px;
-        }
+    .input.text input,
+    .input.password input,
+    .input.select > select + input { /* For input area under select element */
+        height: 35px;
+        line-height: 35px;
+        padding: 0 12px;
     }
 
     .input.text.text-browse {
