@@ -1327,8 +1327,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['e2'] = function (scope, continuation) {
         var res =
-                EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Idrivee2 Access Key Id')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Idrivee2 Access Key Secret')) &&
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('IDrive e2 Access Key Id')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('IDrive e2 Access Key Secret')) &&
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name'));
 
         if (res) {
