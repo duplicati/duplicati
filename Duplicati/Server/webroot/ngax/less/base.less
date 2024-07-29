@@ -1470,10 +1470,11 @@ body {
                             }
                         }
 
+                        .step1,
                         .step2 {
-                            /* For now, apply the rules to the step 2 only.
+                            /* .step1: "backup location" on a direct restore task
+                               .step2: "destination" on adding/editing backup task
                                TODO: integrate with form.less after investigation */
-                            form.styled {
                                 .input.select {
                                     display: grid;
                                     grid-auto-flow: column;
@@ -1499,7 +1500,6 @@ body {
                                         margin-top: 10px; /* Magic number */
                                     }
                                 }
-                            }
                         }
 
                         .step2,
