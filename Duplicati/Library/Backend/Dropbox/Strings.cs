@@ -26,9 +26,7 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string Description { get { return LC.L(@"This backend can read and write data to Dropbox. Supported format is ""dropbox://folder/subfolder""."); } }
         public static string DisplayName { get { return LC.L(@"Dropbox"); } }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-
+        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
     }
 }
-

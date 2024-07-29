@@ -29,7 +29,7 @@ backupApp.service('CaptchaService', function(DialogService, AppService, AppUtils
 				cb.verifying = true;
 				
 
-				DialogService.dialog(gettextCatalog.getString('Verifying answer'), gettextCatalog.getString('Verifying ...'), [], function() {}, function() {
+				DialogService.dialog(gettextCatalog.getString('Verifying answer'), gettextCatalog.getString('Verifying …'), [], function() {}, function() {
 
 		    		AppService.postJson('/captcha/' + encodeURIComponent(cb.token), {'answer': cb.answer, 'target': cb.target}).then(function(resp) {
 		    			DialogService.dismissCurrent();

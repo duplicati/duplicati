@@ -86,7 +86,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         }
 
         /// <summary>
-        /// The protocol key, eg. ftp, http or ssh
+        /// The protocol key, e.g. ftp, http or ssh
         /// </summary>
         public string ProtocolKey
         {
