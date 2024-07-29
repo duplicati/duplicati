@@ -21,6 +21,8 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class CloudFiles {
+        public static string Description_v2 { get { return LC.L(@"Supports connections to the CloudFiles backend. Allowed formats is ""cloudfiles://container/folder""."); } }
+        public static string DisplayName { get { return LC.L(@"Rackspace CloudFiles"); } }
         public static string DescriptionAuthenticationURLLong_v2(string optionname) { return LC.L(@"CloudFiles use different servers for authentication based on where the account resides, use this option to set an alternate authentication URL. This option overrides --{0}.", optionname); }
         public static string DescriptionAuthenticationURLShort { get { return LC.L(@"Provide another authentication URL"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
@@ -33,8 +35,6 @@ namespace Duplicati.Library.Backend.Strings {
         public static string DescriptionUKAccountShort { get { return LC.L(@"Use a UK account"); } }
         public static string DescriptionUsernameLong { get { return LC.L(@"Supplies the username used to authenticate with CloudFiles."); } }
         public static string DescriptionUsernameShort { get { return LC.L(@"Supplies the username used to authenticate with CloudFiles"); } }
-        public static string Description_v2 { get { return LC.L(@"Supports connections to the CloudFiles backend. Allowed formats is ""cloudfiles://container/folder""."); } }
-        public static string DisplayName { get { return LC.L(@"Rackspace CloudFiles"); } }
         public static string ETagVerificationError { get { return LC.L(@"MD5 Hash (ETag) verification failed"); } }
         public static string FileDeleteError { get { return LC.L(@"Failed to delete file"); } }
         public static string FileUploadError { get { return LC.L(@"Failed to upload file"); } }

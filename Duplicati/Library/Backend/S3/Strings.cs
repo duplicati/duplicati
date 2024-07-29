@@ -23,18 +23,18 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class S3Backend
     {
+        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to an S3 compatible server. Allowed formats are: ""s3://bucketname/prefix"""); } }
+        public static string DisplayName { get { return LC.L(@"S3 compatible"); } }
         public static string AMZKeyDescriptionLong { get { return LC.L(@"AWS Secret Access Key can be obtained after logging into your AWS account. This can also be supplied through the ""auth-password"" property"); } }
         public static string AMZKeyDescriptionShort { get { return LC.L(@"AWS Secret Access Key"); } }
         public static string AMZUserIDDescriptionLong { get { return LC.L(@"AWS Access Key ID can be obtained after logging into your AWS account. This can also be supplied through the ""auth-username"" property"); } }
         public static string AMZUserIDDescriptionShort { get { return LC.L(@"AWS Access Key ID"); } }
-        public static string DisplayName { get { return LC.L(@"S3 compatible"); } }
         public static string AuthPasswordDescriptionLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
         public static string NoAMZKeyError { get { return LC.L(@"No S3 secret key given"); } }
         public static string NoAMZUserIDError { get { return LC.L(@"No S3 userID given"); } }
-        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to an S3 compatible server. Allowed formats are: ""s3://bucketname/prefix"""); } }
         public static string S3LocationDescriptionLong(string regions) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what region the data is stored in. Amazon charges slightly more for non-US buckets. Known bucket locations:
 {0}", regions); }
         public static string S3LocationDescriptionShort { get { return LC.L(@"Specifies S3 location constraints"); } }
