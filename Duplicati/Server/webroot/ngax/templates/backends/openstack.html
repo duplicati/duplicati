@@ -3,7 +3,7 @@
     <input type="text" name="openstack_path" id="openstack_path" ng-model="$parent.Path" placeholder="{{'bucket/folder/subfolder' | translate}}" />
 </div>
 
-<div class="input text">
+<div class="input select">
     <label for="openstack_server" translate>OpenStack AuthURI</label>
 
     <select name="openstack_server" id="openstack_server" ng-model="$parent.openstack_server" ng-options="v as k + ' (' + v + ')' for (k, v) in openstack_providers | orderBy: k">
@@ -14,7 +14,7 @@
 
 </div>
 
-<div class="input text">
+<div class="input select">
     <label for="openstack_version" translate>Keystone API version</label>
 
     <select name="openstack_version" id="openstack_version" ng-model="$parent.openstack_version" ng-options="v as k + ' (' + v + ')' for (k, v) in openstack_versions | orderBy: k">

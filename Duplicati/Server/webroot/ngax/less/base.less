@@ -1470,6 +1470,38 @@ body {
                             }
                         }
 
+                        .step2 {
+                            /* For now, apply the rules to the step 2 only.
+                               TODO: integrate with form.less after investigation */
+                            form.styled {
+                                .input.select {
+                                    display: grid;
+                                    grid-auto-flow: column;
+                                    justify-content: flex-start;
+                                    grid-template-areas:
+                                        "label server"
+                                        ".     custom"; /* Adding an empty block ensures the grid area 'server' and 'custom' are aligned. */
+
+                                    label {
+                                        grid-area: label;
+                                    }
+
+                                    select {
+                                        grid-area: server;
+                                    }
+
+                                    input {
+                                        grid-area: custom;
+
+                                        /* Add gap between this input area and the select element above.
+                                           Avoid using the row-gap property as it sets the gap
+                                           even if this input area does not exist. */
+                                        margin-top: 10px; /* Magic number */
+                                    }
+                                }
+                            }
+                        }
+
                         .step2,
                         .step5 {
                             .advancedoptions {
