@@ -1470,38 +1470,6 @@ body {
                             }
                         }
 
-                        .step1,
-                        .step2 {
-                            /* .step1: "backup location" on a direct restore task
-                               .step2: "destination" on adding/editing backup task
-                               TODO: integrate with form.less after investigation */
-                            .input.select {
-                                display: grid;
-                                grid-auto-flow: column;
-                                justify-content: flex-start;
-                                grid-template-areas:
-                                    "label server"
-                                    ".     custom"; /* Adding an empty block ensures the grid area 'server' and 'custom' are aligned. */
-
-                                label {
-                                    grid-area: label;
-                                }
-
-                                select {
-                                    grid-area: server;
-                                }
-
-                                input {
-                                    grid-area: custom;
-
-                                    /* Add gap between this input area and the select element above.
-                                       Avoid using the row-gap property as it sets the gap
-                                       even if this input area does not exist. */
-                                    margin-top: 10px; /* Magic number */
-                                }
-                            }
-                        }
-
                         .step2,
                         .step5 {
                             .advancedoptions {
@@ -1675,6 +1643,38 @@ body {
                             float: none;
                             width: 635px;
                             padding-top: 30px;
+                        }
+                    }
+                }
+
+                div.add .step2,
+                div.restore .step1 {
+                    /* .step2: "destination" on adding/editing backup task
+                       .step1: "backup location" on a direct restore task
+                       TODO: integrate with form.less after investigation */
+                    .input.select {
+                        display: grid;
+                        grid-auto-flow: column;
+                        justify-content: flex-start;
+                        grid-template-areas:
+                            "label server"
+                            ".     custom"; /* Adding an empty block ensures the grid area 'server' and 'custom' are aligned. */
+
+                        label {
+                            grid-area: label;
+                        }
+
+                        select {
+                            grid-area: server;
+                        }
+
+                        input {
+                            grid-area: custom;
+
+                            /* Add gap between this input area and the select element above.
+                               Avoid using the row-gap property as it sets the gap
+                               even if this input area does not exist. */
+                            margin-top: 10px; /* Magic number */
                         }
                     }
                 }
