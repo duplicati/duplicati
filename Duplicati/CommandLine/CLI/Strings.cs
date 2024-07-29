@@ -35,8 +35,8 @@ namespace Duplicati.CommandLine.Strings
         public static string SupportedCompressionModulesHeader { get { return LC.L(@"Supported compression modules:"); } }
         public static string SupportedEncryptionModulesHeader { get { return LC.L(@"Supported encryption modules:"); } }
         public static string SupportedOptionsHeader { get { return LC.L(@"Supported options:"); } }
-        public static string ModuleIsLoadedAutomatically { get { return LC.L(@"Module is loaded automatically, use --disable-module to prevent this"); } }
-        public static string ModuleIsNotLoadedAutomatically { get { return LC.L(@"Module is not loaded automatically, use --enable-module to load it"); } }
+        public static string ModuleIsLoadedAutomatically { get { return LC.L(@"Module is loaded automatically. Use --{0} to prevent this.", "disable-module"); } }
+        public static string ModuleIsNotLoadedAutomatically { get { return LC.L(@"Module is not loaded automatically Use --{0} to load it.", "enable-module"); } }
         public static string GenericModulesHeader { get { return LC.L(@"Supported generic modules:"); } }
         public static string FailedToParseParametersFileError(string path, string message) { return LC.L(@"Unable to read the parameters file ""{0}"", reason: {1}", path, message); }
         public static string FiltersCannotBeUsedWithFileError2 { get { return LC.L(@"Filters cannot be specified on the commandline if filters are also present in the parameter file. Use the special --{0}, --{1}, or --{2} options to specify filters inside the parameter file. Each filter must be prefixed with either a + or a -, and multiple filters must be joined with {3}", "replace-filter", "append-filter", "prepend-filter", System.IO.Path.PathSeparator); } }
