@@ -38,16 +38,16 @@ namespace Duplicati.Library.Backend.Strings
 
     internal static class OneDriveV2
     {
-        public static string DisplayName { get { return LC.L(@"Microsoft OneDrive v2"); } }
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Stores files in Microsoft OneDrive or Microsoft OneDrive for Business via the Microsoft Graph API. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3})", mssadescription, mssalink, msopdescription, msoplink); }
+        public static string DisplayName { get { return LC.L(@"Microsoft OneDrive v2"); } }
         public static string DriveIdLong(string defaultDrive) { return LC.L(@"ID of the drive to store data in. If no drive is specified, the default OneDrive or OneDrive for Business drive will be used via '{0}'.", defaultDrive); }
         public static string DriveIdShort { get { return LC.L(@"Optional ID of the drive"); } }
     }
 
     internal static class SharePointV2
     {
-        public static string DisplayName { get { return LC.L(@"Microsoft SharePoint v2"); } }
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Stores files in a Microsoft SharePoint site via the Microsoft Graph API. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3})", mssadescription, mssalink, msopdescription, msoplink); }
+        public static string DisplayName { get { return LC.L(@"Microsoft SharePoint v2"); } }
         public static string SiteIdLong { get { return LC.L(@"ID of the site to store data in"); } }
         public static string SiteIdShort { get { return LC.L(@"ID of the site"); } }
         public static string MissingSiteId { get { return LC.L(@"No site ID was provided"); } }
@@ -56,8 +56,8 @@ namespace Duplicati.Library.Backend.Strings
 
     internal static class MicrosoftGroup
     {
-        public static string DisplayName { get { return LC.L(@"Microsoft Office 365 Group"); } }
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. Allowed formats are ""sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder"" (with ""//"" being optionally used to indicate the root document folder), or just ""sharepoint://subfolder"" (in which case you must also explicitly specify the SharePoint site's ID via --site-id). Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3})", mssadescription, mssalink, msopdescription, msoplink); }
+        public static string DisplayName { get { return LC.L(@"Microsoft Office 365 Group"); } }
         public static string GroupIdLong { get { return LC.L(@"ID of the group to store data in"); } }
         public static string GroupIdShort { get { return LC.L(@"ID of the group"); } }
         public static string GroupEmailLong { get { return LC.L(@"Email address of the group to store data in"); } }

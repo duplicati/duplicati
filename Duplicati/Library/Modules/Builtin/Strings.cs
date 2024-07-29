@@ -26,9 +26,9 @@ namespace Duplicati.Library.Modules.Builtin.Strings
 {
     internal static class ConsolePasswordInput
     {
-        public static string ConfirmPassphrasePrompt { get { return LC.L(@"Confirm encryption passphrase"); } }
         public static string Description { get { return LC.L(@"This module will ask the user for an encryption password on the command line unless encryption is disabled or the password is supplied by other means"); } }
         public static string Displayname { get { return LC.L(@"Password prompt"); } }
+        public static string ConfirmPassphrasePrompt { get { return LC.L(@"Confirm encryption passphrase"); } }
         public static string EmptyPassphraseError { get { return LC.L(@"Empty passphrases are not allowed"); } }
         public static string EnterPassphrasePrompt { get { return LC.L(@"Enter encryption passphrase"); } }
         public static string PassphraseMismatchError { get { return LC.L(@"The passphrases do not match"); } }
@@ -38,6 +38,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     internal static class HttpOptions
     {
         public static string Description { get { return LC.L(@"This module exposes a number of properties that can be used to change the way http requests are issued"); } }
+        public static string DisplayName { get { return LC.L(@"Configure http requests"); } }
         public static string DescriptionAcceptAnyCertificateLong { get { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --accept-specified-ssl-hash instead, whenever possible."); } }
         public static string DescriptionAcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
         public static string DescriptionAcceptHashLong2 { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
@@ -46,7 +47,6 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string DisableExpect100Short { get { return LC.L(@"Disable the expect header"); } }
         public static string DisableNagleLong { get { return LC.L(@"By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more efficiently."); } }
         public static string DisableNagleShort { get { return LC.L(@"Disable nagling"); } }
-        public static string DisplayName { get { return LC.L(@"Configure http requests"); } }
         public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh url."); } }
         public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
         public static string SslversionsLong { get { return LC.L(@"This option changes the default SSL versions allowed. This is an advanced option and should only be used if you want to enhance security or work around an issue with a particular SSL protocol."); } }
@@ -137,6 +137,8 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
     }
     internal static class SendJabberMessage
     {
+        public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messages"); } }
+        public static string DisplayName { get { return LC.L(@"XMPP report module"); } }
         public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent, specify multiple users separated with commas"); } }
         public static string SendxmpptoShort { get { return LC.L(@"XMPP recipient email"); } }
         public static string SendxmppmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
@@ -158,15 +160,13 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendxmpplevelShort { get { return LC.L(@"The messages to send"); } }
         public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations"); } }
         public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
-        public static string DisplayName { get { return LC.L(@"XMPP report module"); } }
-        public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messages"); } }
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
     }
 
     internal static class SendHttpMessage
     {
-        public static string DisplayName { get { return LC.L(@"HTTP report module"); } }
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via HTTP messages"); } }
+        public static string DisplayName { get { return LC.L(@"HTTP report module"); } }
         public static string SendhttpurlLong { get { return LC.L(@"HTTP report url"); } }
         public static string SendhttpurlShort { get { return LC.L(@"HTTP report url"); } }
         public static string SendhttpmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
