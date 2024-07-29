@@ -119,7 +119,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
         ];
 
 
-        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
+        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, e.g. {0}');
 
         apputils.filterClasses = [{
             name: gettextCatalog.getString('Exclude directories whose names contain'),

@@ -48,7 +48,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
-        public static string DescriptionFingerprintLong { get { return LC.L(@"The server fingerprint used for validation of server identity. Format is eg. ""ssh-rsa 4096 11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66""."); } }
+        public static string DescriptionFingerprintLong { get { return LC.L(@"The server fingerprint used for validation of server identity. Format is e.g. ""ssh-rsa 4096 11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66""."); } }
         public static string DescriptionFingerprintShort { get { return LC.L(@"Supplies server fingerprint used for validation of server identity"); } }
         public static string DescriptionAnyFingerprintLong { get { return LC.L(@"To guard against man-in-the-middle attacks, the server fingerprint is verified on connection. Use this option to disable host-key fingerprint verification. You should only use this option for testing."); } }
         public static string DescriptionAnyFingerprintShort { get { return LC.L(@"Disables fingerprint validation"); } }

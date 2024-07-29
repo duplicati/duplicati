@@ -674,7 +674,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
+        /// Formats a size into a human readable format, e.g. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
         /// </summary>
         /// <param name="size">The size to format</param>
         /// <returns>A human readable string representing the size</returns>
