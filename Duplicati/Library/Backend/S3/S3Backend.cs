@@ -66,6 +66,7 @@ namespace Duplicati.Library.Backend
             { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" },
             { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
             { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
+            { "さくらのクラウド (Sakura Cloud)", "isk01.sakurastorage.jp" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
