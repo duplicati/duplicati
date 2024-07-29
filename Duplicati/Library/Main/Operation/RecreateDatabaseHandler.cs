@@ -78,7 +78,7 @@ namespace Duplicati.Library.Main.Operation
         public void RunUpdate(Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
             if (!m_options.RepairOnlyPaths)
-                throw new UserInformationException(string.Format("Can only update with paths, try setting {0}", "--repair-only-paths"), "RepairUpdateRequiresPathsOnly");
+                throw new UserInformationException(string.Format("Can only update with paths, try setting --{0}", "repair-only-paths"), "RepairUpdateRequiresPathsOnly");
 
             using (var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
