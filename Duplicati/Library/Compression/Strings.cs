@@ -19,8 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Compression.Strings {
-    internal static class FileArchiveZip {
+namespace Duplicati.Library.Compression.Strings
+{
+    internal static class FileArchiveZip
+    {
         public static string Description { get { return LC.L(@"This module provides the industry standard Zip compression. Files created with this module can be read by any standard-compliant zip application."); } }
         public static string DisplayName { get { return LC.L(@"Zip compression"); } }
         public static string CompressionlevelDeprecated(string optionname) { return LC.L(@"Please use the {0} option instead", optionname); }
@@ -30,9 +32,12 @@ namespace Duplicati.Library.Compression.Strings {
         public static string CompressionmethodShort { get { return LC.L(@"Sets the Zip compression method"); } }
         public static string Compressionzip64Long { get { return LC.L(@"The zip64 format is required for files larger than 4GiB, use this flag to toggle it"); } }
         public static string Compressionzip64Short { get { return LC.L(@"Toggles Zip64 support"); } }
+        public static string CompressionlibraryLong { get { return LC.L(@"This option changes the compression library used to read and write files. The SharpCompress library has more features and is more resilient where the built-in library is faster. When Auto is chosen, the built-in library will be used unless an option is added that requires SharpCompress."); } }
+        public static string CompressionlibraryShort { get { return LC.L(@"Toggles the zip library to use"); } }
         public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
     }
-    internal static class SevenZipCompression {
+    internal static class SevenZipCompression
+    {
         public static string Description { get { return LC.L(@"*Experimental*: 7z Archive with LZMA2 support."); } }
         public static string DisplayName { get { return LC.L(@"Experimental - 7z Archive"); } }
         public static string NoWriterError { get { return LC.L(@"Archive not opened for writing"); } }
