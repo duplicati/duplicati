@@ -40,7 +40,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             'Backup_Finalize': gettextCatalog.getString('Completing backup …'),
             'Backup_WaitForUpload': gettextCatalog.getString('Waiting for upload to finish …'),
             'Backup_Delete': gettextCatalog.getString('Deleting unwanted files …'),
-            'Backup_Compact': gettextCatalog.getString('Compacting remote data ...'),
+            'Backup_Compact': gettextCatalog.getString('Compacting remote data …'),
             'Backup_VerificationUpload': gettextCatalog.getString('Uploading verification file …'),
             'Backup_PostBackupVerify': gettextCatalog.getString('Verifying backend data …'),
             'Backup_Complete': gettextCatalog.getString('Backup complete!'),

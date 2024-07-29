@@ -25,7 +25,7 @@ namespace Duplicati.Library.Backend.Strings {
         public static string AlternateDestinationMarkerShort { get { return LC.L(@"Look for a file in the destination folder"); } }
         public static string AlternateTargetPathsLong(string optionname, char pathseparator) { return LC.L(@"This option allows multiple targets to be specified. The primary target path is placed before the list of paths supplied with this option. Before starting the backup, each folder in the list is checked for existence and optionally the presence of the marker file supplied by --{0}. The first existing path that optionally contains the marker file is then used as the destination. Multiple destinations are separated with a ""{1}"". On Windows, the path may be a UNC path, and the drive letter may be substituted with an asterisk (*), e.g: ""*:\backup"", which will examine all drive letters. If a username and password is supplied, the same credentials are used for all destinations.", optionname, pathseparator); }
         public static string AlternateTargetPathsShort { get { return LC.L(@"A list of secondary target paths"); } }
-        public static string Description { get { return LC.L(@"This backend can read and write data to an file based backend. Allowed formats are ""file://hostname/folder"" or ""file://username:password@hostname/folder"". You may supply UNC paths (eg: ""file://\\server\folder"") or local paths (eg: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")"); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to an file based backend. Allowed formats are ""file://hostname/folder"" or ""file://username:password@hostname/folder"". You may supply UNC paths (e.g.: ""file://\\server\folder"") or local paths (e.g.: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
@@ -35,9 +35,9 @@ namespace Duplicati.Library.Backend.Strings {
         public static string NoDestinationWithMarkerFileError(string markername, string[] folders) { return LC.L(@"The marker file ""{0}"" was not found in any of the examined destinations: {1}", markername, string.Join(", ", folders)); }
         public static string UseMoveForPutLong { get { return LC.L(@"When storing the file, the standard operation is to copy the file and delete the original. This sequence ensures that the operation can be retried if something goes wrong. Activating this option may cause the retry operation to fail. This option has no effect unless the --disable-streaming-transfers option is activated."); } }
         public static string UseMoveForPutShort { get { return LC.L(@"Move the file instead of copying it"); } }
-        public static string ForceReauthShort { get { return LC.L(@"Force authentication against remote share"); } }
         public static string ForceReauthLong { get { return LC.L(@"If this option is set, any existing authentication against the remote share is dropped before attempting to authenticate"); } }
-        public static string DisableLengthVerificationShort { get { return LC.L(@"Disable length verification"); } }
+        public static string ForceReauthShort { get { return LC.L(@"Force authentication against remote share"); } }
         public static string DisableLengthVerificationLong { get { return LC.L(@"As an extra precaution the uploaded file length will be checked against the local source length."); } }
+        public static string DisableLengthVerificationShort { get { return LC.L(@"Disable length verification"); } }
     }
 }
