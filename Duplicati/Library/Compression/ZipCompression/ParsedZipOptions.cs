@@ -19,18 +19,19 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Generic;
-using Duplicati.Library.Interface;
+using SharpCompress.Common;
+using SharpCompress.Compressors.Deflate;
 
-namespace Duplicati.Library.Compression;
+namespace Duplicati.Library.Compression.ZipCompression;
 
-public static class CompressionModules
-{
-    /// <summary>
-    /// The list of all built-in compression modules
-    /// </summary>
-    public static IReadOnlyList<ICompression> BuiltInCompressionModules => [
-        new ZipCompression.FileArchiveZip(),
-        new SevenZipCompression()
-    ];
-}
+/// <summary>
+/// The zip options parsed from the command line
+/// </summary>
+/// <param name="DeflateCompressionLevel">The compression level to use</param>
+/// <param name="CompressionType">The compression type to use</param>
+/// <param name="UseZip64">Whether to use zip64 extensions</param>
+public sealed record ParsedZipOptions(
+    CompressionLevel DeflateCompressionLevel,
+    CompressionType CompressionType,
+    bool UseZip64
+);

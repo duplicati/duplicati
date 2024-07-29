@@ -19,18 +19,24 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.Compression;
+namespace Duplicati.Library.Compression.ZipCompression;
 
-public static class CompressionModules
+public interface IZipArchive : IDisposable
 {
-    /// <summary>
-    /// The list of all built-in compression modules
-    /// </summary>
-    public static IReadOnlyList<ICompression> BuiltInCompressionModules => [
-        new ZipCompression.FileArchiveZip(),
-        new SevenZipCompression()
-    ];
+    long FlushBufferSize { get; }
+    long Size { get; }
+
+    Stream CreateFile(string file, CompressionHint hint, DateTime lastWrite);
+    bool FileExists(string file);
+    DateTime GetLastWriteTime(string file);
+    string[] ListFiles(string prefix);
+    IEnumerable<KeyValuePair<string, long>> ListFilesWithSize(string prefix);
+    Stream? OpenRead(string file);
 }
