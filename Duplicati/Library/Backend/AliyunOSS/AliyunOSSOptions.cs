@@ -35,7 +35,7 @@
         /// Endpoint represents the access domain name for OSS external services.
         /// Endpoint 表示OSS对外服务的访问域名。
         /// https://help.aliyun.com/zh/oss/user-guide/regions-and-endpoints#concept-zt4-cvy-5db
-        /// eg.
+        /// e.g.
         /// oss-cn-guangzhou.aliyuncs.com
         /// oss-cn-hongkong.aliyuncs.com
         /// oss-us-west-1.aliyuncs.com

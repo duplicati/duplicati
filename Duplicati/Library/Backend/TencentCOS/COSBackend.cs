@@ -82,7 +82,7 @@ namespace Duplicati.Library.Backend.TencentCOS
             /// </summary>
             public string Appid { get; set; }
             /// <summary>
-            /// Cloud API Secret Id
+            /// Cloud API Secret ID
             /// </summary>
             public string SecretId { get; set; }
             /// <summary>

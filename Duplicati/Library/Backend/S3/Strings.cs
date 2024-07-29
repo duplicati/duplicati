@@ -23,10 +23,10 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class S3Backend
     {
-        public static string AMZKeyDescriptionLong { get { return LC.L(@"The AWS ""Secret Access Key"" can be obtained after logging into your AWS account, this can also be supplied through the ""auth-password"" property"); } }
-        public static string AMZKeyDescriptionShort { get { return LC.L(@"The AWS ""Secret Access Key"""); } }
-        public static string AMZUserIDDescriptionLong { get { return LC.L(@"The AWS ""Access Key ID"" can be obtained after logging into your AWS account, this can also be supplied through the ""auth-username"" property"); } }
-        public static string AMZUserIDDescriptionShort { get { return LC.L(@"The AWS ""Access Key ID"""); } }
+        public static string AMZKeyDescriptionLong { get { return LC.L(@"AWS Secret Access Key can be obtained after logging into your AWS account. This can also be supplied through the ""auth-password"" property"); } }
+        public static string AMZKeyDescriptionShort { get { return LC.L(@"AWS Secret Access Key"); } }
+        public static string AMZUserIDDescriptionLong { get { return LC.L(@"AWS Access Key ID can be obtained after logging into your AWS account. This can also be supplied through the ""auth-username"" property"); } }
+        public static string AMZUserIDDescriptionShort { get { return LC.L(@"AWS Access Key ID"); } }
         public static string DisplayName { get { return LC.L(@"S3 compatible"); } }
         public static string AuthPasswordDescriptionLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
@@ -41,9 +41,9 @@ namespace Duplicati.Library.Backend.Strings
         public static string S3ServerNameDescriptionLong(string providers) { return LC.L(@"Companies other than Amazon are now supporting the S3 API, meaning that this backend can read and write data to those providers as well. Use this option to set the hostname. Currently known providers are:
 {0}", providers); }
         public static string S3ServerNameDescriptionShort { get { return LC.L(@"Specifies an alternate S3 server name"); } }
+        public static string S3ClientDescriptionLong { get { return LC.L(@"Set either to aws or minio. Then either the AWS SDK or Minio SDK will be used to communicate with S3 services."); } }
         public static string S3ClientDescriptionShort { get { return LC.L(@"Specifies the S3 client library to use"); } }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this flag to communicate using Secure Socket Layer (SSL) over http (https). Note that bucket names containing a period has problems with SSL connections."); } }
-        public static string DescriptionS3ClientLong { get { return LC.L(@"Set either to aws or minio. Then either the AWS SDK or Minio SDK will be used to communicate with S3 services."); } }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (https) connection"); } }
         public static string DescriptionDisableChunkEncodingLong { get { return LC.L(@"This disables chunk encoding for the aws client, which is not supported by all S3 providers."); } }
         public static string DescriptionDisableChunkEncodingShort { get { return LC.L(@"Disable chunk encoding (aws client only)"); } }

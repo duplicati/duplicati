@@ -26,7 +26,7 @@
                 <label for="backupOptions">Advanced options</label>
                 <div>
                     <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> Edit as text</a>
-                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, eg. --dblock-size=100MB' | translate}}"></textarea>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, e.g. --dblock-size=100MB' | translate}}"></textarea>
                 </div>
             </div>
 
@@ -49,13 +49,13 @@
             {{'Server is currently paused,' | translate}} <a style="cursor: pointer" ng-click="ServerStatus.resume()" translate>resume now</a>
         </div>
         <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == null" translate="">
-            Connecting to task ....
+            Connecting to task …
         </div>
         <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == false" translate="">
-            Waiting for task to start ....
+            Waiting for task to start …
         </div>
         <div ng-show="Started == true &amp;&amp; Finished == false">
-            <span translate>Running ....</span> <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
+            <span translate>Running …</span> <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
         </div>
         <div ng-show="Started == true &amp;&amp; Finished == true" translate>
             Finished!
