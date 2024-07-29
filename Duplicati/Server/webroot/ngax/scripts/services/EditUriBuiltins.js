@@ -46,7 +46,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         var dlg = null;
 
-        dlg = DialogService.dialog(gettextCatalog.getString('Testing permissions...'), gettextCatalog.getString('Testing permissions …'), [], null, function () {
+        dlg = DialogService.dialog(gettextCatalog.getString('Testing permissions …'), gettextCatalog.getString('Testing permissions …'), [], null, function () {
             AppService.postJson('/webmodule/s3-iamconfig', {
                 's3-operation': 'CanCreateUser',
                 's3-username': scope.Username,
@@ -120,7 +120,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
             var dlg = null;
 
-            dlg = DialogService.dialog(gettextCatalog.getString('Creating user...'), gettextCatalog.getString('Creating new user with limited access …'), [], null, function () {
+            dlg = DialogService.dialog(gettextCatalog.getString('Creating user …'), gettextCatalog.getString('Creating new user with limited access …'), [], null, function () {
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
                 AppService.postJson('/webmodule/s3-iamconfig', {

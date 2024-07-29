@@ -40,7 +40,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                 if (dlg != null)
                     dlg.dismiss();
 
-                dlg = DialogService.dialog(gettextCatalog.getString('Testing ...'), gettextCatalog.getString('Testing connection ...'), [], null, function() {
+                dlg = DialogService.dialog(gettextCatalog.getString('Testing …'), gettextCatalog.getString('Testing connection …'), [], null, function() {
                     AppService.postJson('/remoteoperation/test', { path: uri }).then(function() {
                         scope.Testing = false;
                         dlg.dismiss();
