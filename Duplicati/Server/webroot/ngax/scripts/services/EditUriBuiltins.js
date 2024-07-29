@@ -1145,7 +1145,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseFloat(scope['sia_redundancy']) < 1.0)
-            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 1.0'));
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 1.0')); // Do not forget to update SiaRedundancyDescriptionLong as well if the value is changed
 
         if (res)
             continuation();

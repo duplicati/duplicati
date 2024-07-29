@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-26 12:56+0200\n"
+"POT-Creation-Date: 2024-07-26 20:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -514,7 +514,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:42
-#: Library/Backend/AlternativeFTP/Strings.cs:43
+#: Library/Backend/AlternativeFTP/Strings.cs:44
 msgid "Disable upload verification"
 msgstr ""
 
@@ -890,7 +890,7 @@ msgstr ""
 msgid "The folder {0} was not found. Message: {1}"
 msgstr ""
 
-#: Library/Backend/AlternativeFTP/Strings.cs:44
+#: Library/Backend/AlternativeFTP/Strings.cs:43
 msgid ""
 "To protect against network or server failures, every upload will be "
 "attempted to be verified. Use this option to disable this verification to "
@@ -1161,7 +1161,7 @@ msgid "Path on the Remote repository. "
 msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:34
-msgid "Rclone options."
+msgid "Rclone options"
 msgstr ""
 
 #: Library/Backend/Rclone/Strings.cs:35
@@ -1350,31 +1350,35 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:26
-msgid "Sia Decentralized Cloud"
-msgstr ""
-
-#: Library/Backend/Sia/Strings.cs:27
 msgid "This backend can read and write data to Sia."
 msgstr ""
 
+#: Library/Backend/Sia/Strings.cs:27
+msgid "Sia Decentralized Cloud"
+msgstr ""
+
 #: Library/Backend/Sia/Strings.cs:28
-msgid "Backup path"
+msgid "Set the target path. Example: /backup"
 msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:29
-msgid "Target path, ie /backup"
+msgid "Backup path"
 msgstr ""
 
-#: Library/Backend/Sia/Strings.cs:30 Library/Backend/Sia/Strings.cs:31
+#: Library/Backend/Sia/Strings.cs:30
+msgid "Supply a password for Sia server."
+msgstr ""
+
+#: Library/Backend/Sia/Strings.cs:31
 msgid "Sia password"
 msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:32
-msgid "3"
+msgid "The minimum value for redundancy is 1.0."
 msgstr ""
 
 #: Library/Backend/Sia/Strings.cs:33
-msgid "Minimum value is 3."
+msgid "Set the minimum redundancy"
 msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:28
@@ -1637,11 +1641,15 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:27
-msgid "Tencent COS (Cloud Object Storage)"
+msgid "This backend can read and write data to the Tencent COS."
 msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:28
-msgid "This backend can read and write data to the Tencent COS."
+msgid "Tencent COS (Cloud Object Storage)"
+msgstr ""
+
+#: Library/Backend/TencentCOS/Strings.cs:29
+msgid "Account ID of Tencent Cloud Account"
 msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:30
@@ -1649,52 +1657,48 @@ msgid "Account ID"
 msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:31
-msgid "Account ID of Tencent Cloud Account"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:33
-msgid "Secret Id"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:34
 msgid "Cloud API Secret Id"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:36
-msgid "Secret Key"
+#: Library/Backend/TencentCOS/Strings.cs:32
+msgid "Secret Id"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:37
+#: Library/Backend/TencentCOS/Strings.cs:33
 msgid "Cloud API Secret Key"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:39
-msgid "Bucket"
+#: Library/Backend/TencentCOS/Strings.cs:34
+msgid "Secret Key"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:40
+#: Library/Backend/TencentCOS/Strings.cs:35
 msgid "Bucket, format: BucketName-APPID"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:42
-msgid "Specifies COS location constraints"
+#: Library/Backend/TencentCOS/Strings.cs:36
+msgid "Bucket"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:43
+#: Library/Backend/TencentCOS/Strings.cs:37
 msgid ""
 "Region (Region) is the distribution area of ​​the Tencent cloud hosting "
 "machine room, the object storage COS data is stored in the storage buckets "
 "of these regions. https://intl.cloud.tencent.com/document/product/436/6224"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:45
-msgid "Storage class of the object"
+#: Library/Backend/TencentCOS/Strings.cs:38
+msgid "Specifies COS location constraints"
 msgstr ""
 
-#: Library/Backend/TencentCOS/Strings.cs:46
+#: Library/Backend/TencentCOS/Strings.cs:39
 msgid ""
 "Storage class of the object; check enumerated values at https://intl.cloud."
 "tencent.com/document/product/436/30925"
+msgstr ""
+
+#: Library/Backend/TencentCOS/Strings.cs:40
+msgid "Storage class of the object"
 msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:25
@@ -1747,7 +1751,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:37
-msgid "Number of threads for restore operations."
+msgid "Number of threads for restore operations"
 msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:38
@@ -1757,7 +1761,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:39
-msgid "The chunk size for simultaneous downloading."
+msgid "The chunk size for simultaneous downloading"
 msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:40
@@ -1771,7 +1775,7 @@ msgid "mega.nz"
 msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:29
-msgid "The shared secret used to generate two-factor TOTP codes."
+msgid "The shared secret used to generate two-factor TOTP codes"
 msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:30
@@ -1881,7 +1885,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:38
-msgid "Upload files using binary direct mode."
+msgid "Upload files using binary direct mode"
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:40
@@ -1891,7 +1895,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:41
-msgid "Set timeout for SharePoint web operations."
+msgid "Set timeout for SharePoint web operations"
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:43
@@ -1901,7 +1905,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:44
-msgid "Set block size for chunked uploads to SharePoint."
+msgid "Set block size for chunked uploads to SharePoint"
 msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:46
@@ -2656,13 +2660,13 @@ msgstr ""
 
 #: Library/Main/Strings.cs:104
 msgid ""
-"This option will make sure the contents of the manifest file are not read. "
+"Use this option to make sure the contents of the manifest file are not read. "
 "This also implies that file hashes are not checked either. Use only for "
 "disaster recovery."
 msgstr ""
 
 #: Library/Main/Strings.cs:105
-msgid "An option that prevents verifying the manifests"
+msgid "Disables manifests verification"
 msgstr ""
 
 #: Library/Main/Strings.cs:106
@@ -3594,7 +3598,7 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:273
-msgid "Allow automatic rebuilding of local database to save space."
+msgid "Allow automatic rebuilding of local database to save space"
 msgstr ""
 
 #: Library/Main/Strings.cs:274
