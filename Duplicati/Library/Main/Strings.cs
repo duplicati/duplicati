@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DeletedfilesShort { get { return LC.L(@"List of deleted files"); } }
         public static string DisablefilepathcacheLong { get { return LC.L(@"This option can be used to reduce the memory footprint by not keeping paths and modification timestamps in memory"); } }
         public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
-        public static string DisablefilepathcacheDeprecated { get { return LC.L(@"The option --disable-filepath-cache is no longer used and has been deprecated."); } }
+        public static string DisablefilepathcacheDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "disable-filepath-cache"); } }
         public static string UseblockcacheLong { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
         public static string UseblockcacheShort { get { return LC.L(@"Store an in-memory block cache"); } }
         public static string NobackendverificationLong { get { return LC.L(@"If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
@@ -226,7 +226,7 @@ namespace Duplicati.Library.Main.Strings
         public static string FullremoteverificationShort { get { return LC.L(@"Activates in-depth verification of files"); } }
         public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes are read from a file before processing"); } }
         public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
-        public static string FilereadbuffersizeDeprecated { get { return LC.L(@"The option --file-read-buffer-size is no longer used and has been deprecated."); } }
+        public static string FilereadbuffersizeDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "file-read-buffer-size"); } }
         public static string AllowpassphrasechangeLong { get { return LC.L(@"Use this option to allow the passphrase to change, note that this option is not permitted for a backup or repair operation"); } }
         public static string AllowpassphrasechangeShort { get { return LC.L(@"Allow the passphrase to change"); } }
         public static string ListsetsonlyLong { get { return LC.L(@"Use this option to only list filesets and avoid traversing file names and other metadata which slows down the process"); } }
