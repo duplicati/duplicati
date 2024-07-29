@@ -141,7 +141,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// A localized string describing the module with a friendly name
         /// </summary>
-        public override string DisplayName { get { return Strings.SendMail.Displayname;} }
+        public override string DisplayName { get { return Strings.SendMail.Displayname; } }
 
         /// <summary>
         /// A localized description of the module
@@ -191,11 +191,11 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
         protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
 
-		/// <summary>
-		/// This method is the interception where the module can interact with the execution environment and modify the settings.
-		/// </summary>
-		/// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
-		protected override bool ConfigureModule(IDictionary<string, string> commandlineOptions)
+        /// <summary>
+        /// This method is the interception where the module can interact with the execution environment and modify the settings.
+        /// </summary>
+        /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
+        protected override bool ConfigureModule(IDictionary<string, string> commandlineOptions)
         {
             //We need at least a recipient
             commandlineOptions.TryGetValue(OPTION_RECIPIENT, out m_to);
