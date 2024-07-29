@@ -38,7 +38,7 @@ namespace Duplicati.Library.Encryption.Strings
     }
     internal static class GPGEncryption
     {
-        public static string Description { get { return LC.L(@"The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --{0} switch.", "gpg-program-path"); } }
+        public static string Description { get { return LC.L(@"The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the option --{0}.", "gpg-program-path"); } }
         public static string DisplayName { get { return LC.L(@"GNU Privacy Guard, external"); } }
         public static string GpgencryptiondecryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --decrypt option is always specified."); } }
         public static string GpgencryptiondecryptionswitchesShort { get { return LC.L(@"Extra GPG commandline options for decryption"); } }
