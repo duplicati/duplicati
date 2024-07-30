@@ -23,7 +23,7 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class S3Backend
     {
-        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to an S3 compatible server. Allowed formats are: ""s3://bucketname/prefix"""); } }
+        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to an S3 compatible server. Allowed formats are: ""s3://bucketname/prefix""."); } }
         public static string DisplayName { get { return LC.L(@"S3 compatible"); } }
         public static string AMZKeyDescriptionLong { get { return LC.L(@"AWS Secret Access Key can be obtained after logging into your AWS account. This can also be supplied through the ""auth-password"" property."); } }
         public static string AMZKeyDescriptionShort { get { return LC.L(@"AWS Secret Access Key"); } }

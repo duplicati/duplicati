@@ -43,7 +43,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string DescriptionAcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
         public static string DescriptionAcceptHashLong2 { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
         public static string DescriptionAcceptHashShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
-        public static string DisableExpect100Long { get { return LC.L(@"The default HTTP request has the header ""Expect: 100-Continue"" attached, which allows some optimizations when authenticating, but also breaks some web servers, causing them to report ""417 - Expectation failed"""); } }
+        public static string DisableExpect100Long { get { return LC.L(@"The default HTTP request has the header ""Expect: 100-Continue"" attached, which allows some optimizations when authenticating, but also breaks some web servers, causing them to report ""417 - Expectation failed""."); } }
         public static string DisableExpect100Short { get { return LC.L(@"Disable the expect header"); } }
         public static string DisableNagleLong { get { return LC.L(@"By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more efficiently."); } }
         public static string DisableNagleShort { get { return LC.L(@"Disable nagling"); } }

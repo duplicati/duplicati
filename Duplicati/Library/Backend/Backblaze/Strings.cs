@@ -22,7 +22,7 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class B2 {
-        public static string Description { get { return LC.L(@"This backend can read and write data to the Backblaze B2 Cloud Storage. Allowed formats are: ""b2://bucketname/prefix"""); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to the Backblaze B2 Cloud Storage. Allowed formats are: ""b2://bucketname/prefix""."); } }
         public static string DisplayName { get { return LC.L(@"B2 Cloud Storage"); } }
         public static string B2applicationkeyDescriptionLong { get { return LC.L(@"B2 Cloud Storage Application Key can be obtained after logging into your Backblaze account. This can also be supplied through the ""auth-password"" property."); } }
         public static string B2applicationkeyDescriptionShort { get { return LC.L(@"B2 Cloud Storage Application Key"); } }
