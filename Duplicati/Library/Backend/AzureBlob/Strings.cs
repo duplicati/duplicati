@@ -25,7 +25,7 @@ namespace Duplicati.Library.Backend.AzureBlob.Strings {
         public static string Description_v2 { get { return LC.L(@"This backend can read and write data to Azure blob storage. Allowed formats are: ""azure://bucketname"""); } }
         public static string DisplayName { get { return LC.L(@"Azure blob"); } }
         public static string ContainerNameDescriptionLong { get { return LC.L(@"All files will be written to the container specified."); } }
-        public static string ContainerNameDescriptionShort { get { return LC.L(@"The name of the storage container "); } }
+        public static string ContainerNameDescriptionShort { get { return LC.L(@"The name of the storage container"); } }
         public static string NoStorageAccountName { get { return LC.L(@"No Azure storage account name given"); } }
         public static string StorageAccountNameDescriptionLong { get { return LC.L(@"The Azure storage account name which can be obtained by clicking the ""Manage Access Keys"" button on the storage account dashboard."); } }
         public static string StorageAccountNameDescriptionShort { get { return LC.L(@"The storage account name"); } }
