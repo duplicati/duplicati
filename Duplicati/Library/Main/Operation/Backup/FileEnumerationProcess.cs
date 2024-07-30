@@ -177,7 +177,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // Propagate the any-flag upwards
                             if (pathstack.Count > 0)
                                 pathstack.Peek().AnyEntries = true;
-                                
+
                             yield return e.Path;
                         }
                         else
@@ -191,7 +191,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                 }
                 // Just emit files
-                else 
+                else
                 {
                     if (pathstack.Count != 0)
                         pathstack.Peek().AnyEntries = true;
@@ -202,7 +202,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             while (pathstack.Count > 0)
             {
                 var e = pathstack.Pop();
-                if (e.AnyEntries|| pathstack.Count == 0)
+                if (e.AnyEntries || pathstack.Count == 0)
                 {
                     // Propagate the any-flag upwards
                     if (pathstack.Count > 0)
@@ -249,8 +249,8 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="attributes">The file or folder attributes.</param>
         private static bool AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
         {
-			// Step 1, exclude block devices
-			try
+            // Step 1, exclude block devices
+            try
             {
                 if (snapshot.IsBlockDevice(path))
                 {
@@ -260,7 +260,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorBlockDevice", ex, "Failed to process path: {0}", path);
                 return false;
             }
 
@@ -303,9 +303,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorHardLink", ex, "Failed to process path: {0}", path);
                     return false;
-                }                    
+                }
             }
 
             if (ignorenames != null && (attributes & FileAttributes.Directory) != 0)
@@ -322,9 +322,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorIgnoreFile", ex, "Failed to process path: {0}", path);
                 }
             }
 
