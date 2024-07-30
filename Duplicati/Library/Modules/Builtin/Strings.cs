@@ -47,7 +47,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string DisableExpect100Short { get { return LC.L(@"Disable the expect header"); } }
         public static string DisableNagleLong { get { return LC.L(@"By default the http requests use the RFC 896 nagling algorithm to support transfer of small packages more efficiently."); } }
         public static string DisableNagleShort { get { return LC.L(@"Disable nagling"); } }
-        public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh url."); } }
+        public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh URL."); } }
         public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
         public static string SslversionsLong { get { return LC.L(@"This option changes the default SSL versions allowed. This is an advanced option and should only be used if you want to enhance security or work around an issue with a particular SSL protocol."); } }
         public static string SslversionsShort { get { return LC.L(@"Sets allowed SSL versions"); } }
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings
 
 In the message body, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
-%REMOTEURL% - Remote server url
+%REMOTEURL% - Remote server URL
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
@@ -122,7 +122,7 @@ Mail Sender <sender@example.com>"); } }
         public static string OptionSendlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send an email.", success, warning, error, fatal, all); }
         public static string OptionSendlevelShort { get { return LC.L(@"The messages to send"); } }
-        public static string OptionServerLong { get { return LC.L(@"A url for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
+        public static string OptionServerLong { get { return LC.L(@"A URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
 If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.
 
 To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."); } }
@@ -145,7 +145,7 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
 
 In the message, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
-%REMOTEURL% - Remote server url
+%REMOTEURL% - Remote server URL
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
@@ -167,13 +167,13 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
     {
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via HTTP messages"); } }
         public static string DisplayName { get { return LC.L(@"HTTP report module"); } }
-        public static string SendhttpurlLong { get { return LC.L(@"HTTP report url."); } }
-        public static string SendhttpurlShort { get { return LC.L(@"HTTP report url"); } }
+        public static string SendhttpurlLong { get { return LC.L(@"HTTP report URL."); } }
+        public static string SendhttpurlShort { get { return LC.L(@"HTTP report URL"); } }
         public static string SendhttpmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
 
 In the message, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
-%REMOTEURL% - Remote server url
+%REMOTEURL% - Remote server URL
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
@@ -190,10 +190,10 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string HttpverbLong { get { return LC.L(@"Use this option to change the default HTTP verb used to submit a report."); } }
         public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }
-        public static string SendhttpurlsformLong { get { return LC.L(@"HTTP report urls for sending form-encoded data. This property accepts multiple urls, seperated by a semi-colon. All urls will receive the same data. Note that this option ignores the format and verb settings."); } }
-        public static string SendhttpurlsformShort { get { return LC.L(@"HTTP report urls for sending form data"); } }
-        public static string SendhttpurlsjsonLong { get { return LC.L(@"HTTP report urls for sending JSON data. This property accepts multiple urls, seperated by a semi-colon. All urls will receive the same data. Note that this option ignores the format and verb settings."); } }
-        public static string SendhttpurlsjsonShort { get { return LC.L(@"HTTP report urls for sending JSON data"); } }
+        public static string SendhttpurlsformLong { get { return LC.L(@"HTTP report URLs for sending form-encoded data. This property accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
+        public static string SendhttpurlsformShort { get { return LC.L(@"HTTP report URLs for sending form data"); } }
+        public static string SendhttpurlsjsonLong { get { return LC.L(@"HTTP report URLs for sending JSON data. This property accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
+        public static string SendhttpurlsjsonShort { get { return LC.L(@"HTTP report URLs for sending JSON data"); } }
     }
 
     internal static class ReportHelper
