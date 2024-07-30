@@ -151,7 +151,7 @@ In the message, certain tokens are replaced:
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendxmppmessageShort { get { return LC.L(@"The message template"); } }
-        public static string SendxmppusernameLong { get { return LC.L(@"The username for the account that will send the message, including the hostname. I.e. ""account@jabber.org/Home"""); } }
+        public static string SendxmppusernameLong { get { return LC.L(@"The username for the account that will send the message, including the hostname, e.g. ""account@jabber.org/Home"""); } }
         public static string SendxmppusernameShort { get { return LC.L(@"The XMPP username"); } }
         public static string SendxmpppasswordLong { get { return LC.L(@"The password for the account that will send the message."); } }
         public static string SendxmpppasswordShort { get { return LC.L(@"The XMPP password"); } }
@@ -181,7 +181,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendhttpmessageShort { get { return LC.L(@"The message template"); } }
         public static string SendhttpmessageparameternameLong { get { return LC.L(@"The name of the parameter to send the message as."); } }
         public static string SendhttpmessageparameternameShort { get { return LC.L(@"The name of the parameter to send the message as"); } }
-        public static string SendhttpextraparametersLong { get { return LC.L(@"Extra parameters to add to the http message. I.e. ""parameter1=value1&parameter2=value2"""); } }
+        public static string SendhttpextraparametersLong { get { return LC.L(@"Extra parameters to add to the http message, e.g. ""parameter1=value1&parameter2=value2"""); } }
         public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters to add to the http message"); } }
         public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
