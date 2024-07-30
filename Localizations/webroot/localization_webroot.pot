@@ -32,26 +32,25 @@ msgstr ""
 msgid "API Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1239
-#: scripts/services/EditUriBuiltins.js:1273
+#: scripts/services/EditUriBuiltins.js:1167
 #: templates/backends/storj.html:21
-#: templates/backends/tardigrade.html:21
+#: templates/backends/storj.html:22
 msgid "API key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1113
+#: scripts/services/EditUriBuiltins.js:1041
 #: templates/backends/s3.html:67
 #: templates/backends/s3.html:69
 msgid "AWS Access ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1114
+#: scripts/services/EditUriBuiltins.js:1042
 #: templates/backends/s3.html:72
 #: templates/backends/s3.html:74
 msgid "AWS Access Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:154
+#: scripts/services/EditUriBuiltins.js:153
 msgid "AWS IAM Policy"
 msgstr ""
 
@@ -64,13 +63,12 @@ msgstr ""
 msgid "About {{appname}}"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1062
-#: templates/backends/azure.html:11
+#: scripts/services/EditUriBuiltins.js:990
 msgid "Access Key"
 msgstr ""
 
 #: templates/backends/e2.html:2
-msgid "Access Key Id"
+msgid "Access Key ID"
 msgstr ""
 
 #: templates/backends/e2.html:6
@@ -82,16 +80,22 @@ msgid "Access denied"
 msgstr ""
 
 #: templates/backends/storj.html:33
-#: templates/backends/tardigrade.html:33
+#: templates/backends/storj.html:34
 msgid "Access grant"
+msgstr ""
+
+#: templates/backends/azure.html:11
+#: templates/backends/azure.html:12
+msgid "Access key"
 msgstr ""
 
 #: templates/settings.html:5
 msgid "Access to user interface"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1061
+#: scripts/services/EditUriBuiltins.js:989
 #: templates/backends/azure.html:7
+#: templates/backends/azure.html:8
 msgid "Account name"
 msgstr ""
 
@@ -123,8 +127,8 @@ msgstr ""
 msgid "Added"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1124
-#: scripts/services/EditUriBuiltins.js:1140
+#: scripts/services/EditUriBuiltins.js:1052
+#: scripts/services/EditUriBuiltins.js:1068
 msgid "Adjust bucket name?"
 msgstr ""
 
@@ -200,7 +204,7 @@ msgstr ""
 msgid "As Command-line"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1030
+#: scripts/services/EditUriBuiltins.js:958
 #: templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9
 #: templates/backends/jottacloud.html:8
@@ -214,15 +218,12 @@ msgstr ""
 msgid "AuthID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1230
-#: scripts/services/EditUriBuiltins.js:1264
+#: scripts/services/EditUriBuiltins.js:1158
 #: templates/backends/storj.html:2
-#: templates/backends/tardigrade.html:2
 msgid "Authentication method"
 msgstr ""
 
 #: templates/backends/storj.html:5
-#: templates/backends/tardigrade.html:5
 msgid "Authentication method ({{auth_method}})"
 msgstr ""
 
@@ -252,7 +253,7 @@ msgstr ""
 msgid "B2 Application Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1159
+#: scripts/services/EditUriBuiltins.js:1087
 msgid "B2 Cloud Storage Account ID"
 msgstr ""
 
@@ -260,7 +261,7 @@ msgstr ""
 msgid "B2 Cloud Storage Application ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1160
+#: scripts/services/EditUriBuiltins.js:1088
 #: templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr ""
@@ -321,26 +322,27 @@ msgstr ""
 msgid "Browser default"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1235
-#: scripts/services/EditUriBuiltins.js:1241
-#: scripts/services/EditUriBuiltins.js:1269
-#: scripts/services/EditUriBuiltins.js:1275
+#: scripts/services/EditUriBuiltins.js:1163
+#: scripts/services/EditUriBuiltins.js:1169
 #: templates/backends/storj.html:37
-#: templates/backends/tardigrade.html:37
 msgid "Bucket"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1072
-#: scripts/services/EditUriBuiltins.js:1112
-#: scripts/services/EditUriBuiltins.js:1158
-#: scripts/services/EditUriBuiltins.js:1172
-#: scripts/services/EditUriBuiltins.js:1332
-#: scripts/services/EditUriBuiltins.js:1344
+#: scripts/services/EditUriBuiltins.js:1000
+#: scripts/services/EditUriBuiltins.js:1040
+#: scripts/services/EditUriBuiltins.js:1086
+#: scripts/services/EditUriBuiltins.js:1100
+#: scripts/services/EditUriBuiltins.js:1226
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Bucket Name"
 msgstr ""
 
 #: templates/backends/gcs.html:15
 msgid "Bucket create location"
+msgstr ""
+
+#: templates/backends/storj.html:38
+msgid "Bucket for storing the backup"
 msgstr ""
 
 #: templates/backends/b2.html:2
@@ -355,8 +357,7 @@ msgstr ""
 msgid "Bucket name"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1253
-#: scripts/services/EditUriBuiltins.js:1287
+#: scripts/services/EditUriBuiltins.js:1181
 msgid "Bucket name can only be between 3 and 63 characters long and contain only lower-case characters, numbers, periods and dashes"
 msgstr ""
 
@@ -385,7 +386,7 @@ msgid "Building partial temporary database …"
 msgstr ""
 
 #: templates/restore.html:59
-msgid "Busy ..."
+msgid "Busy …"
 msgstr ""
 
 #: templates/settings.html:21
@@ -397,7 +398,7 @@ msgid "By default, the tray icon will open the user interface with a token that 
 msgstr ""
 
 #: templates/backends/cos.html:2
-msgid "COS App Id"
+msgid "COS App ID"
 msgstr ""
 
 #: templates/backends/cos.html:32
@@ -405,7 +406,7 @@ msgid "COS Path or subfolder in the bucket"
 msgstr ""
 
 #: templates/backends/cos.html:8
-msgid "COS Secret Id"
+msgid "COS Secret ID"
 msgstr ""
 
 #: templates/backends/cos.html:14
@@ -437,9 +438,9 @@ msgstr ""
 #: scripts/controllers/StateController.js:117
 #: scripts/services/CaptchaService.js:22
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1124
-#: scripts/services/EditUriBuiltins.js:1140
-#: scripts/services/EditUriBuiltins.js:58
+#: scripts/services/EditUriBuiltins.js:1052
+#: scripts/services/EditUriBuiltins.js:1068
+#: scripts/services/EditUriBuiltins.js:57
 #: templates/delete.html:54
 #: templates/export.html:34
 #: templates/settings.html:157
@@ -479,12 +480,12 @@ msgstr ""
 msgid "Check for updates now"
 msgstr ""
 
-#: templates/captcha.html:10
-msgid "Checking ..."
-msgstr ""
-
 #: templates/about.html:34
 msgid "Checking for updates …"
+msgstr ""
+
+#: templates/captcha.html:10
+msgid "Checking …"
 msgstr ""
 
 #: templates/backends/sia.html:18
@@ -513,7 +514,7 @@ msgid "Client library to use"
 msgstr ""
 
 #: templates/backends/cos.html:10
-msgid "Cloud API Secret Id"
+msgid "Cloud API Secret ID"
 msgstr ""
 
 #: templates/backends/cos.html:16
@@ -533,9 +534,6 @@ msgid "Compact now"
 msgstr ""
 
 #: scripts/services/ServerStatus.js:43
-msgid "Compacting remote data ..."
-msgstr ""
-
 #: scripts/services/ServerStatus.js:67
 msgid "Compacting remote data …"
 msgstr ""
@@ -607,11 +605,11 @@ msgid "Connecting to server …"
 msgstr ""
 
 #: templates/commandline.html:51
-msgid "Connecting to task ...."
+msgid "Connecting to task …"
 msgstr ""
 
 #: index.html:308
-msgid "Connecting..."
+msgid "Connecting …"
 msgstr ""
 
 #: index.html:293
@@ -630,8 +628,9 @@ msgstr ""
 msgid "Connection worked!"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1063
+#: scripts/services/EditUriBuiltins.js:991
 #: templates/backends/azure.html:2
+#: templates/backends/azure.html:3
 msgid "Container name"
 msgstr ""
 
@@ -688,7 +687,7 @@ msgstr ""
 msgid "Create folder?"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:137
+#: scripts/services/EditUriBuiltins.js:136
 msgid "Created new limited user"
 msgstr ""
 
@@ -696,7 +695,7 @@ msgstr ""
 msgid "Creating bug report …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:123
+#: scripts/services/EditUriBuiltins.js:122
 msgid "Creating new user with limited access …"
 msgstr ""
 
@@ -708,8 +707,8 @@ msgstr ""
 msgid "Creating temporary backup …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:123
-msgid "Creating user..."
+#: scripts/services/EditUriBuiltins.js:122
+msgid "Creating user …"
 msgstr ""
 
 #: templates/home.html:76
@@ -728,15 +727,12 @@ msgstr ""
 msgid "Custom S3 endpoint"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1245
-#: scripts/services/EditUriBuiltins.js:1279
+#: scripts/services/EditUriBuiltins.js:1173
 #: templates/backends/storj.html:18
-#: templates/backends/tardigrade.html:18
 msgid "Custom Satellite"
 msgstr ""
 
 #: templates/backends/storj.html:13
-#: templates/backends/tardigrade.html:13
 msgid "Custom Satellite ({{satellite}})"
 msgstr ""
 
@@ -882,12 +878,21 @@ msgstr ""
 msgid "Destination"
 msgstr ""
 
+#: templates/backends/file.html:7
+#: templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3
+#: templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3
 #: templates/backends/sharepoint.html:2
 msgid "Destination path"
 msgstr ""
 
 #: templates/restorewizard.html:9
-msgid "Direct restore from backup files ..."
+msgid "Direct restore from backup files …"
+msgstr ""
+
+#: templates/backends/idrive.html:3
+msgid "Directory path"
 msgstr ""
 
 #: templates/log.html:32
@@ -917,7 +922,7 @@ msgid "Do you really want to delete the local database for: {{name}}"
 msgstr ""
 
 #: templates/backends/openstack.html:26
-msgid "Domain Name"
+msgid "Domain name"
 msgstr ""
 
 #: templates/export.html:53
@@ -1004,6 +1009,10 @@ msgstr ""
 msgid "Edit …"
 msgstr ""
 
+#: templates/backends/msgroup.html:3
+msgid "Email address of the Office 365 group"
+msgstr ""
+
 #: templates/export.html:22
 msgid "Encrypt file"
 msgstr ""
@@ -1023,11 +1032,14 @@ msgstr ""
 msgid "Encryption modules:"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1240
-#: scripts/services/EditUriBuiltins.js:1274
+#: scripts/services/EditUriBuiltins.js:1168
 #: templates/backends/storj.html:25
-#: templates/backends/tardigrade.html:25
+#: templates/backends/storj.html:26
 msgid "Encryption passphrase"
+msgstr ""
+
+#: templates/backends/storj.html:30
+msgid "Encryption passphrase (for verification)"
 msgstr ""
 
 #: templates/backup-result/phases/compact.html:12
@@ -1049,28 +1061,12 @@ msgstr ""
 msgid "Enter a retention strategy manually. Placeholders are D/W/Y for days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, and one for each of the next 36 months. This can also be written as 1W:1D,1M:1W,3Y:1M."
 msgstr ""
 
-#: templates/backends/azure.html:12
-msgid "Enter access key"
-msgstr ""
-
-#: templates/backends/azure.html:8
-msgid "Enter account name"
-msgstr ""
-
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
 msgstr ""
 
 #: templates/addwizard.html:10
 msgid "Enter configuration details"
-msgstr ""
-
-#: templates/backends/azure.html:3
-msgid "Enter container name"
-msgstr ""
-
-#: templates/backends/idrive.html:3
-msgid "Enter directory path"
 msgstr ""
 
 #: templates/export.html:26
@@ -1081,37 +1077,20 @@ msgstr ""
 msgid "Enter expression here"
 msgstr ""
 
-#: templates/backends/mega.html:3
-msgid "Enter folder path name"
-msgstr ""
-
 #: templates/commandline.html:22
 msgid "Enter one argument per line without quotes, e.g. *.txt"
 msgstr ""
 
 #: templates/commandline.html:29
-msgid "Enter one option per line in command-line format, eg. --dblock-size=100MB"
+msgid "Enter one option per line in command-line format, e.g. --dblock-size=100MB"
 msgstr ""
 
 #: scripts/services/AppUtils.js:122
-msgid "Enter one option per line in command-line format, eg. {0}"
+msgid "Enter one option per line in command-line format, e.g. {0}"
 msgstr ""
 
-#: templates/backends/file.html:7
-#: templates/backends/generic.html:14
-#: templates/backends/jottacloud.html:3
-#: templates/backends/msgroup.html:8
-#: templates/backends/oauth.html:3
 #: templates/restore.html:90
 msgid "Enter the destination path"
-msgstr ""
-
-#: templates/backends/msgroup.html:3
-msgid "Enter the email address of the Office 365 group"
-msgstr ""
-
-#: templates/backends/sharepoint.html:3
-msgid "Enter the full destination path, including the server name, but without https"
 msgstr ""
 
 #: scripts/controllers/CommandlineController.js:174
@@ -1341,14 +1320,25 @@ msgstr ""
 #: templates/backends/s3.html:61
 #: templates/backends/sia.html:6
 #: templates/backends/storj.html:41
-#: templates/backends/tardigrade.html:41
 #: templates/restore.html:105
 #: templates/restore.html:89
 msgid "Folder path"
 msgstr ""
 
+#: templates/backends/mega.html:3
+msgid "Folder path name"
+msgstr ""
+
+#: templates/backends/storj.html:42
+msgid "Folder within the bucket for storing the backup"
+msgstr ""
+
 #: scripts/services/AppUtils.js:108
 msgid "Fri"
+msgstr ""
+
+#: templates/backends/sharepoint.html:3
+msgid "Full destination path, including the server name, but without https"
 msgstr ""
 
 #: scripts/services/AppUtils.js:84
@@ -1389,7 +1379,7 @@ msgstr ""
 msgid "Getting file versions …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1052
+#: scripts/services/EditUriBuiltins.js:980
 #: templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr ""
@@ -1448,20 +1438,14 @@ msgstr ""
 msgid "IDrive Sync directory path"
 msgstr ""
 
+#: scripts/services/EditUriBuiltins.js:1224
 #: templates/backends/e2.html:3
-msgid "Idrivee2 Access Id"
+msgid "IDrive e2 Access Key ID"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1330
-msgid "Idrivee2 Access Key Id"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1331
-msgid "Idrivee2 Access Key Secret"
-msgstr ""
-
+#: scripts/services/EditUriBuiltins.js:1225
 #: templates/backends/e2.html:7
-msgid "Idrivee2 Access Secret"
+msgid "IDrive e2 Access Key Secret"
 msgstr ""
 
 #: templates/addoredit.html:261
@@ -1551,7 +1535,7 @@ msgstr ""
 msgid "Interrupted, no statistics collected"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1216
+#: scripts/services/EditUriBuiltins.js:1144
 msgid "Invalid characters in path"
 msgstr ""
 
@@ -1561,7 +1545,7 @@ msgstr ""
 msgid "Invalid retention time"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1006
+#: scripts/services/EditUriBuiltins.js:934
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1641,12 +1625,8 @@ msgstr ""
 msgid "Load older data"
 msgstr ""
 
-#: templates/captcha.html:14
-msgid "Loading ..."
-msgstr ""
-
 #: templates/delete.html:40
-msgid "Loading remote storage usage ..."
+msgid "Loading remote storage usage …"
 msgstr ""
 
 #: templates/about.html:42
@@ -1656,13 +1636,14 @@ msgstr ""
 #: templates/backuplog.html:22
 #: templates/backuplog.html:29
 #: templates/backuplog.html:40
+#: templates/captcha.html:14
 #: templates/log.html:12
 #: templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1297
+#: scripts/services/EditUriBuiltins.js:1191
 msgid "Local Repository"
 msgstr ""
 
@@ -1678,7 +1659,7 @@ msgstr ""
 msgid "Local repository"
 msgstr ""
 
-#: scripts/services/SystemInfo.js:85
+#: scripts/services/SystemInfo.js:84
 msgid "Local storage"
 msgstr ""
 
@@ -1761,7 +1742,7 @@ msgstr ""
 msgid "Minimum redundancy"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1220
+#: scripts/services/EditUriBuiltins.js:1148
 msgid "Minimum redundancy is 1.0"
 msgstr ""
 
@@ -1836,7 +1817,7 @@ msgstr ""
 msgid "New update found: <a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:137
+#: scripts/services/EditUriBuiltins.js:136
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
@@ -1881,9 +1862,9 @@ msgstr ""
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1124
-#: scripts/services/EditUriBuiltins.js:1140
-#: scripts/services/EditUriBuiltins.js:58
+#: scripts/services/EditUriBuiltins.js:1052
+#: scripts/services/EditUriBuiltins.js:1068
+#: scripts/services/EditUriBuiltins.js:57
 msgid "No"
 msgstr ""
 
@@ -1932,10 +1913,7 @@ msgid "Not using encryption"
 msgstr ""
 
 #: templates/throttle.html:22
-msgid ""
-"Note that speeds are entered in bytes, and line speeds are typically reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line is equivalent to 1 MByte/s.\n"
-"        <div>\n"
-"\t</div>"
+msgid "Note that speeds are entered in bytes, and line speeds are typically reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line is equivalent to 1 MByte/s."
 msgstr ""
 
 #: templates/backends/sia.html:19
@@ -1956,7 +1934,7 @@ msgstr ""
 #: scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50
 #: scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:137
+#: scripts/services/EditUriBuiltins.js:136
 #: templates/restore.html:152
 #: templates/settings.html:158
 msgid "OK"
@@ -1964,7 +1942,7 @@ msgstr ""
 
 #: templates/backends/aliyunoss.html:10
 #: templates/backends/aliyunoss.html:8
-msgid "OSS Access Key Id"
+msgid "OSS Access Key ID"
 msgstr ""
 
 #: templates/backends/aliyunoss.html:14
@@ -2013,7 +1991,7 @@ msgstr ""
 msgid "Opened"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1088
+#: scripts/services/EditUriBuiltins.js:1016
 msgid "Openstack API Key are not supported in v3 keystone API."
 msgstr ""
 
@@ -2030,7 +2008,7 @@ msgid "Operations:"
 msgstr ""
 
 #: templates/backends/openstack.html:45
-msgid "Optional api key"
+msgid "Optional API key"
 msgstr ""
 
 #: templates/backends/file.html:34
@@ -2064,7 +2042,7 @@ msgstr ""
 msgid "Original location"
 msgstr ""
 
-#: scripts/services/SystemInfo.js:88
+#: scripts/services/SystemInfo.js:87
 msgid "Others"
 msgstr ""
 
@@ -2099,7 +2077,7 @@ msgstr ""
 msgid "Passphrases do not match"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1204
+#: scripts/services/EditUriBuiltins.js:1132
 #: templates/backends/file.html:33
 #: templates/backends/generic.html:22
 #: templates/backends/idrive.html:11
@@ -2114,8 +2092,8 @@ msgstr ""
 msgid "Patching files with local blocks …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1188
-#: scripts/services/EditUriBuiltins.js:1360
+#: scripts/services/EditUriBuiltins.js:1116
+#: scripts/services/EditUriBuiltins.js:1254
 msgid "Path"
 msgstr ""
 
@@ -2187,7 +2165,7 @@ msgstr ""
 msgid "ProjectID is optional if the bucket exist"
 msgstr ""
 
-#: scripts/services/SystemInfo.js:87
+#: scripts/services/SystemInfo.js:86
 msgid "Proprietary"
 msgstr ""
 
@@ -2240,11 +2218,11 @@ msgstr ""
 msgid "Remote"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1298
+#: scripts/services/EditUriBuiltins.js:1192
 msgid "Remote Path"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1296
+#: scripts/services/EditUriBuiltins.js:1190
 msgid "Remote Repository"
 msgstr ""
 
@@ -2327,7 +2305,7 @@ msgid "Restore from backup configuration"
 msgstr ""
 
 #: templates/restorewizard.html:15
-msgid "Restore from configuration ..."
+msgid "Restore from configuration …"
 msgstr ""
 
 #: templates/restore.html:24
@@ -2375,10 +2353,6 @@ msgstr ""
 msgid "Run now"
 msgstr ""
 
-#: templates/commandline.html:58
-msgid "Running ...."
-msgstr ""
-
 #: templates/commandline.html:47
 msgid "Running commandline entry"
 msgstr ""
@@ -2388,6 +2362,7 @@ msgid "Running task:"
 msgstr ""
 
 #: scripts/controllers/StateController.js:25
+#: templates/commandline.html:58
 msgid "Running …"
 msgstr ""
 
@@ -2404,7 +2379,6 @@ msgid "Sat"
 msgstr ""
 
 #: templates/backends/storj.html:10
-#: templates/backends/tardigrade.html:10
 msgid "Satellite"
 msgstr ""
 
@@ -2461,7 +2435,7 @@ msgstr ""
 msgid "Select files"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1212
+#: scripts/services/EditUriBuiltins.js:1140
 #: templates/backends/s3.html:8
 #: templates/backends/sia.html:2
 msgid "Server"
@@ -2495,10 +2469,6 @@ msgstr ""
 
 #: templates/about.html:69
 msgid "Server state properties"
-msgstr ""
-
-#: templates/backends/sia.html:7
-msgid "Set the target path. Example: /backup"
 msgstr ""
 
 #: index.html:220
@@ -2584,7 +2554,7 @@ msgstr ""
 msgid "Stable"
 msgstr ""
 
-#: scripts/services/SystemInfo.js:86
+#: scripts/services/SystemInfo.js:85
 msgid "Standard protocols"
 msgstr ""
 
@@ -2701,6 +2671,10 @@ msgstr ""
 msgid "TByte/s"
 msgstr ""
 
+#: templates/backends/sia.html:7
+msgid "Target path. Example: /backup"
+msgstr ""
+
 #: templates/waitarea.html:5
 msgid "Task is running"
 msgstr ""
@@ -2714,7 +2688,7 @@ msgid "Temporary files"
 msgstr ""
 
 #: templates/backends/openstack.html:39
-msgid "Tenant Name"
+msgid "Tenant name"
 msgstr ""
 
 #: templates/backends/cos.html:4
@@ -2734,40 +2708,23 @@ msgid "Test connection"
 msgstr ""
 
 #: scripts/directives/backupEditUri.js:43
-msgid "Testing ..."
+msgid "Testing connection …"
 msgstr ""
 
-#: scripts/directives/backupEditUri.js:43
-msgid "Testing connection ..."
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:49
+#: scripts/services/EditUriBuiltins.js:48
 msgid "Testing permissions …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:49
-msgid "Testing permissions..."
-msgstr ""
-
+#: scripts/directives/backupEditUri.js:43
 #: templates/edituri.html:22
 msgid "Testing …"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1168
-#: scripts/services/EditUriBuiltins.js:1184
-#: scripts/services/EditUriBuiltins.js:1340
-#: scripts/services/EditUriBuiltins.js:1356
+#: scripts/services/EditUriBuiltins.js:1096
+#: scripts/services/EditUriBuiltins.js:1112
+#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1250
 msgid "The '{{fieldname}}' field contains an invalid character: {{character}} (value: {{value}}, index: {{pos}})"
-msgstr ""
-
-#: templates/backends/storj.html:22
-#: templates/backends/tardigrade.html:22
-msgid "The API key"
-msgstr ""
-
-#: templates/backends/storj.html:34
-#: templates/backends/tardigrade.html:34
-msgid "The access grant"
 msgstr ""
 
 #: scripts/directives/notificationArea.js:43
@@ -2785,16 +2742,11 @@ msgid ""
 "                        <external-link link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'\">See this page for more information.</external-link>"
 msgstr ""
 
-#: templates/backends/storj.html:38
-#: templates/backends/tardigrade.html:38
-msgid "The bucket for storing the backup"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1140
+#: scripts/services/EditUriBuiltins.js:1068
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1124
+#: scripts/services/EditUriBuiltins.js:1052
 msgid "The bucket name should start with your username, prepend automatically?"
 msgstr ""
 
@@ -2803,7 +2755,7 @@ msgid "The configuration should be kept safe. Are you sure you want to save an u
 msgstr ""
 
 #: index.html:299
-msgid "The connection to the server is lost, attempting again in {{time}} ..."
+msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
 #: templates/settings.html:74
@@ -2814,28 +2766,12 @@ msgstr ""
 msgid "The default blue on white theme (by Alex)"
 msgstr ""
 
-#: templates/backends/storj.html:26
-#: templates/backends/tardigrade.html:26
-msgid "The encryption passphrase"
-msgstr ""
-
-#: templates/backends/storj.html:30
-#: templates/backends/tardigrade.html:30
-msgid "The encryption passphrase (for verification)"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1249
-#: scripts/services/EditUriBuiltins.js:1283
+#: scripts/services/EditUriBuiltins.js:1177
 msgid "The encryption passphrases do not match"
 msgstr ""
 
 #: scripts/directives/sourceFolderPicker.js:410
 msgid "The file size is {{size}}, larger than the maximum specified size. If the file size decreases, it will be included in future backups."
-msgstr ""
-
-#: templates/backends/storj.html:42
-#: templates/backends/tardigrade.html:42
-msgid "The folder within the bucket for storing the backup"
 msgstr ""
 
 #: scripts/directives/backupEditUri.js:130
@@ -2893,7 +2829,7 @@ msgstr ""
 msgid "The target folder contains encrypted files, please supply the passphrase"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:58
+#: scripts/services/EditUriBuiltins.js:57
 msgid "The user has too many permissions. Do you want to create a new limited user, with only permissions to the selected path?"
 msgstr ""
 
@@ -3031,7 +2967,7 @@ msgstr ""
 msgid "User domain name"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:58
+#: scripts/services/EditUriBuiltins.js:57
 msgid "User has too many permissions"
 msgstr ""
 
@@ -3039,9 +2975,9 @@ msgstr ""
 msgid "User interface settings"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1001
-#: scripts/services/EditUriBuiltins.js:1071
-#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1131
+#: scripts/services/EditUriBuiltins.js:929
+#: scripts/services/EditUriBuiltins.js:999
 #: templates/backends/file.html:29
 #: templates/backends/generic.html:18
 #: templates/backends/idrive.html:7
@@ -3066,16 +3002,11 @@ msgid "Verifications"
 msgstr ""
 
 #: templates/backends/storj.html:29
-#: templates/backends/tardigrade.html:29
 msgid "Verify encryption passphrase"
 msgstr ""
 
 #: templates/home.html:38
 msgid "Verify files"
-msgstr ""
-
-#: scripts/services/CaptchaService.js:32
-msgid "Verifying ..."
 msgstr ""
 
 #: scripts/services/CaptchaService.js:32
@@ -3098,6 +3029,10 @@ msgstr ""
 
 #: scripts/services/ServerStatus.js:56
 msgid "Verifying restored files …"
+msgstr ""
+
+#: scripts/services/CaptchaService.js:32
+msgid "Verifying …"
 msgstr ""
 
 #: templates/backup-result/phases/delete.html:33
@@ -3129,7 +3064,7 @@ msgid "Waiting for task to begin"
 msgstr ""
 
 #: templates/commandline.html:54
-msgid "Waiting for task to start ...."
+msgid "Waiting for task to start …"
 msgstr ""
 
 #: scripts/services/ServerStatus.js:41
@@ -3187,9 +3122,9 @@ msgstr ""
 #: scripts/directives/backupEditUri.js:172
 #: scripts/directives/backupEditUri.js:86
 #: scripts/services/EditUriBackendConfig.js:73
-#: scripts/services/EditUriBuiltins.js:1124
-#: scripts/services/EditUriBuiltins.js:1140
-#: scripts/services/EditUriBuiltins.js:58
+#: scripts/services/EditUriBuiltins.js:1052
+#: scripts/services/EditUriBuiltins.js:1068
+#: scripts/services/EditUriBuiltins.js:57
 msgid "Yes"
 msgstr ""
 
@@ -3255,7 +3190,7 @@ msgstr ""
 msgid "You must choose at least one source folder"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1082
+#: scripts/services/EditUriBuiltins.js:1010
 msgid "You must enter a domain name to use v3 API"
 msgstr ""
 
@@ -3267,7 +3202,7 @@ msgstr ""
 msgid "You must enter a passphrase or disable encryption"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1079
+#: scripts/services/EditUriBuiltins.js:1007
 msgid "You must enter a password to use v3 API"
 msgstr ""
 
@@ -3275,11 +3210,11 @@ msgstr ""
 msgid "You must enter a positive number of backups to keep"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1085
+#: scripts/services/EditUriBuiltins.js:1013
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1099
+#: scripts/services/EditUriBuiltins.js:1027
 msgid "You must enter a tenant name if you do not provide an API Key"
 msgstr ""
 
@@ -3291,11 +3226,11 @@ msgstr ""
 msgid "You must enter a valid retention policy string"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1096
+#: scripts/services/EditUriBuiltins.js:1024
 msgid "You must enter either a password or an API Key"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1103
+#: scripts/services/EditUriBuiltins.js:1031
 msgid "You must enter either a password or an API Key, not both"
 msgstr ""
 
@@ -3316,11 +3251,11 @@ msgstr ""
 msgid "You must fill in {{field}}"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1075
+#: scripts/services/EditUriBuiltins.js:1003
 msgid "You must select or fill in the AuthURI"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1045
 msgid "You must select or fill in the server"
 msgstr ""
 
@@ -3353,23 +3288,23 @@ msgstr ""
 msgid "byte/s"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1306
+#: scripts/services/EditUriBuiltins.js:1200
 msgid "cos_app_id"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1310
+#: scripts/services/EditUriBuiltins.js:1204
 msgid "cos_bucket"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1309
+#: scripts/services/EditUriBuiltins.js:1203
 msgid "cos_region"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1307
+#: scripts/services/EditUriBuiltins.js:1201
 msgid "cos_secret_id"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1308
+#: scripts/services/EditUriBuiltins.js:1202
 msgid "cos_secret_key"
 msgstr ""
 
@@ -3385,26 +3320,26 @@ msgid "failed"
 msgstr ""
 
 #: templates/backends/rclone.html:3
-msgid "local repository, eg local"
+msgid "local repository, e.g. local"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1319
+#: scripts/services/EditUriBuiltins.js:1213
 msgid "oss_access_key_id"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1320
+#: scripts/services/EditUriBuiltins.js:1214
 msgid "oss_access_key_secret"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1322
+#: scripts/services/EditUriBuiltins.js:1216
 msgid "oss_bucket_name"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1318
+#: scripts/services/EditUriBuiltins.js:1212
 msgid "oss_endpoint"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1321
+#: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr ""
 
@@ -3413,11 +3348,11 @@ msgid "public usage statistics"
 msgstr ""
 
 #: templates/backends/rclone.html:11
-msgid "remote path, eg backup"
+msgid "remote path, e.g. backup"
 msgstr ""
 
 #: templates/backends/rclone.html:7
-msgid "remote repository, eg. remote"
+msgid "remote repository, e.g. remote"
 msgstr ""
 
 #: templates/commandline.html:49
@@ -3426,15 +3361,11 @@ msgstr ""
 msgid "resume now"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1234
+#: scripts/services/EditUriBuiltins.js:1162
 msgid "storj_shared_access"
 msgstr ""
 
-#: scripts/services/EditUriBuiltins.js:1268
-msgid "tardigrade_shared_access"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1052
+#: scripts/services/EditUriBuiltins.js:980
 msgid "unless you are explicitly specifying --group-id"
 msgstr ""
 
