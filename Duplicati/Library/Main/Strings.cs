@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.Strings
         public static string PrefixShort { get { return LC.L(@"Remote filename prefix"); } }
         public static string DisablefiletimecheckLong { get { return LC.L(@"The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won't work correctly unless this flag is set."); } }
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
-        public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders, use this option to restore to another folder."); } }
+        public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders. Use this option to restore to another folder."); } }
         public static string RestorepathShort { get { return LC.L(@"Restore to another folder"); } }
         public static string AllowsleepLong { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows/OSX only)"); } }
         public static string AllowsleepShort { get { return LC.L(@"Toggles system sleep mode"); } }
@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Strings
         public static string SmallfilemaxcountShort { get { return LC.L(@"Maximum number of small volumes"); } }
         public static string PatchwithlocalblocksLong { get { return LC.L(@"Enable this option to look into other files on this machine to find existing blocks. This is a fairly slow operation but can limit the size of downloads."); } }
         public static string PatchwithlocalblocksShort { get { return LC.L(@"Use local file data when restoring"); } }
-        public static string PatchwithlocalblocksDeprecated(string optionname) { return LC.L(@"Use the option --{0} instead", optionname); }
+        public static string PatchwithlocalblocksDeprecated(string optionname) { return LC.L(@"Use the option --{0} instead.", optionname); }
         public static string NolocaldbLong { get { return LC.L(@"When listing contents or when restoring files, the local database can be skipped. This is usually slower, but can be used to verify the actual contents of the remote store."); } }
         public static string NolocaldbShort { get { return LC.L(@"Disables the local database"); } }
         public static string KeepversionsLong { get { return LC.L(@"Use this option to set number of versions to keep. Supply -1 to keep all versions."); } }
@@ -213,7 +213,7 @@ namespace Duplicati.Library.Main.Strings
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }
         public static string VerboseShort { get { return LC.L(@"Output more progress information"); } }
-        public static string VerboseDeprecated { get { return LC.L(@"Set a log-level for the desired output method instead"); } }
+        public static string VerboseDeprecated { get { return LC.L(@"Set a log-level for the desired output method instead."); } }
         public static string FullresultLong { get { return LC.L(@"Use this option to increase the amount of output generated as the result of the operation, including all filenames."); } }
         public static string FullresultShort { get { return LC.L(@"Output full results"); } }
         public static string UploadverificationfileLong { get { return LC.L(@"Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files."); } }
@@ -240,7 +240,7 @@ namespace Duplicati.Library.Main.Strings
         public static string SkiprestoreverificationShort { get { return LC.L(@"Skip restored file check"); } }
         public static string NolocalblocksLong { get { return LC.L(@"Duplicati will attempt to use data from source files to minimize the amount of downloaded data. Use this option to skip this optimization and only use remote data."); } }
         public static string NolocalblocksShort { get { return LC.L(@"Do not use local data"); } }
-        public static string NolocalblocksDeprecated(string alternativeOptionName) { return LC.L(@"The default is now to not use local blocks for restore. To opt-in for using local blocks, set the option --{0}", alternativeOptionName); }
+        public static string NolocalblocksDeprecated(string alternativeOptionName) { return LC.L(@"The default is now to not use local blocks for restore. To opt-in for using local blocks, set the option --{0}.", alternativeOptionName); }
         public static string RestorewithlocalblocksLong { get { return LC.L(@"Use this option to allow Duplicati to use blocks found on disk when performing restores, instead of only using files in remote storage."); } }
         public static string RestorewithlocalblocksShort { get { return LC.L(@"Use existing data for restore"); } }
 
