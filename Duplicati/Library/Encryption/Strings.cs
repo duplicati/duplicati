@@ -30,7 +30,7 @@ namespace Duplicati.Library.Encryption.Strings
         public static string EmptyKeyError { get { return LC.L(@"Empty passphrase not allowed"); } }
         public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations."); } }
         public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting"); } }
-        public static string AessetthreadlevelDeprecated { get { return LC.L(@"This option has no effect and should not be used"); } }
+        public static string AessetthreadlevelDeprecated { get { return LC.L(@"This option has no effect and should not be used."); } }
     }
     internal static class EncryptionBase
     {
@@ -49,9 +49,9 @@ namespace Duplicati.Library.Encryption.Strings
         public static string GpgprogrampathShort { get { return LC.L(@"The path to GnuPG"); } }
         public static string GpgencryptionenablearmorLong { get { return LC.L(@"Use this option to supply the --armor option to GPG. The files will be larger but can be sent as pure text files."); } }
         public static string GpgencryptionenablearmorShort { get { return LC.L(@"Use GPG Armor"); } }
-        public static string GpgencryptiondecryptioncommandLong { get { return LC.L(@"Overrides the GPG command supplied for decryption"); } }
+        public static string GpgencryptiondecryptioncommandLong { get { return LC.L(@"Overrides the GPG command supplied for decryption."); } }
         public static string GpgencryptiondecryptioncommandShort { get { return LC.L(@"The GPG decryption command"); } }
-        public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Overrides the default GPG encryption command ""{0}"", normal usage is to request asymetric encryption with the setting {1}", commandname, optionvalue); }
+        public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Overrides the default GPG encryption command ""{0}"". Normal usage is to request asymetric encryption with the setting {1}.", commandname, optionvalue); }
         public static string GpgencryptionencryptioncommandShort { get { return LC.L(@"The GPG encryption command"); } }
     }
     internal static class GPGStreamWrapper

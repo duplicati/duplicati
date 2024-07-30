@@ -27,7 +27,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string Description { get { return LC.L(@"This backend can read and write data to Swift (OpenStack Object Storage). Supported format is ""openstack://container/folder""."); } }
         public static string DisplayName { get { return LC.L(@"OpenStack Simple Storage"); } }
         public static string MissingOptionError(string optionname) { return LC.L(@"Missing required option: {0}", optionname); }
-        public static string PasswordOptionLong(string tenantnameoption) { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD"". If the password is supplied, --{0} must also be set", tenantnameoption); }
+        public static string PasswordOptionLong(string tenantnameoption) { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD"". If the password is supplied, --{0} must also be set.", tenantnameoption); }
         public static string PasswordOptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string DomainnameOptionLong { get { return LC.L(@"The domain name of the user used to connect to the server."); } }
         public static string DomainnameOptionShort { get { return LC.L(@"Supplies the domain used to connect to the server"); } }
@@ -46,4 +46,3 @@ namespace Duplicati.Library.Backend.Strings
 
     }
 }
-

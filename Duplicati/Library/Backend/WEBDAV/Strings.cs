@@ -38,7 +38,7 @@ This can be because the file is deleted or unavailable, but it can also be becau
 Error message: {3}", foldername, filename, extension, errormessage); }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this flag to communicate using Secure Socket Layer (SSL) over http (https)."); } }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (https) connection"); } }
-        public static string DescriptionDebugPropfindLong { get { return LC.L(@"To aid in debugging issues, it is possible to set a path to a file that will be overwritten with the PROPFIND response"); } }
+        public static string DescriptionDebugPropfindLong { get { return LC.L(@"To aid in debugging issues, it is possible to set a path to a file that will be overwritten with the PROPFIND response."); } }
         public static string DescriptionDebugPropfindShort { get { return LC.L(@"Dump the PROPFIND response"); } }
     }
 }
