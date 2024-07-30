@@ -28,7 +28,7 @@ namespace Duplicati.CommandLine.Strings
         public static string WrongNumberOfCommandsError_v2(int actualcommands, int expectedcommands, string[] commands) { return LC.L(@"Found {0} commands but expected {1}, commands: 
 {2}", actualcommands, expectedcommands, string.Join(System.Environment.NewLine, commands ?? new string[0])); }
         public static string InvalidCommandError(string commandname) { return LC.L(@"Command not supported: {0}", commandname); }
-        public static string NoFilesetsMatching { get { return LC.L(@"No filesets matched the criteria"); } }
+        public static string NoFilesetsMatching { get { return LC.L(@"No filesets matched the criteria."); } }
         public static string WouldDeleteBackups { get { return LC.L(@"The following filesets would be deleted:"); } }
         public static string DeletedBackups { get { return LC.L(@"These filesets were deleted:"); } }
         public static string SupportedBackendsHeader { get { return LC.L(@"Supported backends:"); } }
@@ -39,9 +39,9 @@ namespace Duplicati.CommandLine.Strings
         public static string ModuleIsNotLoadedAutomatically { get { return LC.L(@"Module is not loaded automatically Use --{0} to load it.", "enable-module"); } }
         public static string GenericModulesHeader { get { return LC.L(@"Supported generic modules:"); } }
         public static string FailedToParseParametersFileError(string path, string message) { return LC.L(@"Unable to read the parameters file ""{0}"", reason: {1}", path, message); }
-        public static string FiltersCannotBeUsedWithFileError2 { get { return LC.L(@"Filters cannot be specified on the commandline if filters are also present in the parameter file. Use the special --{0}, --{1}, or --{2} options to specify filters inside the parameter file. Each filter must be prefixed with either a + or a -, and multiple filters must be joined with {3}", "replace-filter", "append-filter", "prepend-filter", System.IO.Path.PathSeparator); } }
-        public static string InternalOptionUsedError(string optionname) { return LC.L(@"The option --{0} was supplied, but it is reserved for internal use and may not be set on the commandline", optionname); }
-        public static string ParametersFileOptionLong2 { get { return LC.L(@"This option can be used to store some or all of the options given to the commandline client. The file must be a plain text file, UTF-8 encoding is preferred. Each line in the file should be of the format --option=value. The special options --{0} and --{1} can be used to override the localpath and the remote destination uri, respectively. The options in this file take precedence over the options provided on the commandline. You cannot specify filters in both the file and on the commandline. Instead, you can use the special --{2}, --{3}, or --{4} options to specify filters inside the parameter file. Each filter must be prefixed with either a + or a -, and multiple filters must be joined with {5} ", "source", "target", "replace-filter", "append-filter", "prepend-filter", System.IO.Path.PathSeparator); } }
+        public static string FiltersCannotBeUsedWithFileError2 { get { return LC.L(@"Filters cannot be specified on the commandline if filters are also present in the parameter file. Use the special --{0}, --{1}, or --{2} options to specify filters inside the parameter file. Each filter must be prefixed with either a + or a -, and multiple filters must be joined with {3}.", "replace-filter", "append-filter", "prepend-filter", System.IO.Path.PathSeparator); } }
+        public static string InternalOptionUsedError(string optionname) { return LC.L(@"The option --{0} was supplied, but it is reserved for internal use and may not be set on the commandline.", optionname); }
+        public static string ParametersFileOptionLong2 { get { return LC.L(@"This option can be used to store some or all of the options given to the commandline client. The file must be a plain text file, UTF-8 encoding is preferred. Each line in the file should be of the format --option=value. The special options --{0} and --{1} can be used to override the localpath and the remote destination uri, respectively. The options in this file take precedence over the options provided on the commandline. You cannot specify filters in both the file and on the commandline. Instead, you can use the special --{2}, --{3}, or --{4} options to specify filters inside the parameter file. Each filter must be prefixed with either a + or a -, and multiple filters must be joined with {5}.", "source", "target", "replace-filter", "append-filter", "prepend-filter", System.IO.Path.PathSeparator); } }
         public static string ParametersFileOptionShort { get { return LC.L(@"Path to a file with parameters"); } }
         public static string UnhandledException(string message) { return LC.L(@"An error occured: {0}", message); }
         public static string UnhandledInnerException(string message) { return LC.L(@"The inner error message is: {0}", message); }
@@ -53,7 +53,7 @@ namespace Duplicati.CommandLine.Strings
         public static string ControlFilesOptionShort { get { return LC.L(@"Use control files"); } }
         public static string QuietConsoleOptionLong { get { return LC.L(@"If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log."); } }
         public static string QuietConsoleOptionShort { get { return LC.L(@"Disable console output"); } }
-        public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored"; } }
+        public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored."; } }
 
         // ReSharper disable once UnusedMember.Global
         // This is a placeholder message that is intended to be used with the code
