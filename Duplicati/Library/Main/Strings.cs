@@ -134,6 +134,7 @@ namespace Duplicati.Library.Main.Strings
         public static string UsnpolicyShort { get { return LC.L(@"Controls the use of NTFS Update Sequence Numbers"); } }
         public static string DisabletimetoleranceLong { get { return LC.L(@"When matching timestamps, Duplicati will adjust the times by a small fraction to ensure that minor time differences do not cause unexpected updates. If the option --{0} is set to keep a week of backups, and the backup is made the same time each week, it is possible that the clock drifts slightly, such that full week has just passed, causing Duplicati to delete the older backup earlier than expected. To avoid this, Duplicati inserts a 1% tolerance (max 1 hour). Use this option to disable the tolerance, and use strict time checking.", "keep-time"); } }
         public static string DisabletimetoleranceShort { get { return LC.L(@"Deactivates tolerance when comparing times"); } }
+        public static string ListverifyuploadsLong { get { return LC.L(@"Use this option to verify uploads by listing contents."); } }
         public static string ListverifyuploadsShort { get { return LC.L(@"Verify uploads by listing contents"); } }
         public static string SynchronousuploadLong { get { return LC.L(@"Duplicati will upload files while scanning the disk and producing volumes, which usually makes the backup faster. Use this flag to turn the behavior off, so that Duplicati will wait for each volume to complete."); } }
         public static string SynchronousuploadShort { get { return LC.L(@"Upload files synchronously"); } }
