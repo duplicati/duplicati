@@ -139,7 +139,7 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
     {
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messages"); } }
         public static string DisplayName { get { return LC.L(@"XMPP report module"); } }
-        public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent, specify multiple users separated with commas."); } }
+        public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent. You can specify multiple users separated with commas."); } }
         public static string SendxmpptoShort { get { return LC.L(@"XMPP recipient email"); } }
         public static string SendxmppmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
 
