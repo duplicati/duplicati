@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Strings
         public static string LogfileShort { get { return LC.L(@"Log internal information to a file"); } }
         public static string LoglevelLong { get { return LC.L(@"Specifies the amount of log information to write into the file specified by the option --{0}.", "log-file"); } }
         public static string LoglevelShort { get { return LC.L(@"Log information level"); } }
-        public static string LogLevelDeprecated(string option1, string option2) { return LC.L("Use the options --{0} and --{1} instead", option1, option2); }
+        public static string LogLevelDeprecated(string option1, string option2) { return LC.L("Use the options --{0} and --{1} instead.", option1, option2); }
         public static string DisableautocreatefolderLong { get { return LC.L(@"If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation."); } }
         public static string DisableautocreatefolderShort { get { return LC.L(@"Disables automatic folder creation"); } }
         public static string VssexcludewritersLong { get { return LC.L(@"Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces."); } }
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main.Strings
         public static string SymlinkpolicyShort { get { return LC.L(@"Symlink handling"); } }
         public static string HardlinkpolicyLong(string first, string all, string none) { return LC.L(@"Use this option to handle hardlinks (only works on Linux/OSX). The ""{0}"" option will record a hardlink ID for each hardlink to avoid storing hardlinked paths multiple times. The option ""{1}"" will ignore hardlink information, and treat each hardlink as a unique path. The option ""{2}"" will ignore all hardlinks with more than one link.", first, all, none); }
         public static string HardlinkpolicyShort { get { return LC.L(@"Hardlink handling"); } }
-        public static string ExcludefilesattributesLong(string[] attributes) { return LC.L(@"Use this option to exclude files with certain attributes. Use a comma separated list of attribute names to specify more than one. Possible values are: {0}", string.Join(", ", attributes)); }
+        public static string ExcludefilesattributesLong(string[] attributes) { return LC.L(@"Use this option to exclude files with certain attributes. Use a comma separated list of attribute names to specify more than one. Possible values are: {0}.", string.Join(", ", attributes)); }
         public static string ExcludefilesattributesShort { get { return LC.L(@"Exclude files by attribute"); } }
         public static string VssusemappingLong { get { return LC.L(@"Activate this option to map VSS snapshots to a drive (similar to SUBST, using Win32 DefineDosDevice). This will create temporary drives that are then used to access the contents of a snapshot. This workaround can speed up file access on Windows XP."); } }
         public static string VssusemappingShort { get { return LC.L(@"Map snapshots to a drive (Windows only)"); } }
