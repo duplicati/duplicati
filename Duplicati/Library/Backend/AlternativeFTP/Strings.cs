@@ -33,12 +33,12 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
-        public static string DescriptionLogToConsoleLong { get { return LC.L(@"Log FTP dialog to terminal console for debugging purposes"); } }
+        public static string DescriptionLogToConsoleLong { get { return LC.L(@"Use this option to log FTP dialog to terminal console for debugging purposes."); } }
         public static string DescriptionLogToConsoleShort { get { return LC.L(@"Log FTP dialog to terminal console"); } }
-        public static string DescriptionLogPrivateInfoToConsoleLong { get { return LC.L(@"Log FTP PRIVATE info (username, password) to console for debugging purposes (DO NOT POST THIS TO THE INTERNET!)"); } }
+        public static string DescriptionLogPrivateInfoToConsoleLong { get { return LC.L(@"Use this option to log FTP PRIVATE info (username, password) to console for debugging purposes (DO NOT POST THIS TO THE INTERNET!)"); } }
         public static string DescriptionLogPrivateInfoToConsoleShort { get { return LC.L(@"Log FTP PRIVATE info to console"); } }
         public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found. Message: {1}", foldername, message); }
-        public static string ListVerifyFailure(string filename, IEnumerable<string> files) { return LC.L(@"The file {0} was uploaded but not found afterwards, the file listing returned {1}", filename, string.Join(Environment.NewLine, files)); }
+        public static string ListVerifyFailure(string filename, IEnumerable<string> files) { return LC.L(@"The file {0} was uploaded but not found afterwards. The file listing returned {1}", filename, string.Join(Environment.NewLine, files)); }
         public static string ListVerifySizeFailure(string filename, long actualsize, long expectedsize) { return LC.L(@"The file {0} was uploaded but the returned size was {1} and it was expected to be {2}", filename, actualsize, expectedsize); }
         public static string DescriptionDisableUploadVerifyLong { get { return LC.L(@"To protect against network or server failures, every upload will be attempted to be verified. Use this option to disable this verification to make the upload faster but less reliable."); } }
         public static string DescriptionDisableUploadVerifyShort { get { return LC.L(@"Disable upload verification"); } }
