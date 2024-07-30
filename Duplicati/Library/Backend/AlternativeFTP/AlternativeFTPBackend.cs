@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Threading;
@@ -41,13 +42,37 @@ namespace Duplicati.Library.Backend.AlternativeFTP
     // ReSharper disable once RedundantExtendsListEntry
     public class AlternativeFtpBackend : IBackend, IStreamingBackend
     {
+        private static SslProtocols GetDefaultSslProtocols()
+        {
+            // Use the defaults from FluentFTP
+            var result = new FtpConfig().SslProtocols;
+
+            // Probe if the system supports TLS 1.3
+            var restore = ServicePointManager.SecurityProtocol;
+            try
+            {
+                // If we can set this, it looks like the system supports TLS 1.3
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13;
+                result = SslProtocols.Tls12 | SslProtocols.Tls13;
+            }
+            catch
+            {
+            }
+            finally
+            {
+                ServicePointManager.SecurityProtocol = restore;
+            }
+
+            return result;
+        }
+
         private System.Net.NetworkCredential _userInfo;
         private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash"; // Global option
         private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate"; // Global option
 
         private const FtpDataConnectionType DEFAULT_DATA_CONNECTION_TYPE = FtpDataConnectionType.AutoPassive;
         private const FtpEncryptionMode DEFAULT_ENCRYPTION_MODE = FtpEncryptionMode.None;
-        private const SslProtocols DEFAULT_SSL_PROTOCOLS = SslProtocols.Default;
+        private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = GetDefaultSslProtocols();
         private const string CONFIG_KEY_AFTP_ENCRYPTION_MODE = "aftp-encryption-mode";
         private const string CONFIG_KEY_AFTP_DATA_CONNECTION_TYPE = "aftp-data-connection-type";
         private const string CONFIG_KEY_AFTP_SSL_PROTOCOLS = "aftp-ssl-protocols";
@@ -184,10 +209,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
 
             // Process the aftp-encryption-mode option
-            string encryptionModeString;
             FtpEncryptionMode encryptionMode;
-
-            if (!options.TryGetValue(CONFIG_KEY_AFTP_ENCRYPTION_MODE, out encryptionModeString) || string.IsNullOrWhiteSpace(encryptionModeString))
+            if (!options.TryGetValue(CONFIG_KEY_AFTP_ENCRYPTION_MODE, out var encryptionModeString) || string.IsNullOrWhiteSpace(encryptionModeString))
             {
                 encryptionModeString = null;
             }
@@ -198,10 +221,8 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
 
             // Process the aftp-ssl-protocols option
-            string sslProtocolsString;
             SslProtocols sslProtocols;
-
-            if (!options.TryGetValue(CONFIG_KEY_AFTP_SSL_PROTOCOLS, out sslProtocolsString) || string.IsNullOrWhiteSpace(sslProtocolsString))
+            if (!options.TryGetValue(CONFIG_KEY_AFTP_SSL_PROTOCOLS, out var sslProtocolsString) || string.IsNullOrWhiteSpace(sslProtocolsString))
             {
                 sslProtocolsString = null;
             }
@@ -473,7 +494,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 }
                 catch (Exception e)
                 {
-                    if (e.InnerException != null) { e =  e.InnerException; }
+                    if (e.InnerException != null) { e = e.InnerException; }
                     throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
                 }
             }
