@@ -221,7 +221,7 @@ namespace Duplicati.Library.SQLiteHelper
             if (!OperatingSystem.IsWindows())
                 fileExists = File.Exists(path);
 
-            con.ConnectionString = "Data Source=" + path;
+            con.ConnectionString = string.Format("Data Source={0};PRAGMA journal_mode = WAL;PRAGMA mmap_size = 268435456;PRAGMA locking_mode = EXCLUSIVE;", path);
             con.Open();
             if (con is System.Data.SQLite.SQLiteConnection sqlitecon && !OperatingSystem.IsMacOS())
             {
