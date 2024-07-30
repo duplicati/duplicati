@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend.Strings {
         public static string NoDestinationWithMarkerFileError(string markername, string[] folders) { return LC.L(@"The marker file ""{0}"" was not found in any of the examined destinations: {1}", markername, string.Join(", ", folders)); }
         public static string UseMoveForPutLong { get { return LC.L(@"When storing the file, the standard operation is to copy the file and delete the original. This sequence ensures that the operation can be retried if something goes wrong. Activating this option may cause the retry operation to fail. This option has no effect unless the option --{0} is activated.", "disable-streaming-transfers"); } }
         public static string UseMoveForPutShort { get { return LC.L(@"Move the file instead of copying it"); } }
-        public static string ForceReauthLong { get { return LC.L(@"If this option is set, any existing authentication against the remote share is dropped before attempting to authenticate"); } }
+        public static string ForceReauthLong { get { return LC.L(@"If this option is set, any existing authentication against the remote share is dropped before attempting to authenticate."); } }
         public static string ForceReauthShort { get { return LC.L(@"Force authentication against remote share"); } }
         public static string DisableLengthVerificationLong { get { return LC.L(@"As an extra precaution the uploaded file length will be checked against the local source length."); } }
         public static string DisableLengthVerificationShort { get { return LC.L(@"Disable length verification"); } }
