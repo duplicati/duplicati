@@ -27,7 +27,7 @@ namespace Duplicati.Library.Backend.Strings {
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string NoUsernameError { get { return LC.L(@"No username found"); } }
-        public static string NoPathError { get { return LC.L(@"No path given, cannot upload files to the root folder"); } }
+        public static string NoPathError { get { return LC.L(@"No path given. Files cannot be uploaded to the root folder"); } }
         public static string IllegalMountPoint { get { return LC.L(@"Illegal mount point given."); } }
         public static string FileUploadError { get { return LC.L(@"Failed to upload file"); } }
         public static string DescriptionDeviceLong(string mountPointOption) { return LC.L(@"The backup device to use. Will be created if not already exists. You can manage your devices from the backup panel in the Jottacloud web interface. When you specify a custom device you should also specify the mount point to use on this device with the ""{0}"" option.", mountPointOption); }

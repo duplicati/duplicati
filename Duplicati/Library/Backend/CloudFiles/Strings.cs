@@ -40,6 +40,6 @@ namespace Duplicati.Library.Backend.Strings {
         public static string FileUploadError { get { return LC.L(@"Failed to upload file"); } }
         public static string NoAPIKeyError { get { return LC.L(@"No CloudFiles API Access Key given"); } }
         public static string NoUserIDError { get { return LC.L(@"No CloudFiles userID given"); } }
-        public static string UnexpectedResponseError { get { return LC.L(@"Unexpected CloudFiles response, perhaps the API has changed?"); } }
+        public static string UnexpectedResponseError { get { return LC.L(@"Unexpected CloudFiles response. Perhaps the API has changed?"); } }
     }
 }
