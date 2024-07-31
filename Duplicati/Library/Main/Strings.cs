@@ -28,13 +28,13 @@ namespace Duplicati.Library.Main.Strings
         public static string HashMismatchError(string filename, string recordedhash, string actualhash) { return LC.L(@"Hash mismatch on file ""{0}"", recorded hash: {1}, actual hash {2}", filename, recordedhash, actualhash); }
         public static string DownloadedFileSizeError(string filename, long actualsize, long expectedsize) { return LC.L(@"The file {0} was downloaded and had size {1} but the size was expected to be {2}", filename, actualsize, expectedsize); }
         public static string DeprecatedOptionUsedWarning(string optionname, string message) { return LC.L(@"The option {0} is deprecated: {1}", optionname, message); }
-        public static string DuplicateOptionNameWarning(string optionname) { return LC.L(@"The option --{0} exists more than once, please report this to the developers", optionname); }
+        public static string DuplicateOptionNameWarning(string optionname) { return LC.L(@"The option --{0} exists more than once. Please report this to the developers", optionname); }
         public static string NoSourceFoldersError { get { return LC.L(@"No source folders specified for backup"); } }
         public static string SourceIsMissingError(string foldername) { return LC.L(@"Backup aborted since the source path {0} does not exist. Please verify that the source path exists, or remove the source path from the backup configuration, or set the allow-missing-source option.", foldername); }
         public static string SourceUnauthorizedError(string foldername) { return LC.L(@"Unauthorized to access source folder {0}, aborting backup", foldername); }
-        public static string UnsupportedBooleanValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not parse into a valid boolean, this will be treated as if it was set to ""true""", optionname, value); }
-        public static string UnsupportedEnumerationValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"", supported values are: {2}", optionname, value, string.Join(", ", values)); }
-        public static string UnsupportedFlagsValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"", supported flag values are: {2}", optionname, value, string.Join(", ", values)); }
+        public static string UnsupportedBooleanValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not parse into a valid boolean. This will be treated as if it was set to ""true""", optionname, value); }
+        public static string UnsupportedEnumerationValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"". Supported values are: {2}", optionname, value, string.Join(", ", values)); }
+        public static string UnsupportedFlagsValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"". Supported flag values are: {2}", optionname, value, string.Join(", ", values)); }
         public static string UnsupportedIntegerValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid integer", optionname, value); }
         public static string UnsupportedOptionDisabledModuleWarning(string optionname, string modulename) { return LC.L(@"The option --{0} is not supported because the module {1} is not currently loaded", optionname, modulename); }
         public static string UnsupportedOptionWarning(string optionname) { return LC.L(@"The supplied option --{0} is not supported and will be ignored", optionname); }
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Main.Strings
         public static string AsynchronousuploadlimitShort { get { return LC.L(@"The number of volumes to create ahead of time"); } }
         public static string AsynchronousconcurrentuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, the maximum number of concurrent uploads allowed. Set to zero to disable the limit."); } }
         public static string AsynchronousconcurrentuploadlimitShort { get { return LC.L(@"The number of concurrent uploads allowed"); } }
-        public static string DebugoutputLong { get { return LC.L(@"Activating this option will make some error messages more verbose, which may help you track down a particular issue."); } }
+        public static string DebugoutputLong { get { return LC.L(@"Activate this option to make some error messages more verbose, which may help you track down a particular issue."); } }
         public static string DebugoutputShort { get { return LC.L(@"Enables debugging output"); } }
         public static string LogfileLong { get { return LC.L(@"Logs information to the file specified."); } }
         public static string LogfileShort { get { return LC.L(@"Log internal information to a file"); } }
@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.Strings
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
-        public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring, if this option is not set the files will be restored with a timestamp and a number appended."); } }
+        public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring. If this option is not set, the files will be restored with a timestamp and a number appended."); } }
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }
         public static string VerboseShort { get { return LC.L(@"Output more progress information"); } }
@@ -223,7 +223,7 @@ namespace Duplicati.Library.Main.Strings
         public static string BackendtestsamplesShort { get { return LC.L(@"The number of samples to test after a backup"); } }
         public static string BackendtestpercentageLong { get { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to specify the percentage (between 0 and 100) of files to test. If the option --{0} is also provided, the number of samples tested is the maximum implied by the two options. If the option --{1} is provided, no remote files are verified.", "backup-test-samples", "no-backend-verification"); } }
         public static string BackendtestpercentageShort { get { return LC.L(@"The percentage of samples to test after a backup"); } }
-        public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash, If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly. ListAndIndexes is like True but only dlist and index volumes are handled.", optionname); }
+        public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash. If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly. ListAndIndexes is like True but only dlist and index volumes are handled.", optionname); }
         public static string FullremoteverificationShort { get { return LC.L(@"Activates in-depth verification of files"); } }
         public static string FilereadbuffersizeLong { get { return LC.L(@"Use this size to control how many bytes are read from a file before processing."); } }
         public static string FilereadbuffersizeShort { get { return LC.L(@"Size of the file read buffer"); } }
@@ -255,7 +255,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
         public static string ForceActualDateLong { get { return LC.L(@"By default, dates are displayed in the calendar format, meaning ""Today"" or ""Last Thursday"". By setting this option, only the actual dates are displayed, ""Nov 12, 2018, 8:01 AM"" for example."); } }
         public static string ForceActualDateShort { get { return LC.L(@"Forces the display of the actual date instead of calendar date"); } }
-        public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads, that can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
+        public static string DisablepipingLong { get { return LC.L(@"Use this option to disable multithreaded handling of up- and downloads. That can significantly speed up backend operations depending on the hardware you're running on and the transfer rate of your backend."); } }
         public static string DisablepipingShort { get { return LC.L(@"Handle file communication with backend using threaded pipes"); } }
         public static string ConcurrencymaxthreadsLong { get { return LC.L(@"Use this option to set the maximum number of threads used. Setting this value to zero or less will dynamically balance the number of active threads to fit the hardware."); } }
         public static string ConcurrencymaxthreadsShort { get { return LC.L(@"Limit number of concurrent threads"); } }
