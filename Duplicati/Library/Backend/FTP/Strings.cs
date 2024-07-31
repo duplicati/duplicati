@@ -26,9 +26,9 @@ namespace Duplicati.Library.Backend.Strings {
     internal static class FTPBackend {
         public static string Description { get { return LC.L(@"This backend can read and write data to an FTP based backend. Allowed formats are ""ftp://hostname/folder"" or ""ftp://username:password@hostname/folder""."); } }
         public static string DisplayName { get { return LC.L(@"FTP"); } }
-        public static string DescriptionFTPActiveLong { get { return LC.L(@"If this flag is set, the FTP connection is made in active mode. Even if the ""ftp-passive"" flag is also set, the connection will be made in active mode."); } }
+        public static string DescriptionFTPActiveLong { get { return LC.L(@"Activate this option to make the FTP connection in active mode. Even if the option --{0} is also set, the connection will be made in active mode.", "ftp-passive"); } }
         public static string DescriptionFTPActiveShort { get { return LC.L(@"Toggles the FTP connections method"); } }
-        public static string DescriptionFTPPassiveLong { get { return LC.L(@"If this flag is set, the FTP connection is made in passive mode, which works better with some firewalls. If the ""ftp-regular"" flag is also set, this flag is ignored."); } }
+        public static string DescriptionFTPPassiveLong { get { return LC.L(@"Activate this option to make the FTP connection in passive mode, which works better with some firewalls. If the option --{0} is set, this option is ignored.", "ftp-regular"); } }
         public static string DescriptionFTPPassiveShort { get { return LC.L(@"Toggles the FTP connections method"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
