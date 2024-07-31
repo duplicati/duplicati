@@ -53,7 +53,7 @@ namespace Duplicati.Library.Main.Strings
 
     internal static class Options
     {
-        public static string AutocleanupLong { get { return LC.L(@"If a backup is interrupted there will likely be partial files present on the backend. Using this flag, Duplicati will automatically remove such files when encountered."); } }
+        public static string AutocleanupLong { get { return LC.L(@"If a backup is interrupted there will likely be partial files present on the backend. Using this option, Duplicati will automatically remove such files when encountered."); } }
         public static string AutocleanupShort { get { return LC.L(@"A flag indicating that Duplicati should remove unused files"); } }
         public static string PrefixLong { get { return LC.L(@"A string used to prefix the filenames of the remote volumes, can be used to store multiple backups in the same remote folder. The prefix cannot contain a hyphen (-), but can contain all other characters allowed by the remote storage."); } }
         public static string PrefixShort { get { return LC.L(@"Remote filename prefix"); } }
@@ -273,7 +273,7 @@ namespace Duplicati.Library.Main.Strings
         public static string AllowfullremovalShort { get { return LC.L(@"Allow removing all filesets"); } }
         public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
         public static string AutoVacuumShort { get { return LC.L(@"Allow automatic rebuilding of local database to save space"); } }
-        public static string DisablefilescannerLong { get { return LC.L(@"When this flag is enabled, the scanner that computes the size of source files is disabled, and instead the reported size is read from the database. Using this flag can speed up the backup by reducing disk access, but will give a less accurate progress indicator."); } }
+        public static string DisablefilescannerLong { get { return LC.L(@"When this flag is enabled, the scanner that computes the size of source files is disabled, and instead the reported size is read from the database. Using this option can speed up the backup by reducing disk access, but will give a less accurate progress indicator."); } }
         public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
         public static string DisablefilelistconsistencychecksLong { get { return LC.L(@"In backups with a large number of filesets, the verification can take up a large part of the backup time. If you disable the checks, make sure you run regular check commands to ensure that everything is working as expected."); } }
         public static string DisablefilelistconsistencychecksShort { get { return LC.L(@"Disable filelist consistency checks"); } }
