@@ -35,7 +35,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         public static string APPLICATION_PREFIX = Utility.getEntryAssembly().FullName.Substring(0, 3).ToLower(System.Globalization.CultureInfo.InvariantCulture) + "-";
 
-        private string m_path;
+        private string? m_path;
         private bool m_protect;
 
 #if DEBUG
@@ -102,7 +102,7 @@ namespace Duplicati.Library.Utility
         /// Removes all old temporary files for this application.
         /// </summary>
         /// <param name="errorcallback">An optional callback method for logging errors</param>
-        public static void RemoveOldApplicationTempFiles(Action<string, Exception> errorcallback = null)
+        public static void RemoveOldApplicationTempFiles(Action<string, Exception>? errorcallback = null)
         {
 #if DEBUG
             var expires = TimeSpan.FromHours(3);
@@ -213,7 +213,7 @@ namespace Duplicati.Library.Utility
         /// <param name="tf">The temp file to swap with</param>
         public void Swap(TempFile tf)
         {
-            string p = m_path;
+            string? p = m_path;
             m_path = tf.m_path;
             tf.m_path = p;
         }

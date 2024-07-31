@@ -88,7 +88,7 @@ namespace Duplicati.Library.Utility
 		/// <summary>
 		/// Callback method used to update limits
 		/// </summary>
-		private readonly Action<ThrottledStream> m_updateLimits;
+		private readonly Action<ThrottledStream>? m_updateLimits;
 
 		/// <summary>
 		/// Creates a throttle around a stream.
@@ -135,6 +135,7 @@ namespace Duplicati.Library.Utility
 				var chunksize = (int)Math.Min(remaining, m_readspeed <= 0 ? remaining : m_readspeed * 2);
 				DelayIfRequired(ref m_readspeed, chunksize, ref m_last_read_sample, ref m_current_read_counter, ref m_current_read_speed);
 
+				if(m_basestream == null) throw new InvalidOperationException("m_basestream is null");
 				var actual = m_basestream.Read(buffer, offset + count - remaining, chunksize);
 
 				if (actual <= 0)

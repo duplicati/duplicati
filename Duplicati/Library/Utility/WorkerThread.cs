@@ -65,7 +65,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The current task being processed
         /// </summary>
-        private Tx m_currentTask;
+        private Tx? m_currentTask;
         /// <summary>
         /// A callback that performs the actual work on the item
         /// </summary>

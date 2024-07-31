@@ -31,13 +31,13 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class HashCalculatingStream : OverrideableStream
     {
-        private System.Security.Cryptography.HashAlgorithm m_hash;
-        private byte[] m_finalHash = null;
+        private System.Security.Cryptography.HashAlgorithm? m_hash;
+        private byte[]? m_finalHash = null;
 
         bool m_hasRead = false;
         bool m_hasWritten = false;
 
-        private byte[] m_hashbuffer = null;
+        private byte[]? m_hashbuffer = null;
         private int m_hashbufferLength = 0;
 
         public HashCalculatingStream(System.IO.Stream basestream, System.Security.Cryptography.HashAlgorithm algorithm)
@@ -89,11 +89,14 @@ namespace Duplicati.Library.Utility
             if (m_finalHash != null)
                 throw new Exception("Cannot read/write after hash is read");
 
+            if(m_hashbuffer == null) throw new InvalidOperationException("m_hashbuffer is null");
+
             //If we have a fragment from the last block, fill up
             if (m_hashbufferLength > 0 && count + m_hashbufferLength > m_hashbuffer.Length)
             {
                 int bytesToUse = m_hashbuffer.Length - m_hashbufferLength;
                 Array.Copy(buffer, m_hashbuffer, bytesToUse);
+                if (m_hash == null) throw new InvalidOperationException("Hash algorithm is null");
                 m_hash.TransformBlock(m_hashbuffer, 0, m_hashbuffer.Length, m_hashbuffer, 0);
                 count -= bytesToUse;
                 offset += bytesToUse;
@@ -105,6 +108,7 @@ namespace Duplicati.Library.Utility
             if (fullBlocks > 0)
             {
                 int bytesToUse = fullBlocks * m_hashbuffer.Length;
+                if (m_hash == null) throw new InvalidOperationException("Hash algorithm is null");
                 m_hash.TransformBlock(buffer, offset, bytesToUse, buffer, offset);
                 count -= bytesToUse;
                 offset += bytesToUse;
@@ -127,10 +131,12 @@ namespace Duplicati.Library.Utility
         {
             if (m_finalHash == null)
             {
+                if (m_hash == null) throw new InvalidOperationException("Hash algorithm is null");
+                if(m_hashbuffer == null) throw new InvalidOperationException("m_hashbuffer is null");
                 m_hash.TransformFinalBlock(m_hashbuffer, 0, m_hashbufferLength);
                 m_finalHash = m_hash.Hash;
             }
-            return m_finalHash;
+            return m_finalHash ?? throw new InvalidOperationException("m_finalHash is null");
         }
     }
 }
