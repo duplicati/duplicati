@@ -73,9 +73,9 @@ namespace Duplicati.Library.Main.Strings
         public static string NumberofretriesShort { get { return LC.L(@"Number of times to retry a failed transmission"); } }
         public static string PassphraseLong { get { return LC.L(@"Supply a passphrase that Duplicati will use to encrypt the backup volumes, making them unreadable without the passphrase. This variable can also be supplied through the environment variable PASSPHRASE."); } }
         public static string PassphraseShort { get { return LC.L(@"Passphrase used to encrypt backups"); } }
-        public static string TimeLong { get { return LC.L(@"By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may use relative times, like ""-2M"" for a backup from two months ago."); } }
+        public static string TimeLong { get { return LC.L(@"By default, Duplicati will list and restore files from the most recent backup. Use this option to select another item. You may use relative times, like ""-2M"" for a backup from two months ago."); } }
         public static string TimeShort { get { return LC.L(@"The time to list/restore files"); } }
-        public static string VersionLong { get { return LC.L(@"By default, Duplicati will list and restore files from the most recent backup, use this option to select another item. You may enter multiple values separated with comma, and ranges using -, e.g. ""0,2-4,7"" ."); } }
+        public static string VersionLong { get { return LC.L(@"By default, Duplicati will list and restore files from the most recent backup. Use this option to select another item. You may enter multiple values separated with comma, and ranges using -, e.g. ""0,2-4,7"" ."); } }
         public static string VersionShort { get { return LC.L(@"The version to list/restore files"); } }
         public static string AllversionsLong { get { return LC.L(@"When searching for files, only the most recent backup is searched. Use this option to show all previous versions too."); } }
         public static string AllversionsShort { get { return LC.L(@"Show all versions"); } }
