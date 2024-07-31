@@ -54,10 +54,10 @@ namespace Duplicati.Library.Main.Strings
     internal static class Options
     {
         public static string AutocleanupLong { get { return LC.L(@"If a backup is interrupted there will likely be partial files present on the backend. Using this option, Duplicati will automatically remove such files when encountered."); } }
-        public static string AutocleanupShort { get { return LC.L(@"A flag indicating that Duplicati should remove unused files"); } }
+        public static string AutocleanupShort { get { return LC.L(@"Remove unused files"); } }
         public static string PrefixLong { get { return LC.L(@"A string used to prefix the filenames of the remote volumes, can be used to store multiple backups in the same remote folder. The prefix cannot contain a hyphen (-), but can contain all other characters allowed by the remote storage."); } }
         public static string PrefixShort { get { return LC.L(@"Remote filename prefix"); } }
-        public static string DisablefiletimecheckLong { get { return LC.L(@"The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won't work correctly unless this flag is set."); } }
+        public static string DisablefiletimecheckLong { get { return LC.L(@"The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won't work correctly unless this option is set."); } }
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
         public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders. Use this option to restore to another folder."); } }
         public static string RestorepathShort { get { return LC.L(@"Restore to another folder"); } }
@@ -89,8 +89,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RetrywithexponentialbackoffShort { get { return LC.L(@"Exponential backoff for backend errors"); } }
         public static string ControlfilesLong { get { return LC.L(@"Use this option to attach extra files to the newly uploaded filelists."); } }
         public static string ControlfilesShort { get { return LC.L(@"Set control files"); } }
-        public static string SkipfilehashchecksLong { get { return LC.L(@"If the hash for the volume does not match, Duplicati will refuse to use the backup. Supply this flag to allow Duplicati to proceed anyway."); } }
-        public static string SkipfilehashchecksShort { get { return LC.L(@"Set this flag to skip hash checks"); } }
+        public static string SkipfilehashchecksLong { get { return LC.L(@"If the hash for the volume does not match, Duplicati will refuse to use the backup. Activate this option to allow Duplicati to proceed anyway."); } }
+        public static string SkipfilehashchecksShort { get { return LC.L(@"Skip hash checks"); } }
         public static string SkipfileslargerthanLong { get { return LC.L(@"This option allows you to exclude files that are larger than the given value. Use this to prevent backups becoming extremely large."); } }
         public static string SkipfileslargerthanShort { get { return LC.L(@"Limit the size of files being backed up"); } }
         public static string TempdirLong { get { return LC.L(@"This option can be used to supply an alternative folder for temporary storage. By default the system default temporary folder is used. Note that also SQLite will put temporary files in this temporary folder."); } }
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilepathcacheDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "disable-filepath-cache"); } }
         public static string UseblockcacheLong { get { return LC.L(@"This option can be used to increase speed in exchange for extra memory use."); } }
         public static string UseblockcacheShort { get { return LC.L(@"Store an in-memory block cache"); } }
-        public static string NobackendverificationLong { get { return LC.L(@"If this flag is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
+        public static string NobackendverificationLong { get { return LC.L(@"If this option is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
         public static string NobackendverificationShort { get { return LC.L(@"Do not query backend at startup"); } }
         public static string IndexfilepolicyLong { get { return LC.L(@"The index files are used to limit the need for downloading dblock files when there is no local database present. The more information is recorded in the index files, the faster operations can proceed without the database. The tradeoff is that larger index files take up more remote space and which may never be used."); } }
         public static string IndexfilepolicyShort { get { return LC.L(@"Determines usage of index files"); } }
@@ -265,7 +265,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencycompressorsShort { get { return LC.L(@"Specify the number of concurrent compression processes"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
         public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disables synthetic filelist"); } }
-        public static string CheckfiletimeonlyLong { get { return LC.L(@"This flag instructs Duplicati to not look at metadata or filesize when deciding to scan a file for changes. Use this option if you have a large number of files and notice that the scanning takes a long time with unmodified files."); } }
+        public static string CheckfiletimeonlyLong { get { return LC.L(@"This option instructs Duplicati to not look at metadata or filesize when deciding to scan a file for changes. Use this option if you have a large number of files and notice that the scanning takes a long time with unmodified files."); } }
         public static string CheckfiletimeonlyShort { get { return LC.L(@"Checks only file lastmodified"); } }
         public static string DontcompressrestorepathsLong { get { return LC.L(@"When restore a subset of a backup into a new folder, the shortest possible path is used to avoid generating deep paths with empty folders. Use this option to skip this compression, such that the entire original folder structure is preserved, including upper level empty folders."); } }
         public static string DontcompressrestorepathsShort { get { return LC.L(@"Disables path compression on restore"); } }
@@ -277,7 +277,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
         public static string DisablefilelistconsistencychecksLong { get { return LC.L(@"In backups with a large number of filesets, the verification can take up a large part of the backup time. If you disable the checks, make sure you run regular check commands to ensure that everything is working as expected."); } }
         public static string DisablefilelistconsistencychecksShort { get { return LC.L(@"Disable filelist consistency checks"); } }
-        public static string DisableOnBatteryLong { get { return LC.L("When this flag is enabled, a scheduled backup will not run if the system is detected to be running on battery power (manual or command line backups will still be run). If the detected power source is mains (e.g., AC) or unknown, then scheduled backups will proceed as normal."); } }
+        public static string DisableOnBatteryLong { get { return LC.L("Use this option to run a scheduled backup if the system is detected to be running on battery power (manual or command line backups will still be run). If the detected power source is mains (e.g., AC) or unknown, then scheduled backups will proceed as normal."); } }
         public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
 
         public static string LogfileloglevelLong { get { return LC.L(@"Specifies the amount of log information to write into the file specified by the option --{0}.", "log-file"); } }
