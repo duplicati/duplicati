@@ -21,7 +21,7 @@ backupApp.controller('RestoreDirectController', function ($rootScope, $scope, $l
     };
 
     $scope.importUrl = function () {
-        DialogService.textareaDialog(gettextCatalog.getString('Import URL'), gettextCatalog.getString('Enter a backup destination URL:')', null, gettextCatalog.getString('Enter URL'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn, input) {
+        DialogService.textareaDialog(gettextCatalog.getString('Import URL'), gettextCatalog.getString('Enter a backup destination URL:'), null, gettextCatalog.getString('Enter URL'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn, input) {
             if (btn == 1) {
                 $scope.TargetURL = input;
             }
