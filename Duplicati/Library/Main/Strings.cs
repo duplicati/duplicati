@@ -289,7 +289,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ConsolelogfiltersLong(string delimiter) { return LogfilelogfiltersLong(delimiter); }
         public static string ConsolelogfiltersShort { get { return LC.L(@"Applies filters to the console log data"); } }
 
-        public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructions the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time."); } }
+        public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructs the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time."); } }
         public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the process to use low IO priority"); } }
 
         public static string ExcludeemptyfoldersLong { get { return LC.L("Use this option to remove all empty folders from a backup."); } }
