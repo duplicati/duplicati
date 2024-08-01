@@ -292,9 +292,8 @@
         <div class="info">
             <div class="title" translate>Connection lost</div>
             <div class="content" ng-show="state.connectionState == 'unauthorized'" translate>
-                Connection to server was rejected due to invalid authentication. Reload browser window to reconnect to server properly. 
-                <br />
-                If this problem persist open this page from the TrayIcon instead.
+                <p>Connection to server was rejected due to invalid authentication. Reload browser window to reconnect to server properly. </p>
+                <p>If this problem persist open this page from the TrayIcon instead.</p>
             </div>
             <div class="content" ng-show="state.connectionState != 'unauthorized' && state.connectionState != 'connecting'" translate translate-params-time="(state.connectionAttemptTimer + 1000) | timeremaining">
                 The connection to the server is lost, attempting again in {{time}} …
