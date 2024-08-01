@@ -93,7 +93,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     };
 
     $scope.importUrl = function () {
-        DialogService.textareaDialog('Import URL', 'Enter a Backup destination URL:', null, gettextCatalog.getString('Enter URL'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn, input) {
+        DialogService.textareaDialog(gettextCatalog.getString('Import URL'), gettextCatalog.getString('Enter a backup destination URL:'), null, gettextCatalog.getString('Enter URL'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn, input) {
             if (btn == 1)
                 scope.Backup.TargetURL = input;
         });
@@ -101,7 +101,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
     $scope.copyUrlToClipboard = function () {
         $scope.builduri(function(res) {
-            DialogService.textareaDialog('Copy URL', null, null, res, [gettextCatalog.getString('OK')], 'templates/copy_clipboard_buttons.html');
+            DialogService.textareaDialog(gettextCatalog.getString('Copy URL'), null, null, res, [gettextCatalog.getString('OK')], 'templates/copy_clipboard_buttons.html');
         });
     };
 

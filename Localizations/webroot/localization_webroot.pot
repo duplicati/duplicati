@@ -659,6 +659,11 @@ msgstr ""
 msgid "Copy Destination URL to Clipboard"
 msgstr ""
 
+#: scripts/controllers/EditBackupController.js:104
+#: scripts/controllers/RestoreDirectController.js:33
+msgid "Copy URL"
+msgstr ""
+
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
 msgstr ""
@@ -1055,6 +1060,11 @@ msgstr ""
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:96
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter a backup destination URL:"
 msgstr ""
 
 #: templates/addoredit.html:341
@@ -1489,6 +1499,11 @@ msgstr ""
 #: templates/addoredit.html:100
 #: templates/restoredirect.html:39
 msgid "Import Destination URL"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:96
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Import URL"
 msgstr ""
 
 #: templates/import.html:3
