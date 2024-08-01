@@ -128,12 +128,7 @@
 
             <div  class="input password" ng-show="showInputPassphrase()">
                 <h2 translate>Passphrase</h2>
-                <p translate>
-                    Backup is encrypted but no passphrase is available.
-                    Type a passphrase below to use for restoring your files,
-                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by
-                    invoking your system's keychain.
-                </p>
+                <p translate>Backup is encrypted but no passphrase is available. Type a passphrase below to use for restoring your files, or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by invoking your system's keychain.</p>
                 <input autocomplete="new-password" type="password" name="restore_path" id="passphrase" ng-model="passphrase"
                 placeholder="{{'Type passphrase here.' | translate}}" />
             </div>

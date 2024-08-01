@@ -266,7 +266,7 @@ msgstr ""
 msgid "B2 Cloud Storage Application Key"
 msgstr ""
 
-#: templates/restore.html:143
+#: templates/restore.html:138
 #: templates/restore.html:70
 msgid "Back"
 msgstr ""
@@ -284,11 +284,7 @@ msgid "Backup destination"
 msgstr ""
 
 #: templates/restore.html:131
-msgid ""
-"Backup is encrypted but no passphrase is available.\n"
-"                    Type a passphrase below to use for restoring your files,\n"
-"                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
-"                    invoking your system's keychain."
+msgid "Backup is encrypted but no passphrase is available. Type a passphrase below to use for restoring your files, or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by invoking your system's keychain."
 msgstr ""
 
 #: templates/restore.html:21
@@ -1950,7 +1946,7 @@ msgstr ""
 #: scripts/services/DialogService.js:50
 #: scripts/services/DialogService.js:58
 #: scripts/services/EditUriBuiltins.js:136
-#: templates/restore.html:152
+#: templates/restore.html:147
 #: templates/settings.html:158
 msgid "OK"
 msgstr ""
@@ -2291,7 +2287,7 @@ msgid "Reset"
 msgstr ""
 
 #: index.html:214
-#: templates/restore.html:142
+#: templates/restore.html:137
 msgid "Restore"
 msgstr ""
 
@@ -2909,7 +2905,7 @@ msgstr ""
 msgid "Tue"
 msgstr ""
 
-#: templates/restore.html:138
+#: templates/restore.html:133
 msgid "Type passphrase here."
 msgstr ""
 
@@ -3282,7 +3278,7 @@ msgstr ""
 msgid "You should fill in {{field}} {{reason}}"
 msgstr ""
 
-#: templates/restore.html:149
+#: templates/restore.html:144
 msgid "Your files and folders have been restored successfully."
 msgstr ""
 
