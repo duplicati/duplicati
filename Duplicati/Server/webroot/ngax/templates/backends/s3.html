@@ -47,8 +47,7 @@
     <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass"
             ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k"
             title="{{'The storage class affects the availability and price for a stored file' | translate}}">
-        <option value="" translate translate-params-class="s3_storageclass_custom || ''">Custom storage class
-            ({{class}})
+        <option value="" translate translate-params-class="s3_storageclass_custom || ''">Custom storage class ({{class}})
         </option>
     </select>
 
