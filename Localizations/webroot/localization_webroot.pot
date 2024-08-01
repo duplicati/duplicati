@@ -28,6 +28,12 @@ msgstr ""
 msgid "...loading..."
 msgstr ""
 
+#: index.html:294
+msgid ""
+"<p>Connection to server was rejected due to invalid authentication. Reload browser window to reconnect to server properly. </p>\n"
+"                <p>If this problem persist open this page from the TrayIcon instead.</p>"
+msgstr ""
+
 #: templates/backends/openstack.html:44
 msgid "API Key"
 msgstr ""
@@ -592,11 +598,11 @@ msgstr ""
 msgid "Connect"
 msgstr ""
 
-#: index.html:307
+#: index.html:306
 msgid "Connect now"
 msgstr ""
 
-#: index.html:302
+#: index.html:301
 msgid "Connecting to server …"
 msgstr ""
 
@@ -604,19 +610,12 @@ msgstr ""
 msgid "Connecting to task …"
 msgstr ""
 
-#: index.html:308
+#: index.html:307
 msgid "Connecting …"
 msgstr ""
 
 #: index.html:293
 msgid "Connection lost"
-msgstr ""
-
-#: index.html:294
-msgid ""
-"Connection to server was rejected due to invalid authentication. Reload browser window to reconnect to server properly. \n"
-"                <br>\n"
-"                If this problem persist open this page from the TrayIcon instead."
 msgstr ""
 
 #: scripts/directives/backupEditUri.js:50
@@ -2220,7 +2219,7 @@ msgstr ""
 msgid "Relative paths not allowed"
 msgstr ""
 
-#: index.html:306
+#: index.html:305
 #: templates/captcha.html:7
 msgid "Reload"
 msgstr ""
@@ -2765,7 +2764,7 @@ msgstr ""
 msgid "The configuration should be kept safe. Are you sure you want to save an unencrypted file containing your passwords?"
 msgstr ""
 
-#: index.html:299
+#: index.html:298
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
