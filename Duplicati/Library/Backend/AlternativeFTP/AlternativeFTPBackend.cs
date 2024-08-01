@@ -42,37 +42,13 @@ namespace Duplicati.Library.Backend.AlternativeFTP
     // ReSharper disable once RedundantExtendsListEntry
     public class AlternativeFtpBackend : IBackend, IStreamingBackend
     {
-        private static SslProtocols GetDefaultSslProtocols()
-        {
-            // Use the defaults from FluentFTP
-            var result = new FtpConfig().SslProtocols;
-
-            // Probe if the system supports TLS 1.3
-            var restore = ServicePointManager.SecurityProtocol;
-            try
-            {
-                // If we can set this, it looks like the system supports TLS 1.3
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13;
-                result = SslProtocols.Tls12 | SslProtocols.Tls13;
-            }
-            catch
-            {
-            }
-            finally
-            {
-                ServicePointManager.SecurityProtocol = restore;
-            }
-
-            return result;
-        }
-
         private System.Net.NetworkCredential _userInfo;
         private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash"; // Global option
         private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate"; // Global option
 
         private const FtpDataConnectionType DEFAULT_DATA_CONNECTION_TYPE = FtpDataConnectionType.AutoPassive;
         private const FtpEncryptionMode DEFAULT_ENCRYPTION_MODE = FtpEncryptionMode.None;
-        private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = GetDefaultSslProtocols();
+        private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = SslProtocols.None; // NOTE: None means "use system default"
         private const string CONFIG_KEY_AFTP_ENCRYPTION_MODE = "aftp-encryption-mode";
         private const string CONFIG_KEY_AFTP_DATA_CONNECTION_TYPE = "aftp-data-connection-type";
         private const string CONFIG_KEY_AFTP_SSL_PROTOCOLS = "aftp-ssl-protocols";
@@ -125,7 +101,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new List<ICommandLineArgument>([
                           new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
                           new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
                           new CommandLineArgument("disable-upload-verify", CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
@@ -135,7 +111,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                           new CommandLineArgument(CONFIG_KEY_AFTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
                           new CommandLineArgument(CONFIG_KEY_AFTP_LOGTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogToConsoleShort, Strings.DescriptionLogToConsoleLong),
                           new CommandLineArgument(CONFIG_KEY_AFTP_LOGPRIVATEINFOTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogPrivateInfoToConsoleShort, Strings.DescriptionLogPrivateInfoToConsoleLong, "false"),
-                     });
+                     ]);
             }
         }
 
