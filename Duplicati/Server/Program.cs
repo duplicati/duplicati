@@ -50,6 +50,11 @@ namespace Duplicati.Server
         public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
         /// <summary>
+        /// Name of the database file
+        /// </summary>
+        private const string SERVER_DATABASE_FILENAME = "Duplicati-server.sqlite";
+
+        /// <summary>
         /// The name of the environment variable that holds the path to the data folder used by Duplicati
         /// </summary>
         private static readonly string DATAFOLDER_ENV_NAME = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture) + "_HOME";
@@ -586,29 +591,48 @@ namespace Duplicati.Server
                 else
                 {
                     //Normal release mode uses the systems "(Local) Application Data" folder
-                    // %LOCALAPPDATA% on Windows, ~/.config on Linux
-
-                    // Special handling for Windows:
-                    //   - Older versions use %APPDATA%
-                    //   - but new versions use %LOCALAPPDATA%
-                    //
-                    //  If we find a new version, lets use that
-                    //    otherwise use the older location
-                    //
+                    // %LOCALAPPDATA% on Windows, ~/.config on Linux, ~/Library/Application\ Support on MacOS
 
                     serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
                     if (OperatingSystem.IsWindows())
                     {
+                        // Special handling for Windows:
+                        //   - Older versions use %APPDATA%
+                        //   - but new versions use %LOCALAPPDATA%
+                        //
+                        //  If we find a new version, lets use that
+                        //    otherwise use the older location
+
                         var localappdata = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
 
-                        var prefile = System.IO.Path.Combine(serverDataFolder, "Duplicati-server.sqlite");
-                        var curfile = System.IO.Path.Combine(localappdata, "Duplicati-server.sqlite");
+                        var prefile = System.IO.Path.Combine(serverDataFolder, SERVER_DATABASE_FILENAME);
+                        var curfile = System.IO.Path.Combine(localappdata, SERVER_DATABASE_FILENAME);
 
                         // If the new file exists, we use that
                         // If the new file does not exist, and the old file exists we use the old
                         // Otherwise we use the new location
                         if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prefile))
                             serverDataFolder = localappdata;
+                    }
+
+                    if (OperatingSystem.IsMacOS())
+                    {
+                        // Special handling for MacOS:
+                        //   - Older versions use ~/.config/
+                        //   - but new versions use ~/Library/Application\ Support/
+                        //
+                        //  If we find a new version, lets use that
+                        //    otherwise use the older location
+
+                        var homefolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                        var configfolder = System.IO.Path.Combine(homefolder, ".config", Library.AutoUpdater.AutoUpdateSettings.AppName);
+
+                        var prevfile = System.IO.Path.Combine(configfolder, SERVER_DATABASE_FILENAME);
+                        var curfile = System.IO.Path.Combine(serverDataFolder, SERVER_DATABASE_FILENAME);
+
+                        // If the old file exists and the new does not, we switch back to the old location
+                        if (System.IO.File.Exists(prevfile) && !System.IO.File.Exists(curfile))
+                            serverDataFolder = configfolder;
                     }
 
                     DataFolder = serverDataFolder;
@@ -630,7 +654,7 @@ namespace Duplicati.Server
 
             try
             {
-                DatabasePath = System.IO.Path.Combine(DataFolder, "Duplicati-server.sqlite");
+                DatabasePath = System.IO.Path.Combine(DataFolder, SERVER_DATABASE_FILENAME);
 
                 if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
