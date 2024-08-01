@@ -4,7 +4,7 @@
         <div class="content">
             <div ng-if="item.Action != 'update:new' &amp;&amp; item.Action != 'update:manual'" class="message">{{item.Message}}</div>
             <div ng-show="item.DownloadLink != null">
-                <div translate>If the backup file was not downloaded automatically, <a href="{{item.DownloadLink}}" target="_blank">right click and choose &quot;Save as …&quot;</a></div>
+                <div translate>If the backup file was not downloaded automatically, <a href="{{item.DownloadLink}}" target="_blank">right click and choose &quot;Save as …&quot;</a>.</div>
             </div>
             <div ng-if="item.Action != 'update:new' &amp;&amp; item.Action != 'update:manual'" class="buttons">
                 <a href ng-click="doDismiss(item.ID)" class="button dismiss" translate>Dismiss</a>
