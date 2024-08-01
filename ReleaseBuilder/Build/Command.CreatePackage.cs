@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO.Compression;
+using System.Text;
 
 namespace ReleaseBuilder.Build;
 
@@ -469,6 +470,32 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Creates a GZip compressed file
+        /// </summary>
+        /// <param name="inputStream">The input stream path</param>
+        /// <param name="outputFilePath">The output file path</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        static async Task GzipCompressFileAsync(Stream inputStream, string outputFilePath)
+        {
+            using (var outputFileStream = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write))
+            using (var gzipStream = new GZipStream(outputFileStream, CompressionMode.Compress))
+                await inputStream.CopyToAsync(gzipStream);
+        }
+
+        /// <summary>
+        /// Ensures the folder for the file exists
+        /// </summary>
+        /// <param name="filename">The filename</param>
+        /// <returns>The filename</returns>
+        public static string EnsureFolderForFile(string filename)
+        {
+            var folder = Path.GetDirectoryName(filename);
+            if (folder != null && !Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+            return filename;
+        }
+
+        /// <summary>
         /// Builds a DEB package using Docker
         /// </summary>
         /// <param name="baseDir">The base directory.</param>
@@ -529,17 +556,25 @@ public static partial class Command
             // Copy debian files
             var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "debian");
 
-            // Write in the release notes
-            if (!string.IsNullOrEmpty(rtcfg.ChangelogNews))
-                File.WriteAllText(Path.Combine(pkgroot, "DEBIAN", "releasenotes"), rtcfg.ChangelogNews);
+            // Write the license file
+            File.Copy(
+                Path.Combine(baseDir, "LICENSE.txt"),
+                EnsureFolderForFile(
+                    Path.Combine(pkgroot, "usr", "share", "doc", "duplicati", "copyright")
+                )
+            );
 
             // Write a custom changelog file
-            File.WriteAllText(
-                Path.Combine(pkgroot, "DEBIAN", "changelog"),
-                File.ReadAllText(Path.Combine(resourcesDir, "changelog.template.txt"))
+            var changelogData = File.ReadAllText(Path.Combine(resourcesDir, "changelog.template.txt"))
                     .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
-                    .Replace("%DATE%", DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss +0000", CultureInfo.InvariantCulture))
-            );
+                    .Replace("%DATE%", DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss +0000", CultureInfo.InvariantCulture));
+
+            // Write a compressed changelog file
+            using (var changelogStream = new MemoryStream(Encoding.UTF8.GetBytes(changelogData)))
+                await GzipCompressFileAsync(
+                    changelogStream,
+                    EnsureFolderForFile(Path.Combine(pkgroot, "usr", "share", "doc", "duplicati", "changelog.gz"))
+                );
 
             // Custom arch, from: https://wiki.debian.org/SupportedArchitectures
             var debArchString = target.Arch switch
@@ -601,6 +636,18 @@ public static partial class Command
                 if (!OperatingSystem.IsWindows())
                     File.SetUnixFileMode(f.Destination, UnixFileMode.OtherRead | UnixFileMode.GroupRead | UnixFileMode.UserRead | UnixFileMode.UserWrite);
             }
+
+            // Write a conf file
+            var confroot = Path.Combine(pkgroot, "etc");
+            var conffiles = Directory.EnumerateFiles(confroot, "*", SearchOption.AllDirectories)
+                .Select(x => "/" + Path.GetRelativePath(pkgroot, x))
+                .Append(string.Empty)
+                .ToList();
+
+            File.WriteAllText(
+                Path.Combine(pkgroot, "DEBIAN", "conffiles"),
+                string.Join("\n", conffiles)
+            );
 
             // Copy the Docker build file
             File.Copy(
