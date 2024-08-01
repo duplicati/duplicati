@@ -87,14 +87,14 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string StdErrorReport(string script, string message) { return LC.L(@"The script ""{0}"" reported error messages: {1}", script, message); }
         public static string TimeoutoptionLong { get { return LC.L(@"Sets the maximum time a script is allowed to execute. If the script has not completed within this time, it will continue to execute but the operation will continue too, and no script output will be processed."); } }
         public static string TimeoutoptionShort { get { return LC.L(@"Sets the script timeout"); } }
-        public static string EnableArgumentsLong { get { return LC.L(@"This option enables the use of script arguments. If this option is enabled, the script arguments are treated as commandline strings. Use single or double quotes to separate arguments."); } }
+        public static string EnableArgumentsLong { get { return LC.L(@"This option enables the use of script arguments. If this option is set, the script arguments are treated as commandline strings. Use single or double quotes to separate arguments."); } }
         public static string EnableArgumentsShort { get { return LC.L(@"Enable script arguments"); } }
     }
     internal static class SendMail
     {
         public static string Description { get { return LC.L(@"This module can send email after an operation completes"); } }
         public static string Displayname { get { return LC.L(@"Send mail"); } }
-        public static string FailedToLookupMXServer(string optionname) { return LC.L(@"Unable to find the destination mail server through MX lookup, please use the option {0} to specify what smtp server to use.", optionname); }
+        public static string FailedToLookupMXServer(string optionname) { return LC.L(@"Unable to find the destination mail server through MX lookup. Please use the option {0} to specify what smtp server to use.", optionname); }
         public static string OptionBodyLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message body.
 
 In the message body, certain tokens are replaced:
@@ -158,7 +158,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendxmpplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendxmpplevelShort { get { return LC.L(@"The messages to send"); } }
-        public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations."); } }
+        public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
         public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
     }
@@ -186,7 +186,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendhttplevelShort { get { return LC.L(@"The messages to send"); } }
-        public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a Backup operation. Use this option to send messages for all operations."); } }
+        public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
         public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string HttpverbLong { get { return LC.L(@"Use this option to change the default HTTP verb used to submit a report."); } }
         public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }

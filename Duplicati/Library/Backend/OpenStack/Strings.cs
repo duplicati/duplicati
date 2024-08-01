@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string ApikeyOptionShort { get { return LC.L(@"Supplies the API key used to connect to the server"); } }
         public static string AuthuriOptionLong(string providers) { return LC.L(@"The authentication URL is used to authenticate the user and find the storage service. The URL commonly ends with ""/v2.0"". Known providers are: {0}{1}", System.Environment.NewLine, providers); }
         public static string AuthuriOptionShort { get { return LC.L(@"Supplies the authentication URL"); } }
-        public static string VersionOptionLong { get { return LC.L(@"The keystone API version to use, valid values are 'v2' and 'v3'."); } }
+        public static string VersionOptionLong { get { return LC.L(@"The keystone API version to use. Valid values are 'v2' and 'v3'."); } }
         public static string VersionOptionShort { get { return LC.L(@"The keystone API version to use"); } }
         public static string RegionOptionLong { get { return LC.L(@"This option is only used when creating a container, and is used to indicate where the container should be placed. Consult your provider for a list of valid regions, or leave empty for the default region."); } }
         public static string RegionOptionShort { get { return LC.L(@"Supplies the region used for creating a container"); } }
