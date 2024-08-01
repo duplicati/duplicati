@@ -659,6 +659,11 @@ msgstr ""
 msgid "Copy Destination URL to Clipboard"
 msgstr ""
 
+#: scripts/controllers/EditBackupController.js:104
+#: scripts/controllers/RestoreDirectController.js:33
+msgid "Copy URL"
+msgstr ""
+
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
 msgstr ""
@@ -804,7 +809,7 @@ msgstr ""
 msgid "Default options"
 msgstr ""
 
-#: templates/localdatabase.html:19
+#: templates/localdatabase.html:16
 msgid "Delete"
 msgstr ""
 
@@ -987,7 +992,7 @@ msgid ""
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
 
-#: templates/localdatabase.html:8
+#: templates/localdatabase.html:5
 msgid "Each backup has a local database associated with it, which stores information about the remote backup on the local machine. This makes it faster to perform many operations, and reduces the amount of data that needs to be downloaded for each operation."
 msgstr ""
 
@@ -1055,6 +1060,11 @@ msgstr ""
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:96
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter a backup destination URL:"
 msgstr ""
 
 #: templates/addoredit.html:341
@@ -1456,7 +1466,7 @@ msgstr ""
 msgid "If at least one newer backup is found, all backups older than this date are deleted."
 msgstr ""
 
-#: templates/localdatabase.html:13
+#: templates/localdatabase.html:10
 msgid "If the backup and the remote storage is out of sync, Duplicati will require that you perform a repair operation to synchronize the database. If the repair is unsuccessful, you can delete the local database and re-generate."
 msgstr ""
 
@@ -1489,6 +1499,11 @@ msgstr ""
 #: templates/addoredit.html:100
 #: templates/restoredirect.html:39
 msgid "Import Destination URL"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:96
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Import URL"
 msgstr ""
 
 #: templates/import.html:3
@@ -1648,10 +1663,10 @@ msgid "Local Repository"
 msgstr ""
 
 #: templates/localdatabase.html:2
-msgid "Local database for"
+msgid "Local database for <b ng-show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-hide=\"Backup.Backup.Name\">…loading…</b>"
 msgstr ""
 
-#: templates/localdatabase.html:26
+#: templates/localdatabase.html:23
 msgid "Local database path:"
 msgstr ""
 
@@ -1663,7 +1678,7 @@ msgstr ""
 msgid "Local storage"
 msgstr ""
 
-#: templates/localdatabase.html:23
+#: templates/localdatabase.html:20
 msgid "Location"
 msgstr ""
 
@@ -1691,7 +1706,7 @@ msgstr ""
 msgid "MByte/s"
 msgstr ""
 
-#: templates/localdatabase.html:11
+#: templates/localdatabase.html:8
 msgid "Maintenance"
 msgstr ""
 
@@ -1777,7 +1792,7 @@ msgstr ""
 msgid "Months"
 msgstr ""
 
-#: templates/localdatabase.html:34
+#: templates/localdatabase.html:31
 msgid "Move existing database"
 msgstr ""
 
@@ -2185,7 +2200,7 @@ msgstr ""
 msgid "Rebuilding local database …"
 msgstr ""
 
-#: templates/localdatabase.html:20
+#: templates/localdatabase.html:17
 msgid "Recreate (delete and repair)"
 msgstr ""
 
@@ -2250,7 +2265,7 @@ msgstr ""
 msgid "Removed files"
 msgstr ""
 
-#: templates/localdatabase.html:18
+#: templates/localdatabase.html:15
 #: templates/notificationarea.html:14
 msgid "Repair"
 msgstr ""
@@ -2271,7 +2286,7 @@ msgstr ""
 msgid "Reporting:"
 msgstr ""
 
-#: templates/localdatabase.html:31
+#: templates/localdatabase.html:28
 msgid "Reset"
 msgstr ""
 
@@ -2383,11 +2398,11 @@ msgid "Satellite"
 msgstr ""
 
 #: templates/addoredit.html:410
-#: templates/localdatabase.html:32
+#: templates/localdatabase.html:29
 msgid "Save"
 msgstr ""
 
-#: templates/localdatabase.html:33
+#: templates/localdatabase.html:30
 msgid "Save and repair"
 msgstr ""
 
@@ -3407,8 +3422,4 @@ msgstr ""
 
 #: templates/home.html:52
 msgid "{{time}} (took {{duration}})"
-msgstr ""
-
-#: templates/localdatabase.html:4
-msgid "…loading…"
 msgstr ""
