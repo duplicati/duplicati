@@ -1049,7 +1049,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
             function checkUsernamePrefix() {
                 if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
-                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('The bucket name should start with your username, prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
+                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('To prevent bucket naming conflicts, it is recommended to prepend your account ID to the bucket name. Prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
                         if (ix == 2)
                             scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
                         if (ix == 1 || ix == 2) {
