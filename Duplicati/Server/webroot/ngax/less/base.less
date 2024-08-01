@@ -561,6 +561,21 @@ ul.notification {
     }
 }
 
+.note {
+    & p {
+        /* Override default block margin */
+        margin-block: 0.5rem; /* Magic number */
+
+        &:first-child {
+            margin-top: 0;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
 .fixed-width-font {
     font-family: monospace;
 }
