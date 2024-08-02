@@ -1013,7 +1013,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                 res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
 
             if (res && (scope.openstack_apikey || '').trim().length != 0)
-                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API Key are not supported in v3 keystone API.'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API key are not supported in v3 keystone API'));
 
 
         } else {
@@ -1021,14 +1021,14 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             if (((scope.openstack_apikey) || '').trim().length == 0) {
 
                 if (res && (scope.Password || '').trim().length == 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API key'));
 
                 if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API Key'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API key'));
 
             } else {
                 if (res && (scope.Password || '').trim().length != 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key, not both'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API key, not both'));
             }
         }
         if (res)
