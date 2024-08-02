@@ -508,11 +508,21 @@ ul.notification {
     }
 
     .longdescription {
-        margin-top: 10px;
+        --margin-block: 10px; /* Magic number */
+
+        margin-top: var(--margin-block);
         margin-left: 190px;
         clear: both;
         font-style: italic;
         white-space: pre-wrap;
+
+        .longdescription__item {
+            margin-block: 0 var(--margin-block);
+        }
+
+        .longdescription__default {
+            margin-block: var(--margin-block) 0;
+        }
     }
 }
 
@@ -1690,6 +1700,17 @@ body {
                                Avoid using the row-gap property as it sets the gap
                                even if this input area does not exist. */
                             margin-top: 10px; /* Magic number */
+                        }
+                    }
+
+                    .input.text {
+                        #generic_server {
+                            width: 335px;
+                        }
+
+                        #generic_port {
+                            width: 50px;
+                            margin-left: 10px; /* Magic number */
                         }
                     }
                 }
