@@ -30,7 +30,7 @@ namespace Duplicati.Library.Common.IO
 {
     public class WriterMetaData
     {
-        public string Name { get; set;  }
+        public string Name { get; set; }
         public string LogicalPath { get; set; }
         public Guid Guid { get; set; }
         public List<string> Paths { get; set; }
@@ -129,7 +129,11 @@ namespace Duplicati.Library.Common.IO
             _volumeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var kvp in _volumes)
             {
-                _volumeMap.Add(kvp.Key, _vssBackupComponents.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject);
+                // The snapshot path has the format of "\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1"
+                // Attempting to get attributes on this path will fail, so we need to append a double backslash
+                // Strangely, the double backslash is not needed when acessing a subfolder, here a single backslash is enough,
+                // but double backslash works for both cases due to path normalization.
+                _volumeMap.Add(kvp.Key, Util.AppendDirSeparator(_vssBackupComponents.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject) + "\\");
             }
 
             _volumeReverseMap = _volumeMap.ToDictionary(x => x.Value, x => x.Key);
@@ -137,7 +141,8 @@ namespace Duplicati.Library.Common.IO
 
         public Dictionary<string, string> SnapshotDeviceAndVolumes
         {
-            get {
+            get
+            {
                 return _volumeReverseMap;
             }
         }
@@ -178,10 +183,13 @@ namespace Duplicati.Library.Common.IO
                 var writer = _vssBackupComponents.WriterMetadata.First(o => o.WriterId.Equals(writerGUID));
                 foreach (var component in writer.Components)
                 {
-                    yield return new WriterMetaData{ Guid = writerGUID,
+                    yield return new WriterMetaData
+                    {
+                        Guid = writerGUID,
                         Name = component.ComponentName,
                         LogicalPath = component.LogicalPath,
-                        Paths = GetPathsFromComponent(component) };
+                        Paths = GetPathsFromComponent(component)
+                    };
                 }
             }
         }
