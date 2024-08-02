@@ -27,7 +27,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 {
     internal static class Strings
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to an FTP based backend using an alternative FTP client. Allowed formats are ""aftp://hostname/folder"" or ""aftp://username:password@hostname/folder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to an FTP based backend using an alternative FTP client. Allowed formats are ""aftp://hostname/folder"" and ""aftp://username:password@hostname/folder""."); } }
         public static string DisplayName { get { return LC.L(@"Alternative FTP"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }

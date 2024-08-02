@@ -24,7 +24,7 @@ using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings
 {
     internal static class GoogleCloudStorage {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Google Cloud Storage. Supported format is ""gcs://bucket/folder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Google Cloud Storage. Allowed format is ""gcs://bucket/folder""."); } }
         public static string DisplayName { get { return LC.L(@"Google Cloud Storage"); } }
         public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID. You can get it from: {0}", url); }
         public static string ProjectIDMissingError(string projectoption) { return LC.L(@"You must supply a project ID with --{0} for creating a bucket.", projectoption); }
@@ -41,7 +41,7 @@ namespace Duplicati.Library.Backend.Strings
     }
 
     internal static class GoogleDrive {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Google Drive. Supported format is ""googledrive://folder/subfolder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Google Drive. Allowed format is ""googledrive://folder/subfolder""."); } }
         public static string DisplayName { get { return LC.L(@"Google Drive"); } }
         public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}"".", folder, parent); }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }

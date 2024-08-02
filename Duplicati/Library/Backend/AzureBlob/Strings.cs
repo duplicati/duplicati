@@ -22,7 +22,7 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.AzureBlob.Strings {
     internal static class AzureBlobBackend {
-        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to Azure blob storage. Allowed formats are: ""azure://bucketname""."); } }
+        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to Azure blob storage. Allowed format is ""azure://bucketname""."); } }
         public static string DisplayName { get { return LC.L(@"Azure blob"); } }
         public static string ContainerNameDescriptionLong { get { return LC.L(@"All files will be written to the container specified."); } }
         public static string ContainerNameDescriptionShort { get { return LC.L(@"The name of the storage container"); } }
