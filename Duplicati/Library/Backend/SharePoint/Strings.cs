@@ -23,7 +23,7 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class SharePoint
     {
-        public static string Description { get { return LC.L(@"Supports connections to a SharePoint server (including OneDrive for Business). Allowed formats are ""mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"" or ""mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"". Use a double slash '//' in the path to denote the web from the documents library."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to a SharePoint server (including OneDrive for Business). Allowed formats are ""mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"" and ""mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"". Use a double slash '//' in the path to denote the web from the documents library."); } }
         public static string DisplayName { get { return LC.L(@"Microsoft SharePoint"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Backend.Strings
 
     internal static class OneDriveForBusiness
     {
-        public static string Description { get { return LC.L(@"Supports connections to Microsoft OneDrive for Business. Allowed formats are ""od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder"" or ""od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder"". You can use a double slash '//' in the path to denote the base path from the documents folder."); } }
+        public static string Description { get { return LC.L(@"Supports connections to Microsoft OneDrive for Business. Allowed formats are ""od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder"" and ""od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder"". You can use a double slash '//' in the path to denote the base path from the documents folder."); } }
         public static string DisplayName { get { return LC.L(@"Microsoft OneDrive for Business"); } }
     }
 }

@@ -21,7 +21,7 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class Idrivee2Backend {
-        public static string Description { get; set; }
+        public static string Description { get { return LC.L(@"This backend can read and write data to IDrive e2."); } }
         public static string DisplayName { get { return LC.L(@"IDrive e2"); } }
         public static string KeySecretDescriptionLong { get { return LC.L(@"Access Key Secret can be obtained after logging into your IDrive e2 account. This can also be supplied through the ""auth-password"" property."); } }
         public static string KeySecretDescriptionShort { get { return LC.L(@"Access Key Secret"); } }

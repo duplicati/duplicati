@@ -21,7 +21,7 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class CloudFiles {
-        public static string Description_v2 { get { return LC.L(@"Supports connections to the CloudFiles backend. Allowed formats is ""cloudfiles://container/folder""."); } }
+        public static string Description_v2 { get { return LC.L(@"This backend can read and write data to CloudFiles. Allowed format is ""cloudfiles://container/folder""."); } }
         public static string DisplayName { get { return LC.L(@"Rackspace CloudFiles"); } }
         public static string DescriptionAuthenticationURLLong_v2(string optionname) { return LC.L(@"CloudFiles use different servers for authentication based on where the account resides. Use this option to set an alternate authentication URL. This option overrides --{0}.", optionname); }
         public static string DescriptionAuthenticationURLShort { get { return LC.L(@"Provide another authentication URL"); } }

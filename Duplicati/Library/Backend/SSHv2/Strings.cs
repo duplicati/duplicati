@@ -43,7 +43,7 @@ namespace Duplicati.Library.Backend.Strings
     }
     internal static class SSHv2Backend
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are ""ssh://hostname/folder"" or ""ssh://username:password@hostname/folder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to an SSH based backend, using SFTP. Allowed formats are ""ssh://hostname/folder"" and ""ssh://username:password@hostname/folder""."); } }
         public static string DisplayName { get { return LC.L(@"SFTP (SSH)"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
         public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
