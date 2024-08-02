@@ -636,6 +636,13 @@ body {
                 color: darken(@tColor, 25%);
             }
 
+            button {
+                width: 26px;
+                height: 26px;
+                background-size: 26px;
+                cursor: pointer;
+            }
+
             .logo {
                 font-size: 30px;
                 font-weight: 700;
@@ -697,13 +704,8 @@ body {
                     width: 26px;
                     margin: 13px 15px;
 
-                    .stop,
-                    .resume {
+                    button {
                         display: block;
-                        width: 26px;
-                        height: 26px;
-                        background-size: 26px;
-                        cursor: pointer;
                     }
 
                     .stop {
@@ -770,13 +772,8 @@ body {
 
             .action-icons,
             .action-icons-small {
-                > .pause,
-                > .throttle {
+                > button {
                     display: inline-block;
-                    width: 26px;
-                    height: 26px;
-                    background-size: 26px;
-                    cursor: pointer;
                 }
 
                 > .pause {
