@@ -31,6 +31,18 @@
       <Link>licenses\alphavss\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\angular-gettext\Homepage.txt">
+      <Link>licenses\AngularGettext\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\angular-gettext\License.txt">
+      <Link>licenses\AngularGettext\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\angular-gettext\licensedata.json">
+      <Link>licenses\AngularGettext\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
       <Link>licenses\FluentFTP\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -84,9 +96,15 @@
     </Content>
     <Content Include="..\..\thirdparty\uplink.NET\Homepage.txt">
       <Link>licenses\uplink.NET\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\uplink.NET\license.txt">
       <Link>licenses\uplink.NET\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\uplink.NET\licensedata.json">
+      <Link>licenses\uplink.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\LICENSE.txt">
       <Link>licenses\license.txt</Link>
@@ -293,18 +311,6 @@
     </Content>
     <Content Include="..\..\thirdparty\MimeKit\licensedata.json">
       <Link>licenses\MimeKit\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\angular-gettext\Homepage.txt">
-      <Link>licenses\AngularGettext\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\angular-gettext\License.txt">
-      <Link>licenses\AngularGettext\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\angular-gettext\licensedata.json">
-      <Link>licenses\AngularGettext\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
