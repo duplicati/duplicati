@@ -127,6 +127,18 @@
       <Link>licenses\Json.NET\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\MailKit\Homepage.txt">
+      <Link>licenses\MailKit\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MailKit\license.txt">
+      <Link>licenses\MailKit\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MailKit\licensedata.json">
+      <Link>licenses\MailKit\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\Otp.NET\Homepage.txt">
       <Link>licenses\Otp.NET\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -279,18 +291,6 @@
     </Content>
     <Content Include="..\..\thirdparty\MegaApi\license.txt">
       <Link>licenses\MegaApi\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MailKit\Homepage.txt">
-      <Link>licenses\MailKit\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MailKit\license.txt">
-      <Link>licenses\MailKit\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MailKit\licensedata.json">
-      <Link>licenses\MailKit\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\MimeKit\Homepage.txt">
