@@ -4,13 +4,10 @@
 
         <div ng-hide="EditUriState">
 
-            <div class="input mixed">
+            <div class="input select">
                 <label for="command" translate>Command</label>
-                <select name="command" id="command" ng-model="Command" ng-options="item for item in SupportedCommands">
-                </select>
-                <div style="float: left">{{CommandHelp[Command]}}</div>
+                <select name="command" id="command" ng-model="Command" ng-options="item for item in SupportedCommands"></select>
             </div>
-
 
             <div class="input textarea linklabel">
                 <label for="target"><a href class="target" ng-click="EditUriState = true" translate>Target URL &gt;</a></label>
