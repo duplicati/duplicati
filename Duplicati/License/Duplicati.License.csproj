@@ -79,6 +79,18 @@
       <Link>licenses\AWSSDK\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\CoCoL\download.txt">
+      <Link>licenses\CoCoL\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\CoCoL\license.txt">
+      <Link>licenses\CoCoL\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\CoCoL\licensedata.json">
+      <Link>licenses\CoCoL\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
       <Link>licenses\FluentFTP\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -263,18 +275,6 @@
     </Content>
     <Content Include="..\..\thirdparty\jQuery\licensedata.json">
       <Link>licenses\jQuery\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\CoCoL\download.txt">
-      <Link>licenses\CoCoL\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\CoCoL\license.txt">
-      <Link>licenses\CoCoL\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\CoCoL\licensedata.json">
-      <Link>licenses\CoCoL\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
