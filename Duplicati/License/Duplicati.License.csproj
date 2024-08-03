@@ -7,6 +7,18 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\download.txt">
+      <Link>licenses\aliyun-oss-csharp-sdk\README.md</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\LICENSE.txt">
+      <Link>licenses\aliyun-oss-csharp-sdk\LICENSE.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\licensedata.json">
+      <Link>licenses\aliyun-oss-csharp-sdk\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\alphavss\Homepage.txt">
       <Link>licenses\alphavss\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -299,18 +311,7 @@
       <Link>licenses\SharpCompress\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\licensedata.json">
-      <Link>licenses\aliyun-oss-csharp-sdk\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\LICENSE.txt">
-      <Link>licenses\aliyun-oss-csharp-sdk\LICENSE.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\download.txt">
-      <Link>licenses\aliyun-oss-csharp-sdk\README.md</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+
   </ItemGroup>
   
   <ItemGroup>
@@ -321,4 +322,3 @@
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
 </Project>
-
