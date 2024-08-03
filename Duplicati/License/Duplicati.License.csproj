@@ -163,6 +163,18 @@
       <Link>licenses\MegaApi\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\MimeKit\Homepage.txt">
+      <Link>licenses\MimeKit\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MimeKit\license.txt">
+      <Link>licenses\MimeKit\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MimeKit\licensedata.json">
+      <Link>licenses\MimeKit\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\Otp.NET\Homepage.txt">
       <Link>licenses\Otp.NET\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -291,18 +303,6 @@
     </Content>
     <Content Include="..\..\thirdparty\SharpAESCrypt\licensedata.json">
       <Link>licenses\SharpAESCrypt\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MimeKit\Homepage.txt">
-      <Link>licenses\MimeKit\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MimeKit\license.txt">
-      <Link>licenses\MimeKit\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MimeKit\licensedata.json">
-      <Link>licenses\MimeKit\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
