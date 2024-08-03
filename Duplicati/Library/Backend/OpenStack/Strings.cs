@@ -24,7 +24,7 @@ using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings
 {
     internal static class OpenStack {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Swift (OpenStack Object Storage). Supported format is ""openstack://container/folder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Swift (OpenStack Object Storage). Allowed format is ""openstack://container/folder""."); } }
         public static string DisplayName { get { return LC.L(@"OpenStack Simple Storage"); } }
         public static string MissingOptionError(string optionname) { return LC.L(@"Missing required option: {0}", optionname); }
         public static string PasswordOptionLong(string tenantnameoption) { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD"". If the password is supplied, --{0} must also be set.", tenantnameoption); }

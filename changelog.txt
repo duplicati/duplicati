@@ -1,3 +1,41 @@
+2024-08-02 - 2.0.9.102_canary_2024-08-02
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+Please see release notes for `v2.0.9.100` for a summary of changes.
+Please see list of known issues related to .NET8 upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+This build is changes the underlying webserver to Kestrel, which is common for .NET based projects.
+A big thanks to @tsuckow and @npodbielski for their contributions towards this goal.
+
+** This build changes authentication for the WebUI **
+With this build it is no longer possible to use the web-UI without a password. 
+If no password is set, a random password is generated.
+For users activating the UI via the TrayIcon, this will automatically log in, as the TrayIcon hosts the server.
+For users that rely on the WebUI without the TrayIcon, as special link is emitted during startup that allows login.
+For both cases, the password can be (re-)set with `--webservice-password=...` as a startup commandline argument.
+
+## Detailed lits of changes:
+- Updated libraries: Mega, SharpAESCrypt, Storj, FluentFTP
+- Updated Webserver to Kestrel, thanks @tsuckow and @npodbielski
+- Implemented websocket based messages in WebUI, thanks @npodbielski
+- HTTP reports now give a warning if the server rejects the message
+- Extensive changes to strings to improve localization, structure and layout in WebUI, thanks @luixxiul
+- Uplink libraries fixed on all platforms, thanks @TopperDEL
+- Fixed an issue where strings with line-breaks would not show in translated form
+- Removed remnants of Tardigrade backend in favor of Storj API
+- Added Sakura Cloud to list of S3 providers
+- Changed aFTP default SSL to `None`, meaning "System Default"
+- Added check to find Duplicati server database in old location on MacOS
+- Fixed issues with `.deb` packages overwriting options file on update
+- Fixed issue with backups using VSS and a drive letter as the source
+- Fixed issue with Arm 32bit not reading files larger than 4GiB
+
 2024-06-27 - 2.0.9.101_canary_2024-06-27
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.

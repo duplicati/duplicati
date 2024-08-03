@@ -21,7 +21,7 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class FileBackend {
-        public static string Description { get { return LC.L(@"This backend can read and write data to an file based backend. Allowed formats are ""file://hostname/folder"" or ""file://username:password@hostname/folder"". You may supply UNC paths (e.g.: ""file://\\server\folder"") or local paths (e.g.: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")"); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to an file based backend. Allowed formats are ""file://hostname/folder"" and ""file://username:password@hostname/folder"". You may supply UNC paths (e.g.: ""file://\\server\folder"") or local paths (e.g.: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files"")"); } }
         public static string DisplayName { get { return LC.L(@"Local folder or drive"); } }
         public static string AlternateDestinationMarkerLong(string optionname) { return LC.L(@"This option only works when the option --{0} is also specified. If there are alternate paths specified, this option indicates the name of a marker file that must be present in the folder. This can be used to handle situations where an external drive changes drive letter or mount point. By ensuring that a certain file exists, it is possible to prevent writing data to an unwanted external drive. The contents of the file are never examined, only file existence.", optionname); }
         public static string AlternateDestinationMarkerShort { get { return LC.L(@"Look for a file in the destination folder"); } }

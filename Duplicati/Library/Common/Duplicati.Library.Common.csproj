@@ -11,7 +11,7 @@
     <PackageReference Include="AlphaVSS" Version="2.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
-    <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />    
+    <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
   </ItemGroup>
 
   <ItemGroup>

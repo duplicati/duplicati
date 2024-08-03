@@ -22,7 +22,7 @@ using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class Jottacloud
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Jottacloud using it's REST protocol. Allowed format is ""jottacloud://folder/subfolder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Jottacloud using its REST protocol. Allowed format is ""jottacloud://folder/subfolder""."); } }
         public static string DisplayName { get { return LC.L(@"Jottacloud"); } }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
