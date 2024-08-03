@@ -115,6 +115,18 @@
       <Link>licenses\jQuery\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\Json.NET\Homepage.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\Json.NET\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\Json.NET\License.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\licensedata.json">
+      <Link>licenses\Json.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\Otp.NET\Homepage.txt">
       <Link>licenses\Otp.NET\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -188,18 +200,6 @@
     </Content>
     <Content Include="..\..\thirdparty\SSH.NET\licensedata.json">
       <Link>licenses\SSH.NET\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Json.NET\Homepage.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\Json.NET\Homepage.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\Json.NET\License.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\Json.NET\License.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\Json.NET\licensedata.json">
-      <Link>licenses\Json.NET\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\ManagedLZMA\licensedata.json">
