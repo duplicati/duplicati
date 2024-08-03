@@ -199,6 +199,18 @@
       <Link>licenses\SharePointPnP-Sites-Core\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
+      <Link>licenses\SharpAESCrypt\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\License.txt">
+      <Link>licenses\SharpAESCrypt\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\licensedata.json">
+      <Link>licenses\SharpAESCrypt\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\SharpCompress\download.txt">
       <Link>licenses\SharpCompress\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -291,18 +303,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="acknowledgements.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
-      <Link>licenses\SharpAESCrypt\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpAESCrypt\License.txt">
-      <Link>licenses\SharpAESCrypt\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpAESCrypt\licensedata.json">
-      <Link>licenses\SharpAESCrypt\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
