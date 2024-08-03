@@ -276,9 +276,11 @@
     </Content>
     <Content Include="..\..\thirdparty\Tencentyun\download.txt">
       <Link>licenses\Tencentyun\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\Tencentyun\LICENSE.txt">
       <Link>licenses\Tencentyun\LICENSE.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\Tencentyun\licensedata.json">
       <Link>licenses\Tencentyun\licensedata.json</Link>
