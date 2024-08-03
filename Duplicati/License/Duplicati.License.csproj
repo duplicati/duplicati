@@ -265,6 +265,10 @@
     <Content Include="..\..\thirdparty\Tencentyun\LICENSE.txt">
       <Link>licenses\Tencentyun\LICENSE.txt</Link>
     </Content>
+    <Content Include="..\..\thirdparty\Tencentyun\licensedata.json">
+      <Link>licenses\Tencentyun\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\TLSharp\Homepage.txt">
       <Link>licenses\TLSharp\Homepage.txt</Link>
     </Content>
