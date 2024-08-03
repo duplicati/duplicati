@@ -187,6 +187,18 @@
       <Link>licenses\Otp.NET\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\download.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\license.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\licensedata.json">
+      <Link>licenses\SharePointPnP-Sites-Core\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\SharpCompress\download.txt">
       <Link>licenses\SharpCompress\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -276,18 +288,6 @@
     </Content>
     <Content Include="..\..\thirdparty\WindowsAzureStorage\licensedata.json">
       <Link>licenses\WindowsAzure\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\download.txt">
-      <Link>licenses\SharePointPnP-Sites-Core\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\license.txt">
-      <Link>licenses\SharePointPnP-Sites-Core\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\licensedata.json">
-      <Link>licenses\SharePointPnP-Sites-Core\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="acknowledgements.txt">
