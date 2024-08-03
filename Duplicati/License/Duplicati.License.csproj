@@ -27,6 +27,10 @@
       <Link>licenses\alphavss\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\alphavss\licensedata.json">
+      <Link>licenses\alphavss\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
       <Link>licenses\FluentFTP\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -111,10 +115,6 @@
     <Content Include="..\..\thirdparty\Json.NET\License.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>licenses\Json.NET\License.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\alphavss\licensedata.json">
-      <Link>licenses\alphavss\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\AWS SDK\licensedata.json">
       <Link>licenses\AWSSDK\licensedata.json</Link>
