@@ -45,7 +45,11 @@ public static class WebServerLoader
     /// <summary>
     /// Option for setting the webservice allowed hostnames
     /// </summary>
-    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowedhostnames";
+    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowed-hostnames";
+    /// <summary>
+    /// Option for setting the webservice allowed hostnames, alternative name
+    /// </summary>
+    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT = "webservice-allowedhostnames";
 
     /// <summary>
     /// The default path to the web root
