@@ -36,7 +36,7 @@ Duplicati 2.0のベータ版がDuplicatiの最新バージョンとなります�
 ベータ版では、アップデートがある場合に自動的に通知を行い、1クリック（またはターミナルでのコマンド入力）でアップグレードを行えます。
 より新しい[テスト版に関しては、最新のリリースを確認](https://github.com/duplicati/duplicati/releases)するか、ソフトウェア上の画面またはコマンドラインで、別のアップデートチャンネルを選択してください。
 
-全てのリリースは、GPGで署名されます。署名に使われる公開鍵は[3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D)となります。最新の署名ファイル（バイナリー版とASCII版）については、[Duplicatiのダウンロード用ページ](https://github.com/duplicati/duplicati/releases)から入手できます。
+全てのリリースは、GPGで署名されます。署名に使われる公開鍵は[3DAC703D](https://keys.openpgp.org/search?q=0xC20E90473DAC703D)となります。最新の署名ファイル（バイナリー版とASCII版）については、[Duplicatiのダウンロード用ページ](https://github.com/duplicati/duplicati/releases)から入手できます。
 
 サポート
 =======
