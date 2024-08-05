@@ -1,14 +1,16 @@
 // form.css for duplicati 2.0 | Alex Franzelin 2015
 
 form.styled {
-    div.leftflush input {
-        width: auto;
-        margin-top: 10px;
-    }
+    div.leftflush {
+        & input {
+            width: auto;
+            margin-top: 10px;
+        }
 
-    div.leftflush label {
-        width: auto;
-        min-width: 190px;
+        & label {
+            width: auto;
+            min-width: 190px;
+        }
     }
 
     label {
@@ -29,14 +31,11 @@ form.styled {
         border: 1px @border solid;
         border-radius: 2px;
         width: 420px;
-    }
 
-    input:focus,
-    textarea:focus,
-    select:focus {
-        border: 1px darken(@border, 20%) solid;
+        &:focus {
+            border: 1px darken(@border, 20%) solid;
+        }
     }
-
 
     .input {
         padding-bottom: 18px;
@@ -70,10 +69,10 @@ form.styled {
             color: white;
             background: @lColor;
             line-height: 37px;
-        }
 
-        a.browse:hover {
-            background: darken(@lColor, 20%);
+            &:hover {
+                background: darken(@lColor, 20%);
+            }
         }
     }
 
