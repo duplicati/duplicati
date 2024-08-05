@@ -1716,16 +1716,16 @@ body {
                 div.add,
                 div.restore,
                 div.restore.restore-direct {
-                    @legends-width: 700px;
-                    @legends-padding-left: calc(calc(700px - @legends-width) / 2);
-                    @circle-width: 43px;
-                    @step-width: calc(@legends-width / @legends-steps);
+                    --legends-width: 700px;
+                    --legends-padding-left: calc(calc(700px - var(--legends-width)) / 2);
+                    --circle-width: 43px;
+                    --step-width: calc(var(--legends-width) / var(--legends-steps));
 
                     .steps {
-                        margin-left: calc(calc(calc(@step-width - @circle-width) / 2) + @legends-padding-left);
+                        margin-left: calc(calc(calc(var(--step-width) - var(--circle-width)) / 2) + var(--legends-padding-left));
 
                         .step {
-                            padding-left: calc(@step-width - @circle-width);
+                            padding-left: calc(var(--step-width) - var(--circle-width));
                             padding-right: 0;
 
                             &:first-child {
@@ -1735,24 +1735,24 @@ body {
                     }
 
                     .steps-legend {
-                        padding-left: @legends-padding-left;
+                        padding-left: var(--legends-padding-left);
 
                         li {
-                            width: @step-width;
+                            width: var(--step-width);
                         }
                     }
                 }
 
                 div.add {
-                    @legends-steps: 5;
+                    --legends-steps: 5;
                 }
 
                 div.restore {
-                    @legends-steps: 2;
+                    --legends-steps: 2;
                 }
 
                 div.restore.restore-direct {
-                    @legends-steps: 4;
+                    --legends-steps: 4;
 
                     .step:first-child {
                         padding-left: 0;
