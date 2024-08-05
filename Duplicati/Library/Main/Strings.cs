@@ -214,7 +214,7 @@ namespace Duplicati.Library.Main.Strings
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }
         public static string VerboseShort { get { return LC.L(@"Output more progress information"); } }
-        public static string VerboseDeprecated { get { return LC.L(@"Set a log-level for the desired output method instead."); } }
+        public static string VerboseDeprecated { get { return LC.L("Use the options --{0} and --{1} instead.", "log-file-log-level", "console-log-level"); } }
         public static string FullresultLong { get { return LC.L(@"Use this option to increase the amount of output generated as the result of the operation, including all filenames."); } }
         public static string FullresultShort { get { return LC.L(@"Output full results"); } }
         public static string UploadverificationfileLong { get { return LC.L(@"Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files."); } }
