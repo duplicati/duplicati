@@ -7,6 +7,33 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <Content Include="acknowledgements.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="duplicati-url.txt">
+      <Link>licenses\duplicati-url.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\changelog.txt">
+      <Link>changelog.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\LICENSE.txt">
+      <Link>licenses\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\download.txt">
+      <Link>licenses\aliyun-oss-csharp-sdk\README.md</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\LICENSE.txt">
+      <Link>licenses\aliyun-oss-csharp-sdk\LICENSE.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\licensedata.json">
+      <Link>licenses\aliyun-oss-csharp-sdk\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\alphavss\Homepage.txt">
       <Link>licenses\alphavss\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -15,200 +42,20 @@
       <Link>licenses\alphavss\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\FluentFTP\Homepage.txt">
-      <Link>licenses\FluentFTP\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\FluentFTP\License.txt">
-      <Link>licenses\FluentFTP\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Otp.NET\Homepage.txt">
-      <Link>licenses\Otp.NET\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Otp.NET\license.txt">
-      <Link>licenses\Otp.NET\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Otp.NET\licensedata.json">
-      <Link>licenses\Otp.NET\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpCompress\download.txt">
-      <Link>licenses\SharpCompress\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpCompress\License.txt">
-      <Link>licenses\SharpCompress\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SQLite\Homepage.txt">
-      <Link>licenses\SQLite\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SQLite\License.txt">
-      <Link>licenses\SQLite\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Tencentyun\download.txt">
-      <Link>licenses\Tencentyun\download.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\Tencentyun\LICENSE.txt">
-      <Link>licenses\Tencentyun\LICENSE.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\TLSharp\Homepage.txt">
-      <Link>licenses\TLSharp\Homepage.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\TLSharp\License.txt">
-      <Link>licenses\TLSharp\License.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\TLSharp\licensedata.json">
-      <Link>licenses\TLSharp\licensedata.json</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\uplink.NET\Homepage.txt">
-      <Link>licenses\uplink.NET\Homepage.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\uplink.NET\license.txt">
-      <Link>licenses\uplink.NET\license.txt</Link>
-    </Content>
-    <Content Include="..\..\LICENSE.txt">
-      <Link>licenses\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="duplicati-url.txt">
-      <Link>licenses\duplicati-url.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SSH.NET\Homepage.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\SSH.NET\Homepage.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\SSH.NET\License.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\SSH.NET\License.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\SSH.NET\licensedata.json">
-      <Link>licenses\SSH.NET\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Json.NET\Homepage.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\Json.NET\Homepage.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\Json.NET\License.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\Json.NET\License.txt</Link>
-    </Content>
     <Content Include="..\..\thirdparty\alphavss\licensedata.json">
       <Link>licenses\alphavss\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\AWS SDK\licensedata.json">
-      <Link>licenses\AWSSDK\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\angular-gettext\Homepage.txt">
+      <Link>licenses\AngularGettext\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\AWS SDK\download.txt">
-      <Link>licenses\AWSSDK\download.txt</Link>
+    <Content Include="..\..\thirdparty\angular-gettext\License.txt">
+      <Link>licenses\AngularGettext\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\AWS SDK\license.txt">
-      <Link>licenses\AWSSDK\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Json.NET\licensedata.json">
-      <Link>licenses\Json.NET\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ManagedLZMA\licensedata.json">
-      <Link>licenses\ManagedLZMA\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ManagedLZMA\download.txt">
-      <Link>licenses\ManagedLZMA\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ManagedLZMA\license.txt">
-      <Link>licenses\ManagedLZMA\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SQLite\licensedata.json">
-      <Link>licenses\SQLite\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\Homepage.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\SshNet.Security.Cryptography\Homepage.txt</Link>
-    </Content>
-    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\License.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>licenses\SshNet.Security.Cryptography\License.txt</Link>
-    </Content>
-    <Content Include="..\..\changelog.txt">
-      <Link>changelog.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\WindowsAzureStorage\download.txt">
-      <Link>licenses\WindowsAzure\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\WindowsAzureStorage\license.txt">
-      <Link>licenses\WindowsAzure\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\WindowsAzureStorage\licensedata.json">
-      <Link>licenses\WindowsAzure\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\download.txt">
-      <Link>licenses\SharePointPnP-Sites-Core\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\license.txt">
-      <Link>licenses\SharePointPnP-Sites-Core\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\licensedata.json">
-      <Link>licenses\SharePointPnP-Sites-Core\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="acknowledgements.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Artalk.Xmpp\download.txt">
-      <Link>licenses\Artalk.Xmpp\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Artalk.Xmpp\license.txt">
-      <Link>licenses\Artalk.Xmpp\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\Artalk.Xmpp\licensedata.json">
-      <Link>licenses\Artalk.Xmpp\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
-      <Link>licenses\SharpAESCrypt\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpAESCrypt\License.txt">
-      <Link>licenses\SharpAESCrypt\License.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\SharpAESCrypt\licensedata.json">
-      <Link>licenses\SharpAESCrypt\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MegaApi\Homepage.txt">
-      <Link>licenses\MegaApi\Homepage.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MegaApi\licensedata.json">
-      <Link>licenses\MegaApi\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\MegaApi\license.txt">
-      <Link>licenses\MegaApi\license.txt</Link>
+    <Content Include="..\..\thirdparty\angular-gettext\licensedata.json">
+      <Link>licenses\AngularGettext\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\AngularJS\Homepage.txt">
@@ -223,16 +70,28 @@
       <Link>licenses\AngularJS\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\jQuery\Homepage.txt">
-      <Link>licenses\jQuery\Homepage.txt</Link>
+    <Content Include="..\..\thirdparty\Artalk.Xmpp\download.txt">
+      <Link>licenses\Artalk.Xmpp\download.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\jQuery\License.txt">
-      <Link>licenses\jQuery\License.txt</Link>
+    <Content Include="..\..\thirdparty\Artalk.Xmpp\license.txt">
+      <Link>licenses\Artalk.Xmpp\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\jQuery\licensedata.json">
-      <Link>licenses\jQuery\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\Artalk.Xmpp\licensedata.json">
+      <Link>licenses\Artalk.Xmpp\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\download.txt">
+      <Link>licenses\AWSSDK\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\license.txt">
+      <Link>licenses\AWSSDK\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\AWS SDK\licensedata.json">
+      <Link>licenses\AWSSDK\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\CoCoL\download.txt">
@@ -259,6 +118,30 @@
       <Link>licenses\FluentFTP\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\thirdparty\jQuery\Homepage.txt">
+      <Link>licenses\jQuery\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\jQuery\License.txt">
+      <Link>licenses\jQuery\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\jQuery\licensedata.json">
+      <Link>licenses\jQuery\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\Homepage.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\Json.NET\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\Json.NET\License.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\Json.NET\licensedata.json">
+      <Link>licenses\Json.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\thirdparty\MailKit\Homepage.txt">
       <Link>licenses\MailKit\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -269,6 +152,30 @@
     </Content>
     <Content Include="..\..\thirdparty\MailKit\licensedata.json">
       <Link>licenses\MailKit\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ManagedLZMA\download.txt">
+      <Link>licenses\ManagedLZMA\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ManagedLZMA\license.txt">
+      <Link>licenses\ManagedLZMA\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\ManagedLZMA\licensedata.json">
+      <Link>licenses\ManagedLZMA\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MegaApi\Homepage.txt">
+      <Link>licenses\MegaApi\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MegaApi\license.txt">
+      <Link>licenses\MegaApi\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\MegaApi\licensedata.json">
+      <Link>licenses\MegaApi\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\MimeKit\Homepage.txt">
@@ -283,32 +190,124 @@
       <Link>licenses\MimeKit\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\angular-gettext\Homepage.txt">
-      <Link>licenses\AngularGettext\Homepage.txt</Link>
+    <Content Include="..\..\thirdparty\Otp.NET\Homepage.txt">
+      <Link>licenses\Otp.NET\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\angular-gettext\License.txt">
-      <Link>licenses\AngularGettext\License.txt</Link>
+    <Content Include="..\..\thirdparty\Otp.NET\license.txt">
+      <Link>licenses\Otp.NET\license.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\angular-gettext\licensedata.json">
-      <Link>licenses\AngularGettext\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\Otp.NET\licensedata.json">
+      <Link>licenses\Otp.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\download.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\license.txt">
+      <Link>licenses\SharePointPnP-Sites-Core\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharePointPnP-Sites-Core\licensedata.json">
+      <Link>licenses\SharePointPnP-Sites-Core\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\download.txt">
+      <Link>licenses\SharpAESCrypt\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\License.txt">
+      <Link>licenses\SharpAESCrypt\License.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpAESCrypt\licensedata.json">
+      <Link>licenses\SharpAESCrypt\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpCompress\download.txt">
+      <Link>licenses\SharpCompress\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SharpCompress\License.txt">
+      <Link>licenses\SharpCompress\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\SharpCompress\licensedata.json">
       <Link>licenses\SharpCompress\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\licensedata.json">
-      <Link>licenses\aliyun-oss-csharp-sdk\licensedata.json</Link>
+    <Content Include="..\..\thirdparty\SQLite\Homepage.txt">
+      <Link>licenses\SQLite\Homepage.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\LICENSE.txt">
-      <Link>licenses\aliyun-oss-csharp-sdk\LICENSE.txt</Link>
+    <Content Include="..\..\thirdparty\SQLite\License.txt">
+      <Link>licenses\SQLite\License.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\thirdparty\aliyun-oss-csharp-sdk\download.txt">
-      <Link>licenses\aliyun-oss-csharp-sdk\README.md</Link>
+    <Content Include="..\..\thirdparty\SQLite\licensedata.json">
+      <Link>licenses\SQLite\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SSH.NET\Homepage.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SSH.NET\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\SSH.NET\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SSH.NET\License.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\SSH.NET\licensedata.json">
+      <Link>licenses\SSH.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\Homepage.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SshNet.Security.Cryptography\Homepage.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>licenses\SshNet.Security.Cryptography\License.txt</Link>
+    </Content>
+    <Content Include="..\..\thirdparty\SshNet.Security.Cryptography\licensedata.json">
+      <Link>licenses\SshNet.Security.Cryptography\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\Tencentyun\download.txt">
+      <Link>licenses\Tencentyun\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\Tencentyun\LICENSE.txt">
+      <Link>licenses\Tencentyun\LICENSE.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\Tencentyun\licensedata.json">
+      <Link>licenses\Tencentyun\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\uplink.NET\Homepage.txt">
+      <Link>licenses\uplink.NET\Homepage.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\uplink.NET\license.txt">
+      <Link>licenses\uplink.NET\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\uplink.NET\licensedata.json">
+      <Link>licenses\uplink.NET\licensedata.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\WindowsAzureStorage\download.txt">
+      <Link>licenses\WindowsAzure\download.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\WindowsAzureStorage\license.txt">
+      <Link>licenses\WindowsAzure\license.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\thirdparty\WindowsAzureStorage\licensedata.json">
+      <Link>licenses\WindowsAzure\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -321,4 +320,3 @@
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
 </Project>
-
