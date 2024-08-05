@@ -206,7 +206,7 @@ namespace Duplicati.Library.Main.Strings
         public static string KeepversionsShort { get { return LC.L(@"Keep a number of versions"); } }
         public static string KeeptimeLong { get { return LC.L(@"Use this option to set the timespan in which backups are kept."); } }
         public static string KeeptimeShort { get { return LC.L(@"Keep all versions within a timespan"); } }
-        public static string RetentionPolicyLong { get { return LC.L(@"Use this option to set a retention strategy manually. Placeholders are D/W/Y for days/weeks/years and U for an unlimited time interval. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, and one for each of the next 36 months. This can also be written as 1W:1D,1M:1W,3Y:1M."); } }
+        public static string RetentionPolicyLong { get { return LC.L(@"Use this option to set a retention strategy manually. Placeholders are D/W/Y for days/weeks/years and U for an unlimited time interval. The syntax is: 7D:1D,4W:1W,36M:1M. This example keeps one backup for each of the next 7 days, one for each of the next 4 weeks, one for each of the next 36 months, and deletes every backup older than this. This can also be written as 1W:1D,1M:1W,3Y:1M."); } }
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
