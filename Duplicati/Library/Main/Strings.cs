@@ -27,7 +27,7 @@ namespace Duplicati.Library.Main.Strings
     {
         public static string HashMismatchError(string filename, string recordedhash, string actualhash) { return LC.L(@"Hash mismatch on file ""{0}"", recorded hash: {1}, actual hash {2}", filename, recordedhash, actualhash); }
         public static string DownloadedFileSizeError(string filename, long actualsize, long expectedsize) { return LC.L(@"The file {0} was downloaded and had size {1} but the size was expected to be {2}", filename, actualsize, expectedsize); }
-        public static string DeprecatedOptionUsedWarning(string optionname, string message) { return LC.L(@"The option {0} is deprecated: {1}", optionname, message); }
+        public static string DeprecatedOptionUsedWarning(string optionname, string message) { return LC.L(@"The option --{0} has been deprecated: {1}", optionname, message); }
         public static string DuplicateOptionNameWarning(string optionname) { return LC.L(@"The option --{0} exists more than once. Please report this to the developers", optionname); }
         public static string NoSourceFoldersError { get { return LC.L(@"No source folders specified for backup"); } }
         public static string SourceIsMissingError(string foldername) { return LC.L(@"Backup aborted since the source path {0} does not exist. Please verify that the source path exists, or remove the source path from the backup configuration, or set the allow-missing-source option.", foldername); }
@@ -214,7 +214,7 @@ namespace Duplicati.Library.Main.Strings
         public static string OverwriteShort { get { return LC.L(@"Overwrite files when restoring"); } }
         public static string VerboseLong { get { return LC.L(@"Use this option to increase the amount of output generated when running an option. Generally this option will produce a line for each file processed."); } }
         public static string VerboseShort { get { return LC.L(@"Output more progress information"); } }
-        public static string VerboseDeprecated { get { return LC.L(@"Set a log-level for the desired output method instead."); } }
+        public static string VerboseDeprecated { get { return LC.L("Use the options --{0} and --{1} instead.", "log-file-log-level", "console-log-level"); } }
         public static string FullresultLong { get { return LC.L(@"Use this option to increase the amount of output generated as the result of the operation, including all filenames."); } }
         public static string FullresultShort { get { return LC.L(@"Output full results"); } }
         public static string UploadverificationfileLong { get { return LC.L(@"Use this option to upload a verification file after changing the remote storage. The file is not encrypted and contains the size and SHA256 hashes of all the remote files and can be used to verify the integrity of the files."); } }
