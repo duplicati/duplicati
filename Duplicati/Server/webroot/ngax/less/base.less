@@ -1720,11 +1720,6 @@ body {
                     @legends-padding-left: (700px - @legends-width) / 2;
                     @circle-width: 43px;
                     @step-width: @legends-width / @legends-steps;
-                }
-
-
-                div.add {
-                    @legends-steps: 5;
 
                     .steps {
                         margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
@@ -1748,44 +1743,16 @@ body {
                     }
                 }
 
+                div.add {
+                    @legends-steps: 5;
+                }
+
                 div.restore {
                     @legends-steps: 2;
-
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
-
-                        .step {
-                            padding-left: @step-width - @circle-width;
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
-
-                        li {
-                            width: @step-width;
-                        }
-                    }
                 }
 
                 div.restore.restore-direct {
                     @legends-steps: 4;
-
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
-
-                        .step {
-                            padding-left: @step-width - @circle-width;
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
-
-                        li {
-                            width: @step-width;
-                        }
-                    }
 
                     .step:first-child {
                         padding-left: 0;
