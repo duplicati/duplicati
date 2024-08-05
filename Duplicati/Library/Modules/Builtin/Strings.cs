@@ -78,7 +78,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string ExitCodeError(string script, int exitcode, string message) { return LC.L(@"The script ""{0}"" returned with exit code {1}{2}", script, exitcode, string.IsNullOrWhiteSpace(message) ? string.Empty : string.Format(": {0}", message)); }
         public static string RequiredoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted."); } }
         public static string RequiredoptionShort { get { return LC.L(@"Run a required script on startup"); } }
-        public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Selects the output format for results. Available formats: {0}", string.Join(", ", options)); }
+        public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ResultFormatShort { get { return LC.L(@"Selects the output format for results"); } }
         public static string ScriptExecuteError(string script, string message) { return LC.L(@"Error while executing script ""{0}"": {1}", script, message); }
         public static string ScriptTimeoutError(string script) { return LC.L(@"Execution of the script ""{0}"" timed out", script); }
@@ -105,14 +105,14 @@ In the message body, certain tokens are replaced:
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string OptionBodyShort { get { return LC.L(@"The message body"); } }
-        public static string OptionPasswordLong { get { return LC.L(@"The password used to authenticate with the SMTP server if required."); } }
+        public static string OptionPasswordLong { get { return LC.L(@"Use this option to set the password used to authenticate with the SMTP server if required."); } }
         public static string OptionPasswordShort { get { return LC.L(@"SMTP Password"); } }
         public static string OptionRecipientLong { get { return LC.L(@"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.
 Example with 3 recipients: 
 
 Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"); } }
         public static string OptionRecipientShort { get { return LC.L(@"Email recipient(s)"); } }
-        public static string OptionSenderLong { get { return LC.L(@"Address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:
+        public static string OptionSenderLong { get { return LC.L(@"Use this option to set an address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:
 
 sender
 sender@example.com
@@ -122,14 +122,14 @@ Mail Sender <sender@example.com>"); } }
         public static string OptionSendlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send an email.", success, warning, error, fatal, all); }
         public static string OptionSendlevelShort { get { return LC.L(@"The messages to send"); } }
-        public static string OptionServerLong { get { return LC.L(@"A URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
+        public static string OptionServerLong { get { return LC.L(@"Use this option to set a URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
 If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.
 
 To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."); } }
         public static string OptionServerShort { get { return LC.L(@"SMTP Url"); } }
         public static string OptionSubjectLong(string optionname) { return LC.L(@"This setting supplies the email subject. Values are replaced as described in the description for --{0}.", optionname); }
         public static string OptionSubjectShort { get { return LC.L(@"The email subject"); } }
-        public static string OptionUsernameLong { get { return LC.L(@"The username used to authenticate with the SMTP server if required."); } }
+        public static string OptionUsernameLong { get { return LC.L(@"Use this option to set the username used to authenticate with the SMTP server if required."); } }
         public static string OptionUsernameShort { get { return LC.L(@"SMTP Username"); } }
         public static string SendMailLog(string message) { return LC.L(@"Whole SMTP communication: {0}", message); }
         public static string SendMailFailedRetryError(string failedserver, string message, string retryserver) { return LC.L(@"Failed to send email with server: {0}, message: {1}, retrying with {2}", failedserver, message, retryserver); }
@@ -139,7 +139,7 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
     {
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via XMPP messages"); } }
         public static string DisplayName { get { return LC.L(@"XMPP report module"); } }
-        public static string SendxmpptoLong { get { return LC.L(@"The users who should have the messages sent. You can specify multiple users separated with commas."); } }
+        public static string SendxmpptoLong { get { return LC.L(@"Use this option to set the users who should have the messages sent. You can specify multiple users separated with commas."); } }
         public static string SendxmpptoShort { get { return LC.L(@"XMPP recipient email"); } }
         public static string SendxmppmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
 
@@ -151,9 +151,9 @@ In the message, certain tokens are replaced:
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendxmppmessageShort { get { return LC.L(@"The message template"); } }
-        public static string SendxmppusernameLong { get { return LC.L(@"The username for the account that will send the message, including the hostname, e.g. ""account@jabber.org/Home"""); } }
+        public static string SendxmppusernameLong { get { return LC.L(@"Use this option to set a username for the account that will send the message, including the hostname, e.g. ""account@jabber.org/Home"""); } }
         public static string SendxmppusernameShort { get { return LC.L(@"The XMPP username"); } }
-        public static string SendxmpppasswordLong { get { return LC.L(@"The password for the account that will send the message."); } }
+        public static string SendxmpppasswordLong { get { return LC.L(@"Use this option to set a password for the account that will send the message."); } }
         public static string SendxmpppasswordShort { get { return LC.L(@"The XMPP password"); } }
         public static string SendxmpplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
@@ -167,7 +167,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
     {
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via HTTP messages"); } }
         public static string DisplayName { get { return LC.L(@"HTTP report module"); } }
-        public static string SendhttpurlLong { get { return LC.L(@"HTTP report URL."); } }
+        public static string SendhttpurlLong { get { return LC.L(@"Use this option to set a HTTP report URL."); } }
         public static string SendhttpurlShort { get { return LC.L(@"HTTP report URL"); } }
         public static string SendhttpmessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
 
@@ -179,9 +179,9 @@ In the message, certain tokens are replaced:
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendhttpmessageShort { get { return LC.L(@"The message template"); } }
-        public static string SendhttpmessageparameternameLong { get { return LC.L(@"The name of the parameter to send the message as."); } }
+        public static string SendhttpmessageparameternameLong { get { return LC.L(@"Use this option to set a name of the parameter to send the message as."); } }
         public static string SendhttpmessageparameternameShort { get { return LC.L(@"The name of the parameter to send the message as"); } }
-        public static string SendhttpextraparametersLong { get { return LC.L(@"Extra parameters to add to the http message, e.g. ""parameter1=value1&parameter2=value2"""); } }
+        public static string SendhttpextraparametersLong { get { return LC.L(@"Use this option to set extra parameters to add to the http message, e.g. ""parameter1=value1&parameter2=value2"""); } }
         public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters to add to the http message"); } }
         public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
@@ -192,7 +192,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }
         public static string SendhttpurlsformLong { get { return LC.L(@"HTTP report URLs for sending form-encoded data. This property accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
         public static string SendhttpurlsformShort { get { return LC.L(@"HTTP report URLs for sending form data"); } }
-        public static string SendhttpurlsjsonLong { get { return LC.L(@"HTTP report URLs for sending JSON data. This property accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
+        public static string SendhttpurlsjsonLong { get { return LC.L(@"Use this option to set HTTP report URLs for sending JSON data. This property accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
         public static string SendhttpurlsjsonShort { get { return LC.L(@"HTTP report URLs for sending JSON data"); } }
     }
 
@@ -205,7 +205,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string OptionLogfilterShort { get { return LC.L("Log message filter"); } }
         public static string OptionmaxloglinesLong { get { return LC.L("Use this option to set the maximum number of log lines to include in the report. Zero or negative values means unlimited."); } }
         public static string OptionmaxloglinesShort { get { return LC.L("Limits log lines"); } }
-        public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Selects the output format for results. Available formats: {0}", string.Join(", ", options)); }
+        public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ResultFormatShort { get { return LC.L(@"Selects the output format for results"); } }
     }
 }
