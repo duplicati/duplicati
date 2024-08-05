@@ -1,6 +1,6 @@
 # Duplicati
 
-[English](./README.md) | **中文**
+[English](./README.md) | **中文** | [日本語](./README.ja-JP.md)
 
 [中文官网](https://duplicati.cn)
 
@@ -116,4 +116,3 @@ https://www.transifex.com/duplicati/duplicati/dashboard/
 <a href="https://opencollective.com/duplicati/sponsor/7/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/7/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/8/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/8/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/9/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/9/avatar.svg"></a>
-
