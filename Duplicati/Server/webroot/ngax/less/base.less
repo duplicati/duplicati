@@ -1342,11 +1342,6 @@ body {
                                 color: @lColor;
                             }
                         }
-
-                        .step:first-child {
-                            padding-left: 0;
-                            background: transparent;
-                        }
                     }
 
                     .steps-legend {
@@ -1727,6 +1722,16 @@ body {
 
                         .step {
                             padding-left: @step-width - @circle-width;
+                            padding-right: 0;
+
+                            &:first-child {
+                                padding-inline: 0;
+                                background: transparent;
+                            }
+
+                            &:last-child {
+                                padding-right: 0;
+                            }
                         }
                     }
 
