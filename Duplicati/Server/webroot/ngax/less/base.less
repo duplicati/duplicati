@@ -1717,15 +1717,15 @@ body {
                 div.restore,
                 div.restore.restore-direct {
                     @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
+                    @legends-padding-left: calc(calc(700px - @legends-width) / 2);
                     @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
+                    @step-width: calc(@legends-width / @legends-steps);
 
                     .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+                        margin-left: calc(calc(calc(@step-width - @circle-width) / 2) + @legends-padding-left);
 
                         .step {
-                            padding-left: @step-width - @circle-width;
+                            padding-left: calc(@step-width - @circle-width);
                             padding-right: 0;
 
                             &:first-child {
