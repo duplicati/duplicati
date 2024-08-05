@@ -735,7 +735,7 @@ body {
                     .resume {
                         background: url('../img/progress-resume.png');
                         background-size: 100%;
-                        
+
                         @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                             background-image: url('../img/progress-resume_2x.png');
                         }
@@ -816,7 +816,7 @@ body {
                 > .throttle {
                     background: url('../img/throttle.png');
                     background-size: 100%;
-                    
+
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/throttle_2x.png');
                     }
@@ -1713,12 +1713,18 @@ body {
                     }
                 }
 
-                div.add {
-                    @legends-steps: 5;
+                div.add,
+                div.restore,
+                div.restore.restore-direct {
                     @legends-width: 700px;
                     @legends-padding-left: (700px - @legends-width) / 2;
                     @circle-width: 43px;
                     @step-width: @legends-width / @legends-steps;
+                }
+
+
+                div.add {
+                    @legends-steps: 5;
 
                     .steps {
                         margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
@@ -1744,10 +1750,6 @@ body {
 
                 div.restore {
                     @legends-steps: 2;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
 
                     .steps {
                         margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
@@ -1768,10 +1770,6 @@ body {
 
                 div.restore.restore-direct {
                     @legends-steps: 4;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
 
                     .steps {
                         margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
