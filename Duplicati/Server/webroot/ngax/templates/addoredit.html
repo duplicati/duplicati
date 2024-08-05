@@ -2,30 +2,30 @@
 
 <div class="add" ng-controller="EditBackupController">
     <div class="steps">
-        <button class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0">
+        <button class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0" aria-labelledby="steps-legend__1">
             <span>1</span>
         </button>
-        <button class="step step2" ng-class="{active: CurrentStep == 1}"  ng-click="CurrentStep = 1">
+        <button class="step step2" ng-class="{active: CurrentStep == 1}" ng-click="CurrentStep = 1" aria-labelledby="steps-legend__2">
             <span>2</span>
         </button>
-        <button class="step step3" ng-class="{active: CurrentStep == 2}"  ng-click="CurrentStep = 2">
+        <button class="step step3" ng-class="{active: CurrentStep == 2}" ng-click="CurrentStep = 2" aria-labelledby="steps-legend__3">
             <span>3</span>
         </button>
-        <button class="step step4" ng-class="{active: CurrentStep == 3}" ng-click="CurrentStep = 3">
+        <button class="step step4" ng-class="{active: CurrentStep == 3}" ng-click="CurrentStep = 3" aria-labelledby="steps-legend__4">
             <span>4</span>
         </button>
-        <button class="step step5" ng-class="{active: CurrentStep == 4}" ng-click="CurrentStep = 4">
+        <button class="step step5" ng-class="{active: CurrentStep == 4}" ng-click="CurrentStep = 4" aria-labelledby="steps-legend__5">
             <span>5</span>
         </button>
     </div>
     <!-- .steps -->
 
     <ol class="steps-legend">
-        <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
-        <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
-        <li ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2" translate>Source Data</li>
-        <li ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3" translate>Schedule</li>
-        <li ng-class="{active: CurrentStep == 4}" class="step5" ng-click="CurrentStep = 4" translate>Options</li>
+        <li id="steps-legend__1" ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
+        <li id="steps-legend__2" ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
+        <li id="steps-legend__3" ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2" translate>Source Data</li>
+        <li id="steps-legend__4" ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3" translate>Schedule</li>
+        <li id="steps-legend__5" ng-class="{active: CurrentStep == 4}" class="step5" ng-click="CurrentStep = 4" translate>Options</li>
     </ol>
     <!-- .steps-legend -->
 
