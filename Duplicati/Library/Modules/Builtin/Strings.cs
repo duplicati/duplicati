@@ -190,7 +190,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string HttpverbLong { get { return LC.L(@"Use this option to change the default HTTP verb used to submit a report."); } }
         public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }
-        public static string SendhttpurlsformLong { get { return LC.L(@"HTTP report URLs for sending form-encoded data. This option accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
+        public static string SendhttpurlsformLong { get { return LC.L(@"Use this option to set HTTP report URLs for sending form-encoded data. This option accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
         public static string SendhttpurlsformShort { get { return LC.L(@"HTTP report URLs for sending form data"); } }
         public static string SendhttpurlsjsonLong { get { return LC.L(@"Use this option to set HTTP report URLs for sending JSON data. This option accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
         public static string SendhttpurlsjsonShort { get { return LC.L(@"HTTP report URLs for sending JSON data"); } }
