@@ -330,7 +330,9 @@ namespace Duplicati.Server
                     parsedOptions.WebRoot,
                     parsedOptions.Port,
                     parsedOptions.Interface,
-                    parsedOptions.Certificate,
+                    parsedOptions.HTTPS,
+                    parsedOptions.CertificateFile,
+                    parsedOptions.CertificatePassword,
                     parsedOptions.Servername,
                     parsedOptions.AllowedHostnames);
 
@@ -790,6 +792,7 @@ namespace Duplicati.Server
                     new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, WebServerLoader.DEFAULT_OPTION_WEBROOT),
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, WebServerLoader.DEFAULT_OPTION_PORT.ToString()),
+                    new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_USEHTTPS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverUseHTTPSDescription, Strings.Program.WebserverUseHTTPSDescription, WebServerLoader.OPTION_USEHTTPS),
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificateFileDescription, Strings.Program.WebserverCertificateFileDescription, WebServerLoader.OPTION_SSLCERTIFICATEFILE),
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILEPASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificatePasswordDescription, Strings.Program.WebserverCertificatePasswordDescription, WebServerLoader.OPTION_SSLCERTIFICATEFILEPASSWORD),
                     new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, WebServerLoader.DEFAULT_OPTION_INTERFACE),

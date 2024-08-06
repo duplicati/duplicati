@@ -49,7 +49,9 @@ namespace Duplicati.Server.Database
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
+            public const string SERVER_USE_HTTPS = "server-use-https";
             public const string SERVER_SSL_CERTIFICATE = "server-ssl-certificate";
+            public const string SERVER_SSL_CERTIFICATEPASSWORD = "server-ssl-certificate-password";
             public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
             public const string UPDATE_CHANNEL = "update-channel";
             public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
@@ -563,17 +565,28 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public X509Certificate2 ServerSSLCertificate
+        public bool ServerUseHTTPS
+        {
+            get
+            {
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.SERVER_USE_HTTPS], false);
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.SERVER_USE_HTTPS] = value.ToString();
+                SaveSettings();
+            }
+        }
+
+        public string ServerSSLCertificate
         {
             get
             {
                 if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
                     return null;
 
-                if (OperatingSystem.IsWindows())
-                    return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]));
-                else
-                    return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]), "");
+                return settings[CONST.SERVER_SSL_CERTIFICATE];
             }
             set
             {
@@ -584,12 +597,33 @@ namespace Duplicati.Server.Database
                 }
                 else
                 {
-                    if (OperatingSystem.IsWindows())
-                        lock (databaseConnection.m_lock)
-                            settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
-                    else
-                        lock (databaseConnection.m_lock)
-                            settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, ""));
+                    lock (databaseConnection.m_lock)
+                        settings[CONST.SERVER_SSL_CERTIFICATE] = value;
+                }
+                SaveSettings();
+            }
+        }
+
+        public string ServerSSLCertificatePassword
+        {
+            get
+            {
+                if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD]))
+                    return null;
+
+                return settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD];
+            }
+            set
+            {
+                if (value == null)
+                {
+                    lock (databaseConnection.m_lock)
+                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = String.Empty;
+                }
+                else
+                {
+                    lock (databaseConnection.m_lock)
+                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = value;
                 }
                 SaveSettings();
             }

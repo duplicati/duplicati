@@ -33,7 +33,9 @@ public partial class DuplicatiWebserver
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        X509Certificate2? Certificate,
+        bool HTTPS,
+        string? CertificateFile,
+        string? CertificatePassword,
         string Servername,
         IEnumerable<string> AllowedHostnames
     );
@@ -45,8 +47,8 @@ public partial class DuplicatiWebserver
         {
             options.Listen(settings.Interface, settings.Port, listenOptions =>
             {
-                if (settings.Certificate != null)
-                    listenOptions.UseHttps(settings.Certificate);
+                if (settings.HTTPS)
+                    listenOptions.UseHttps(settings.CertificateFile, settings.CertificatePassword);
             });
         });
 
@@ -164,7 +166,7 @@ public partial class DuplicatiWebserver
     {
         var allowedOrigins = settings.AllowedHostnames.Any(x => x == "*")
             ? []
-            : settings.AllowedHostnames.Select(x => settings.Certificate == null ? $"http://{x}:{settings.Port}" : $"https://{x}:{settings.Port}");
+            : settings.AllowedHostnames.Select(x => settings.CertificateFile == null ? $"http://{x}:{settings.Port}" : $"https://{x}:{settings.Port}");
 
         App.AddEndpoints()
             .UseNotifications(allowedOrigins, "/notifications");

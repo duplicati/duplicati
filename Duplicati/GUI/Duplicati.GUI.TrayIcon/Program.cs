@@ -114,10 +114,9 @@ namespace Duplicati.GUI.TrayIcon
                 // Tell the hosted server it was started by the TrayIcon
                 Server.Program.Origin = "Tray icon";
 
-                var cert = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
                 var scheme = "http";
 
-                if (cert != null && cert.HasPrivateKey)
+                if (!string.IsNullOrEmpty(databaseConnection.ApplicationSettings.ServerSSLCertificate))
                     scheme = "https";
 
                 serverURL = (new UriBuilder(serverURL)
@@ -134,10 +133,9 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
 
-                    var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
                     var scheme = "http";
 
-                    if (cert != null && cert.HasPrivateKey)
+                    if (!string.IsNullOrEmpty(databaseConnection.ApplicationSettings.ServerSSLCertificate))
                         scheme = "https";
 
                     serverURL = new UriBuilder(serverURL)
