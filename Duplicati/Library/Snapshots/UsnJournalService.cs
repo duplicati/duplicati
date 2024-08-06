@@ -172,7 +172,7 @@ namespace Duplicati.Library.Snapshots
                     // With this, we need still need to do the following:
                     //
                     // 1. Simplify the folder list, such that it only contains the parent-most entries 
-                    //     (eg. { "C:\A\B\", "C:\A\B\C\", "C:\A\B\D\E\" } => { "C:\A\B\" }
+                    //     (e.g. { "C:\A\B\", "C:\A\B\C\", "C:\A\B\D\E\" } => { "C:\A\B\" }
                     volumeData.Folders = Utility.Utility.SimplifyFolderList(changedFolders).ToList();
 
                     // 2. Our list of files may contain entries inside one of the simplified folders (from step 1., above).
@@ -187,7 +187,7 @@ namespace Duplicati.Library.Snapshots
                 }
                 catch (Exception e)
                 {
-                    // full scan is required this time (eg. due to missing journal entries)
+                    // full scan is required this time (e.g. due to missing journal entries)
                     volumeData.Exception = e;
                     volumeData.IsFullScan = true;
                     volumeData.Folders = new List<string>();

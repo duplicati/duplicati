@@ -48,8 +48,8 @@ namespace Duplicati.Library.Utility.Power
         private bool IsAC()
         {
             // If any of the power supply devices of type "Mains" are online, then we are on 
-            // AC power.  If none of the power supply devices are of type "Mains", then we 
-            // are also on AC power.  See https://bugzilla.redhat.com/show_bug.cgi?id=644629.
+            // AC power. If none of the power supply devices are of type "Mains", then we 
+            // are also on AC power. See https://bugzilla.redhat.com/show_bug.cgi?id=644629.
             bool reply = false;
             bool haveMains = false;
 

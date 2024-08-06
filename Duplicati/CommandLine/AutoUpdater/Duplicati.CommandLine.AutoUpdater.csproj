@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Duplicati.CommandLine.AutoUpdater.Implementation</AssemblyName>
     <RootNamespace>Duplicati.CommandLine.AutoUpdater</RootNamespace>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,3 +21,4 @@
   </ItemGroup>
 
 </Project>
+

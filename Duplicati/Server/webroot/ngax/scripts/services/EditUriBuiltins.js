@@ -30,7 +30,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
-    EditUriBackendConfig.templates['tardigrade']  = 'templates/backends/tardigrade.html';
 	  EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
     EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
 	  EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
@@ -46,8 +45,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         var dlg = null;
 
-        dlg = DialogService.dialog(gettextCatalog.getString('Testing permissions...'), gettextCatalog.getString('Testing permissions …'), [], null, function () {
-            AppService.post('/webmodule/s3-iamconfig', {
+        dlg = DialogService.dialog(gettextCatalog.getString('Testing permissions …'), gettextCatalog.getString('Testing permissions …'), [], null, function () {
+            AppService.postJson('/webmodule/s3-iamconfig', {
                 's3-operation': 'CanCreateUser',
                 's3-username': scope.Username,
                 's3-password': scope.Password
@@ -80,7 +79,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     // Loaders are a way for backends to request extra data from the server
     EditUriBackendConfig.loaders['s3'] = function (scope) {
         if (scope.s3_providers == null) {
-            AppService.post('/webmodule/s3-getconfig', {'s3-config': 'Providers'}).then(function (data) {
+            AppService.postJson('/webmodule/s3-getconfig', {'s3-config': 'Providers'}).then(function (data) {
                 scope.s3_providers = data.data.Result;
                 if (scope.s3_server == undefined && scope.s3_server_custom == undefined)
                     scope.s3_server = 's3.amazonaws.com';
@@ -92,7 +91,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.s3_regions == null) {
-            AppService.post('/webmodule/s3-getconfig', {'s3-config': 'Regions'}).then(function (data) {
+            AppService.postJson('/webmodule/s3-getconfig', {'s3-config': 'Regions'}).then(function (data) {
                 scope.s3_regions = data.data.Result;
                 if (scope.s3_region == null && scope.s3_region_custom == undefined)
                     scope.s3_region = '';
@@ -103,7 +102,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.s3_storageclasses == null) {
-            AppService.post('/webmodule/s3-getconfig', {'s3-config': 'StorageClasses'}).then(function (data) {
+            AppService.postJson('/webmodule/s3-getconfig', {'s3-config': 'StorageClasses'}).then(function (data) {
                 scope.s3_storageclasses = data.data.Result;
                 if (scope.s3_storageclass == null && scope.s3_storageclass_custom == undefined)
                     scope.s3_storageclass = '';
@@ -120,10 +119,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
             var dlg = null;
 
-            dlg = DialogService.dialog(gettextCatalog.getString('Creating user...'), gettextCatalog.getString('Creating new user with limited access …'), [], null, function () {
+            dlg = DialogService.dialog(gettextCatalog.getString('Creating user …'), gettextCatalog.getString('Creating new user with limited access …'), [], null, function () {
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
-                AppService.post('/webmodule/s3-iamconfig', {
+                AppService.postJson('/webmodule/s3-iamconfig', {
                     's3-operation': 'CreateIAMUser',
                     's3-path': path,
                     's3-username': scope.Username,
@@ -147,7 +146,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             EditUriBackendConfig.validaters['s3'](scope, function () {
                 path = (scope.Server || '') + '/' + (scope.Path || '');
 
-                AppService.post('/webmodule/s3-iamconfig', {
+                AppService.postJson('/webmodule/s3-iamconfig', {
                     's3-operation': 'GetPolicyDoc',
                     's3-path': path
                 }).then(function (data) {
@@ -162,7 +161,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 	
 	EditUriBackendConfig.loaders['storj'] = function (scope) {
         if (scope.storj_satellites == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
+            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
                 scope.storj_satellites = data.data.Result;
                 if (scope.storj_satellite == undefined && scope.storj_satellite_custom == undefined)
                     scope.storj_satellite = 'us1.storj.io:7777';
@@ -174,7 +173,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 		
 		if (scope.storj_auth_methods == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
+            AppService.postJson('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
                 scope.storj_auth_methods = data.data.Result;
                 if (scope.storj_auth_method == undefined)
                     scope.storj_auth_method = 'API key';
@@ -183,32 +182,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         } else {
             if (scope.storj_auth_method == undefined)
                 scope.storj_auth_method = 'API key';
-        }
-    };
-	
-	EditUriBackendConfig.loaders['tardigrade'] = function (scope) {
-        if (scope.tardigrade_satellites == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'Satellites'}).then(function (data) {
-                scope.tardigrade_satellites = data.data.Result;
-                if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
-                    scope.tardigrade_satellite = 'us1.storj.io:7777';
-
-            }, AppUtils.connectionError);
-        } else {
-            if (scope.tardigrade_satellite == undefined && scope.tardigrade_satellite_custom == undefined)
-                scope.tardigrade_satellite = 'us1.storj.io:7777';
-        }
-		
-		if (scope.tardigrade_auth_methods == null) {
-            AppService.post('/webmodule/storj-getconfig', {'storj-config': 'AuthenticationMethods'}).then(function (data) {
-                scope.tardigrade_auth_methods = data.data.Result;
-                if (scope.tardigrade_auth_method == undefined)
-                    scope.tardigrade_auth_method = 'API key';
-
-            }, AppUtils.connectionError);
-        } else {
-            if (scope.tardigrade_auth_method == undefined)
-                scope.tardigrade_auth_method = 'API key';
         }
     };
 
@@ -306,7 +279,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.loaders['openstack'] = function (scope) {
         if (scope.openstack_providers == null) {
-            AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function (data) {
+            AppService.postJson('/webmodule/openstack-getconfig', {'openstack-config': 'Providers'}).then(function (data) {
                 scope.openstack_providers = data.data.Result;
                 if (scope.openstack_server == undefined && scope.openstack_server_custom == undefined)
                     scope.openstack_server = 'https://identity.api.rackspacecloud.com/';
@@ -318,7 +291,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.openstack_versions == null) {
-            AppService.post('/webmodule/openstack-getconfig', {'openstack-config': 'Versions'}).then(function (data) {
+            AppService.postJson('/webmodule/openstack-getconfig', {'openstack-config': 'Versions'}).then(function (data) {
                 scope.openstack_versions = data.data.Result;
                 if (scope.openstack_version == undefined)
                     scope.openstack_version = 'v2.0';
@@ -333,7 +306,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.loaders['gcs'] = function (scope) {
         if (scope.gcs_locations == null) {
-            AppService.post('/webmodule/gcs-getconfig', {'gcs-config': 'Locations'}).then(function (data) {
+            AppService.postJson('/webmodule/gcs-getconfig', {'gcs-config': 'Locations'}).then(function (data) {
                 scope.gcs_locations = data.data.Result;
                 for (var k in scope.gcs_locations)
                     if (scope.gcs_locations[k] === null)
@@ -346,7 +319,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (scope.gcs_storageclasses == null) {
-            AppService.post('/webmodule/gcs-getconfig', {'gcs-config': 'StorageClasses'}).then(function (data) {
+            AppService.postJson('/webmodule/gcs-getconfig', {'gcs-config': 'StorageClasses'}).then(function (data) {
                 scope.gcs_storageclasses = data.data.Result;
                 for (var k in scope.gcs_storageclasses)
                     if (scope.gcs_storageclasses[k] === null)
@@ -576,30 +549,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         for (var x in nukeopts)
             delete options[nukeopts[x]];
     };
-	
-    EditUriBackendConfig.parsers['tardigrade'] = function (scope, module, server, port, path, options) {
-        if (options['--tardigrade-auth-method'])
-            scope.tardigrade_auth_method = options['--tardigrade-auth-method'];
-        if (options['--tardigrade-satellite'])
-            scope.tardigrade_satellite = options['--tardigrade-satellite'];
-        if (options['--tardigrade-api-key'])
-            scope.tardigrade_api_key = options['--tardigrade-api-key'];
-        if (options['--tardigrade-secret'])
-            scope.tardigrade_secret = options['--tardigrade-secret'];
-        if (options['--tardigrade-secret-verify'])
-            scope.tardigrade_secret_verify = options['--tardigrade-secret-verify'];
-        if (options['--tardigrade-shared-access'])
-            scope.tardigrade_shared_access = options['--tardigrade-shared-access'];
-        if (options['--tardigrade-bucket'])
-            scope.tardigrade_bucket = options['--tardigrade-bucket'];
-        if (options['--tardigrade-folder'])
-            scope.tardigrade_folder = options['--tardigrade-folder'];
-		
-        var nukeopts = ['--tardigrade-auth-method','--tardigrade-satellite', '--tardigrade-api-key', '--tardigrade-secret', '--tardigrade-secret-verify', '--tardigrade-shared-access', '--tardigrade-bucket', '--tardigrade-folder'];
-        for (var x in nukeopts)
-            delete options[nukeopts[x]];
-    };
-
 
     EditUriBackendConfig.parsers['cos'] = function (scope, module, server, port, path, options) {
         if (options['--cos-app-id'])
@@ -899,27 +848,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         return url;
     };
 	
-	EditUriBackendConfig.builders['tardigrade'] = function (scope) {
-        var opts = {
-            'tardigrade-auth-method': scope.tardigrade_auth_method,
-            'tardigrade-satellite': scope.tardigrade_satellite,
-            'tardigrade-api-key': scope.tardigrade_api_key,
-            'tardigrade-secret': scope.tardigrade_secret,
-            'tardigrade-shared-access': scope.tardigrade_shared_access,
-            'tardigrade-bucket': scope.tardigrade_bucket,
-            'tardigrade-folder': scope.tardigrade_folder
-        };
-
-        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
-
-        var url = AppUtils.format('{0}://tardigrade.io/config{1}',
-            scope.Backend.Key,
-            AppUtils.encodeDictAsUrl(opts)
-        );
-
-        return url;
-    };
-
     EditUriBackendConfig.builders['rclone'] = function (scope) {
 
         var opts = {
@@ -1049,18 +977,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         EditUriBackendConfig.validaters['authid-base'](scope, function () {
             var res =
-                EditUriBackendConfig.recommend_field(scope, 'msgroup_group_email', gettextCatalog.getString('Group email'), gettextCatalog.getString(' unless you are explicitly specifying --group-id'), continuation);
-
-            if (res)
-                continuation();
-        });
-    };
-
-    EditUriBackendConfig.validaters['msgroup'] = function (scope, continuation) {
-
-        EditUriBackendConfig.validaters['authid-base'](scope, function () {
-            var res =
-                EditUriBackendConfig.recommend_field(scope, 'msgroup_group_email', gettextCatalog.getString('Group email'), gettextCatalog.getString(' unless you are explicitly specifying --group-id'), continuation);
+                EditUriBackendConfig.recommend_field(scope, 'msgroup_group_email', gettextCatalog.getString('Group email'), gettextCatalog.getString('unless you are explicitly specifying --group-id'), continuation);
 
             if (res)
                 continuation();
@@ -1096,7 +1013,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                 res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
 
             if (res && (scope.openstack_apikey || '').trim().length != 0)
-                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API Key are not supported in v3 keystone API.'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API key are not supported in v3 keystone API'));
 
 
         } else {
@@ -1104,14 +1021,14 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             if (((scope.openstack_apikey) || '').trim().length == 0) {
 
                 if (res && (scope.Password || '').trim().length == 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API key'));
 
                 if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API Key'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API key'));
 
             } else {
                 if (res && (scope.Password || '').trim().length != 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key, not both'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API key, not both'));
             }
         }
         if (res)
@@ -1132,7 +1049,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
             function checkUsernamePrefix() {
                 if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
-                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('The bucket name should start with your username, prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
+                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('To prevent bucket naming conflicts, it is recommended to prepend your account ID to the bucket name. Prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
                         if (ix == 2)
                             scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
                         if (ix == 1 || ix == 2) {
@@ -1228,7 +1145,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
 
         if (res && (scope['sia_redundancy'] || '').trim().length == 0 || parseFloat(scope['sia_redundancy']) < 1.0)
-            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 1.0'));
+            res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Minimum redundancy is 1.0')); // Do not forget to update SiaRedundancyDescriptionLong as well if the value is changed
 
         if (res)
             continuation();
@@ -1268,40 +1185,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             continuation();
     };
 	
-	EditUriBackendConfig.validaters['tardigrade'] = function (scope, continuation) {
-		var res = true;
-		
-		if(res && !scope['tardigrade_auth_method']){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_auth_method', gettextCatalog.getString('Authentication method'));
-		}
-
-		if(res && scope['tardigrade_auth_method'] == 'Access grant'){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_shared_access', gettextCatalog.getString('tardigrade_shared_access')) &&
-				  EditUriBackendConfig.require_field(scope, 'tardigrade_bucket', gettextCatalog.getString('Bucket'));
-		}
-		
-		if(res && scope['tardigrade_auth_method'] == 'API key'){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_api_key', gettextCatalog.getString('API key')) &&
-				  EditUriBackendConfig.require_field(scope, 'tardigrade_secret', gettextCatalog.getString('Encryption passphrase')) &&
-				  EditUriBackendConfig.require_field(scope, 'tardigrade_bucket', gettextCatalog.getString('Bucket'));
-		}
-		
-		if(res && scope['tardigrade_auth_method'] == 'API key' && !scope['tardigrade_satellite']){
-			res = EditUriBackendConfig.require_field(scope, 'tardigrade_satellite_custom', gettextCatalog.getString('Custom Satellite'));
-		}
-
-		if(res && scope['tardigrade_auth_method'] == 'API key' && scope['tardigrade_secret'] != scope['tardigrade_secret_verify'])
-			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The encryption passphrases do not match'));
-		
-		var re = new RegExp('^([a-z0-9]+([a-z0-9\-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9\-][a-z0-9])*)*$');
-		if(res && scope['tardigrade_bucket'] && (!re.test(scope['tardigrade_bucket']) || !(scope['tardigrade_bucket'].length > 2 && scope['tardigrade_bucket'].length < 64))){
-			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Bucket name can only be between 3 and 63 characters long and contain only lower-case characters, numbers, periods and dashes'));
-		}
-		
-		if (res)
-            continuation();
-    };
-
     EditUriBackendConfig.validaters['rclone'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Remote Repository')) &&
@@ -1338,8 +1221,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['e2'] = function (scope, continuation) {
         var res =
-                EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Idrivee2 Access Key Id')) &&
-            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('Idrivee2 Access Key Secret')) &&
+            EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('IDrive e2 Access Key ID')) &&
+            EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('IDrive e2 Access Key Secret')) &&
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name'));
 
         if (res) {

@@ -41,7 +41,7 @@ namespace Duplicati.Library.Utility
         /// Size of buffers for copying stream
         /// </summary>
         public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
-        
+
         /// <summary>
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
         /// </summary>
@@ -93,15 +93,15 @@ namespace Duplicati.Library.Utility
                 }
 
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
-            
+
             int read;
-			long total = 0;
-			while ((read = source.Read(buf, 0, buf.Length)) != 0)
-			{
-				target.Write(buf, 0, read);
-				total += read;
+            long total = 0;
+            while ((read = source.Read(buf, 0, buf.Length)) != 0)
+            {
+                target.Write(buf, 0, read);
+                total += read;
             }
-            
+
             return total;
         }
 
@@ -128,7 +128,7 @@ namespace Duplicati.Library.Utility
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
-                catch {}
+                catch { }
 
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
 
@@ -438,7 +438,7 @@ namespace Duplicati.Library.Utility
         public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
         {
             var sanitizedParentFolder = Util.AppendDirSeparator(parentFolder);
-            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) && 
+            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) &&
                    !fileOrFolderPath.Equals(sanitizedParentFolder, ClientFilenameStringComparison);
         }
 
@@ -459,7 +459,7 @@ namespace Duplicati.Library.Utility
             var last = path.LastIndexOf(Path.DirectorySeparatorChar, len);
             if (last == -1 || last == 0 && len == 0)
                 return null;
-            
+
             if (last == 0 && !OperatingSystem.IsWindows())
                 return Util.DirectorySeparatorString;
 
@@ -474,7 +474,7 @@ namespace Duplicati.Library.Utility
             return parent;
         }
 
-        
+
 
         /// <summary>
         /// Given a collection of unique folders, returns only parent-most folders
@@ -520,7 +520,7 @@ namespace Duplicati.Library.Utility
 
             return result.Distinct();
         }
-        
+
         /// <summary>
         /// Given a collection of file paths, return those NOT contained within specified collection of folders
         /// </summary>
@@ -674,7 +674,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
+        /// Formats a size into a human readable format, e.g. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
         /// </summary>
         /// <param name="size">The size to format</param>
         /// <returns>A human readable string representing the size</returns>
@@ -690,7 +690,7 @@ namespace Duplicati.Library.Utility
             else if (sizeAbs >= 1024)
                 return Strings.Utility.FormatStringKB(size / 1024);
             else
-                return Strings.Utility.FormatStringB((long) size); // safe to cast because lower than 1024 and thus well within range of long
+                return Strings.Utility.FormatStringB((long)size); // safe to cast because lower than 1024 and thus well within range of long
         }
 
         public static System.Threading.ThreadPriority ParsePriority(string value)
@@ -831,9 +831,15 @@ namespace Duplicati.Library.Utility
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
         }
 
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macos")]
+        /// <summary>
+        /// Invokes the &quot;which&quot; command to determine if a given application is available in the path
+        /// </summary>
+        /// <param name="appname">The name of the application to look for</param>
         public static bool Which(string appname)
         {
-            if (!Platform.IsClientPosix)
+            if (!(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
                 return false;
 
             try
@@ -919,7 +925,7 @@ namespace Duplicati.Library.Utility
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
-        
+
         /// <summary>
         /// Normalizes a DateTime instance by converting to UTC and flooring to seconds.
         /// </summary>
@@ -931,22 +937,22 @@ namespace Duplicati.Library.Utility
             ticks -= ticks % TimeSpan.TicksPerSecond;
             return new DateTime(ticks, DateTimeKind.Utc);
         }
-        
-	/// <summary>
-	/// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
-	/// </summary>
-	/// <returns>The number of elapsed seconds since the Unix epoch</returns>
-	/// <param name="input">The input time</param>
+
+        /// <summary>
+        /// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
+        /// </summary>
+        /// <returns>The number of elapsed seconds since the Unix epoch</returns>
+        /// <param name="input">The input time</param>
         public static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
             // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
             // The DateTimeOffset constructor will convert the provided DateTime to the UTC
-            // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
+            // equivalent. However, if DateTime.MinValue is provided (for example, when creating
             // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
             // and DateTimeOffset.MaxValue bounds.
-            return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
+            return (long)Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
         }
-        
+
         /// <summary>
         /// The format string for a DateTime
         /// </summary>
@@ -1022,7 +1028,7 @@ namespace Duplicati.Library.Utility
 
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
-        // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
+        // This is the case in NUnit tests. The following approach does not work w/ Mono due to unimplemented members:
         // http://social.msdn.microsoft.com/Forums/nb-NO/clr/thread/db44fe1a-3bb4-41d4-a0e0-f3021f30e56f
         // so this layer of indirection is necessary
         // </summary>

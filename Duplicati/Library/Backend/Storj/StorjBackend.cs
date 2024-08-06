@@ -86,14 +86,6 @@ namespace Duplicati.Library.Backend.Storj
         {
             InitStorjLibrary();
 
-            foreach (var option in options.ToList())
-            {
-                if (option.Key.ToLower().Contains("tardigrade"))
-                {
-                    options.Add(option.Key.ToLower().Replace("tardigrade", "storj"), option.Value);
-                }
-            }
-
             var auth_method = options[STORJ_AUTH_METHOD];
             if (auth_method == "Access grant")
             {

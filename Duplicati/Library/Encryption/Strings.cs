@@ -28,8 +28,9 @@ namespace Duplicati.Library.Encryption.Strings
         public static string Description_v2 { get { return LC.L(@"This module encrypts all files in the same way that AESCrypt does, using 256 bit AES encryption."); } }
         public static string DisplayName { get { return LC.L(@"AES-256 encryption, built in"); } }
         public static string EmptyKeyError { get { return LC.L(@"Empty passphrase not allowed"); } }
-        public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations. Valid values are 0 (uses default), or from 1 (no multithreading) to 4 (max. multithreading)"); } }
-        public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting (0-4)"); } }
+        public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations."); } }
+        public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting"); } }
+        public static string AessetthreadlevelDeprecated { get { return LC.L(@"This option has no effect and should not be used."); } }
     }
     internal static class EncryptionBase
     {
@@ -37,7 +38,7 @@ namespace Duplicati.Library.Encryption.Strings
     }
     internal static class GPGEncryption
     {
-        public static string Description { get { return LC.L(@"The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the --gpg-program-path switch."); } }
+        public static string Description { get { return LC.L(@"The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the option --{0}.", "gpg-program-path"); } }
         public static string DisplayName { get { return LC.L(@"GNU Privacy Guard, external"); } }
         public static string GpgencryptiondecryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --decrypt option is always specified."); } }
         public static string GpgencryptiondecryptionswitchesShort { get { return LC.L(@"Extra GPG commandline options for decryption"); } }
@@ -48,9 +49,9 @@ namespace Duplicati.Library.Encryption.Strings
         public static string GpgprogrampathShort { get { return LC.L(@"The path to GnuPG"); } }
         public static string GpgencryptionenablearmorLong { get { return LC.L(@"Use this option to supply the --armor option to GPG. The files will be larger but can be sent as pure text files."); } }
         public static string GpgencryptionenablearmorShort { get { return LC.L(@"Use GPG Armor"); } }
-        public static string GpgencryptiondecryptioncommandLong { get { return LC.L(@"Overrides the GPG command supplied for decryption"); } }
+        public static string GpgencryptiondecryptioncommandLong { get { return LC.L(@"Overrides the GPG command supplied for decryption."); } }
         public static string GpgencryptiondecryptioncommandShort { get { return LC.L(@"The GPG decryption command"); } }
-        public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Overrides the default GPG encryption command ""{0}"", normal usage is to request asymetric encryption with the setting {1}", commandname, optionvalue); }
+        public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Overrides the default GPG encryption command ""{0}"". Normal usage is to request asymetric encryption with the setting {1}.", commandname, optionvalue); }
         public static string GpgencryptionencryptioncommandShort { get { return LC.L(@"The GPG encryption command"); } }
     }
     internal static class GPGStreamWrapper

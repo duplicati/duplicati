@@ -34,8 +34,8 @@ namespace Duplicati.Server.Database
             "authid",
             "auth-password",
             "sia-password",
-            "tardigrade-secret",
-            "tardigrade-shared-access",
+            "storj-secret",
+            "storj-shared-access",
         };
 
         // Sensitive information that may be stored in Settings
@@ -69,6 +69,8 @@ namespace Duplicati.Server.Database
                 this.Metadata = con.GetMetadata(id);
             }
         }
+
+        protected void SetDBPath(string path) => this.DBPath = path;
 
         /// <summary>
         /// The backup ID
@@ -130,7 +132,7 @@ namespace Duplicati.Server.Database
             if (url.Query != null)
             {
                 // We cannot use url.QueryParameters since it contains decoded parameter values, which
-                // breaks assumptions made by the decode_uri function in AppUtils.js.  Since we are simply
+                // breaks assumptions made by the decode_uri function in AppUtils.js. Since we are simply
                 // removing password parameters, we will leave the parameters as they are in the target URL.
                 filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
                 foreach (string field in this.UrlPasswords)

@@ -4,6 +4,6 @@ namespace Duplicati.CommandLine.SharpAESCrypt.Net8
     public static class Program
     {
         public static void Main(string[] args)
-            => global::SharpAESCrypt.SharpAESCrypt.CommandLineMain(args);
+            => global::SharpAESCrypt.Program.CommandLineMain(args);
     }
 }

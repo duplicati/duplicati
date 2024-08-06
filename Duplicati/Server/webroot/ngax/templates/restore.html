@@ -56,7 +56,7 @@
                 <label for="searchfilter" translate>Search for files</label>
                 <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="{{'Type to highlight files' | translate}}" ng-on-enter-press="doSearch()" ng-on-escape-press="clearSearch()" />
                 <a href id="searchfiltersubmit" class="button" ng-click="doSearch()" ng-cancelsearch="clearSearch()" ng-enabled="!Searching">
-                    <span ng-show="Searching" translate>Busy ...</span>
+                    <span ng-show="Searching" translate>Busy …</span>
                     <span ng-hide="Searching" translate>Search</span>
                 </a>
             </div>
@@ -128,12 +128,7 @@
 
             <div  class="input password" ng-show="showInputPassphrase()">
                 <h2 translate>Passphrase</h2>
-                <p translate>
-                    Backup is encrypted but no passphrase is available.
-                    Type a passphrase below to use for restoring your files,
-                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by
-                    invoking your system's keychain.
-                </p>
+                <p translate>Backup is encrypted but no passphrase is available. Type a passphrase below to use for restoring your files, or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by invoking your system's keychain.</p>
                 <input autocomplete="new-password" type="password" name="restore_path" id="passphrase" ng-model="passphrase"
                 placeholder="{{'Type passphrase here.' | translate}}" />
             </div>

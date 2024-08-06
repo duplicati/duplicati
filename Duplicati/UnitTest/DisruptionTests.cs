@@ -194,7 +194,7 @@ namespace Duplicati.UnitTest
             // Choose a dblock size that is small enough so that more than one volume is needed.
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["dblock-size"] = "10mb" };
 
-            // First, run two complete backups followed by a partial backup.  We will then set the keep-time
+            // First, run two complete backups followed by a partial backup. We will then set the keep-time
             // option so that the threshold lies between the first and second backups.
             DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
@@ -245,7 +245,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
 
-            // Run another partial backup.  We will then verify that a full backup is retained
+            // Run another partial backup. We will then verify that a full backup is retained
             // even when all the "recent" backups are partial.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
@@ -420,7 +420,7 @@ namespace Duplicati.UnitTest
                 DateTime secondBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, the only backup in the first time frame
-                // is the initial one.  As a result, we should have 2 backups.
+                // is the initial one. As a result, we should have 2 backups.
                 filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(2, filesets.Count);
                 Assert.AreEqual(firstBackupTime, filesets[1].Time);
@@ -441,7 +441,7 @@ namespace Duplicati.UnitTest
                 thirdBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, there are no backups in the first time
-                // frame.  The original 2 backups have now spilled over to the U:1m specification.  Since we keep the first
+                // frame. The original 2 backups have now spilled over to the U:1m specification. Since we keep the first
                 // backup in the interval, we should be left with the first backup, as well as the third partial one.
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(2, filesets.Count);
@@ -461,7 +461,7 @@ namespace Duplicati.UnitTest
                 fourthBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, the third backup is the only backup
-                // in the first time frame.  There is no further spillover, so we simply add the fourth backup to the
+                // in the first time frame. There is no further spillover, so we simply add the fourth backup to the
                 // collection of retained backups.
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(3, filesets.Count);
@@ -479,9 +479,9 @@ namespace Duplicati.UnitTest
                 DateTime fifthBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, we now have two backups in the
-                // first time frame: the third (partial) and fourth (full).  Since the first backup in each interval is
-                // kept, we would typically keep just the third backup.  However, since we should not discard a full
-                // backup in favor of a partial one, we keep the fourth as well.  We also still have the initial backup.
+                // first time frame: the third (partial) and fourth (full). Since the first backup in each interval is
+                // kept, we would typically keep just the third backup. However, since we should not discard a full
+                // backup in favor of a partial one, we keep the fourth as well. We also still have the initial backup.
                 filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(4, filesets.Count);
                 Assert.AreEqual(firstBackupTime, filesets[3].Time);
@@ -506,7 +506,7 @@ namespace Duplicati.UnitTest
                 DateTime sixthBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, we now have three backups in the
-                // second time frame: the third (partial), fourth (full), and fifth (full).  Since we keep up to the first
+                // second time frame: the third (partial), fourth (full), and fifth (full). Since we keep up to the first
                 // full backup in each time frame, we now drop the fifth backup.
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(4, filesets.Count);
@@ -581,7 +581,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
-            // Run a complete backup.  Listing the Filesets should include both full and partial backups.
+            // Run a complete backup. Listing the Filesets should include both full and partial backups.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
@@ -641,7 +641,7 @@ namespace Duplicati.UnitTest
                 Task backupTask = Task.Run(() => c.Backup(new[] { this.DATAFOLDER }));
 
                 // Block for a small amount of time to allow the ITaskControl to be associated
-                // with the Controller.  Otherwise, the call to Stop will simply be a no-op.
+                // with the Controller. Otherwise, the call to Stop will simply be a no-op.
                 Thread.Sleep(1000);
 
                 c.Stop(false);

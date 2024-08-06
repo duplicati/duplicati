@@ -255,7 +255,7 @@
                 <h2 translate>Schedule</h2>
                 <div class="input checkbox multiple">
                     <input type="checkbox" id="useScheduleRun" ng-checked="Schedule != null" ng-click="toggleSchedule()" />
-                    <label for="useScheduleRun" translate>Automatically run backups.</label>
+                    <label for="useScheduleRun" translate>Automatically run backups</label>
                 </div>
                 <div ng-hide="Schedule == null">
                     <div translate>If a date was missed, the job will run as soon as possible.</div>
@@ -310,9 +310,7 @@
                     </select>
 
                     <div class="hint" translate>
-			The backups will be split up into multiple files called volumes. Here
-			you can set the maximum size of the individual volume files.
-                        <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page for more information.</external-link>
+                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page for more information.</external-link>
                     </div>
 
                 </div>

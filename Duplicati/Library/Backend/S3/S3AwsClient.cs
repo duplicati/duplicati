@@ -103,7 +103,7 @@ namespace Duplicati.Library.Backend
                 BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
 
                 // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
-                // to get the region endpoint.  The use of ARNs (Amazon Resource Names) doesn't appear to be
+                // to get the region endpoint. The use of ARNs (Amazon Resource Names) doesn't appear to be
                 // critical for our usages.
                 // See: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
                 UseArnRegion = false,

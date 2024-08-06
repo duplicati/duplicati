@@ -20,8 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.RestAPI;
 using Duplicati.Server.Serializable;
-using Duplicati.Server.WebServer.RESTMethods;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,7 +63,7 @@ namespace Duplicati.CommandLine.ConfigurationImporter
                 { "server-datafolder", serverDatafolder }
             };
 
-            ImportExportStructure importedStructure = Backups.ImportBackup(configurationFile, importMetadata, () => ConfigurationImporter.ReadPassword($"Password for {configurationFile}: "), advancedOptions);
+            ImportExportStructure importedStructure = BackupImportExportHandler.ImportBackup(configurationFile, importMetadata, () => ConfigurationImporter.ReadPassword($"Password for {configurationFile}: "), advancedOptions);
             Console.WriteLine($"Imported \"{importedStructure.Backup.Name}\" with ID {importedStructure.Backup.ID} and local database at {importedStructure.Backup.DBPath}.");
 
             return 0;

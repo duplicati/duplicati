@@ -44,7 +44,7 @@ namespace Duplicati.Library.Interface
         string DisplayName { get; }
 
         /// <summary>
-        /// The protocol key, eg. ftp, http or ssh
+        /// The protocol key, e.g. ftp, http or ssh
         /// </summary>
         string ProtocolKey { get; }
 

@@ -20,11 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.Versioning;
-using System.Text;
-using Duplicati.Library.Common;
-using Duplicati.Library.RestAPI;
+using Duplicati.Library.IO;
+using Duplicati.Server.Database;
 
 namespace Duplicati.Server
 {
@@ -32,7 +30,7 @@ namespace Duplicati.Server
     /// This class keeps track of the users modifications regarding
     /// throttling and pause/resume
     /// </summary>
-    public class LiveControls
+    public class LiveControls : ILiveControls
     {
         /// <summary>
         /// The tag used for logging
@@ -88,6 +86,8 @@ namespace Duplicati.Server
         /// Gets the current state for the control
         /// </summary>
         public LiveControlState State { get { return m_state; } }
+
+        public bool IsPaused => State == LiveControlState.Paused;
 
         /// <summary>
         /// The internal variable that tracks the the priority
@@ -163,7 +163,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The timer that is activated after a pause period.
         /// </summary>
-        private readonly System.Threading.Timer m_waitTimer;
+        private System.Threading.Timer m_waitTimer;
 
         /// <summary>
         /// The time that the current pause is expected to expire
@@ -171,10 +171,26 @@ namespace Duplicati.Server
         private DateTime m_waitTimeExpiration = new DateTime(0);
 
         /// <summary>
+        /// The connection to use
+        /// </summary>
+        private readonly Connection m_connection;
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
-        public LiveControls(Database.ServerSettings settings)
+        /// <param name="connection">The connection to use</param>
+        public LiveControls(Connection connection)
         {
+            m_connection = connection;
+            Init();
+        }
+
+        /// <summary>
+        /// Constructs a new instance of the LiveControl
+        /// </summary>
+        private void Init()
+        {
+            var settings = m_connection.ApplicationSettings;
             m_state = LiveControlState.Running;
             m_waitTimer = new System.Threading.Timer(m_waitTimer_Tick, this, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
 
@@ -385,7 +401,7 @@ namespace Duplicati.Server
                 {
                     long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
 
-                    var appset = FIXMEGlobal.DataConnection.ApplicationSettings;
+                    var appset = m_connection.ApplicationSettings;
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
                         try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
                         catch { }

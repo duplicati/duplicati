@@ -508,10 +508,21 @@ ul.notification {
     }
 
     .longdescription {
-        margin-top: 10px;
+        --margin-block: 10px; /* Magic number */
+
+        margin-top: var(--margin-block);
         margin-left: 190px;
         clear: both;
         font-style: italic;
+        white-space: pre-wrap;
+
+        .longdescription__item {
+            margin-block: 0 var(--margin-block);
+        }
+
+        .longdescription__default {
+            margin-block: var(--margin-block) 0;
+        }
     }
 }
 
@@ -557,6 +568,21 @@ ul.notification {
         float: left;
         padding: 0px;
         margin-left: 5px;
+    }
+}
+
+.note {
+    & p {
+        /* Override default block margin */
+        margin-block: 0.5rem; /* Magic number */
+
+        &:first-child {
+            margin-top: 0;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
     }
 }
 
@@ -1469,6 +1495,15 @@ body {
                             }
                         }
 
+                        .step2,
+                        .step5 {
+                            .advancedoptions {
+                                li > a {
+                                    .button;
+                                }
+                            }
+                        }
+
                         .step5 {
                             div.input.maxSize input.number,
                             div.input.keepBackups input.number {
@@ -1494,10 +1529,6 @@ body {
 
                                 li {
                                     border-top: none;
-                                }
-
-                                li > a {
-                                    .button;
                                 }
 
                                 li.advancedentry {
@@ -1641,6 +1672,49 @@ body {
                     }
                 }
 
+                div.add .step2,
+                div.restore .step1 {
+                    /* .step2: "destination" on adding/editing backup task
+                       .step1: "backup location" on a direct restore task
+                       TODO: integrate with form.less after investigation */
+                    .input.select {
+                        display: grid;
+                        grid-auto-flow: column;
+                        justify-content: flex-start;
+                        grid-template-areas:
+                            "label server"
+                            ".     custom"; /* Adding an empty block ensures the grid area 'server' and 'custom' are aligned. */
+
+                        label {
+                            grid-area: label;
+                        }
+
+                        select {
+                            grid-area: server;
+                        }
+
+                        input {
+                            grid-area: custom;
+
+                            /* Add gap between this input area and the select element above.
+                               Avoid using the row-gap property as it sets the gap
+                               even if this input area does not exist. */
+                            margin-top: 10px; /* Magic number */
+                        }
+                    }
+
+                    .input.text {
+                        #generic_server {
+                            width: 335px;
+                        }
+
+                        #generic_port {
+                            width: 50px;
+                            margin-left: 10px; /* Magic number */
+                        }
+                    }
+                }
+
                 div.add {
                     @legends-steps: 5;
                     @legends-width: 700px;
@@ -1775,6 +1849,15 @@ body {
                             width: auto;
                         }
                     }
+
+                    .input {
+                        .advancedoptions {
+                            li > a {
+                                .button;
+                            }
+                        }
+                    }
+
                 }
 
                 .logpage {
@@ -1791,6 +1874,20 @@ body {
 
                     ul.backuplog {
                         list-style: none;
+                    }
+                }
+
+                .about-general {
+                    .about-general__block {
+                        margin-block: 1rem;
+
+                        &:first-child {
+                            margin-top: 10px; /* See: ul.tabs */
+                        }
+
+                        &:last-child {
+                            margin-bottom: 0;
+                        }
                     }
                 }
 
@@ -1984,6 +2081,16 @@ div.modal-dialog {
         background-color: white;
         border: 1px solid white;
         padding: 20px;
+
+        /* Reset default margin */
+        & p:first-child {
+            margin-top: 0;
+        }
+
+        /* Reset default margin */
+        & p:last-child {
+            margin-bottom: 0;
+        }
     }
 
     .buttons {

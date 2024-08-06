@@ -4,10 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Encryption</RootNamespace>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpAESCrypt.dll" Version="1.3.4" />
+    <PackageReference Include="SharpAESCrypt" Version="2.0.2" />
   </ItemGroup>
 
   <ItemGroup>

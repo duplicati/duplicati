@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
   
   <ItemGroup>	
@@ -42,8 +43,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoCoL" Version="1.7.1" />
+    <PackageReference Include="CoCoL" Version="1.8" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>
+

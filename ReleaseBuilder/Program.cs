@@ -21,6 +21,8 @@ class Program
         "linux-x64-gui.zip",
         "linux-x64-gui.deb",
         "linux-x64-gui.rpm",
+        "linux-arm7-gui.deb",
+        "linux-arm7-cli.deb",
         "linux-x64-cli.zip",
         "linux-x64-cli.deb",
         "linux-x64-cli.rpm",
