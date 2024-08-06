@@ -1,9 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using System.IO;
 using Duplicati.Server.Database;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using SharpCompress.Common;
+using Amazon.Util.Internal.PlatformServices;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Duplicati.Server;
 
@@ -58,6 +65,16 @@ public static class WebServerLoader
     public const int DEFAULT_OPTION_PORT = 8200;
 
     /// <summary>
+    /// The default certificate file for https
+    /// </summary>
+    public const string DEFAULT_OPTION_CERTIFICATEFILE = "server-webui.pfx";
+
+    /// <summary>
+    /// Option for setting if to use HTTPS
+    /// </summary>
+    public const string OPTION_USEHTTPS = "webservice-usehttps";
+
+    /// <summary>
     /// Option for setting the webservice SSL certificate
     /// </summary>
     public const string OPTION_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
@@ -78,14 +95,18 @@ public static class WebServerLoader
     /// <param name="WebRoot">The root folder with static files</param>
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
-    /// <param name="Certificate">The certificate, if any</param>
+    /// <param name="HTTPS">If to use HTTPS</param>
+    /// <param name="CertificateFile">Path to certificate file, if any</param>
+    /// <param name="CertificatePassword">Password to the certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     public record ParsedWebserverSettings(
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        X509Certificate2? Certificate,
+        bool HTTPS,
+        string? CertificateFile,
+        string? CertificatePassword,
         string Servername,
         IEnumerable<string> AllowedHostnames
     );
@@ -123,37 +144,46 @@ public static class WebServerLoader
         else if (interfacestring != "loopback")
             listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
+        options.TryGetValue(OPTION_USEHTTPS, out var usehttps);
         options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out var certificateFile);
         options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
         certificateFilePassword = certificateFilePassword?.Trim() ?? "";
 
-        X509Certificate2? cert = null;
-        if (certificateFile == null)
+        if (!string.IsNullOrEmpty(certificateFile) && string.IsNullOrEmpty(certificateFilePassword))
+            throw new ArgumentException(Strings.Server.SSLCertificatePasswordEmpty);
+        else if (string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
+            Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerCertificate", Strings.Server.SSLCertificateFileMissingOption);
+
+        if (!string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
         {
-            try
-            {
-                cert = connection.ApplicationSettings.ServerSSLCertificate;
-            }
-            catch (Exception ex)
-            {
-                Library.Logging.Log.WriteWarningMessage(LOGTAG, "DefectStoredSSLCert", ex, Strings.Server.DefectSSLCertInDatabase);
-            }
+            connection.ApplicationSettings.ServerSSLCertificate = Convert.ToBase64String(File.ReadAllBytes(certificateFile));
+            connection.ApplicationSettings.ServerSSLCertificatePassword = certificateFilePassword;
         }
-        else if (certificateFile.Length == 0)
+        else if (certificateFile != null && certificateFile.Length == 0)
         {
             connection.ApplicationSettings.ServerSSLCertificate = null;
+            connection.ApplicationSettings.ServerSSLCertificatePassword = null;
+        }
+
+        if (!string.IsNullOrEmpty(connection.ApplicationSettings.ServerSSLCertificate))
+        {
+            File.WriteAllBytes(Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE), Convert.FromBase64String(connection.ApplicationSettings.ServerSSLCertificate));
+
+            //backward compatible check for installations before OPTION_USEHTTPS
+            if (usehttps == null && string.IsNullOrEmpty(connection.ApplicationSettings.ServerSSLCertificatePassword))
+                connection.ApplicationSettings.ServerUseHTTPS = true;
         }
         else
         {
-            try
-            {
-                cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(Strings.Server.SSLCertificateFailure(ex.Message), ex);
-            }
+            if (File.Exists(Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE)))
+                File.Delete(Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE));
         }
+
+        if (usehttps != null)
+            connection.ApplicationSettings.ServerUseHTTPS = bool.Parse(usehttps);
+
+        if(connection.ApplicationSettings.ServerUseHTTPS && connection.ApplicationSettings.ServerSSLCertificate == null)
+            throw new ArgumentException(Strings.Server.SSLParametersMismatch);
 
         var webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
@@ -181,12 +211,13 @@ public static class WebServerLoader
 #endif
         }
 
-        var certValid = cert != null && cert.HasPrivateKey;
         var settings = new ParsedWebserverSettings(
             webroot,
             -1,
             listenInterface,
-            cert,
+            connection.ApplicationSettings.ServerUseHTTPS,
+            Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE),
+            connection.ApplicationSettings.ServerSSLCertificatePassword,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
             options.GetValueOrDefault(OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, "").Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
@@ -201,9 +232,6 @@ public static class WebServerLoader
                 var server = await createServer(settings);
                 if (interfacestring != connection.ApplicationSettings.ServerListenInterface)
                     connection.ApplicationSettings.ServerListenInterface = interfacestring;
-
-                if (certValid && cert != connection.ApplicationSettings.ServerSSLCertificate)
-                    connection.ApplicationSettings.ServerSSLCertificate = cert;
 
                 Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Strings.Server.StartedServer(listenInterface.ToString(), p));
 
