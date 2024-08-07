@@ -290,10 +290,10 @@ namespace Duplicati.Library.Main.Strings
         public static string ConsolelogfiltersShort { get { return LC.L(@"Applies filters to the console log data"); } }
 
         public static string UsebackgroundiopriorityLong { get { return LC.L("This option instructs the operating system to set the current process to use the lowest IO priority level, which can make operations run slower but will interfere less with other operations running at the same time."); } }
-        public static string UsebackgroundiopriorityShort { get { return LC.L("Sets the process to use low IO priority"); } }
+        public static string UsebackgroundiopriorityShort { get { return LC.L("Set the process to use low IO priority"); } }
 
         public static string ExcludeemptyfoldersLong { get { return LC.L("Use this option to remove all empty folders from a backup."); } }
-        public static string ExcludeemptyfoldersShort { get { return LC.L("Excludes empty folders"); } }
+        public static string ExcludeemptyfoldersShort { get { return LC.L("Exclude empty folders"); } }
         public static string IgnorefilenamesLong { get { return LC.L("Use this option to set a filename, or list of filenames, that indicate exclusion of a folder which contains it. A common use would be to have a file named something like \".nobackup\" and place this file into folders that should not be backed up."); } }
         public static string IgnorefilenamesShort { get { return LC.L("List of filenames that exclude folders"); } }
         public static string RestoresymlinkmetadataLong { get { return LC.L("If symlink metadata is applied, it will usually mean changing the symlink target, instead of the symlink itself. For this reason, metadata is not applied to symlinks, but this option can be used to override this, such that metadata is applied to symlinks as well."); } }
@@ -302,7 +302,7 @@ namespace Duplicati.Library.Main.Strings
         public static string UnittestmodeShort { get { return LC.L("Activate unittest mode"); } }
 
         public static string ProfilealldatabasequeriesLong { get { return LC.L("To improve performance of the backups, frequent database queries are not logged by default. Enable this option to log all database queries, and remember to set either --{0}={2} or --{1}={2} to report the additional log data", "console-log-level", "log-file-log-level", nameof(Logging.LogMessageType.Profiling)); } }
-        public static string ProfilealldatabasequeriesShort { get { return LC.L("Activates logging of all database queries"); } }
+        public static string ProfilealldatabasequeriesShort { get { return LC.L("Activate logging of all database queries"); } }
         public static string RebuildmissingdblockfilesLong { get { return LC.L("If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."); } }
         public static string RebuildmissingdblockfilesShort { get { return LC.L("Rebuild dblock files when missing"); } }
 

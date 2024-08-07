@@ -200,11 +200,11 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
     {
         public static string SendMessageFailedError(string message) { return LC.L(@"Failed to send message: {0}", message); }
         public static string OptionLoglevelLong { get { return LC.L("Use this option to set the log level for messages to include in the report."); } }
-        public static string OptionLoglevelShort { get { return LC.L("Defines a log level for messages"); } }
+        public static string OptionLoglevelShort { get { return LC.L("Define a log level for messages"); } }
         public static string OptionLogfilterLong { get { return LC.L("Use this option to set a filter expression that defines what options are included in the report."); } }
         public static string OptionLogfilterShort { get { return LC.L("Log message filter"); } }
         public static string OptionmaxloglinesLong { get { return LC.L("Use this option to set the maximum number of log lines to include in the report. Zero or negative values means unlimited."); } }
-        public static string OptionmaxloglinesShort { get { return LC.L("Limits log lines"); } }
+        public static string OptionmaxloglinesShort { get { return LC.L("Limit log lines"); } }
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ResultFormatShort { get { return LC.L(@"Selects the output format for results"); } }
     }
