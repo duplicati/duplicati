@@ -44,7 +44,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string S3ClientDescriptionLong { get { return LC.L(@"Set either to aws or minio. Then either the AWS SDK or Minio SDK will be used to communicate with S3 services."); } }
         public static string S3ClientDescriptionShort { get { return LC.L(@"Specify the S3 client library to use"); } }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this option to communicate using Secure Socket Layer (SSL) over http (https). Note that bucket names containing a period has problems with SSL connections."); } }
-        public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (https) connection"); } }
+        public static string DescriptionUseSSLShort { get { return LC.L(@"Instruct Duplicati to use an SSL (https) connection"); } }
         public static string DescriptionDisableChunkEncodingLong { get { return LC.L(@"This disables chunk encoding for the aws client, which is not supported by all S3 providers."); } }
         public static string DescriptionDisableChunkEncodingShort { get { return LC.L(@"Disable chunk encoding (aws client only)"); } }
         public static string S3StorageclassDescriptionLong { get { return LC.L(@"Use this option to specify a storage class. If this option is not used, the server will choose a default storage class."); } }
