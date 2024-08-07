@@ -31,9 +31,9 @@ namespace Duplicati.Library.Backend.Strings {
         public static string DescriptionFTPPassiveLong { get { return LC.L(@"Activate this option to make the FTP connection in passive mode, which works better with some firewalls. If the option --{0} is set, this option is ignored.", "ftp-regular"); } }
         public static string DescriptionFTPPassiveShort { get { return LC.L(@"Toggles the FTP connections method"); } }
         public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
-        public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
+        public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supply the password used to connect to the server"); } }
         public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
-        public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
+        public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this option to communicate using Secure Socket Layer (SSL) over ftp (ftps)."); } }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (ftps) connection"); } }
         public static string DescriptionDisableUploadVerifyLong { get { return LC.L(@"To protect against network failures, every upload will be attempted verified. Use this option to disable this verification to make the upload faster but less reliable."); } }
