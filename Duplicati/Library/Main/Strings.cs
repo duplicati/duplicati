@@ -100,15 +100,15 @@ namespace Duplicati.Library.Main.Strings
         public static string DblocksizeLong { get { return LC.L(@"This option can change the maximum size of dblock files. Changing the size can be useful if the backend has a limit on the size of each individual file."); } }
         public static string DblocksizeShort { get { return LC.L(@"Limit the size of the volumes"); } }
         public static string DisableStreamingLong { get { return LC.L(@"Enabling this option will disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored."); } }
-        public static string DisableStreamingShort { get { return LC.L(@"Disables use of the streaming transfer method"); } }
+        public static string DisableStreamingShort { get { return LC.L(@"Disable use of the streaming transfer method"); } }
         public static string DontreadmanifestsLong { get { return LC.L(@"Use this option to make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery."); } }
-        public static string DontreadmanifestsShort { get { return LC.L(@"Disables manifests verification"); } }
+        public static string DontreadmanifestsShort { get { return LC.L(@"Disable manifests verification"); } }
         public static string CompressionmoduleLong { get { return LC.L(@"Duplicati supports pluggable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module."); } }
         public static string CompressionmoduleShort { get { return LC.L(@"Select what module to use for compression"); } }
         public static string EncryptionmoduleLong { get { return LC.L(@"Duplicati supports pluggable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module."); } }
         public static string EncryptionmoduleShort { get { return LC.L(@"Select what module to use for encryption"); } }
         public static string DisablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to unload them."); } }
-        public static string DisablemoduleShort { get { return LC.L(@"Disables one or more modules"); } }
+        public static string DisablemoduleShort { get { return LC.L(@"Disable one or more modules"); } }
         public static string EnablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to load them."); } }
         public static string EnablemoduleShort { get { return LC.L(@"Enables one or more modules"); } }
         public static string SnapshotpolicyLong { get { return LC.L(@"This setting controls the usage of snapshots, which allows Duplicati to backup files that are locked by other programs. If this is set to ""off"", Duplicati will not attempt to create a disk snapshot. Setting this to ""auto"" makes Duplicati attempt to create a snapshot, and fail silently if that was not allowed or supported (note that the OS may still log system warnings). A setting of ""on"" will also make Duplicati attempt to create a snapshot, but will produce a warning message in the log if it fails. Setting it to ""required"" will make Duplicati abort the backup if the snapshot creation fails. On windows this uses the Volume Shadow Copy Services (VSS) and requires administrative privileges. On Linux this uses Logical Volume Management (LVM) and requires root privileges."); } }
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Main.Strings
         public static string LoglevelShort { get { return LC.L(@"Log information level"); } }
         public static string LogLevelDeprecated(string option1, string option2) { return LC.L("Use the options --{0} and --{1} instead.", option1, option2); }
         public static string DisableautocreatefolderLong { get { return LC.L(@"If Duplicati detects that the target folder is missing, it will create it automatically. Activate this option to prevent automatic folder creation."); } }
-        public static string DisableautocreatefolderShort { get { return LC.L(@"Disables automatic folder creation"); } }
+        public static string DisableautocreatefolderShort { get { return LC.L(@"Disable automatic folder creation"); } }
         public static string VssexcludewritersLong { get { return LC.L(@"Use this option to exclude faulty writers from a snapshot. This is equivalent to the -wx flag of the vshadow.exe tool, except that it only accepts writer class GUIDs, and not component names or instance GUIDs. Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs are allowed, including with and without curly braces."); } }
         public static string VssexcludewritersShort { get { return LC.L(@"A semicolon separated list of guids of VSS writers to exclude (Windows only)"); } }
         public static string UsnpolicyLong { get { return LC.L(@"This setting controls the usage of NTFS USN numbers, which allows Duplicati to obtain a list of files and folders much faster. If this is set to ""off"", Duplicati will not attempt to use USN. Setting this to ""auto"" makes Duplicati attempt to use USN, and fail silently if that was not allowed or supported. A setting of ""on"" will also make Duplicati attempt to use USN, but will produce a warning message in the log if it fails. Setting it to ""required"" will make Duplicati abort the backup if the USN usage fails. This feature is only supported on Windows and requires administrative privileges."); } }
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Strings
         public static string PatchwithlocalblocksShort { get { return LC.L(@"Use local file data when restoring"); } }
         public static string PatchwithlocalblocksDeprecated(string optionname) { return LC.L(@"Use the option --{0} instead.", optionname); }
         public static string NolocaldbLong { get { return LC.L(@"When listing contents or when restoring files, the local database can be skipped. This is usually slower, but can be used to verify the actual contents of the remote store."); } }
-        public static string NolocaldbShort { get { return LC.L(@"Disables the local database"); } }
+        public static string NolocaldbShort { get { return LC.L(@"Disable the local database"); } }
         public static string KeepversionsLong { get { return LC.L(@"Use this option to set number of versions to keep. Supply -1 to keep all versions."); } }
         public static string KeepversionsShort { get { return LC.L(@"Keep a number of versions"); } }
         public static string KeeptimeLong { get { return LC.L(@"Use this option to set the timespan in which backups are kept."); } }
@@ -264,11 +264,11 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
         public static string ConcurrencycompressorsShort { get { return LC.L(@"Specify the number of concurrent compression processes"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
-        public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disables synthetic filelist"); } }
+        public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disable synthetic filelist"); } }
         public static string CheckfiletimeonlyLong { get { return LC.L(@"This option instructs Duplicati to not look at metadata or filesize when deciding to scan a file for changes. Use this option if you have a large number of files and notice that the scanning takes a long time with unmodified files."); } }
         public static string CheckfiletimeonlyShort { get { return LC.L(@"Checks only file lastmodified"); } }
         public static string DontcompressrestorepathsLong { get { return LC.L(@"When restore a subset of a backup into a new folder, the shortest possible path is used to avoid generating deep paths with empty folders. Use this option to skip this compression, such that the entire original folder structure is preserved, including upper level empty folders."); } }
-        public static string DontcompressrestorepathsShort { get { return LC.L(@"Disables path compression on restore"); } }
+        public static string DontcompressrestorepathsShort { get { return LC.L(@"Disable path compression on restore"); } }
         public static string AllowfullremovalLong { get { return LC.L(@"By default, the last fileset cannot be removed. This is a safeguard to make sure that all remote data is not deleted by a configuration mistake. Use this option to disable that protection, such that all filesets can be deleted."); } }
         public static string AllowfullremovalShort { get { return LC.L(@"Allow removing all filesets"); } }
         public static string AutoVacuumLong { get { return LC.L(@"Some operations that manipulate the local database leave unused entries behind. These entries are not deleted from a hard drive until a VACUUM operation is run. This operation saves disk space in the long run but needs to temporarily create a copy of all valid entries in the database. Setting this to true will allow Duplicati to perform VACUUM operations at its discretion."); } }
