@@ -186,7 +186,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ThresholdLong { get { return LC.L(@"As files are changed, some data stored at the remote destination may not be required. This option controls how much wasted space the destination can contain before being reclaimed. This value is a percentage used on each volume and the total storage."); } }
         public static string ThresholdShort { get { return LC.L(@"The maximum wasted space in percent"); } }
         public static string DryrunLong { get { return LC.L(@"Use this option to experiment with different settings and observe the outcome without changing actual files."); } }
-        public static string DryrunShort { get { return LC.L(@"Does not perform any modifications"); } }
+        public static string DryrunShort { get { return LC.L(@"Do not perform any modifications"); } }
         public static string BlockhashalgorithmLong { get { return LC.L(@"This is a very advanced option! Use this option to select a block hash algorithm with smaller or larger hash size, for performance or storage space reasons."); } }
         public static string BlockhashalgorithmShort { get { return LC.L(@"The hash algorithm used on blocks"); } }
         public static string FilehashalgorithmLong { get { return LC.L(@"This is a very advanced option! Use this option to select a file hash algorithm with smaller or larger hash size, for performance or storage space reasons."); } }
@@ -234,7 +234,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ListsetsonlyShort { get { return LC.L(@"List only filesets"); } }
 
         public static string SkipmetadataLong { get { return LC.L(@"Use this option to disable the storage of metadata, such as file timestamps. Disabling metadata storage will speed up the backup and restore operations, but does not affect file size much."); } }
-        public static string SkipmetadataShort { get { return LC.L(@"Don't store metadata"); } }
+        public static string SkipmetadataShort { get { return LC.L(@"Do not store metadata"); } }
         public static string RestorepermissionsLong { get { return LC.L(@"By default permissions are not restored as they might prevent you from accessing your files. Use this option to restore the permissions as well."); } }
         public static string RestorepermissionsShort { get { return LC.L(@"Restore file permissions"); } }
         public static string SkiprestoreverificationLong { get { return LC.L(@"After restoring files, the file hash of all restored files are checked to verify that the restore was successful. Use this option to disable the check and avoid waiting for the verification."); } }
