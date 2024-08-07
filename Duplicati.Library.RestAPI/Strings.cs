@@ -9,7 +9,7 @@ namespace Duplicati.Server.Strings
         public static string AnotherInstanceDetected { get { return LC.L(@"Another instance is running, and was notified"); } }
         public static string DatabaseOpenError(string message) { return LC.L(@"Failed to create, open or upgrade the database.
 Error message: {0}", message); }
-        public static string HelpCommandDescription { get { return LC.L(@"Displays this help"); } }
+        public static string HelpCommandDescription { get { return LC.L(@"Display this help"); } }
         public static string HelpDisplayDialog { get { return LC.L(@"Supported commandline arguments:
 
 "); } }
@@ -19,9 +19,9 @@ Error message: {0}", message); }
         public static string FiltersCannotBeUsedWithFileError2 { get { return LC.L(@"Filters cannot be specified on the commandline if filters are also present in the parameter file. Use the special --{0}, --{1}, or --{2} options to specify filters inside the parameter file. Each filter must be prefixed with either a + or a -, and multiple filters must be joined with {3}", "replace-filter", "append-filter", "prepend-filter", System.IO.Path.PathSeparator); } }
         public static string FailedToParseParametersFileError(string path, string message) { return LC.L(@"Unable to read the parameters file ""{0}"", reason: {1}", path, message); }
         public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored"; } }
-        public static string LogfileCommandDescription { get { return LC.L(@"Outputs log information to the file given"); } }
-        public static string LoglevelCommandDescription { get { return LC.L(@"Determines the amount of information written in the log file"); } }
-        public static string PortablemodeCommandDescription { get { return LC.L(@"Activates portable mode where the database is placed below the program executable"); } }
+        public static string LogfileCommandDescription { get { return LC.L(@"Output log information to the file given"); } }
+        public static string LoglevelCommandDescription { get { return LC.L(@"Determine the amount of information written in the log file"); } }
+        public static string PortablemodeCommandDescription { get { return LC.L(@"Activate portable mode where the database is placed below the program executable"); } }
         public static string SeriousError(string message) { return LC.L(@"A serious error occurred in Duplicati: {0}", message); }
         public static string StartupFailure(System.Exception error) { return LC.L(@"Unable to start up. Perhaps another process is already running?
 Error message: {0}", error); }

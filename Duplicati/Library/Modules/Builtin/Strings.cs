@@ -79,14 +79,14 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string RequiredoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted."); } }
         public static string RequiredoptionShort { get { return LC.L(@"Run a required script on startup"); } }
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
-        public static string ResultFormatShort { get { return LC.L(@"Selects the output format for results"); } }
+        public static string ResultFormatShort { get { return LC.L(@"Select the output format for results"); } }
         public static string ScriptExecuteError(string script, string message) { return LC.L(@"Error while executing script ""{0}"": {1}", script, message); }
         public static string ScriptTimeoutError(string script) { return LC.L(@"Execution of the script ""{0}"" timed out", script); }
         public static string StartupoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out."); } }
         public static string StartupoptionShort { get { return LC.L(@"Run a script on startup"); } }
         public static string StdErrorReport(string script, string message) { return LC.L(@"The script ""{0}"" reported error messages: {1}", script, message); }
         public static string TimeoutoptionLong { get { return LC.L(@"Sets the maximum time a script is allowed to execute. If the script has not completed within this time, it will continue to execute but the operation will continue too, and no script output will be processed."); } }
-        public static string TimeoutoptionShort { get { return LC.L(@"Sets the script timeout"); } }
+        public static string TimeoutoptionShort { get { return LC.L(@"Set the script timeout"); } }
         public static string EnableArgumentsLong { get { return LC.L(@"This option enables the use of script arguments. If this option is set, the script arguments are treated as commandline strings. Use single or double quotes to separate arguments."); } }
         public static string EnableArgumentsShort { get { return LC.L(@"Enable script arguments"); } }
     }
@@ -189,7 +189,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
         public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string HttpverbLong { get { return LC.L(@"Use this option to change the default HTTP verb used to submit a report."); } }
-        public static string HttpverbShort { get { return LC.L(@"Sets the HTTP verb to use"); } }
+        public static string HttpverbShort { get { return LC.L(@"Set the HTTP verb to use"); } }
         public static string SendhttpurlsformLong { get { return LC.L(@"Use this option to set HTTP report URLs for sending form-encoded data. This option accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
         public static string SendhttpurlsformShort { get { return LC.L(@"HTTP report URLs for sending form data"); } }
         public static string SendhttpurlsjsonLong { get { return LC.L(@"Use this option to set HTTP report URLs for sending JSON data. This option accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
@@ -206,6 +206,6 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string OptionmaxloglinesLong { get { return LC.L("Use this option to set the maximum number of log lines to include in the report. Zero or negative values means unlimited."); } }
         public static string OptionmaxloglinesShort { get { return LC.L("Limit log lines"); } }
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
-        public static string ResultFormatShort { get { return LC.L(@"Selects the output format for results"); } }
+        public static string ResultFormatShort { get { return LC.L(@"Select the output format for results"); } }
     }
 }
