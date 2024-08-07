@@ -25,11 +25,11 @@ namespace Duplicati.Library.Compression.Strings {
         public static string DisplayName { get { return LC.L(@"ZIP compression"); } }
         public static string CompressionlevelDeprecated(string optionname) { return LC.L(@"Use the option --{0} instead.", optionname); }
         public static string CompressionlevelLong { get { return LC.L(@"This option controls the compression level used. A setting of zero gives no compression, and a setting of 9 gives maximum compression."); } }
-        public static string CompressionlevelShort { get { return LC.L(@"Sets the ZIP compression level"); } }
+        public static string CompressionlevelShort { get { return LC.L(@"Set the ZIP compression level"); } }
         public static string CompressionmethodLong(string optionname) { return LC.L(@"Use this option to set an alternative compressor method, such as LZMA. Note that using another value than Deflate will cause the option --{0} to be ignored.", optionname); }
-        public static string CompressionmethodShort { get { return LC.L(@"Sets the ZIP compression method"); } }
+        public static string CompressionmethodShort { get { return LC.L(@"Set the ZIP compression method"); } }
         public static string Compressionzip64Long { get { return LC.L(@"The ZIP64 format is required for files larger than 4GiB. Use this option to toggle it."); } }
-        public static string Compressionzip64Short { get { return LC.L(@"Toggles ZIP64 support"); } }
+        public static string Compressionzip64Short { get { return LC.L(@"Toggle ZIP64 support"); } }
         public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
     }
     internal static class SevenZipCompression {
@@ -41,8 +41,8 @@ namespace Duplicati.Library.Compression.Strings {
         public static string ThreadcountLong { get { return LC.L(@"The number of threads used in LZMA 2 compression. Defaults to the number of processor cores."); } }
         public static string ThreadcountShort { get { return LC.L(@"Number of threads used in compression"); } }
         public static string CompressionlevelLong { get { return LC.L(@"This option controls the compression level used. A setting of zero gives no compression, and a setting of 9 gives maximum compression."); } }
-        public static string CompressionlevelShort { get { return LC.L(@"Sets the 7z compression level"); } }
+        public static string CompressionlevelShort { get { return LC.L(@"Set the 7z compression level"); } }
         public static string FastalgoLong { get { return LC.L(@"This option controls the compression algorithm used. Enabling this option will cause 7z to use the fast algorithm, which produces slightly less compression."); } }
-        public static string FastalgoShort { get { return LC.L(@"Sets the 7z fast algorithm usage"); } }
+        public static string FastalgoShort { get { return LC.L(@"Set the 7z fast algorithm usage"); } }
     }
 }
