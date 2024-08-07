@@ -1,5 +1,6 @@
 // Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
+// Copyright (C) 2024, Suguru Hirahara
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
 // copy of this software and associated documentation files (the "Software"), 
@@ -27,7 +28,7 @@ namespace Duplicati.Library.Backend.Strings {
         public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
-        public static string AuthTwoFactorKeyDescriptionLong { get { return LC.L(@"For accounts with two-factor authentication enabled, this is the shared secret used to generate the two-factor TOTP codes."); } }
+        public static string AuthTwoFactorKeyDescriptionLong { get { return LC.L(@"For accounts with two-factor authentication enabled, set the shared secret used to generate the two-factor TOTP codes."); } }
         public static string AuthTwoFactorKeyDescriptionShort { get { return LC.L(@"The shared secret used to generate two-factor TOTP codes"); } }
         public static string NoPasswordError { get { return LC.L(@"No password given"); } }
         public static string NoUsernameError { get { return LC.L(@"No username given"); } }
