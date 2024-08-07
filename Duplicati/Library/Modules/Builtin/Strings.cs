@@ -50,13 +50,13 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string OauthurlLong { get { return LC.L(@"Duplicati uses an external server to support the OAuth authentication flow. If you have set up your own Duplicati OAuth server, you can supply the refresh URL."); } }
         public static string OauthurlShort { get { return LC.L(@"Alternate OAuth URL"); } }
         public static string SslversionsLong { get { return LC.L(@"This option changes the default SSL versions allowed. This is an advanced option and should only be used if you want to enhance security or work around an issue with a particular SSL protocol."); } }
-        public static string SslversionsShort { get { return LC.L(@"Sets allowed SSL versions"); } }
+        public static string SslversionsShort { get { return LC.L(@"Set allowed SSL versions"); } }
         public static string OperationtimeoutLong { get { return LC.L(@"This option changes the default timeout for any HTTP request, the time covers the entire operation from initial packet to shutdown."); } }
-        public static string OperationtimeoutShort { get { return LC.L(@"Sets the default operation timeout"); } }
+        public static string OperationtimeoutShort { get { return LC.L(@"Set the default operation timeout"); } }
         public static string ReadwritetimeoutLong { get { return LC.L(@"This option changes the default read-write timeout. Read-write timeouts are used to detect a stalled requests, and this option configures the maximum time between activity on a connection."); } }
-        public static string ReadwritetimeoutShort { get { return LC.L(@"Sets readwrite"); } }
+        public static string ReadwritetimeoutShort { get { return LC.L(@"Set readwrite"); } }
         public static string BufferrequestsLong { get { return LC.L(@"This option sets the HTTP buffering. Setting this to ""{0}"" can cause memory leaks, but can also improve performance in some cases.", "true"); } }
-        public static string BufferrequestsShort { get { return LC.L(@"Sets HTTP buffering"); } }
+        public static string BufferrequestsShort { get { return LC.L(@"Set HTTP buffering"); } }
     }
     internal static class HyperVOptions
     {
