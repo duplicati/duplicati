@@ -997,7 +997,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['openstack'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Bucket Name'));
+            EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Bucket name'));
 
         if (res && (scope['openstack_server'] || '').trim().length == 0 && (scope['openstack_server_custom'] || '').trim().length == 0)
             res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must select or fill in the AuthURI'));
@@ -1037,7 +1037,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['s3'] = function (scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket name')) &&
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('AWS Access ID')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('AWS Access Key'));
 
@@ -1083,7 +1083,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['b2'] = function (scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket name')) &&
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('B2 Cloud Storage Account ID')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('B2 Cloud Storage Application Key'));
 
@@ -1097,7 +1097,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                     value: bucketname[ix].charCodeAt(),
                     pos: ix,
                     character: bucketname[ix],
-                    fieldname: gettextCatalog.getString('Bucket Name')
+                    fieldname: gettextCatalog.getString('Bucket name')
                 }));
                 res = false;
             }
@@ -1223,7 +1223,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('IDrive e2 Access Key ID')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('IDrive e2 Access Key Secret')) &&
-            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name'));
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket name'));
 
         if (res) {
             var re = new RegExp('[^A-Za-z0-9-]');
@@ -1235,7 +1235,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                     value: bucketname[ix].charCodeAt(),
                     pos: ix,
                     character: bucketname[ix],
-                    fieldname: gettextCatalog.getString('Bucket Name')
+                    fieldname: gettextCatalog.getString('Bucket name')
                 }));
                 res = false;
             }
