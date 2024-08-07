@@ -69,7 +69,7 @@ namespace Duplicati.Library.Compression
         public SevenZipCompression() { }
 
         /// <summary>
-        /// Constructs a new zip instance.
+        /// Constructs a new ZIP instance.
         /// Access mode is specified by mode parameter.
         /// Note that stream would not be disposed by FileArchiveZip instance so
         /// you may reuse it and have to dispose it yourself.

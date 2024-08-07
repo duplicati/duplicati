@@ -50,7 +50,7 @@ public enum ArchType
 public enum PackageType
 {
     /// <summary>
-    /// The basic zip package
+    /// The basic ZIP package
     /// </summary>
     Zip,
     /// <summary>

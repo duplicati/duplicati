@@ -199,7 +199,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         {
                             Console.Write(" recompressing ...");
 
-                            //Recompressing from e.g. zip to zip
+                            //Recompressing from e.g. ZIP to ZIP
                             if (localFileSource == localFileTarget)
                             {
                                 File.Move(localFileSource, localFileSource + ".same");
