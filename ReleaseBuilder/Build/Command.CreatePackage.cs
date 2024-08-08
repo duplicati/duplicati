@@ -163,11 +163,11 @@ public static partial class Command
         }
 
         /// <summary>
-        /// Builds a zip package asynchronously.
+        /// Builds a ZIP package asynchronously.
         /// </summary>
-        /// <param name="buildRoot">The output folder where the zip package will be created.</param>
-        /// <param name="dirName">The directory name to use as the root zip name.</param>
-        /// <param name="zipFile">The zip file to generate.</param>
+        /// <param name="buildRoot">The output folder where the ZIP package will be created.</param>
+        /// <param name="dirName">The directory name to use as the root ZIP name.</param>
+        /// <param name="zipFile">The ZIP file to generate.</param>
         /// <param name="target">The package target.</param>
         /// <param name="rtcfg">The runtime configuration.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>

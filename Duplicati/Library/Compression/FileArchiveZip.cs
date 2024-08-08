@@ -34,7 +34,7 @@ using System.Linq;
 namespace Duplicati.Library.Compression
 {
     /// <summary>
-    /// An abstraction of a zip archive as a FileArchive, based on SharpCompress.
+    /// An abstraction of a ZIP archive as a FileArchive, based on SharpCompress.
     /// Please note, duplicati does not require both Read &amp; Write access at the same time so this has not been implemented.
     /// </summary>
     public class FileArchiveZip : ICompression
@@ -62,7 +62,7 @@ namespace Duplicati.Library.Compression
         /// </summary>
         private const string COMPRESSION_METHOD_OPTION = "zip-compression-method";
         /// <summary>
-        /// The commandline option for toggling the zip64 support
+        /// The commandline option for toggling the ZIP64 support
         /// </summary>
         private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
 
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Compression
         private const CompressionType DEFAULT_COMPRESSION_METHOD = CompressionType.Deflate;
 
         /// <summary>
-        /// The default setting for the zip64 support
+        /// The default setting for the ZIP64 support
         /// </summary>
         private const bool DEFAULT_ZIP64 = false;
 
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Compression
         private const int CENTRAL_HEADER_ENTRY_SIZE = 8 + 2 + 2 + 4 + 4 + 4 + 4 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 4;
 
         /// <summary>
-        /// The size of the extended zip64 header
+        /// The size of the extended ZIP64 header
         /// </summary>
         private const int CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA = 2 + 2 + 8 + 8 + 8 + 4;
 
@@ -137,7 +137,7 @@ namespace Duplicati.Library.Compression
         private readonly CompressionType m_compressionType;
 
         /// <summary>
-        /// A flag indicating if zip64 is in use
+        /// A flag indicating if ZIP64 is in use
         /// </summary>
         private readonly bool m_usingZip64;
 
@@ -199,7 +199,7 @@ namespace Duplicati.Library.Compression
         }
 
         /// <summary>
-        /// Constructs a new zip instance.
+        /// Constructs a new ZIP instance.
         /// Access mode is specified by mode parameter.
         /// Note that stream would not be disposed by FileArchiveZip instance so
         /// you may reuse it and have to dispose it yourself.
@@ -361,7 +361,7 @@ namespace Duplicati.Library.Compression
                     if (m_using_reader)
                         throw;
 
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeaderFallback", ex, "Zip archive appears to have a broken Central Record Header, switching to stream mode");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeaderFallback", ex, "ZIP archive appears to have a broken Central Record Header, switching to stream mode");
                     SwitchToReader();
 
                     var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
@@ -385,7 +385,7 @@ namespace Duplicati.Library.Compression
                         if (d.Count < 2)
                             throw;
 
-                        Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeader", ex2, "Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeader", ex2, "ZIP archive appears to have broken records, returning the {0} records that could be recovered", d.Count);
                     }
 
                     m_entryDict = d;
