@@ -1,6 +1,6 @@
 # Duplicati
 
-**English** | [中文](./README.zh-CN.md)
+**English** | [中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
 
 Store securely encrypted backups on cloud storage services!
 
@@ -24,12 +24,12 @@ Duplicati is a free, open source, backup client that securely stores encrypted, 
 
 &nbsp;&nbsp; *Amazon S3, [IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2"), [Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage"), Box, Dropbox, FTP, Google Cloud and Drive, MEGA, Microsoft Azure and OneDrive, Rackspace Cloud Files, OpenStack Storage (Swift), Sia, Storj DCS, SSH (SFTP), WebDAV, Tencent Cloud Object Storage (COS), Aliyun OSS, [and more!](https://duplicati.readthedocs.io/en/latest/01-introduction/#supported-backends)*
 
-Duplicati is licensed under the MIT license and available for Windows, OSX and Linux (.NET 4.7.1+ or Mono 5.10.0+ required). 
+Duplicati is licensed under the MIT license and available for Windows, OSX and Linux (.NET 4.7.1+ or Mono 5.10.0+ required).
 
 Download
 ========
 
-The latest version of Duplicati is a beta version for the Duplicati 2.0 release. 
+The latest version of Duplicati is a beta version for the Duplicati 2.0 release.
 
 [Click here to download the latest Duplicati 2.0 beta release.](https://duplicati.com/download)
 
@@ -53,7 +53,7 @@ Features
   * A scheduler keeps backups up-to-date automatically.
   * Integrated updater notifies you when a new release is out
   * Encrypted backup files are transferred to targets like FTP, Cloudfiles, WebDAV, SSH (SFTP), Amazon S3 and others.
-  * Duplicati allows backups of folders, document types like e.g. documents or images, or custom filter rules. 
+  * Duplicati allows backups of folders, document types like e.g. documents or images, or custom filter rules.
   * Duplicati is available as application with an easy-to-use user interface and as command line tool.
   * Duplicati can make proper backups of opened or locked files using the Volume Snapshot Service (VSS) under Windows or the Logical Volume Manager (LVM) under Linux. This allows Duplicati to back up the Microsoft Outlook PST file while Outlook is running.
   * Filters, deletion rules, transfer and bandwidth options, etc
@@ -61,8 +61,8 @@ Features
 Why use Duplicati?
 ==================
 
-Keep your data safe, store it far away, update your backup regularly! 
-This is a simple rule but many backup solutions do not achieve that today. 
+Keep your data safe, store it far away, update your backup regularly!
+This is a simple rule but many backup solutions do not achieve that today.
 But Duplicati does!
 
 Keep your data safe! Bad guys on the Internet seem to look for interesting data everywhere. But people do not want to see any of their private data revealed anywhere. Duplicati provides strong encryption to make sure that your data looks like garbage to others. With a well chosen password your backup files will be more safe on a public webserver than your unencrypted files at home.
@@ -113,5 +113,3 @@ The list below reflects the sponsors who donated to the open-source project.
 <a href="https://opencollective.com/duplicati/sponsor/7/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/7/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/8/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/8/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/9/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/9/avatar.svg"></a>
-
-
