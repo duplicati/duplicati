@@ -21,7 +21,7 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings {
     internal static class WEBDAV {
-        public static string Description { get { return LC.L(@"Supports connections to a WEBDAV enabled web server, using the HTTP protocol. Allowed formats are ""webdav://hostname/folder"" and ""webdav://username:password@hostname/folder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to a WEBDAV enabled web server, using the HTTP protocol. Allowed formats are ""webdav://hostname/folder"" and ""webdav://username:password@hostname/folder""."); } }
         public static string DisplayName { get { return LC.L(@"WebDAV"); } }
         public static string DescriptionForceDigestLong { get { return LC.L(@"Using the HTTP Digest authentication method allows the user to authenticate with the server, without sending the password in clear. However, a man-in-the-middle attack is easy, because the HTTP protocol specifies a fallback to Basic authentication, which will make the client send the password to the attacker. Using this option, the client does not accept this, and always uses Digest authentication or fails to connect."); } }
         public static string DescriptionForceDigestShort { get { return LC.L(@"Force the use of the HTTP Digest authentication method"); } }
