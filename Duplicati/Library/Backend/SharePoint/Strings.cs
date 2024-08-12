@@ -50,7 +50,7 @@ namespace Duplicati.Library.Backend.Strings
 
     internal static class OneDriveForBusiness
     {
-        public static string Description { get { return LC.L(@"Supports connections to Microsoft OneDrive for Business. Allowed formats are ""od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder"" and ""od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder"". You can use a double slash '//' in the path to denote the base path from the documents folder."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Microsoft OneDrive for Business. Allowed formats are ""od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder"" and ""od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder"". You can use a double slash '//' in the path to denote the base path from the documents folder."); } }
         public static string DisplayName { get { return LC.L(@"Microsoft OneDrive for Business"); } }
     }
 }
