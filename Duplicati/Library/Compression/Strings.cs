@@ -26,7 +26,7 @@ namespace Duplicati.Library.Compression.Strings {
         public static string CompressionlevelDeprecated(string optionname) { return LC.L(@"Use the option --{0} instead.", optionname); }
         public static string CompressionlevelLong { get { return LC.L(@"This option controls the compression level used. A setting of zero gives no compression, and a setting of 9 gives maximum compression."); } }
         public static string CompressionlevelShort { get { return LC.L(@"Sets the Zip compression level"); } }
-        public static string CompressionmethodLong(string optionname) { return LC.L(@"This option can be used to set an alternative compressor method, such as LZMA. Note that using another value than Deflate will cause the {0} option to be ignored.", optionname); }
+        public static string CompressionmethodLong(string optionname) { return LC.L(@"Use this option to set an alternative compressor method, such as LZMA. Note that using another value than Deflate will cause the option --{0} to be ignored.", optionname); }
         public static string CompressionmethodShort { get { return LC.L(@"Sets the Zip compression method"); } }
         public static string Compressionzip64Long { get { return LC.L(@"The zip64 format is required for files larger than 4GiB. Use this option to toggle it."); } }
         public static string Compressionzip64Short { get { return LC.L(@"Toggles Zip64 support"); } }
