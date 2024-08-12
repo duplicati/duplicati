@@ -30,7 +30,7 @@ namespace Duplicati.Library.Encryption.Strings
         public static string EmptyKeyError { get { return LC.L(@"Empty passphrase not allowed"); } }
         public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations."); } }
         public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting"); } }
-        public static string AessetthreadlevelDeprecated { get { return LC.L(@"This option has no effect and should not be used."); } }
+        public static string AessetthreadlevelDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "aes-set-threadlevel"); } }
     }
     internal static class EncryptionBase
     {
