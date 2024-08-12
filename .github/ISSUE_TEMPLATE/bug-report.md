@@ -1,3 +1,12 @@
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: bug
+assignees: ''
+
+---
+
 <!-- Thank you for taking the time to submit an issue using this template. By following the instructions and filling out the sections below, you will help the developers get the necessary information to fix your issue. You may remove sections that aren't relevant to your particular case. You can also preview your report before submitting it. -->
 <!-- Please note that the issues are a tool for Duplicati developers. If you post here, you are supposed to want to help the project by providing timely information on your problem so it can be fixed. If this is not the case, please use the forum instead -->
 
