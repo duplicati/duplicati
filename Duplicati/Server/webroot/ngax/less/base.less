@@ -641,6 +641,14 @@ body {
                 color: darken(@tColor, 25%);
             }
 
+            button {
+                width: 26px;
+                height: 26px;
+                background-size: 26px;
+                cursor: pointer;
+                border: none; /* Remove default border */
+            }
+
             .logo {
                 font-size: 30px;
                 font-weight: 700;
@@ -702,13 +710,12 @@ body {
                     width: 26px;
                     margin: 13px 15px;
 
-                    .stop {
+                    button {
                         display: block;
-                        width: 26px;
-                        height: 26px;
+                    }
+
+                    .stop {
                         background: url('../img/progress-stop.png');
-                        background-size: 26px;
-                        cursor: pointer;
                         z-index: 10;
                         position: relative;
 
@@ -722,12 +729,7 @@ body {
                     }
 
                     .resume {
-                        display: block;
-                        width: 26px;
-                        height: 26px;
                         background: url('../img/progress-resume.png');
-                        background-size: 26px;
-                        cursor: pointer;
 
                         @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                             background-image: url('../img/progress-resume_2x.png');
@@ -776,13 +778,12 @@ body {
 
             .action-icons,
             .action-icons-small {
-                > .pause {
-                    width: 26px;
-                    height: 26px;
+                > button {
                     display: inline-block;
-                    cursor: pointer;
+                }
+
+                > .pause {
                     background: url('../img/pause.png');
-                    background-size: 26px;
 
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/pause_2x.png');
@@ -795,7 +796,6 @@ body {
 
                 > .pause.active {
                     background: url('../img/resume.png');
-                    background-size: 26px;
 
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/resume_2x.png');
@@ -807,12 +807,7 @@ body {
                 }
 
                 > .throttle {
-                    width: 26px;
-                    height: 26px;
-                    display: inline-block;
-                    cursor: pointer;
                     background: url('../img/throttle.png');
-                    background-size: 26px;
 
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/throttle_2x.png');
