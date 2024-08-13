@@ -27,6 +27,7 @@ public class StatusService(
             UpdateDownloadProgress = updatePollThread.DownloadProgess,
             ActiveTask = workerThreadsManager.CurrentTask,
             SchedulerQueueIds = scheduler.GetSchedulerQueueIds(),
+            ProposedSchedule = scheduler.GetProposedSchedule(),
             LastEventID = eventPollNotify.EventNo,
             LastDataUpdateID = notificationUpdateService.LastDataUpdateId,
             LastNotificationUpdateID = notificationUpdateService.LastNotificationUpdateId,

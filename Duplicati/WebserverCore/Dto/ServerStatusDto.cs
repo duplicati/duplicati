@@ -24,6 +24,11 @@ public sealed record ServerStatusDto : IServerStatus
     public required IList<Tuple<long, string>> SchedulerQueueIds { get; init; } = [];
 
     /// <summary>
+    /// Gets or sets the proposed schedule.
+    /// </summary>
+    public required IList<Tuple<string, DateTime>> ProposedSchedule { get; init; } = [];
+
+    /// <summary>
     /// Gets or sets a value indicating whether there is a warning.
     /// </summary>
     public required bool HasWarning { get; set; }

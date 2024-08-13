@@ -27,7 +27,6 @@ namespace Duplicati.Server.Serialization.Implementations
     {
         public Tuple<long, string> ActiveTask { get; set; }
         public LiveControlState ProgramState { get; set; }
-        public IList<Tuple<long, string>> SchedulerQueueIds { get; set; }
         public bool HasError { get; set; }
         public bool HasWarning { get; set; }
         public SuggestedStatusIcon SuggestedStatusIcon { get; set; }

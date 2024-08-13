@@ -74,26 +74,6 @@ namespace Duplicati.Server.Serializable
             }
         }
 
-        public IList<Tuple<long, string>> SchedulerQueueIds
-        {
-            get { return (from n in FIXMEGlobal.Scheduler.WorkerQueue where n.Backup != null select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList(); }
-        }
-
-        public IList<Tuple<string, DateTime>> ProposedSchedule
-        {
-            get
-            {
-                return (
-                    from n in FIXMEGlobal.Scheduler.Schedule
-                    let backupid = (from t in n.Value.Tags
-                                    where t != null && t.StartsWith("ID=", StringComparison.Ordinal)
-                                    select t.Substring("ID=".Length)).FirstOrDefault()
-                    where !string.IsNullOrWhiteSpace(backupid)
-                    select new Tuple<string, DateTime>(backupid, n.Key)
-                ).ToList();
-            }
-        }
-
         public bool HasWarning { get { return FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning; } }
         public bool HasError { get { return FIXMEGlobal.DataConnection.ApplicationSettings.UnackedError; } }
 

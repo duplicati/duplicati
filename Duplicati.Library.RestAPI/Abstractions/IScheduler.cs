@@ -14,7 +14,15 @@ public interface IScheduler
     /// <param name="worker">The worker thread</param>
     void Init(WorkerThread<Runner.IRunnerData> worker);
 
+    /// <summary>
+    /// Gets the current ids in the scheduler queue
+    /// </summary>
     IList<Tuple<long, string>> GetSchedulerQueueIds();
+
+    /// <summary>
+    /// Gets the current proposed schedule
+    /// </summary>
+    IList<Tuple<string, DateTime>> GetProposedSchedule();
 
     /// <summary>
     /// Terminates the thread. Any items still in queue will be removed

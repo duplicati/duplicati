@@ -24,6 +24,9 @@ public class SchedulerService : IScheduler
     public IList<Tuple<long, string>> GetSchedulerQueueIds()
         => scheduler.GetSchedulerQueueIds();
 
+    public IList<Tuple<string, DateTime>> GetProposedSchedule()
+        => scheduler.GetProposedSchedule();
+
     public void Reschedule()
         => scheduler.Reschedule();
 
