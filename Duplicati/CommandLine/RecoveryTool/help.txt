@@ -25,7 +25,7 @@ Optionally you can also run:
   Shows what files are available and tests filters
 
 5: Recompress
-  Ability to change compression type of files on remote backend e.g. from 7z to zip
+  Ability to change compression type of files on remote backend e.g. from 7z to ZIP
 
 
 
@@ -71,7 +71,7 @@ If the process is interrupted for any reason, note the file counter and use --of
 Advanced performance options are:
   --reduce-memory-use: Disables keeping all hashes in memory; use if memory is limited on the restoring machine
   --disable-file-verify: Disables the initial hashing of the restored file
-  --disable-wrapped-zip: Disable using the faster .NET native Zip archive in favor of the more resilient one in Duplicati
+  --disable-wrapped-zip: Disable using the faster .NET native ZIP archive in favor of the more resilient one in Duplicati
   --max-open-archives: Sets the number of archives to keep open for faster access (uses some memory pr. archive); default 200
 
 List
