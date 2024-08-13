@@ -19,7 +19,7 @@ public partial class DuplicatiWebserver
 
     public IServiceProvider Provider { get; private set; }
 
-    public int Port => App.Configuration.GetValue("Port", 8200);
+    public int Port { get; private set; }
 
     /// <summary>
     /// The settings used for stating the server
@@ -40,6 +40,7 @@ public partial class DuplicatiWebserver
 
     public void InitWebServer(InitSettings settings, Connection connection)
     {
+        Port = settings.Port;
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.ConfigureKestrel(options =>
         {
