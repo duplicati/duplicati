@@ -121,7 +121,7 @@ namespace Duplicati.Library.Main.Strings
         public static string AsynchronousconcurrentuploadlimitShort { get { return LC.L(@"The number of concurrent uploads allowed"); } }
         public static string DebugoutputLong { get { return LC.L(@"Activate this option to make some error messages more verbose, which may help you track down a particular issue."); } }
         public static string DebugoutputShort { get { return LC.L(@"Enable debugging output"); } }
-        public static string LogfileLong { get { return LC.L(@"Logs information to the file specified."); } }
+        public static string LogfileLong { get { return LC.L(@"Log information to the file specified."); } }
         public static string LogfileShort { get { return LC.L(@"Log internal information to a file"); } }
         public static string LoglevelLong { get { return LC.L(@"Specify the amount of log information to write into the file specified by the option --{0}.", "log-file"); } }
         public static string LoglevelShort { get { return LC.L(@"Log information level"); } }
@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main.Strings
         public static string UploadUnchangedBackupsShort { get { return LC.L(@"Upload empty backup files"); } }
         public static string QuotasizeLong { get { return LC.L(@"Set a limit to the amount of storage used on the backend (by this backup). This is in addition to the full backend quota, if available. Note: Backups will continue past the quota. This only creates warnings and error messages."); } }
         public static string QuotasizeShort { get { return LC.L(@"Limit storage use"); } }
-        public static string QuotaWarningThresholdLong { get { return LC.L(@"Sets a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less than this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored."); } }
+        public static string QuotaWarningThresholdLong { get { return LC.L(@"Set a threshold for when to warn about the backend quota being nearly exceeded. It is given as a percentage, and a warning is generated if the amount of available quota is less than this percentage of the total backup size. If the backend does not report the quota information, this value will be ignored."); } }
         public static string QuotaWarningThresholdShort { get { return LC.L(@"Threshold for warning about low quota"); } }
         public static string QuotaDisableLong(string optionname) { return LC.L(@"Disable the quota reported by the backend. The option --{0} can still be used to set a manual quota", optionname); }
         public static string QuotaDisableShort { get { return LC.L(@"Disable backend quota"); } }

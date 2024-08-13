@@ -70,22 +70,22 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     }
     internal static class RunScript
     {
-        public static string Description { get { return LC.L(@"Executes a script before starting an operation, and again on completion"); } }
+        public static string Description { get { return LC.L(@"Execute a script before starting an operation, and again on completion"); } }
         public static string DisplayName { get { return LC.L(@"Run script"); } }
-        public static string FinishoptionLong { get { return LC.L(@"Executes a script after performing an operation. The script will receive the operation results written to stdout."); } }
+        public static string FinishoptionLong { get { return LC.L(@"Execute a script after performing an operation. The script will receive the operation results written to stdout."); } }
         public static string FinishoptionShort { get { return LC.L(@"Run a script on exit"); } }
         public static string InvalidExitCodeError(string script, int exitcode) { return LC.L(@"The script ""{0}"" returned with exit code {1}", script, exitcode); }
         public static string ExitCodeError(string script, int exitcode, string message) { return LC.L(@"The script ""{0}"" returned with exit code {1}{2}", script, exitcode, string.IsNullOrWhiteSpace(message) ? string.Empty : string.Format(": {0}", message)); }
-        public static string RequiredoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted."); } }
+        public static string RequiredoptionLong { get { return LC.L(@"Execute a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted."); } }
         public static string RequiredoptionShort { get { return LC.L(@"Run a required script on startup"); } }
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ResultFormatShort { get { return LC.L(@"Select the output format for results"); } }
         public static string ScriptExecuteError(string script, string message) { return LC.L(@"Error while executing script ""{0}"": {1}", script, message); }
         public static string ScriptTimeoutError(string script) { return LC.L(@"Execution of the script ""{0}"" timed out", script); }
-        public static string StartupoptionLong { get { return LC.L(@"Executes a script before performing an operation. The operation will block until the script has completed or timed out."); } }
+        public static string StartupoptionLong { get { return LC.L(@"Execute a script before performing an operation. The operation will block until the script has completed or timed out."); } }
         public static string StartupoptionShort { get { return LC.L(@"Run a script on startup"); } }
         public static string StdErrorReport(string script, string message) { return LC.L(@"The script ""{0}"" reported error messages: {1}", script, message); }
-        public static string TimeoutoptionLong { get { return LC.L(@"Sets the maximum time a script is allowed to execute. If the script has not completed within this time, it will continue to execute but the operation will continue too, and no script output will be processed."); } }
+        public static string TimeoutoptionLong { get { return LC.L(@"Set the maximum time a script is allowed to execute. If the script has not completed within this time, it will continue to execute but the operation will continue too, and no script output will be processed."); } }
         public static string TimeoutoptionShort { get { return LC.L(@"Set the script timeout"); } }
         public static string EnableArgumentsLong { get { return LC.L(@"This option enables the use of script arguments. If this option is set, the script arguments are treated as commandline strings. Use single or double quotes to separate arguments."); } }
         public static string EnableArgumentsShort { get { return LC.L(@"Enable script arguments"); } }
