@@ -18,8 +18,12 @@ public class Captcha : IEndpointV1
 
         group.MapPost("/captcha", ([FromServices] ICaptchaProvider captchaProvider, [FromBody] Dto.SolveCaptchaInputDto input) =>
         {
-            var token = captchaProvider.CreateCaptcha(input.target);
-            return new { token };
+            var (token, answer) = captchaProvider.CreateCaptcha(input.target);
+            return new Dto.GenerateCaptchaOutput(
+                token,
+                answer,
+                captchaProvider.VisualCaptchaDisabled
+            );
         })
         .RequireAuthorization();
 

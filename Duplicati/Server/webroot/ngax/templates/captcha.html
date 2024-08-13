@@ -2,8 +2,9 @@
 	<div ng-show="entry.imageurl">
 		<div>{{entry.message}}</div>
 		<div class="details">
-			<img src="{{entry.imageurl}}" />
-			<input type="text" ng-model="entry.answer" />
+			<img ng-hide="entry.noVisualChallenge" src="{{entry.imageurl}}" />
+			<code class="code" ng-show="entry.noVisualChallenge">{{entry.expectedAnswer}}</code>
+			<input class="answer" type="text" ng-model="entry.answer" />
 			<input type="button" value="{{'Reload' | translate}}" ng-click="reload()" />
 		</div>
 
