@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ThreadpriorityShort { get { return LC.L(@"Thread priority"); } }
         public static string DblocksizeLong { get { return LC.L(@"This option can change the maximum size of dblock files. Changing the size can be useful if the backend has a limit on the size of each individual file."); } }
         public static string DblocksizeShort { get { return LC.L(@"Limit the size of the volumes"); } }
-        public static string DisableStreamingLong { get { return LC.L(@"Enabling this option will disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored."); } }
+        public static string DisableStreamingLong { get { return LC.L(@"Use this option to disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored."); } }
         public static string DisableStreamingShort { get { return LC.L(@"Disable use of the streaming transfer method"); } }
         public static string DontreadmanifestsLong { get { return LC.L(@"Use this option to make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery."); } }
         public static string DontreadmanifestsShort { get { return LC.L(@"Disable manifests verification"); } }
