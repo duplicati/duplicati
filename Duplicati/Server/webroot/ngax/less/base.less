@@ -1714,8 +1714,7 @@ body {
                 }
 
                 div.add,
-                div.restore,
-                div.restore.restore-direct {
+                div.restore {
                     --legends-width: 700px;
                     --legends-padding-left: calc(calc(700px - var(--legends-width)) / 2);
                     --circle-width: 43px;
@@ -1749,21 +1748,20 @@ body {
 
                 div.restore {
                     --legends-steps: 2;
-                }
 
-                div.restore.restore-direct {
-                    --legends-steps: 4;
+                    &.restore-direct {
+                        --legends-steps: 4;
 
-                    .step:first-child {
-                        padding-left: 0;
-                        background: transparent;
+                        .step:first-child {
+                            padding-left: 0;
+                            background: transparent;
+                        }
+
+                        .steps-legend {
+                            padding-left: 20px;
+                        }
                     }
-
-                    .steps-legend {
-                        padding-left: 20px;
-                    }
                 }
-
 
                 div.headerthreedotmenu {
                     margin: 20px 0 20px 0;
