@@ -1611,8 +1611,12 @@ body {
                                 margin-right: 5px;
                             }
 
+                            /* TODO: investigate if this block can be merged with one on form.less */
                             select {
-                                padding: 5px 12px;
+                                --padding-block: 5px;
+
+                                padding: var(--padding-block) 12px;
+                                line-height: calc(var(--height) - calc(var(--padding-block) * 2));
                             }
                         }
 
