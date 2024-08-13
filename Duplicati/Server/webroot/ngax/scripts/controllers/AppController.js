@@ -21,6 +21,10 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
         location.reload();
     };
 
+    $scope.login = function() {
+        location.href = '/login.html';
+    };
+
     $scope.resume = function() {
         ServerStatus.resume().then(function() {}, AppUtils.connectionError);
     };

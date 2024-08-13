@@ -207,9 +207,11 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
         websocketReconnectTimer = window.setInterval(function () {
             state.connectionAttemptTimer = retryAt - new Date();
-            if (state.connectionAttemptTimer <= 0)
+            if (state.connectionAttemptTimer <= 0) {
+                window.clearInterval(websocketReconnectTimer);
+                websocketReconnectTimer = null;
                 m();
-            else {
+            } else {
                 $rootScope.$broadcast('serverstatechanged');
             }
         }, 1000);
@@ -318,7 +320,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             updateServerState();
-        } else if (state.failedAuthAttempts > 2 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) { 
+        } else if (state.failedAuthAttempts > 1 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) { 
             state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
@@ -340,7 +342,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     };
 
     const reconnect_websocket = function () {
-        window.clearInterval(websocketReconnectTimer);
         const websocketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const w = new WebSocket(`${websocketProtocol}//${window.location.host}/notifications?token=${AppService.access_token}`);
         w.addEventListener("message", (event) => {
@@ -363,6 +364,11 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     }
 
     this.reconnect = function (fastcall) {        
+        if (websocketReconnectTimer != null) {
+            window.clearInterval(websocketReconnectTimer);
+            websocketReconnectTimer = null;
+        }
+
         AppService.getAccessToken().then(() => {
             if (useWebsocket)
                 window.websocket = reconnect_websocket();
