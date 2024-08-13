@@ -32,8 +32,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string COSAPISecretIdDescriptionShort { get { return LC.L(@"Secret ID"); } }
         public static string COSAPISecretKeyDescriptionLong { get { return LC.L(@"Cloud API Secret Key."); } }
         public static string COSAPISecretKeyDescriptionShort { get { return LC.L(@"Secret Key"); } }
-        public static string COSBucketDescriptionLong { get { return LC.L(@"Bucket, format: BucketName-APPID"); } }
-        public static string COSBucketDescriptionShort { get { return LC.L(@"Bucket"); } }
+        public static string COSBucketDescriptionLong { get { return LC.L(@"Bucket name, format: BucketName-APPID"); } }
+        public static string COSBucketDescriptionShort { get { return LC.L(@"Bucket name"); } }
         public static string COSLocationDescriptionLong { get { return LC.L(@"Region is the distribution area of ​​the Tencent cloud hosting machine room. The object storage COS data is stored in the storage buckets of these regions. https://intl.cloud.tencent.com/document/product/436/6224."); } }
         public static string COSLocationDescriptionShort { get { return LC.L(@"Specifies COS location constraints"); } }
         public static string COSStorageClassDescriptionLong { get { return LC.L(@"Storage class of the object; check enumerated values at https://intl.cloud.tencent.com/document/product/436/30925."); } }
