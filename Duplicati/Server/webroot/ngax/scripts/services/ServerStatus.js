@@ -342,7 +342,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     };
 
     const reconnect_websocket = function () {
-        const w = new WebSocket(`ws://${window.location.host}/notifications?token=${AppService.access_token}`)
+        const websocketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const w = new WebSocket(`${websocketProtocol}//${window.location.host}/notifications?token=${AppService.access_token}`);
         w.addEventListener("message", (event) => {
             const status = JSON.parse(event.data);
             handleServerState({data: status});
