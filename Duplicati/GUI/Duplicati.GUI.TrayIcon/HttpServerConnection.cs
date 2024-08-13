@@ -60,7 +60,6 @@ namespace Duplicati.GUI.TrayIcon
         private record ServerStatusImpl(
             Tuple<long, string> ActiveTask,
             LiveControlState ProgramState,
-            IList<Tuple<long, string>> SchedulerQueueIds,
             bool HasWarning,
             bool HasError,
             SuggestedStatusIcon SuggestedStatusIcon,

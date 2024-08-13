@@ -19,15 +19,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
 
 namespace Duplicati.Server.Serialization.Interface
 {
+    // TODO: This interface should be moved to the TrayIcon and mimic only the properties that are needed
+    // The source data for the interface is actually the in ServerStatusDto.cs
+
     public interface IServerStatus
     {
         Tuple<long, string> ActiveTask { get; }
         LiveControlState ProgramState { get; }
-        IList<Tuple<long,string>> SchedulerQueueIds { get; }
         bool HasWarning { get; }
         bool HasError { get; }
         SuggestedStatusIcon SuggestedStatusIcon { get; }
