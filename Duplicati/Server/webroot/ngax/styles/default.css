@@ -2815,6 +2815,7 @@ body .container .header .state .buttons button {
 }
 body .container .header .state .buttons .stop {
   background: url('../img/progress-stop.png');
+  background-size: 100%;
   z-index: 10;
   position: relative;
 }
@@ -2830,6 +2831,7 @@ body .container .header .state .buttons .stop {
 }
 body .container .header .state .buttons .resume {
   background: url('../img/progress-resume.png');
+  background-size: 100%;
 }
 @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
   body .container .header .state .buttons .resume {
@@ -2877,6 +2879,7 @@ body .container .header .action-icons-small > button {
 body .container .header .action-icons > .pause,
 body .container .header .action-icons-small > .pause {
   background: url('../img/pause.png');
+  background-size: 100%;
 }
 @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
   body .container .header .action-icons > .pause,
@@ -2893,6 +2896,7 @@ body .container .header .action-icons-small > .pause {
 body .container .header .action-icons > .pause.active,
 body .container .header .action-icons-small > .pause.active {
   background: url('../img/resume.png');
+  background-size: 100%;
 }
 @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
   body .container .header .action-icons > .pause.active,
@@ -2909,6 +2913,7 @@ body .container .header .action-icons-small > .pause.active {
 body .container .header .action-icons > .throttle,
 body .container .header .action-icons-small > .throttle {
   background: url('../img/throttle.png');
+  background-size: 100%;
 }
 @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
   body .container .header .action-icons > .throttle,
