@@ -44,7 +44,7 @@ Error message: {0}", error); }
         public static string ServerencryptionkeyShort { get { return LC.L(@"Set the database encryption key"); } }
         public static string TempdirLong { get { return LC.L(@"Use this option to supply an alternative folder for temporary storage. By default the system default temporary folder is used. Note that also SQLite will put temporary files in this temporary folder."); } }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
-        public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Resets the JWT configuration, invalidating any issued login tokens"); } }
+        public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Reset the JWT configuration, invalidating any issued login tokens"); } }
     }
     internal static class Scheduler
     {
