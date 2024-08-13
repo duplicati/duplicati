@@ -49,6 +49,10 @@ a {
     text-decoration: none;
 }
 
+button {
+    border: none; /* Remove default border */
+}
+
 ul {
     list-style: none;
     margin: 0;
@@ -646,7 +650,6 @@ body {
                 height: 26px;
                 background-size: 26px;
                 cursor: pointer;
-                border: none; /* Remove default border */
             }
 
             .logo {
@@ -1342,11 +1345,6 @@ body {
                                 color: @lColor;
                             }
                         }
-
-                        .step:first-child {
-                            padding-left: 0;
-                            background: transparent;
-                        }
                     }
 
                     .steps-legend {
@@ -1718,6 +1716,11 @@ body {
 
                         .step {
                             padding-left: @step-width - @circle-width;
+                            padding-right: 0;
+
+                            &:first-child {
+                                padding-inline: 0;
+                            }
                         }
                     }
 
