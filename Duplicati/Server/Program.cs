@@ -540,7 +540,8 @@ namespace Duplicati.Server
             //Log various information in the logfile
             if (!commandlineOptions.ContainsKey("log-file"))
             {
-                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, "Duplicati.debug.log");
+                var prefix = System.Reflection.Assembly.GetEntryAssembly().GetName().Name.StartsWith("Duplicati.Server") ? "server" : "trayicon";
+                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, $"Duplicati-{prefix}.debug.log");
                 commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
                 if (System.IO.File.Exists(commandlineOptions["log-file"]))
                 {
