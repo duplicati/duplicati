@@ -40,6 +40,12 @@ namespace Duplicati.Server
 
         private static readonly List<string> ParameterFileOptionStrings = new List<string> { "parameters-file", "parameterfile" };
 
+#if DEBUG
+        private const bool DEBUG_MODE = true;
+#else
+        private const bool DEBUG_MODE = false;
+#endif
+
         /// <summary>
         /// The log tag for messages from this class
         /// </summary>
@@ -580,13 +586,16 @@ namespace Duplicati.Server
 
             if (string.IsNullOrEmpty(serverDataFolder))
             {
-#if DEBUG
-                //debug mode uses a lock file located in the app folder
-                DataFolder = StartupPath;
-#else
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode") ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true) : false;
+                bool portableMode = commandlineOptions.ContainsKey("portable-mode")
+                    ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true)
+                    : (DEBUG_MODE ? true : false); // Default to portable mode in debug mode
 
-                if (portableMode)
+                if (DEBUG_MODE && portableMode)
+                {
+                    //debug mode uses a lock file located in the app folder
+                    DataFolder = StartupPath;
+                }
+                else if (portableMode)
                 {
                     //Portable mode uses a data folder in the application home dir
                     DataFolder = System.IO.Path.Combine(StartupPath, "data");
@@ -641,7 +650,6 @@ namespace Duplicati.Server
 
                     DataFolder = serverDataFolder;
                 }
-#endif
             }
             else
                 DataFolder = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
