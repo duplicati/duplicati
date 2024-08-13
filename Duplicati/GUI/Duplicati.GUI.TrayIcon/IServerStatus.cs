@@ -18,29 +18,16 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
+using Duplicati.Server.Serialization;
 
-namespace Duplicati.Server.Serialization.Interface
+namespace Duplicati.GUI.TrayIcon
 {
-    // TODO: This interface should be moved to the TrayIcon and mimic only the properties that are needed
-    // The source data for the interface is actually the in ServerStatusDto.cs
-
     public interface IServerStatus
     {
-        Tuple<long, string> ActiveTask { get; }
         LiveControlState ProgramState { get; }
-        bool HasWarning { get; }
-        bool HasError { get; }
         SuggestedStatusIcon SuggestedStatusIcon { get; }
-        DateTime EstimatedPauseEnd { get; }
         long LastEventID { get; }
         long LastDataUpdateID { get; }
         long LastNotificationUpdateID { get; }
-
-        string UpdatedVersion { get; }
-        string UpdateDownloadLink { get; }
-        UpdatePollerStates UpdaterState { get; }
-        double UpdateDownloadProgress { get; }
-
     }
 }
