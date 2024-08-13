@@ -1303,6 +1303,57 @@ body {
                     }
                 }
 
+                /* TODO: merge these blocks with below */
+                div.add,
+                div.restore {
+                    --legends-width: 700px;
+                    --legends-padding-left: calc(calc(700px - var(--legends-width)) / 2);
+                    --circle-width: 43px;
+                    --step-width: calc(var(--legends-width) / var(--legends-steps));
+
+                    .steps {
+                        margin-left: calc(calc(calc(var(--step-width) - var(--circle-width)) / 2) + var(--legends-padding-left));
+
+                        .step {
+                            padding-left: calc(var(--step-width) - var(--circle-width));
+                            padding-right: 0;
+
+                            &:first-child {
+                                padding-inline: 0;
+                            }
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: var(--legends-padding-left);
+
+                        li {
+                            width: var(--step-width);
+                        }
+                    }
+                }
+
+                div.add {
+                    --legends-steps: 5;
+                }
+
+                div.restore {
+                    --legends-steps: 2;
+
+                    &.restore-direct {
+                        --legends-steps: 4;
+
+                        .step:first-child {
+                            padding-left: 0;
+                            background: transparent;
+                        }
+
+                        .steps-legend {
+                            padding-left: 20px;
+                        }
+                    }
+                }
+
                 div.add,
                 div.restore {
                     .steps {
@@ -1709,56 +1760,6 @@ body {
                         #generic_port {
                             width: 50px;
                             margin-left: 10px; /* Magic number */
-                        }
-                    }
-                }
-
-                div.add,
-                div.restore {
-                    --legends-width: 700px;
-                    --legends-padding-left: calc(calc(700px - var(--legends-width)) / 2);
-                    --circle-width: 43px;
-                    --step-width: calc(var(--legends-width) / var(--legends-steps));
-
-                    .steps {
-                        margin-left: calc(calc(calc(var(--step-width) - var(--circle-width)) / 2) + var(--legends-padding-left));
-
-                        .step {
-                            padding-left: calc(var(--step-width) - var(--circle-width));
-                            padding-right: 0;
-
-                            &:first-child {
-                                padding-inline: 0;
-                            }
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: var(--legends-padding-left);
-
-                        li {
-                            width: var(--step-width);
-                        }
-                    }
-                }
-
-                div.add {
-                    --legends-steps: 5;
-                }
-
-                div.restore {
-                    --legends-steps: 2;
-
-                    &.restore-direct {
-                        --legends-steps: 4;
-
-                        .step:first-child {
-                            padding-left: 0;
-                            background: transparent;
-                        }
-
-                        .steps-legend {
-                            padding-left: 20px;
                         }
                     }
                 }
