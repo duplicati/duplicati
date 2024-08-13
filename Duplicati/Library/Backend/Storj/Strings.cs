@@ -37,9 +37,9 @@ namespace Duplicati.Library.Backend.Strings
         public static string StorjSecretDescriptionShort { get { return LC.L(@"Encryption passphrase"); } }
         public static string StorjSharedAccessDescriptionLong { get { return LC.L(@"Supply the access grant which contains all information in one encrypted string. You may use it instead of a satellite, API key and secret."); } }
         public static string StorjSharedAccessDescriptionShort { get { return LC.L(@"Access grant"); } }
-        public static string StorjBucketDescriptionLong { get { return LC.L(@"Use this option to specify the bucket for storing the backup."); } }
+        public static string StorjBucketDescriptionLong { get { return LC.L(@"Specify the bucket for storing the backup."); } }
         public static string StorjBucketDescriptionShort { get { return LC.L(@"Bucket"); } }
-        public static string StorjFolderDescriptionLong { get { return LC.L(@"Use this option to specify the folder in the bucket for storing the backup."); } }
+        public static string StorjFolderDescriptionLong { get { return LC.L(@"Specify the folder in the bucket for storing the backup."); } }
         public static string StorjFolderDescriptionShort { get { return LC.L(@"Folder"); } }
     }
 }
