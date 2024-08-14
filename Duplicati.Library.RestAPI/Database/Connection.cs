@@ -25,6 +25,7 @@ using System.Linq;
 using Duplicati.Server.Serialization.Interface;
 using System.Text;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.Encryption;
 
 namespace Duplicati.Server.Database
 {
@@ -36,6 +37,7 @@ namespace Duplicati.Server.Database
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
+        private static string[] _encryptedFields = { ServerSettings.CONST.JWT_CONFIG, ServerSettings.CONST.PBKDF_CONFIG,  ServerSettings.CONST.PASSPHRASE_FIELDNAME };
 
         public Connection(System.Data.IDbConnection connection)
         {
@@ -194,7 +196,7 @@ namespace Duplicati.Server.Database
                     {
                         Filter = ConvertToString(rd, 0) ?? "",
                         Name = ConvertToString(rd, 1) ?? "",
-                        Value = ConvertToString(rd, 2) ?? ""
+                        Value = DecryptSensitiveFields( ConvertToString(rd, 1) ?? "", ConvertToString(rd, 2) ?? "")
                         //TODO: Attach the argument information
                     },
                     @"SELECT ""Filter"", ""Name"", ""Value"" FROM ""Option"" WHERE ""BackupID"" = ?", id)
@@ -206,6 +208,9 @@ namespace Duplicati.Server.Database
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
+                    foreach (var setting in values)
+                        setting.Value = EncryptSensitiveFields(setting.Name, setting.Value);
+                    
                     OverwriteAndUpdateDb(
                         tr,
                         @"DELETE FROM ""Option"" WHERE ""BackupID"" = ?", new object[] { id },
@@ -300,7 +305,7 @@ namespace Duplicati.Server.Database
                         Name = ConvertToString(rd, 1),
                         Description = ConvertToString(rd, 2),
                         Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                        TargetURL = ConvertToString(rd, 4),
+                        TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4)),
                         DBPath = ConvertToString(rd, 5),
                     },
                     @"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = ?", id)
@@ -1252,6 +1257,32 @@ namespace Duplicati.Server.Database
                     cmd.ExecuteNonQuery();
                 }
             }
+        }
+
+        /// <summary>
+        /// Encrypts sensitive fields
+        /// </summary>
+        /// <param name="fieldName">The fieldname used to determine if it will be encrypted</param>
+        /// <param name="fieldValue">The field value</param>
+        /// <returns></returns>
+        private static string EncryptSensitiveFields(string fieldName, string fieldValue)
+        {
+            if (fieldValue != null)
+            return _encryptedFields.Contains(fieldName) ? EncryptedFieldHelper.Encrypt(fieldValue) : fieldValue;
+            else return null;
+        }
+
+        /// <summary>
+        /// Decrypts sensitive fields
+        /// </summary>
+        /// <param name="fieldName">The fieldname used to determine if it will be decrypted</param>
+        /// <param name="fieldValue">The field value</param>
+        /// <returns></returns>
+        private static string DecryptSensitiveFields(string fieldName, string fieldValue)
+        {
+            if (fieldValue != null)
+            return _encryptedFields.Contains(fieldName) ? EncryptedFieldHelper.Decrypt(fieldValue) : fieldValue;
+            else return null;
         }
 
         #region IDisposable implementation

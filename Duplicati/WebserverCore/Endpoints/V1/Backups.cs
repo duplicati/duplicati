@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Duplicati.Library.Encryption;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -79,7 +80,7 @@ public class Backups : IEndpointV1
                     Include = y.Include,
                     Expression = y.Expression,
                 }),
-                TargetURL = x.Backup.TargetURL,
+                TargetURL = EncryptedFieldHelper.Decrypt(x.Backup.TargetURL),
                 DBPath = x.Backup.DBPath,
                 Tags = x.Backup.Tags
             },
@@ -161,7 +162,7 @@ public class Backups : IEndpointV1
                 Name = data.Backup.Name,
                 Description = data.Backup.Description,
                 Tags = data.Backup.Tags,
-                TargetURL = data.Backup.TargetURL,
+                TargetURL = EncryptedFieldHelper.Encrypt( data.Backup.TargetURL),
                 DBPathSetter = null,
                 Sources = data.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
