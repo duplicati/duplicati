@@ -4,5 +4,10 @@
     "less-plugin-clean-css": "^1.6.0",
     "stylelint": "^16.8.1",
     "stylelint-config-standard-less": "^3.0.1"
+  },
+  "scripts": {
+    "lint:style": "npx stylelint \"Duplicati/Server/**/less/*.less\"",
+    "lint:style-fix": "npx stylelint \"Duplicati/Server/**/less/*.less\" --fix",
+    "lessc": "npx lessc Duplicati/Server/webroot/ngax/less/dark.less Duplicati/Server/webroot/ngax/styles/dark.css --clean-css -m=always && npx lessc Duplicati/Server/webroot/ngax/less/default.less Duplicati/Server/webroot/ngax/styles/default.css --clean-css -m=always"
   }
 }

@@ -20,4 +20,6 @@ npx lessc webroot/ngax/less/default.less webroot/ngax/styles/default.css --clean
 
 Add `--fix` option to have Stylelint fix some fixable errors.
 
+Alternatively, it is possible to run those commands with `npm run-script`. See `package.json` on the root directory for available scripts.
+
 Note: there are warnings about math=always on running `lessc`, but to fix those all divisions in `.less` need to be wrapped in parens.
