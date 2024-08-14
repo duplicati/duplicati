@@ -1717,9 +1717,11 @@ body {
                 }
 
                 div.add .step2,
-                div.restore .step1 {
+                div.restore .step1,
+                .commandline {
                     /* .step2: "destination" on adding/editing backup task
                        .step1: "backup location" on a direct restore task
+                       .commandline: the form on "Target URL >"
                        TODO: integrate with form.less after investigation */
                     .input.select {
                         display: grid;
@@ -1740,9 +1742,10 @@ body {
                         input {
                             grid-area: custom;
 
-                            /* Add gap between this input area and the select element above.
-                               Avoid using the row-gap property as it sets the gap
-                               even if this input area does not exist. */
+                            /* Add gap between this input area and the select
+                               element above. Avoid using the row-gap property
+                               as it sets the gap even if this input area does
+                               not exist. */
                             margin-top: 10px; /* Magic number */
                         }
                     }
