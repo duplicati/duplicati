@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "stylelint-config-standard-less": "^3.0.1"
+  }
+}

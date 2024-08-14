@@ -12,6 +12,8 @@ Duplicati/Localization/*.updated.csv
 Duplicati/Localization/report.*.xml
 Duplicati/Server/webroot/extjs-*
 packages
+package-lock.json
+node_modules
 changelog-news.txt
 .idea/
 .vs/
