@@ -1,12 +1,11 @@
 using Duplicati.Server.Serialization;
-using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.WebserverCore.Dto;
 
 /// <summary>
 /// Represents the server status DTO.
 /// </summary>
-public sealed record ServerStatusDto : IServerStatus
+public sealed record ServerStatusDto
 {
     /// <summary>
     /// Gets or sets the active task.

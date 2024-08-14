@@ -24,14 +24,6 @@ using Newtonsoft.Json;
 
 namespace Duplicati.Server.Serialization
 {
-    public class SerializableStatusCreator : CustomCreationConverter<Interface.IServerStatus>
-    {
-        public override Interface.IServerStatus Create(Type objectType)
-        {
-            return new Implementations.ServerStatus();
-        }
-    }
-
     public class SettingsCreator : CustomCreationConverter<Interface.ISetting>
     {
         public override Interface.ISetting Create(Type objectType)

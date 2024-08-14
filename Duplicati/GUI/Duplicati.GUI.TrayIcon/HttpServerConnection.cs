@@ -58,19 +58,11 @@ namespace Duplicati.GUI.TrayIcon
         };
 
         private record ServerStatusImpl(
-            Tuple<long, string> ActiveTask,
             LiveControlState ProgramState,
-            bool HasWarning,
-            bool HasError,
             SuggestedStatusIcon SuggestedStatusIcon,
-            DateTime EstimatedPauseEnd,
             long LastEventID,
             long LastDataUpdateID,
-            long LastNotificationUpdateID,
-            string UpdatedVersion,
-            string UpdateDownloadLink,
-            UpdatePollerStates UpdaterState,
-            double UpdateDownloadProgress
+            long LastNotificationUpdateID
         ) : IServerStatus;
 
         private record NotificationImpl(
