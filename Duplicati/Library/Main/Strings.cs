@@ -277,7 +277,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilescannerShort { get { return LC.L(@"Disable the read-ahead scanner"); } }
         public static string DisablefilelistconsistencychecksLong { get { return LC.L(@"In backups with a large number of filesets, the verification can take up a large part of the backup time. If you disable the checks, make sure you run regular check commands to ensure that everything is working as expected."); } }
         public static string DisablefilelistconsistencychecksShort { get { return LC.L(@"Disable filelist consistency checks"); } }
-        public static string DisableOnBatteryLong { get { return LC.L("Use this option to run a scheduled backup if the system is detected to be running on battery power (manual or command line backups will still be run). If the detected power source is mains (e.g., AC) or unknown, then scheduled backups will proceed as normal."); } }
+        public static string DisableOnBatteryLong { get { return LC.L("Use this option to disable a scheduled backup if the system is detected to be running on battery power (manual or command line backups will still be run). If the detected power source is mains (e.g., AC) or unknown, then scheduled backups will proceed as normal."); } }
         public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
 
         public static string LogfileloglevelLong { get { return LC.L(@"Specifies the amount of log information to write into the file specified by the option --{0}.", "log-file"); } }
