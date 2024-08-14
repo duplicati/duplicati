@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-30 09:12+0200\n"
+"POT-Creation-Date: 2024-08-14 09:15+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Hoilc <fyxyzhc@qq.com>, 2024\n"
 "Language-Team: Chinese (China) (https://app.transifex.com/duplicati/teams/67655/zh_CN/)\n"
@@ -51,8 +51,10 @@ msgstr ""
 msgid "Set thread level utilized for crypting"
 msgstr ""
 
-#: Library/Encryption/Strings.cs:33
-msgid "This option has no effect and should not be used."
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:230
+#, csharp-format
+msgid "The option --{0} is no longer used and has been deprecated."
 msgstr ""
 
 #: Library/Encryption/Strings.cs:37
@@ -315,16 +317,11 @@ msgstr "下一个 USN 是 0"
 msgid "Backup configuration changed"
 msgstr "备份设置有变更"
 
-#: Library/Snapshots/Strings.cs:48
-msgid "Calling process does not have the backup privilege"
-msgstr "调用过程没有备份权限"
-
 #: Library/Backend/OpenStack/Strings.cs:27
 msgid ""
 "This backend can read and write data to Swift (OpenStack Object Storage). "
-"Supported format is \"openstack://container/folder\"."
+"Allowed format is \"openstack://container/folder\"."
 msgstr ""
-"该后端能读写 Swift (OpenStack 对象存储) 中数据，支持的格式为 \"openstack://container/folder\"。"
 
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "OpenStack Simple Storage"
@@ -348,7 +345,7 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:33
 #: Library/Backend/SSHv2/Strings.cs:49 Library/Backend/File/Strings.cs:31
 #: Library/Backend/Backblaze/Strings.cs:32
-#: Library/Backend/AzureBlob/Strings.cs:38 Library/Backend/Mega/Strings.cs:27
+#: Library/Backend/AzureBlob/Strings.cs:38 Library/Backend/Mega/Strings.cs:28
 #: Library/Backend/SharePoint/Strings.cs:29
 #: Library/Backend/WEBDAV/Strings.cs:29
 msgid "Supplies the password used to connect to the server"
@@ -367,7 +364,7 @@ msgstr "提供用于连接服务器的域"
 #: Library/Backend/AlternativeFTP/Strings.cs:34
 #: Library/Backend/SSHv2/Strings.cs:50 Library/Backend/File/Strings.cs:32
 #: Library/Backend/Backblaze/Strings.cs:33
-#: Library/Backend/AzureBlob/Strings.cs:39 Library/Backend/Mega/Strings.cs:28
+#: Library/Backend/AzureBlob/Strings.cs:39 Library/Backend/Mega/Strings.cs:29
 #: Library/Backend/SharePoint/Strings.cs:30
 #: Library/Backend/WEBDAV/Strings.cs:30
 msgid ""
@@ -380,7 +377,7 @@ msgstr "该用户名用来连接到服务器，它也可以由环境变量 \"AUT
 #: Library/Backend/AlternativeFTP/Strings.cs:35
 #: Library/Backend/SSHv2/Strings.cs:51 Library/Backend/File/Strings.cs:33
 #: Library/Backend/Backblaze/Strings.cs:34
-#: Library/Backend/AzureBlob/Strings.cs:40 Library/Backend/Mega/Strings.cs:29
+#: Library/Backend/AzureBlob/Strings.cs:40 Library/Backend/Mega/Strings.cs:30
 #: Library/Backend/SharePoint/Strings.cs:31
 #: Library/Backend/WEBDAV/Strings.cs:31
 msgid "Supplies the username used to connect to the server"
@@ -419,8 +416,8 @@ msgid "Supplies the authentication URL"
 msgstr "提供认证地址"
 
 #: Library/Backend/OpenStack/Strings.cs:42
-msgid "The keystone API version to use, valid values are 'v2' and 'v3'."
-msgstr "keystone API 版本，有效值为 'v2' 或 'v3'。"
+msgid "The keystone API version to use. Valid values are 'v2' and 'v3'."
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:43
 msgid "The keystone API version to use"
@@ -460,7 +457,7 @@ msgstr ""
 #: Library/Backend/FTP/Strings.cs:27
 msgid ""
 "This backend can read and write data to an FTP based backend. Allowed "
-"formats are \"ftp://hostname/folder\" or "
+"formats are \"ftp://hostname/folder\" and "
 "\"ftp://username:password@hostname/folder\"."
 msgstr ""
 
@@ -469,10 +466,10 @@ msgid "FTP"
 msgstr "FTP"
 
 #: Library/Backend/FTP/Strings.cs:29
+#, csharp-format
 msgid ""
-"If this flag is set, the FTP connection is made in active mode. Even if the "
-"\"ftp-passive\" flag is also set, the connection will be made in active "
-"mode."
+"Activate this option to make the FTP connection in active mode. Even if the "
+"option --{0} is also set, the connection will be made in active mode."
 msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:30 Library/Backend/FTP/Strings.cs:32
@@ -480,10 +477,11 @@ msgid "Toggles the FTP connections method"
 msgstr "切换 FTP 连接模式"
 
 #: Library/Backend/FTP/Strings.cs:31
+#, csharp-format
 msgid ""
-"If this flag is set, the FTP connection is made in passive mode, which works"
-" better with some firewalls. If the \"ftp-regular\" flag is also set, this "
-"flag is ignored."
+"Activate this option to make the FTP connection in passive mode, which works"
+" better with some firewalls. If the option --{0} is set, this option is "
+"ignored."
 msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:33 Library/Backend/CloudFiles/Strings.cs:28
@@ -491,7 +489,7 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:32
 #: Library/Backend/SSHv2/Strings.cs:48 Library/Backend/File/Strings.cs:30
 #: Library/Backend/Backblaze/Strings.cs:31
-#: Library/Backend/AzureBlob/Strings.cs:37 Library/Backend/Mega/Strings.cs:26
+#: Library/Backend/AzureBlob/Strings.cs:37 Library/Backend/Mega/Strings.cs:27
 #: Library/Backend/SharePoint/Strings.cs:28
 #: Library/Backend/WEBDAV/Strings.cs:28
 msgid ""
@@ -501,9 +499,9 @@ msgstr "该密码用来连接到服务器，它也可以由环境变量 \"AUTH_P
 
 #: Library/Backend/FTP/Strings.cs:37
 msgid ""
-"Use this flag to communicate using Secure Socket Layer (SSL) over ftp "
+"Use this option to communicate using Secure Socket Layer (SSL) over ftp "
 "(ftps)."
-msgstr "开启该参数将使用安全套接字协议 (SSL) 连接 FTP (FTPS)。"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:38
 msgid "Instructs Duplicati to use an SSL (ftps) connection"
@@ -552,9 +550,9 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:27
 msgid ""
-"This backend can read and write data to Google Cloud Storage. Supported "
-"format is \"gcs://bucket/folder\"."
-msgstr "该后端可以从 Google Cloud Storage 读写数据，支持格式为 \"gcs://bucket/folder\"。"
+"This backend can read and write data to Google Cloud Storage. Allowed format"
+" is \"gcs://bucket/folder\"."
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:28
 msgid "Google Cloud Storage"
@@ -563,8 +561,8 @@ msgstr "Google Cloud Storage"
 #: Library/Backend/GoogleServices/Strings.cs:29
 #: Library/Backend/OAuthHelper/Strings.cs:26
 #, csharp-format
-msgid "You need an AuthID, you can get it from: {0}"
-msgstr "您需要一个授权 ID，您可以获取自：{0}"
+msgid "You need an AuthID. You can get it from: {0}"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:30
 #, csharp-format
@@ -629,9 +627,9 @@ msgstr "指定创建 bucket 的项目"
 
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid ""
-"This backend can read and write data to Google Drive. Supported format is "
+"This backend can read and write data to Google Drive. Allowed format is "
 "\"googledrive://folder/subfolder\"."
-msgstr "该后端能读写 Google Drive 中数据，支持的格式为 \"googledrive://folder/subfolder\"。"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:45
 msgid "Google Drive"
@@ -654,9 +652,9 @@ msgstr "团队云盘 ID"
 
 #: Library/Backend/CloudFiles/Strings.cs:24
 msgid ""
-"Supports connections to the CloudFiles backend. Allowed formats is "
+"This backend can read and write data to CloudFiles. Allowed format is "
 "\"cloudfiles://container/folder\"."
-msgstr "支持连接至 CloudFiles 后端，允许的格式为 \"cloudfiles://container/folder\"。"
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:25
 msgid "Rackspace CloudFiles"
@@ -666,17 +664,17 @@ msgstr "Rackspace CloudFiles"
 #, csharp-format
 msgid ""
 "CloudFiles use different servers for authentication based on where the "
-"account resides, use this option to set an alternate authentication URL. "
+"account resides. Use this option to set an alternate authentication URL. "
 "This option overrides --{0}."
-msgstr "CloudFile 根据帐户所在使用不同的认证服务器，使用该选项设置可选的认证地址且会覆盖 --{0}。"
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:27
 msgid "Provide another authentication URL"
 msgstr "提供另外认证地址"
 
 #: Library/Backend/CloudFiles/Strings.cs:32
-msgid "Supplies the API Access Key used to authenticate with CloudFiles."
-msgstr "提供用来认证 CloudFiles 的 API 访问密钥。"
+msgid "The API Access Key used to authenticate with CloudFiles."
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:33
 msgid "Supplies the access key used to connect to the server"
@@ -685,18 +683,18 @@ msgstr "提供连接服务器的访问密钥"
 #: Library/Backend/CloudFiles/Strings.cs:34
 #, csharp-format
 msgid ""
-"Duplicati will assume that the credentials given are for a US account, use "
+"Duplicati will assume that the credentials given are for a US account. Use "
 "this option if the account is a UK based account. Note that this is "
 "equivalent to setting --{0}={1}."
-msgstr "Duplicati 假定所给登录凭证为美国帐户，使用该选项指定为英国帐户，注意该选项等同于设置 --{0}={1}。"
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:35
 msgid "Use a UK account"
 msgstr "使用英国帐户"
 
 #: Library/Backend/CloudFiles/Strings.cs:36
-msgid "Supplies the username used to authenticate with CloudFiles."
-msgstr "提供用来认证 CloudFiles 的用户名。"
+msgid "The username used to authenticate with CloudFiles."
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:37
 msgid "Supplies the username used to authenticate with CloudFiles"
@@ -724,8 +722,8 @@ msgid "No CloudFiles userID given"
 msgstr "未给出 CloudFiles 用户 ID"
 
 #: Library/Backend/CloudFiles/Strings.cs:43
-msgid "Unexpected CloudFiles response, perhaps the API has changed?"
-msgstr "预期外的 CloudFiles 响应，可能是 API 改变？"
+msgid "Unexpected CloudFiles response. Perhaps the API has changed?"
+msgstr ""
 
 #: Library/Backend/S3/S3Config.cs:75
 msgid "S3 configuration module"
@@ -738,7 +736,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
-"formats are: \"s3://bucketname/prefix\"."
+"format is \"s3://bucketname/prefix\"."
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:27
@@ -746,9 +744,10 @@ msgid "S3 compatible"
 msgstr "兼容 S3"
 
 #: Library/Backend/S3/Strings.cs:28
+#, csharp-format
 msgid ""
 "AWS Secret Access Key can be obtained after logging into your AWS account. "
-"This can also be supplied through the \"auth-password\" property."
+"This can also be supplied through the option --{0}."
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:29
@@ -756,9 +755,10 @@ msgid "AWS Secret Access Key"
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:30
+#, csharp-format
 msgid ""
 "AWS Access Key ID can be obtained after logging into your AWS account. This "
-"can also be supplied through the \"auth-username\" property."
+"can also be supplied through the option --{0}."
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:31
@@ -811,10 +811,10 @@ msgstr "指定使用的 S3 客户端库"
 
 #: Library/Backend/S3/Strings.cs:46
 msgid ""
-"Use this flag to communicate using Secure Socket Layer (SSL) over http "
+"Use this option to communicate using Secure Socket Layer (SSL) over http "
 "(https). Note that bucket names containing a period has problems with SSL "
 "connections."
-msgstr "开启该参数将使用 SSL 连接 HTTP (HTTPS)。注意名称中包含句号的 bucket 会在 SSL 连接中出错"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:47 Library/Backend/WEBDAV/Strings.cs:40
 #: Library/Backend/TahoeLAFS/Strings.cs:27
@@ -876,7 +876,7 @@ msgstr ""
 #: Library/Backend/AlternativeFTP/Strings.cs:30
 msgid ""
 "This backend can read and write data to an FTP based backend using an "
-"alternative FTP client. Allowed formats are \"aftp://hostname/folder\" or "
+"alternative FTP client. Allowed formats are \"aftp://hostname/folder\" and "
 "\"aftp://username:password@hostname/folder\"."
 msgstr ""
 
@@ -1039,11 +1039,9 @@ msgstr "附加的 SSH 公钥"
 #: Library/Backend/SSHv2/Strings.cs:46
 msgid ""
 "This backend can read and write data to an SSH based backend, using SFTP. "
-"Allowed formats are \"ssh://hostname/folder\" or "
+"Allowed formats are \"ssh://hostname/folder\" and "
 "\"ssh://username:password@hostname/folder\"."
 msgstr ""
-"该后端能读写 SSH 后端中数据，支持的格式为 \"ssh://hostname/folder\" 或  "
-"\"ssh://username:password@hostname/folder\"。"
 
 #: Library/Backend/SSHv2/Strings.cs:47
 msgid "SFTP (SSH)"
@@ -1073,8 +1071,8 @@ msgstr "禁用指纹校验"
 #: Library/Backend/SSHv2/Strings.cs:56
 msgid ""
 "Points to a valid OpenSSH keyfile. If the file is encrypted, the password "
-"supplied is used to decrypt the keyfile. If this option is supplied, the "
-"password is not used to authenticate."
+"supplied is used to decrypt it. If the keyfile is specified, the password is"
+" not used to authenticate."
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:57 Library/Backend/SSHv2/Strings.cs:59
@@ -1085,15 +1083,14 @@ msgstr "使用 SSH 私钥认证"
 #, csharp-format
 msgid ""
 "An url-encoded SSH private key. The private key must be prefixed with {0}. "
-"If the file is encrypted, the password supplied is used to decrypt the "
-"keyfile. If this option is supplied, the password is not used to "
-"authenticate."
+"If the key is encrypted, the password supplied is used to decrypt it. If the"
+" private key is specified, the password is not used to authenticate."
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:60
 msgid ""
-"Use this option to manage the internal timeout for SSH operations. If this "
-"options is set to zero, the operations will not time out."
+"Use this option to manage the internal timeout for SSH operations. If the "
+"value is set to zero, the operations will not time out."
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:61
@@ -1102,13 +1099,11 @@ msgstr "设置操作超时时间"
 
 #: Library/Backend/SSHv2/Strings.cs:62
 msgid ""
-"This option can be used to enable the keep-alive interval for the SSH "
-"connection. If the connection is idle, aggressive firewalls might close the "
-"connection. Using keep-alive will keep the connection open in this scenario."
-" If this value is set to zero, the keep-alive is disabled."
+"Use this option to enable the keep-alive interval for the SSH connection. If"
+" the connection is idle, aggressive firewalls might close the connection. "
+"Using keep-alive will keep the connection open in this scenario. If this "
+"value is set to zero, the keep-alive is disabled."
 msgstr ""
-"该选项用来设置 SSH 连接的 keepalive 时间。对于空闲的连接，激进的防火墙可能会将其关闭。使用 keepalive "
-"将在这种情况下保持连接。设为 0 表示禁用 keepalive。"
 
 #: Library/Backend/SSHv2/Strings.cs:63
 msgid "Sets a keepalive value"
@@ -1136,9 +1131,9 @@ msgstr "请添加 --{1}=\"{0}\" 来信任该主机。视情况，您也可以使
 
 #: Library/Backend/Box/Strings.cs:25
 msgid ""
-"This backend can read and write data to Box.com. Supported format is "
+"This backend can read and write data to Box.com. Allowed format is "
 "\"box://folder/subfolder\"."
-msgstr "该后端能读写 Box.com 中数据，支持的格式为 \"box://folder/subfolder\"。"
+msgstr ""
 
 #: Library/Backend/Box/Strings.cs:26
 msgid "Box.com"
@@ -1211,7 +1206,7 @@ msgstr "Rclone 程序路径"
 #: Library/Backend/File/Strings.cs:24
 msgid ""
 "This backend can read and write data to an file based backend. Allowed "
-"formats are \"file://hostname/folder\" or "
+"formats are \"file://hostname/folder\" and "
 "\"file://username:password@hostname/folder\". You may supply UNC paths "
 "(e.g.: \"file://\\\\server\\folder\") or local paths (e.g.: (win) "
 "\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
@@ -1307,7 +1302,7 @@ msgstr ""
 #: Library/Backend/Backblaze/Strings.cs:25
 msgid ""
 "This backend can read and write data to the Backblaze B2 Cloud Storage. "
-"Allowed formats are: \"b2://bucketname/prefix\"."
+"Allowed format is \"b2://bucketname/prefix\"."
 msgstr ""
 
 #: Library/Backend/Backblaze/Strings.cs:26
@@ -1315,10 +1310,10 @@ msgid "B2 Cloud Storage"
 msgstr "B2 Cloud Storage"
 
 #: Library/Backend/Backblaze/Strings.cs:27
+#, csharp-format
 msgid ""
 "B2 Cloud Storage Application Key can be obtained after logging into your "
-"Backblaze account. This can also be supplied through the \"auth-password\" "
-"property."
+"Backblaze account. This can also be supplied through the option --{0}."
 msgstr ""
 
 #: Library/Backend/Backblaze/Strings.cs:28
@@ -1326,10 +1321,10 @@ msgid "B2 Cloud Storage Application Key"
 msgstr "B2 云存储应用密钥"
 
 #: Library/Backend/Backblaze/Strings.cs:29
+#, csharp-format
 msgid ""
 "B2 Cloud Storage Account ID can be obtained after logging into your "
-"Backblaze account. This can also be supplied through the \"auth-username\" "
-"property."
+"Backblaze account. This can also be supplied through the option --{0}."
 msgstr ""
 
 #: Library/Backend/Backblaze/Strings.cs:30
@@ -1519,8 +1514,8 @@ msgid ""
 "Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. "
 "Allowed formats are "
 "\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
-" (with \"//\" being optionally used to indicate the root document folder), "
-"or just \"sharepoint://subfolder\" (in which case you must also explicitly "
+" (with \"//\" being optionally used to indicate the root document folder) "
+"and \"sharepoint://subfolder\" (in which case you must also explicitly "
 "specify the SharePoint site's ID via --{0}). Usage of this backend requires "
 "that you agree to the terms in {1} ({2}) and {3} ({4})."
 msgstr ""
@@ -1599,8 +1594,9 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/AliyunOSS/Strings.cs:14
-msgid "Bucket Name"
-msgstr "Bucket 名称"
+#: Library/Backend/TencentCOS/Strings.cs:36
+msgid "Bucket name"
+msgstr ""
 
 #: Library/Backend/AliyunOSS/Strings.cs:15
 msgid "Region indicates the physical location of the OSS data center."
@@ -1622,8 +1618,8 @@ msgstr ""
 
 #: Library/Backend/AzureBlob/Strings.cs:25
 msgid ""
-"This backend can read and write data to Azure blob storage. Allowed formats "
-"are: \"azure://bucketname\"."
+"This backend can read and write data to Azure blob storage. Allowed format "
+"is \"azure://bucketname\"."
 msgstr ""
 
 #: Library/Backend/AzureBlob/Strings.cs:26
@@ -1710,17 +1706,13 @@ msgid "Secret Key"
 msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:35
-msgid "Bucket, format: BucketName-APPID"
+msgid "Bucket name, format: BucketName-APPID"
 msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:36
-msgid "Bucket"
-msgstr "Bucket"
 
 #: Library/Backend/TencentCOS/Strings.cs:37
 msgid ""
-"Region is the distribution area of ​​the Tencent cloud hosting machine room,"
-" the object storage COS data is stored in the storage buckets of these "
+"Region is the distribution area of ​​the Tencent cloud hosting machine room."
+" The object storage COS data is stored in the storage buckets of these "
 "regions. https://intl.cloud.tencent.com/document/product/436/6224."
 msgstr ""
 
@@ -1740,9 +1732,9 @@ msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:25
 msgid ""
-"This backend can read and write data to Jottacloud using it's REST protocol."
-" Allowed format is \"jottacloud://folder/subfolder\"."
-msgstr "该后端能通过 REST 协议读写 Jottacloud 中数据，支持的格式为 \"jottacloud://folder/subfolder\"。"
+"This backend can read and write data to Jottacloud using its REST protocol. "
+"Allowed format is \"jottacloud://folder/subfolder\"."
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:26
 msgid "Jottacloud"
@@ -1753,8 +1745,8 @@ msgid "No username found"
 msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:30
-msgid "No path given, cannot upload files to the root folder"
-msgstr "未给出路径，不能上传文件至根目录"
+msgid "No path given. Files cannot be uploaded to the root folder"
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:31
 msgid "Illegal mount point given."
@@ -1812,48 +1804,54 @@ msgstr "同时下载的块大小。这些块将保存在内存中，因此请尽
 msgid "The chunk size for simultaneous downloading"
 msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:24
+#: Library/Backend/Mega/Strings.cs:25
 msgid ""
-"This backend can read and write data to Mega.co.nz. Allowed formats are: "
+"This backend can read and write data to Mega.co.nz. Allowed format is "
 "\"mega://folder/subfolder\"."
 msgstr ""
 
-#: Library/Backend/Mega/Strings.cs:25
+#: Library/Backend/Mega/Strings.cs:26
 msgid "mega.nz"
 msgstr "mega.nz"
 
-#: Library/Backend/Mega/Strings.cs:30
-msgid ""
-"For accounts with two-factor authentication enabled, this is the shared "
-"secret used to generate the two-factor TOTP codes."
-msgstr ""
-
 #: Library/Backend/Mega/Strings.cs:31
-msgid "The shared secret used to generate two-factor TOTP codes"
+msgid ""
+"For accounts with two-factor authentication enabled, set the shared secret "
+"used to generate the two-factor TOTP codes."
 msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:32
+msgid "The shared secret used to generate two-factor TOTP codes"
+msgstr ""
+
+#: Library/Backend/Mega/Strings.cs:33
 msgid "No password given"
 msgstr "未给出密码"
 
-#: Library/Backend/Mega/Strings.cs:33
+#: Library/Backend/Mega/Strings.cs:34
 msgid "No username given"
 msgstr "未给出用户名"
+
+#: Library/Backend/Idrivee2/Strings.cs:24
+msgid "This backend can read and write data to IDrive e2."
+msgstr ""
 
 #: Library/Backend/Idrivee2/Strings.cs:25
 msgid "IDrive e2"
 msgstr ""
 
 #: Library/Backend/Idrivee2/Strings.cs:26
+#, csharp-format
 msgid ""
 "Access Key Secret can be obtained after logging into your IDrive e2 account."
-" This can also be supplied through the \"auth-password\" property."
+" This can also be supplied through the option --{0}."
 msgstr ""
 
 #: Library/Backend/Idrivee2/Strings.cs:28
+#, csharp-format
 msgid ""
 "Access Key ID can be obtained after logging into your IDrive e2 account. "
-"This can also be supplied through the \"auth-username\" property."
+"This can also be supplied through the option --{0}."
 msgstr ""
 
 #: Library/Backend/Idrivee2/Strings.cs:31
@@ -1876,17 +1874,13 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:26
 msgid ""
-"Supports connections to a SharePoint server (including OneDrive for "
-"Business). Allowed formats are "
-"\"mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\" or "
+"This backend can read and write data to a SharePoint server (including "
+"OneDrive for Business). Allowed formats are "
+"\"mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\" and "
 "\"mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\"."
 " Use a double slash '//' in the path to denote the web from the documents "
 "library."
 msgstr ""
-"支持连接到 SharePoint 服务器 (包括 OneDrive for Business ) .允许的格式为 "
-"\"mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\" 或 "
-"\"mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\"。在路径中使用双斜杠"
-" '//'  表示文档库中的网站。"
 
 #: Library/Backend/SharePoint/Strings.cs:27
 msgid "Microsoft SharePoint"
@@ -1969,19 +1963,14 @@ msgstr "看起来一切正常，但测试连接时网页标题读取失败。某
 
 #: Library/Backend/SharePoint/Strings.cs:53
 msgid ""
-"Supports connections to Microsoft OneDrive for Business. Allowed formats are"
-" "
+"This backend can read and write data to Microsoft OneDrive for Business. "
+"Allowed formats are "
 "\"od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder\""
-" or "
+" and "
 "\"od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder\"."
 " You can use a double slash '//' in the path to denote the base path from "
 "the documents folder."
 msgstr ""
-"支持连接到 Microsoft OneDrive for Business.允许的格式为 "
-"\"od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder\""
-" 或 "
-"\"od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder\""
-" 。在路径中使用双斜杠 '//'  表示文档文件夹中的基础路径。"
 
 #: Library/Backend/SharePoint/Strings.cs:54
 msgid "Microsoft OneDrive for Business"
@@ -1989,9 +1978,9 @@ msgstr "Microsoft OneDrive for Business"
 
 #: Library/Backend/Dropbox/Strings.cs:27
 msgid ""
-"This backend can read and write data to Dropbox. Supported format is "
+"This backend can read and write data to Dropbox. Allowed format is "
 "\"dropbox://folder/subfolder\"."
-msgstr "该后端能读写 Dropbox 中数据，支持的格式为 \"dropbox://folder/subfolder\"。"
+msgstr ""
 
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
@@ -1999,12 +1988,10 @@ msgstr "Dropbox"
 
 #: Library/Backend/WEBDAV/Strings.cs:24
 msgid ""
-"Supports connections to a WEBDAV enabled web server, using the HTTP "
-"protocol. Allowed formats are \"webdav://hostname/folder\" or "
+"This backend can read and write data to a WEBDAV enabled web server, using "
+"the HTTP protocol. Allowed formats are \"webdav://hostname/folder\" and "
 "\"webdav://username:password@hostname/folder\"."
 msgstr ""
-"支持通过 HTTP 协议连接到 WEBDAV 服务器，支持的格式为 \"webdav://hostname/folder\" 或  "
-"\"webdav://username:password@hostname/folder\"。"
 
 #: Library/Backend/WEBDAV/Strings.cs:25
 msgid "WebDAV"
@@ -2016,11 +2003,9 @@ msgid ""
 "with the server, without sending the password in clear. However, a man-in-"
 "the-middle attack is easy, because the HTTP protocol specifies a fallback to"
 " Basic authentication, which will make the client send the password to the "
-"attacker. Using this flag, the client does not accept this, and always uses "
-"Digest authentication or fails to connect."
+"attacker. Using this option, the client does not accept this, and always "
+"uses Digest authentication or fails to connect."
 msgstr ""
-"使用 HTTP Digest 认证可以使用户不明文发送密码而登录服务器。但是中间人攻击仍然很容易，因为 HTTP 协议允许回退到 Basic "
-"认证，这将使客户端发送密码给攻击者。开启该参数，客户端将只接受 Digest 认证，否则中止连接。"
 
 #: Library/Backend/WEBDAV/Strings.cs:27
 msgid "Force the use of the HTTP Digest authentication method"
@@ -2046,9 +2031,9 @@ msgstr ""
 #: Library/Backend/WEBDAV/Strings.cs:39
 #: Library/Backend/TahoeLAFS/Strings.cs:26
 msgid ""
-"Use this flag to communicate using Secure Socket Layer (SSL) over http "
+"Use this option to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
-msgstr "开启该参数将使用 SSL 连接 (HTTPS)"
+msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:41
 msgid ""
@@ -2091,78 +2076,78 @@ msgid "Storj DCS (Decentralized Cloud Storage)"
 msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:29
-msgid "The connection-test failed."
-msgstr "连接测试失败"
+msgid "Connection-test failed."
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:30
 msgid ""
-"The authentication method describes which way to use to connect to the "
-"network - either via API key or via an access grant."
-msgstr "\"认证方法\" 选项指定了连接到网络的方式——通过API密钥或访问授权"
+"Specify the authentication method which describes which way to use to "
+"connect to the network - either via API key or via an access grant."
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:31
-msgid "The authentication method"
-msgstr "认证方法"
+msgid "Authentication method"
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:32
 msgid ""
-"The satellite that keeps track of all metadata. Use a Storj DCS server for "
-"high-performance SLA-backed connectivity or use a community server. Or even "
-"host your own."
+"Specify the satellite that keeps track of all metadata. Use a Storj DCS "
+"server for high-performance SLA-backed connectivity or use a community "
+"server. Or even host your own."
 msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:33
-msgid "The satellite"
-msgstr "卫星"
+msgid "Satellite"
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:34
 msgid ""
-"The API key grants access to a specific project on your chosen satellite. "
-"Head over to the dashboard of your satellite to create one if you do not "
-"already have an API key."
-msgstr "用来授权访问您选择的 卫星上指定项目的 API 密钥。如果您没有现有的 API 密钥，可以从卫星的仪表盘上创建。"
+"Supply the API key which grants access to a specific project on your chosen "
+"satellite. Head over to the dashboard of your satellite to create one if you"
+" do not already have an API key."
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:35
-msgid "The API key"
-msgstr "API 密钥"
+msgid "API key"
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:36
 msgid ""
-"The encryption passphrase is used to encrypt your data before sending it to "
-"the Storj network. This passphrase can be the only secret to provide - for "
-"Storj you do not necessary need any additional encryption (from Duplicati) "
-"in place."
+"Supply the encryption passphrase used to encrypt your data before sending it"
+" to the Storj network. This passphrase can be the only secret to provide - "
+"for Storj you do not necessary need any additional encryption (from "
+"Duplicati) in place."
 msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:37
-msgid "The encryption passphrase"
-msgstr "加密密码"
+msgid "Encryption passphrase"
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:38
 msgid ""
-"An access grant contains all information in one encrypted string. You may "
-"use it instead of a satellite, API key and secret."
-msgstr "\"访问授权\" 包含加密字符串中的所有信息。您可以用它替代卫星、API 密钥或 secret。"
+"Supply the access grant which contains all information in one encrypted "
+"string. You may use it instead of a satellite, API key and secret."
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:39
-msgid "The access grant"
-msgstr "访问授权"
+msgid "Access grant"
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:40
-msgid "The bucket where the backup will reside in."
-msgstr "存放备份的 bucket"
+msgid "Specify the bucket for storing the backup."
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:41
-msgid "The bucket"
+msgid "Bucket"
 msgstr "Bucket"
 
 #: Library/Backend/Storj/Strings.cs:42
-msgid "The folder within the bucket where the backup will reside in."
-msgstr "存放备份的 bucket 中的文件夹"
+msgid "Specify the folder in the bucket for storing the backup."
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:43
-msgid "The folder"
-msgstr "文件夹"
+msgid "Folder"
+msgstr ""
 
 #: Library/Backend/OAuthHelper/Strings.cs:27
 #, csharp-format
@@ -2177,8 +2162,8 @@ msgid "Unexpected error code: {0} - {1}"
 msgstr "预期外的错误码 ：{0} - {1}"
 
 #: Library/Backend/OAuthHelper/Strings.cs:31
-msgid "The OAuth service is currently over quota, try again in a few hours"
-msgstr "OAuth 当前已超出配额，请在几小时内重试"
+msgid "The OAuth service is currently over quota. Try again in a few hours"
+msgstr ""
 
 #: Library/DynamicLoader/Strings.cs:24
 #, csharp-format
@@ -2192,17 +2177,17 @@ msgstr "加载处理类型 {0} 集合 {1} 失败，错误信息：{2}"
 
 #: Library/Compression/Strings.cs:24
 msgid ""
-"This module provides the industry standard Zip compression. Files created "
-"with this module can be read by any standard-compliant zip application."
-msgstr "该模块提供标准的 Zip 功能。用该模块创建的文件能被任何标准的 Zip 程序打开。"
+"This module provides the industry standard ZIP compression. Files created "
+"with this module can be read by any standard-compliant ZIP application."
+msgstr ""
 
 #: Library/Compression/Strings.cs:25
-msgid "Zip compression"
-msgstr "Zip 压缩"
+msgid "ZIP compression"
+msgstr ""
 
-#: Library/Compression/Strings.cs:26
+#: Library/Compression/Strings.cs:26 Library/Main/Strings.cs:202
 #, csharp-format
-msgid "Please use the {0} option instead."
+msgid "Use the option --{0} instead."
 msgstr ""
 
 #: Library/Compression/Strings.cs:27 Library/Compression/Strings.cs:43
@@ -2212,30 +2197,30 @@ msgid ""
 msgstr "该选项控制压缩级别。设置为 0 表示不压缩，设置为 9 表示最大压缩。"
 
 #: Library/Compression/Strings.cs:28
-msgid "Sets the Zip compression level"
-msgstr "设置 Zip 压缩级别"
+msgid "Sets the ZIP compression level"
+msgstr ""
 
 #: Library/Compression/Strings.cs:29
 #, csharp-format
 msgid ""
-"This option can be used to set an alternative compressor method, such as "
-"LZMA. Note that using another value than Deflate will cause the {0} option "
-"to be ignored."
-msgstr "该选项用来设置压缩算法，例如 LZMA。注意，使用其他的值，如 Deflate，将导致 {0} 无效。"
+"Use this option to set an alternative compressor method, such as LZMA. Note "
+"that using another value than Deflate will cause the option --{0} to be "
+"ignored."
+msgstr ""
 
 #: Library/Compression/Strings.cs:30
-msgid "Sets the Zip compression method"
-msgstr "设置 Zip 压缩方式"
+msgid "Sets the ZIP compression method"
+msgstr ""
 
 #: Library/Compression/Strings.cs:31
 msgid ""
-"The zip64 format is required for files larger than 4GiB. Use this flag to "
+"The ZIP64 format is required for files larger than 4GiB. Use this option to "
 "toggle it."
 msgstr ""
 
 #: Library/Compression/Strings.cs:32
-msgid "Toggles Zip64 support"
-msgstr "启用 Zip64 支持"
+msgid "Toggles ZIP64 support"
+msgstr ""
 
 #: Library/Compression/Strings.cs:33
 #, csharp-format
@@ -2340,14 +2325,14 @@ msgstr "文件 {0} 已下载且大小为 {1} 但其大小应当为 {2}"
 
 #: Library/Main/Strings.cs:30
 #, csharp-format
-msgid "The option {0} is deprecated: {1}"
-msgstr "选项 {0} 已被废弃：{1}"
+msgid "The option --{0} has been deprecated: {1}"
+msgstr ""
 
 #: Library/Main/Strings.cs:31
 #, csharp-format
 msgid ""
-"The option --{0} exists more than once, please report this to the developers"
-msgstr "选项 --{0} 多次出现，请把该情况报告给开发者"
+"The option --{0} exists more than once. Please report this to the developers"
+msgstr ""
 
 #: Library/Main/Strings.cs:32
 msgid "No source folders specified for backup"
@@ -2369,23 +2354,23 @@ msgstr "无权访问源文件夹 {0}，跳过备份"
 #: Library/Main/Strings.cs:35
 #, csharp-format
 msgid ""
-"The value \"{1}\" supplied to --{0} does not parse into a valid boolean, "
-"this will be treated as if it was set to \"true\""
-msgstr "指定给 --{0} 的值 \"{1}\" 未能解析成有效的布尔值，这将默认为 \"true\""
+"The value \"{1}\" supplied to --{0} does not parse into a valid boolean. "
+"This will be treated as if it was set to \"true\""
+msgstr ""
 
 #: Library/Main/Strings.cs:36
 #, csharp-format
 msgid ""
-"The option --{0} does not support the value \"{1}\", supported values are: "
+"The option --{0} does not support the value \"{1}\". Supported values are: "
 "{2}"
-msgstr "选项 --{0} 不支持值 \"{1}\"，支持的值有：  {2}"
+msgstr ""
 
 #: Library/Main/Strings.cs:37
 #, csharp-format
 msgid ""
-"The option --{0} does not support the value \"{1}\", supported flag values "
+"The option --{0} does not support the value \"{1}\". Supported flag values "
 "are: {2}"
-msgstr "选项 --{0} 不支持值 \"{1}\"，支持的标识值有：  {2}"
+msgstr ""
 
 #: Library/Main/Strings.cs:38
 #, csharp-format
@@ -2468,13 +2453,13 @@ msgstr "尺寸 \"{1}\" 提供的 {0} 没有乘数(b、kb、mb等)。建议使用
 #: Library/Main/Strings.cs:56
 msgid ""
 "If a backup is interrupted there will likely be partial files present on the"
-" backend. Using this flag, Duplicati will automatically remove such files "
+" backend. Using this option, Duplicati will automatically remove such files "
 "when encountered."
-msgstr "如果备份时中断，远程后端很可能有残缺文件。启用该参数，Duplicati 将在遇到时自动删除这类文件。"
+msgstr ""
 
 #: Library/Main/Strings.cs:57
-msgid "A flag indicating that Duplicati should remove unused files"
-msgstr "指示 Duplicati 删除未使用的文件"
+msgid "Remove unused files"
+msgstr ""
 
 #: Library/Main/Strings.cs:58
 msgid ""
@@ -2493,10 +2478,8 @@ msgid ""
 "The operating system keeps track of the last time a file was written. Using "
 "this information, Duplicati can quickly determine if the file has been "
 "modified. If some application deliberately modifies this information, "
-"Duplicati won't work correctly unless this flag is set."
+"Duplicati won't work correctly unless this option is set."
 msgstr ""
-"操作系统会持续追踪文件的最后更改时间。Duplicati 据此能快速断定文件是否有修改。如果一些程序故意修改此信息，除非该参数开启，否则 "
-"Duplicati 将不能正常工作"
 
 #: Library/Main/Strings.cs:61
 msgid "Disable checks based on file time"
@@ -2578,10 +2561,9 @@ msgstr "用以加密备份的密码"
 #: Library/Main/Strings.cs:76
 msgid ""
 "By default, Duplicati will list and restore files from the most recent "
-"backup, use this option to select another item. You may use relative times, "
+"backup. Use this option to select another item. You may use relative times, "
 "like \"-2M\" for a backup from two months ago."
 msgstr ""
-"默认情况下，Duplicati 将从最近的备份中列出和恢复文件，使用该选项来指定某次备份。您也可以使用相对时间，例如 \"-2M\" 表示两个月前的备份"
 
 #: Library/Main/Strings.cs:77
 msgid "The time to list/restore files"
@@ -2590,11 +2572,9 @@ msgstr "从指定时间点列出或恢复文件"
 #: Library/Main/Strings.cs:78
 msgid ""
 "By default, Duplicati will list and restore files from the most recent "
-"backup, use this option to select another item. You may enter multiple "
+"backup. Use this option to select another item. You may enter multiple "
 "values separated with comma, and ranges using -, e.g. \"0,2-4,7\" ."
 msgstr ""
-"默认情况下，Duplicati 将从最近的备份中列出和恢复文件，使用该选项来指定某次备份。您也可以使用以逗号分开的多个值或范围，例如 "
-"\"0,2-4,7\"。"
 
 #: Library/Main/Strings.cs:79
 msgid "The version to list/restore files"
@@ -2663,12 +2643,12 @@ msgstr "设置控制文件"
 #: Library/Main/Strings.cs:92
 msgid ""
 "If the hash for the volume does not match, Duplicati will refuse to use the "
-"backup. Supply this flag to allow Duplicati to proceed anyway."
-msgstr "如果某卷的哈希值不匹配，Duplicati将拒绝使用该备份。开启该参数将允许 Duplicati 忽略哈希值检查。"
+"backup. Activate this option to allow Duplicati to proceed anyway."
+msgstr ""
 
 #: Library/Main/Strings.cs:93
-msgid "Set this flag to skip hash checks"
-msgstr "设置该参数以跳过哈希值检查"
+msgid "Skip hash checks"
+msgstr ""
 
 #: Library/Main/Strings.cs:94
 msgid ""
@@ -2682,10 +2662,10 @@ msgstr "限制可备份的文件大小"
 
 #: Library/Main/Strings.cs:96
 msgid ""
-"This option can be used to supply an alternative folder for temporary "
-"storage. By default the system default temporary folder is used. Note that "
-"also SQLite will put temporary files in this temporary folder."
-msgstr "该选项用于提供备用文件夹作为临时存储。默认会使用系统的临时文件。注意，SQLite 也会将临时文件存放到这里。"
+"Use this option to supply an alternative folder for temporary storage. By "
+"default the system default temporary folder is used. Note that also SQLite "
+"will put temporary files in this temporary folder."
+msgstr ""
 
 #: Library/Main/Strings.cs:97
 msgid "Temporary storage folder"
@@ -2834,8 +2814,8 @@ msgstr "允许的并行上传数"
 
 #: Library/Main/Strings.cs:122
 msgid ""
-"Activating this option will make some error messages more verbose, which may"
-" help you track down a particular issue."
+"Activate this option to make some error messages more verbose, which may "
+"help you track down a particular issue."
 msgstr ""
 
 #: Library/Main/Strings.cs:123
@@ -2850,7 +2830,7 @@ msgstr ""
 msgid "Log internal information to a file"
 msgstr "将内部信息日志记录到文件"
 
-#: Library/Main/Strings.cs:126
+#: Library/Main/Strings.cs:126 Library/Main/Strings.cs:283
 #, csharp-format
 msgid ""
 "Specifies the amount of log information to write into the file specified by "
@@ -2861,7 +2841,7 @@ msgstr ""
 msgid "Log information level"
 msgstr "日志信息级别"
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:128 Library/Main/Strings.cs:217
 #, csharp-format
 msgid "Use the options --{0} and --{1} instead."
 msgstr ""
@@ -2931,67 +2911,70 @@ msgid "Deactivates tolerance when comparing times"
 msgstr "比较时间时禁用公差"
 
 #: Library/Main/Strings.cs:137
+msgid "Use this option to verify uploads by listing contents."
+msgstr ""
+
+#: Library/Main/Strings.cs:138
 msgid "Verify uploads by listing contents"
 msgstr "通过列出内容校验上传文件"
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:139
 msgid ""
 "Duplicati will upload files while scanning the disk and producing volumes, "
-"which usually makes the backup faster. Use this flag to turn the behavior "
+"which usually makes the backup faster. Use this option to turn the behavior "
 "off, so that Duplicati will wait for each volume to complete."
 msgstr ""
-"Duplicati 会在扫描磁盘和生成卷的同时上传文件，这同时能加快备份速度。使用该参数可以关闭这项功能，Duplicati 将等待每个卷完成。"
 
-#: Library/Main/Strings.cs:139
+#: Library/Main/Strings.cs:140
 msgid "Upload files synchronously"
 msgstr "同步上传文件"
 
-#: Library/Main/Strings.cs:140
+#: Library/Main/Strings.cs:141
 msgid ""
 "Duplicati will attempt to perform multiple operations on a single "
 "connection, as this avoids repeated login attempts, and thus speeds up the "
-"process. This option can be used to ensure that each operation is performed "
-"on a seperate connection."
+"process. Use this option to ensure that each operation is performed on a "
+"seperate connection."
 msgstr ""
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:142
 msgid "Do not re-use connections"
 msgstr "禁用重用连接"
 
-#: Library/Main/Strings.cs:142
+#: Library/Main/Strings.cs:143
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
 "when a retry is performed."
 msgstr "当某个错误发生，Duplicati 会静默地重试，而只在多次重试后报错。启用该选项将在每次重试时报错。"
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:144
 msgid "Show error messages when a retry is performed"
 msgstr "重试时显示错误信息"
 
-#: Library/Main/Strings.cs:144
+#: Library/Main/Strings.cs:145
 msgid ""
 "If no files have changed, Duplicati will not upload a backup set. If the "
 "backup data is used to verify that a backup was executed, this option will "
 "make Duplicati upload a backupset even if it is empty."
 msgstr ""
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:146
 msgid "Upload empty backup files"
 msgstr "上传空的备份文件"
 
-#: Library/Main/Strings.cs:146
+#: Library/Main/Strings.cs:147
 msgid ""
 "Set a limit to the amount of storage used on the backend (by this backup). "
 "This is in addition to the full backend quota, if available. Note: Backups "
 "will continue past the quota. This only creates warnings and error messages."
 msgstr ""
 
-#: Library/Main/Strings.cs:147
+#: Library/Main/Strings.cs:148
 msgid "Limit storage use"
 msgstr ""
 
-#: Library/Main/Strings.cs:148
+#: Library/Main/Strings.cs:149
 msgid ""
 "Sets a threshold for when to warn about the backend quota being nearly "
 "exceeded. It is given as a percentage, and a warning is generated if the "
@@ -3000,22 +2983,22 @@ msgid ""
 "be ignored."
 msgstr ""
 
-#: Library/Main/Strings.cs:149
+#: Library/Main/Strings.cs:150
 msgid "Threshold for warning about low quota"
 msgstr "低存储配额报警的阈值"
 
-#: Library/Main/Strings.cs:150
+#: Library/Main/Strings.cs:151
 #, csharp-format
 msgid ""
 "Disable the quota reported by the backend. The option --{0} can still be "
 "used to set a manual quota"
 msgstr ""
 
-#: Library/Main/Strings.cs:151
+#: Library/Main/Strings.cs:152
 msgid "Disable backend quota"
 msgstr ""
 
-#: Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:153
 #, csharp-format
 msgid ""
 "Use this option to handle symlinks differently. The \"{0}\" option will "
@@ -3027,11 +3010,11 @@ msgid ""
 "option and behaved as if \"{2}\" was specified."
 msgstr ""
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:154
 msgid "Symlink handling"
 msgstr "符号链接处理方式"
 
-#: Library/Main/Strings.cs:154
+#: Library/Main/Strings.cs:155
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -3043,11 +3026,11 @@ msgstr ""
 "该选项用来选择对于符号链接的不同处理方式 (仅在 Linux/OSX 上生效)。选项 \"{0}\" 记录每个硬链接的ID以避免多次保存路径。选项 "
 "\"{1}\" 将忽略硬链接信息，并将每个硬链接作为不同的路径。选项 \"{2}\" 将忽略所有多余一个链接的硬链接。"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:156
 msgid "Hardlink handling"
 msgstr "硬链接处理方式"
 
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:157
 #, csharp-format
 msgid ""
 "Use this option to exclude files with certain attributes. Use a comma "
@@ -3055,11 +3038,11 @@ msgid ""
 "are: {0}."
 msgstr ""
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:158
 msgid "Exclude files by attribute"
 msgstr "根据属性排除文件"
 
-#: Library/Main/Strings.cs:158
+#: Library/Main/Strings.cs:159
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -3069,60 +3052,57 @@ msgstr ""
 "激活该选项会把 VSS 快照映射到一个磁盘 (类似于 SUBST，使用 Win32 "
 "DefineDosDevice)。这将创建用于访问快照内容的临时磁盘，可以加快 Windows XP 上的文件访问。"
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:160
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "映射快照至磁盘 (仅 Windows)"
 
-#: Library/Main/Strings.cs:160
-msgid ""
-"A display name that is attached to this backup. Can be used to identify the "
-"backup when sending mail or running scripts."
-msgstr "该备份的显示名称，用于在发送邮件或执行脚本时识别备份。"
-
 #: Library/Main/Strings.cs:161
+msgid ""
+"A display name that is attached to this backup. This can be used to identify"
+" the backup when sending mail or running scripts."
+msgstr ""
+
+#: Library/Main/Strings.cs:162
 msgid "Name of the backup"
 msgstr "备份名称"
 
-#: Library/Main/Strings.cs:162
-msgid ""
-"A unique identification for this backup. Can be used to identify the backup "
-"when sending mail or running scripts."
-msgstr ""
-
 #: Library/Main/Strings.cs:163
-msgid "Backup ID"
+msgid ""
+"A unique identification for this backup. This can be used to identify the "
+"backup when sending mail or running scripts."
 msgstr ""
 
 #: Library/Main/Strings.cs:164
-msgid ""
-"A unique identification of the machine running the backup. Can be used to "
-"identify the machine when sending mail or running scripts."
+msgid "Backup ID"
 msgstr ""
 
 #: Library/Main/Strings.cs:165
-msgid "Machine ID"
+msgid ""
+"A unique identification of the machine running the backup. This can be used "
+"to identify the machine when sending mail or running scripts."
 msgstr ""
 
 #: Library/Main/Strings.cs:166
+msgid "Machine ID"
+msgstr ""
+
+#: Library/Main/Strings.cs:167
 #, csharp-format
 msgid ""
-"This property can be used to point to a text file where each line contains a"
-" file extension that indicates a non-compressible file. Files that have an "
+"Use this option to point to a text file where each line contains a file "
+"extension that indicates a non-compressible file. Files that have an "
 "extension found in the file will not be compressed, but simply stored in the"
 " archive. The file format ignores any lines that do not start with a period,"
 " and considers a space to indicate the end of the extension. A default file "
 "is supplied, that also serves as an example. The default file is placed in "
 "{0}."
 msgstr ""
-"该属性用于指向一个文本文件，其中每行都是以 \".\" "
-"开头的文件扩展名，表示一个不可压缩的文件。这些扩展名的文件将不会被压缩，而只是简单地保存在存档里。文件中忽略任何不以句点开头的行，同时认为空格表示扩展名的结尾。提供了一个默认文件，也作为样例。默认文件位于"
-" {0}。"
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:168
 msgid "Manage non-compressible file extensions"
 msgstr "管理不被压缩的文件扩展名"
 
-#: Library/Main/Strings.cs:168
+#: Library/Main/Strings.cs:169
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -3131,77 +3111,71 @@ msgid ""
 msgstr ""
 "块大小决定了文件的分片的方式。这个值过大会导致文件改动的额外开销更多，这个值过小会导致存储文件列表的额外开销更多。请注意，这个值在创建远程文件后不能再更改。"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:170
 msgid "Block size used in hashing"
 msgstr "哈希时的文件块大小"
 
-#: Library/Main/Strings.cs:170
-msgid ""
-"This option can be used to limit the scan to only files that are known to "
-"have changed. This is usually only activated in combination with a "
-"filesystem watcher that keeps track of file changes."
-msgstr "该选项用来限制 Duplicati 只扫描已知有更改的文件。这通常和某一追踪文件更改的文件系统监测者结合使用。"
-
 #: Library/Main/Strings.cs:171
+msgid ""
+"Use this option to limit the scan to only files that are known to have "
+"changed. This is usually only activated in combination with a filesystem "
+"watcher that keeps track of file changes."
+msgstr ""
+
+#: Library/Main/Strings.cs:172
 msgid "List of files to examine for changes"
 msgstr "已知更改文件的列表"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:173
 msgid ""
 "Path to the file containing the local cache of the remote file database."
 msgstr ""
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:174
 msgid "Path to the local state database"
 msgstr "本地状态数据库的路径"
 
-#: Library/Main/Strings.cs:174
+#: Library/Main/Strings.cs:175
 #, csharp-format
 msgid ""
-"This option can be used to supply a list of deleted files. This option will "
-"be ignored unless the option --{0} is also set."
-msgstr "该选项可以指定已删除文件的列表。除非选项 --{0} 开启，否则该选项将被忽略。"
+"Use this option to supply a list of deleted files. This option will be "
+"ignored unless the option --{0} is also set."
+msgstr ""
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:176
 msgid "List of deleted files"
 msgstr "已删除文件的列表"
 
-#: Library/Main/Strings.cs:176
+#: Library/Main/Strings.cs:177
 msgid ""
-"This option can be used to reduce the memory footprint by not keeping paths "
-"and modification timestamps in memory."
+"Use this option to reduce the memory footprint by not keeping paths and "
+"modification timestamps in memory."
 msgstr ""
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:178
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr "通过禁用内存内查询减少内存占用"
 
-#: Library/Main/Strings.cs:178 Library/Main/Strings.cs:229
-#, csharp-format
-msgid "The option --{0} is no longer used and has been deprecated."
+#: Library/Main/Strings.cs:180
+msgid "Use this option to increase speed in exchange for extra memory use."
 msgstr ""
 
-#: Library/Main/Strings.cs:179
-msgid ""
-"This option can be used to increase speed in exchange for extra memory use."
-msgstr "该选项可以提高速度，但会增加内存占用"
-
-#: Library/Main/Strings.cs:180
+#: Library/Main/Strings.cs:181
 msgid "Store an in-memory block cache"
 msgstr "在内存中缓存块数据"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:182
 msgid ""
-"If this flag is set, the local database is not compared to the remote "
+"If this option is set, the local database is not compared to the remote "
 "filelist on startup. The intended usage for this option is to work correctly"
 " in cases where the filelisting is broken or unavailable."
-msgstr "如果开启该参数，本地数据库将不会在启动时与远程文件列表作对比。该选项用于在文件列表损坏或不可用的情况下正常工作。"
+msgstr ""
 
-#: Library/Main/Strings.cs:182
+#: Library/Main/Strings.cs:183
 msgid "Do not query backend at startup"
 msgstr "不在启动时查询后端"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:184
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -3212,11 +3186,11 @@ msgstr ""
 "索引文件用来在没有本地数据库时减少 dblock "
 "文件的下载。索引文件中记录的信息越多，没有数据库时的操作越快。代价是越大的索引文件占用越多的远程空间，而且可能永远用不到。"
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:185
 msgid "Determines usage of index files"
 msgstr "决定索引文件的使用与否"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:186
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -3225,43 +3199,43 @@ msgid ""
 msgstr ""
 "随着文件的更改，一部分远程数据可能不再需要。该选项控制在回收再利用前，远程存储能容纳多少无用数据。这个值是一百分比，用于每一个卷和所有存储。"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:187
 msgid "The maximum wasted space in percent"
 msgstr "最大无用空间百分比"
 
-#: Library/Main/Strings.cs:187
-msgid ""
-"This option can be used to experiment with different settings and observe "
-"the outcome without changing actual files."
-msgstr "该选项可以用来试验各种设置，观察输出，而不改变实际文件。"
-
 #: Library/Main/Strings.cs:188
+msgid ""
+"Use this option to experiment with different settings and observe the "
+"outcome without changing actual files."
+msgstr ""
+
+#: Library/Main/Strings.cs:189
 msgid "Does not perform any modifications"
 msgstr "不做任何更改"
 
-#: Library/Main/Strings.cs:189
-msgid ""
-"This is a very advanced option! This option can be used to select a block "
-"hash algorithm with smaller or larger hash size, for performance or storage "
-"space reasons."
-msgstr "这是个非常高级的选项！出于性能或存储空间原因，该选项用来选择具有更小或更大哈希大小的文件块哈希算法。"
-
 #: Library/Main/Strings.cs:190
+msgid ""
+"This is a very advanced option! Use this option to select a block hash "
+"algorithm with smaller or larger hash size, for performance or storage space"
+" reasons."
+msgstr ""
+
+#: Library/Main/Strings.cs:191
 msgid "The hash algorithm used on blocks"
 msgstr "用于文件块的哈希算法"
 
-#: Library/Main/Strings.cs:191
-msgid ""
-"This is a very advanced option! This option can be used to select a file "
-"hash algorithm with smaller or larger hash size, for performance or storage "
-"space reasons."
-msgstr "这是个非常高级的选项！出于性能或存储空间原因，该选项用来选择具有更小或更大哈希大小的文件哈希算法。"
-
 #: Library/Main/Strings.cs:192
+msgid ""
+"This is a very advanced option! Use this option to select a file hash "
+"algorithm with smaller or larger hash size, for performance or storage space"
+" reasons."
+msgstr ""
+
+#: Library/Main/Strings.cs:193
 msgid "The hash algorithm used on files"
 msgstr "用于文件的哈希算法"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:194
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -3269,11 +3243,11 @@ msgid ""
 "running the compact command."
 msgstr "如果在备份时检测到大量的小文件，或者在删除备份后发现无用的空间，远程数据将被压实。使用该选项来禁用这种自动压实，而仅在执行压实命令时压缩。"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:195
 msgid "Disable automatic compacting"
 msgstr "禁用自动压实"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:196
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -3282,67 +3256,62 @@ msgid ""
 msgstr ""
 "Duplicati 使用该阈值评估卷的大小是否需要压实，使用一个小的公差值，默认为卷大小的 20%。这确保那些有一些无用空间的大的卷不需要被下载和修改。"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:197
 msgid "Volume size threshold"
 msgstr "卷大小阈值"
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:198
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
 "can fill an entire volume."
 msgstr "为了避免远程存储中填满小文件，这个值可以强制聚合小文件。小文件总会在它们可以填满整个卷时合并。"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:199
 msgid "Maximum number of small volumes"
 msgstr "小卷的最大个数"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:200
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
 "downloads."
 msgstr "启用该选项可以在本机其它文件中查找存在的文件块。这是一个相当慢的操作，但能减少需要下载的数据量。"
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:201
 msgid "Use local file data when restoring"
 msgstr "恢复时使用本地文件数据"
 
-#: Library/Main/Strings.cs:201
-#, csharp-format
-msgid "Use the option --{0} instead."
-msgstr ""
-
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:203
 msgid ""
 "When listing contents or when restoring files, the local database can be "
 "skipped. This is usually slower, but can be used to verify the actual "
 "contents of the remote store."
 msgstr ""
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:204
 msgid "Disables the local database"
 msgstr "禁用本地数据库"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:205
 msgid ""
 "Use this option to set number of versions to keep. Supply -1 to keep all "
 "versions."
 msgstr ""
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:206
 msgid "Keep a number of versions"
 msgstr "保留指定版本数"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:207
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr "使用该选项设置保留备份的时间间隔"
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:208
 msgid "Keep all versions within a timespan"
 msgstr "保留指定时间间隔内的所有版本"
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:209
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -3356,53 +3325,49 @@ msgstr ""
 "该选项可以通过删除大多数旧备份，从而减少随着备份增长的版本数。要求的格式为逗号分隔的列表，其中每项都是分号分隔的时间范围和时间间隔。例如，\"7D:0s,3M:1D,10Y:2M\""
 " 意味着保留7天中所有备份，保留3个月中每天一份，保留10年中每两个月一份，清理所有早于此期限的备份。该选项也支持使用 \"U\" 代表永久保留。"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:210
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "删除旧的中间备份以减少版本数"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:211
 msgid "Use this option to continue even if some source entries are missing."
 msgstr "使用该选项在部分源数据丢失的情况下继续操作"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:212
 msgid "Ignore missing source elements"
 msgstr "忽略丢失的源元素"
 
-#: Library/Main/Strings.cs:212
-msgid ""
-"Use this option to overwrite target files when restoring, if this option is "
-"not set the files will be restored with a timestamp and a number appended."
-msgstr "使用该选项在恢复时覆盖已有文件。如果不使用该选项，恢复的文件将被加上时间戳和序号。"
-
 #: Library/Main/Strings.cs:213
+msgid ""
+"Use this option to overwrite target files when restoring. If this option is "
+"not set, the files will be restored with a timestamp and a number appended."
+msgstr ""
+
+#: Library/Main/Strings.cs:214
 msgid "Overwrite files when restoring"
 msgstr "恢复时覆盖文件"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:215
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
 msgstr "使用该选项来增加运行时的输出信息。一般来说，该选项将每处理一个文件，打印一行信息。"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:216
 msgid "Output more progress information"
 msgstr "输出更多进度信息"
 
-#: Library/Main/Strings.cs:216
-msgid "Set a log-level for the desired output method instead."
-msgstr ""
-
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:218
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
 msgstr "使用该选项来增加的输出的操作结果信息，包括所有的文件名。"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:219
 msgid "Output full results"
 msgstr "输出完整结果"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:220
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -3410,25 +3375,25 @@ msgid ""
 "files."
 msgstr "使用该选项在改变远程存储后上传校验文件。此文件没有加密，且包含所有远程文件的大小和 SHA256 哈希值，用来校验文件的完整性。"
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:221
 msgid "Determine if verification files are uploaded"
 msgstr "决定是否上传校验文件"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:222
 #, csharp-format
 msgid ""
 "After a backup is completed, some (dblock, dindex, dlist) files from the "
 "remote backend are selected for verification. Use this option to change how "
 "many. If the option --{0} is also provided, the number of samples tested is "
 "the maximum implied by the two options. If this value is set to 0 or the "
-"option --{1} is set, no remote files are verified"
+"option --{1} is set, no remote files are verified."
 msgstr ""
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:223
 msgid "The number of samples to test after a backup"
 msgstr "备份后的校验样本数"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:224
 #, csharp-format
 msgid ""
 "After a backup is completed, some (dblock, dindex, dlist) files from the "
@@ -3438,135 +3403,135 @@ msgid ""
 "two options. If the option --{1} is provided, no remote files are verified."
 msgstr ""
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:225
 msgid "The percentage of samples to test after a backup"
 msgstr "备份后的校验样本百分比"
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:226
 #, csharp-format
 msgid ""
 "After a backup is completed, some (dblock, dindex, dlist) files from the "
 "remote backend are selected for verification. Use this option to turn on "
 "full verification, which will decrypt the files and examine the insides of "
-"each volume, instead of simply verifying the external hash, If the option "
+"each volume, instead of simply verifying the external hash. If the option "
 "--{0} is set, no remote files are verified. This option is automatically set"
 " when then verification is performed directly. ListAndIndexes is like True "
 "but only dlist and index volumes are handled."
 msgstr ""
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:227
 msgid "Activates in-depth verification of files"
 msgstr "激活深度校验"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:228
 msgid ""
 "Use this size to control how many bytes are read from a file before "
 "processing."
 msgstr ""
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:229
 msgid "Size of the file read buffer"
 msgstr "文件读取缓冲大小"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:231
 msgid ""
 "Use this option to allow the passphrase to change. Note that this option is "
 "not permitted for a backup or repair operation."
 msgstr ""
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:232
 msgid "Allow the passphrase to change"
 msgstr "允许更改备份密码"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:233
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process."
 msgstr ""
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:234
 msgid "List only filesets"
 msgstr "仅列出文件集"
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:236
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
 " but does not affect file size much."
 msgstr "使用该选项来禁用保存元数据，例如文件的时间戳。不保存元数据可以加快备份和恢复的速度，但是对文件大小影响不大。"
 
-#: Library/Main/Strings.cs:236
+#: Library/Main/Strings.cs:237
 msgid "Don't store metadata"
 msgstr "不保存元数据"
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:238
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
 msgstr "默认情况下，权限不会被还原，因为这可能影响您访问恢复出的文件。使用该选项可以还原权限。"
 
-#: Library/Main/Strings.cs:238
+#: Library/Main/Strings.cs:239
 msgid "Restore file permissions"
 msgstr "恢复文件权限"
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:240
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
 " and avoid waiting for the verification."
 msgstr "恢复文件后，Duplicati 将对比哈希值验证恢复是否成功。使用该选项来禁用此检查来跳过等待校验的时间。"
 
-#: Library/Main/Strings.cs:240
+#: Library/Main/Strings.cs:241
 msgid "Skip restored file check"
 msgstr "跳过恢复文件校验"
 
-#: Library/Main/Strings.cs:241
+#: Library/Main/Strings.cs:242
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
 "remote data."
 msgstr "Duplicati 将尝试使用源文件中的数据来最小化需要下载的数据量。使用该选项来跳过此项优化，只使用远程数据。"
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:243
 msgid "Do not use local data"
 msgstr "不使用本地数据"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:244
 #, csharp-format
 msgid ""
 "The default is now to not use local blocks for restore. To opt-in for using "
 "local blocks, set the option --{0}."
 msgstr ""
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:245
 msgid ""
 "Use this option to allow Duplicati to use blocks found on disk when "
 "performing restores, instead of only using files in remote storage."
 msgstr ""
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:246
 msgid "Use existing data for restore"
 msgstr ""
 
-#: Library/Main/Strings.cs:247
+#: Library/Main/Strings.cs:248
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
 msgstr "使用该选项可在将数据恢复至文件中时，通过检查卷中保存的文件块哈希值增加校验。"
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:249
 msgid "Check block hashes"
 msgstr "检查文件块哈希值"
 
-#: Library/Main/Strings.cs:249
+#: Library/Main/Strings.cs:250
 msgid "Set the time after which log data will be purged from the database."
 msgstr "设置时长，在此时长之后日志数据将被从数据库中清除。"
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:251
 msgid "Clean up old log data"
 msgstr "清理旧日志数据"
 
-#: Library/Main/Strings.cs:251
+#: Library/Main/Strings.cs:252
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -3575,129 +3540,122 @@ msgid ""
 msgstr ""
 "使用该选项将构建一个只包含路径信息的本地可搜索的数据库。这可以快速构建数据库来定位文件，而不需要重构所有信息。产生的数据库可以搜索，但不能用来恢复数据。"
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:253
 msgid "Repair database with paths"
 msgstr "修复路径数据库"
 
-#: Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:254
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
-" in another language. This option can be used to set the locale. Supply a "
-"blank string to choose the \"Invariant Culture\"."
+" in another language. Use this option to set the locale. Supply a blank "
+"string to choose the \"Invariant Culture\"."
 msgstr ""
-"默认情况下，Duplicati "
-"将使用系统默认的语言和区域设置。在某些情况下，您可能想指定其他语言区域，比如想获得其他语言的消息。该选项可以用来设置语言区域，设置为空则表示 "
-"\"固定区域性\"。"
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:255
 msgid "Force the locale setting"
 msgstr "指定语言区域设置"
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:256
 msgid ""
 "By default, dates are displayed in the calendar format, meaning \"Today\" or"
 " \"Last Thursday\". By setting this option, only the actual dates are "
 "displayed, \"Nov 12, 2018, 8:01 AM\" for example."
 msgstr "默认情况下，日期以日历格式显示，即 \"今天\" 或 \"上周四\"。通过设置该选项，仅显示实际日期，例如 \"2018 年 11 月 12 日 08:01\"。"
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:257
 msgid "Forces the display of the actual date instead of calendar date"
 msgstr "强制显示实际日期而不是日历日期"
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:258
 msgid ""
-"Use this option to disable multithreaded handling of up- and downloads, that"
+"Use this option to disable multithreaded handling of up- and downloads. That"
 " can significantly speed up backend operations depending on the hardware "
 "you're running on and the transfer rate of your backend."
-msgstr "使用该选项可以禁用多线程处理上传下载，这可以根据您的硬件和后端的传输速率显著地提升后端操作速度。"
+msgstr ""
 
-#: Library/Main/Strings.cs:258
+#: Library/Main/Strings.cs:259
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "使用单线程处理与后端的文件通信"
 
-#: Library/Main/Strings.cs:259
+#: Library/Main/Strings.cs:260
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
 "to fit the hardware."
 msgstr "使用该选项可设置使用的最大线程数。将此值设置为零或更小将动态平衡活动线程的数量以适应硬件。"
 
-#: Library/Main/Strings.cs:260
+#: Library/Main/Strings.cs:261
 msgid "Limit number of concurrent threads"
 msgstr "限制并发线程数"
 
-#: Library/Main/Strings.cs:261
+#: Library/Main/Strings.cs:262
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr "使用该选项可设置执行数据哈希的进程数。"
 
-#: Library/Main/Strings.cs:262
+#: Library/Main/Strings.cs:263
 msgid "Specify the number of concurrent hashing processes"
 msgstr "指定并发哈希进程的数量"
 
-#: Library/Main/Strings.cs:263
+#: Library/Main/Strings.cs:264
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr "使用该选项可设置执行输出数据压缩的进程数"
 
-#: Library/Main/Strings.cs:264
+#: Library/Main/Strings.cs:265
 msgid "Specify the number of concurrent compression processes"
 msgstr "指定并发压缩进程数"
 
-#: Library/Main/Strings.cs:265
+#: Library/Main/Strings.cs:266
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
 "contents that were uploaded in the incomplete backup session."
 msgstr "如果 Duplicati 检测到前一备份没有完成，它将生成一份文件列表，其中包括上一次完成的备份和在未完成备份会话中已上传的内容。"
 
-#: Library/Main/Strings.cs:266
+#: Library/Main/Strings.cs:267
 msgid "Disables synthetic filelist"
 msgstr "禁用虚拟文件列表"
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:268
 msgid ""
-"This flag instructs Duplicati to not look at metadata or filesize when "
+"This option instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
 "number of files and notice that the scanning takes a long time with "
 "unmodified files."
 msgstr ""
-"该参数通知 Duplicati 在扫描文件更改时不要查看元数据或文件大小。如果您有大量文件需要扫描，而 Duplicati "
-"耗费大量时间在未更改的文件上，您可以使用该选项。"
 
-#: Library/Main/Strings.cs:268
+#: Library/Main/Strings.cs:269
 msgid "Checks only file lastmodified"
 msgstr "仅检查文件最后更改时间"
 
-#: Library/Main/Strings.cs:269
+#: Library/Main/Strings.cs:270
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
-"flag to skip this compression, such that the entire original folder "
+"option to skip this compression, such that the entire original folder "
 "structure is preserved, including upper level empty folders."
 msgstr ""
-"在恢复一个备份的子集到新文件夹时，Duplicati "
-"会使用尽可能短的路径来避免生成包含空文件夹的深路径。使用该参数可以跳过这项压缩，这样完整的原始文件夹结构会保留下来，包括上一级的空文件夹。"
 
-#: Library/Main/Strings.cs:270
+#: Library/Main/Strings.cs:271
 msgid "Disables path compression on restore"
 msgstr "恢复时禁用路径压缩"
 
-#: Library/Main/Strings.cs:271
+#: Library/Main/Strings.cs:272
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
-"this flag to disable that protection, such that all filesets can be deleted."
+"this option to disable that protection, such that all filesets can be "
+"deleted."
 msgstr ""
-"默认情况下，最近的文件集不能被删除。这是一项安全措施，用来确保远程数据不会因为配置错误而被全部删除。使用该参数可以禁用这项保护，这样所有文件集都可以被删除。"
 
-#: Library/Main/Strings.cs:272
+#: Library/Main/Strings.cs:273
 msgid "Allow removing all filesets"
 msgstr "允许删除所有文件集"
 
-#: Library/Main/Strings.cs:273
+#: Library/Main/Strings.cs:274
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -3710,52 +3668,50 @@ msgstr ""
 "操作清理。长远来看，此操作会节省磁盘空间，但它需要临时创建一份包含所有有效条目的数据库副本。设为 true 将允许 Duplicati 自动执行 "
 "VACUUM操作。"
 
-#: Library/Main/Strings.cs:274
+#: Library/Main/Strings.cs:275
 msgid "Allow automatic rebuilding of local database to save space"
 msgstr ""
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:276
 msgid ""
 "When this flag is enabled, the scanner that computes the size of source "
 "files is disabled, and instead the reported size is read from the database. "
-"Using this flag can speed up the backup by reducing disk access, but will "
+"Using this option can speed up the backup by reducing disk access, but will "
 "give a less accurate progress indicator."
 msgstr ""
-"该参数启用时，Duplicati "
-"不再使用此扫描器计算源文件的大小，而直接使用数据库中记录的大小。这将减少磁盘访问，从而加速备份，但会使备份进度不够精确。"
 
-#: Library/Main/Strings.cs:276
+#: Library/Main/Strings.cs:277
 msgid "Disable the read-ahead scanner"
 msgstr "禁用预读扫描器"
 
-#: Library/Main/Strings.cs:277
+#: Library/Main/Strings.cs:278
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
 "regular check commands to ensure that everything is working as expected."
 msgstr "当备份的文件量很大时，验证可能占用大部分备份时间。如果禁用检查，请确保运行常规检查命令以确保一切按预期工作。"
 
-#: Library/Main/Strings.cs:278
+#: Library/Main/Strings.cs:279
 msgid "Disable filelist consistency checks"
 msgstr "禁用文件列表一致性检查"
 
-#: Library/Main/Strings.cs:279
+#: Library/Main/Strings.cs:280
 msgid ""
-"When this flag is enabled, a scheduled backup will not run if the system is "
-"detected to be running on battery power (manual or command line backups will"
-" still be run). If the detected power source is mains (e.g., AC) or unknown,"
-" then scheduled backups will proceed as normal."
+"Use this option to run a scheduled backup if the system is detected to be "
+"running on battery power (manual or command line backups will still be run)."
+" If the detected power source is mains (e.g., AC) or unknown, then scheduled"
+" backups will proceed as normal."
 msgstr ""
 
-#: Library/Main/Strings.cs:280
+#: Library/Main/Strings.cs:281
 msgid "Disable the backup when on battery power"
 msgstr "电量不足时禁用备份"
 
-#: Library/Main/Strings.cs:282
+#: Library/Main/Strings.cs:284
 msgid "Log file information level"
 msgstr "日志文件信息等级"
 
-#: Library/Main/Strings.cs:283
+#: Library/Main/Strings.cs:285
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -3767,38 +3723,42 @@ msgstr ""
 "该选项接受删除或包含消息的过滤器，无论其日志级别。通过使用 {0} 分隔来支持多个过滤器。过滤器与日志标签匹配并假定包含，除非它们以 \"-\" "
 "开头。方括号内支持正则表达式。如：\"+Path*{0}+*Mail*{0}-[.*DNS]\""
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:286
 msgid "Applies filters to the file log data"
 msgstr "过滤规则应用到文件日志数据"
 
-#: Library/Main/Strings.cs:285
+#: Library/Main/Strings.cs:287
+msgid "Specifies the amount of log information to output to the console."
+msgstr ""
+
+#: Library/Main/Strings.cs:288
 msgid "Console information level"
 msgstr "控制台信息级别"
 
-#: Library/Main/Strings.cs:287
+#: Library/Main/Strings.cs:290
 msgid "Applies filters to the console log data"
 msgstr "应用过滤规则到控制台日志数据"
 
-#: Library/Main/Strings.cs:289
-msgid ""
-"This option instructions the operating system to set the current process to "
-"use the lowest IO priority level, which can make operations run slower but "
-"will interfere less with other operations running at the same time."
-msgstr ""
-
-#: Library/Main/Strings.cs:290
-msgid "Sets the process to use low IO priority"
-msgstr "将进程设置为使用低IO优先级"
-
 #: Library/Main/Strings.cs:292
-msgid "Use this option to remove all empty folders from a backup."
+msgid ""
+"This option instructs the operating system to set the current process to use"
+" the lowest IO priority level, which can make operations run slower but will"
+" interfere less with other operations running at the same time."
 msgstr ""
 
 #: Library/Main/Strings.cs:293
+msgid "Sets the process to use low IO priority"
+msgstr "将进程设置为使用低IO优先级"
+
+#: Library/Main/Strings.cs:295
+msgid "Use this option to remove all empty folders from a backup."
+msgstr ""
+
+#: Library/Main/Strings.cs:296
 msgid "Excludes empty folders"
 msgstr ""
 
-#: Library/Main/Strings.cs:294
+#: Library/Main/Strings.cs:297
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -3807,11 +3767,11 @@ msgid ""
 msgstr ""
 "使用该选项可设置文件名或文件名列表，以指示排除包含它的文件夹。常见的用法是将文件命名为 \".nobackup\"，并将此文件放入不应备份的文件夹中。"
 
-#: Library/Main/Strings.cs:295
+#: Library/Main/Strings.cs:298
 msgid "List of filenames that exclude folders"
 msgstr "排除文件夹中的文件名列表"
 
-#: Library/Main/Strings.cs:296
+#: Library/Main/Strings.cs:299
 msgid ""
 "If symlink metadata is applied, it will usually mean changing the symlink "
 "target, instead of the symlink itself. For this reason, metadata is not "
@@ -3819,11 +3779,11 @@ msgid ""
 " metadata is applied to symlinks as well."
 msgstr ""
 
-#: Library/Main/Strings.cs:297
+#: Library/Main/Strings.cs:300
 msgid "Apply metadata to symlinks"
 msgstr ""
 
-#: Library/Main/Strings.cs:298
+#: Library/Main/Strings.cs:301
 msgid ""
 "When running in unittest mode, no automatic fixes are applied, which assumes"
 " that the input data is always in perfect shape. This option is not intended"
@@ -3831,11 +3791,11 @@ msgid ""
 "potential problems."
 msgstr ""
 
-#: Library/Main/Strings.cs:299
+#: Library/Main/Strings.cs:302
 msgid "Activate unittest mode"
 msgstr ""
 
-#: Library/Main/Strings.cs:301
+#: Library/Main/Strings.cs:304
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -3846,11 +3806,11 @@ msgstr ""
 "为了提高备份的性能，默认情况下不会记录频繁的数据库查询。启用该选项以记录所有数据库查询，并记住设置 --{0}={2} 或 --{1}={2} "
 "以报告额外的日志数据"
 
-#: Library/Main/Strings.cs:302
+#: Library/Main/Strings.cs:305
 msgid "Activates logging of all database queries"
 msgstr "激活所有数据库查询的日志记录"
 
-#: Library/Main/Strings.cs:303
+#: Library/Main/Strings.cs:306
 msgid ""
 "If dblock files are missing from the destination, you can attempt to rebuild"
 " them using local source data. However, since the local data may have "
@@ -3859,11 +3819,11 @@ msgid ""
 "files."
 msgstr ""
 
-#: Library/Main/Strings.cs:304
+#: Library/Main/Strings.cs:307
 msgid "Rebuild dblock files when missing"
 msgstr ""
 
-#: Library/Main/Strings.cs:306
+#: Library/Main/Strings.cs:309
 msgid ""
 "The minimum amount of time that must elapse after the last compaction before"
 " another will be automatically triggered at the end of a backup job. "
@@ -3871,11 +3831,11 @@ msgid ""
 "to run after every single backup."
 msgstr ""
 
-#: Library/Main/Strings.cs:307
+#: Library/Main/Strings.cs:310
 msgid "Minimum time between auto compactions"
 msgstr ""
 
-#: Library/Main/Strings.cs:308
+#: Library/Main/Strings.cs:311
 msgid ""
 "The minimum amount of time that must elapse after the last vacuum before "
 "another will be automatically triggered at the end of a backup job. "
@@ -3883,27 +3843,27 @@ msgid ""
 "run after every single backup."
 msgstr ""
 
-#: Library/Main/Strings.cs:309
+#: Library/Main/Strings.cs:312
 msgid "Minimum time between auto vacuums"
 msgstr ""
 
-#: Library/Main/Strings.cs:314
+#: Library/Main/Strings.cs:317
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr "加密库不支持哈希算法 {0} 的重用变换"
 
-#: Library/Main/Strings.cs:315
+#: Library/Main/Strings.cs:318
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "加密库不支持哈希算法 {0}"
 
-#: Library/Main/Strings.cs:316
+#: Library/Main/Strings.cs:319
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "不能更改已有备份的加密密码"
 
-#: Library/Main/Strings.cs:317
+#: Library/Main/Strings.cs:320
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "创建快照失败：{0}"
@@ -4151,8 +4111,10 @@ msgstr "开始时运行必要脚本"
 #: Library/Modules/Builtin/Strings.cs:81
 #: Library/Modules/Builtin/Strings.cs:208
 #, csharp-format
-msgid "Selects the output format for results. Available formats: {0}"
-msgstr "选择输出结果的格式。可用格式：{0}"
+msgid ""
+"Use this option to select the output format for results. Available formats: "
+"{0}"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:82
 #: Library/Modules/Builtin/Strings.cs:209
@@ -4197,9 +4159,9 @@ msgstr "设置脚本超时时间"
 
 #: Library/Modules/Builtin/Strings.cs:90
 msgid ""
-"This option enables the use of script arguments. If this option is enabled, "
-"the script arguments are treated as commandline strings. Use single or "
-"double quotes to separate arguments."
+"This option enables the use of script arguments. If this option is set, the "
+"script arguments are treated as commandline strings. Use single or double "
+"quotes to separate arguments."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
@@ -4217,9 +4179,9 @@ msgstr "发送邮件"
 #: Library/Modules/Builtin/Strings.cs:97
 #, csharp-format
 msgid ""
-"Unable to find the destination mail server through MX lookup, please use the"
+"Unable to find the destination mail server through MX lookup. Please use the"
 " option {0} to specify what smtp server to use."
-msgstr "通过 MX 查询目标邮件服务器失败，请使用选项 {0} 指定要使用的 smtp 服务器"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:98
 msgid ""
@@ -4239,8 +4201,10 @@ msgid "The message body"
 msgstr "邮件正文"
 
 #: Library/Modules/Builtin/Strings.cs:108
-msgid "The password used to authenticate with the SMTP server if required."
-msgstr "若需要，该密码用于 SMTP 服务器认证"
+msgid ""
+"Use this option to set the password used to authenticate with the SMTP "
+"server if required."
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:109
 msgid "SMTP Password"
@@ -4264,19 +4228,13 @@ msgstr "收件人"
 
 #: Library/Modules/Builtin/Strings.cs:115
 msgid ""
-"Address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
+"Use this option to set an address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
 "\n"
 "sender\n"
 "sender@example.com\n"
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 msgstr ""
-"发件人的地址。如果未写明主机，第一个收件人的主机名将被使用。允许的格式例如：\n"
-"\n"
-"sender\n"
-"sender@example.com\n"
-"Mail Sender <sender>\n"
-"Mail Sender <sender@example.com>"
 
 #: Library/Modules/Builtin/Strings.cs:121
 msgid "Email sender"
@@ -4297,7 +4255,7 @@ msgstr "要发送的消息"
 
 #: Library/Modules/Builtin/Strings.cs:125
 msgid ""
-"A URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
+"Use this option to set a URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
 "\n"
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
@@ -4319,8 +4277,10 @@ msgid "The email subject"
 msgstr "邮件主题"
 
 #: Library/Modules/Builtin/Strings.cs:132
-msgid "The username used to authenticate with the SMTP server if required."
-msgstr "若需要，该用户名用于 SMTP 服务器认证"
+msgid ""
+"Use this option to set the username used to authenticate with the SMTP "
+"server if required."
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:133
 msgid "SMTP Username"
@@ -4352,8 +4312,8 @@ msgstr "XMPP 报告模块"
 
 #: Library/Modules/Builtin/Strings.cs:142
 msgid ""
-"The users who should have the messages sent. You can specify multiple users "
-"separated with commas."
+"Use this option to set the users who should have the messages sent. You can "
+"specify multiple users separated with commas."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:143
@@ -4381,8 +4341,8 @@ msgstr "消息模板"
 
 #: Library/Modules/Builtin/Strings.cs:154
 msgid ""
-"The username for the account that will send the message, including the "
-"hostname, e.g. \"account@jabber.org/Home\""
+"Use this option to set a username for the account that will send the "
+"message, including the hostname, e.g. \"account@jabber.org/Home\""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:155
@@ -4390,7 +4350,9 @@ msgid "The XMPP username"
 msgstr "XMPP 用户名"
 
 #: Library/Modules/Builtin/Strings.cs:156
-msgid "The password for the account that will send the message."
+msgid ""
+"Use this option to set a password for the account that will send the "
+"message."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:157
@@ -4410,7 +4372,7 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:161
 #: Library/Modules/Builtin/Strings.cs:189
 msgid ""
-"By default, messages will only be sent after a Backup operation. Use this "
+"By default, messages will only be sent after a backup operation. Use this "
 "option to send messages for all operations."
 msgstr ""
 
@@ -4433,7 +4395,7 @@ msgid "HTTP report module"
 msgstr "HTTP 报告模块"
 
 #: Library/Modules/Builtin/Strings.cs:170
-msgid "HTTP report URL."
+msgid "Use this option to set a HTTP report URL."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:171
@@ -4441,8 +4403,8 @@ msgid "HTTP report URL"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:182
-msgid "The name of the parameter to send the message as."
-msgstr "作为消息发送的参数的名字。"
+msgid "Use this option to set a name of the parameter to send the message as."
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:183
 msgid "The name of the parameter to send the message as"
@@ -4450,7 +4412,7 @@ msgstr "作为消息发送的参数的名字"
 
 #: Library/Modules/Builtin/Strings.cs:184
 msgid ""
-"Extra parameters to add to the http message, e.g. "
+"Use this option to set extra parameters to add to the http message, e.g. "
 "\"parameter1=value1&parameter2=value2\""
 msgstr ""
 
@@ -4469,9 +4431,10 @@ msgstr "设置 HTTP 动作"
 
 #: Library/Modules/Builtin/Strings.cs:193
 msgid ""
-"HTTP report URLs for sending form-encoded data. This property accepts "
-"multiple URLs, seperated by a semi-colon. All URLs will receive the same "
-"data. Note that this option ignores the format and verb settings."
+"Use this option to set HTTP report URLs for sending form-encoded data. This "
+"option accepts multiple URLs, seperated by a semi-colon. All URLs will "
+"receive the same data. Note that this option ignores the format and verb "
+"settings."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:194
@@ -4480,9 +4443,9 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:195
 msgid ""
-"HTTP report URLs for sending JSON data. This property accepts multiple URLs,"
-" seperated by a semi-colon. All URLs will receive the same data. Note that "
-"this option ignores the format and verb settings."
+"Use this option to set HTTP report URLs for sending JSON data. This option "
+"accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
+"same data. Note that this option ignores the format and verb settings."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:196
@@ -4761,11 +4724,11 @@ msgstr ""
 #: CommandLine/CLI/Strings.cs:44
 #, csharp-format
 msgid ""
-"This option can be used to store some or all of the options given to the "
-"commandline client. The file must be a plain text file, UTF-8 encoding is "
-"preferred. Each line in the file should be of the format --option=value. The"
-" special options --{0} and --{1} can be used to override the localpath and "
-"the remote destination uri, respectively. The options in this file take "
+"Use this option to store some or all of the options given to the commandline"
+" client. The file must be a plain text file, and UTF-8 encoding is "
+"preferred. Each line in the file should be of the format --option=value. Use"
+" the special options --{0} and --{1} to override the localpath and the "
+"remote destination uri, respectively. The options in this file take "
 "precedence over the options provided on the commandline. You cannot specify "
 "filters in both the file and on the commandline. Instead, you can use the "
 "special --{2}, --{3}, or --{4} options to specify filters inside the "
@@ -4790,8 +4753,8 @@ msgstr "内部错误信息：{0}"
 #: CommandLine/CLI/Strings.cs:48
 msgid ""
 "Include files that match this filter. The special character * means any "
-"number of character, and the special character ? means any single character,"
-" use *.txt to include all files with a txt extension. Regular expressions "
+"number of character, and the special character ? means any single character."
+" Use *.txt to include all files with a txt extension. Regular expressions "
 "are also supported and can be supplied by using hard braces, e.g. "
 "[.*\\.txt]. Filter groups (which encapsulate a built-in set of well-known "
 "files and folders) can be specified by using curly braces, e.g. "
@@ -4805,8 +4768,8 @@ msgstr "包含文件"
 #: CommandLine/CLI/Strings.cs:50
 msgid ""
 "Exclude files that match this filter. The special character * means any "
-"number of character, and the special character ? means any single character,"
-" use *.txt to exclude all files with a txt extension. Regular expressions "
+"number of character, and the special character ? means any single character."
+" Use *.txt to exclude all files with a txt extension. Regular expressions "
 "are also supported and can be supplied by using hard braces, e.g. "
 "[.*\\.txt]. Filter groups (which encapsulate a built-in set of well-known "
 "files and folders) can be specified by using curly braces, e.g. "
