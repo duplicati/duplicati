@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>DeviceId.Windows.Mmi</PackageId>
+    <Title>DeviceId (Windows / MMI)</Title>
+    <Description>Provides extra Windows-specific components (using MMI) for the DeviceId package.</Description>
+    <VersionPrefix>6.5.0</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DeviceId\DeviceId.csproj" />
+    <ProjectReference Include="..\DeviceId.Windows\DeviceId.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Management.Infrastructure" Version="3.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>DeviceId.Mac</PackageId>
+    <Title>DeviceId (Mac)</Title>
+    <Description>Provides Mac-specific components for the DeviceId package.</Description>
+    <VersionPrefix>6.3.0</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DeviceId\DeviceId.csproj" />
+  </ItemGroup>
+
+</Project>
