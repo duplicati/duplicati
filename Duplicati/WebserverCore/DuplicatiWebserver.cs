@@ -8,6 +8,7 @@ using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.Configuration.Json;
 
 namespace Duplicati.WebserverCore;
 
@@ -19,7 +20,7 @@ public partial class DuplicatiWebserver
 
     public IServiceProvider Provider { get; private set; }
 
-    public int Port => App.Configuration.GetValue("Port", 8200);
+    public int Port { get; private set; }
 
     /// <summary>
     /// The settings used for stating the server
@@ -40,7 +41,22 @@ public partial class DuplicatiWebserver
 
     public void InitWebServer(InitSettings settings, Connection connection)
     {
-        var builder = WebApplication.CreateBuilder();
+        Port = settings.Port;
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
+        {
+            ContentRootPath = settings.WebRoot,
+            WebRootPath = settings.WebRoot
+        });
+
+        // Remove all appsettings sources as they are not used, but they do install FS watchers by default
+        while (true)
+        {
+            var appCfgSource = builder.Configuration.Sources.FirstOrDefault(x => x is JsonConfigurationSource { ReloadOnChange: true });
+            if (appCfgSource == null)
+                break;
+            builder.Configuration.Sources.Remove(appCfgSource);
+        }
+
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Listen(settings.Interface, settings.Port, listenOptions =>

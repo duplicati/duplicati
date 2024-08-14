@@ -114,6 +114,18 @@ namespace Duplicati.Server
                     select new Tuple<long, string>(n.TaskID, n.Backup.ID)).ToList();
         }
 
+        public IList<Tuple<string, DateTime>> GetProposedSchedule()
+        {
+            return (
+                from n in FIXMEGlobal.Scheduler.Schedule
+                let backupid = (from t in n.Value.Tags
+                                where t != null && t.StartsWith("ID=", StringComparison.Ordinal)
+                                select t.Substring("ID=".Length)).FirstOrDefault()
+                where !string.IsNullOrWhiteSpace(backupid)
+                select new Tuple<string, DateTime>(backupid, n.Key)
+            ).ToList();
+        }
+
         /// <summary>
         /// Forces the scheduler to re-evaluate the order. 
         /// Call this method if something changes

@@ -21,6 +21,10 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
         location.reload();
     };
 
+    $scope.login = function() {
+        location.href = '/login.html';
+    };
+
     $scope.resume = function() {
         ServerStatus.resume().then(function() {}, AppUtils.connectionError);
     };
@@ -29,12 +33,14 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
         ServerStatus.pause(duration).then(function() {}, AppUtils.connectionError);
     };
 
-    $scope.isLoggedIn = $cookies.get('session-auth') != null && $cookies.get('session-auth') != '';
+    $scope.isLoggedIn = false;
 
     $scope.log_out = function() {
-        AppService.log_out().then(function() {
-            $cookies.remove('session-auth', { path: '/' });
-            location.reload(true);            
+        // Use a path under /auth/refresh to allow the cookie to be sent for deletion
+        // Calling `/auth/logout` also works, but does not revoke the token in the database
+        AppService.post('/auth/refresh/logout').then(function() {
+            AppService.clearAccessToken();
+            location.href = '/login.html';            
         }, AppUtils.connectionError);
     };
 
@@ -102,6 +108,7 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
             $('#contextmenu_pause').removeClass('open');
             $('#contextmenulink_pause').removeClass('open');            
         }
+        $scope.isLoggedIn = ServerStatus.state.connectionState == 'connected';
     });
 
     //$scope.$on('$routeUpdate', updateCurrentPage);

@@ -38,7 +38,6 @@ namespace Duplicati.Server.Serialization
                 {
                     new DayOfWeekConcerter(),
                     new StringEnumConverter(),
-                    new SerializableStatusCreator(),
                     new SettingsCreator(),
                     new FilterCreator(),
                     new NotificationCreator(),

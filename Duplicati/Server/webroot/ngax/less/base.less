@@ -745,7 +745,7 @@ body {
                     .resume {
                         background: url('../img/progress-resume.png');
                         background-size: 100%;
-                        
+
                         @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                             background-image: url('../img/progress-resume_2x.png');
                         }
@@ -826,7 +826,7 @@ body {
                 > .throttle {
                     background: url('../img/throttle.png');
                     background-size: 100%;
-                    
+
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/throttle_2x.png');
                     }
@@ -1313,6 +1313,52 @@ body {
                     }
                 }
 
+                /* TODO: merge these blocks with below */
+                div.add,
+                div.restore {
+                    --legends-width: 700px;
+                    --legends-padding-left: calc(calc(700px - var(--legends-width)) / 2);
+                    --circle-width: 43px;
+                    --step-width: calc(var(--legends-width) / var(--legends-steps));
+
+                    .steps {
+                        margin-left: calc(calc(calc(var(--step-width) - var(--circle-width)) / 2) + var(--legends-padding-left));
+
+                        .step {
+                            padding-left: calc(var(--step-width) - var(--circle-width));
+                            padding-right: 0;
+
+                            &:first-child {
+                                padding-left: unset;
+                            }
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: var(--legends-padding-left);
+
+                        li {
+                            width: var(--step-width);
+                        }
+                    }
+                }
+
+                div.add {
+                    --legends-steps: 5;
+                }
+
+                div.restore {
+                    --legends-steps: 2;
+
+                    &.restore-direct {
+                        --legends-steps: 4;
+
+                        .steps-legend {
+                            padding-left: 20px; /* Align "Backup location" */
+                        }
+                    }
+                }
+
                 div.add,
                 div.restore {
                     .steps {
@@ -1681,9 +1727,11 @@ body {
                 }
 
                 div.add .step2,
-                div.restore .step1 {
+                div.restore .step1,
+                .commandline {
                     /* .step2: "destination" on adding/editing backup task
                        .step1: "backup location" on a direct restore task
+                       .commandline: the form on "Target URL >"
                        TODO: integrate with form.less after investigation */
                     .input.select {
                         display: grid;
@@ -1704,9 +1752,10 @@ body {
                         input {
                             grid-area: custom;
 
-                            /* Add gap between this input area and the select element above.
-                               Avoid using the row-gap property as it sets the gap
-                               even if this input area does not exist. */
+                            /* Add gap between this input area and the select
+                               element above. Avoid using the row-gap property
+                               as it sets the gap even if this input area does
+                               not exist. */
                             margin-top: 10px; /* Magic number */
                         }
                     }
@@ -1722,93 +1771,6 @@ body {
                         }
                     }
                 }
-
-                div.add {
-                    @legends-steps: 5;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
-
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
-
-                        .step {
-                            padding-left: @step-width - @circle-width;
-                            padding-right: 0;
-
-                            &:first-child {
-                                padding-inline: 0;
-                            }
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
-
-                        li {
-                            width: @step-width;
-                        }
-                    }
-                }
-
-                div.restore {
-                    @legends-steps: 2;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
-
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
-
-                        .step {
-                            padding-left: @step-width - @circle-width;
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
-
-                        li {
-                            width: @step-width;
-                        }
-                    }
-                }
-
-                div.restore.restore-direct {
-                    @legends-steps: 4;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
-
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
-
-                        .step {
-                            padding-left: @step-width - @circle-width;
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
-
-                        li {
-                            width: @step-width;
-                        }
-                    }
-
-                    .step:first-child {
-                        padding-left: 0;
-                        background: transparent;
-                    }
-
-                    .steps-legend {
-                        padding-left: 20px;
-                    }
-                }
-
 
                 div.headerthreedotmenu {
                     margin: 20px 0 20px 0;

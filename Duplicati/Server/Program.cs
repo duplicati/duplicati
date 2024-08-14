@@ -478,6 +478,9 @@ namespace Duplicati.Server
 #endif
         }
 
+        private static string? GetEnvironmentVariableForOption(string name)
+            => Environment.GetEnvironmentVariable((name ?? "").Replace('-', '_').ToUpperInvariant().Trim());
+
         private static void AdjustApplicationSettings(Dictionary<string, string> commandlineOptions)
         {
             // This clears the JWT config, and a new will be generated, invalidating all existing tokens
@@ -493,17 +496,17 @@ namespace Duplicati.Server
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_PASSWORD))
                 DataConnection.ApplicationSettings.SetWebserverPassword(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_PASSWORD]);
-            else if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(WebServerLoader.OPTION_WEBSERVICE_PASSWORD)))
-                DataConnection.ApplicationSettings.SetWebserverPassword(Environment.GetEnvironmentVariable(WebServerLoader.OPTION_WEBSERVICE_PASSWORD));
+            else if (!string.IsNullOrWhiteSpace(GetEnvironmentVariableForOption(WebServerLoader.OPTION_WEBSERVICE_PASSWORD)))
+                DataConnection.ApplicationSettings.SetWebserverPassword(GetEnvironmentVariableForOption(WebServerLoader.OPTION_WEBSERVICE_PASSWORD));
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES))
                 DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES]);
             else if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT))
                 DataConnection.ApplicationSettings.SetAllowedHostnames(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT]);
-            else if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES)))
-                DataConnection.ApplicationSettings.SetAllowedHostnames(Environment.GetEnvironmentVariable(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES));
-            else if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT)))
-                DataConnection.ApplicationSettings.SetAllowedHostnames(Environment.GetEnvironmentVariable(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT));
+            else if (!string.IsNullOrWhiteSpace(GetEnvironmentVariableForOption(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES)))
+                DataConnection.ApplicationSettings.SetAllowedHostnames(GetEnvironmentVariableForOption(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES));
+            else if (!string.IsNullOrWhiteSpace(GetEnvironmentVariableForOption(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT)))
+                DataConnection.ApplicationSettings.SetAllowedHostnames(GetEnvironmentVariableForOption(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT));
         }
 
         private static void CreateApplicationInstance(bool writeConsole)
@@ -543,7 +546,8 @@ namespace Duplicati.Server
             //Log various information in the logfile
             if (!commandlineOptions.ContainsKey("log-file"))
             {
-                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, "Duplicati.debug.log");
+                var prefix = System.Reflection.Assembly.GetEntryAssembly().GetName().Name.StartsWith("Duplicati.Server") ? "server" : "trayicon";
+                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, $"Duplicati-{prefix}.debug.log");
                 commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
                 if (System.IO.File.Exists(commandlineOptions["log-file"]))
                 {
