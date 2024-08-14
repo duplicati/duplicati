@@ -43,6 +43,11 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_RESET_JWT_CONFIG = "webservice-reset-jwt-config";
 
     /// <summary>
+    /// Option for disabling the visual captcha
+    /// </summary>
+    public const string OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA = "webservice-disable-visual-captcha";
+
+    /// <summary>
     /// Option for setting the webservice allowed hostnames
     /// </summary>
     public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowed-hostnames";
