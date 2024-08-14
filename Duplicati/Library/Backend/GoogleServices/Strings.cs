@@ -32,12 +32,12 @@ namespace Duplicati.Library.Backend.Strings
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string LocationDescriptionLong(string regions) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:
 {0}", regions); }
-        public static string LocationDescriptionShort { get { return LC.L(@"Specifies location option for creating a bucket"); } }
+        public static string LocationDescriptionShort { get { return LC.L(@"Specify location option for creating a bucket"); } }
         public static string StorageclassDescriptionLong(string classes) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:
 {0}", classes); }
-        public static string StorageclassDescriptionShort { get { return LC.L(@"Specifies storage class for creating a bucket"); } }
+        public static string StorageclassDescriptionShort { get { return LC.L(@"Specify storage class for creating a bucket"); } }
         public static string ProjectDescriptionLong { get { return LC.L(@"This option is only used when creating new buckets. Use this option to supply the project ID that the bucket is attached to. The project determines where usage charges are applied."); } }
-        public static string ProjectDescriptionShort { get { return LC.L(@"Specifies project for creating a bucket"); } }
+        public static string ProjectDescriptionShort { get { return LC.L(@"Specify project for creating a bucket"); } }
     }
 
     internal static class GoogleDrive {

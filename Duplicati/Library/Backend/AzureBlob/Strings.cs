@@ -35,8 +35,8 @@ namespace Duplicati.Library.Backend.AzureBlob.Strings {
         public static string SasTokenDescriptionShort { get { return LC.L(@"The SAS token"); } }
         public static string NoAccessKeyOrSasToken { get { return LC.L(@"No Azure access key or SAS token given"); } }
         public static string AuthPasswordDescriptionLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
-        public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
+        public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supply the password used to connect to the server"); } }
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
-        public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
+        public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
     }
 }

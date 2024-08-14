@@ -49,9 +49,9 @@ namespace Duplicati.Library.Encryption.Strings
         public static string GpgprogrampathShort { get { return LC.L(@"The path to GnuPG"); } }
         public static string GpgencryptionenablearmorLong { get { return LC.L(@"Use this option to supply the --armor option to GPG. The files will be larger but can be sent as pure text files."); } }
         public static string GpgencryptionenablearmorShort { get { return LC.L(@"Use GPG Armor"); } }
-        public static string GpgencryptiondecryptioncommandLong { get { return LC.L(@"Overrides the GPG command supplied for decryption."); } }
+        public static string GpgencryptiondecryptioncommandLong { get { return LC.L(@"Override the GPG command supplied for decryption."); } }
         public static string GpgencryptiondecryptioncommandShort { get { return LC.L(@"The GPG decryption command"); } }
-        public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Overrides the default GPG encryption command ""{0}"". Normal usage is to request asymetric encryption with the setting {1}.", commandname, optionvalue); }
+        public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Override the default GPG encryption command ""{0}"". Normal usage is to request asymetric encryption with the setting {1}.", commandname, optionvalue); }
         public static string GpgencryptionencryptioncommandShort { get { return LC.L(@"The GPG encryption command"); } }
     }
     internal static class GPGStreamWrapper
