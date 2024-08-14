@@ -2,20 +2,18 @@
 
 Install [less CSS](https://lesscss.org) and minify plugin. We also use [Stylelint](https://stylelint.io/) with a plugin for LESS ([stylelint-config-standard-less](https://www.npmjs.com/package/stylelint-config-standard-less)).
 
-Run the commands below to install the packages on the project root directory:
+Run the command below on the current directory to install the packages on the project root directory:
 
 ```
-npm install less -g
-npm install -g less-plugin-clean-css
-npm install stylelint stylelint-config-standard-less --save-dev --prefix ../../
+npm install less less-plugin-clean-css stylelint stylelint-config-standard-less --save-dev --prefix ../../
 ```
 
 Then, run the commands below to use stylelint and compile the LESS files:
 
 ```
 npx stylelint "**/less/*.less"
-lessc webroot/ngax/less/dark.less styles/dark.css --clean-css -m=always
-lessc webroot/ngax/less/default.less styles/default.css --clean-css -m=always
+npx lessc webroot/ngax/less/dark.less webroot/ngax/styles/dark.css --clean-css -m=always
+npx lessc webroot/ngax/less/default.less webroot/ngax/styles/default.css --clean-css -m=always
 ```
 
 Add `--fix` option to have Stylelint fix some fixable errors.
