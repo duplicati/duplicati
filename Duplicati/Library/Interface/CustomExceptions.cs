@@ -201,4 +201,18 @@ namespace Duplicati.Library.Interface
             : base(message, helpId, innerException)
         {}
     }
+
+    /// <summary>
+    /// An exception indicating that the current encryption key does not match the key
+    /// used to encrypt the settings.
+    /// </summary>
+    [Serializable]
+    public class SettingsEncryptionKeyMismatchException : UserInformationException
+    {
+        public SettingsEncryptionKeyMismatchException()
+            : base(Strings.Common.SettingsKeyMismatchExceptionError, "SettingsKeyMismatch")
+        {}
+
+    }
+
 }
