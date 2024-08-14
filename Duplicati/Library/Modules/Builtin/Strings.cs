@@ -94,7 +94,7 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     {
         public static string Description { get { return LC.L(@"This module can send email after an operation completes"); } }
         public static string Displayname { get { return LC.L(@"Send mail"); } }
-        public static string FailedToLookupMXServer(string optionname) { return LC.L(@"Unable to find the destination mail server through MX lookup. Please use the option {0} to specify what smtp server to use.", optionname); }
+        public static string FailedToLookupMXServer(string optionname) { return LC.L(@"Unable to find the destination mail server through MX lookup. Please use the option --{0} to specify what SMTP server to use.", optionname); }
         public static string OptionBodyLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message body.
 
 In the message body, certain tokens are replaced:
