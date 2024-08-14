@@ -33,12 +33,12 @@ namespace Duplicati.UnitTest
             string data = "Sample Data to Encrypt";
             string passphrase = "Secret key used to encrypt";
 
-            string encrypted = AESStringEncryption.EncryptToHex(data,passphrase);
+            string encrypted = AESStringEncryption.EncryptToHex(passphrase, data);
 
             Assert.IsNotNull(encrypted);
             Assert.IsNotEmpty(encrypted);
 
-            string decrypted = AESStringEncryption.DecryptFromHex(encrypted,passphrase);
+            string decrypted = AESStringEncryption.DecryptFromHex(passphrase, encrypted);
 
             Assert.IsNotNull(decrypted);
             Assert.IsNotEmpty(decrypted);
