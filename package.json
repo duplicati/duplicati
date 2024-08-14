@@ -8,6 +8,6 @@
   "scripts": {
     "lint:style": "npx stylelint \"Duplicati/Server/**/less/*.less\"",
     "lint:style-fix": "npx stylelint \"Duplicati/Server/**/less/*.less\" --fix",
-    "lessc": "npx lessc Duplicati/Server/webroot/ngax/less/dark.less Duplicati/Server/webroot/ngax/styles/dark.css --clean-css -m=always && npx lessc Duplicati/Server/webroot/ngax/less/default.less Duplicati/Server/webroot/ngax/styles/default.css --clean-css -m=always"
+    "lessc": "npm run lint:style-fix; npx lessc Duplicati/Server/webroot/ngax/less/dark.less Duplicati/Server/webroot/ngax/styles/dark.css --clean-css -m=always && npx lessc Duplicati/Server/webroot/ngax/less/default.less Duplicati/Server/webroot/ngax/styles/default.css --clean-css -m=always"
   }
 }
