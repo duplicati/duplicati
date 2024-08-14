@@ -528,6 +528,16 @@ namespace Duplicati.UnitTest
             for (int i = 0; i < testValues.Length; i++)
                 Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], true));
         }
+
+        [Test]
+        [Category("Utility")]
+        public static void GetDeviceID()
+        {    
+           Assert.DoesNotThrow(() => DeviceIDHelper.GetDeviceID());
+           Assert.IsNotNull(DeviceIDHelper.GetDeviceID());
+           Assert.IsNotEmpty(DeviceIDHelper.GetDeviceID());
+        }
+        
     }
 
     /// <summary>

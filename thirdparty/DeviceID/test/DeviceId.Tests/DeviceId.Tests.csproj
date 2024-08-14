@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>DeviceId.Tests.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="6.8.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageReference Include="Moq" Version="4.18.2" />
+    <PackageReference Include="NSubstitute" Version="5.1.0" />
+    <PackageReference Include="xunit" Version="2.9.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DeviceId\DeviceId.csproj" />
+    <ProjectReference Include="..\..\src\DeviceId.Windows.Mmi\DeviceId.Windows.Mmi.csproj" />
+    <ProjectReference Include="..\..\src\DeviceId.Windows.WmiLight\DeviceId.Windows.WmiLight.csproj" />
+    <ProjectReference Include="..\..\src\DeviceId.Windows.Wmi\DeviceId.Windows.Wmi.csproj" />
+    <ProjectReference Include="..\..\src\DeviceId.Linux\DeviceId.Linux.csproj" />
+    <ProjectReference Include="..\..\src\DeviceId.SqlServer\DeviceId.SqlServer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="*.snk">
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Linux_4.8-4.13.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Linux_4.4.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

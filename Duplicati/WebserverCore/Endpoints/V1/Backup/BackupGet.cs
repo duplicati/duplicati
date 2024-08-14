@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
@@ -114,7 +115,7 @@ public class BackupGet : IEndpointV1
                 Metadata = bk.Metadata,
                 Description = bk.Description,
                 Tags = bk.Tags,
-                TargetURL = bk.TargetURL,
+                TargetURL = EncryptedFieldHelper.Decrypt(bk.TargetURL),
                 DBPath = bk.DBPath,
                 IsTemporary = bk.IsTemporary,
                 IsUnencryptedOrPassphraseStored = false,
