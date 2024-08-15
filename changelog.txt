@@ -1,3 +1,39 @@
+2024-08-15 - 2.0.9.103_canary_2024-08-15
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+** Important changes from last Beta **
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v7
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+## Detailed list of changes:
+- Multiple updates for styling and visual consistency, thanks @luixxiul
+- Extensive work on making all documentation strings follow a consistent logic, thanks @luixxiul
+- Fixed support for Websocket over https, thanks @Riches
+- Fixed an issue with `--webservice-allowed-hostnames` being renamed
+- Fixed support for captcha on systems without the Arial font
+- Using different default filenames for logging with TrayIcon and Server
+- Fixed issue with livelog not showing contents
+- Fixed an issue where a login issue would not show an option to log in
+- Fixed showing correct port number in log output
+- Fixed not showing scheduler state and next backup
+- Fixed an issue where a crash would show the wrong stack trace
+- Fixed an issue with generating massive number of inotify watchers
+- Re-enabled the button to log out
+- Added option to disable the visual captcha
+- Added support for providing server commandline arguments via environment variables
+- Fixed log error message related to update download url
+- Added Telegram reporting module
+
 2024-08-02 - 2.0.9.102_canary_2024-08-02
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.
