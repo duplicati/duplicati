@@ -1,5 +1,4 @@
 using Duplicati.WebserverCore.Abstractions;
-using Newtonsoft.Json;
 
 namespace Duplicati.WebserverCore.Services;
 
