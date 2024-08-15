@@ -29,9 +29,9 @@ namespace Duplicati.Library.Backend.Strings {
         public static string B2accountidDescriptionLong { get { return LC.L(@"B2 Cloud Storage Account ID can be obtained after logging into your Backblaze account. This can also be supplied through the option --{0}.", "auth-username"); } }
         public static string B2accountidDescriptionShort { get { return LC.L(@"B2 Cloud Storage Account ID"); } }
         public static string AuthPasswordDescriptionLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
-        public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supplies the password used to connect to the server"); } }
+        public static string AuthPasswordDescriptionShort { get { return LC.L(@"Supply the password used to connect to the server"); } }
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
-        public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supplies the username used to connect to the server"); } }
+        public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
         public static string NoB2KeyError { get { return LC.L(@"No B2 Cloud Storage Application Key given"); } }
         public static string NoB2UserIDError { get { return LC.L(@"No B2 Cloud Storage Account ID given"); } }
         public static string B2createbuckettypeDescriptionLong { get { return LC.L(@"By default, a private bucket is created. Use this option to set the bucket type. Refer to the B2 documentation for allowed types."); } }

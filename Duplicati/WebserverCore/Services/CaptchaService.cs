@@ -12,6 +12,12 @@ public class CaptchaService : ICaptchaProvider
 {
     private readonly object m_lock = new();
     private readonly Dictionary<string, CaptchaEntry> m_captchas = [];
+    private readonly bool m_disableVisualCaptcha;
+
+    public CaptchaService(ISettingsService settings)
+    {
+        m_disableVisualCaptcha = settings.GetSettings().DisableVisualCaptcha;
+    }
 
     /// <summary>
     /// List of possible system fonts, ordered by preference
@@ -38,7 +44,7 @@ public class CaptchaService : ICaptchaProvider
         }
     }
 
-    public string CreateCaptcha(string target)
+    public (string Token, string? Answer) CreateCaptcha(string target)
     {
         var answer = CaptchaUtil.CreateRandomAnswer(minlength: 6, maxlength: 6);
         var nonce = Guid.NewGuid().ToString();
@@ -65,11 +71,14 @@ public class CaptchaService : ICaptchaProvider
             m_captchas[token] = new CaptchaEntry(answer, target);
         }
 
-        return token;
+        return (token, m_disableVisualCaptcha ? answer : null);
     }
 
     public byte[] GetCaptchaImage(string token)
     {
+        if (m_disableVisualCaptcha)
+            throw new NotFoundException("No such entry");
+
         string? answer = null;
         lock (m_lock)
         {
@@ -101,6 +110,8 @@ public class CaptchaService : ICaptchaProvider
             return tp.Attempts >= 0 && string.Equals(tp.Answer, answer, StringComparison.OrdinalIgnoreCase) && tp.Target == target && tp.Expires >= DateTime.Now;
         }
     }
+
+    public bool VisualCaptchaDisabled => m_disableVisualCaptcha;
 
 
     public static class CaptchaUtil

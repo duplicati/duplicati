@@ -90,24 +90,8 @@ public partial class Auth : IEndpointV1
             return new Dto.SigninTokenOutputDto(signinToken);
         });
 
-        group.MapPost("auth/logout", ([FromServices] ILoginProvider loginProvider, [FromServices] IHttpContextAccessor httpContextAccessor) =>
-        {
-            var cookieName = GetCookieName(httpContextAccessor);
-            if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
-            {
-                try
-                {
-                    loginProvider.PerformLogoutWithRefreshToken(refreshTokenString, CancellationToken.None);
-                }
-                catch
-                {
-                    // Ignore invalid refresh tokens
-                }
-            }
-
-            httpContextAccessor.HttpContext!.Response.Cookies.Delete(cookieName);
-            return new { success = true };
-        });
+        group.MapPost("auth/refresh/logout", ([FromServices] ILoginProvider loginProvider, [FromServices] IHttpContextAccessor httpContextAccessor) =>
+            PerformLogout(loginProvider, httpContextAccessor));
 
         group.MapPost("auth/issuetoken/{operation}", ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider, [FromRoute] string operation) =>
         {
@@ -137,6 +121,24 @@ public partial class Auth : IEndpointV1
             Domain = context.Request.Host.Host
         });
 
+    private static object PerformLogout(ILoginProvider loginProvider, IHttpContextAccessor httpContextAccessor)
+    {
+        var cookieName = GetCookieName(httpContextAccessor);
+        if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
+        {
+            try
+            {
+                loginProvider.PerformLogoutWithRefreshToken(refreshTokenString, CancellationToken.None);
+            }
+            catch
+            {
+                // Ignore invalid refresh tokens
+            }
+        }
 
+        // Also remove the cookie, in case we failed to delete it
+        httpContextAccessor.HttpContext!.Response.Cookies.Delete(cookieName);
+        return new { success = true };
+    }
 
 }
