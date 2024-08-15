@@ -179,7 +179,8 @@ In the message, certain tokens are replaced:
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendtelegrammessageShort { get { return LC.L(@"The message template"); } }
-        public static string SendtelegrambotidLong { get { return LC.L(@"Use this option to set a bot ID for the bot that will send the message"); } }
+        public static string SendtelegrambotidLong { get { return LC.L(@"Use this option to set a bot ID for the bot that will send the message."); } }
+
         public static string SendtelegrambotidShort { get { return LC.L(@"The Telegram bot ID"); } }
         public static string SendtelegramapikeyLong { get { return LC.L(@"Use this option to set a API key for the bot that will send the message."); } }
         public static string SendtelegramapikeyShort { get { return LC.L(@"The Telegram API key"); } }
