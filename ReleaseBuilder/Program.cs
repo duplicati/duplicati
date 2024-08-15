@@ -67,6 +67,7 @@ class Program
         {
             Build.Command.Create(),
             CreateKey.Command.Create(),
+            PackWebroot.Command.Create(),
         }.InvokeAsync(args);
 
         return ReturnCode ?? r;
