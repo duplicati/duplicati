@@ -1,4 +1,3 @@
-
 namespace Duplicati.WebserverCore.Abstractions;
 
 public class ServerSettings
@@ -56,9 +55,15 @@ public class ServerSettings
         get => applicationSettings.UpdateCheckInterval;
         set => applicationSettings.UpdateCheckInterval = value;
     }
-    public string? UpdateCheckNewVersion
+    public string? NewVersionUpdateUrl
     {
-        get => applicationSettings.UpdatedVersion?.GetUpdateUrls()?.FirstOrDefault();
+        get => applicationSettings.UpdatedVersion == null
+            ? null
+            : applicationSettings.UpdatedVersion.GetUpdateUrls()?.FirstOrDefault();
+    }
+    public UpdateInfo? NewVersion
+    {
+        get => UpdateInfo.FromSrc(applicationSettings.UpdatedVersion);
     }
     public bool UnackedError
     {
