@@ -1380,15 +1380,19 @@ body {
                             }
 
                             span {
+                                --size: 35px;
+
                                 display: block;
-                                border: 4px #c7e5f6 solid;
+                                border-width: 4px;
+                                border-style: solid;
+                                border-color: #c7e5f6;
                                 background: white;
                                 border-radius: 50%;
-                                width: 35px;
-                                height: 35px;
+                                width: var(--size);
+                                height: var(--size);
                                 text-align: center;
                                 font-size: 22px;
-                                line-height: 35px;
+                                line-height: var(--size);
                                 cursor: pointer;
                             }
 
@@ -1396,7 +1400,7 @@ body {
                                 color: @lColor;
 
                                 span {
-                                    border: 4px @lColor solid;
+                                    border-color: @lColor;
                                     background: @lColor;
                                     color: white;
                                 }
