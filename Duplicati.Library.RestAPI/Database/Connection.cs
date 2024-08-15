@@ -37,7 +37,7 @@ namespace Duplicati.Server.Database
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
-        private static string[] _encryptedFields = { ServerSettings.CONST.JWT_CONFIG, ServerSettings.CONST.PBKDF_CONFIG,  ServerSettings.CONST.PASSPHRASE_FIELDNAME };
+        private static string[] _encryptedFields = { ServerSettings.CONST.JWT_CONFIG, ServerSettings.CONST.PASSPHRASE_FIELDNAME };
 
         public Connection(System.Data.IDbConnection connection)
         {
@@ -208,8 +208,13 @@ namespace Duplicati.Server.Database
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
-                    foreach (var setting in values)
+                    List<ISetting> intercepted = values.ToList();
+                    foreach (ISetting setting in intercepted)
+                    {
                         setting.Value = EncryptSensitiveFields(setting.Name, setting.Value);
+                    }
+
+                    values = intercepted.ToList();
                     
                     OverwriteAndUpdateDb(
                         tr,
