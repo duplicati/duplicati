@@ -33,7 +33,7 @@ public static class Command
         return command;
     }
 
-    public static async Task PackWebroot(string webroot)
+    public static async Task<IEnumerable<string>> PackWebroot(string webroot)
     {
         var indexhtml = Path.Combine(webroot, "index.html");
         if (!File.Exists(indexhtml))
@@ -65,5 +65,10 @@ public static class Command
         }
 
         await File.WriteAllTextAsync(indexhtml, index);
+
+        return scripts.Select(s => s.Path)
+            .Append(combinedScriptPath)
+            .Append("index.html")
+            .Select(x => Path.Combine(webroot, x));
     }
 }
