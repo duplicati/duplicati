@@ -163,6 +163,35 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
     }
 
+    internal static class SendTelegramMessage
+    {
+        public static string Description { get { return LC.L(@"This module provides support for sending status reports via Telegram messages"); } }
+        public static string DisplayName { get { return LC.L(@"Telegram report module"); } }
+        public static string SendtelegramchannelLong { get { return LC.L(@"Use this option to set the channel ID."); } }
+        public static string SendtelegramchannelShort { get { return LC.L(@"Telegram channel id"); } }
+        public static string SendtelegrammessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
+
+In the message, certain tokens are replaced:
+%OPERATIONNAME% - The name of the operation, normally ""Backup""
+%REMOTEURL% - Remote server URL
+%LOCALPATH% - The path to the local files or folders involved in the operation (if any)
+%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
+
+All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
+        public static string SendtelegrammessageShort { get { return LC.L(@"The message template"); } }
+        public static string SendtelegrambotidLong { get { return LC.L(@"Use this option to set a bot ID for the bot that will send the message."); } }
+
+        public static string SendtelegrambotidShort { get { return LC.L(@"The Telegram bot ID"); } }
+        public static string SendtelegramapikeyLong { get { return LC.L(@"Use this option to set a API key for the bot that will send the message."); } }
+        public static string SendtelegramapikeyShort { get { return LC.L(@"The Telegram API key"); } }
+        public static string SendtelegramlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
+        public static string SendtelegramlevelShort { get { return LC.L(@"The messages to send"); } }
+        public static string SendtelegramanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
+        public static string SendtelegramanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
+        public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while sending to Telegram server"); } }
+    }
+
     internal static class SendHttpMessage
     {
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via HTTP messages"); } }
