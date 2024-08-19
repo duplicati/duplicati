@@ -209,7 +209,7 @@ namespace Duplicati.Server.Database
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
                     List<ISetting> intercepted = values.ToList();
-                    foreach (ISetting setting in intercepted)
+                    foreach (var setting in intercepted)
                     {
                         setting.Value = EncryptSensitiveFields(setting.Name, setting.Value);
                     }
