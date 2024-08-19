@@ -64,7 +64,6 @@ backupApp.directive('destinationFolderPicker', function() {
                 node.loading = true;
 
                 AppService.postJson('/filesystem?onlyfolders=true&showhidden=true', {path: node.id}).then(function(data) {
-                    console.log(data);
                     node.children = data.data;
                     node.loading = false;
 
