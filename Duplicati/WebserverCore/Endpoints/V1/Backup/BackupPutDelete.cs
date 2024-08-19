@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Duplicati.Library.Encryption;
 using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.RestAPI.Abstractions;
@@ -76,7 +77,7 @@ public class BackupPutDelete : IEndpointV1
                 Name = input.Backup.Name,
                 Description = input.Backup.Description,
                 Tags = input.Backup.Tags,
-                TargetURL = input.Backup.TargetURL,
+                TargetURL = EncryptedFieldHelper.Encrypt(input.Backup.TargetURL),
                 DBPathSetter = null,
                 Sources = input.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
