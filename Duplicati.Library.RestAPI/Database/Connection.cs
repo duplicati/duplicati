@@ -37,8 +37,8 @@ namespace Duplicati.Server.Database
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
-        private static string[] _encryptedFields = { ServerSettings.CONST.JWT_CONFIG, ServerSettings.CONST.PASSPHRASE_FIELDNAME };
-
+        private static HashSet<string> _encryptedFields = new string[]{ServerSettings.CONST.JWT_CONFIG, ServerSettings.CONST.PASSPHRASE_FIELDNAME}.ToHashSet(StringComparer.OrdinalIgnoreCase);
+       
         public Connection(System.Data.IDbConnection connection)
         {
             m_connection = connection;
