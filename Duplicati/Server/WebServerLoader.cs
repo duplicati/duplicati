@@ -197,7 +197,7 @@ public static class WebServerLoader
             listenInterface,
             cert,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
-            options.GetValueOrDefault(OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, "").Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+            connection.ApplicationSettings.AllowedHostnames.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
 
         // If we are in hosted mode with no specified port, 

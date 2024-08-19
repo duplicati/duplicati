@@ -6,13 +6,9 @@ namespace Duplicati.WebserverCore.Middlewares;
 
 public static class WebsocketExtensions
 {
-    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IEnumerable<string> allowedOrigins,
-        string notificationPath)
+    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, string notificationPath)
     {
         var opts = new WebSocketOptions();
-        if (allowedOrigins.Any())
-            foreach (var origin in allowedOrigins)
-                opts.AllowedOrigins.Add(origin);
 
         app.UseWebSockets(opts);
         return app.Use(async (context, next) =>
