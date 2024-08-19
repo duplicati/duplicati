@@ -1324,8 +1324,7 @@ body {
                     .steps {
                         margin-left: calc(calc(calc(var(--step-width) - var(--circle-width)) / 2) + var(--legends-padding-left));
 
-                        & button,
-                        & div {
+                        .step {
                             padding-left: calc(var(--step-width) - var(--circle-width));
                             padding-right: 0;
 
@@ -1366,8 +1365,7 @@ body {
                         width: 100%;
                         overflow: hidden;
 
-                        & button,
-                        & div {
+                        .step {
                             float: left;
                             background: url('../img/steps/line-out.png') no-repeat top left;
                             background-size: 485px 24px;
@@ -1382,34 +1380,30 @@ body {
                             }
 
                             span {
-                                --size: 35px;
-
                                 display: block;
-                                border-width: 4px;
-                                border-style: solid;
-                                border-color: #c7e5f6;
+                                border: 4px #c7e5f6 solid;
                                 background: white;
                                 border-radius: 50%;
-                                width: var(--size);
-                                height: var(--size);
+                                width: 35px;
+                                height: 35px;
                                 text-align: center;
                                 font-size: 22px;
-                                line-height: var(--size);
+                                line-height: 35px;
                                 cursor: pointer;
                             }
+                        }
 
-                            &.active {
+                        .step.active {
+                            color: @lColor;
+
+                            span {
+                                border: 4px @lColor solid;
+                                background: @lColor;
+                                color: white;
+                            }
+
+                            h2 {
                                 color: @lColor;
-
-                                span {
-                                    border-color: @lColor;
-                                    background: @lColor;
-                                    color: white;
-                                }
-
-                                h2 {
-                                    color: @lColor;
-                                }
                             }
                         }
                     }

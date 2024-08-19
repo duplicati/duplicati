@@ -425,8 +425,8 @@ msgstr ""
 msgid "Canary"
 msgstr ""
 
-#: scripts/controllers/AppController.js:54
-#: scripts/controllers/AppController.js:69
+#: scripts/controllers/AppController.js:52
+#: scripts/controllers/AppController.js:67
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -488,7 +488,7 @@ msgstr ""
 msgid "Checking for updates …"
 msgstr ""
 
-#: templates/captcha.html:11
+#: templates/captcha.html:10
 msgid "Checking …"
 msgstr ""
 
@@ -968,7 +968,7 @@ msgstr ""
 msgid "Duplicati forum"
 msgstr ""
 
-#: scripts/controllers/AppController.js:184
+#: scripts/controllers/AppController.js:181
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1319,7 +1319,7 @@ msgstr ""
 msgid "Finished!"
 msgstr ""
 
-#: scripts/controllers/AppController.js:183
+#: scripts/controllers/AppController.js:180
 msgid "First run setup"
 msgstr ""
 
@@ -1542,7 +1542,7 @@ msgstr ""
 msgid "Include regular expression"
 msgstr ""
 
-#: templates/captcha.html:12
+#: templates/captcha.html:11
 msgid "Incorrect answer, try again"
 msgstr ""
 
@@ -1659,7 +1659,7 @@ msgstr ""
 #: templates/backuplog.html:22
 #: templates/backuplog.html:29
 #: templates/backuplog.html:40
-#: templates/captcha.html:15
+#: templates/captcha.html:14
 #: templates/log.html:12
 #: templates/log.html:23
 #: templates/updatechangelog.html:7
@@ -1876,7 +1876,7 @@ msgstr ""
 msgid "Next time"
 msgstr ""
 
-#: scripts/controllers/AppController.js:185
+#: scripts/controllers/AppController.js:182
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1947,8 +1947,8 @@ msgstr ""
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr ""
 
-#: scripts/controllers/AppController.js:54
-#: scripts/controllers/AppController.js:69
+#: scripts/controllers/AppController.js:52
+#: scripts/controllers/AppController.js:67
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2144,7 +2144,7 @@ msgstr ""
 msgid "Pause after startup or hibernation"
 msgstr ""
 
-#: scripts/controllers/AppController.js:52
+#: scripts/controllers/AppController.js:50
 msgid "Pause options"
 msgstr ""
 
@@ -2233,7 +2233,7 @@ msgid "Relative paths not allowed"
 msgstr ""
 
 #: index.html:305
-#: templates/captcha.html:8
+#: templates/captcha.html:7
 msgid "Reload"
 msgstr ""
 
@@ -2867,7 +2867,7 @@ msgstr ""
 msgid "This week"
 msgstr ""
 
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:65
 msgid "Throttle settings"
 msgstr ""
 
@@ -2961,7 +2961,7 @@ msgid "Uploading verification file …"
 msgstr ""
 
 #: templates/settings.html:125
-msgid "Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <external-link link=\"'https://usage-reporter.duplicati.com/'\">public usage statistics</external-link>."
+msgid "Usage reports help us improve the user experience and evaluate impact of new features. We use them to generate <external-link link=\"'https://usage-reporter.duplicati.com/'\">{{'public usage statistics' | translate}}</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3139,7 +3139,7 @@ msgstr ""
 msgid "Years"
 msgstr ""
 
-#: scripts/controllers/AppController.js:185
+#: scripts/controllers/AppController.js:182
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3371,6 +3371,10 @@ msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
+msgstr ""
+
+#: templates/settings.html:125
+msgid "public usage statistics"
 msgstr ""
 
 #: templates/backends/rclone.html:11
