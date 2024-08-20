@@ -9,6 +9,7 @@ using Duplicati.WebserverCore.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Configuration.Json;
+using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
 
@@ -93,8 +94,21 @@ public partial class DuplicatiWebserver
 
         builder.Services
             .AddHostedService<ApplicationPartsLogger>()
+#if DEBUG
             .AddEndpointsApiExplorer()
-            .AddSwaggerGen()
+            .AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Duplicati API Documentation", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer"
+                });
+            })
+#endif
             .AddHttpContextAccessor()
             .AddHostFiltering(options =>
             {
@@ -149,6 +163,14 @@ public partial class DuplicatiWebserver
         Configuration = builder.Configuration;
         App = builder.Build();
         Provider = App.Services;
+
+#if DEBUG
+        App.UseSwagger();
+        App.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
+        });
+#endif
 
         App.UseDefaultStaticFiles(settings.WebRoot);
 
