@@ -80,7 +80,7 @@ public class Backups : IEndpointV1
                     Include = y.Include,
                     Expression = y.Expression,
                 }),
-                TargetURL = EncryptedFieldHelper.Decrypt(x.Backup.TargetURL),
+                TargetURL = x.Backup.TargetURL,
                 DBPath = x.Backup.DBPath,
                 Tags = x.Backup.Tags
             },
@@ -162,7 +162,7 @@ public class Backups : IEndpointV1
                 Name = data.Backup.Name,
                 Description = data.Backup.Description,
                 Tags = data.Backup.Tags,
-                TargetURL = EncryptedFieldHelper.Encrypt( data.Backup.TargetURL),
+                TargetURL = data.Backup.TargetURL,
                 DBPathSetter = null,
                 Sources = data.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
