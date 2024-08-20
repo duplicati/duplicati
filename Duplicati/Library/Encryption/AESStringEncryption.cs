@@ -20,49 +20,47 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Duplicati.Library.Encryption
+namespace Duplicati.Library.Encryption;
+
+public static class AESStringEncryption
 {
-    public static class AESStringEncryption
+    private enum Direction
     {
-        private enum Direction
-        {
-            Encryption,
-            Decryption
-        }
+        Encryption,
+        Decryption
+    }
 
-        public static string EncryptToHex(string passphrase, string content)
-        {
-            return Transform(passphrase, content, Direction.Encryption);
-        }
+    public static string EncryptToHex(string passphrase, string content)
+    {
+        return Transform(passphrase, content, Direction.Encryption);
+    }
 
-        public static string DecryptFromHex(string passphrase, string content)
-        {
-            return Transform(passphrase, content, Direction.Decryption);
-        }
+    public static string DecryptFromHex(string passphrase, string content)
+    {
+        return Transform(passphrase, content, Direction.Decryption);
+    }
 
-        private static string Transform(string passphrase, string content, Direction direction)
-        {
-            using AESEncryption aesprovider = new AESEncryption(passphrase, new Dictionary<string, string>());
-            using MemoryStream inputStream = new MemoryStream(direction == Direction.Encryption
-                ? Encoding.UTF8.GetBytes(content)
-                : Utility.Utility.HexStringAsByteArray(content));
-            using MemoryStream outputStream = new MemoryStream();
+    private static string Transform(string passphrase, string content, Direction direction)
+    {
+        using var aesprovider = new AESEncryption(passphrase, []);
+        using var inputStream = new MemoryStream(direction == Direction.Encryption
+            ? Encoding.UTF8.GetBytes(content)
+            : Utility.Utility.HexStringAsByteArray(content));
+        using var outputStream = new MemoryStream();
 
-            switch (direction)
-            {
-                case Direction.Encryption:
-                    aesprovider.Encrypt(inputStream, outputStream);
-                    return Utility.Utility.ByteArrayAsHexString(outputStream.ToArray());
-                case Direction.Decryption:
-                    aesprovider.Decrypt(inputStream, outputStream);
-                    return Encoding.UTF8.GetString(outputStream.ToArray());
-                default:
-                    throw new NotImplementedException();
-            }
+        switch (direction)
+        {
+            case Direction.Encryption:
+                aesprovider.Encrypt(inputStream, outputStream);
+                return Utility.Utility.ByteArrayAsHexString(outputStream.ToArray());
+            case Direction.Decryption:
+                aesprovider.Decrypt(inputStream, outputStream);
+                return Encoding.UTF8.GetString(outputStream.ToArray());
+            default:
+                throw new NotImplementedException();
         }
     }
 }
