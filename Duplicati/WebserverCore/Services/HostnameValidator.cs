@@ -11,7 +11,7 @@ public class HostnameValidator : IHostnameValidator
     /// <summary>
     /// Hostnames that are always allowed
     /// </summary>
-    private static readonly string[] DefaultAllowedHostnames = ["localhost", "127.0.0.1", "[::1]"];
+    private static readonly string[] DefaultAllowedHostnames = ["localhost", "127.0.0.1", "[::1]", "localhost.localdomain"];
     /// <summary>
     /// The list of allowed hostnames
     /// </summary>
