@@ -127,13 +127,13 @@ public static class EncryptedFieldHelper
         using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
         var encrypted = AESStringEncryption.EncryptToHex(ActiveKey, value);
 
-        using MemoryStream output = new();
-        using StreamWriter sw = new(output, Encoding.UTF8);
-        sw.Write(encrypted.ComputeHashToHex(hasher));
-        sw.Write(KeyHash);
-        sw.Write(encrypted);
-        sw.Flush();
-        return HEADER_PREFIX + Encoding.UTF8.GetString(output.ToArray());
+        var sb = new StringBuilder();
+        sb.Append(HEADER_PREFIX);
+        sb.Append(encrypted.ComputeHashToHex(hasher));
+        sb.Append(KeyHash);
+        sb.Append(encrypted);
+
+        return sb.ToString();
     }
 
 }
