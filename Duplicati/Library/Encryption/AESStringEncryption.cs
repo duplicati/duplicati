@@ -45,7 +45,7 @@ public static class AESStringEncryption
 
     private static string Transform(string passphrase, string content, Direction direction)
     {
-        using var aesprovider = new AESEncryption(passphrase, []);
+        using var aesprovider = new AESEncryption(passphrase, minimalheader: true);
         using var inputStream = new MemoryStream(direction == Direction.Encryption
             ? Encoding.UTF8.GetBytes(content)
             : Utility.Utility.HexStringAsByteArray(content));
