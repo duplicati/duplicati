@@ -51,7 +51,8 @@ namespace Duplicati.Server.Database
                 .SelectMany(x => new string[] { x.Name }.Concat(x.Aliases ?? []))
                 .SelectMany(x => new string[] { x, $"--{x}" })
                 .Concat([
-                    ServerSettings.CONST.JWT_CONFIG
+                    ServerSettings.CONST.JWT_CONFIG,
+                    ServerSettings.CONST.PBKDF_CONFIG
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
