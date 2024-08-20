@@ -69,14 +69,10 @@ namespace Duplicati.Server.Database
 
         public void ReWriteAllFieldsIfEncryptionChanged()
         {
-            var activeToken = m_encryptSensitiveFields
-                ? "enc-v1-canary"
-                : "no-encryption";
-
             // The token is automatically decrypted when the settings are loaded  
             // In case the password has changed, this will fail and return the encrypted
             // hex-string, but will crash before reaching this point
-            if (this.ApplicationSettings.EncryptionCanaryToken != activeToken)
+            if (this.ApplicationSettings.EncryptedFields != m_encryptSensitiveFields)
             {
                 var backups = this.Backups;
                 foreach (var b in backups)
@@ -86,9 +82,7 @@ namespace Duplicati.Server.Database
                 }
 
                 this.SetSettings(this.GetSettings(ANY_BACKUP_ID), ANY_BACKUP_ID);
-                this.ApplicationSettings.EncryptionCanaryToken = m_encryptSensitiveFields
-                    ? EncryptedFieldHelper.Encrypt(activeToken)
-                    : activeToken;
+                this.ApplicationSettings.EncryptedFields = m_encryptSensitiveFields;
             }
         }
 
