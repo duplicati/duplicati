@@ -252,7 +252,6 @@ namespace Duplicati.Server
                     DataConnection.FixInvalidBackupId();
 
                 DataConnection.ApplicationSettings.UpgradePasswordToKBDF();
-
                 CreateApplicationInstance(writeToConsole);
 
                 StartOrStopUsageReporter();
@@ -289,6 +288,8 @@ namespace Duplicati.Server
                     PingPongThread = new System.Threading.Thread(PingPongMethod) { IsBackground = true };
                     PingPongThread.Start();
                 }
+
+                DataConnection.ReWriteAllFieldsIfEncryptionChanged();
 
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
@@ -705,7 +706,7 @@ namespace Duplicati.Server
                 throw new Exception(Strings.Program.DatabaseOpenError(ex.Message));
             }
 
-            return new Database.Connection(con);
+            return new Database.Connection(con, Library.Utility.Utility.ParseBoolOption(commandlineOptions, "disable-db-encryption"));
         }
 
         public static void StartOrStopUsageReporter()
@@ -829,6 +830,7 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                 new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                 new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
+                new Duplicati.Library.Interface.CommandLineArgument("disable-db-encryption", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
             ];
 
         private static bool ReadOptionsFromFile(string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)

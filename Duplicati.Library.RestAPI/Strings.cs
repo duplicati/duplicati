@@ -46,6 +46,8 @@ Error message: {0}", error); }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
         public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Reset the JWT configuration, invalidating any issued login tokens"); } }
         public static string WebserverDisableVisualCaptchaDescription { get { return LC.L(@"Disable the visual captcha"); } }
+        public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
+        public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
     }
     internal static class Scheduler
     {

@@ -39,6 +39,7 @@ namespace Duplicati.Server.Database
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
+        private readonly bool m_encryptSensitiveFields;
         private static HashSet<string> _encryptedFields =
             BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
                 .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
@@ -54,7 +55,9 @@ namespace Duplicati.Server.Database
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        public Connection(System.Data.IDbConnection connection, bool disableFieldEncryption)
         {
+            m_encryptSensitiveFields = !disableFieldEncryption;
             m_connection = connection;
             m_errorcmd = m_connection.CreateCommand();
             m_errorcmd.CommandText = @"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (?,?,?,?)";
@@ -62,6 +65,31 @@ namespace Duplicati.Server.Database
                 m_errorcmd.Parameters.Add(m_errorcmd.CreateParameter());
 
             this.ApplicationSettings = new ServerSettings(this);
+        }
+
+        public void ReWriteAllFieldsIfEncryptionChanged()
+        {
+            var activeToken = m_encryptSensitiveFields
+                ? "enc-v1-canary"
+                : "no-encryption";
+
+            // The token is automatically decrypted when the settings are loaded  
+            // In case the password has changed, this will fail and return the encrypted
+            // hex-string, but will crash before reaching this point
+            if (this.ApplicationSettings.EncryptionCanaryToken != activeToken)
+            {
+                var backups = this.Backups;
+                foreach (var b in backups)
+                {
+                    ((Backup)b).LoadChildren(this);
+                    AddOrUpdateBackup(b, false, null);
+                }
+
+                this.SetSettings(this.GetSettings(ANY_BACKUP_ID), ANY_BACKUP_ID);
+                this.ApplicationSettings.EncryptionCanaryToken = m_encryptSensitiveFields
+                    ? EncryptedFieldHelper.Encrypt(activeToken)
+                    : activeToken;
+            }
         }
 
         public void LogError(string backupid, string message, Exception ex)
@@ -222,7 +250,7 @@ namespace Duplicati.Server.Database
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
-                    List<ISetting> intercepted = values.ToList();
+                    if (m_encryptSensitiveFields)
                         values = values.Select(x => new Setting
                         {
                             Filter = x.Filter,
@@ -582,7 +610,7 @@ namespace Duplicati.Server.Database
                                 n.Name,
                                 n.Description ?? "" , // Description is optional but the column is set to NOT NULL, an additional check is welcome
                                 string.Join(",", n.Tags ?? new string[0]),
-                                EncryptedFieldHelper.Encrypt(n.TargetURL) 
+                                m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL) : n.TargetURL,
                                 update ? item.ID : n.DBPath
                             };
                         });
