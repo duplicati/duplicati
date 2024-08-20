@@ -154,6 +154,10 @@ namespace Duplicati.GUI.TrayIcon
             if (options.TryGetValue(WebServerLoader.OPTION_WEBSERVICE_PASSWORD, out pwd))
                 password = pwd;
 
+            // Let the user specify the port, if they are not providing a hosturl
+            if (!options.ContainsKey(HOSTURL_OPTION) && options.TryGetValue(WebServerLoader.OPTION_PORT, out var portString) && int.TryParse(portString, out var port))
+                serverURL = new UriBuilder(serverURL) { Port = port }.Uri;
+
             if (options.TryGetValue(HOSTURL_OPTION, out var url))
                 serverURL = new Uri(url);
 
