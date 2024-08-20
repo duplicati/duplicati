@@ -23,6 +23,7 @@ Error message: {0}", message); }
         public static string LoglevelCommandDescription { get { return LC.L(@"Determine the amount of information written in the log file"); } }
         public static string PortablemodeCommandDescription { get { return LC.L(@"Activate portable mode where the database is placed below the program executable"); } }
         public static string SeriousError(string message) { return LC.L(@"A serious error occurred in Duplicati: {0}", message); }
+        public static string TearDownError(string message) { return LC.L(@"An error occurred on server tear down: {0}", message); }
         public static string StartupFailure(System.Exception error) { return LC.L(@"Unable to start up. Perhaps another process is already running?
 Error message: {0}", error); }
         public static string UnencrypteddatabaseCommandDescription { get { return LC.L(@"Disable database encryption"); } }
@@ -46,6 +47,8 @@ Error message: {0}", error); }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
         public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Reset the JWT configuration, invalidating any issued login tokens"); } }
         public static string WebserverDisableVisualCaptchaDescription { get { return LC.L(@"Disable the visual captcha"); } }
+        public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
+        public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
     }
     internal static class Scheduler
     {

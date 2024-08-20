@@ -115,7 +115,7 @@ public class BackupGet : IEndpointV1
                 Metadata = bk.Metadata,
                 Description = bk.Description,
                 Tags = bk.Tags,
-                TargetURL = EncryptedFieldHelper.Decrypt(bk.TargetURL),
+                TargetURL = bk.TargetURL,
                 DBPath = bk.DBPath,
                 IsTemporary = bk.IsTemporary,
                 IsUnencryptedOrPassphraseStored = false,

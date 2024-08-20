@@ -26,21 +26,39 @@ using Duplicati.Server.Serialization.Interface;
 using System.Text;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.Encryption;
+using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Main;
 
 namespace Duplicati.Server.Database
 {
     public class Connection : IDisposable
     {
         private readonly System.Data.IDbConnection m_connection;
-        private System.Data.IDbCommand m_errorcmd;
+        private readonly System.Data.IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
-        private static HashSet<string> _encryptedFields = new string[]{ServerSettings.CONST.JWT_CONFIG, ServerSettings.CONST.PASSPHRASE_FIELDNAME}.ToHashSet(StringComparer.OrdinalIgnoreCase);
-       
-        public Connection(System.Data.IDbConnection connection)
+        private readonly bool m_encryptSensitiveFields;
+        private static readonly HashSet<string> _encryptedFields =
+            BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
+                .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(CompressionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(GenericLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(WebLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(new Options(new Dictionary<string, string>()).SupportedCommands)
+                .Where(x => x.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password)
+                .SelectMany(x => new string[] { x.Name }.Concat(x.Aliases ?? []))
+                .SelectMany(x => new string[] { x, $"--{x}" })
+                .Concat([
+                    ServerSettings.CONST.JWT_CONFIG,
+                    ServerSettings.CONST.PBKDF_CONFIG
+                ])
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        public Connection(System.Data.IDbConnection connection, bool disableFieldEncryption)
         {
+            m_encryptSensitiveFields = !disableFieldEncryption;
             m_connection = connection;
             m_errorcmd = m_connection.CreateCommand();
             m_errorcmd.CommandText = @"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (?,?,?,?)";
@@ -48,6 +66,25 @@ namespace Duplicati.Server.Database
                 m_errorcmd.Parameters.Add(m_errorcmd.CreateParameter());
 
             this.ApplicationSettings = new ServerSettings(this);
+        }
+
+        public void ReWriteAllFieldsIfEncryptionChanged()
+        {
+            // The token is automatically decrypted when the settings are loaded  
+            // In case the password has changed, this will fail and return the encrypted
+            // hex-string, but will crash before reaching this point
+            if (this.ApplicationSettings.EncryptedFields != m_encryptSensitiveFields)
+            {
+                var backups = this.Backups;
+                foreach (var b in backups)
+                {
+                    ((Backup)b).LoadChildren(this);
+                    AddOrUpdateBackup(b, false, null);
+                }
+
+                this.SetSettings(this.GetSettings(ANY_BACKUP_ID), ANY_BACKUP_ID);
+                this.ApplicationSettings.EncryptedFields = m_encryptSensitiveFields;
+            }
         }
 
         public void LogError(string backupid, string message, Exception ex)
@@ -196,7 +233,7 @@ namespace Duplicati.Server.Database
                     {
                         Filter = ConvertToString(rd, 0) ?? "",
                         Name = ConvertToString(rd, 1) ?? "",
-                        Value = DecryptSensitiveFields( ConvertToString(rd, 1) ?? "", ConvertToString(rd, 2) ?? "")
+                        Value = DecryptSensitiveFields(ConvertToString(rd, 2) ?? "")
                         //TODO: Attach the argument information
                     },
                     @"SELECT ""Filter"", ""Name"", ""Value"" FROM ""Option"" WHERE ""BackupID"" = ?", id)
@@ -208,14 +245,14 @@ namespace Duplicati.Server.Database
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
                 {
-                    List<ISetting> intercepted = values.ToList();
-                    foreach (var setting in intercepted)
-                    {
-                        setting.Value = EncryptSensitiveFields(setting.Name, setting.Value);
-                    }
+                    if (m_encryptSensitiveFields)
+                        values = values.Select(x => new Setting
+                        {
+                            Filter = x.Filter,
+                            Name = x.Name,
+                            Value = EncryptSensitiveFields(x.Name, x.Value)
+                        }).ToList();
 
-                    values = intercepted.ToList();
-                    
                     OverwriteAndUpdateDb(
                         tr,
                         @"DELETE FROM ""Option"" WHERE ""BackupID"" = ?", new object[] { id },
@@ -568,7 +605,7 @@ namespace Duplicati.Server.Database
                                 n.Name,
                                 n.Description ?? "" , // Description is optional but the column is set to NOT NULL, an additional check is welcome
                                 string.Join(",", n.Tags ?? new string[0]),
-                                n.TargetURL,
+                                m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL) : n.TargetURL,
                                 update ? item.ID : n.DBPath
                             };
                         });
@@ -738,7 +775,7 @@ namespace Duplicati.Server.Database
                             Name = ConvertToString(rd, 1),
                             Description = ConvertToString(rd, 2),
                             Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                            TargetURL = ConvertToString(rd, 4),
+                            TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4)),
                             DBPath = ConvertToString(rd, 5),
                         },
                         @"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" ")
@@ -1269,44 +1306,40 @@ namespace Duplicati.Server.Database
         /// </summary>
         /// <param name="fieldName">The fieldname used to determine if it will be encrypted</param>
         /// <param name="fieldValue">The field value</param>
-        /// <returns></returns>
+        /// <returns>The encrypted string or the original value</returns>
         private static string EncryptSensitiveFields(string fieldName, string fieldValue)
         {
             if (fieldValue != null)
-            return _encryptedFields.Contains(fieldName) ? EncryptedFieldHelper.Encrypt(fieldValue) : fieldValue;
-            else return null;
+                return _encryptedFields.Contains(fieldName)
+                    ? EncryptedFieldHelper.Encrypt(fieldValue)
+                    : fieldValue;
+
+            return null;
         }
 
         /// <summary>
         /// Decrypts sensitive fields
         /// </summary>
-        /// <param name="fieldName">The fieldname used to determine if it will be decrypted</param>
         /// <param name="fieldValue">The field value</param>
-        /// <returns></returns>
-        private static string DecryptSensitiveFields(string fieldName, string fieldValue)
+        /// <returns>The decrypted string</returns>
+        private static string DecryptSensitiveFields(string fieldValue)
         {
             if (fieldValue != null)
-            return _encryptedFields.Contains(fieldName) ? EncryptedFieldHelper.Decrypt(fieldValue) : fieldValue;
-            else return null;
+                return EncryptedFieldHelper.IsEncryptedString(fieldValue)
+                    ? EncryptedFieldHelper.Decrypt(fieldValue)
+                    : fieldValue;
+
+            return null;
         }
 
         #region IDisposable implementation
         public void Dispose()
         {
-            if (m_errorcmd != null)
-                try { if (m_errorcmd != null) m_errorcmd.Dispose(); }
-                catch { }
-                finally { m_errorcmd = null; }
+            try { m_errorcmd?.Dispose(); }
+            catch { }
 
-
-            try
-            {
-                if (m_connection != null)
-                    m_connection.Dispose();
-            }
-            catch
-            {
-            }
+            try { m_connection?.Dispose(); }
+            catch { }
         }
         #endregion
     }

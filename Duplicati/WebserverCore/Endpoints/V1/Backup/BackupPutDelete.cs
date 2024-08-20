@@ -77,7 +77,7 @@ public class BackupPutDelete : IEndpointV1
                 Name = input.Backup.Name,
                 Description = input.Backup.Description,
                 Tags = input.Backup.Tags,
-                TargetURL = EncryptedFieldHelper.Encrypt(input.Backup.TargetURL),
+                TargetURL = input.Backup.TargetURL,
                 DBPathSetter = null,
                 Sources = input.Backup.Sources,
                 Settings = settings.Select(x => new Setting()

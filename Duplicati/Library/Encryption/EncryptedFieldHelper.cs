@@ -25,97 +25,115 @@ using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
-namespace Duplicati.Library.Encryption
+namespace Duplicati.Library.Encryption;
+
+/// <summary>
+/// Class used to encrypt and decrypt settings in a way that is backwards compatible
+/// with previous versions of Duplicati.
+/// </summary>
+public static class EncryptedFieldHelper
 {
+    /// <summary>
+    /// Holds the key to be used for encryption, either from a self computed key
+    /// which uses the deviceid hash, or from an environment variable set by the user
+    /// </summary>
+    private static readonly string ActiveKey = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY"))
+        ? DeviceIDHelper.GetDeviceIDHash()
+        : Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY");
 
     /// <summary>
-    /// Class used to encrypt and decrypt settings in a way that is backwards compatible
-    /// with previous versions of Duplicati.
+    /// Hash of the key to be used for encryption
     /// </summary>
-    public class EncryptedFieldHelper
+    private static readonly string KeyHash;
+
+    /// <summary>
+    /// Static constructor to compute the hash of the key
+    /// </summary>
+    static EncryptedFieldHelper()
     {
+        using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
+        KeyHash = ActiveKey.ComputeHashToHex(hasher);
+    }
 
-        /// <summary>
-        /// Returns the key to be used for encryption, either coming from a self computed key
-        /// which uses the deviceid hash, or from an environment variable set by the user
-        /// </summary>
-        private static string SelectKey()
-        {
-            // If the environment variable is set, it will take precedence over the self computed key
-            return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY")) ?
-                Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY")! : DeviceIDHelper.GetDeviceIDHash();
-        }
-        
-        /// <summary>
-        /// Decrypts a value from the database, if it is not encrypted, it will be returned as is.
-        /// 
-        /// If the value is encrypted, it will be decrypted using the key obtained from SelectKey.
-        /// 
-        /// To determine if its encrypted, it checks first for length criterias then it checks
-        /// if the hashes of the content and the key match.
-        /// </summary>
-        /// <param name="value">data from the field</param>
-        /// <returns>Unencrypted data of the field</returns>
-        /// <exception cref="SettingsEncryptionKeyMismatchException"></exception>
-        public static string Decrypt(string? value)
-        {
-            // Single call to SelectKey to avoid latency to obtain deviceid
-            string settingsEncryptionKey = SelectKey();
+    /// <summary>
+    /// Prefix used to identify an encrypted field
+    /// </summary>
+    private const string HEADER_PREFIX = "enc-v1:";
 
-            var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
+    /// <summary>
+    /// Checks if a value is an encrypted string
+    /// </summary>
+    /// <param name="value">The value to decrypt</param>
+    /// <returns><c>true</c> if the string is encrypted; <c>false</c> otherwise</returns>
+    public static bool IsEncryptedString(string value)
+        => !string.IsNullOrWhiteSpace(value) && value.StartsWith(HEADER_PREFIX);
 
-            // For clarity, HashSize is size in bits / 8 for bytes, then times two because an encrypted field
-            // is prefixed with two hashes before 
-            var hashSizeInBytes = hasher.HashSize / 8 * 2;
-
-            if (value!.Length <= hashSizeInBytes * 2) return value;
-            
-            // Value may be encrypted, to ensure, we will parse everything after
-            // the mark of hashesCombinedSize as content, hash it and check if matches prefix.
-
-            var contentHash = value.Substring(0, hashSizeInBytes);
-            var keyHash = value.Substring(hashSizeInBytes, hashSizeInBytes);
-            var content = value.Substring(hashSizeInBytes * 2);
-
-            if (contentHash == content.ComputeHashToHex(hasher))
-            {
-                // Content hashes match therefore it is probed as encrypted, the next
-                // step is to verify the encryption keys hashes match.
-
-                if (keyHash != settingsEncryptionKey.ComputeHashToHex(hasher))
-                    throw new SettingsEncryptionKeyMismatchException();
-
-                // Lets then decrypt it.
-                return AESStringEncryption.DecryptFromHex(settingsEncryptionKey, content);
-            }
-
-            // if the hashes don't match, the lenght criteria can be ignored,
-            // and it will be returned as is.
+    /// <summary>
+    /// Decrypts a value from the database, if it is not encrypted, it will be returned as is.
+    /// 
+    /// If the value is encrypted, it will be decrypted using the key obtained from ActiveKey.
+    /// 
+    /// The check for encryption is done by checking the prefix of the string.
+    /// An additional check is done by hashing the content and comparing it to the hash
+    /// </summary>
+    /// <param name="value">data from the field</param>
+    /// <returns>Unencrypted data of the field</returns>
+    public static string Decrypt(string? value)
+    {
+        // If the value is not encrypted, it will be returned as is.
+        if (string.IsNullOrEmpty(value) || !value.StartsWith(HEADER_PREFIX))
             return value;
 
-        }
+        value = value.Substring(HEADER_PREFIX.Length);
 
-        /// <summary>
-        /// Encrypts a value to be stored in the database.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static string Encrypt(string value)
+        using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
+
+        // For clarity, HashSize is size in bits / 8 for bytes, then times two because an encrypted field
+        // is prefixed with two hashes before 
+        var hashSizeInBytes = hasher.HashSize / 8 * 2;
+
+        // Value may be encrypted, to ensure, we will parse everything after
+        // the mark of hashesCombinedSize as content, hash it and check if matches prefix.
+
+        var contentHash = value.Substring(0, hashSizeInBytes);
+        var keyHash = value.Substring(hashSizeInBytes, hashSizeInBytes);
+        var content = value.Substring(hashSizeInBytes * 2);
+
+        if (contentHash == content.ComputeHashToHex(hasher))
         {
-            // Single call to SelectKey to avoid latency to obtain deviceid
-            string settingsEncryptionKey = SelectKey();
+            // Content hashes match therefore it is probed as encrypted, the next
+            // step is to verify the encryption keys hashes match.
 
-            var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
-            var encrypted = AESStringEncryption.EncryptToHex(settingsEncryptionKey, value);
+            if (keyHash != KeyHash)
+                throw new SettingsEncryptionKeyMismatchException();
 
-            using MemoryStream output = new();
-            using StreamWriter sw = new(output);
-            sw.Write(encrypted.ComputeHashToHex(hasher));
-            sw.Write(settingsEncryptionKey.ComputeHashToHex(hasher));
-            sw.Write(encrypted);
-            sw.Flush();
-            return Encoding.UTF8.GetString(output.ToArray());
+            // Lets then decrypt it.
+            return AESStringEncryption.DecryptFromHex(ActiveKey, content);
         }
+
+        // if the hashes don't match, the lenght criteria can be ignored,
+        // and it will be returned as is.
+        return value;
 
     }
+
+    /// <summary>
+    /// Encrypts a value to be stored in the database.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns>The encrypted string</returns>
+    public static string Encrypt(string value)
+    {
+        using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
+        var encrypted = AESStringEncryption.EncryptToHex(ActiveKey, value);
+
+        var sb = new StringBuilder();
+        sb.Append(HEADER_PREFIX);
+        sb.Append(encrypted.ComputeHashToHex(hasher));
+        sb.Append(KeyHash);
+        sb.Append(encrypted);
+
+        return sb.ToString();
+    }
+
 }
