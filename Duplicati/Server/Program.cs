@@ -702,7 +702,7 @@ namespace Duplicati.Server
                 if (ex is System.Reflection.TargetInvocationException && ex.InnerException != null)
                     ex = ex.InnerException;
 
-                throw new Exception(Strings.Program.DatabaseOpenError(ex.Message));
+                throw new Exception(Strings.Program.DatabaseOpenError(ex.Message), ex);
             }
 
             return new Database.Connection(con);
