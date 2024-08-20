@@ -244,6 +244,7 @@ namespace Duplicati.Server
 
             ConfigureLogging(commandlineOptions);
 
+            var crashed = false;
             try
             {
                 DataConnection = GetDatabaseConnection(commandlineOptions);
@@ -296,6 +297,7 @@ namespace Duplicati.Server
             }
             catch (SingleInstance.MultipleInstanceException mex)
             {
+                crashed = true;
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (!writeToConsole) throw;
 
@@ -304,6 +306,7 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
+                crashed = true;
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                 if (writeToConsole)
                 {
@@ -315,22 +318,37 @@ namespace Duplicati.Server
             }
             finally
             {
-                StatusEventNotifyer.SignalNewEvent();
+                var steps = new Action[] {
+                    () => StatusEventNotifyer.SignalNewEvent(),
+                    () => { if (ShutdownModernWebserver != null) ShutdownModernWebserver(); },
+                    () => UpdatePoller?.Terminate(),
+                    () => Scheduler?.Terminate(true),
+                    () => FIXMEGlobal.WorkThread?.Terminate(true),
+                    () => ApplicationInstance?.Dispose(),
+                    () => PurgeTempFilesTimer?.Dispose(),
+                    () => Library.UsageReporter.Reporter.ShutDown(),
+                    () => PingPongThread?.Interrupt(),
+                    () => LogHandler?.Dispose()
+                };
 
-                if (ShutdownModernWebserver != null)
-                    ShutdownModernWebserver();
-                UpdatePoller?.Terminate();
-                Scheduler?.Terminate(true);
-                FIXMEGlobal.WorkThread?.Terminate(true);
-                ApplicationInstance?.Dispose();
-                PurgeTempFilesTimer?.Dispose();
-
-                Library.UsageReporter.Reporter.ShutDown();
-
-                try { PingPongThread?.Interrupt(); }
-                catch { }
-
-                LogHandler?.Dispose();
+                foreach (var teardownStep in steps)
+                {
+                    try
+                    {
+                        teardownStep();
+                    }
+                    catch (Exception ex)
+                    {
+                        // If the server is already crashed, that is the main error
+                        // If the server crashes during teardown, we log that as an error
+                        if (!crashed)
+                        {
+                            System.Diagnostics.Trace.WriteLine(Strings.Program.TearDownError(ex.ToString()));
+                            if (writeToConsole)
+                                Console.WriteLine(Strings.Program.TearDownError(ex.ToString()));
+                        }
+                    }
+                }
             }
 
             return 0;
