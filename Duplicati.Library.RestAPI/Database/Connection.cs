@@ -34,13 +34,13 @@ namespace Duplicati.Server.Database
     public class Connection : IDisposable
     {
         private readonly System.Data.IDbConnection m_connection;
-        private System.Data.IDbCommand m_errorcmd;
+        private readonly System.Data.IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
         private readonly bool m_encryptSensitiveFields;
-        private static HashSet<string> _encryptedFields =
+        private static readonly HashSet<string> _encryptedFields =
             BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
                 .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
                 .Concat(CompressionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
@@ -1334,20 +1334,11 @@ namespace Duplicati.Server.Database
         #region IDisposable implementation
         public void Dispose()
         {
-            if (m_errorcmd != null)
-                try { if (m_errorcmd != null) m_errorcmd.Dispose(); }
-                catch { }
-                finally { m_errorcmd = null; }
+            try { m_errorcmd?.Dispose(); }
+            catch { }
 
-
-            try
-            {
-                if (m_connection != null)
-                    m_connection.Dispose();
-            }
-            catch
-            {
-            }
+            try { m_connection?.Dispose(); }
+            catch { }
         }
         #endregion
     }
