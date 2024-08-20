@@ -161,6 +161,16 @@ namespace Duplicati.GUI.TrayIcon
             if (options.TryGetValue(HOSTURL_OPTION, out var url))
                 serverURL = new Uri(url);
 
+            if (string.IsNullOrWhiteSpace(password) && databaseConnection == null && hosted == null)
+            {
+                Console.WriteLine($@"
+When running the TrayIcon without a hosted server, you must provide the server password via the option --{WebServerLoader.OPTION_WEBSERVICE_PASSWORD}=<password>.
+If the TrayIcon instance has read access to the server database, you can also or use the option --{READCONFIGFROMDB_OPTION}, possibly with --server-datafolder=<path>.
+
+No password provided, unable to connect to server, exiting");
+                return 1;
+            }
+
             StartTray(_args, options, hosted, password);
 
             return 0;
