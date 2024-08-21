@@ -6,6 +6,7 @@ using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
+using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Configuration.Json;
@@ -110,11 +111,7 @@ public partial class DuplicatiWebserver
             })
 #endif
             .AddHttpContextAccessor()
-            .AddHostFiltering(options =>
-            {
-                if (!settings.AllowedHostnames.Any(x => x == "*"))
-                    options.AllowedHosts = settings.AllowedHostnames.ToArray();
-            })
+            .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
             .AddSingleton(jwtConfig)
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -200,12 +197,8 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
-        var allowedOrigins = settings.AllowedHostnames.Any(x => x == "*")
-            ? []
-            : settings.AllowedHostnames.Select(x => settings.Certificate == null ? $"http://{x}:{settings.Port}" : $"https://{x}:{settings.Port}");
-
         App.AddEndpoints()
-            .UseNotifications(allowedOrigins, "/notifications");
+            .UseNotifications("/notifications");
 
         return App.RunAsync();
     }
