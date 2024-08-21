@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.IO;
 using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -34,31 +33,42 @@ namespace Duplicati.Library.Encryption;
 public static class EncryptedFieldHelper
 {
     /// <summary>
-    /// Holds the key to be used for encryption, either from a self computed key
-    /// which uses the deviceid hash, or from an environment variable set by the user
+    /// Key instance, isolating the current key and its hash
     /// </summary>
-    private static readonly string ActiveKey = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY"))
-        ? DeviceIDHelper.GetDeviceIDHash()
-        : Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY");
-
-    /// <summary>
-    /// Hash of the key to be used for encryption
-    /// </summary>
-    private static readonly string KeyHash;
-
-    /// <summary>
-    /// Static constructor to compute the hash of the key
-    /// </summary>
-    static EncryptedFieldHelper()
+    /// <param name="Key">The key to use</param>
+    /// <param name="Hash">The key hash</param>
+    public sealed record KeyInstance(string Key, string Hash)
     {
-        using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
-        KeyHash = ActiveKey.ComputeHashToHex(hasher);
+        /// <summary>
+        /// Creates a new key instance
+        /// </summary>
+        /// <param name="key">The key to use</param>
+        /// <returns>The key instance</returns>
+        public static KeyInstance CreateKey(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentNullException(nameof(key));
+            if (key.Length < 8)
+                throw new ArgumentException("Key must be at least 8 characters long", nameof(key));
+
+            using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
+            return new KeyInstance(key, key.ComputeHashToHex(hasher));
+        }
     }
+
+    /// <summary>
+    /// The default key to be used for encryption
+    /// </summary>
+    private static readonly KeyInstance DefaultKey = KeyInstance.CreateKey(
+        string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY"))
+            ? DeviceIDHelper.GetDeviceIDHash()
+            : Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY")
+    );
 
     /// <summary>
     /// Prefix used to identify an encrypted field
     /// </summary>
-    private const string HEADER_PREFIX = "enc-v1:";
+    public const string HEADER_PREFIX = "enc-v1:";
 
     /// <summary>
     /// Checks if a value is an encrypted string
@@ -79,6 +89,20 @@ public static class EncryptedFieldHelper
     /// <param name="value">data from the field</param>
     /// <returns>Unencrypted data of the field</returns>
     public static string Decrypt(string? value)
+        => Decrypt(value, DefaultKey);
+
+    /// <summary>
+    /// Decrypts a value from the database, if it is not encrypted, it will be returned as is.
+    /// 
+    /// If the value is encrypted, it will be decrypted using the key obtained from ActiveKey.
+    /// 
+    /// The check for encryption is done by checking the prefix of the string.
+    /// An additional check is done by hashing the content and comparing it to the hash
+    /// </summary>
+    /// <param name="value">data from the field</param>
+    /// <param name="key">The key to use for decryption</param>
+    /// <returns>Unencrypted data of the field</returns>
+    public static string Decrypt(string? value, KeyInstance key)
     {
         // If the value is not encrypted, it will be returned as is.
         if (string.IsNullOrEmpty(value) || !value.StartsWith(HEADER_PREFIX))
@@ -104,11 +128,11 @@ public static class EncryptedFieldHelper
             // Content hashes match therefore it is probed as encrypted, the next
             // step is to verify the encryption keys hashes match.
 
-            if (keyHash != KeyHash)
+            if (keyHash != key.Hash)
                 throw new SettingsEncryptionKeyMismatchException();
 
             // Lets then decrypt it.
-            return AESStringEncryption.DecryptFromHex(ActiveKey, content);
+            return AESStringEncryption.DecryptFromHex(key.Key, content);
         }
 
         // if the hashes don't match, the lenght criteria can be ignored,
@@ -123,14 +147,23 @@ public static class EncryptedFieldHelper
     /// <param name="value"></param>
     /// <returns>The encrypted string</returns>
     public static string Encrypt(string value)
+        => Encrypt(value, DefaultKey);
+
+    /// <summary>
+    /// Encrypts a value to be stored in the database.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="key">The key to use for encryption</param>
+    /// <returns>The encrypted string</returns>
+    public static string Encrypt(string value, KeyInstance key)
     {
         using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
-        var encrypted = AESStringEncryption.EncryptToHex(ActiveKey, value);
+        var encrypted = AESStringEncryption.EncryptToHex(key.Key, value);
 
         var sb = new StringBuilder();
         sb.Append(HEADER_PREFIX);
         sb.Append(encrypted.ComputeHashToHex(hasher));
-        sb.Append(KeyHash);
+        sb.Append(key.Hash);
         sb.Append(encrypted);
 
         return sb.ToString();
