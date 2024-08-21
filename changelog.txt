@@ -1,3 +1,27 @@
+2024-08-21 - 2.0.9.104_canary_2024-08-21
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v7
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+## Detailed list of changes:
+- Removed some console logging in JS
+- Updates to localization, thanks @luixxiul
+- Improved navigation in UI, thanks @luixxiul
+- Fixed some issues with using TrayIcon detached from Server
+- Made hostname validation more backwards compatible
+
 2024-08-15 - 2.0.9.103_canary_2024-08-15
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.
