@@ -164,5 +164,5 @@ CREATE TABLE "TokenFamily" (
     "LastUpdated" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (7);
+INSERT INTO "Version" ("Version") VALUES (8);
 
