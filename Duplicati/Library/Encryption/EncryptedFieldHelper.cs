@@ -58,7 +58,7 @@ public static class EncryptedFieldHelper
     /// <summary>
     /// Prefix used to identify an encrypted field
     /// </summary>
-    private const string HEADER_PREFIX = "enc-v1:";
+    public const string HEADER_PREFIX = "enc-v1:";
 
     /// <summary>
     /// Checks if a value is an encrypted string
