@@ -571,8 +571,8 @@ namespace Duplicati.Server
 
                                     FIXMEGlobal.DataConnection.RegisterNotification(
                                         NotificationType.Information,
-                                        "Bugreport ready",
-                                        "Bugreport is ready for download",
+                                        Strings.Runner.BugreportNotificationTitle,
+                                        Strings.Runner.BugreportNotificationMessage,
                                          null,
                                          null,
                                          "bug-report:created:" + tempid,
@@ -847,20 +847,20 @@ namespace Duplicati.Server
                             : NotificationType.Error;
 
                 var title = result.ParsedResult == ParsedResultType.Warning
-                                ? (backup.IsTemporary ?
-                                "Warning" : string.Format("Warning while running {0}", backup.Name))
+                            ? (backup.IsTemporary ?
+                                Strings.Runner.WarningTitleTemporary : Strings.Runner.WarningTitleStoredBackup(backup.Name))
                             : (backup.IsTemporary ?
-                                "Error" : string.Format("Error while running {0}", backup.Name));
+                                Strings.Runner.ErrorTitleTemporary : Strings.Runner.ErrorTitleStoredBackup(backup.Name));
 
                 var message = result.ParsedResult == ParsedResultType.Warning
-                                    ? string.Format("Got {0} warning(s)", result.Warnings.Count())
-                                    : string.Format("Got {0} error(s)", result.Errors.Count());
+                                    ? Strings.Runner.WarningMessageMultiple(result.Warnings.Count())
+                                    : Strings.Runner.ErrorMessageMultiple(result.Errors.Count());
 
                 // If there is only one error or warning, show the message
                 if (result.ParsedResult == ParsedResultType.Warning && result.Warnings.Count() == 1)
-                    message = $"Warning: {result.Warnings.Single()}";
+                    message = Strings.Runner.WarningMessageSingle(result.Warnings.Single());
                 else if (result.ParsedResult == ParsedResultType.Error && result.Errors.Count() == 1)
-                    message = $"Error: {result.Errors.Single()}";
+                    message = Strings.Runner.ErrorMessageSingle(result.Errors.Single());
 
                 FIXMEGlobal.DataConnection.RegisterNotification(
                     type,

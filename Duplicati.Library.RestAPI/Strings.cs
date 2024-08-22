@@ -59,4 +59,20 @@ Error message: {0}", error); }
         public static string ServerStartFailure(IEnumerable<int> portstried) { return LC.L(@"Unable to open a socket for listening, tried ports: {0}", string.Join(",", from n in (portstried ?? new int[0]) select n.ToString())); }
     }
 
+    public static class Runner
+    {
+        public static string BugreportNotificationTitle { get { return LC.L(@"Bugreport notification"); } }
+        public static string BugreportNotificationMessage { get { return LC.L(@"Bugreport is ready for download"); } }
+
+        public static string WarningTitleTemporary { get { return LC.L(@"Warning"); } }
+        public static string WarningTitleStoredBackup(string name) { return LC.L(@"Warning while running {0}", name); }
+        public static string ErrorTitleTemporary { get { return LC.L(@"Error"); } }
+        public static string ErrorTitleStoredBackup(string name) { return LC.L(@"Error while running {0}", name); }
+        public static string WarningMessageMultiple(int count) { return LC.L(@"Got {0} warnings", count); }
+        public static string ErrorMessageMultiple(int count) { return LC.L(@"Got {0} errors", count); }
+        public static string WarningMessageSingle(string message) { return LC.L(@"Warning: {0}", message); }
+        public static string ErrorMessageSingle(string message) { return LC.L(@"Error: {0}", message); }
+
+    }
+
 }
