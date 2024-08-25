@@ -144,13 +144,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backends"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.WebserverCore", "Duplicati\WebserverCore\Duplicati.WebserverCore.csproj", "{5A702CEE-DB36-4153-BD94-D8CF867E75A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.RestAPI", "Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj", "{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.RestAPI", "Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj", "{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SharpAESCrypt", "Executables\net8\Duplicati.CommandLine.SharpAESCrypt\Duplicati.CommandLine.SharpAESCrypt.csproj", "{FE6FD36C-E171-4599-8D55-62DA579C0864}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.SharpAESCrypt", "Executables\net8\Duplicati.CommandLine.SharpAESCrypt\Duplicati.CommandLine.SharpAESCrypt.csproj", "{FE6FD36C-E171-4599-8D55-62DA579C0864}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Snapshots", "Executables\net8\Duplicati.CommandLine.Snapshots\Duplicati.CommandLine.Snapshots.csproj", "{0364E724-1929-445E-9145-90A70B01DDC0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.Snapshots", "Executables\net8\Duplicati.CommandLine.Snapshots\Duplicati.CommandLine.Snapshots.csproj", "{0364E724-1929-445E-9145-90A70B01DDC0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -418,6 +418,10 @@ Global
 		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1D4D665-23A3-4216-9CD1-D67AE9AAAA4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4EB3DABC-D412-4C12-8876-41A1427A389E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FE6FD36C-E171-4599-8D55-62DA579C0864}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FE6FD36C-E171-4599-8D55-62DA579C0864}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE6FD36C-E171-4599-8D55-62DA579C0864}.Release|Any CPU.ActiveCfg = Release|Any CPU

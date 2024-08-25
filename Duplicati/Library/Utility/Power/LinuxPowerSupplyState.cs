@@ -59,12 +59,12 @@ namespace Duplicati.Library.Utility.Power
                 {
                     if (!reply)
                     {
-                        string sourceType = File.ReadLines(Path.Combine(source, "type")).FirstOrDefault();
+                        var sourceType = File.ReadLines(Path.Combine(source, "type")).FirstOrDefault();
                         if (String.Equals(sourceType, "Mains", StringComparison.Ordinal))
                         {
                             haveMains = true;
 
-                            string isOnline = File.ReadLines(Path.Combine(source, "online")).FirstOrDefault();
+                            string? isOnline = File.ReadLines(Path.Combine(source, "online")).FirstOrDefault();
                             reply = String.Equals(isOnline, "1", StringComparison.Ordinal);
                         }
                     }
@@ -91,12 +91,12 @@ namespace Duplicati.Library.Utility.Power
                 {
                     if (allOffline)
                     {
-                        string sourceType = File.ReadLines(Path.Combine(source, "type")).FirstOrDefault();
+                        string? sourceType = File.ReadLines(Path.Combine(source, "type")).FirstOrDefault();
                         if (String.Equals(sourceType, "Mains", StringComparison.Ordinal))
                         {
                             haveMains = true;
 
-                            string isOnline = File.ReadLines(Path.Combine(source, "online")).FirstOrDefault();
+                            string? isOnline = File.ReadLines(Path.Combine(source, "online")).FirstOrDefault();
                             allOffline &= String.Equals(isOnline, "0", StringComparison.Ordinal);
                         }
                     }

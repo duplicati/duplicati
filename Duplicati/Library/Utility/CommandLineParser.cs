@@ -37,7 +37,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The parsed list of commandline options</returns>
         /// <param name='args'>The commandline arguments</param>
-        public static Dictionary<string, string> ExtractOptions(List<string> args, Func<string, string, bool> parserCallback = null)
+        public static Dictionary<string, string> ExtractOptions(List<string> args, Func<string, string, bool>? parserCallback = null)
         {
             Dictionary<string, string> options = new Dictionary<string, string>();
 
@@ -45,8 +45,8 @@ namespace Duplicati.Library.Utility
             {
                 if (args[i].StartsWith("--", StringComparison.Ordinal))
                 {
-                    string key = null;
-                    string value = null;
+                    string? key = null;
+                    string? value = null;
                     if (args[i].IndexOf("=", StringComparison.Ordinal) > 0)
                     {
                         key = args[i].Substring(0, args[i].IndexOf("=", StringComparison.Ordinal));
@@ -59,6 +59,8 @@ namespace Duplicati.Library.Utility
                     key = key.Substring(2).ToLower(System.Globalization.CultureInfo.InvariantCulture);
                     if (!string.IsNullOrEmpty(value) && value.Length > 1 && value.StartsWith("\"", StringComparison.Ordinal) && value.EndsWith("\"", StringComparison.Ordinal))
                         value = value.Substring(1, value.Length - 2);
+
+                    value ??= string.Empty;
 
                     //Last argument overwrites the current
                     if (parserCallback == null || parserCallback(key, value))

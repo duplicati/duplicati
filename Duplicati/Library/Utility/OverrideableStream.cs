@@ -44,17 +44,26 @@ namespace Duplicati.Library.Utility
 
         public override bool CanRead
         {
-            get { return m_basestream.CanRead; }
+            get
+            {
+                return m_basestream?.CanRead ?? throw new InvalidOperationException("m_basestream is null");
+            }
         }
 
         public override bool CanSeek
         {
-            get { return m_basestream.CanSeek; }
+            get
+            {
+                return m_basestream?.CanSeek ?? throw new InvalidOperationException("m_basestream is null");
+            }
         }
 
         public override bool CanWrite
         {
-            get { return m_basestream.CanWrite; }
+            get
+            {
+                return m_basestream?.CanWrite ?? throw new InvalidOperationException("m_basestream is null");
+            }
         }
 
         public override void Flush()
@@ -64,38 +73,46 @@ namespace Duplicati.Library.Utility
 
         public override long Length
         {
-            get { return m_basestream.Length; }
+            get
+            {
+                return m_basestream?.Length ?? throw new InvalidOperationException("m_basestream is null");
+            }
         }
 
         public override long Position
         {
             get
             {
-                return m_basestream.Position;
+                return m_basestream?.Position ?? throw new InvalidOperationException("m_basestream is null");
             }
             set
             {
+                if (m_basestream == null) throw new InvalidOperationException("m_basestream is null");
                 m_basestream.Position = value;
             }
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (m_basestream == null) throw new InvalidOperationException("m_basestream is null");
             return m_basestream.Read(buffer, offset, count);
         }
 
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
+            if (m_basestream == null) throw new InvalidOperationException("m_basestream is null");
             return m_basestream.Seek(offset, origin);
         }
 
         public override void SetLength(long value)
         {
+            if (m_basestream == null) throw new InvalidOperationException("m_basestream is null");
             m_basestream.SetLength(value);
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (m_basestream == null) throw new InvalidOperationException("m_basestream is null");
             m_basestream.Write(buffer, offset, count);
         }
 

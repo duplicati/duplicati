@@ -45,11 +45,11 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The request async wrapper
         /// </summary>
-        private AsyncWrapper m_asyncRequest = null;
+        private AsyncWrapper? m_asyncRequest = null;
         /// <summary>
         /// The response async wrapper
         /// </summary>
-        private AsyncWrapper m_asyncResponse = null;
+        private AsyncWrapper? m_asyncResponse = null;
         /// <summary>
         /// The request/response timeout value
         /// </summary>
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Utility
             }
 
             if (m_state == RequestStates.GetRequest)
-                return (Stream)m_asyncRequest.GetResponseOrStream();
+                return (Stream)(m_asyncRequest?.GetResponseOrStream() ?? throw new InvalidOperationException("The async request is null."));
 
             if (m_state != RequestStates.Created)
                 throw new InvalidOperationException();
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Utility
         public WebResponse GetResponse()
         {
             if (m_state == RequestStates.GetResponse)
-                return (WebResponse)m_asyncResponse.GetResponseOrStream();
+                return (WebResponse)(m_asyncResponse?.GetResponseOrStream() ?? throw new InvalidOperationException("The async response is null."));
 
             if (m_state == RequestStates.Done)
                 throw new InvalidOperationException();
@@ -206,11 +206,11 @@ namespace Duplicati.Library.Utility
         /// </summary>
         private class AsyncWrapper
         {
-            private readonly IAsyncResult m_async = null;
-            private Stream m_stream = null;
-            private WebResponse m_response = null;
+            private readonly IAsyncResult? m_async = null;
+            private Stream? m_stream = null;
+            private WebResponse? m_response = null;
             private readonly AsyncHttpRequest m_owner;
-            private Exception m_exception = null;
+            private Exception? m_exception = null;
             private readonly ManualResetEvent m_event = new ManualResetEvent(false);
             private readonly bool m_isRequest;
             private bool m_timedout = false;
@@ -248,7 +248,7 @@ namespace Duplicati.Library.Utility
                         var wex = ex;
                         if (ex is WebException exception && exception.Response == null)
                         {
-                            WebResponse resp = null;
+                            WebResponse? resp = null;
 
                             try { resp = r.GetType().GetProperty("Response", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(r) as WebResponse; }
                             catch {}
@@ -304,9 +304,9 @@ namespace Duplicati.Library.Utility
                     throw m_exception;
 
                 if (m_isRequest)
-                    return m_stream;
+                    return m_stream!;
                 else
-                    return m_response;
+                    return m_response!;
             }
         }
     }

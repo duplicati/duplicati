@@ -29,7 +29,7 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class TempFolder : IDisposable
     {
-        private string m_folder;
+        private string? m_folder;
         private bool m_protect;
 
         public TempFolder()
