@@ -128,6 +128,12 @@ public class ServerSetting : IEndpointV1
 
     private static void UpdateSetting(string key, string value, Connection connection)
     {
+        if (key == Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)
+        {
+            connection.ApplicationSettings.SetWebserverPassword(value);
+            return;
+        }
+
         if (GUARDED_INPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
             throw new BadRequestException($"Cannot update {key} setting");
 

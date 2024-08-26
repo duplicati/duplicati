@@ -1,9 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Duplicati.Library.Common;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -58,9 +53,9 @@ namespace Duplicati.Library.AutoUpdater
             /// </summary>
             Snapshots,
             /// <summary>
-            /// The configuration importer
+            /// The server utility
             /// </summary>
-            ConfigurationImporter
+            ServerUtil,
 
         }
 
@@ -83,7 +78,7 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.BackendTester => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.BackendTester.exe" : "duplicati-backend-tester",
                 NamedExecutable.SharpAESCrypt => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.SharpAESCrypt.exe" : "duplicati-aescrypt",
                 NamedExecutable.Snapshots => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.Snapshots.exe" : "duplicati-snapshots",
-                NamedExecutable.ConfigurationImporter => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.ConfigurationImporter.exe" : "duplicati-configuration-importer",
+                NamedExecutable.ServerUtil => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.ServerUtil.exe" : "duplicati-server-util",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 
