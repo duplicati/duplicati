@@ -37,9 +37,7 @@ public class Backups : IEndpointV1
             using var tempfile = new Library.Utility.TempFile();
             File.WriteAllBytes(tempfile, Convert.FromBase64String(input.config));
 
-            var html = ExecuteImport(connection, input.cmdline ?? false, input.import_metadata ?? false, input.direct ?? false, input.passphrase ?? "", tempfile);
-            httpContextAccessor.HttpContext!.Response.ContentType = "text/html";
-            return html;
+            return ExecuteImport(connection, input.cmdline ?? false, input.import_metadata ?? false, input.direct ?? false, input.passphrase ?? "", tempfile);
 
         }).RequireAuthorization();
     }
