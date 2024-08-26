@@ -24,6 +24,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
@@ -622,50 +623,7 @@ namespace Duplicati.Server
                 {
                     //Normal release mode uses the systems "(Local) Application Data" folder
                     // %LOCALAPPDATA% on Windows, ~/.config on Linux, ~/Library/Application\ Support on MacOS
-
-                    serverDataFolder = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
-                    if (OperatingSystem.IsWindows())
-                    {
-                        // Special handling for Windows:
-                        //   - Older versions use %APPDATA%
-                        //   - but new versions use %LOCALAPPDATA%
-                        //
-                        //  If we find a new version, lets use that
-                        //    otherwise use the older location
-
-                        var localappdata = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName);
-
-                        var prefile = System.IO.Path.Combine(serverDataFolder, SERVER_DATABASE_FILENAME);
-                        var curfile = System.IO.Path.Combine(localappdata, SERVER_DATABASE_FILENAME);
-
-                        // If the new file exists, we use that
-                        // If the new file does not exist, and the old file exists we use the old
-                        // Otherwise we use the new location
-                        if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prefile))
-                            serverDataFolder = localappdata;
-                    }
-
-                    if (OperatingSystem.IsMacOS())
-                    {
-                        // Special handling for MacOS:
-                        //   - Older versions use ~/.config/
-                        //   - but new versions use ~/Library/Application\ Support/
-                        //
-                        //  If we find a new version, lets use that
-                        //    otherwise use the older location
-
-                        var homefolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                        var configfolder = System.IO.Path.Combine(homefolder, ".config", Library.AutoUpdater.AutoUpdateSettings.AppName);
-
-                        var prevfile = System.IO.Path.Combine(configfolder, SERVER_DATABASE_FILENAME);
-                        var curfile = System.IO.Path.Combine(serverDataFolder, SERVER_DATABASE_FILENAME);
-
-                        // If the old file exists and the new does not, we switch back to the old location
-                        if (System.IO.File.Exists(prevfile) && !System.IO.File.Exists(curfile))
-                            serverDataFolder = configfolder;
-                    }
-
-                    DataFolder = serverDataFolder;
+                    DataFolder = DatabaseLocator.GetDefaultStorageFolder(SERVER_DATABASE_FILENAME, Library.AutoUpdater.AutoUpdateSettings.AppName);
                 }
             }
             else
