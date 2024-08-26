@@ -245,6 +245,7 @@ namespace Duplicati.Server
 
             ConfigureLogging(commandlineOptions);
 
+            var crashed = false;
             try
             {
                 DataConnection = GetDatabaseConnection(commandlineOptions);
@@ -253,7 +254,6 @@ namespace Duplicati.Server
                     DataConnection.FixInvalidBackupId();
 
                 DataConnection.ApplicationSettings.UpgradePasswordToKBDF();
-
                 CreateApplicationInstance(writeToConsole);
 
                 StartOrStopUsageReporter();
@@ -291,11 +291,14 @@ namespace Duplicati.Server
                     PingPongThread.Start();
                 }
 
+                DataConnection.ReWriteAllFieldsIfEncryptionChanged();
+
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
             }
             catch (SingleInstance.MultipleInstanceException mex)
             {
+                crashed = true;
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (!writeToConsole) throw;
 
@@ -304,6 +307,7 @@ namespace Duplicati.Server
             }
             catch (Exception ex)
             {
+                crashed = true;
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                 if (writeToConsole)
                 {
@@ -315,22 +319,37 @@ namespace Duplicati.Server
             }
             finally
             {
-                StatusEventNotifyer.SignalNewEvent();
+                var steps = new Action[] {
+                    () => StatusEventNotifyer.SignalNewEvent(),
+                    () => { if (ShutdownModernWebserver != null) ShutdownModernWebserver(); },
+                    () => UpdatePoller?.Terminate(),
+                    () => Scheduler?.Terminate(true),
+                    () => FIXMEGlobal.WorkThread?.Terminate(true),
+                    () => ApplicationInstance?.Dispose(),
+                    () => PurgeTempFilesTimer?.Dispose(),
+                    () => Library.UsageReporter.Reporter.ShutDown(),
+                    () => PingPongThread?.Interrupt(),
+                    () => LogHandler?.Dispose()
+                };
 
-                if (ShutdownModernWebserver != null)
-                    ShutdownModernWebserver();
-                UpdatePoller?.Terminate();
-                Scheduler?.Terminate(true);
-                FIXMEGlobal.WorkThread?.Terminate(true);
-                ApplicationInstance?.Dispose();
-                PurgeTempFilesTimer?.Dispose();
-
-                Library.UsageReporter.Reporter.ShutDown();
-
-                try { PingPongThread?.Interrupt(); }
-                catch { }
-
-                LogHandler?.Dispose();
+                foreach (var teardownStep in steps)
+                {
+                    try
+                    {
+                        teardownStep();
+                    }
+                    catch (Exception ex)
+                    {
+                        // If the server is already crashed, that is the main error
+                        // If the server crashes during teardown, we log that as an error
+                        if (!crashed)
+                        {
+                            System.Diagnostics.Trace.WriteLine(Strings.Program.TearDownError(ex.ToString()));
+                            if (writeToConsole)
+                                Console.WriteLine(Strings.Program.TearDownError(ex.ToString()));
+                        }
+                    }
+                }
             }
 
             return 0;
@@ -660,7 +679,7 @@ namespace Duplicati.Server
                 throw new Exception(Strings.Program.DatabaseOpenError(ex.Message), ex);
             }
 
-            return new Database.Connection(con);
+            return new Database.Connection(con, Library.Utility.Utility.ParseBoolOption(commandlineOptions, "disable-db-encryption"));
         }
 
         public static void StartOrStopUsageReporter()
@@ -784,6 +803,7 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument("ping-pong-keepalive", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                 new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                 new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
+                new Duplicati.Library.Interface.CommandLineArgument("disable-db-encryption", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
             ];
 
         private static bool ReadOptionsFromFile(string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)

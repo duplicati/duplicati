@@ -831,6 +831,18 @@ namespace Duplicati.Library.Utility
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
         }
 
+        /// <summary>
+        /// Converts a hex string to a byte array, as a function so no variable declaration on caller's side is needed
+        /// </summary>
+        /// <returns>The string as byte array.</returns>
+        /// <param name="hex">The hex string</param>
+        public static byte[] HexStringAsByteArray(string hex)
+        {
+            byte[] data = new byte[hex.Length /2];
+            HexStringAsByteArray(hex, data);
+            return data;
+        }
+
         [SupportedOSPlatform("linux")]
         [SupportedOSPlatform("macos")]
         /// <summary>
