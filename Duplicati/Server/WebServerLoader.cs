@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Duplicati.Server.Database;
+using Microsoft.AspNetCore.Connections;
 
 namespace Duplicati.Server;
 
@@ -200,6 +201,11 @@ public static class WebServerLoader
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
 
+        // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first
+        ports = ports.ToList();
+        if (ports.Contains(connection.ApplicationSettings.LastWebserverPort))
+            ports = ports.Where(x => x != connection.ApplicationSettings.LastWebserverPort).Prepend(connection.ApplicationSettings.LastWebserverPort).ToList();
+
         // If we are in hosted mode with no specified port, 
         // then try different ports
         foreach (var p in ports)
@@ -218,9 +224,11 @@ public static class WebServerLoader
 
                 return server;
             }
-            catch (System.Net.Sockets.SocketException)
-            {
-            }
+            catch (Exception ex) when
+                (ex is System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AddressAlreadyInUse }
+                || ex is System.IO.IOException { InnerException: AddressInUseException })
+            { }
+
 
         throw new Exception(Strings.Server.ServerStartFailure(ports));
     }
