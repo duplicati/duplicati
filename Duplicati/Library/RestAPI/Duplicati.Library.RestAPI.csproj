@@ -18,13 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Duplicati\CommandLine\CLI\Duplicati.CommandLine.csproj" />
-    <ProjectReference Include="..\Duplicati\Library\Common\Duplicati.Library.Common.csproj" />
-    <ProjectReference Include="..\Duplicati\Library\Encryption\Duplicati.Library.Encryption.csproj" />
-    <ProjectReference Include="..\Duplicati\Library\Main\Duplicati.Library.Main.csproj" />
-    <ProjectReference Include="..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
-    <ProjectReference Include="..\Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
-    <ProjectReference Include="..\Duplicati\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
+    <ProjectReference Include="..\..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
+    <ProjectReference Include="..\Main\Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="..\Snapshots\Duplicati.Library.Snapshots.csproj" />
+    <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
+    <ProjectReference Include="..\..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
   </ItemGroup>
 
   <ItemGroup>
