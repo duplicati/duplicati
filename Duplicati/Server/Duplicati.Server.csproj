@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj" />
+    <ProjectReference Include="..\Library\RestAPI\Duplicati.Library.RestAPI.csproj" />
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
     <ProjectReference Include="..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
     <ProjectReference Include="..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
