@@ -1,15 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AssemblyName>Duplicati.CommandLine.ConfigurationImporter.Implementation</AssemblyName>
+    <TargetFramework>net8.0</TargetFramework>
+    <Description>Server CLI implementation of Duplicati</Description>
     <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\..\Server\Duplicati.Server.csproj" />
+  <ItemGroup>	
+    <ProjectReference Include="..\..\..\Duplicati\CommandLine\ServerUtil\Duplicati.CommandLine.ServerUtil.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,3 +19,4 @@
   </ItemGroup>
 
 </Project>
+

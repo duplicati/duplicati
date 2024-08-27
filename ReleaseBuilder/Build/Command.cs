@@ -45,7 +45,7 @@ public static partial class Command
         { "Duplicati.CommandLine.AutoUpdater", "duplicati-autoupdater" },
         { "Duplicati.CommandLine.SharpAESCrypt", "duplicati-aescrypt" },
         { "Duplicati.CommandLine.Snapshots", "duplicati-snapshots" },
-        { "Duplicati.CommandLine.ConfigurationImporter", "duplicati-configuration-importer" },
+        { "Duplicati.CommandLine.ServerUtil", "duplicati-server-util" },
         { "Duplicati.CommandLine", "duplicati-cli" },
         { "Duplicati.Server", "duplicati-server"},
         { "Duplicati.GUI.TrayIcon", "duplicati" }

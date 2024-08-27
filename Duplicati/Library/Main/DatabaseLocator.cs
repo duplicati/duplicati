@@ -49,6 +49,24 @@ namespace Duplicati.Library.Main
         /// Finds a default storage folder, using the operating system specific locations.
         /// The targetfilename is used to detect locations that are used in previous versions.
         /// If the targetfilename is found in an old location, but not the current, the old location is used.
+        /// If running with DEBUG defined, the storage folder is placed in the same folder as the executable
+        /// </summary>
+        /// <param name="targetfilename">The filename to look for</param>
+        /// <param name="appName">The name of the application</param>
+        /// <returns>The default storage folder</returns>
+        public static string GetDefaultStorageFolderWithDebugSupport(string targetfilename, string appName = "Duplicati")
+        {
+#if DEBUG
+            return System.IO.Path.GetDirectoryName(typeof(DatabaseLocator).Assembly.Location) ?? string.Empty;
+#else
+            return GetDefaultStorageFolder(targetfilename, appName);
+#endif
+        }
+
+        /// <summary>
+        /// Finds a default storage folder, using the operating system specific locations.
+        /// The targetfilename is used to detect locations that are used in previous versions.
+        /// If the targetfilename is found in an old location, but not the current, the old location is used.
         /// </summary>
         /// <param name="targetfilename">The filename to look for</param>
         /// <param name="appName">The name of the application</param>
@@ -103,7 +121,7 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;
 
-            var folder = GetDefaultStorageFolder(CONFIG_FILE);
+            var folder = GetDefaultStorageFolderWithDebugSupport(CONFIG_FILE);
 
             var file = System.IO.Path.Combine(folder, CONFIG_FILE);
             List<BackendEntry> configs;
@@ -239,7 +257,7 @@ namespace Duplicati.Library.Main
 
         public static bool IsDatabasePathInUse(string path)
         {
-            var file = System.IO.Path.Combine(GetDefaultStorageFolder(CONFIG_FILE), CONFIG_FILE);
+            var file = System.IO.Path.Combine(GetDefaultStorageFolderWithDebugSupport(CONFIG_FILE), CONFIG_FILE);
             if (!System.IO.File.Exists(file))
                 return false;
 
