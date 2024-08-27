@@ -209,6 +209,8 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(string[] _args)
         {
+            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.Server, out var preloadDbSettings);
+
             //If this executable is invoked directly, write to console, otherwise throw exceptions
             var writeToConsole = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName.StartsWith("Duplicati.Server,", StringComparison.OrdinalIgnoreCase);
 
@@ -286,6 +288,7 @@ namespace Duplicati.Server
                 }
 
                 DataConnection.ReWriteAllFieldsIfEncryptionChanged();
+                DataConnection.SetPreloadSettingsIfChanged(preloadDbSettings);
 
                 DuplicatiWebserver.TerminationTask.ContinueWith((t) =>
                 {

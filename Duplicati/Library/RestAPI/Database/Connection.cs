@@ -87,6 +87,34 @@ namespace Duplicati.Server.Database
             }
         }
 
+        public void SetPreloadSettingsIfChanged(Dictionary<string, string> newsettings)
+        {
+            if (newsettings == null || newsettings.Count == 0)
+                return;
+
+            var settingsHash = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(newsettings.OrderBy(x => x.Key)))));
+            if (settingsHash == this.ApplicationSettings.PreloadSettingsHash)
+                return;
+
+            newsettings = newsettings
+                .ToDictionary(x => x.Key.StartsWith("--") ? x.Key : $"--{x.Key}", x => x.Value);
+
+            var currentSettings = this.Settings;
+            var filters = currentSettings.Where(x => x.Filter != null).ToDictionary(x => x.Name, x => x.Filter);
+
+            var updatedSettings = currentSettings
+                .Where(x => !newsettings.ContainsKey(x.Name))
+                .Concat(newsettings.Where(x => x.Value != null).Select(x => new Setting
+                {
+                    Name = x.Key,
+                    Value = x.Value,
+                    Filter = filters.GetValueOrDefault(x.Key) ?? ""
+                }));
+
+            this.Settings = updatedSettings.ToArray();
+            this.ApplicationSettings.PreloadSettingsHash = settingsHash;
+        }
+
         public void LogError(string backupid, string message, Exception ex)
         {
             lock (m_lock)

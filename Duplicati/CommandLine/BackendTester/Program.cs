@@ -34,9 +34,9 @@ namespace Duplicati.CommandLine.BackendTester
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
-        #pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
         private static IDisposable SystemSettings;
-        #pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
 
         class TempFile
         {
@@ -66,6 +66,8 @@ namespace Duplicati.CommandLine.BackendTester
         {
             try
             {
+                Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.BackendTester);
+
                 if (_args.Length == 1)
                 {
                     try
@@ -73,8 +75,8 @@ namespace Duplicati.CommandLine.BackendTester
                         var p = Environment.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
-                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
-                                select x.Trim()
+                                     where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
+                                     select x.Trim()
                             ).ToArray();
                     }
                     catch
@@ -105,7 +107,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
-                
+
                 SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
 
                 if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))

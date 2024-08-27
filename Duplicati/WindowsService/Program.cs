@@ -31,6 +31,8 @@ namespace Duplicati.WindowsService
         [STAThread]
         public static int Main(string[] args)
         {
+            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.WindowsService);
+
             if (!OperatingSystem.IsWindows())
             {
                 throw new NotSupportedException("Unsupported Operating System");
