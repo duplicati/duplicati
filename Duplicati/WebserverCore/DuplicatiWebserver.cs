@@ -24,6 +24,8 @@ public partial class DuplicatiWebserver
 
     public int Port { get; private set; }
 
+    public Task TerminationTask { get; private set; } = Task.CompletedTask;
+
     /// <summary>
     /// The settings used for stating the server
     /// </summary>
@@ -200,7 +202,7 @@ public partial class DuplicatiWebserver
         App.AddEndpoints()
             .UseNotifications("/notifications");
 
-        return App.RunAsync();
+        return TerminationTask = App.RunAsync();
     }
 
     public async Task Stop()
