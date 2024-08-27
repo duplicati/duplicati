@@ -75,7 +75,12 @@ namespace Duplicati.WindowsService
 
         private void DoStart(string[] args)
         {
-            var startargs = (args ?? new string[0]).Union(m_cmdargs ?? new string[0]).ToArray();
+            var startargs = (args ?? [])
+                .Union(m_cmdargs ?? [])
+                .ToArray();
+
+            if (!startargs.Any(x => x.StartsWith("--windows-eventlog=", StringComparison.OrdinalIgnoreCase)))
+                startargs = startargs.Union(new string[] { "--windows-eventlog=" + LOG_SOURCE }).ToArray();
 
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");
