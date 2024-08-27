@@ -20,20 +20,20 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Service;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Versioning;
 
 namespace Duplicati.WindowsService
 {
+    [SupportedOSPlatform("windows")]
     public class ServiceControl : System.ServiceProcess.ServiceBase
     {
         private const string LOG_SOURCE = "Duplicati";
         private const string LOG_NAME = "Application";
         public const string SERVICE_NAME = "Duplicati";
         public const string DISPLAY_NAME = "Duplicati service";
+        public const string SERVICE_DESCRIPTION = "Duplicati running as a Windows Service";
 
         private readonly System.Diagnostics.EventLog m_eventLog;
 
@@ -46,12 +46,13 @@ namespace Duplicati.WindowsService
         {
             this.ServiceName = SERVICE_NAME;
 
-            m_eventLog = new System.Diagnostics.EventLog();
             if (!System.Diagnostics.EventLog.SourceExists(LOG_SOURCE))
                 System.Diagnostics.EventLog.CreateEventSource(LOG_SOURCE, LOG_NAME);
-
-            m_eventLog.Source = LOG_SOURCE;
-            m_eventLog.Log = LOG_NAME;
+            m_eventLog = new System.Diagnostics.EventLog
+            {
+                Source = LOG_SOURCE,
+                Log = LOG_NAME
+            };
             m_verbose_messages = args != null && args.Any(x => string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase));
             m_cmdargs = (args ?? new string[0]).Where(x => !string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase)).ToArray();
 
@@ -78,7 +79,7 @@ namespace Duplicati.WindowsService
 
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");
-            lock(m_lock)
+            lock (m_lock)
                 if (m_runner == null)
                 {
                     if (m_verbose_messages)
