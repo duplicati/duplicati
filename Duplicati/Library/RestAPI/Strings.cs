@@ -57,6 +57,7 @@ Error message: {0}", error); }
         public static string WindowsEventLogNotSupported { get { return LC.L(@"The Windows event log is not supported on this platform"); } }
         public static string ServerStarted(int port) { return LC.L(@"Server has started and is listening on port {0}", port); }
         public static string ServerStartedSignin(string url) { return LC.L(@"Use the following link to sign in: {0}", url); }
+        public static string ServerCrashed(string message) { return LC.L(@"The server crashed: {0}", message); }
     }
     internal static class Scheduler
     {
