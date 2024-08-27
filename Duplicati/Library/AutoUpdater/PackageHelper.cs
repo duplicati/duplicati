@@ -56,6 +56,10 @@ namespace Duplicati.Library.AutoUpdater
             /// The server utility
             /// </summary>
             ServerUtil,
+            /// <summary>
+            /// The service wrapping the server
+            /// </summary>
+            Service
 
         }
 
@@ -79,6 +83,7 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.SharpAESCrypt => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.SharpAESCrypt.exe" : "duplicati-aescrypt",
                 NamedExecutable.Snapshots => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.Snapshots.exe" : "duplicati-snapshots",
                 NamedExecutable.ServerUtil => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.ServerUtil.exe" : "duplicati-server-util",
+                NamedExecutable.Service => OperatingSystem.IsWindows() ? "Duplicati.Service.exe" : "duplicati-service",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 
