@@ -27,6 +27,11 @@ public static class PreloadSettingsLoader
     private const string AnyExecutableMarker = "*";
 
     /// <summary>
+    /// Cached value for toggling debug code
+    /// </summary>
+    private static readonly bool PreloadDebug = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar));
+
+    /// <summary>
     /// The preload paths to search for settings in.
     /// Each path is checked and applied to obtain the final settings.
     /// Later paths take precedence over earlier ones, so the env variable is most specific.
@@ -116,14 +121,14 @@ public static class PreloadSettingsLoader
         {
             if (!Path.IsPathRooted(path))
             {
-                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar)))
+                if (PreloadDebug)
                     Console.WriteLine($"Preload settings path is not rooted, ignoring: {path}");
                 continue;
             }
 
             if (!File.Exists(path))
             {
-                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar)))
+                if (PreloadDebug)
                     Console.WriteLine($"Preload settings file does not exist, ignoring: {path}");
                 continue;
             }
@@ -226,16 +231,49 @@ public static class PreloadSettingsLoader
     {
         try
         {
-            return JsonSerializer.Deserialize<PreloadSettingsRoot>(File.ReadAllText(path));
+            var result = JsonSerializer.Deserialize<PreloadSettingsRoot>(File.ReadAllText(path));
+            if (PreloadDebug)
+            {
+                if (result == null)
+                {
+                    Console.WriteLine($"Loaded empty preload settings from {path}");
+                    return null;
+                }
+
+                var jsData = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(path));
+                var unmatched_keys = jsData.EnumerateObject().Select(x => x.Name).Except(["db", "env", "args"]);
+                if (unmatched_keys.Any())
+                    Console.WriteLine($"Unexpected key(s) in preload settings: {string.Join(", ", unmatched_keys)}");
+
+                Console.WriteLine($"Loaded preload settings from {path}");
+
+                var allowedSources = Enum.GetValues<PackageHelper.NamedExecutable>()
+                    .Select(MapExecutableName)
+                    .Append(AnyExecutableMarker)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var unmatched_db = result.db?.Keys.Where(x => !allowedSources.Contains(x)) ?? [];
+                var unmatched_env = result.env?.Keys.Where(x => !allowedSources.Contains(x)) ?? [];
+                var unmatched_args = result.args?.Keys.Where(x => !allowedSources.Contains(x)) ?? [];
+
+                if (unmatched_db.Any())
+                    Console.WriteLine($"Found unknown executable name(s) in db preload settings: {string.Join(", ", unmatched_db)}");
+                if (unmatched_env.Any())
+                    Console.WriteLine($"Found unknown executable name(s) in env preload settings: {string.Join(", ", unmatched_env)}");
+                if (unmatched_args.Any())
+                    Console.WriteLine($"Found unknown executable name(s) in args preload settings: {string.Join(", ", unmatched_args)}");
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
             // Logging is usually not set up at this point
-            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar)))
-                Console.WriteLine($"Failed to load preload settings from {path}: {ex.ToString()}");
-        }
+            if (PreloadDebug)
+                Console.WriteLine($"Failed to load preload settings from {path}: {ex}");
 
-        return null;
+            return null;
+        }
     }
 
     /// <summary>
