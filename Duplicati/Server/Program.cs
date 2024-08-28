@@ -472,17 +472,10 @@ namespace Duplicati.Server
             {
                 try
                 {
-#if DEBUG
-                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 1)
+                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < (DEBUG_MODE ? 1 : 23))
                     {
                         return;
                     }
-#else
-                    if (Math.Abs((DateTime.Now - lastPurge).TotalHours) < 23)
-                    {
-                        return;
-                    }
-#endif
 
                     lastPurge = DateTime.Now;
 
@@ -520,13 +513,10 @@ namespace Duplicati.Server
                 }
             };
 
-#if DEBUG
             PurgeTempFilesTimer =
-                new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromSeconds(10), TimeSpan.FromHours(1));
-#else
-            PurgeTempFilesTimer =
-                new System.Threading.Timer(purgeTempFilesCallback, null, TimeSpan.FromHours(1), TimeSpan.FromDays(1));
-#endif
+                new System.Threading.Timer(purgeTempFilesCallback, null,
+                    DEBUG_MODE ? TimeSpan.FromSeconds(10) : TimeSpan.FromHours(1),
+                    DEBUG_MODE ? TimeSpan.FromHours(1) : TimeSpan.FromDays(1));
         }
 
         private static void AdjustApplicationSettings(Dictionary<string, string> commandlineOptions)
@@ -599,9 +589,8 @@ namespace Duplicati.Server
         private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
         {
 
-#if DEBUG
             //Log various information in the logfile
-            if (!commandlineOptions.ContainsKey("log-file"))
+            if (DEBUG_MODE && !commandlineOptions.ContainsKey("log-file"))
             {
                 var prefix = System.Reflection.Assembly.GetEntryAssembly().GetName().Name.StartsWith("Duplicati.Server") ? "server" : "trayicon";
                 commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, $"Duplicati-{prefix}.debug.log");
@@ -611,7 +600,6 @@ namespace Duplicati.Server
                     System.IO.File.Delete(commandlineOptions["log-file"]);
                 }
             }
-#endif
 
             // Setup the log redirect
             Library.Logging.Log.StartScope(LogHandler, null);
