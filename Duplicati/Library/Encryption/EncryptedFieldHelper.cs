@@ -60,15 +60,20 @@ public static class EncryptedFieldHelper
     /// The default key to be used for encryption
     /// </summary>
     private static readonly KeyInstance DefaultKey = KeyInstance.CreateKey(
-        string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY"))
+        string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME))
             ? DeviceIDHelper.GetDeviceIDHash()
-            : Environment.GetEnvironmentVariable("SETTINGS_ENCRYPTION_KEY")
+            : Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME)
     );
 
     /// <summary>
     /// Prefix used to identify an encrypted field
     /// </summary>
     public const string HEADER_PREFIX = "enc-v1:";
+
+    /// <summary>
+    /// The name of the enviroment variable that holds the encryption key
+    /// </summary>
+    public const string ENVIROMENT_VARIABLE_NAME = "SETTINGS_ENCRYPTION_KEY";
 
     /// <summary>
     /// Checks if a value is an encrypted string
