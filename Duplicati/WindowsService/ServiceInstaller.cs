@@ -19,10 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Text;
 
 namespace Duplicati.WindowsService
 {
@@ -47,6 +45,18 @@ namespace Duplicati.WindowsService
         [DllImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool DeleteService(IntPtr hService);
+
+        private const int SERVICE_CONFIG_DESCRIPTION = 0x01;
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, [MarshalAs(UnmanagedType.Struct)] ref SERVICE_DESCRIPTION lpInfo);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct SERVICE_DESCRIPTION
+        {
+            public string lpDescription;
+        }
 
         /// <summary>
         /// Access to the service. Before granting the requested access, the
@@ -391,21 +401,30 @@ namespace Duplicati.WindowsService
             GENERIC_ALL = SC_MANAGER_ALL_ACCESS,
         }
 
-        public static void InstallService(string ServiceName, string DisplayName, string Path)
+        public static void InstallService(string ServiceName, string DisplayName, string Description, string Path)
         {
             var scMgrHandle = OpenSCManager(null, null, (uint)SCM_ACCESS.SC_MANAGER_ALL_ACCESS);
 
             try
             {
                 if (scMgrHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during install service (OpenSCManager)");
-                
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during install service (OpenSCManager)");
+
                 var serviceHandle = CreateService(scMgrHandle, ServiceName, DisplayName, (uint)SERVICE_ACCESS.SERVICE_ALL_ACCESS, (uint)SERVICE_TYPE.SERVICE_WIN32_OWN_PROCESS,
                     (uint)SERVICE_START.SERVICE_AUTO_START, (uint)SERVICE_ERROR.SERVICE_ERROR_NORMAL, Path, null, null, null, null, null);
 
                 if (serviceHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during install service (CreateService)");
-                
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during install service (CreateService)");
+
+                var pinfo = new SERVICE_DESCRIPTION
+                {
+                    lpDescription = Description
+                };
+
+                var res = ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref pinfo);
+                if (!res)
+                    System.Diagnostics.Trace.WriteLine($"Failed to set decription: {Marshal.GetLastWin32Error().ToString()}");
+
                 CloseServiceHandle(serviceHandle);
             }
             finally
@@ -421,17 +440,17 @@ namespace Duplicati.WindowsService
             try
             {
                 if (scMgrHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during delete service (OpenSCManager)");
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during delete service (OpenSCManager)");
 
                 var serviceHandle = OpenService(scMgrHandle, ServiceName, (uint)SERVICE_ACCESS.SERVICE_ALL_ACCESS);
 
                 if (serviceHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during delete service (OpenService)");
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during delete service (OpenService)");
 
                 try
                 {
                     if (DeleteService(serviceHandle) == false)
-                        throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during delete service (DeleteService)");
+                        throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during delete service (DeleteService)");
                 }
                 finally
                 {

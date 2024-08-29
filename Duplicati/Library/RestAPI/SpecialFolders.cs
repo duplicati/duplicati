@@ -145,7 +145,7 @@ namespace Duplicati.Server
                 TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "My Pictures");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
                 TryAdd(lst, Environment.GetEnvironmentVariable("HOME"), "%HOME%", "Home");
-                TryAdd(lst, Environment.SpecialFolder.Personal, "%HOME%", "Home");
+                TryAdd(lst, Environment.SpecialFolder.UserProfile, "%HOME%", "Home");
             }
 
             Nodes = lst.ToArray();

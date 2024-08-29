@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
