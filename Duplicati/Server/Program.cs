@@ -24,6 +24,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.RestAPI;
@@ -45,6 +46,7 @@ namespace Duplicati.Server
         private const string WINDOWS_EVENTLOG_OPTION = "windows-eventlog";
         private const string WINDOWS_EVENTLOG_LEVEL_OPTION = "windows-eventlog-level";
         private const string DISABLE_DB_ENCRYPTION_OPTION = "disable-db-encryption";
+        private const string REQUIRE_DB_ENCRYPTION_OPTION = "require-db-encryption-key";
 
 #if DEBUG
         private const bool DEBUG_MODE = true;
@@ -713,7 +715,13 @@ namespace Duplicati.Server
                 throw new Exception(Strings.Program.DatabaseOpenError(ex.Message), ex);
             }
 
-            return new Database.Connection(con, Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION));
+            var disableDbEncryption = Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION);
+            var requireDbEncryption = Library.Utility.Utility.ParseBoolOption(commandlineOptions, REQUIRE_DB_ENCRYPTION_OPTION);
+            var hasEncryptionKey = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+            if (requireDbEncryption && !(hasEncryptionKey || disableDbEncryption))
+                throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
+
+            return new Database.Connection(con, disableDbEncryption);
         }
 
         public static void StartOrStopUsageReporter()
@@ -844,6 +852,7 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
                 new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
                 new Duplicati.Library.Interface.CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
+                new Duplicati.Library.Interface.CommandLineArgument(REQUIRE_DB_ENCRYPTION_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),
             ])
             .ToArray();
 

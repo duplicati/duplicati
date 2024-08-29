@@ -58,6 +58,9 @@ Error message: {0}", error); }
         public static string ServerStarted(int port) { return LC.L(@"Server has started and is listening on port {0}", port); }
         public static string ServerStartedSignin(string url) { return LC.L(@"Use the following link to sign in: {0}", url); }
         public static string ServerCrashed(string message) { return LC.L(@"The server crashed: {0}", message); }
+        public static string RequiredbencryptionShort { get { return LC.L(@"Require database encryption"); } }
+        public static string RequiredbencryptionLong { get { return LC.L(@"Use this option to require a custom provided key for database encryption of sensitive fields and not rely on the serial number"); } }
+        public static string DatabaseEncryptionKeyRequired(string envkey, string disableoptionname) { return LC.L(@"Database encryption key is required. Supply an encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
     }
     internal static class Scheduler
     {
