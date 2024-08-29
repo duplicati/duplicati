@@ -20,6 +20,7 @@ public class ServerSetting : IEndpointV1
     private static readonly string[] GUARDED_OUTPUT = [
         Server.Database.ServerSettings.CONST.JWT_CONFIG,
         Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
         // Not used anymore, but not completely removed
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
@@ -31,6 +32,7 @@ public class ServerSetting : IEndpointV1
     private static readonly string[] GUARDED_INPUT = [
         Server.Database.ServerSettings.CONST.JWT_CONFIG,
         Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
         Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,

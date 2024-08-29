@@ -17,6 +17,8 @@ public static class Program
     /// <returns>The return code</returns>
     public static Task<int> Main(string[] args)
     {
+        Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.ServerUtil);
+
         var rootCmd = new RootCommand("Server CLI tool for Duplicati")
             {
                 Pause.Create(),

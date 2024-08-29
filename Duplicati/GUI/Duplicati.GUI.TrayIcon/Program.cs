@@ -61,6 +61,7 @@ namespace Duplicati.GUI.TrayIcon
         [STAThread]
         public static int Main(string[] _args)
         {
+            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.TrayIcon);
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
