@@ -24,6 +24,7 @@ using System.Linq;
 using Duplicati.Library.Logging;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
 
 namespace Duplicati.Server
 {
@@ -209,8 +210,8 @@ namespace Duplicati.Server
         private volatile bool m_anytimeouts = false;
         private RingBuffer<LogEntry> m_buffer;
 
-        private ILogDestination m_serverfile;
-        private LogMessageType m_serverloglevel;
+
+        private readonly ControllerMultiLogTarget m_target = new ControllerMultiLogTarget(null, LogMessageType.Warning, null);
         private LogMessageType m_logLevel;
 
         public LogWriteHandler()
@@ -237,9 +238,13 @@ namespace Duplicati.Server
             if (!System.IO.Directory.Exists(dir))
                 System.IO.Directory.CreateDirectory(dir);
 
-            m_serverfile = new StreamLogDestination(path);
-            m_serverloglevel = level;
+            m_target.AddTarget(new StreamLogDestination(path), level, null);
+            UpdateLogLevel();
+        }
 
+        public void AppendLogDestination(ILogDestination destination, LogMessageType level)
+        {
+            m_target.AddTarget(destination, level, null);
             UpdateLogLevel();
         }
 
@@ -294,7 +299,7 @@ namespace Duplicati.Server
         private void UpdateLogLevel()
         {
             m_logLevel =
-                (LogMessageType)(GetActiveTimeouts().Union(new int[] { (int)m_serverloglevel }).Min());
+                (LogMessageType)GetActiveTimeouts().Append((int)m_target.MinimumLevel).Min();
         }
 
 
@@ -305,14 +310,13 @@ namespace Duplicati.Server
             if (entry.Level < m_logLevel)
                 return;
 
-            if (m_serverfile != null && entry.Level >= m_serverloglevel)
-                try
-                {
-                    m_serverfile.WriteMessage(entry);
-                }
-                catch
-                {
-                }
+            try
+            {
+                m_target.WriteMessage(entry);
+            }
+            catch
+            {
+            }
 
             lock (m_lock)
             {
@@ -342,13 +346,7 @@ namespace Duplicati.Server
 
         public void Dispose()
         {
-            if (m_serverfile != null)
-            {
-                var sf = m_serverfile;
-                m_serverfile = null;
-                if (sf is IDisposable disposable)
-                    disposable.Dispose();
-            }
+            m_target.Dispose();
         }
 
         #endregion
