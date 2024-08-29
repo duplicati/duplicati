@@ -662,7 +662,7 @@ namespace Duplicati.CommandLine
                 }
 
                 var parsedStats = result.BackendStatistics as Duplicati.Library.Interface.IParsedBackendStatistics;
-                output.MessageEvent(string.Format("  Duration of backup: {0:hh\\:mm\\:ss}", result.Duration));
+                output.MessageEvent(string.Format("  Duration of backup: {0:c}", result.Duration));
                 if (parsedStats != null)
                 {
                     if (parsedStats.KnownFileCount > 0)
