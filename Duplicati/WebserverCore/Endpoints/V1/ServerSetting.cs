@@ -37,6 +37,7 @@ public class ServerSetting : IEndpointV1
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
         Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
         Server.Database.ServerSettings.CONST.DISABLE_VISUAL_CAPTCHA,
+        Server.Database.ServerSettings.CONST.ENCRYPTED_FIELDS,
         "ServerSSLCertificate",
         "server-passphrase-trayicon-hash",
         "server-passphrase-trayicon-salt"
