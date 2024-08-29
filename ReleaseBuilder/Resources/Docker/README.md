@@ -1,4 +1,4 @@
-# [Duplicati](https://www.duplicati.com)
+# [Duplicati](https://duplicati.com)
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
