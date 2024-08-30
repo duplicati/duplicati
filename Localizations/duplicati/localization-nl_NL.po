@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-14 09:15+0200\n"
+"POT-Creation-Date: 2024-08-30 15:22+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kees Zaaijer, 2024\n"
 "Language-Team: Dutch (Netherlands) (https://app.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -137,8 +137,8 @@ msgid "Use GPG Armor"
 msgstr "Gebruik GPG Armor"
 
 #: Library/Encryption/Strings.cs:52
-msgid "Overrides the GPG command supplied for decryption."
-msgstr "Overschrijft de GPG-opdracht die voor decodering is opgegeven."
+msgid "Override the GPG command supplied for decryption."
+msgstr ""
 
 #: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
@@ -147,11 +147,9 @@ msgstr "Het GPG ontsleutelings commando"
 #: Library/Encryption/Strings.cs:54
 #, csharp-format
 msgid ""
-"Overrides the default GPG encryption command \"{0}\". Normal usage is to "
+"Override the default GPG encryption command \"{0}\". Normal usage is to "
 "request asymetric encryption with the setting {1}."
 msgstr ""
-"Overschrijft de standaard GPG-coderingsopdracht \"{0}\". Normaal gesproken "
-"wordt asymmetrische codering aangevraagd met de instelling {1}."
 
 #: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
@@ -234,6 +232,11 @@ msgstr "De opgevraagde map bestaat niet"
 #: Library/Interface/Strings.cs:43
 msgid "Cancelled"
 msgstr "Afgebroken"
+
+#: Library/Interface/Strings.cs:44
+msgid ""
+"Encryption key used to encrypt target settings does not match current key."
+msgstr ""
 
 #: Library/Interface/CustomExceptions.cs:84
 #: Library/Interface/CustomExceptions.cs:92
@@ -348,6 +351,8 @@ msgid ""
 "This backend can read and write data to Swift (OpenStack Object Storage). "
 "Allowed format is \"openstack://container/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Swift (OpenStack Object "
+"Storage). Toegestane indeling is \"openstack://container/folder\"."
 
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "OpenStack Simple Storage"
@@ -377,10 +382,8 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:38 Library/Backend/Mega/Strings.cs:28
 #: Library/Backend/SharePoint/Strings.cs:29
 #: Library/Backend/WEBDAV/Strings.cs:29
-msgid "Supplies the password used to connect to the server"
+msgid "Supply the password used to connect to the server"
 msgstr ""
-"Geeft het wachtwoord door dat wordt gebruikt om verbinding te maken met de "
-"server"
 
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
@@ -389,8 +392,8 @@ msgstr ""
 "server."
 
 #: Library/Backend/OpenStack/Strings.cs:33
-msgid "Supplies the domain used to connect to the server"
-msgstr "Geeft het domein aan dat wordt gebruikt om te verbinden met de server"
+msgid "Supply the domain used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/FTP/Strings.cs:35
 #: Library/Backend/CloudFiles/Strings.cs:30 Library/Backend/S3/Strings.cs:34
@@ -416,10 +419,8 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:40 Library/Backend/Mega/Strings.cs:30
 #: Library/Backend/SharePoint/Strings.cs:31
 #: Library/Backend/WEBDAV/Strings.cs:31
-msgid "Supplies the username used to connect to the server"
+msgid "Supply the username used to connect to the server"
 msgstr ""
-"Geeft de gebruikersnaam door die wordt gebruikt om verbinding te maken met "
-"de server"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
@@ -432,10 +433,8 @@ msgstr ""
 "niet vereist als een API sleutel wordt gebruikt."
 
 #: Library/Backend/OpenStack/Strings.cs:37
-msgid "Supplies the Tenant Name used to connect to the server"
+msgid "Supply the Tenant Name used to connect to the server"
 msgstr ""
-"Gebruikt de Tenant naam die gebruikt wordt om verbinding te maken met de "
-"server"
 
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid ""
@@ -446,9 +445,8 @@ msgstr ""
 "tenant ID te versturen bij sommige providers."
 
 #: Library/Backend/OpenStack/Strings.cs:39
-msgid "Supplies the API key used to connect to the server"
+msgid "Supply the API key used to connect to the server"
 msgstr ""
-"Geeft de API sleutel die gebruikt wordt om verbinding te maken met de server"
 
 #: Library/Backend/OpenStack/Strings.cs:40
 #, csharp-format
@@ -461,12 +459,14 @@ msgstr ""
 "providers zijn: {0}{1}"
 
 #: Library/Backend/OpenStack/Strings.cs:41
-msgid "Supplies the authentication URL"
-msgstr "Geeft de authenticatie URL"
+msgid "Supply the authentication URL"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:42
 msgid "The keystone API version to use. Valid values are 'v2' and 'v3'."
 msgstr ""
+"De keystone API-waarde die moet worden gebruikt. Geldige waarden zijn 'v2' "
+"en 'v3'."
 
 #: Library/Backend/OpenStack/Strings.cs:43
 msgid "The keystone API version to use"
@@ -484,16 +484,16 @@ msgstr ""
 "dit leeg voor de standaard regio."
 
 #: Library/Backend/OpenStack/Strings.cs:45
-msgid "Supplies the region used for creating a container"
-msgstr "Geeft de regio die gebruikt wordt voor het aanmaken van een container"
+msgid "Supply the region used for creating a container"
+msgstr ""
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:67
 msgid "OpenStack configuration module"
 msgstr "OpenStack configuratiemodule"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:69
-msgid "Exposes OpenStack configuration as a web module"
-msgstr "Toont OpenStack-configuratie als een webmodule"
+msgid "Expose OpenStack configuration as a web module"
+msgstr ""
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
 #: Library/Backend/GoogleServices/GCSConfig.cs:81
@@ -504,8 +504,8 @@ msgstr "De configuratie die moet worden opgehaald"
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
 #: Library/Backend/GoogleServices/GCSConfig.cs:81
 #: Library/Backend/S3/S3Config.cs:84 Library/Backend/Storj/StorjConfig.cs:53
-msgid "Provides different config values"
-msgstr "Biedt verschillende configuratiewaarden"
+msgid "Provide different config values"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:27
 msgid ""
@@ -513,6 +513,9 @@ msgid ""
 "formats are \"ftp://hostname/folder\" and "
 "\"ftp://username:password@hostname/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een FTP-gebaseerde "
+"backend. Toegestane formaten zijn \"ftp://hostname/folder\" en "
+"\"ftp://username:password@hostname/folder\"."
 
 #: Library/Backend/FTP/Strings.cs:28
 msgid "FTP"
@@ -524,10 +527,13 @@ msgid ""
 "Activate this option to make the FTP connection in active mode. Even if the "
 "option --{0} is also set, the connection will be made in active mode."
 msgstr ""
+"Activeer deze optie om een FTP-verbinding tot stand te brengen in actieve "
+"modus. Zelfs als de optie --{0} ook is ingesteld, zal de verbinding tot "
+"stand gebracht worden in actieve modus."
 
 #: Library/Backend/FTP/Strings.cs:30 Library/Backend/FTP/Strings.cs:32
-msgid "Toggles the FTP connections method"
-msgstr "Schakelt tussen de FTP verbindingmethodes"
+msgid "Toggle the FTP connections method"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:31
 #, csharp-format
@@ -536,6 +542,9 @@ msgid ""
 " better with some firewalls. If the option --{0} is set, this option is "
 "ignored."
 msgstr ""
+"Activeer deze optie om een FTP-verbinding tot stand te brengen in passieve "
+"modus, wat beter werkt met sommige firewalls. Als de optie --{0} ook is "
+"ingesteld, wordt deze optie genegeerd."
 
 #: Library/Backend/FTP/Strings.cs:33 Library/Backend/CloudFiles/Strings.cs:28
 #: Library/Backend/S3/Strings.cs:32
@@ -557,10 +566,12 @@ msgid ""
 "Use this option to communicate using Secure Socket Layer (SSL) over ftp "
 "(ftps)."
 msgstr ""
+"Gebruik deze optie om te communiceren door middel van Secure Sockets Layer "
+"(SSL) over ftp (ftps)."
 
 #: Library/Backend/FTP/Strings.cs:38
-msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr "Laat Duplicati een SSL (ftps) verbinding gebruiken"
+msgid "Instruct Duplicati to use an SSL (ftps) connection"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:39
 msgid ""
@@ -607,14 +618,16 @@ msgid "Google Cloud Storage configuration module"
 msgstr "Google Cloud Storage configuratiemodule"
 
 #: Library/Backend/GoogleServices/GCSConfig.cs:73
-msgid "Exposes Google Cloud Storage configuration as a web module"
-msgstr "Toont de Google Cloud Storage-configuratie als een webmodule"
+msgid "Expose Google Cloud Storage configuration as a web module"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:27
 msgid ""
 "This backend can read and write data to Google Cloud Storage. Allowed format"
 " is \"gcs://bucket/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Google Cloud Storage. "
+"Toegestane indeling is \"gcs://bucket/folder\". "
 
 #: Library/Backend/GoogleServices/Strings.cs:28
 msgid "Google Cloud Storage"
@@ -624,7 +637,7 @@ msgstr "Google Cloud Storage"
 #: Library/Backend/OAuthHelper/Strings.cs:26
 #, csharp-format
 msgid "You need an AuthID. You can get it from: {0}"
-msgstr ""
+msgstr "Een AuthID is nodig. Deze kan verkregen worden van: {0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:30
 #, csharp-format
@@ -661,8 +674,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:35
-msgid "Specifies location option for creating a bucket"
-msgstr "Geeft de locatie optie aan voor het aanmaken van een bucket"
+msgid "Specify location option for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:36
 #, csharp-format
@@ -674,8 +687,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:38
-msgid "Specifies storage class for creating a bucket"
-msgstr "Geeft storage klasse aan voor het aanmaken van een bucket"
+msgid "Specify storage class for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:39
 msgid ""
@@ -688,14 +701,16 @@ msgstr ""
 "gekoppeld.. Het project bepaalt waar de gebruikskosten worden geheven."
 
 #: Library/Backend/GoogleServices/Strings.cs:40
-msgid "Specifies project for creating a bucket"
-msgstr "Geeft project aan voor het aanmaken van een bucket"
+msgid "Specify project for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid ""
 "This backend can read and write data to Google Drive. Allowed format is "
 "\"googledrive://folder/subfolder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Google Drive. Toegestane "
+"indeling is \"googledrive://folder/subfolder\"."
 
 #: Library/Backend/GoogleServices/Strings.cs:45
 msgid "Google Drive"
@@ -723,6 +738,8 @@ msgid ""
 "This backend can read and write data to CloudFiles. Allowed format is "
 "\"cloudfiles://container/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar CloudFiles. Toegestane "
+"indeling is \"cloudfiles://container/folder\"."
 
 #: Library/Backend/CloudFiles/Strings.cs:25
 msgid "Rackspace CloudFiles"
@@ -735,6 +752,9 @@ msgid ""
 "account resides. Use this option to set an alternate authentication URL. "
 "This option overrides --{0}."
 msgstr ""
+"CloudFiles gebruikt verschillende servers voor authenticatie, afhankelijk "
+"van waar het account zich bevindt. Gebruik deze optie om een alternatieve "
+"authenticatie URL op te geven. Deze optie overschrijft --{0}."
 
 #: Library/Backend/CloudFiles/Strings.cs:27
 msgid "Provide another authentication URL"
@@ -743,12 +763,11 @@ msgstr "Geef een andere authenticatie URL op"
 #: Library/Backend/CloudFiles/Strings.cs:32
 msgid "The API Access Key used to authenticate with CloudFiles."
 msgstr ""
+"De API-toegangssleutel die wordt gebruikt voor authenticatie bij Cloudfiles."
 
 #: Library/Backend/CloudFiles/Strings.cs:33
-msgid "Supplies the access key used to connect to the server"
+msgid "Supply the access key used to connect to the server"
 msgstr ""
-"Geeft de toegangssleutel die gebruikt wordt om verbinding te maken met de "
-"server"
 
 #: Library/Backend/CloudFiles/Strings.cs:34
 #, csharp-format
@@ -757,6 +776,9 @@ msgid ""
 "this option if the account is a UK based account. Note that this is "
 "equivalent to setting --{0}={1}."
 msgstr ""
+"Duplicati veronderstelt dat de referenties worden gegeven voor een US "
+"account. Gebruik deze optie als de account een UK gebaseerd account is. Let "
+"op: dit is equivalent aan de instelling --{0}={1}."
 
 #: Library/Backend/CloudFiles/Strings.cs:35
 msgid "Use a UK account"
@@ -765,12 +787,11 @@ msgstr "Gebruik een UK account"
 #: Library/Backend/CloudFiles/Strings.cs:36
 msgid "The username used to authenticate with CloudFiles."
 msgstr ""
+"De gebruikersnaam die gebruikt wordt om te authentiseren met CloudFiles."
 
 #: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Supplies the username used to authenticate with CloudFiles"
+msgid "Supply the username used to authenticate with CloudFiles"
 msgstr ""
-"Geeft de gebruikersnaam die gebruikt wordt om te authentiseren met "
-"CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:38
 msgid "MD5 Hash (ETag) verification failed"
@@ -795,21 +816,23 @@ msgstr "Geen CloudFiles userID gegeven"
 
 #: Library/Backend/CloudFiles/Strings.cs:43
 msgid "Unexpected CloudFiles response. Perhaps the API has changed?"
-msgstr ""
+msgstr "Onverwacht antwoord van CloudFiles. Wellicht is de API veranderd?"
 
 #: Library/Backend/S3/S3Config.cs:75
 msgid "S3 configuration module"
 msgstr "S3 configuratiemodule"
 
 #: Library/Backend/S3/S3Config.cs:77
-msgid "Exposes S3 configuration as a web module"
-msgstr "Toont de S3 configuratie als een webmodule"
+msgid "Expose S3 configuration as a web module"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
 "format is \"s3://bucketname/prefix\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een S3 compatibele server."
+" Toegestane indeling is: \"s3://bucketname/prefix\"."
 
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
@@ -821,6 +844,8 @@ msgid ""
 "AWS Secret Access Key can be obtained after logging into your AWS account. "
 "This can also be supplied through the option --{0}."
 msgstr ""
+"AWS Geheime Toegangssleutel kan verkregen worden na inloggen op uw AWS-"
+"account. Deze kan ook worden opgegeven met de optie --{0}."
 
 #: Library/Backend/S3/Strings.cs:29
 msgid "AWS Secret Access Key"
@@ -832,6 +857,8 @@ msgid ""
 "AWS Access Key ID can be obtained after logging into your AWS account. This "
 "can also be supplied through the option --{0}."
 msgstr ""
+"AWS Toegangssleutel-ID kan verkregen worden na inloggen op uw AWS-account. "
+"Deze kan ook worden opgegeven met de optie --{0}."
 
 #: Library/Backend/S3/Strings.cs:31
 msgid "AWS Access Key ID"
@@ -855,8 +882,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:40
-msgid "Specifies S3 location constraints"
-msgstr "Geeft S3 locatiebeperkingen aan"
+msgid "Specify S3 location constraints"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:41
 #, csharp-format
@@ -868,8 +895,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:43
-msgid "Specifies an alternate S3 server name"
-msgstr "Geeft een alternatieve S3 servernaam"
+msgid "Specify an alternate S3 server name"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:44
 msgid ""
@@ -880,8 +907,8 @@ msgstr ""
 "om met S3-services te communiceren."
 
 #: Library/Backend/S3/Strings.cs:45
-msgid "Specifies the S3 client library to use"
-msgstr "Geeft de S3 client-bibliotheek aan die gebruikt moet worden"
+msgid "Specify the S3 client library to use"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:46
 msgid ""
@@ -889,12 +916,14 @@ msgid ""
 "(https). Note that bucket names containing a period has problems with SSL "
 "connections."
 msgstr ""
+"Gebruik deze optie om te communiceren door middel van Secure Sockets Layer "
+"(SSL) over http (https). Let op: bucket-namen die een punt bevatten hebben "
+"problemen met SSL verbindingen."
 
 #: Library/Backend/S3/Strings.cs:47 Library/Backend/WEBDAV/Strings.cs:40
 #: Library/Backend/TahoeLAFS/Strings.cs:27
-msgid "Instructs Duplicati to use an SSL (https) connection"
+msgid "Instruct Duplicati to use an SSL (https) connection"
 msgstr ""
-"Geeft Duplicati de opdracht om een SSL (https) verbinding te gebruiken"
 
 #: Library/Backend/S3/Strings.cs:48
 msgid ""
@@ -925,16 +954,16 @@ msgid "S3 IAM support module"
 msgstr "S3 IAM ondersteuningsmodule"
 
 #: Library/Backend/S3/S3IAM.cs:73
-msgid "Exposes S3 IAM manipulation as a web module"
-msgstr "Toont S3 IAM manipulatie als een webmodule"
+msgid "Expose S3 IAM manipulation as a web module"
+msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:81
 msgid "The operation to perform"
 msgstr "De uit te voeren bewerking"
 
 #: Library/Backend/S3/S3IAM.cs:81
-msgid "Selects the operation to perform"
-msgstr "Selecteert de uit te voeren bewerking"
+msgid "Select the operation to perform"
+msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:82
 msgid "The username"
@@ -958,6 +987,9 @@ msgid ""
 "alternative FTP client. Allowed formats are \"aftp://hostname/folder\" and "
 "\"aftp://username:password@hostname/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een FTP-gebaseerde backend"
+" met een alternatieve FTP client. Toegestane indelingen zijn "
+"\"aftp://hostname/folder\" en \"aftp://username:password@hostname/folder\"."
 
 #: Library/Backend/AlternativeFTP/Strings.cs:31
 msgid "Alternative FTP"
@@ -1145,6 +1177,9 @@ msgid ""
 "Allowed formats are \"ssh://hostname/folder\" and "
 "\"ssh://username:password@hostname/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een SSH gebaseerde "
+"backend, door middel van SFTP. Toegestane indelingen zijn "
+"\"ssh://hostname/folder\" en \"ssh://username:password@hostname/folder\"."
 
 #: Library/Backend/SSHv2/Strings.cs:47
 msgid "SFTP (SSH)"
@@ -1160,10 +1195,8 @@ msgstr ""
 "11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66\"."
 
 #: Library/Backend/SSHv2/Strings.cs:53
-msgid "Supplies server fingerprint used for validation of server identity"
+msgid "Supply server fingerprint used for validation of server identity"
 msgstr ""
-"Geeft server vingerafdruk op die gebruikt wordt voor validatie van server "
-"identiteit"
 
 #: Library/Backend/SSHv2/Strings.cs:54
 msgid ""
@@ -1176,19 +1209,19 @@ msgstr ""
 "verificatie uit te schakelen. Gebruik deze optie alleen voor testdoeleinden."
 
 #: Library/Backend/SSHv2/Strings.cs:55
-msgid "Disables fingerprint validation"
-msgstr "Schakelt vingerafdruk validatie uit"
+msgid "Disable fingerprint validation"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:56
 msgid ""
-"Points to a valid OpenSSH keyfile. If the file is encrypted, the password "
+"Point to a valid OpenSSH keyfile. If the file is encrypted, the password "
 "supplied is used to decrypt it. If the keyfile is specified, the password is"
 " not used to authenticate."
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:57 Library/Backend/SSHv2/Strings.cs:59
-msgid "Uses a SSH private key to authenticate"
-msgstr "Gebruikt een SSH sleutelbestand om te authentiseren"
+msgid "Use a SSH private key to authenticate"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:58
 #, csharp-format
@@ -1197,16 +1230,23 @@ msgid ""
 "If the key is encrypted, the password supplied is used to decrypt it. If the"
 " private key is specified, the password is not used to authenticate."
 msgstr ""
+"Een url-gecodeerde SSH-privésleutel. De privésleutel moet worden "
+"voorafgegaan door {0}. Als het bestand is gecodeerd, wordt het opgegeven "
+"wachtwoord gebruikt om het te decoderen. Als de privésleutel is opgegeven, "
+"wordt het wachtwoord niet gebruikt voor authenticatie."
 
 #: Library/Backend/SSHv2/Strings.cs:60
 msgid ""
 "Use this option to manage the internal timeout for SSH operations. If the "
 "value is set to zero, the operations will not time out."
 msgstr ""
+"Gebruik deze optie om de interne time-out voor SSH-bewerkingen te beheren. "
+"Als de waarde op nul wordt ingesteld, zal er geen time-out voor de "
+"bewerkingen plaatsvinden."
 
 #: Library/Backend/SSHv2/Strings.cs:61
-msgid "Sets the operation timeout value"
-msgstr "Stelt de time-out waarde van de bewerking in"
+msgid "Set the operation timeout value"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:62
 msgid ""
@@ -1215,10 +1255,15 @@ msgid ""
 "Using keep-alive will keep the connection open in this scenario. If this "
 "value is set to zero, the keep-alive is disabled."
 msgstr ""
+"Gebruik deze optie om de keep-alive interval in te schakelen voor de SSH "
+"verbinding. Als de verbinding niet actief is, kunnen strikt ingestelde "
+"firewalls de verbinding afbreken. Het gebruik van keep-alive zal de "
+"verbinding open houden in dit scenario. Als deze waarde is ingesteld op nul,"
+" wordt keep-alive uitgeschakeld."
 
 #: Library/Backend/SSHv2/Strings.cs:63
-msgid "Sets a keepalive value"
-msgstr "Stelt de keepalive waarde in"
+msgid "Set a keepalive value"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:64
 #, csharp-format
@@ -1250,6 +1295,8 @@ msgid ""
 "This backend can read and write data to Box.com. Allowed format is "
 "\"box://folder/subfolder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Box.com. Toegestane "
+"indeling is \"box://folder/subfolder\"."
 
 #: Library/Backend/Box/Strings.cs:26
 msgid "Box.com"
@@ -1338,6 +1385,11 @@ msgid ""
 "(e.g.: \"file://\\\\server\\folder\") or local paths (e.g.: (win) "
 "\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar bestand-gebaseerde "
+"backend. Toegestane formaten zijn \"file://hostname/folder\" en "
+"\"file://username:password@hostname/folder\". U mag UNC-paden opgeven "
+"(bijv.: \"file://\\\\server\\folder\") of lokale paden (bijv.: (win) "
+"\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 
 #: Library/Backend/File/Strings.cs:25
 msgid "Local folder or drive"
@@ -1457,6 +1509,8 @@ msgid ""
 "This backend can read and write data to the Backblaze B2 Cloud Storage. "
 "Allowed format is \"b2://bucketname/prefix\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar de Backblaze B2 Cloud "
+"Opslag. Toegestane indeling is: \"b2://bucketname/prefix\"."
 
 #: Library/Backend/Backblaze/Strings.cs:26
 msgid "B2 Cloud Storage"
@@ -1468,6 +1522,8 @@ msgid ""
 "B2 Cloud Storage Application Key can be obtained after logging into your "
 "Backblaze account. This can also be supplied through the option --{0}."
 msgstr ""
+"B2 Cloud Opslag Applicatie Sleutel kan verkegen worden na het inloggen op uw"
+" Backblaze account. Dit kan ook worden opgegeven met de optie --{0}."
 
 #: Library/Backend/Backblaze/Strings.cs:28
 msgid "B2 Cloud Storage Application Key"
@@ -1479,6 +1535,8 @@ msgid ""
 "B2 Cloud Storage Account ID can be obtained after logging into your "
 "Backblaze account. This can also be supplied through the option --{0}."
 msgstr ""
+"B2 Cloud Opslag Account ID kan verkregen worden na het inloggen op uw "
+"Backblaze-account. Dit kan ook worden opgegeven met de optie --{0}."
 
 #: Library/Backend/Backblaze/Strings.cs:30
 msgid "B2 Cloud Storage Account ID"
@@ -1635,13 +1693,10 @@ msgstr "Of de klasse HttpClient moet worden gebruikt"
 #: Library/Backend/OneDrive/Strings.cs:41
 #, csharp-format
 msgid ""
-"Stores files in Microsoft OneDrive or Microsoft OneDrive for Business via "
-"the Microsoft Graph API. Usage of this backend requires that you agree to "
-"the terms in {0} ({1}) and {2} ({3})."
+"Store files in Microsoft OneDrive or Microsoft OneDrive for Business via the"
+" Microsoft Graph API. Usage of this backend requires that you agree to the "
+"terms in {0} ({1}) and {2} ({3})."
 msgstr ""
-"Slaat bestanden op in Microsoft OneDrive of Microsoft OneDrive voor Business"
-" via de Microsoft Graph API. Gebruik van deze backend vereist u akkoord gaat"
-" met de voorwaarden in {0} ({1}) en {2} ({3})."
 
 #: Library/Backend/OneDrive/Strings.cs:42
 msgid "Microsoft OneDrive v2"
@@ -1664,13 +1719,10 @@ msgstr "Optionele ID van de drive"
 #: Library/Backend/OneDrive/Strings.cs:49
 #, csharp-format
 msgid ""
-"Stores files in a Microsoft SharePoint site via the Microsoft Graph API. "
+"Store files in a Microsoft SharePoint site via the Microsoft Graph API. "
 "Usage of this backend requires that you agree to the terms in {0} ({1}) and "
 "{2} ({3})."
 msgstr ""
-"Slaat bestanden op in een Microsoft SharePoint site via de Microsoft Graph "
-"API. Gebruik van deze backend vereist dat u akkoord gaat met de voorwaarden "
-"in {0} ({1}) en {2} ({3})."
 
 #: Library/Backend/OneDrive/Strings.cs:50
 msgid "Microsoft SharePoint v2"
@@ -1696,7 +1748,7 @@ msgstr "Tegenstrijdige site-ID's gebruikt: opgegeven {0} maar gevonden {1}"
 #: Library/Backend/OneDrive/Strings.cs:59
 #, csharp-format
 msgid ""
-"Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. "
+"Store files in a Microsoft Office 365 Group via the Microsoft Graph API. "
 "Allowed formats are "
 "\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
 " (with \"//\" being optionally used to indicate the root document folder) "
@@ -1786,7 +1838,7 @@ msgstr ""
 #: Library/Backend/AliyunOSS/Strings.cs:14
 #: Library/Backend/TencentCOS/Strings.cs:36
 msgid "Bucket name"
-msgstr ""
+msgstr "Bucketnaam"
 
 #: Library/Backend/AliyunOSS/Strings.cs:15
 msgid "Region indicates the physical location of the OSS data center."
@@ -1812,6 +1864,8 @@ msgid ""
 "This backend can read and write data to Azure blob storage. Allowed format "
 "is \"azure://bucketname\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Azure blob-opslag. "
+"Toegestane indeling is: \"azure://bucketname\"."
 
 #: Library/Backend/AzureBlob/Strings.cs:26
 msgid "Azure blob"
@@ -1905,7 +1959,7 @@ msgstr "Geheime Sleutel"
 
 #: Library/Backend/TencentCOS/Strings.cs:35
 msgid "Bucket name, format: BucketName-APPID"
-msgstr ""
+msgstr "Bucket-naam, indeling: BucketName-APPID"
 
 #: Library/Backend/TencentCOS/Strings.cs:37
 msgid ""
@@ -1913,10 +1967,13 @@ msgid ""
 " The object storage COS data is stored in the storage buckets of these "
 "regions. https://intl.cloud.tencent.com/document/product/436/6224."
 msgstr ""
+"Regio is het distributiegebied van de Tencent cloud hosting machine room. De"
+" object storage COS-gegevens worden opgeslagen in de opslagbuckets van deze "
+"regio's. https://intl.cloud.tencent.com/document/product/436/6224."
 
 #: Library/Backend/TencentCOS/Strings.cs:38
-msgid "Specifies COS location constraints"
-msgstr "Specificeert COS-locatiebeperkingen"
+msgid "Specify COS location constraints"
+msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:39
 msgid ""
@@ -1935,6 +1992,9 @@ msgid ""
 "This backend can read and write data to Jottacloud using its REST protocol. "
 "Allowed format is \"jottacloud://folder/subfolder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Jottacloud door middel van"
+" het REST protocol. Toegestane indeling is "
+"\"jottacloud://folder/subfolder\"."
 
 #: Library/Backend/Jottacloud/Strings.cs:26
 msgid "Jottacloud"
@@ -1946,7 +2006,7 @@ msgstr "Geen gebruikersnaam gevonden"
 
 #: Library/Backend/Jottacloud/Strings.cs:30
 msgid "No path given. Files cannot be uploaded to the root folder"
-msgstr ""
+msgstr "Geen pad opgegeven. Kan geen bestanden uploaden naar de hoofdmap"
 
 #: Library/Backend/Jottacloud/Strings.cs:31
 msgid "Illegal mount point given."
@@ -1967,8 +2027,8 @@ msgstr ""
 " \"{0}\" optie."
 
 #: Library/Backend/Jottacloud/Strings.cs:34
-msgid "Supplies the backup device to use"
-msgstr "Geeft het te gebruiken back-up apparaat"
+msgid "Supply the backup device to use"
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:35
 #, csharp-format
@@ -1986,8 +2046,8 @@ msgstr ""
 "de optie \"{0}\" kan de naam van ieder gewenst koppelpunt worden opgegeven."
 
 #: Library/Backend/Jottacloud/Strings.cs:36
-msgid "Supplies the mount point to use on the server"
-msgstr "Geeft het koppelpunt dat gebruikt moet worden op de server."
+msgid "Supply the mount point to use on the server"
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:37
 msgid ""
@@ -2021,6 +2081,8 @@ msgid ""
 "This backend can read and write data to Mega.co.nz. Allowed format is "
 "\"mega://folder/subfolder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Mega.co.nz. Toegestane "
+"indeling is: \"mega://folder/subfolder\"."
 
 #: Library/Backend/Mega/Strings.cs:26
 msgid "mega.nz"
@@ -2031,6 +2093,9 @@ msgid ""
 "For accounts with two-factor authentication enabled, set the shared secret "
 "used to generate the two-factor TOTP codes."
 msgstr ""
+"Stel voor accounts waarvoor twee-factor-authenticatie is ingeschakeld het "
+"gedeelde geheim in dat gebruikt wordt om twee-factor TOTP codes te "
+"genereren."
 
 #: Library/Backend/Mega/Strings.cs:32
 msgid "The shared secret used to generate two-factor TOTP codes"
@@ -2048,7 +2113,7 @@ msgstr "Geen gebruikersnaam opgegeven"
 
 #: Library/Backend/Idrivee2/Strings.cs:24
 msgid "This backend can read and write data to IDrive e2."
-msgstr ""
+msgstr "Deze backend kan gegevens lezen en schrijven naar IDrive e2."
 
 #: Library/Backend/Idrivee2/Strings.cs:25
 msgid "IDrive e2"
@@ -2060,6 +2125,8 @@ msgid ""
 "Access Key Secret can be obtained after logging into your IDrive e2 account."
 " This can also be supplied through the option --{0}."
 msgstr ""
+"Toegangssleutel-geheim kan verkregen worden na inloggen op uw IDrive "
+"e2-account. Deze kan ook worden opgegeven met de optie --{0}."
 
 #: Library/Backend/Idrivee2/Strings.cs:28
 #, csharp-format
@@ -2067,6 +2134,8 @@ msgid ""
 "Access Key ID can be obtained after logging into your IDrive e2 account. "
 "This can also be supplied through the option --{0}."
 msgstr ""
+"Toegangssleutel-ID kan verkregen worden na inloggen op uw IDrive e2-account."
+" Deze kan ook worden opgegeven met de optie --{0}."
 
 #: Library/Backend/Idrivee2/Strings.cs:31
 msgid ""
@@ -2097,6 +2166,12 @@ msgid ""
 " Use a double slash '//' in the path to denote the web from the documents "
 "library."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een SharePoint server "
+"(inclusief OneDrive for Business). Toegestane indelingen zijn "
+"\"mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\" en "
+"\"mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\"."
+" Gebruik een dubbele schuine streep '//' in het pad om de scheiding tussen "
+"het web en de documentenbibliotheek aan te geven."
 
 #: Library/Backend/SharePoint/Strings.cs:27
 msgid "Microsoft SharePoint"
@@ -2207,6 +2282,13 @@ msgid ""
 " You can use a double slash '//' in the path to denote the base path from "
 "the documents folder."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Microsoft OneDrive for "
+"Business. Toegestane indelingen zijn "
+"\"od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder\""
+" en "
+"\"od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder\"."
+" Een dubbele schuine streep '//' kan gebruikt worden in het pad om het "
+"basispad te scheiden van de documentenmap."
 
 #: Library/Backend/SharePoint/Strings.cs:54
 msgid "Microsoft OneDrive for Business"
@@ -2217,6 +2299,8 @@ msgid ""
 "This backend can read and write data to Dropbox. Allowed format is "
 "\"dropbox://folder/subfolder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar Dropbox. Toegestane "
+"indeling is \"dropbox://folder/subfolder\"."
 
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
@@ -2228,6 +2312,10 @@ msgid ""
 "the HTTP protocol. Allowed formats are \"webdav://hostname/folder\" and "
 "\"webdav://username:password@hostname/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een webserver met WEBDAV-"
+"ondersteuning, door middel van het HTTP protocol. Toegestane indelingen zijn"
+" \"webdav://hostname/folder\" of "
+"\"webdav://username:password@hostname/folder\"."
 
 #: Library/Backend/WEBDAV/Strings.cs:25
 msgid "WebDAV"
@@ -2242,6 +2330,13 @@ msgid ""
 "attacker. Using this option, the client does not accept this, and always "
 "uses Digest authentication or fails to connect."
 msgstr ""
+"Door gebruik te maken van HTTP Digest authenticatie kan de gebruiker "
+"authentiseren met de server, zonder het wachtwoord als leesbare tekst te "
+"verzenden. Echter, een man-in-the-middle aanval is eenvoudig, omdat het HTTP"
+" protocol een fallback specificeert naar Basic authenticatie, wat ervoor "
+"zorgt dat de client het wachtwoord naar de aanvaller verstuurt. Door deze "
+"optie te gebruiken, accepteert de client dit niet, en gebruikt ten allen "
+"tijde Digest authenticatie of breekt de verbinding af."
 
 #: Library/Backend/WEBDAV/Strings.cs:27
 msgid "Force the use of the HTTP Digest authentication method"
@@ -2273,6 +2368,8 @@ msgid ""
 "Use this option to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
 msgstr ""
+"Gebruik deze optie om te communiceren door middel van Secure Sockets Layer "
+"(SSL) over http (https)."
 
 #: Library/Backend/WEBDAV/Strings.cs:41
 msgid ""
@@ -2307,8 +2404,8 @@ msgid "Storj DCS configuration module"
 msgstr "Storj DCS configuratiemodule"
 
 #: Library/Backend/Storj/StorjConfig.cs:46
-msgid "Exposes Storj DCS configuration as a web module"
-msgstr "Toont Storj DCS configuratie als een webmodule"
+msgid "Expose Storj DCS configuration as a web module"
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:27
 msgid "This backend can read and write data to the Storj DCS."
@@ -2320,17 +2417,19 @@ msgstr "Storj DCS (Gedecentraliseerde Cloudopslag)"
 
 #: Library/Backend/Storj/Strings.cs:29
 msgid "Connection-test failed."
-msgstr ""
+msgstr "Verbindingstest mislukt."
 
 #: Library/Backend/Storj/Strings.cs:30
 msgid ""
 "Specify the authentication method which describes which way to use to "
 "connect to the network - either via API key or via an access grant."
 msgstr ""
+"Geef de authenticatiemethode op die beschrijft hoe verbinding moet worden "
+"gemaakt met het netwerk - via een API sleutel of via toegangsverlening."
 
 #: Library/Backend/Storj/Strings.cs:31
 msgid "Authentication method"
-msgstr ""
+msgstr "Authenticatiemethode"
 
 #: Library/Backend/Storj/Strings.cs:32
 msgid ""
@@ -2338,10 +2437,13 @@ msgid ""
 "server for high-performance SLA-backed connectivity or use a community "
 "server. Or even host your own."
 msgstr ""
+"Geef de satelliet op die alle metadata bijhoudt. Gebruik een Storj DCS-"
+"server voor krachtige SLA-ondersteunde connectiviteit of gebruik een "
+"communityserver. Of host zelfs uw eigen server."
 
 #: Library/Backend/Storj/Strings.cs:33
 msgid "Satellite"
-msgstr ""
+msgstr "Satellite"
 
 #: Library/Backend/Storj/Strings.cs:34
 msgid ""
@@ -2349,10 +2451,13 @@ msgid ""
 "satellite. Head over to the dashboard of your satellite to create one if you"
 " do not already have an API key."
 msgstr ""
+"Geef de API sleutel op die toegang verleent tot een specifiek project op de "
+"door u gekozen satellite. Ga naar het dashboard van uw satellite om er één "
+"aan te maken als u niet al een API sleutel heeft."
 
 #: Library/Backend/Storj/Strings.cs:35
 msgid "API key"
-msgstr ""
+msgstr "API sleutel"
 
 #: Library/Backend/Storj/Strings.cs:36
 msgid ""
@@ -2361,24 +2466,31 @@ msgid ""
 "for Storj you do not necessary need any additional encryption (from "
 "Duplicati) in place."
 msgstr ""
+"Geef de coderingswachtwoordzin op die wordt gebruikt om uw gegevens te "
+"coderen voordat ze wordt verzonden naar het Storj-netwerk. Deze "
+"wachtwoordzin kan het enige opgegeven geheim zijn - voor Storj heeft u niet "
+"noodzakelijk aanvullende codering (van Duplicati) nodig."
 
 #: Library/Backend/Storj/Strings.cs:37
 msgid "Encryption passphrase"
-msgstr ""
+msgstr "Encryptie wachtwoordzin"
 
 #: Library/Backend/Storj/Strings.cs:38
 msgid ""
 "Supply the access grant which contains all information in one encrypted "
 "string. You may use it instead of a satellite, API key and secret."
 msgstr ""
+"Geef de verleende toegang op die alle informatie bevat in één gecodeerde "
+"tekenreeks. Deze mag gebruikt worden in plaats van een satellite, API "
+"sleutel en geheim."
 
 #: Library/Backend/Storj/Strings.cs:39
 msgid "Access grant"
-msgstr ""
+msgstr "Toegang verleend"
 
 #: Library/Backend/Storj/Strings.cs:40
 msgid "Specify the bucket for storing the backup."
-msgstr ""
+msgstr "Geef de bucket op voor het opslaan van de back-up."
 
 #: Library/Backend/Storj/Strings.cs:41
 msgid "Bucket"
@@ -2386,11 +2498,11 @@ msgstr "Bucket"
 
 #: Library/Backend/Storj/Strings.cs:42
 msgid "Specify the folder in the bucket for storing the backup."
-msgstr ""
+msgstr "Geef de map in de bucket op voor het opslaan van de back-up."
 
 #: Library/Backend/Storj/Strings.cs:43
 msgid "Folder"
-msgstr ""
+msgstr "Map"
 
 #: Library/Backend/OAuthHelper/Strings.cs:27
 #, csharp-format
@@ -2409,6 +2521,348 @@ msgstr "Onverwachte foutcode: {0} - {1}"
 #: Library/Backend/OAuthHelper/Strings.cs:31
 msgid "The OAuth service is currently over quota. Try again in a few hours"
 msgstr ""
+"De OAuth service is momenteel over quota. Probeer het opnieuw over een paar "
+"uur"
+
+#: Library/RestAPI/Strings.cs:9
+msgid "Another instance is running, and was notified"
+msgstr "Een andere instance is in uitvoering, en was aangekondigd"
+
+#: Library/RestAPI/Strings.cs:10
+#, csharp-format
+msgid ""
+"Failed to create, open or upgrade the database.\n"
+"Error message: {0}"
+msgstr ""
+"Aanmaken, openen of upgraden van de database is mislukt.\n"
+"Foutmelding: {0}"
+
+#: Library/RestAPI/Strings.cs:12
+msgid "Display this help"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:13
+msgid ""
+"Supported commandline arguments:\n"
+"\n"
+msgstr ""
+"Ondersteunde opdrachtregel argumenten:\n"
+"\n"
+
+#: Library/RestAPI/Strings.cs:16
+#, csharp-format
+msgid "--{0}: {1}"
+msgstr "--{0}: {1}"
+
+#: Library/RestAPI/Strings.cs:17
+#, csharp-format
+msgid ""
+"Use this option to store some or all of the options given to the commandline"
+" client. The file must be a plain text file, and UTF-8 encoding is "
+"preferred. Each line in the file should be of the format --option=value. Use"
+" the special options --{0} and --{1} to override the localpath and the "
+"remote destination uri, respectively. The options in this file take "
+"precedence over the options provided on the commandline. You cannot specify "
+"filters in both the file and on the commandline. Instead, you can use the "
+"special --{2}, --{3}, or --{4} options to specify filters inside the "
+"parameter file. Each filter must be prefixed with either a + or a -, and "
+"multiple filters must be joined with {5} "
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:18 CommandLine/CLI/Strings.cs:45
+msgid "Path to a file with parameters"
+msgstr "Pad naar een bestand met parameters"
+
+#: Library/RestAPI/Strings.cs:19
+#, csharp-format
+msgid ""
+"Filters cannot be specified on the commandline if filters are also present "
+"in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
+"specify filters inside the parameter file. Each filter must be prefixed with"
+" either a + or a -, and multiple filters must be joined with {3}"
+msgstr ""
+"Filters kunnen niet worden opgegeven vanaf de opdrachtregel als filters "
+"eveneens aanwezig zijn in het parameterbestand. Gebruik de speciale --{0}, "
+"--{1}, of --{2} opties om filters op te geven binnen het parameterbestand. "
+"Ieder filter moet worden voorafgegaan door een + of een -, en meerdere "
+"filters moeten worden samengevoegd met {3}"
+
+#: Library/RestAPI/Strings.cs:20 CommandLine/CLI/Strings.cs:41
+#, csharp-format
+msgid "Unable to read the parameters file \"{0}\", reason: {1}"
+msgstr "Parameters bestand \"{0}\" kan niet gelezen worden, reden: {1}"
+
+#: Library/RestAPI/Strings.cs:22
+msgid "Output log information to the file given"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:23
+msgid "Determine the amount of information written in the log file"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:24
+msgid ""
+"Activate portable mode where the database is placed below the program "
+"executable"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:25
+#, csharp-format
+msgid "A serious error occurred in Duplicati: {0}"
+msgstr "Een ernstige fout trad op in Duplicati: {0}"
+
+#: Library/RestAPI/Strings.cs:26
+#, csharp-format
+msgid "An error occurred on server tear down: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:27
+#, csharp-format
+msgid ""
+"Unable to start up. Perhaps another process is already running?\n"
+"Error message: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:29 Library/RestAPI/Strings.cs:51
+msgid "Disable database encryption"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:30
+#, csharp-format
+msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
+msgstr ""
+"Niet-ondersteunde versie van SQLite gedetecteerd ({0}), moet {1} zijn of "
+"hoger"
+
+#: Library/RestAPI/Strings.cs:31
+msgid ""
+"The path to the folder where the static files for the webserver is present. "
+"The folder must be located beneath the installation folder."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:32
+msgid ""
+"The port the webserver listens on. Multiple values may be supplied with a "
+"comma in between."
+msgstr ""
+"De poort waarop de webserver luistert. Meerdere waarden mogen worden "
+"opgegeven met een komma ertussen."
+
+#: Library/RestAPI/Strings.cs:33
+msgid ""
+"The certificate and key file in PKCS #12 format the webserver use for SSL. "
+"Only RSA/DSA keys are supported."
+msgstr ""
+"Het certificaat en het sleutelbestand in PKCS #12 indeling die de webserver "
+"gebruikt voor SSL. Alleen RSA/DSA sleutels worden ondersteund."
+
+#: Library/RestAPI/Strings.cs:34
+msgid "The password for decryption of certificate PKCS #12 file."
+msgstr ""
+"Het wachtwoord voor het ontsleutelen van het certificaat PKCS #12 bestand."
+
+#: Library/RestAPI/Strings.cs:35
+msgid ""
+"The interface the webserver listens on. The special values \"*\" and \"any\""
+" means any interface. The special value \"loopback\" means the loopback "
+"adapter."
+msgstr ""
+"De interface waarop de webserver luistert. De speciale waarden \"*\" en "
+"\"any\" betekent iedere willekeurige interface. De speciale waarde "
+"\"loopback\" betekent de loopback adapter."
+
+#: Library/RestAPI/Strings.cs:36
+msgid ""
+"The password required to access the webserver. This option is saved so you "
+"do not need to set it on each run. Setting an empty value disables the "
+"password."
+msgstr ""
+"Het wachtwoord dat vereist is om de webserver te benaderen. Deze optie wordt"
+" opgeslagen, dus het is niet nodig dit bij iedere uitvoering in te stellen. "
+"Het instellen van een lege waarde schakelt het wachtwoord uit."
+
+#: Library/RestAPI/Strings.cs:37
+msgid ""
+"The hostnames that are accepted, separated with semicolons. If any of the "
+"hostnames are \"*\", all hostnames are allowed and the hostname checking is "
+"disabled."
+msgstr ""
+"De hostnamen die worden geaccepteerd, gescheiden door puntkomma's. Als één "
+"van de hostnamen \"*\" is, zijn alle hostnamen toegestaan en is controle van"
+" de hostnaam uitgeschakeld."
+
+#: Library/RestAPI/Strings.cs:38
+msgid ""
+"When running as a server, the service daemon must verify that the process is"
+" responding. If this option is enabled, the server reads stdin and writes a "
+"reply to each line read."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:39
+msgid "Enable the ping-pong responder"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:40 Library/Main/Strings.cs:250
+msgid "Set the time after which log data will be purged from the database."
+msgstr "Stel de tijd in waarna log-gegevens worden gewist uit de database."
+
+#: Library/RestAPI/Strings.cs:41 Library/Main/Strings.cs:251
+msgid "Clean up old log data"
+msgstr "Schoon oude log-gegevens op"
+
+#: Library/RestAPI/Strings.cs:42
+#, csharp-format
+msgid ""
+"Duplicati needs to store a small database with all settings. Use this option"
+" to choose where the settings are stored. This option can also be set with "
+"the environment variable {0}."
+msgstr ""
+"Duplicati moet een kleine database opslaan met alle instellingen. Gebruik "
+"deze optie om te kiezen waar de instellingen worden opgeslagen. Deze optie "
+"kan ook worden ingesteld met de omgevingsvariabele {0}."
+
+#: Library/RestAPI/Strings.cs:43
+msgid "Set the folder where settings are stored"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:44
+#, csharp-format
+msgid ""
+"This option sets the encryption key used to scramble the local settings "
+"database. This option can also be set with the environment variable {0}. Use"
+" the option --{1} to disable the database scrambling."
+msgstr ""
+"Deze optie stelt de encryptiesleutel in die wordt gebruikt om de lokale "
+"instellingendatabase te versleutelen. Deze optie kan eveneens worden "
+"ingesteld met de omgevingsvariabele {0}. Gebruik de optie --{1} om het "
+"versleutelen van de database uit te schakelen."
+
+#: Library/RestAPI/Strings.cs:45
+msgid "Set the database encryption key"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:46 Library/Main/Strings.cs:96
+msgid ""
+"Use this option to supply an alternative folder for temporary storage. By "
+"default the system default temporary folder is used. Note that also SQLite "
+"will put temporary files in this temporary folder."
+msgstr ""
+"Gebruik deze optie om een alternatieve map op te geven voor tijdelijke "
+"opslag. Standaard wordt de systeemstandaard tijdelijke map gebruikt. Let op:"
+" ook tijdelijke bestanden van SQLite worden in deze tijdelijke map "
+"geplaatst."
+
+#: Library/RestAPI/Strings.cs:47 Library/Main/Strings.cs:97
+msgid "Temporary storage folder"
+msgstr "Tijdelijke opslagmap"
+
+#: Library/RestAPI/Strings.cs:48
+msgid "Reset the JWT configuration, invalidating any issued login tokens"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:49
+msgid "Disable the visual captcha"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:50
+msgid "Use this option to disable database encryption of sensitive fields"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:52
+msgid "Log to the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:53
+msgid "Use this option to log to the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:54
+msgid "Set the log level for the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:55
+msgid "Use this option to set the log level for the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:56
+#, csharp-format
+msgid ""
+"The Windows event log source {0} was not found. The source must be "
+"registered before the log can be written."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:57
+msgid "The Windows event log is not supported on this platform"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:58
+#, csharp-format
+msgid "Server has started and is listening on port {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:59
+#, csharp-format
+msgid "Use the following link to sign in: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:60
+#, csharp-format
+msgid "The server crashed: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:61
+msgid "Require database encryption"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:62
+msgid ""
+"Use this option to require a custom provided key for database encryption of "
+"sensitive fields and not rely on the serial number"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:63
+#, csharp-format
+msgid ""
+"Database encryption key is required. Supply an encryption key via the "
+"environment variable {0} or disable database encryption with the option "
+"--{1}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:64
+#, csharp-format
+msgid ""
+"The encryption key is blacklisted and cannot be used. The database has been "
+"decrypted. Supply a new encryption key via the environment variable {0} or "
+"disable database encryption with the option --{1}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:68
+#, csharp-format
+msgid ""
+"Unable to find a valid date, given the start date {0}, the repetition "
+"interval {1} and the allowed days {2}"
+msgstr ""
+"Kan geen geldige datum vinden, rekening houdend met de start-datum {0}, de "
+"herhalingsinterval {1} en de toegestane dagen {2}"
+
+#: Library/RestAPI/Strings.cs:73
+#, csharp-format
+msgid "Server has started and is listening on {0}, port {1}"
+msgstr "Server is gestart en luistert op {0}, poort {1}"
+
+#: Library/RestAPI/Strings.cs:74
+#, csharp-format
+msgid ""
+"Unable to create SSL certificate using provided parameters. Exception "
+"detail: {0}"
+msgstr ""
+"SSL certificaat kan niet aangemaakt worden met de opgegeven parameters. "
+"Uitzondering detail: {0}"
+
+#: Library/RestAPI/Strings.cs:75
+#, csharp-format
+msgid "Unable to open a socket for listening, tried ports: {0}"
+msgstr "Kan geen socket openen om te luisteren, geprobeerd op poorten: {0}"
 
 #: Library/DynamicLoader/Strings.cs:24
 #, csharp-format
@@ -2426,10 +2880,13 @@ msgid ""
 "This module provides the industry standard ZIP compression. Files created "
 "with this module can be read by any standard-compliant ZIP application."
 msgstr ""
+"Deze module biedt de industrie standaard Zip-compressie. Bestanden die met "
+"deze module zijn aangemaakt kunnen gelezen worden met iedere standaard Zip-"
+"toepassing."
 
 #: Library/Compression/Strings.cs:25
 msgid "ZIP compression"
-msgstr ""
+msgstr "Zip-compressie"
 
 #: Library/Compression/Strings.cs:26 Library/Main/Strings.cs:202
 #, csharp-format
@@ -2446,7 +2903,7 @@ msgstr ""
 "compressie."
 
 #: Library/Compression/Strings.cs:28
-msgid "Sets the ZIP compression level"
+msgid "Set the ZIP compression level"
 msgstr ""
 
 #: Library/Compression/Strings.cs:29
@@ -2456,9 +2913,12 @@ msgid ""
 "that using another value than Deflate will cause the option --{0} to be "
 "ignored."
 msgstr ""
+"Gebruik deze optie om een alternatieve compressiemethode in te stellen, "
+"zoals LZMA. Let op: het gebruik van een andere waarde dan Deflate zal ervoor"
+" zorgen dat de --{0} optie wordt genegeerd."
 
 #: Library/Compression/Strings.cs:30
-msgid "Sets the ZIP compression method"
+msgid "Set the ZIP compression method"
 msgstr ""
 
 #: Library/Compression/Strings.cs:31
@@ -2466,9 +2926,11 @@ msgid ""
 "The ZIP64 format is required for files larger than 4GiB. Use this option to "
 "toggle it."
 msgstr ""
+"Het ZIP64-formaat is vereist voor bestanden groter dan 4GiB. Gebruik deze "
+"vlag om het te wisselen."
 
 #: Library/Compression/Strings.cs:32
-msgid "Toggles ZIP64 support"
+msgid "Toggle ZIP64 support"
 msgstr ""
 
 #: Library/Compression/Strings.cs:33
@@ -2509,8 +2971,8 @@ msgid "Number of threads used in compression"
 msgstr "Aantal threads dat gebruikt wordt in compressie"
 
 #: Library/Compression/Strings.cs:44
-msgid "Sets the 7z compression level"
-msgstr "Stelt het 7z compressieniveau in"
+msgid "Set the 7z compression level"
+msgstr ""
 
 #: Library/Compression/Strings.cs:45
 msgid ""
@@ -2523,8 +2985,8 @@ msgstr ""
 "minder compressie oplevert."
 
 #: Library/Compression/Strings.cs:46
-msgid "Sets the 7z fast algorithm usage"
-msgstr "Stelt het 7z snelle algoritme gebruik in"
+msgid "Set the 7z fast algorithm usage"
+msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:24
 msgid "backup"
@@ -2584,13 +3046,14 @@ msgstr ""
 #: Library/Main/Strings.cs:30
 #, csharp-format
 msgid "The option --{0} has been deprecated: {1}"
-msgstr ""
+msgstr "De optie --{0} is verouderd: {1}"
 
 #: Library/Main/Strings.cs:31
 #, csharp-format
 msgid ""
 "The option --{0} exists more than once. Please report this to the developers"
 msgstr ""
+"De optie --{0} bestaat meer dan één keer. Geef dit door aan de ontwikkelaars"
 
 #: Library/Main/Strings.cs:32
 msgid "No source folders specified for backup"
@@ -2620,6 +3083,8 @@ msgid ""
 "The value \"{1}\" supplied to --{0} does not parse into a valid boolean. "
 "This will be treated as if it was set to \"true\""
 msgstr ""
+"De waarde \"{1}\" gegeven aan --{0} kan niet omgezet worden in een geldige "
+"booleaanse term. Dit zal behandeld worden alsof het op \"waar\"staat"
 
 #: Library/Main/Strings.cs:36
 #, csharp-format
@@ -2627,6 +3092,8 @@ msgid ""
 "The option --{0} does not support the value \"{1}\". Supported values are: "
 "{2}"
 msgstr ""
+"De optie --{0} ondersteunt de waarde \"{1}\" niet. Ondersteunde waarden "
+"zijn: {2}"
 
 #: Library/Main/Strings.cs:37
 #, csharp-format
@@ -2634,6 +3101,8 @@ msgid ""
 "The option --{0} does not support the value \"{1}\". Supported flag values "
 "are: {2}"
 msgstr ""
+"De optie --{0} ondersteunt de waarde \"{1}\" niet. Ondersteunde vlag waarden"
+" zijn: {2}"
 
 #: Library/Main/Strings.cs:38
 #, csharp-format
@@ -2730,10 +3199,14 @@ msgid ""
 " backend. Using this option, Duplicati will automatically remove such files "
 "when encountered."
 msgstr ""
+"Als een back-up wordt onderbroken, zullen er waarschijnlijk gedeeltelijke "
+"bestanden aanwezig zijn op de backend. Door deze optie te gebruiken, zal "
+"Duplicati dit soort bestanden automatisch verwijderen zodra ze ontdekt "
+"worden."
 
 #: Library/Main/Strings.cs:57
 msgid "Remove unused files"
-msgstr ""
+msgstr "Verwijder ongebruikte bestanden"
 
 #: Library/Main/Strings.cs:58
 msgid ""
@@ -2759,6 +3232,10 @@ msgid ""
 "modified. If some application deliberately modifies this information, "
 "Duplicati won't work correctly unless this option is set."
 msgstr ""
+"Het besturingssysteem houdt bij op welk moment naar een bestand werd "
+"geschreven. Door middel van deze informatie kan Duplicati snel bepalen of "
+"het bestand is bewerkt. Als een bepaalde toepassing deze informatie aanpast,"
+" zal Duplicati niet correct werken, tenzij deze optie is ingesteld."
 
 #: Library/Main/Strings.cs:61
 msgid "Disable checks based on file time"
@@ -2785,8 +3262,8 @@ msgstr ""
 "up/herstel bewerkingen (alleen Windows/OSX)"
 
 #: Library/Main/Strings.cs:65
-msgid "Toggles system sleep mode"
-msgstr "Schakelt systeem slaapmodus aan en uit"
+msgid "Toggle system sleep mode"
+msgstr ""
 
 #: Library/Main/Strings.cs:66
 msgid ""
@@ -2864,6 +3341,10 @@ msgid ""
 "backup. Use this option to select another item. You may use relative times, "
 "like \"-2M\" for a backup from two months ago."
 msgstr ""
+"Standaard zal Duplicati bestanden weergeven en herstellen vanuit de meest "
+"recente back-up. Gebruik deze optie om een ander item te selecteren. Er "
+"mogen relatieve tijden gebruikt worden, zoals \"-2M\" voor een back-up van 2"
+" maanden geleden."
 
 #: Library/Main/Strings.cs:77
 msgid "The time to list/restore files"
@@ -2875,6 +3356,10 @@ msgid ""
 "backup. Use this option to select another item. You may enter multiple "
 "values separated with comma, and ranges using -, e.g. \"0,2-4,7\" ."
 msgstr ""
+"Standaard zal Duplicati bestanden weergeven en herstellen vanuit de meest "
+"recente back-up. Gebruik deze optie om een ander item te selecteren. Er "
+"mogen meerdere waarden worden ingevoerd, gescheiden door een komma, en "
+"reeksen met een -, bijvoorbeeld \"0,2-4,7\"."
 
 #: Library/Main/Strings.cs:79
 msgid "The version to list/restore files"
@@ -2962,10 +3447,13 @@ msgid ""
 "If the hash for the volume does not match, Duplicati will refuse to use the "
 "backup. Activate this option to allow Duplicati to proceed anyway."
 msgstr ""
+"Als de hash voor het volume niet overeenkomt, zal Duplicati weigeren de "
+"back-up te gebruiken. Activeer deze optie om Duplicati in dat geval toch "
+"door te laten gaan."
 
 #: Library/Main/Strings.cs:93
 msgid "Skip hash checks"
-msgstr ""
+msgstr "Sla hashcontroles over"
 
 #: Library/Main/Strings.cs:94
 msgid ""
@@ -2980,24 +3468,11 @@ msgstr ""
 msgid "Limit the size of files being backed up"
 msgstr "Beperk de grootte van bestanden die meegenomen worden in de back-up"
 
-#: Library/Main/Strings.cs:96
-msgid ""
-"Use this option to supply an alternative folder for temporary storage. By "
-"default the system default temporary folder is used. Note that also SQLite "
-"will put temporary files in this temporary folder."
-msgstr ""
-
-#: Library/Main/Strings.cs:97
-msgid "Temporary storage folder"
-msgstr "Tijdelijke opslagmap"
-
 #: Library/Main/Strings.cs:98
 msgid ""
-"Selects another thread priority for the process. Use this to set Duplicati "
-"to be more or less CPU intensive."
+"Select another thread priority for the process. Use this to set Duplicati to"
+" be more or less CPU intensive."
 msgstr ""
-"Selecteert een andere thread prioriteit voor het proces. Gebruik dit om "
-"Duplicati meer of minder CPU intensief te maken."
 
 #: Library/Main/Strings.cs:99
 msgid "Thread priority"
@@ -3019,18 +3494,14 @@ msgstr "Beperk de grootte van de volumes"
 
 #: Library/Main/Strings.cs:102
 msgid ""
-"Enabling this option will disallow usage of the streaming interface, which "
-"means that transfer progress bars will not show, and bandwidth throttle "
-"settings will be ignored."
+"Use this option to disallow usage of the streaming interface, which means "
+"that transfer progress bars will not show, and bandwidth throttle settings "
+"will be ignored."
 msgstr ""
-"Door deze optie aan te zetten wordt het gebruik van de streaming interface "
-"geblokkeerd, wat wil zeggen dat voortgangsbalken van een overdracht niet "
-"worden weergegeven, en instellingen voor bandbreedtegebruik worden "
-"genegeerd."
 
 #: Library/Main/Strings.cs:103
-msgid "Disables use of the streaming transfer method"
-msgstr "Schakelt het gebruik van de streaming overdrachtsmethode uit"
+msgid "Disable use of the streaming transfer method"
+msgstr ""
 
 #: Library/Main/Strings.cs:104
 msgid ""
@@ -3043,8 +3514,8 @@ msgstr ""
 "gecontroleerd. Gebruik alleen voor noodherstel."
 
 #: Library/Main/Strings.cs:105
-msgid "Disables manifests verification"
-msgstr "Schakelt manifests-verificatie uit"
+msgid "Disable manifests verification"
+msgstr ""
 
 #: Library/Main/Strings.cs:106
 msgid ""
@@ -3086,8 +3557,8 @@ msgstr ""
 "Geef één of meer modulenamen op, gescheiden door komma's om ze te ontladen."
 
 #: Library/Main/Strings.cs:111
-msgid "Disables one or more modules"
-msgstr "Schakelt één of meer modules uit."
+msgid "Disable one or more modules"
+msgstr ""
 
 #: Library/Main/Strings.cs:112
 msgid "Supply one or more module names, separated by commas to load them."
@@ -3095,8 +3566,8 @@ msgstr ""
 "Geef één of meer modulenamen op, gescheiden door komma's om ze te laden."
 
 #: Library/Main/Strings.cs:113
-msgid "Enables one or more modules"
-msgstr "Schakelt één of meer modules in"
+msgid "Enable one or more modules"
+msgstr ""
 
 #: Library/Main/Strings.cs:114
 msgid ""
@@ -3127,8 +3598,8 @@ msgstr ""
 " Volume Management (LVM) gebruikt en vereist root permissies. "
 
 #: Library/Main/Strings.cs:115
-msgid "Controls the use of disk snapshots"
-msgstr "Bepaalt het gebruik van schijf-momentopnames"
+msgid "Control the use of disk snapshots"
+msgstr ""
 
 #: Library/Main/Strings.cs:116
 msgid ""
@@ -3178,14 +3649,16 @@ msgid ""
 "Activate this option to make some error messages more verbose, which may "
 "help you track down a particular issue."
 msgstr ""
+"Activeer deze optie om sommige foutmeldingen uitgebreider te laten "
+"weergegeven, waardoor u mogelijk een specifiek probleem kunt opsporen."
 
 #: Library/Main/Strings.cs:123
-msgid "Enables debugging output"
-msgstr "Schakelt debug-uitvoer in"
+msgid "Enable debugging output"
+msgstr ""
 
 #: Library/Main/Strings.cs:124
-msgid "Logs information to the file specified."
-msgstr "Registreert informatie in het opgegeven bestand."
+msgid "Log information to the file specified."
+msgstr ""
 
 #: Library/Main/Strings.cs:125
 msgid "Log internal information to a file"
@@ -3194,11 +3667,9 @@ msgstr "Log interne informatie naar een bestand"
 #: Library/Main/Strings.cs:126 Library/Main/Strings.cs:283
 #, csharp-format
 msgid ""
-"Specifies the amount of log information to write into the file specified by "
+"Specify the amount of log information to write into the file specified by "
 "the option --{0}."
 msgstr ""
-"Geeft de hoeveelheid logboekinformatie op die naar het bestand moet worden "
-"geschreven dat is opgegeven met de optie --{0}."
 
 #: Library/Main/Strings.cs:127
 msgid "Log information level"
@@ -3219,8 +3690,8 @@ msgstr ""
 "mappen te voorkomen."
 
 #: Library/Main/Strings.cs:130
-msgid "Disables automatic folder creation"
-msgstr "Schakelt het automatisch aanmaken van mappen uit"
+msgid "Disable automatic folder creation"
+msgstr ""
 
 #: Library/Main/Strings.cs:131
 msgid ""
@@ -3268,8 +3739,8 @@ msgstr ""
 " Windows en vereist beheerdersrechten."
 
 #: Library/Main/Strings.cs:134
-msgid "Controls the use of NTFS Update Sequence Numbers"
-msgstr "Bepaalt het gebruik van NTFS Update Sequence Numbers"
+msgid "Control the use of NTFS Update Sequence Numbers"
+msgstr ""
 
 #: Library/Main/Strings.cs:135
 #, csharp-format
@@ -3294,12 +3765,14 @@ msgstr ""
 "tijdcontrole te gebruiken."
 
 #: Library/Main/Strings.cs:136
-msgid "Deactivates tolerance when comparing times"
-msgstr "Deactiveert tolerantie bij het vergelijken van tijden."
+msgid "Deactivate tolerance when comparing times"
+msgstr ""
 
 #: Library/Main/Strings.cs:137
 msgid "Use this option to verify uploads by listing contents."
 msgstr ""
+"Gebruik deze optie om uploads te controleren door het opvragen van de "
+"inhoud."
 
 #: Library/Main/Strings.cs:138
 msgid "Verify uploads by listing contents"
@@ -3311,6 +3784,10 @@ msgid ""
 "which usually makes the backup faster. Use this option to turn the behavior "
 "off, so that Duplicati will wait for each volume to complete."
 msgstr ""
+"Duplicati zal bestanden uploaden tijdens het scannen van de schijf en het "
+"samenstellen van volumes, waardoor de back-up gewoonlijk sneller zal "
+"verlopen. Gebruik deze optie om dit gedrag uit te schakelen, zodat Duplicati"
+" voor ieder volume zal wachten tot het voltooid is."
 
 #: Library/Main/Strings.cs:140
 msgid "Upload files synchronously"
@@ -3323,6 +3800,10 @@ msgid ""
 "process. Use this option to ensure that each operation is performed on a "
 "seperate connection."
 msgstr ""
+"Duplicati zal proberen meerdere bewerkingen tegelijkertijd uit te voeren op "
+"één verbinding, omdat dit herhaalde aanmeldpogingen voorkomt en het proces "
+"dus versnelt. Gebruik deze optie om ervoor te zorgen dat elke bewerking "
+"uitgevoerd wordt op een afzonderlijke verbinding."
 
 #: Library/Main/Strings.cs:142
 msgid "Do not re-use connections"
@@ -3376,17 +3857,12 @@ msgstr "Beperk opslaggebruik"
 
 #: Library/Main/Strings.cs:149
 msgid ""
-"Sets a threshold for when to warn about the backend quota being nearly "
+"Set a threshold for when to warn about the backend quota being nearly "
 "exceeded. It is given as a percentage, and a warning is generated if the "
 "amount of available quota is less than this percentage of the total backup "
 "size. If the backend does not report the quota information, this value will "
 "be ignored."
 msgstr ""
-"Stelt een drempel in voor wanneer te waarschuwen over backend quota die "
-"bijna overschreden wordt. Dit wordt opgegeven als een percentage, en een "
-"waarschuwing wordt gegenereerd als de hoeveelheid beschikbare quota minder "
-"is dan dit percentage van de totale back-upgrootte. Als de backend geen "
-"quota-informatie rapporteert, zal deze waarde worden genegeerd."
 
 #: Library/Main/Strings.cs:150
 msgid "Threshold for warning about low quota"
@@ -3487,6 +3963,9 @@ msgid ""
 "A display name that is attached to this backup. This can be used to identify"
 " the backup when sending mail or running scripts."
 msgstr ""
+"Een weergavenaam die is gekoppeld aan deze back-up. Dit kan gebruikt worden "
+"om de back-up te identificeren bij het verzenden van email of het uitvoeren "
+"van scripts."
 
 #: Library/Main/Strings.cs:162
 msgid "Name of the backup"
@@ -3497,6 +3976,9 @@ msgid ""
 "A unique identification for this backup. This can be used to identify the "
 "backup when sending mail or running scripts."
 msgstr ""
+"Een unieke identificatie voor deze back-up. Dit kan gebruikt worden voor het"
+" identificeren van de back-up bij het verzenden van mail of het uitvoeren "
+"van scripts."
 
 #: Library/Main/Strings.cs:164
 msgid "Backup ID"
@@ -3507,6 +3989,9 @@ msgid ""
 "A unique identification of the machine running the backup. This can be used "
 "to identify the machine when sending mail or running scripts."
 msgstr ""
+"Een unieke identificatie van de machine waarop de back-up wordt uitgevoerd. "
+"Dit kan gebruikt worden voor het identificeren van de machine bij het "
+"verzenden van mail of het uitvoeren van scripts."
 
 #: Library/Main/Strings.cs:166
 msgid "Machine ID"
@@ -3523,6 +4008,14 @@ msgid ""
 "is supplied, that also serves as an example. The default file is placed in "
 "{0}."
 msgstr ""
+"Gebruik deze optie om naar een tekstbestand te verwijzen waarbij elke regel "
+"een bestandsextensie bevat die aangeeft dat het een niet-comprimeerbaar "
+"bestand is. Bestanden met een extensie die in het bestand is gevonden, "
+"worden niet gecomprimeerd, maar gewoon opgeslagen in het archief. Het "
+"bestandsformaat negeert alle regels die niet beginnen met een punt, en "
+"veronderstelt dat een spatie het einde van de extensie aangeeft. Een "
+"standaard bestand wordt meegeleverd, dat eveneens dient als voorbeeld. Het "
+"standaard bestand is opgeslagen in {0}."
 
 #: Library/Main/Strings.cs:168
 msgid "Manage non-compressible file extensions"
@@ -3551,6 +4044,9 @@ msgid ""
 "changed. This is usually only activated in combination with a filesystem "
 "watcher that keeps track of file changes."
 msgstr ""
+"Gebruik deze optie om het scannen te beperken tot alleen bestanden waarvan "
+"bekend is dat ze veranderd zijn. Dit is gewoonlijk alleen geactiveerd in "
+"combinatie met een bestandssysteem-bewaker die bestandswijzigingen bijhoudt."
 
 #: Library/Main/Strings.cs:172
 msgid "List of files to examine for changes"
@@ -3573,6 +4069,8 @@ msgid ""
 "Use this option to supply a list of deleted files. This option will be "
 "ignored unless the option --{0} is also set."
 msgstr ""
+"Gebruik deze optie om een lijst met verwijderde bestanden op te geven. Deze "
+"optie zal worden genegeerd tenzij de optie --{0} eveneens is ingesteld."
 
 #: Library/Main/Strings.cs:176
 msgid "List of deleted files"
@@ -3583,6 +4081,8 @@ msgid ""
 "Use this option to reduce the memory footprint by not keeping paths and "
 "modification timestamps in memory."
 msgstr ""
+"Gebruik deze optie om het geheugengebruik te verminderen door paden en "
+"tijdstempels van wijzigingen niet in het geheugen te houden."
 
 #: Library/Main/Strings.cs:178
 msgid "Reduce memory footprint by disabling in-memory lookups"
@@ -3592,6 +4092,8 @@ msgstr ""
 #: Library/Main/Strings.cs:180
 msgid "Use this option to increase speed in exchange for extra memory use."
 msgstr ""
+"Gebruik deze optie om de snelheid te verhogen ten koste van een hoger "
+"geheugengebruik."
 
 #: Library/Main/Strings.cs:181
 msgid "Store an in-memory block cache"
@@ -3603,6 +4105,10 @@ msgid ""
 "filelist on startup. The intended usage for this option is to work correctly"
 " in cases where the filelisting is broken or unavailable."
 msgstr ""
+"Als deze optie is ingesteld, zal de lokale database niet vergeleken worden "
+"met de externe bestandenlijst tijdens het opstarten. Deze optie is bedoeld "
+"om correct te werken in situaties waar het opvragen van bestandenlijsten "
+"niet meer werkt of niet beschikbaar is."
 
 #: Library/Main/Strings.cs:183
 msgid "Do not query backend at startup"
@@ -3624,8 +4130,8 @@ msgstr ""
 "gebruikt wordt."
 
 #: Library/Main/Strings.cs:185
-msgid "Determines usage of index files"
-msgstr "Bepaalt het gebruik van indexbestanden"
+msgid "Determine usage of index files"
+msgstr ""
 
 #: Library/Main/Strings.cs:186
 msgid ""
@@ -3648,10 +4154,12 @@ msgid ""
 "Use this option to experiment with different settings and observe the "
 "outcome without changing actual files."
 msgstr ""
+"Gebruik deze optie om te experimenteren met verschillende instellingen om te"
+" zien wat de uitkomst is zonder daadwerkelijk bestanden te wijzigen."
 
 #: Library/Main/Strings.cs:189
-msgid "Does not perform any modifications"
-msgstr "Voert geen enkele wijziging uit"
+msgid "Do not perform any modifications"
+msgstr ""
 
 #: Library/Main/Strings.cs:190
 msgid ""
@@ -3659,6 +4167,9 @@ msgid ""
 "algorithm with smaller or larger hash size, for performance or storage space"
 " reasons."
 msgstr ""
+"Dit is een zeer geavanceerde optie! Gebruik deze optie om een blok hash "
+"algoritme te selecteren met een kleinere of grotere hash-grootte, voor "
+"prestatie- of opslag-gerelateerde redenen."
 
 #: Library/Main/Strings.cs:191
 msgid "The hash algorithm used on blocks"
@@ -3670,6 +4181,9 @@ msgid ""
 "algorithm with smaller or larger hash size, for performance or storage space"
 " reasons."
 msgstr ""
+"Dit is een zeer geavanceerde optie! Gebruik deze optie om een bestandshash "
+"algoritme te selecteren met een kleinere of grotere hash-grootte, voor "
+"prestatie- of opslag-gerelateerde redenen."
 
 #: Library/Main/Strings.cs:193
 msgid "The hash algorithm used on files"
@@ -3749,8 +4263,8 @@ msgstr ""
 "controleren."
 
 #: Library/Main/Strings.cs:204
-msgid "Disables the local database"
-msgstr "Schakelt de lokale database uit"
+msgid "Disable the local database"
+msgstr ""
 
 #: Library/Main/Strings.cs:205
 msgid ""
@@ -3815,6 +4329,9 @@ msgid ""
 "Use this option to overwrite target files when restoring. If this option is "
 "not set, the files will be restored with a timestamp and a number appended."
 msgstr ""
+"Gebruik deze optie om doelbestanden te overschrijven bij het herstellen. Als"
+" deze optie niet is ingesteld, zullen de bestanden worden hersteld met een "
+"tijdstempel en een nummer eraan toegevoegd."
 
 #: Library/Main/Strings.cs:214
 msgid "Overwrite files when restoring"
@@ -3870,6 +4387,12 @@ msgid ""
 "the maximum implied by the two options. If this value is set to 0 or the "
 "option --{1} is set, no remote files are verified."
 msgstr ""
+"Nadat een back-up is voltooid, worden sommige (dblock, dindex, dlist) "
+"bestanden van de externe backend geselecteerd voor controle. Gebruik deze "
+"optie om aan te geven hoeveel. Als de optie --{0} ook is opgegeven, is het "
+"aantal te controleren bestanden het maximum dat wordt geïmpliceerd door de "
+"twee opties. Als deze waarde wordt ingesteld op 0 of de optie --{1} is "
+"ingesteld, dan worden geen externe bestanden gecontroleerd."
 
 #: Library/Main/Strings.cs:223
 msgid "The number of samples to test after a backup"
@@ -3906,10 +4429,19 @@ msgid ""
 " when then verification is performed directly. ListAndIndexes is like True "
 "but only dlist and index volumes are handled."
 msgstr ""
+"Nadat een back-up is voltooid, worden enkele (dblock, dindex, dlist) "
+"bestanden van de externe backend geselecteerd voor verificatie. Gebruik deze"
+" optie om volledige verificatie in te schakelen, waardoor de bestanden "
+"worden gedecodeerd en de inhoud van elk volume wordt onderzocht, in plaats "
+"van eenvoudigweg de externe hash te controleren. Als de optie --{0} is "
+"ingesteld, worden er geen externe bestanden geverifieerd. Deze optie wordt "
+"automatisch ingesteld als de verificatie direct wordt uitgevoerd. "
+"ListAndIndexes staat op True, maar alleen dlist- en indexvolumes worden "
+"verwerkt."
 
 #: Library/Main/Strings.cs:227
-msgid "Activates in-depth verification of files"
-msgstr "Activeert diepgaande controle van bestanden"
+msgid "Activate in-depth verification of files"
+msgstr ""
 
 #: Library/Main/Strings.cs:228
 msgid ""
@@ -3960,8 +4492,8 @@ msgstr ""
 "bestandsgrootte."
 
 #: Library/Main/Strings.cs:237
-msgid "Don't store metadata"
-msgstr "Sla geen metadata op"
+msgid "Do not store metadata"
+msgstr ""
 
 #: Library/Main/Strings.cs:238
 msgid ""
@@ -4043,14 +4575,6 @@ msgstr ""
 msgid "Check block hashes"
 msgstr "Controleer blok hashes"
 
-#: Library/Main/Strings.cs:250
-msgid "Set the time after which log data will be purged from the database."
-msgstr "Stel de tijd in waarna log-gegevens worden gewist uit de database."
-
-#: Library/Main/Strings.cs:251
-msgid "Clean up old log data"
-msgstr "Schoon oude log-gegevens op"
-
 #: Library/Main/Strings.cs:252
 msgid ""
 "Use this option to build a searchable local database which only contains "
@@ -4075,6 +4599,11 @@ msgid ""
 " in another language. Use this option to set the locale. Supply a blank "
 "string to choose the \"Invariant Culture\"."
 msgstr ""
+"Standaard worden de lokale plaats- en cultuurinstellingen gebruikt. In "
+"sommige gevallen kan het de voorkeur hebben een andere plaatsinstelling te "
+"gebruiken, bijvoorbeeld om meldingen in een andere taal te krijgen. Gebruik "
+"deze instelling om de plaatsinstelling te in te stellen. Geef een lege regel"
+" op om te kiezen voor \"Invariant Culture\"."
 
 #: Library/Main/Strings.cs:255
 msgid "Force the locale setting"
@@ -4092,9 +4621,8 @@ msgstr ""
 "2018, 8:01 AM\"."
 
 #: Library/Main/Strings.cs:257
-msgid "Forces the display of the actual date instead of calendar date"
+msgid "Force the display of the actual date instead of calendar date"
 msgstr ""
-"Forceert de weergave van de actuele datum in plaats van de kalenderdatum"
 
 #: Library/Main/Strings.cs:258
 msgid ""
@@ -4102,6 +4630,9 @@ msgid ""
 " can significantly speed up backend operations depending on the hardware "
 "you're running on and the transfer rate of your backend."
 msgstr ""
+"Gebruik deze optie om multithreaded afhandeling van up- en downloads uit te "
+"schakelen. Dat kan backend bewerkingen aanzienlijk versnellen afhankelijk "
+"van de hardware die gebruikt wordt en de doorvoersnelheid van de backend."
 
 #: Library/Main/Strings.cs:259
 msgid "Handle file communication with backend using threaded pipes"
@@ -4156,8 +4687,8 @@ msgstr ""
 "back-up en de inhoud die werd geüpload tijdens de incomplete back-up sessie."
 
 #: Library/Main/Strings.cs:267
-msgid "Disables synthetic filelist"
-msgstr "Schakelt synthetische bestandenlijst uit"
+msgid "Disable synthetic filelist"
+msgstr ""
 
 #: Library/Main/Strings.cs:268
 msgid ""
@@ -4166,10 +4697,14 @@ msgid ""
 "number of files and notice that the scanning takes a long time with "
 "unmodified files."
 msgstr ""
+"Deze optie laat Duplicati niet kijken naar metadata of bestandsgrootte bij "
+"de beslissing een bestand te scannen op wijzigingen. Gebruik deze optie als "
+"u een groot aantal bestanden hebt en opmerkt dat het scannen een lange tijd "
+"duurt met ongewijzigde bestanden."
 
 #: Library/Main/Strings.cs:269
-msgid "Checks only file lastmodified"
-msgstr "Controleert alleen laatst bewerkte bestand"
+msgid "Check only file lastmodified"
+msgstr ""
 
 #: Library/Main/Strings.cs:270
 msgid ""
@@ -4178,10 +4713,15 @@ msgid ""
 "option to skip this compression, such that the entire original folder "
 "structure is preserved, including upper level empty folders."
 msgstr ""
+"Als een deel van een back-up wordt teruggezet naar een nieuwe map, wordt het"
+" kortst mogelijke pad gebruikt om lange paden met veel lege mappen te "
+"voorkomen. Gebruik deze optie om deze verkleining over te slaan, zodat de "
+"originele mapstructuur in zijn geheel behouden blijft, inclusief hoger "
+"gelegen lege mappen."
 
 #: Library/Main/Strings.cs:271
-msgid "Disables path compression on restore"
-msgstr "Schakelt pad-compressie uit bij een herstelbewerking"
+msgid "Disable path compression on restore"
+msgstr ""
 
 #: Library/Main/Strings.cs:272
 msgid ""
@@ -4190,6 +4730,11 @@ msgid ""
 "this option to disable that protection, such that all filesets can be "
 "deleted."
 msgstr ""
+"Standaard kan de laatste bestandsverzameling niet worden verwijderd. Dit "
+"dient als bescherming, zodat niet alle externe gegevens onbedoeld worden "
+"verwijderd door een vergissing bij het configureren. Gebruik deze optie om "
+"deze beveiliging uit te schakelen, zodat alle bestandsverzamelingen kunnen "
+"worden verwijderd."
 
 #: Library/Main/Strings.cs:273
 msgid "Allow removing all filesets"
@@ -4224,6 +4769,11 @@ msgid ""
 "Using this option can speed up the backup by reducing disk access, but will "
 "give a less accurate progress indicator."
 msgstr ""
+"Als deze vlag is ingeschakeld, wordt de scanner die de omvang van "
+"bronbestanden berekent uitgeschakeld. In plaats hiervan wordt de "
+"gerapporteerde grootte gelezen uit de database. Het gebruik van deze optie "
+"kan het back-up proces versnellen door het verminderen van schijftoegang, "
+"maar zak een minder accurate voortgangsindicator tot gevolg hebben."
 
 #: Library/Main/Strings.cs:277
 msgid "Disable the read-ahead scanner"
@@ -4246,10 +4796,10 @@ msgstr "Consistentiecontroles voor bestandslijsten uitschakelen"
 
 #: Library/Main/Strings.cs:280
 msgid ""
-"Use this option to run a scheduled backup if the system is detected to be "
-"running on battery power (manual or command line backups will still be run)."
-" If the detected power source is mains (e.g., AC) or unknown, then scheduled"
-" backups will proceed as normal."
+"Use this option to disable a scheduled backup if the system is detected to "
+"be running on battery power (manual or command line backups will still be "
+"run). If the detected power source is mains (e.g., AC) or unknown, then "
+"scheduled backups will proceed as normal."
 msgstr ""
 
 #: Library/Main/Strings.cs:281
@@ -4273,11 +4823,11 @@ msgstr ""
 "Voorbeeld: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
 #: Library/Main/Strings.cs:286
-msgid "Applies filters to the file log data"
-msgstr "Past filters toe op de gegevens in het logbestand"
+msgid "Apply filters to the file log data"
+msgstr ""
 
 #: Library/Main/Strings.cs:287
-msgid "Specifies the amount of log information to output to the console."
+msgid "Specify the amount of log information to output to the console."
 msgstr ""
 
 #: Library/Main/Strings.cs:288
@@ -4285,8 +4835,8 @@ msgid "Console information level"
 msgstr "Console informatie-niveau"
 
 #: Library/Main/Strings.cs:290
-msgid "Applies filters to the console log data"
-msgstr "Past filters toe op de console log-gegevens"
+msgid "Apply filters to the console log data"
+msgstr ""
 
 #: Library/Main/Strings.cs:292
 msgid ""
@@ -4294,10 +4844,14 @@ msgid ""
 " the lowest IO priority level, which can make operations run slower but will"
 " interfere less with other operations running at the same time."
 msgstr ""
+"Deze optie geeft het besturingssysteem opdracht om het huidige proces in te "
+"stellen om het laagste IO-prioriteitsniveau te gebruiken, waardoor "
+"bewerkingen langzamer uitgevoerd kunnen worden maar andere bewerkingen die "
+"op hetzelfde moment uitgevoerd worden minder verstoord zullen worden."
 
 #: Library/Main/Strings.cs:293
-msgid "Sets the process to use low IO priority"
-msgstr "Stelt het proces in voor laag IO gebruik"
+msgid "Set the process to use low IO priority"
+msgstr ""
 
 #: Library/Main/Strings.cs:295
 msgid "Use this option to remove all empty folders from a backup."
@@ -4305,8 +4859,8 @@ msgstr ""
 "Gebruik deze optie om alle lege mappen te verwijderen van een back-up."
 
 #: Library/Main/Strings.cs:296
-msgid "Excludes empty folders"
-msgstr "Sluit lege mappen uit"
+msgid "Exclude empty folders"
+msgstr ""
 
 #: Library/Main/Strings.cs:297
 msgid ""
@@ -4373,8 +4927,8 @@ msgstr ""
 "--{0}={2} of --{1}={2} in te stellen om de extra loggegevens te rapporteren."
 
 #: Library/Main/Strings.cs:305
-msgid "Activates logging of all database queries"
-msgstr "Activeert logboekregistratie van alle databasequery's"
+msgid "Activate logging of all database queries"
+msgstr ""
 
 #: Library/Main/Strings.cs:306
 msgid ""
@@ -4629,8 +5183,8 @@ msgstr ""
 "uitbreiden of een probleem wilt omzeilen met een specifiek SSL protocol."
 
 #: Library/Modules/Builtin/Strings.cs:53
-msgid "Sets allowed SSL versions"
-msgstr "Stel toegestane SSL versies in"
+msgid "Set allowed SSL versions"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:54
 msgid ""
@@ -4642,8 +5196,8 @@ msgstr ""
 "afsluiting,"
 
 #: Library/Modules/Builtin/Strings.cs:55
-msgid "Sets the default operation timeout"
-msgstr "Stelt de standaard bewerkings time-out in."
+msgid "Set the default operation timeout"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:56
 msgid ""
@@ -4657,8 +5211,8 @@ msgstr ""
 "activiteit tijdens een verbinding."
 
 #: Library/Modules/Builtin/Strings.cs:57
-msgid "Sets readwrite"
-msgstr "Stelt lezen-schrijven in"
+msgid "Set readwrite"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:58
 #, csharp-format
@@ -4671,8 +5225,8 @@ msgstr ""
 "verbeteren."
 
 #: Library/Modules/Builtin/Strings.cs:59
-msgid "Sets HTTP buffering"
-msgstr "Stelt HTTP buffering in"
+msgid "Set HTTP buffering"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:63
 msgid ""
@@ -4699,11 +5253,8 @@ msgid "Configure Microsoft SQL Server module"
 msgstr "Configureer Microsoft SQL Server module"
 
 #: Library/Modules/Builtin/Strings.cs:73
-msgid ""
-"Executes a script before starting an operation, and again on completion"
+msgid "Execute a script before starting an operation, and again on completion"
 msgstr ""
-"Voert een script uit voordat een bewerking wordt gestart, en opnieuw na "
-"voltooiing"
 
 #: Library/Modules/Builtin/Strings.cs:74
 msgid "Run script"
@@ -4711,11 +5262,9 @@ msgstr "Voer script uit"
 
 #: Library/Modules/Builtin/Strings.cs:75
 msgid ""
-"Executes a script after performing an operation. The script will receive the"
-" operation results written to stdout."
+"Execute a script after performing an operation. The script will receive the "
+"operation results written to stdout."
 msgstr ""
-"Voert een script uit na het uitvoeren van een bewerking. Het script zal de "
-"resultaten van de bewerking ontvangen die geschreven zijn naar stdout."
 
 #: Library/Modules/Builtin/Strings.cs:76
 msgid "Run a script on exit"
@@ -4733,31 +5282,29 @@ msgstr "Het script \"{0}\" gaf afsluitcode {1}{2} terug"
 
 #: Library/Modules/Builtin/Strings.cs:79
 msgid ""
-"Executes a script before performing an operation. The operation will block "
+"Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
-"Voert een script uit voordat een bewerking wordt gestart. De bewerking zal "
-"onderbroken worden totdat het script is afgerond of er een time-out heeft "
-"plaatsgevonden. Als het script een waarde anders dan 0 teruggeeft of er een "
-"time-out plaatsvindt, zal de bewerking worden afgebroken."
 
 #: Library/Modules/Builtin/Strings.cs:80
 msgid "Run a required script on startup"
 msgstr "Voer een vereist script uit bij opstarten"
 
 #: Library/Modules/Builtin/Strings.cs:81
-#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:237
 #, csharp-format
 msgid ""
 "Use this option to select the output format for results. Available formats: "
 "{0}"
 msgstr ""
+"Gebruik deze optie om het uitvoerformaat voor resultaten te selecteren. "
+"Beschikbare formaten: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:82
-#: Library/Modules/Builtin/Strings.cs:209
-msgid "Selects the output format for results"
-msgstr "Selecteert het uitvoerformaat voor de resultaten"
+#: Library/Modules/Builtin/Strings.cs:238
+msgid "Select the output format for results"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:83
 #, csharp-format
@@ -4771,12 +5318,9 @@ msgstr "Time-out bij uitvoeren van script \"{0}\""
 
 #: Library/Modules/Builtin/Strings.cs:85
 msgid ""
-"Executes a script before performing an operation. The operation will block "
+"Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
-"Voert een script uit voordat een bewerking wordt uitgevoerd. De bewerking "
-"zal onderbroken worden totdat het script is afgerond of er een time-out "
-"heeft plaatsgevonden."
 
 #: Library/Modules/Builtin/Strings.cs:86
 msgid "Run a script on startup"
@@ -4789,18 +5333,14 @@ msgstr "Het script \"{0}\" rapporteerde foutmeldingen: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:88
 msgid ""
-"Sets the maximum time a script is allowed to execute. If the script has not "
+"Set the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr ""
-"Stelt in hoeveel tijd een script maximaal uitgevoerd mag worden. Als het "
-"script niet is afgerond binnen deze tijd, zal het verder gaan maar de "
-"bewerking zal ook verder gaan, en uitvoer van het script zal niet worden "
-"verwerkt."
 
 #: Library/Modules/Builtin/Strings.cs:89
-msgid "Sets the script timeout"
-msgstr "Stelt de script time-out in"
+msgid "Set the script timeout"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:90
 msgid ""
@@ -4808,6 +5348,10 @@ msgid ""
 "script arguments are treated as commandline strings. Use single or double "
 "quotes to separate arguments."
 msgstr ""
+"Deze optie schakelt het gebruik van script-argumenten in. Als deze optie is "
+"ingeschakeld, worden script-argumenten behandeld als opdrachtregel-"
+"tekenreeksen. Gebruik enkele of dubbele aanhalingstekens om meerdere "
+"argumenten te scheiden."
 
 #: Library/Modules/Builtin/Strings.cs:91
 msgid "Enable script arguments"
@@ -4825,7 +5369,7 @@ msgstr "Stuur email"
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup. Please use the"
-" option {0} to specify what smtp server to use."
+" option --{0} to specify what SMTP server to use."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:98
@@ -4859,6 +5403,8 @@ msgid ""
 "Use this option to set the password used to authenticate with the SMTP "
 "server if required."
 msgstr ""
+"Gebruik deze optie om het wachtwoord in te stellen dat gebruikt wordt om te "
+"authentiseren bij de SMTP server, indien vereist."
 
 #: Library/Modules/Builtin/Strings.cs:109
 msgid "SMTP Password"
@@ -4889,6 +5435,12 @@ msgid ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 msgstr ""
+"Gebruik deze optie om een adres van de email-verzender in te stellen. Als geen host is opgegeven, zal de hostnaam van de eerste ontvanger gebruikt worden. Voorbeelden van toegestane indelingen:\n"
+"\n"
+"sender\n"
+"sender@example.com\n"
+"Mail Sender <sender>\n"
+"Mail Sender <sender@example.com>"
 
 #: Library/Modules/Builtin/Strings.cs:121
 msgid "Email sender"
@@ -4908,7 +5460,8 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:124
 #: Library/Modules/Builtin/Strings.cs:160
-#: Library/Modules/Builtin/Strings.cs:188
+#: Library/Modules/Builtin/Strings.cs:189
+#: Library/Modules/Builtin/Strings.cs:217
 msgid "The messages to send"
 msgstr "De berichten die verzonden moeten worden"
 
@@ -4919,6 +5472,9 @@ msgid ""
 "\n"
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
+"Gebruik deze optie om een URL voor de SMTP-server in te stellen, bijvoorbeeld smtp://example.com:25. Meerdere servers kunnen worden opgegeven in een lijst op volgorde van belangrijkheid, gescheiden door puntkomma's. Als een server onbereikbaar is, wordt de volgende server in de lijst geprobeerd, totdat het bericht is verzonden.\n"
+"Als geen server is opgegeven, zal een DNS-lookup worden uitgevoerd om het MX-record van de eerste geadresseerde te vinden, en alle SMTP-servers worden geprobeerd op volgorde van prioriteit totdat het bericht is verzonden.\n"
+"Gebruik om SMTP over SSL in te schakelen het formaat smtps://example.com. Gebruik om SMTP STARTTLS in te schakelen het formaat smtp://example.com:25/?starttls=when-available of smtp://example.com:25/?starttls=always. Als geen poort wordt opgegeven, wordt poort 25 gebruikt voor niet-SSL en poort 465 gebruikt voor SSL verbindingen. Gebruik om het niet gebruiken van STARTTLS af te dwingen het formaat smtp://example.com:25/?starttls=never."
 
 #: Library/Modules/Builtin/Strings.cs:129
 msgid "SMTP Url"
@@ -4942,6 +5498,8 @@ msgid ""
 "Use this option to set the username used to authenticate with the SMTP "
 "server if required."
 msgstr ""
+"Gebruik deze optie om de gebruikersnaam in te stellen die gebruikt wordt om "
+"te authentiseren bij de SMTP server, indien vereist."
 
 #: Library/Modules/Builtin/Strings.cs:133
 msgid "SMTP Username"
@@ -4980,6 +5538,9 @@ msgid ""
 "Use this option to set the users who should have the messages sent. You can "
 "specify multiple users separated with commas."
 msgstr ""
+"Gebruik deze optie om de gebruikers in te stellen waarnaar de berichten "
+"verzonden moeten worden. Meerdere gebruikers kunnen gescheiden door komma's "
+"worden opgegeven."
 
 #: Library/Modules/Builtin/Strings.cs:143
 msgid "XMPP recipient email"
@@ -4987,6 +5548,7 @@ msgstr "XMPP ontvanger email"
 
 #: Library/Modules/Builtin/Strings.cs:144
 #: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:201
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -5010,6 +5572,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:153
 #: Library/Modules/Builtin/Strings.cs:181
+#: Library/Modules/Builtin/Strings.cs:210
 msgid "The message template"
 msgstr "Het bericht-sjabloon"
 
@@ -5018,6 +5581,9 @@ msgid ""
 "Use this option to set a username for the account that will send the "
 "message, including the hostname, e.g. \"account@jabber.org/Home\""
 msgstr ""
+"Gebruik deze optie om een gebruikersnaam in te stellen voor het account "
+"waarmee het bericht verstuurd wordt, inclusief de hostnaam. Voorbeeld: "
+"\"account@jabber.org/Home\""
 
 #: Library/Modules/Builtin/Strings.cs:155
 msgid "The XMPP username"
@@ -5028,13 +5594,16 @@ msgid ""
 "Use this option to set a password for the account that will send the "
 "message."
 msgstr ""
+"Gebruik deze optie om een wachtwoord in te stellen van het account waarmee "
+"het bericht verstuurd wordt."
 
 #: Library/Modules/Builtin/Strings.cs:157
 msgid "The XMPP password"
 msgstr "Het XMPP wachtwoord"
 
 #: Library/Modules/Builtin/Strings.cs:158
-#: Library/Modules/Builtin/Strings.cs:186
+#: Library/Modules/Builtin/Strings.cs:187
+#: Library/Modules/Builtin/Strings.cs:215
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -5044,14 +5613,18 @@ msgstr ""
 "Meerdere opties kunnen worden opgegeven met een komma als scheidingsteken, bijvoorbeeld \"{0},{1}\". De speciale waarde \"{4}\" is een korte schrijfwijze voor \"{0},{1},{2},{3}\" en zal ervoor zorgen dat voor alle back-up bewerkingen een bericht wordt verstuurd."
 
 #: Library/Modules/Builtin/Strings.cs:161
-#: Library/Modules/Builtin/Strings.cs:189
+#: Library/Modules/Builtin/Strings.cs:190
+#: Library/Modules/Builtin/Strings.cs:218
 msgid ""
 "By default, messages will only be sent after a backup operation. Use this "
 "option to send messages for all operations."
 msgstr ""
+"Standaard worden berichten alleen verstuurd na een back-upbewerking. Gebruik"
+" deze optie om berichten te versturen voor alle bewerkingen."
 
 #: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:190
+#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:219
 msgid "Send messages for all operations"
 msgstr "Verstuur berichten voor alle bewerkingen"
 
@@ -5061,92 +5634,145 @@ msgstr "Time-out opgetreden tijdens inloggen bij jabber server"
 
 #: Library/Modules/Builtin/Strings.cs:168
 msgid ""
+"This module provides support for sending status reports via Telegram "
+"messages"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:169
+msgid "Telegram report module"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:170
+msgid "Use this option to set the channel ID."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:171
+msgid "Telegram channel id"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:182
+msgid ""
+"Use this option to set a bot ID for the bot that will send the message."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:184
+msgid "The Telegram bot ID"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:185
+msgid ""
+"Use this option to set a API key for the bot that will send the message."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:186
+msgid "The Telegram API key"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:192
+msgid "Timeout occurred while sending to Telegram server"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:197
+msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Deze module biedt ondersteuning voor het versturen van statusrapporten via "
 "HTTP-berichten"
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:198
 msgid "HTTP report module"
 msgstr "HTTP rapportagemodule"
 
-#: Library/Modules/Builtin/Strings.cs:170
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "Use this option to set a HTTP report URL."
-msgstr ""
+msgstr "Gebruik deze optie om een HTTP rapportage-URL in te stellen."
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:200
 msgid "HTTP report URL"
 msgstr "HTTP rapportage-URL"
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:211
 msgid "Use this option to set a name of the parameter to send the message as."
 msgstr ""
+"Gebruik deze optie om de naam van de parameter in te stellen namens wie het "
+"bericht verstuurd moet worden."
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:212
 msgid "The name of the parameter to send the message as"
 msgstr "De naam van de parameter namens wie het bericht verstuurd moet worden"
 
-#: Library/Modules/Builtin/Strings.cs:184
+#: Library/Modules/Builtin/Strings.cs:213
 msgid ""
 "Use this option to set extra parameters to add to the http message, e.g. "
 "\"parameter1=value1&parameter2=value2\""
 msgstr ""
+"Gebruik deze optie om extra parameters in te stellen die aan het http-"
+"bericht moeten worden toegevoegd, bijvoorbeeld "
+"\"parameter1=waarde1&parameter2=waarde2\""
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:214
 msgid "Extra parameters to add to the http message"
 msgstr "Extra parameters die aan het http bericht moeten worden toegevoegd"
 
-#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:220
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report."
 msgstr ""
 "Gebruik deze optie om het standaard HTTP-woord te veranderen dat wordt "
 "gebruikt om een rapport in te dienen."
 
-#: Library/Modules/Builtin/Strings.cs:192
-msgid "Sets the HTTP verb to use"
-msgstr "Stelt het te gebruiken HTTP-woord in"
+#: Library/Modules/Builtin/Strings.cs:221
+msgid "Set the HTTP verb to use"
+msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:193
+#: Library/Modules/Builtin/Strings.cs:222
 msgid ""
 "Use this option to set HTTP report URLs for sending form-encoded data. This "
 "option accepts multiple URLs, seperated by a semi-colon. All URLs will "
 "receive the same data. Note that this option ignores the format and verb "
 "settings."
 msgstr ""
+"Gebruik deze optie om HTTP rapportage-URL's in te stellen voor het verzenden"
+" van formulier-gecodeerde gegevens. Deze optie accepteert meerdere URL's, "
+"gescheiden door puntkomma's. Alle URL's ontvangen dezelfde gegevens. Houd er"
+" rekening mee dat deze optie de opmaak- en verb-instellingen negeert."
 
-#: Library/Modules/Builtin/Strings.cs:194
+#: Library/Modules/Builtin/Strings.cs:223
 msgid "HTTP report URLs for sending form data"
 msgstr "HTTP rapportage-URL's voor het verzenden van formuliergegevens."
 
-#: Library/Modules/Builtin/Strings.cs:195
+#: Library/Modules/Builtin/Strings.cs:224
 msgid ""
 "Use this option to set HTTP report URLs for sending JSON data. This option "
 "accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
 "same data. Note that this option ignores the format and verb settings."
 msgstr ""
+"Gebruik deze optie om HTTP rapportage-URL's in te stellen voor het verzenden"
+" van JSON-gegevens. Deze optie accepteert meerdere URL's, gescheiden door "
+"puntkomma's. Alle URL's ontvangen dezelfde gegevens. Houd er rekening mee "
+"dat deze optie de opmaak- en verb-instellingen negeert."
 
-#: Library/Modules/Builtin/Strings.cs:196
+#: Library/Modules/Builtin/Strings.cs:225
 msgid "HTTP report URLs for sending JSON data"
 msgstr "HTTP rapportage-URL's voor het verzenden van JSON-gegevens"
 
-#: Library/Modules/Builtin/Strings.cs:201
+#: Library/Modules/Builtin/Strings.cs:230
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Verzenden van bericht mislukt: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:202
+#: Library/Modules/Builtin/Strings.cs:231
 msgid ""
 "Use this option to set the log level for messages to include in the report."
 msgstr ""
 "Gebruik deze optie om een logniveau in te stellen voor berichten die moeten "
 "worden opgenomen in het rapport."
 
-#: Library/Modules/Builtin/Strings.cs:203
-msgid "Defines a log level for messages"
-msgstr "Definieert een logniveau voor berichten"
+#: Library/Modules/Builtin/Strings.cs:232
+msgid "Define a log level for messages"
+msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:233
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report."
@@ -5154,11 +5780,11 @@ msgstr ""
 "Gebruik deze optie om een filteruitdrukking in te stellen die definieert "
 "welke opties worden opgenomen in het rapport."
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:234
 msgid "Log message filter"
 msgstr "Logbericht filter"
 
-#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:235
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
@@ -5167,9 +5793,9 @@ msgstr ""
 " die worden opgenomen in het rapport. Nul of een negatieve waarde betekent "
 "onbeperkt."
 
-#: Library/Modules/Builtin/Strings.cs:207
-msgid "Limits log lines"
-msgstr "Beperkt logboekregels"
+#: Library/Modules/Builtin/Strings.cs:236
+msgid "Limit log lines"
+msgstr ""
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:39
 #, csharp-format
@@ -5408,11 +6034,6 @@ msgstr "Module wordt niet automatisch geladen, gebruik --{0} om het te laden."
 msgid "Supported generic modules:"
 msgstr "Ondersteunde algemene modules:"
 
-#: CommandLine/CLI/Strings.cs:41
-#, csharp-format
-msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr "Parameters bestand \"{0}\" kan niet gelezen worden, reden: {1}"
-
 #: CommandLine/CLI/Strings.cs:42
 #, csharp-format
 msgid ""
@@ -5450,10 +6071,18 @@ msgid ""
 "parameter file. Each filter must be prefixed with either a + or a -, and "
 "multiple filters must be joined with {5}."
 msgstr ""
-
-#: CommandLine/CLI/Strings.cs:45
-msgid "Path to a file with parameters"
-msgstr "Pad naar een bestand met parameters"
+"Gebruik deze optie om sommige of alle opties op te slaan die worden "
+"opgegeven aan de opdrachtregel-client. Het bestand moet een alleen-"
+"tekstbestand zijn, UTF-8 codering heeft de voorkeur. Iedere regel in het "
+"bestand moet het formaat --optie=waarde hebben. De speciale opties --{0} en "
+"--{1} kunnen worden gebruikt om respectievelijk het lokale pad en de URI van"
+" het externe doel te overschrijven. De opties in dit bestand hebben voorrang"
+" boven de opties die vanaf de opdrachtregel worden opgegeven. Filters kunnen"
+" niet zowel in het bestand als vanaf de opdrachtregel worden opgegeven. "
+"Gebruik daarvoor in de plaats de speciale --{2}, --{3}, of --{4} opties om "
+"filters op te geven binnen het parameter-bestand. Ieder filter moet worden "
+"voorafgegaan door een + of een -, en meerdere filters moeten worden "
+"samengevoegd met {5}"
 
 #: CommandLine/CLI/Strings.cs:46
 #, csharp-format
@@ -5475,6 +6104,13 @@ msgid ""
 "files and folders) can be specified by using curly braces, e.g. "
 "{{Applications}}."
 msgstr ""
+"Neem bestanden op die overeenkomen met dit filter. Het speciale teken * "
+"betekent een willekeurig aantal tekens, en het speciale teken ? betekent een"
+" enkel teken. Gebruik *.txt om alle bestanden met een txt extensie op te "
+"nemen. Reguliere expressies worden eveneens ondersteund en kunnen worden "
+"opgegeven door middel van teksthaken, bijv. [.*\\.txt]. Filtergroepen (die "
+"een bekende set van bestanden en mappen omsluiten) kunnen worden opgegeven "
+"door gebruik te maken van accolades, bijv. {{Applications}}."
 
 #: CommandLine/CLI/Strings.cs:49
 msgid "Include files"
@@ -5490,6 +6126,13 @@ msgid ""
 "files and folders) can be specified by using curly braces, e.g. "
 "{{TemporaryFiles}}."
 msgstr ""
+"Sluit bestanden uit die overeenkomen met dit filter. Het speciale teken * "
+"betekent een willekeurig aantal tekens, en het speciale teken ? betekent een"
+" enkel teken. Gebruik *.txt om alle bestanden met een txt extensie uit te "
+"sluiten. Reguliere expressies worden eveneens ondersteund en kunnen worden "
+"opgegeven door middel van teksthaken, bijv. [.*\\.txt]. Filtergroepen (die "
+"een bekende set van bestanden en mappen omsluiten) kunnen worden opgegeven "
+"door gebruik te maken van accolades, bijv. {{TemporaryFiles}}. "
 
 #: CommandLine/CLI/Strings.cs:51
 msgid "Exclude files"
@@ -5529,11 +6172,11 @@ msgstr "Uitvoer naar het scherm uitschakelen"
 msgid "This link may provide additional information: {0}"
 msgstr "Deze link kan aanvullende informatie weergeven: {0}"
 
-#: CommandLine/CLI/Program.cs:288
+#: CommandLine/CLI/Program.cs:290
 msgid "Toggle automatic updates"
 msgstr "Automatische updates inschakelen"
 
-#: CommandLine/CLI/Program.cs:288
+#: CommandLine/CLI/Program.cs:290
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
