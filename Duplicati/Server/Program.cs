@@ -67,7 +67,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Name of the database file
         /// </summary>
-        private const string SERVER_DATABASE_FILENAME = "Duplicati-server.sqlite";
+        public const string SERVER_DATABASE_FILENAME = "Duplicati-server.sqlite";
 
         /// <summary>
         /// The environment variable prefix
@@ -659,7 +659,7 @@ namespace Duplicati.Server
             throw new Exception("Server invoked with --help");
         }
 
-        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
+        public static string GetDataFolderPath(Dictionary<string, string> commandlineOptions)
         {
             var serverDataFolder = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
             if (commandlineOptions.ContainsKey("server-datafolder"))
@@ -674,23 +674,28 @@ namespace Duplicati.Server
                 if (DEBUG_MODE && portableMode)
                 {
                     //debug mode uses a lock file located in the app folder
-                    DataFolder = StartupPath;
+                    return StartupPath;
                 }
                 else if (portableMode)
                 {
                     //Portable mode uses a data folder in the application home dir
-                    DataFolder = System.IO.Path.Combine(StartupPath, "data");
                     System.IO.Directory.SetCurrentDirectory(StartupPath);
+                    return System.IO.Path.Combine(StartupPath, "data");
                 }
                 else
                 {
                     //Normal release mode uses the systems "(Local) Application Data" folder
                     // %LOCALAPPDATA% on Windows, ~/.config on Linux, ~/Library/Application\ Support on MacOS
-                    DataFolder = DatabaseLocator.GetDefaultStorageFolder(SERVER_DATABASE_FILENAME, Library.AutoUpdater.AutoUpdateSettings.AppName);
+                    return DatabaseLocator.GetDefaultStorageFolder(SERVER_DATABASE_FILENAME, Library.AutoUpdater.AutoUpdateSettings.AppName);
                 }
             }
             else
-                DataFolder = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
+                return Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
+        }
+
+        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
+        {
+            DataFolder = GetDataFolderPath(commandlineOptions);
 
             var sqliteVersion = new Version(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteVersion);
             if (sqliteVersion < new Version(3, 6, 3))

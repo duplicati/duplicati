@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using Duplicati.Library.Interface;
 using Duplicati.Server;
@@ -129,23 +130,26 @@ namespace Duplicati.GUI.TrayIcon
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
-                databaseConnection = Server.Program.GetDatabaseConnection(options);
-
-                if (databaseConnection != null)
+                if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(options), Server.Program.SERVER_DATABASE_FILENAME)))
                 {
-                    disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+                    databaseConnection = Server.Program.GetDatabaseConnection(options);
 
-                    var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
-                    var scheme = "http";
-
-                    if (cert != null && cert.HasPrivateKey)
-                        scheme = "https";
-
-                    serverURL = new UriBuilder(serverURL)
+                    if (databaseConnection != null)
                     {
-                        Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
-                        Scheme = scheme
-                    }.Uri;
+                        disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+
+                        var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
+                        var scheme = "http";
+
+                        if (cert != null && cert.HasPrivateKey)
+                            scheme = "https";
+
+                        serverURL = new UriBuilder(serverURL)
+                        {
+                            Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
+                            Scheme = scheme
+                        }.Uri;
+                    }
                 }
             }
 
