@@ -74,14 +74,17 @@ public sealed record Settings(
     /// </summary>
     public void Save()
     {
+        if (!string.IsNullOrWhiteSpace(RefreshToken) && EncryptedFieldHelper.IsCurrentKeyBlacklisted)
+            Console.WriteLine("Warning: The current encryption key is blacklisted and cannot be used, saving login token without encryption");
+
         File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile)
             .Where(x => x.HostUrl != HostUrl)
             .Append(new PersistedSettings(RefreshToken, HostUrl, ServerDatafolder))
             .Select(x => x with
             {
-                RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken)
-                ? x.RefreshToken
-                : EncryptedFieldHelper.Encrypt(x.RefreshToken)
+                RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || EncryptedFieldHelper.IsCurrentKeyBlacklisted
+                    ? x.RefreshToken
+                    : EncryptedFieldHelper.Encrypt(x.RefreshToken)
             })
         ));
     }

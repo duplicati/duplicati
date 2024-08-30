@@ -19,7 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -37,7 +40,8 @@ public static class EncryptedFieldHelper
     /// </summary>
     /// <param name="Key">The key to use</param>
     /// <param name="Hash">The key hash</param>
-    public sealed record KeyInstance(string Key, string Hash)
+    /// <param name="IsBlacklisted">If the key is blacklisted</param>
+    public sealed record KeyInstance(string Key, string Hash, bool IsBlacklisted)
     {
         /// <summary>
         /// Creates a new key instance
@@ -52,18 +56,37 @@ public static class EncryptedFieldHelper
                 throw new ArgumentException("Key must be at least 8 characters long", nameof(key));
 
             using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
-            return new KeyInstance(key, key.ComputeHashToHex(hasher));
+            return new KeyInstance(key, key.ComputeHashToHex(hasher), IsKeyBlacklisted(key));
         }
     }
+
+    /// <summary>
+    /// Checks if a key is blacklisted
+    /// </summary>
+    /// <param name="key">The key to check</param>
+    /// <returns><c>true</c> if the key is blacklisted; <c>false</c> otherwise</returns>
+    public static bool IsKeyBlacklisted(string key)
+        => DeviceIDHelper.EMPTY_DEVICE_ID_HASHES.Contains(key);
+
+
+    /// <summary>
+    /// The key supplied by the user
+    /// </summary>
+    private static string? SUPPLIED_KEY = Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME);
 
     /// <summary>
     /// The default key to be used for encryption
     /// </summary>
     private static readonly KeyInstance DefaultKey = KeyInstance.CreateKey(
-        string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME))
+        string.IsNullOrWhiteSpace(SUPPLIED_KEY)
             ? DeviceIDHelper.GetDeviceIDHash()
-            : Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME)
+            : SUPPLIED_KEY
     );
+
+    /// <summary>
+    /// Returns a value indicating if the default key is blacklisted and cannot be used
+    /// </summary>
+    public static bool IsCurrentKeyBlacklisted => DefaultKey.IsBlacklisted;
 
     /// <summary>
     /// Prefix used to identify an encrypted field
@@ -93,7 +116,8 @@ public static class EncryptedFieldHelper
     /// </summary>
     /// <param name="value">data from the field</param>
     /// <returns>Unencrypted data of the field</returns>
-    public static string Decrypt(string? value)
+    [return: NotNullIfNotNull("value")]
+    public static string? Decrypt(string? value)
         => Decrypt(value, DefaultKey);
 
     /// <summary>
@@ -107,7 +131,8 @@ public static class EncryptedFieldHelper
     /// <param name="value">data from the field</param>
     /// <param name="key">The key to use for decryption</param>
     /// <returns>Unencrypted data of the field</returns>
-    public static string Decrypt(string? value, KeyInstance key)
+    [return: NotNullIfNotNull("value")]
+    public static string? Decrypt(string? value, KeyInstance key)
     {
         // If the value is not encrypted, it will be returned as is.
         if (string.IsNullOrEmpty(value) || !value.StartsWith(HEADER_PREFIX))
@@ -162,6 +187,9 @@ public static class EncryptedFieldHelper
     /// <returns>The encrypted string</returns>
     public static string Encrypt(string value, KeyInstance key)
     {
+        if (key.IsBlacklisted)
+            throw new InvalidOperationException("Refusing to encrypt with a blacklisted key");
+
         using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
         var encrypted = AESStringEncryption.EncryptToHex(key.Key, value);
 

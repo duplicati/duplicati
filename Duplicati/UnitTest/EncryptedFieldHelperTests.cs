@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -115,11 +116,31 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("FieldEncryption")]
+        public static void TestBlacklistedKeysCannotEncrypt()
+        {
+            using var hasher = HashFactory.CreateHasher("SHA256"); ;
+            if (!EncryptedFieldHelper.IsKeyBlacklisted("".ComputeHashToHex(hasher)))
+                throw new Exception("Expected empty string hash to be blacklisted");
+
+            var key = EncryptedFieldHelper.KeyInstance.CreateKey("ECB47E9D8445E0A3F30A1435BE075C101F202FF5445BA01A9F9A8DBD4506F5F3");
+            if (!key.IsBlacklisted)
+                throw new Exception("Expected empty key to be blacklisted");
+
+            Assert.Throws<InvalidOperationException>(() => EncryptedFieldHelper.Encrypt("test", key));
+        }
+
+
+        [Test]
+        [Category("FieldEncryption")]
         public static void EncryptAndDecryptUsingDeviceID()
         {
 
             var sampleTargerURL = "s3://awsid-bucket/folder/?s3-location-constraint=us-east-2&s3-storage-class=&s3-client=aws&auth-username=AWSID&auth-password=AWSACCESSKEY";
             var key = EncryptedFieldHelper.KeyInstance.CreateKey(DeviceIDHelper.GetDeviceIDHash());
+
+            // If the key is blacklisted, it cannot be tested
+            if (key.IsBlacklisted)
+                return;
             var encrypted = EncryptedFieldHelper.Encrypt(sampleTargerURL, key);
 
             Assert.IsNotNull(encrypted);
