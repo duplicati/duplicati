@@ -66,7 +66,7 @@ namespace Duplicati.Server
         /// <summary>
         /// Name of the database file
         /// </summary>
-        private const string SERVER_DATABASE_FILENAME = "Duplicati-server.sqlite";
+        public const string SERVER_DATABASE_FILENAME = "Duplicati-server.sqlite";
 
         /// <summary>
         /// The environment variable prefix
@@ -655,7 +655,7 @@ namespace Duplicati.Server
             throw new Exception("Server invoked with --help");
         }
 
-        private static string GetDataFolderPath(Dictionary<string, string> commandlineOptions)
+        public static string GetDataFolderPath(Dictionary<string, string> commandlineOptions)
         {
             var serverDataFolder = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
             if (commandlineOptions.ContainsKey("server-datafolder"))

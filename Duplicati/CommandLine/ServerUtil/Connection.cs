@@ -135,10 +135,14 @@ public class Connection
         // If we can read the server database, try to create a signin token
         try
         {
-            if (!string.IsNullOrWhiteSpace(settings.ServerDatafolder) && File.Exists(Path.Combine(settings.ServerDatafolder, "Duplicati-server.sqlite")))
+            var opts = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(settings.ServerDatafolder))
+                opts.Add("server-datafolder", settings.ServerDatafolder);
+
+            if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(opts), Server.Program.SERVER_DATABASE_FILENAME)))
             {
                 string? cfg = null;
-                using (var connection = Duplicati.Server.Program.GetDatabaseConnection(new Dictionary<string, string> { { "server-datafolder", settings.ServerDatafolder } }))
+                using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts))
                     cfg = connection.ApplicationSettings.JWTConfig;
 
                 if (!string.IsNullOrWhiteSpace(cfg))
