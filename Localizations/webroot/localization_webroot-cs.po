@@ -63,7 +63,7 @@ msgstr ""
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr ""
 
-#: index.html:294
+#: index.html:295
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
 "                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
@@ -89,7 +89,7 @@ msgstr "Přístupový klíč ke službě AWS"
 msgid "AWS IAM Policy"
 msgstr "Zásady IAM služby AWS"
 
-#: index.html:223 index.html:239
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "O aplikaci"
 
@@ -142,7 +142,7 @@ msgstr "Přidat popis umístění přímo"
 msgid "Add advanced option"
 msgstr "Přidat pokročilou volbu"
 
-#: index.html:211
+#: index.html:212
 msgid "Add backup"
 msgstr "Přidat zálohu"
 
@@ -456,8 +456,9 @@ msgstr "Soubory mezipaměti"
 msgid "Canary"
 msgstr "Kanárek"
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -496,6 +497,10 @@ msgstr ""
 msgid "Change server passphrase"
 msgstr ""
 
+#: scripts/controllers/AppController.js:194
+msgid "Change server password"
+msgstr ""
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "Seznam změn"
@@ -516,7 +521,7 @@ msgstr "Zjistit dostupnost případných aktualizací nyní"
 msgid "Checking for updates …"
 msgstr "Zjišťování dostupnosti případných aktualizací…"
 
-#: templates/captcha.html:10
+#: templates/captcha.html:11
 msgid "Checking …"
 msgstr ""
 
@@ -536,7 +541,7 @@ msgstr "Pro začátek vyberte typ úložiště"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "AuthID vytvoříte kliknutím na odkaz AuthID"
 
-#: index.html:148 index.html:199
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
 msgstr "Kliknutím nastavte předvolby přiškrcování"
 
@@ -620,7 +625,7 @@ msgstr "Potvrzení smazání"
 msgid "Confirm encryption passphrase"
 msgstr "Potvrzení zadání šifrovací heslové fráze"
 
-#: templates/settings.html:15
+#: templates/changepassword.html:14 templates/settings.html:15
 msgid "Confirm new password"
 msgstr ""
 
@@ -636,11 +641,11 @@ msgstr "Vyžadováno potvrzení"
 msgid "Connect"
 msgstr "Připojit"
 
-#: index.html:307
+#: index.html:308
 msgid "Connect now"
 msgstr "Připojit nyní"
 
-#: index.html:301
+#: index.html:302
 msgid "Connecting to server …"
 msgstr "Připojování k serveru…"
 
@@ -648,11 +653,11 @@ msgstr "Připojování k serveru…"
 msgid "Connecting to task …"
 msgstr ""
 
-#: index.html:308
+#: index.html:309
 msgid "Connecting …"
 msgstr ""
 
-#: index.html:293
+#: index.html:294
 msgid "Connection lost"
 msgstr "Spojení ztraceno"
 
@@ -975,15 +980,15 @@ msgstr "Stahování aktualizace…"
 msgid "Duplicate option {{opt}}"
 msgstr "Volba duplikace {{opt}}"
 
-#: index.html:254
+#: index.html:255
 msgid "Duplicati Website"
 msgstr "Webové stránky projektu Duplicati"
 
-#: index.html:248
+#: index.html:249
 msgid "Duplicati forum"
 msgstr "Diskuzní fórum o Duplicati"
 
-#: scripts/controllers/AppController.js:181
+#: scripts/controllers/AppController.js:184
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1350,7 +1355,7 @@ msgstr "Filtry"
 msgid "Finished!"
 msgstr "Dokončeno!"
 
-#: scripts/controllers/AppController.js:180
+#: scripts/controllers/AppController.js:183
 msgid "First run setup"
 msgstr "Úvodní nastavení při prvním spuštění"
 
@@ -1437,7 +1442,7 @@ msgstr "Skrýt"
 msgid "Hide hidden folders"
 msgstr "Skrýt skryté složky"
 
-#: index.html:208 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "Domovská složka"
 
@@ -1576,7 +1581,7 @@ msgstr "Výraz pro zahrnutí"
 msgid "Include regular expression"
 msgstr "Regulární výraz pro zahrnutí"
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
 msgstr "Nesprávná odpověď, zkuste to znovu"
 
@@ -1693,7 +1698,7 @@ msgstr ""
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
-#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "Načítání…"
@@ -1737,11 +1742,11 @@ msgstr "Zaznamenávat (log) údaje pro <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Zaznamenávat data ze serveru"
 
-#: index.html:306
+#: index.html:307
 msgid "Log in"
 msgstr ""
 
-#: index.html:226
+#: index.html:227
 msgid "Log out"
 msgstr "Odhlásit se"
 
@@ -1763,7 +1768,7 @@ msgid ""
 " advanced options."
 msgstr ""
 
-#: index.html:259
+#: index.html:260
 msgid "Manual"
 msgstr ""
 
@@ -1783,7 +1788,7 @@ msgstr "Nejvyšší rychlost stahování"
 msgid "Max upload speed"
 msgstr "Nejvyšší rychlost odesílání"
 
-#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1866,7 +1871,7 @@ msgstr "Název"
 msgid "Never"
 msgstr "Nikdy"
 
-#: templates/settings.html:11
+#: templates/changepassword.html:5 templates/settings.html:11
 msgid "New Password"
 msgstr ""
 
@@ -1893,11 +1898,11 @@ msgstr "Další"
 msgid "Next scheduled run:"
 msgstr "Příští naplánované spuštění:"
 
-#: index.html:183
+#: index.html:184
 msgid "Next scheduled task:"
 msgstr "Příští naplánovaná úloha:"
 
-#: index.html:180
+#: index.html:181
 msgid "Next task:"
 msgstr "Příští úloha:"
 
@@ -1905,7 +1910,7 @@ msgstr "Příští úloha:"
 msgid "Next time"
 msgstr "Příště"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1954,7 +1959,7 @@ msgstr "Žádné položky pro obnovení – vyberte alespoň jednu"
 msgid "No passphrase entered"
 msgstr "Není zadaná žádná heslová fráze"
 
-#: index.html:185
+#: index.html:186
 msgid "No scheduled tasks"
 msgstr "Žádné naplánované úlohy"
 
@@ -1981,8 +1986,9 @@ msgstr ""
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr "Nic nebude smazáno. Velikost zálohy naroste při každé změně."
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2174,7 +2180,7 @@ msgstr "Pozastavit"
 msgid "Pause after startup or hibernation"
 msgstr "Pozastavit po spuštění nebo hibernaci"
 
-#: scripts/controllers/AppController.js:50
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr "Předvolby pozastavení"
 
@@ -2262,7 +2268,7 @@ msgstr "Registrace dočasné zálohy…"
 msgid "Relative paths not allowed"
 msgstr "Vztažené (relativní) popisy umístění není možné použít"
 
-#: index.html:305 templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr "Načíst znovu"
 
@@ -2326,7 +2332,7 @@ msgstr "Hlášení:"
 msgid "Reset"
 msgstr "Resetovat"
 
-#: index.html:214 templates/restore.html:137
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
 msgstr "Obnovit"
 
@@ -2384,7 +2390,7 @@ msgstr "Obnovené symbolické odkazy"
 msgid "Restoring files …"
 msgstr "Obnovování souborů…"
 
-#: index.html:217
+#: index.html:218
 msgid "Resume"
 msgstr "Pokračovat"
 
@@ -2404,7 +2410,7 @@ msgstr "Spustit nyní"
 msgid "Running commandline entry"
 msgstr "Spuštěná položka příkazového řádku"
 
-#: index.html:172
+#: index.html:173
 msgid "Running task:"
 msgstr "Spuštěná úloha:"
 
@@ -2521,7 +2527,7 @@ msgstr "Server pozastaven"
 msgid "Server state properties"
 msgstr "Vlastnosti stavu serveru"
 
-#: index.html:220 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
 msgstr "Nastavení"
 
@@ -2652,11 +2658,11 @@ msgstr "Zastavit probíhající zálohu"
 msgid "Stop running task"
 msgstr "Zastavit probíhající úlohu"
 
-#: index.html:168
+#: index.html:169
 msgid "Stopping after the current file:"
 msgstr "Zastavování pro stávajícím souboru:"
 
-#: index.html:173
+#: index.html:174
 msgid "Stopping task:"
 msgstr "Zastavování úlohy:"
 
@@ -2815,7 +2821,7 @@ msgstr ""
 "Nastavení by měla být uchovávána bezpečně. Opravdu chcete uložit nešifrovaný"
 " soubor obsahující vaše hesla?"
 
-#: index.html:298
+#: index.html:299
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
@@ -2934,7 +2940,7 @@ msgstr "Tento měsíc"
 msgid "This week"
 msgstr "Tento týden"
 
-#: scripts/controllers/AppController.js:65
+#: scripts/controllers/AppController.js:67
 msgid "Throttle settings"
 msgstr "Nastavení přiškrcování"
 
@@ -3059,8 +3065,7 @@ msgstr "Nahrávání ověřovacího souboru…"
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | "
-"translate}}</external-link>."
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3169,7 +3174,7 @@ msgstr "Velmi silné"
 msgid "Very weak"
 msgstr "Velmi slabé"
 
-#: index.html:245
+#: index.html:246
 msgid "Visit us on"
 msgstr "Navštivte nás na"
 
@@ -3232,7 +3237,7 @@ msgstr "Kam chcete soubory obnovit?"
 msgid "Years"
 msgstr "Let"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3494,10 +3499,6 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr ""
-
-#: templates/settings.html:125
-msgid "public usage statistics"
-msgstr "veřejné statistiky využívání"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

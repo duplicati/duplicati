@@ -56,7 +56,7 @@ msgstr ""
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr ""
 
-#: index.html:294
+#: index.html:295
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
 "                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
@@ -82,7 +82,7 @@ msgstr "Tunniste \"Access Key ID\" palveluun AWS"
 msgid "AWS IAM Policy"
 msgstr "Palvelun AWS IAM-asetukset"
 
-#: index.html:223 index.html:239
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "Tietoja"
 
@@ -135,7 +135,7 @@ msgstr "Lisää suora polku"
 msgid "Add advanced option"
 msgstr "Anna harvoin tarvittava valitsin"
 
-#: index.html:211
+#: index.html:212
 msgid "Add backup"
 msgstr "Lisää varmuuskopio"
 
@@ -452,8 +452,9 @@ msgstr "Välimuistitiedostot"
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -492,6 +493,10 @@ msgstr ""
 msgid "Change server passphrase"
 msgstr ""
 
+#: scripts/controllers/AppController.js:194
+msgid "Change server password"
+msgstr ""
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "Muutokset"
@@ -512,7 +517,7 @@ msgstr "Tarkista päivitykset"
 msgid "Checking for updates …"
 msgstr "Tarkistetaan päivityksiä ..."
 
-#: templates/captcha.html:10
+#: templates/captcha.html:11
 msgid "Checking …"
 msgstr ""
 
@@ -532,7 +537,7 @@ msgstr "Valitseensin tallennustyyppi"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Klikkaa AuthID-linkkiä luodaksesi AuthID-tunnisteen"
 
-#: index.html:148 index.html:199
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
 msgstr ""
 
@@ -616,7 +621,7 @@ msgstr "Vahvista poistaminen"
 msgid "Confirm encryption passphrase"
 msgstr "Vahvista salauslause"
 
-#: templates/settings.html:15
+#: templates/changepassword.html:14 templates/settings.html:15
 msgid "Confirm new password"
 msgstr ""
 
@@ -632,11 +637,11 @@ msgstr "Tarvitsen vahvistuksen"
 msgid "Connect"
 msgstr "Yhdistä"
 
-#: index.html:307
+#: index.html:308
 msgid "Connect now"
 msgstr "Yhdistä nyt"
 
-#: index.html:301
+#: index.html:302
 msgid "Connecting to server …"
 msgstr "Yhdistetään palvelimeen ..."
 
@@ -644,11 +649,11 @@ msgstr "Yhdistetään palvelimeen ..."
 msgid "Connecting to task …"
 msgstr ""
 
-#: index.html:308
+#: index.html:309
 msgid "Connecting …"
 msgstr ""
 
-#: index.html:293
+#: index.html:294
 msgid "Connection lost"
 msgstr "Yhteys katkesi"
 
@@ -972,15 +977,15 @@ msgstr "Ladataan päivitystä ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Sama valitsin {{opt}} annettiin kahdesti"
 
-#: index.html:254
+#: index.html:255
 msgid "Duplicati Website"
 msgstr "Duplicatin verkkosivu"
 
-#: index.html:248
+#: index.html:249
 msgid "Duplicati forum"
 msgstr "Duplicatin keskustelualue"
 
-#: scripts/controllers/AppController.js:181
+#: scripts/controllers/AppController.js:184
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1336,7 +1341,7 @@ msgstr "Suodattimet"
 msgid "Finished!"
 msgstr "Valmis!"
 
-#: scripts/controllers/AppController.js:180
+#: scripts/controllers/AppController.js:183
 msgid "First run setup"
 msgstr ""
 
@@ -1423,7 +1428,7 @@ msgstr "Piilota"
 msgid "Hide hidden folders"
 msgstr "Älä näytä piilotettuja kansioita"
 
-#: index.html:208 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "Etusivu"
 
@@ -1564,7 +1569,7 @@ msgstr "Sisällytä ilmaisua vastaavat kohteet"
 msgid "Include regular expression"
 msgstr "Sisällytä säännöllistä ilmaisua vastaavat kohteet"
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
 msgstr "Virheellinen vastaus. Yritä uudelleen."
 
@@ -1681,7 +1686,7 @@ msgstr ""
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
-#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "Ladataan ..."
@@ -1725,11 +1730,11 @@ msgstr "Varmuuskopion <b>{{Backup.Backup.Name}}</b> lokitiedot"
 msgid "Log data from the server"
 msgstr "Palvelimen lokitiedot"
 
-#: index.html:306
+#: index.html:307
 msgid "Log in"
 msgstr ""
 
-#: index.html:226
+#: index.html:227
 msgid "Log out"
 msgstr "Kirjaudu ulos"
 
@@ -1751,7 +1756,7 @@ msgid ""
 " advanced options."
 msgstr ""
 
-#: index.html:259
+#: index.html:260
 msgid "Manual"
 msgstr ""
 
@@ -1771,7 +1776,7 @@ msgstr "Suurin latausnopeus"
 msgid "Max upload speed"
 msgstr "Suurin lähetysnopeus"
 
-#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1854,7 +1859,7 @@ msgstr "Nimi"
 msgid "Never"
 msgstr "Ei koskaan"
 
-#: templates/settings.html:11
+#: templates/changepassword.html:5 templates/settings.html:11
 msgid "New Password"
 msgstr ""
 
@@ -1881,11 +1886,11 @@ msgstr "Seuraava"
 msgid "Next scheduled run:"
 msgstr "Seuraava varmuuskopio tehdään:"
 
-#: index.html:183
+#: index.html:184
 msgid "Next scheduled task:"
 msgstr "Seuraava ajoitettu tehtävä:"
 
-#: index.html:180
+#: index.html:181
 msgid "Next task:"
 msgstr "Seuraava tehtävä:"
 
@@ -1893,7 +1898,7 @@ msgstr "Seuraava tehtävä:"
 msgid "Next time"
 msgstr "Seuraavalla kerralla"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1944,7 +1949,7 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Et antanut salasanaa"
 
-#: index.html:185
+#: index.html:186
 msgid "No scheduled tasks"
 msgstr "Ei ajastettuja tehtäviä"
 
@@ -1971,8 +1976,9 @@ msgstr ""
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr "Mitään ei poisteta. Varmuuskopion koko kasvaa jokaisella muutoksella."
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2161,7 +2167,7 @@ msgstr "Tauko"
 msgid "Pause after startup or hibernation"
 msgstr "Tauko käynnistyksen tai lepotilasta heräämisen jälkeen"
 
-#: scripts/controllers/AppController.js:50
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr ""
 
@@ -2247,7 +2253,7 @@ msgstr "Rekisteröidään tilapäinen varmuuskopio ..."
 msgid "Relative paths not allowed"
 msgstr "Suhteelliset polut eivät ole sallittuja"
 
-#: index.html:305 templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr "Lataa uudelleen"
 
@@ -2311,7 +2317,7 @@ msgstr "Raportoin:"
 msgid "Reset"
 msgstr "Palauta edelliset asetukset"
 
-#: index.html:214 templates/restore.html:137
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
 msgstr "Palauta"
 
@@ -2369,7 +2375,7 @@ msgstr ""
 msgid "Restoring files …"
 msgstr "Palautetaan tiedostoja ..."
 
-#: index.html:217
+#: index.html:218
 msgid "Resume"
 msgstr "Jatka"
 
@@ -2389,7 +2395,7 @@ msgstr "Suorita nyt"
 msgid "Running commandline entry"
 msgstr "Ajetaan komentorivin komentoa"
 
-#: index.html:172
+#: index.html:173
 msgid "Running task:"
 msgstr "Suoritettava tehtävä:"
 
@@ -2505,7 +2511,7 @@ msgstr "Palvelin on pysäytetty"
 msgid "Server state properties"
 msgstr "Palvelimen tila"
 
-#: index.html:220 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
 msgstr "Asetukset"
 
@@ -2632,11 +2638,11 @@ msgstr "Keskeytä käynnissä oleva varmuuskopiointi"
 msgid "Stop running task"
 msgstr ""
 
-#: index.html:168
+#: index.html:169
 msgid "Stopping after the current file:"
 msgstr ""
 
-#: index.html:173
+#: index.html:174
 msgid "Stopping task:"
 msgstr ""
 
@@ -2791,7 +2797,7 @@ msgid ""
 "unencrypted file containing your passwords?"
 msgstr ""
 
-#: index.html:298
+#: index.html:299
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
@@ -2904,7 +2910,7 @@ msgstr "Tässä kuussa"
 msgid "This week"
 msgstr "Tällä viikolla"
 
-#: scripts/controllers/AppController.js:65
+#: scripts/controllers/AppController.js:67
 msgid "Throttle settings"
 msgstr ""
 
@@ -3025,8 +3031,7 @@ msgstr "Lähetetään varmennustiedosto ..."
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | "
-"translate}}</external-link>."
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3135,7 +3140,7 @@ msgstr "Hyvin vahva"
 msgid "Very weak"
 msgstr "Hyvin heikko"
 
-#: index.html:245
+#: index.html:246
 msgid "Visit us on"
 msgstr "Tutustu meihin"
 
@@ -3199,7 +3204,7 @@ msgstr "Mihin tiedostot palautetaan?"
 msgid "Years"
 msgstr "Vuotta"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3450,10 +3455,6 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr ""
-
-#: templates/settings.html:125
-msgid "public usage statistics"
-msgstr "julkiset käyttötilastot"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

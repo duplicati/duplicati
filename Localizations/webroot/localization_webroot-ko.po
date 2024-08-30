@@ -55,7 +55,7 @@ msgstr ""
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr ""
 
-#: index.html:294
+#: index.html:295
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
 "                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
@@ -81,7 +81,7 @@ msgstr ""
 msgid "AWS IAM Policy"
 msgstr ""
 
-#: index.html:223 index.html:239
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "정보"
 
@@ -134,7 +134,7 @@ msgstr "경로 직접 추가"
 msgid "Add advanced option"
 msgstr "고급 옵션 추가"
 
-#: index.html:211
+#: index.html:212
 msgid "Add backup"
 msgstr "백업 추가"
 
@@ -440,8 +440,9 @@ msgstr ""
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -480,6 +481,10 @@ msgstr ""
 msgid "Change server passphrase"
 msgstr ""
 
+#: scripts/controllers/AppController.js:194
+msgid "Change server password"
+msgstr ""
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "변경로그"
@@ -500,7 +505,7 @@ msgstr "업데이트 확인"
 msgid "Checking for updates …"
 msgstr "업데이트 확인 중 …"
 
-#: templates/captcha.html:10
+#: templates/captcha.html:11
 msgid "Checking …"
 msgstr ""
 
@@ -520,7 +525,7 @@ msgstr "시작할 저장소 유형을 선택하세요"
 msgid "Click the AuthID link to create an AuthID"
 msgstr ""
 
-#: index.html:148 index.html:199
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
 msgstr "속도 제한 옵션을 설정하려면 클릭"
 
@@ -604,7 +609,7 @@ msgstr ""
 msgid "Confirm encryption passphrase"
 msgstr "암호화 암호 확인"
 
-#: templates/settings.html:15
+#: templates/changepassword.html:14 templates/settings.html:15
 msgid "Confirm new password"
 msgstr ""
 
@@ -620,11 +625,11 @@ msgstr ""
 msgid "Connect"
 msgstr "연결"
 
-#: index.html:307
+#: index.html:308
 msgid "Connect now"
 msgstr "지금 연결하기"
 
-#: index.html:301
+#: index.html:302
 msgid "Connecting to server …"
 msgstr "서버에 연결하는 중 …"
 
@@ -632,11 +637,11 @@ msgstr "서버에 연결하는 중 …"
 msgid "Connecting to task …"
 msgstr ""
 
-#: index.html:308
+#: index.html:309
 msgid "Connecting …"
 msgstr ""
 
-#: index.html:293
+#: index.html:294
 msgid "Connection lost"
 msgstr "연결이 끊어짐"
 
@@ -959,15 +964,15 @@ msgstr ""
 msgid "Duplicate option {{opt}}"
 msgstr ""
 
-#: index.html:254
+#: index.html:255
 msgid "Duplicati Website"
 msgstr "Duplicati Website"
 
-#: index.html:248
+#: index.html:249
 msgid "Duplicati forum"
 msgstr "Duplicati 포럼"
 
-#: scripts/controllers/AppController.js:181
+#: scripts/controllers/AppController.js:184
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1328,7 +1333,7 @@ msgstr "필터"
 msgid "Finished!"
 msgstr ""
 
-#: scripts/controllers/AppController.js:180
+#: scripts/controllers/AppController.js:183
 msgid "First run setup"
 msgstr ""
 
@@ -1415,7 +1420,7 @@ msgstr "숨기기"
 msgid "Hide hidden folders"
 msgstr "숨김 폴더 숨기기"
 
-#: index.html:208 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "홈"
 
@@ -1550,7 +1555,7 @@ msgstr ""
 msgid "Include regular expression"
 msgstr ""
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
 msgstr ""
 
@@ -1663,7 +1668,7 @@ msgstr ""
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
-#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "로딩 …"
@@ -1707,11 +1712,11 @@ msgstr ""
 msgid "Log data from the server"
 msgstr "서버에서 가져온 로그 데이터"
 
-#: index.html:306
+#: index.html:307
 msgid "Log in"
 msgstr ""
 
-#: index.html:226
+#: index.html:227
 msgid "Log out"
 msgstr ""
 
@@ -1733,7 +1738,7 @@ msgid ""
 " advanced options."
 msgstr ""
 
-#: index.html:259
+#: index.html:260
 msgid "Manual"
 msgstr ""
 
@@ -1753,7 +1758,7 @@ msgstr "최대 다운로드 속도"
 msgid "Max upload speed"
 msgstr "최대 업로드 속도"
 
-#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1836,7 +1841,7 @@ msgstr "이름"
 msgid "Never"
 msgstr "없음"
 
-#: templates/settings.html:11
+#: templates/changepassword.html:5 templates/settings.html:11
 msgid "New Password"
 msgstr ""
 
@@ -1861,11 +1866,11 @@ msgstr "다음"
 msgid "Next scheduled run:"
 msgstr "다음 백업 일정:"
 
-#: index.html:183
+#: index.html:184
 msgid "Next scheduled task:"
 msgstr "다음 예약 작업:"
 
-#: index.html:180
+#: index.html:181
 msgid "Next task:"
 msgstr ""
 
@@ -1873,7 +1878,7 @@ msgstr ""
 msgid "Next time"
 msgstr "시작"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1919,7 +1924,7 @@ msgstr "복원할 항목이 없습니다. 하나 이상의 항목을 선택하�
 msgid "No passphrase entered"
 msgstr ""
 
-#: index.html:185
+#: index.html:186
 msgid "No scheduled tasks"
 msgstr "스케줄링된 작업 없음"
 
@@ -1946,8 +1951,9 @@ msgstr ""
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr "아무 것도 삭제되지 않습니다. 백업 크기는 변경될 때마다 커집니다."
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2136,7 +2142,7 @@ msgstr "일시 중지"
 msgid "Pause after startup or hibernation"
 msgstr "부팅 또는 최대 절전 모드 후 일시 중지"
 
-#: scripts/controllers/AppController.js:50
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr "일시 중지 옵션"
 
@@ -2222,7 +2228,7 @@ msgstr ""
 msgid "Relative paths not allowed"
 msgstr ""
 
-#: index.html:305 templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr ""
 
@@ -2286,7 +2292,7 @@ msgstr "리포트:"
 msgid "Reset"
 msgstr "초기화"
 
-#: index.html:214 templates/restore.html:137
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
 msgstr "복원"
 
@@ -2344,7 +2350,7 @@ msgstr ""
 msgid "Restoring files …"
 msgstr "파일 복원 중 …"
 
-#: index.html:217
+#: index.html:218
 msgid "Resume"
 msgstr ""
 
@@ -2364,7 +2370,7 @@ msgstr "백업 실행"
 msgid "Running commandline entry"
 msgstr ""
 
-#: index.html:172
+#: index.html:173
 msgid "Running task:"
 msgstr ""
 
@@ -2480,7 +2486,7 @@ msgstr ""
 msgid "Server state properties"
 msgstr "서버 상태 속성"
 
-#: index.html:220 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
 msgstr "설정"
 
@@ -2605,11 +2611,11 @@ msgstr "백업 실행 중지"
 msgid "Stop running task"
 msgstr ""
 
-#: index.html:168
+#: index.html:169
 msgid "Stopping after the current file:"
 msgstr "현재 파일까지 진행 후 중지 중:"
 
-#: index.html:173
+#: index.html:174
 msgid "Stopping task:"
 msgstr ""
 
@@ -2762,7 +2768,7 @@ msgid ""
 "unencrypted file containing your passwords?"
 msgstr ""
 
-#: index.html:298
+#: index.html:299
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
@@ -2864,7 +2870,7 @@ msgstr "이번 달"
 msgid "This week"
 msgstr "이번 주"
 
-#: scripts/controllers/AppController.js:65
+#: scripts/controllers/AppController.js:67
 msgid "Throttle settings"
 msgstr "속도 제한 설정"
 
@@ -2979,8 +2985,7 @@ msgstr ""
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | "
-"translate}}</external-link>."
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3089,7 +3094,7 @@ msgstr "매우 강한"
 msgid "Very weak"
 msgstr "매우 약한"
 
-#: index.html:245
+#: index.html:246
 msgid "Visit us on"
 msgstr "Visit us on"
 
@@ -3151,7 +3156,7 @@ msgstr "파일을 어디에 복원하시겠습니까?"
 msgid "Years"
 msgstr "년"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3395,10 +3400,6 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr ""
-
-#: templates/settings.html:125
-msgid "public usage statistics"
-msgstr "공개 사용 통계"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

@@ -53,7 +53,7 @@ msgstr ""
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr ""
 
-#: index.html:294
+#: index.html:295
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
 "                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
@@ -79,7 +79,7 @@ msgstr "AWS Access Key"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Policy"
 
-#: index.html:223 index.html:239
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "關於"
 
@@ -132,7 +132,7 @@ msgstr "直接增加資料路徑"
 msgid "Add advanced option"
 msgstr "加入進階選項"
 
-#: index.html:211
+#: index.html:212
 msgid "Add backup"
 msgstr "備份"
 
@@ -437,8 +437,9 @@ msgstr "快取檔案"
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -477,6 +478,10 @@ msgstr ""
 msgid "Change server passphrase"
 msgstr ""
 
+#: scripts/controllers/AppController.js:194
+msgid "Change server password"
+msgstr ""
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "更新記錄"
@@ -497,7 +502,7 @@ msgstr "現在檢查更新"
 msgid "Checking for updates …"
 msgstr "檢查更新中 ..."
 
-#: templates/captcha.html:10
+#: templates/captcha.html:11
 msgid "Checking …"
 msgstr ""
 
@@ -517,7 +522,7 @@ msgstr "選擇儲存區類型，然後開始"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "按下 AuthID 連結來建立一組 AuthID"
 
-#: index.html:148 index.html:199
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
 msgstr "點這裡進入頻寬限制設定"
 
@@ -601,7 +606,7 @@ msgstr "確認刪除"
 msgid "Confirm encryption passphrase"
 msgstr "確認加密密碼"
 
-#: templates/settings.html:15
+#: templates/changepassword.html:14 templates/settings.html:15
 msgid "Confirm new password"
 msgstr ""
 
@@ -617,11 +622,11 @@ msgstr "需要確認"
 msgid "Connect"
 msgstr "連線"
 
-#: index.html:307
+#: index.html:308
 msgid "Connect now"
 msgstr "立即連線"
 
-#: index.html:301
+#: index.html:302
 msgid "Connecting to server …"
 msgstr "正在連線到伺服器 ..."
 
@@ -629,11 +634,11 @@ msgstr "正在連線到伺服器 ..."
 msgid "Connecting to task …"
 msgstr ""
 
-#: index.html:308
+#: index.html:309
 msgid "Connecting …"
 msgstr ""
 
-#: index.html:293
+#: index.html:294
 msgid "Connection lost"
 msgstr "連線失敗"
 
@@ -956,15 +961,15 @@ msgstr "正在下載更新 ..."
 msgid "Duplicate option {{opt}}"
 msgstr "重複選項 {{opt}}"
 
-#: index.html:254
+#: index.html:255
 msgid "Duplicati Website"
 msgstr "Duplicati 官方網站"
 
-#: index.html:248
+#: index.html:249
 msgid "Duplicati forum"
 msgstr "Duplicati 論壇"
 
-#: scripts/controllers/AppController.js:181
+#: scripts/controllers/AppController.js:184
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1327,7 +1332,7 @@ msgstr "篩選"
 msgid "Finished!"
 msgstr "已完成！"
 
-#: scripts/controllers/AppController.js:180
+#: scripts/controllers/AppController.js:183
 msgid "First run setup"
 msgstr "執行初始化設定"
 
@@ -1414,7 +1419,7 @@ msgstr "隱藏"
 msgid "Hide hidden folders"
 msgstr "隱藏目錄"
 
-#: index.html:208 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "首頁"
 
@@ -1551,7 +1556,7 @@ msgstr "包含表示式"
 msgid "Include regular expression"
 msgstr "包含正則表示式"
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
 msgstr "回應不正確，請重試一次"
 
@@ -1666,7 +1671,7 @@ msgstr ""
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
-#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "載入中 ..."
@@ -1710,11 +1715,11 @@ msgstr "<b>{{Backup.Backup.Name}}</b> 的記錄資料"
 msgid "Log data from the server"
 msgstr "伺服器上的記錄"
 
-#: index.html:306
+#: index.html:307
 msgid "Log in"
 msgstr ""
 
-#: index.html:226
+#: index.html:227
 msgid "Log out"
 msgstr "登出"
 
@@ -1736,7 +1741,7 @@ msgid ""
 " advanced options."
 msgstr ""
 
-#: index.html:259
+#: index.html:260
 msgid "Manual"
 msgstr ""
 
@@ -1756,7 +1761,7 @@ msgstr "最大下載速度"
 msgid "Max upload speed"
 msgstr "最大上傳速度"
 
-#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1839,7 +1844,7 @@ msgstr "名稱"
 msgid "Never"
 msgstr "從未"
 
-#: templates/settings.html:11
+#: templates/changepassword.html:5 templates/settings.html:11
 msgid "New Password"
 msgstr ""
 
@@ -1866,11 +1871,11 @@ msgstr "下一頁"
 msgid "Next scheduled run:"
 msgstr "下一次排程執行："
 
-#: index.html:183
+#: index.html:184
 msgid "Next scheduled task:"
 msgstr "下一個排程工作："
 
-#: index.html:180
+#: index.html:181
 msgid "Next task:"
 msgstr "下一個工作："
 
@@ -1878,7 +1883,7 @@ msgstr "下一個工作："
 msgid "Next time"
 msgstr "下一次"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1927,7 +1932,7 @@ msgstr "沒有要還原的項目，請至少選擇一個項目"
 msgid "No passphrase entered"
 msgstr "沒有輸入密碼"
 
-#: index.html:185
+#: index.html:186
 msgid "No scheduled tasks"
 msgstr "沒有排程工作"
 
@@ -1954,8 +1959,9 @@ msgstr ""
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr "什麼都不刪除。備份大小將隨著每次異動而持續增長。"
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2142,7 +2148,7 @@ msgstr "暫停"
 msgid "Pause after startup or hibernation"
 msgstr "當啟動或休眠後暫停"
 
-#: scripts/controllers/AppController.js:50
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr "暫停選項"
 
@@ -2228,7 +2234,7 @@ msgstr "正在註冊暫時備份 ..."
 msgid "Relative paths not allowed"
 msgstr "不允許使用相對路徑"
 
-#: index.html:305 templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr "重新載入"
 
@@ -2292,7 +2298,7 @@ msgstr "報告︰"
 msgid "Reset"
 msgstr "重置"
 
-#: index.html:214 templates/restore.html:137
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
 msgstr "還原"
 
@@ -2350,7 +2356,7 @@ msgstr "已還原符號連結"
 msgid "Restoring files …"
 msgstr "正在還原檔案 ..."
 
-#: index.html:217
+#: index.html:218
 msgid "Resume"
 msgstr "繼續"
 
@@ -2370,7 +2376,7 @@ msgstr "立即執行"
 msgid "Running commandline entry"
 msgstr "Running commandline entry"
 
-#: index.html:172
+#: index.html:173
 msgid "Running task:"
 msgstr "正在執行工作："
 
@@ -2486,7 +2492,7 @@ msgstr "伺服器目前已暫停"
 msgid "Server state properties"
 msgstr "伺服器狀態屬性"
 
-#: index.html:220 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
 msgstr "設定"
 
@@ -2611,11 +2617,11 @@ msgstr "停止正在進行的備份"
 msgid "Stop running task"
 msgstr "停止正在進行的工作"
 
-#: index.html:168
+#: index.html:169
 msgid "Stopping after the current file:"
 msgstr "正在等檔案完成後停止："
 
-#: index.html:173
+#: index.html:174
 msgid "Stopping task:"
 msgstr "正在停止工作："
 
@@ -2770,7 +2776,7 @@ msgid ""
 "unencrypted file containing your passwords?"
 msgstr "設定應該注意安全，您確定將含有密碼的設定儲存為不加密的檔案嗎？"
 
-#: index.html:298
+#: index.html:299
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
@@ -2881,7 +2887,7 @@ msgstr "本月"
 msgid "This week"
 msgstr "本週"
 
-#: scripts/controllers/AppController.js:65
+#: scripts/controllers/AppController.js:67
 msgid "Throttle settings"
 msgstr "頻寬限制設定"
 
@@ -2997,8 +3003,7 @@ msgstr "正在上傳驗證檔案 ..."
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | "
-"translate}}</external-link>."
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3107,7 +3112,7 @@ msgstr "非常強"
 msgid "Very weak"
 msgstr "非常弱"
 
-#: index.html:245
+#: index.html:246
 msgid "Visit us on"
 msgstr "造訪我們"
 
@@ -3169,7 +3174,7 @@ msgstr "您要還原檔案到哪裡？"
 msgid "Years"
 msgstr "年"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3415,10 +3420,6 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr ""
-
-#: templates/settings.html:125
-msgid "public usage statistics"
-msgstr "公開使用統計資料"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

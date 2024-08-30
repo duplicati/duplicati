@@ -77,7 +77,7 @@ msgstr ""
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr ""
 
-#: index.html:294
+#: index.html:295
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
 "                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
@@ -103,7 +103,7 @@ msgstr "AWS Access Key"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Policy"
 
-#: index.html:223 index.html:239
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "Über"
 
@@ -156,7 +156,7 @@ msgstr "Pfad direkt eingeben"
 msgid "Add advanced option"
 msgstr "Option für Profis hinzufügen"
 
-#: index.html:211
+#: index.html:212
 msgid "Add backup"
 msgstr "Sicherung hinzufügen"
 
@@ -475,8 +475,9 @@ msgstr "Dateien cachen"
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -515,6 +516,10 @@ msgstr ""
 msgid "Change server passphrase"
 msgstr ""
 
+#: scripts/controllers/AppController.js:194
+msgid "Change server password"
+msgstr ""
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "Änderungsprotokoll"
@@ -535,7 +540,7 @@ msgstr "Aktualisierung suchen"
 msgid "Checking for updates …"
 msgstr "Aktualisierungen werden gesucht …"
 
-#: templates/captcha.html:10
+#: templates/captcha.html:11
 msgid "Checking …"
 msgstr ""
 
@@ -555,7 +560,7 @@ msgstr "Wähle einen Speichertypen zum Starten"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Auf AuthID klicken um eine AuthID zu erstellen"
 
-#: index.html:148 index.html:199
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
 msgstr "Zum Einstellen der Drosselungsoptionen anklicken"
 
@@ -639,7 +644,7 @@ msgstr "Löschen bestätigen"
 msgid "Confirm encryption passphrase"
 msgstr "Verschlüsselungspassphrase bestätigen"
 
-#: templates/settings.html:15
+#: templates/changepassword.html:14 templates/settings.html:15
 msgid "Confirm new password"
 msgstr ""
 
@@ -655,11 +660,11 @@ msgstr "Bestätigung erfolderlich"
 msgid "Connect"
 msgstr "Verbinden"
 
-#: index.html:307
+#: index.html:308
 msgid "Connect now"
 msgstr "Jetzt verbinden"
 
-#: index.html:301
+#: index.html:302
 msgid "Connecting to server …"
 msgstr "Verbindung zum Server wird hergestellt …"
 
@@ -667,11 +672,11 @@ msgstr "Verbindung zum Server wird hergestellt …"
 msgid "Connecting to task …"
 msgstr ""
 
-#: index.html:308
+#: index.html:309
 msgid "Connecting …"
 msgstr ""
 
-#: index.html:293
+#: index.html:294
 msgid "Connection lost"
 msgstr "Verbindung verloren"
 
@@ -994,15 +999,15 @@ msgstr "Aktualisierung wird heruntergeladen …"
 msgid "Duplicate option {{opt}}"
 msgstr "doppelte Option {{opt}}"
 
-#: index.html:254
+#: index.html:255
 msgid "Duplicati Website"
 msgstr "Duplicati Website"
 
-#: index.html:248
+#: index.html:249
 msgid "Duplicati forum"
 msgstr "Duplicati Forum"
 
-#: scripts/controllers/AppController.js:181
+#: scripts/controllers/AppController.js:184
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1372,7 +1377,7 @@ msgstr "Filter"
 msgid "Finished!"
 msgstr "Fertiggestellt!"
 
-#: scripts/controllers/AppController.js:180
+#: scripts/controllers/AppController.js:183
 msgid "First run setup"
 msgstr "Zuerst Setup starten"
 
@@ -1459,7 +1464,7 @@ msgstr "Ausblenden"
 msgid "Hide hidden folders"
 msgstr "versteckte Ordner ausblenden"
 
-#: index.html:208 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "Home"
 
@@ -1600,7 +1605,7 @@ msgstr "Filter (einschließen)"
 msgid "Include regular expression"
 msgstr "Regulären Ausdruck (einschließen)"
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
 msgstr "Fehlerhafte Antwort, versuche es erneut"
 
@@ -1719,7 +1724,7 @@ msgstr ""
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
-#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "Laden..."
@@ -1763,11 +1768,11 @@ msgstr "Protokolldaten für <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Protokolldaten vom Server"
 
-#: index.html:306
+#: index.html:307
 msgid "Log in"
 msgstr ""
 
-#: index.html:226
+#: index.html:227
 msgid "Log out"
 msgstr "Abmelden"
 
@@ -1789,7 +1794,7 @@ msgid ""
 " advanced options."
 msgstr ""
 
-#: index.html:259
+#: index.html:260
 msgid "Manual"
 msgstr ""
 
@@ -1809,7 +1814,7 @@ msgstr "Max. Downloadgeschwindigkeit"
 msgid "Max upload speed"
 msgstr "Max. Uploadgeschwindigkeit"
 
-#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1892,7 +1897,7 @@ msgstr "Name"
 msgid "Never"
 msgstr "Nie"
 
-#: templates/settings.html:11
+#: templates/changepassword.html:5 templates/settings.html:11
 msgid "New Password"
 msgstr ""
 
@@ -1919,11 +1924,11 @@ msgstr "Weiter"
 msgid "Next scheduled run:"
 msgstr "Nächste geplante Ausführung:"
 
-#: index.html:183
+#: index.html:184
 msgid "Next scheduled task:"
 msgstr "Nächste geplante Aufgabe:"
 
-#: index.html:180
+#: index.html:181
 msgid "Next task:"
 msgstr "Nächste Aufgabe:"
 
@@ -1931,7 +1936,7 @@ msgstr "Nächste Aufgabe:"
 msgid "Next time"
 msgstr "Nächstes Mal"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1982,7 +1987,7 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Keine Passphrase eingegeben"
 
-#: index.html:185
+#: index.html:186
 msgid "No scheduled tasks"
 msgstr "Keine geplanten Aufgaben"
 
@@ -2010,8 +2015,9 @@ msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr ""
 "Es wird nichts gelöscht. Die Sicherungsgröße erhöht sich mit jeder Änderung."
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2204,7 +2210,7 @@ msgstr "Pause"
 msgid "Pause after startup or hibernation"
 msgstr "Pause nach dem Start oder Aufwachen"
 
-#: scripts/controllers/AppController.js:50
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr "Anhalten Optionen"
 
@@ -2290,7 +2296,7 @@ msgstr "Temporäre Sicherung wird registriert …"
 msgid "Relative paths not allowed"
 msgstr "Relative Pfade sind nicht möglich"
 
-#: index.html:305 templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr "Neu laden"
 
@@ -2354,7 +2360,7 @@ msgstr "Bericht:"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: index.html:214 templates/restore.html:137
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
 msgstr "Wiederherstellen"
 
@@ -2412,7 +2418,7 @@ msgstr "Symbolische Verknüpfungen wiederhergestellt"
 msgid "Restoring files …"
 msgstr "Dateien werden wiederhergestellt …"
 
-#: index.html:217
+#: index.html:218
 msgid "Resume"
 msgstr "Fortsetzen"
 
@@ -2432,7 +2438,7 @@ msgstr "Jetzt sichern"
 msgid "Running commandline entry"
 msgstr "Führe Kommandozeilenbefehl aus"
 
-#: index.html:172
+#: index.html:173
 msgid "Running task:"
 msgstr "Laufende Aufgabe:"
 
@@ -2550,7 +2556,7 @@ msgstr "Server pausiert"
 msgid "Server state properties"
 msgstr "Server Zustandseigenschaften"
 
-#: index.html:220 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -2680,11 +2686,11 @@ msgstr "Laufende Sicherung anhalten"
 msgid "Stop running task"
 msgstr "Beende laufenden Vorgang"
 
-#: index.html:168
+#: index.html:169
 msgid "Stopping after the current file:"
 msgstr "Anhalten nach der aktuellen Datei:"
 
-#: index.html:173
+#: index.html:174
 msgid "Stopping task:"
 msgstr "Beende Vorgang"
 
@@ -2843,7 +2849,7 @@ msgstr ""
 "Die Konfiguration sollte sicher aufbewahrt werden. Sicher, dass eine "
 "unverschlüsselte Datei mit Ihren Passwörtern gespeichert werden soll?"
 
-#: index.html:298
+#: index.html:299
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
@@ -2972,7 +2978,7 @@ msgstr "Dieser Monat"
 msgid "This week"
 msgstr "Diese Woche"
 
-#: scripts/controllers/AppController.js:65
+#: scripts/controllers/AppController.js:67
 msgid "Throttle settings"
 msgstr "Drosselungseinstellungen"
 
@@ -3098,8 +3104,7 @@ msgstr "Verifikationsdatei wird hochgeladen …"
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | "
-"translate}}</external-link>."
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3208,7 +3213,7 @@ msgstr "Sehr stark"
 msgid "Very weak"
 msgstr "Sehr schwach"
 
-#: index.html:245
+#: index.html:246
 msgid "Visit us on"
 msgstr "Besuche uns auf"
 
@@ -3273,7 +3278,7 @@ msgstr "Wohin sollen die Dateien wiederhergestellt werden?"
 msgid "Years"
 msgstr "Jahre"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3540,10 +3545,6 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr ""
-
-#: templates/settings.html:125
-msgid "public usage statistics"
-msgstr "Öffentliche Nutzungsstatistiken"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"
