@@ -206,7 +206,6 @@ namespace Duplicati.Server
 
         static Program()
         {
-            FIXMEGlobal.GetDatabaseConnection = Program.GetDatabaseConnection;
             FIXMEGlobal.StartOrStopUsageReporter = Program.StartOrStopUsageReporter;
         }
 

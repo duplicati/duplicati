@@ -72,8 +72,6 @@ namespace Duplicati.Library.RestAPI
         /// </summary>
         public static readonly LogWriteHandler LogHandler = new LogWriteHandler();
 
-        public static Func<Dictionary<string, string>, Server.Database.Connection> GetDatabaseConnection;
-
         /// <summary>
         /// The update poll thread.
         /// </summary>
