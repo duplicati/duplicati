@@ -48,28 +48,24 @@ public static class BackupImportExportHandler
         return data;
     }
 
-    public static Server.Serializable.ImportExportStructure ImportBackup(string configurationFile, bool importMetadata, Func<string> getPassword, Dictionary<string, string> advancedOptions)
+    public static Server.Serializable.ImportExportStructure ImportBackup(Connection connection, string configurationFile, bool importMetadata, Func<string> getPassword)
     {
         // This removes the ID and DBPath from the backup configuration.
         Server.Serializable.ImportExportStructure importedStructure = LoadConfiguration(configurationFile, importMetadata, getPassword);
 
-        // This will create the Duplicati-server.sqlite database file if it doesn't exist.
-        using (Duplicati.Server.Database.Connection connection = FIXMEGlobal.GetDatabaseConnection(advancedOptions))
+        if (connection.Backups.Any(x => x.Name.Equals(importedStructure.Backup.Name, StringComparison.OrdinalIgnoreCase)))
         {
-            if (connection.Backups.Any(x => x.Name.Equals(importedStructure.Backup.Name, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException($"A backup with the name {importedStructure.Backup.Name} already exists.");
-            }
-
-            string error = connection.ValidateBackup(importedStructure.Backup, importedStructure.Schedule);
-            if (!string.IsNullOrWhiteSpace(error))
-            {
-                throw new InvalidOperationException(error);
-            }
-
-            // This creates a new ID and DBPath.
-            connection.AddOrUpdateBackupAndSchedule(importedStructure.Backup, importedStructure.Schedule);
+            throw new InvalidOperationException($"A backup with the name {importedStructure.Backup.Name} already exists.");
         }
+
+        string error = connection.ValidateBackup(importedStructure.Backup, importedStructure.Schedule);
+        if (!string.IsNullOrWhiteSpace(error))
+        {
+            throw new InvalidOperationException(error);
+        }
+
+        // This creates a new ID and DBPath.
+        connection.AddOrUpdateBackupAndSchedule(importedStructure.Backup, importedStructure.Schedule);
 
         return importedStructure;
     }
