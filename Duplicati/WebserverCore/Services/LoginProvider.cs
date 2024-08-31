@@ -1,10 +1,11 @@
 using Duplicati.Library.Logging;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Middlewares;
 
 namespace Duplicati.WebserverCore.Services;
 
-public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvider, Connection connection) : ILoginProvider
+public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvider, JWTConfig jwtConfig, Connection connection) : ILoginProvider
 {
     private static readonly string LOGTAG = Log.LogTagFromType<LoginProvider>();
 
@@ -29,7 +30,8 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         var tokenFamily = await repo.GetTokenFamily(refreshToken.UserId, refreshToken.TokenFamilyId, ct)
             ?? throw new UnauthorizedAccessException("Invalid refresh token");
 
-        if (tokenFamily.Counter != refreshToken.Counter)
+        var counterDiff = tokenFamily.Counter - refreshToken.Counter;
+        if (counterDiff < 0 || counterDiff > jwtConfig.MaxRefreshTokenDrift)
         {
             Log.WriteWarningMessage(LOGTAG, "TokenFamilyReuse", null, $"Invalid refresh token counter: {tokenFamily.Counter} != {refreshToken.Counter}");
             await repo.InvalidateTokenFamily(tokenFamily.UserId, tokenFamily.Id, ct);
