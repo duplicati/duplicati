@@ -3,7 +3,6 @@ $(document).ready(function() {
 
     $('#login-form').on('submit', function() {
 
-        console.log('login-form submit');
         if (processing)
             return;
 

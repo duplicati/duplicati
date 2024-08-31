@@ -14,11 +14,11 @@
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
-    <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
+    <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj" />
+    <ProjectReference Include="..\Library\RestAPI\Duplicati.Library.RestAPI.csproj" />
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
     <ProjectReference Include="..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
     <ProjectReference Include="..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />

@@ -6,8 +6,11 @@ using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
+using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.Configuration.Json;
+using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
 
@@ -20,6 +23,8 @@ public partial class DuplicatiWebserver
     public IServiceProvider Provider { get; private set; }
 
     public int Port { get; private set; }
+
+    public Task TerminationTask { get; private set; } = Task.CompletedTask;
 
     /// <summary>
     /// The settings used for stating the server
@@ -41,7 +46,21 @@ public partial class DuplicatiWebserver
     public void InitWebServer(InitSettings settings, Connection connection)
     {
         Port = settings.Port;
-        var builder = WebApplication.CreateBuilder();
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
+        {
+            ContentRootPath = settings.WebRoot,
+            WebRootPath = settings.WebRoot
+        });
+
+        // Remove all appsettings sources as they are not used, but they do install FS watchers by default
+        while (true)
+        {
+            var appCfgSource = builder.Configuration.Sources.FirstOrDefault(x => x is JsonConfigurationSource { ReloadOnChange: true });
+            if (appCfgSource == null)
+                break;
+            builder.Configuration.Sources.Remove(appCfgSource);
+        }
+
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Listen(settings.Interface, settings.Port, listenOptions =>
@@ -78,14 +97,23 @@ public partial class DuplicatiWebserver
 
         builder.Services
             .AddHostedService<ApplicationPartsLogger>()
+#if DEBUG
             .AddEndpointsApiExplorer()
-            .AddSwaggerGen()
-            .AddHttpContextAccessor()
-            .AddHostFiltering(options =>
+            .AddSwaggerGen(c =>
             {
-                if (!settings.AllowedHostnames.Any(x => x == "*"))
-                    options.AllowedHosts = settings.AllowedHostnames.ToArray();
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Duplicati API Documentation", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer"
+                });
             })
+#endif
+            .AddHttpContextAccessor()
+            .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
             .AddSingleton(jwtConfig)
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -135,6 +163,14 @@ public partial class DuplicatiWebserver
         App = builder.Build();
         Provider = App.Services;
 
+#if DEBUG
+        App.UseSwagger();
+        App.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
+        });
+#endif
+
         App.UseDefaultStaticFiles(settings.WebRoot);
 
         App.UseExceptionHandler(app =>
@@ -163,14 +199,10 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
-        var allowedOrigins = settings.AllowedHostnames.Any(x => x == "*")
-            ? []
-            : settings.AllowedHostnames.Select(x => settings.Certificate == null ? $"http://{x}:{settings.Port}" : $"https://{x}:{settings.Port}");
-
         App.AddEndpoints()
-            .UseNotifications(allowedOrigins, "/notifications");
+            .UseNotifications("/notifications");
 
-        return App.RunAsync();
+        return TerminationTask = App.RunAsync();
     }
 
     public async Task Stop()

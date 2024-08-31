@@ -1,9 +1,9 @@
-// duplicati 2.0 less | Alex Franzelin 2015
+/* duplicati 2.0 less | Alex Franzelin 2015 */
 @import 'fonts.less';
 @import 'form.less';
 @import 'font-awesome/font-awesome.less';
 
-// https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+/* https://css-tricks.com/snippets/css/a-guide-to-flexbox/ */
 .flexbox() {
     display: -webkit-box;
     display: -moz-box;
@@ -611,6 +611,16 @@ div.captcha {
         margin-left: auto;
         margin-right: auto;
         width: 180px;
+    }
+    .code {
+        background: lightgray;
+        color: black;
+        font-family: monospace;
+        font-size: xx-large;
+        padding: 10px;
+    }
+    .answer {
+        margin-top: 16px;
     }
 }
 
@@ -1288,8 +1298,8 @@ body {
 
                             dt.active,
                             dt:hover {
-                                //background: @lColor;
-                                //color: white;
+                                /* background: @lColor; */
+                                /* color: white; */
                             }
 
                             dd {
@@ -1314,7 +1324,8 @@ body {
                     .steps {
                         margin-left: calc(calc(calc(var(--step-width) - var(--circle-width)) / 2) + var(--legends-padding-left));
 
-                        .step {
+                        & button,
+                        & div {
                             padding-left: calc(var(--step-width) - var(--circle-width));
                             padding-right: 0;
 
@@ -1355,7 +1366,8 @@ body {
                         width: 100%;
                         overflow: hidden;
 
-                        .step {
+                        & button,
+                        & div {
                             float: left;
                             background: url('../img/steps/line-out.png') no-repeat top left;
                             background-size: 485px 24px;
@@ -1370,30 +1382,34 @@ body {
                             }
 
                             span {
+                                --size: 35px;
+
                                 display: block;
-                                border: 4px #c7e5f6 solid;
+                                border-width: 4px;
+                                border-style: solid;
+                                border-color: #c7e5f6;
                                 background: white;
                                 border-radius: 50%;
-                                width: 35px;
-                                height: 35px;
+                                width: var(--size);
+                                height: var(--size);
                                 text-align: center;
                                 font-size: 22px;
-                                line-height: 35px;
+                                line-height: var(--size);
                                 cursor: pointer;
                             }
-                        }
 
-                        .step.active {
-                            color: @lColor;
-
-                            span {
-                                border: 4px @lColor solid;
-                                background: @lColor;
-                                color: white;
-                            }
-
-                            h2 {
+                            &.active {
                                 color: @lColor;
+
+                                span {
+                                    border-color: @lColor;
+                                    background: @lColor;
+                                    color: white;
+                                }
+
+                                h2 {
+                                    color: @lColor;
+                                }
                             }
                         }
                     }
@@ -1717,9 +1733,11 @@ body {
                 }
 
                 div.add .step2,
-                div.restore .step1 {
+                div.restore .step1,
+                .commandline {
                     /* .step2: "destination" on adding/editing backup task
                        .step1: "backup location" on a direct restore task
+                       .commandline: the form on "Target URL >"
                        TODO: integrate with form.less after investigation */
                     .input.select {
                         display: grid;
@@ -1740,9 +1758,10 @@ body {
                         input {
                             grid-area: custom;
 
-                            /* Add gap between this input area and the select element above.
-                               Avoid using the row-gap property as it sets the gap
-                               even if this input area does not exist. */
+                            /* Add gap between this input area and the select
+                               element above. Avoid using the row-gap property
+                               as it sets the gap even if this input area does
+                               not exist. */
                             margin-top: 10px; /* Magic number */
                         }
                     }
@@ -1929,7 +1948,7 @@ body {
     }
 }
 
-// Modal windows
+/* Modal windows */
 .remodal {
     padding: 30px;
     box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
@@ -2079,7 +2098,7 @@ div.modal-dialog {
         ul {
             float: right;
         }
-        // tooltipped css taken from: https://github.com/primer/primer-tooltips and https://sachinchoolur.github.io/ngclipboard/
+        /* tooltipped css taken from: https://github.com/primer/primer-tooltips and https://sachinchoolur.github.io/ngclipboard/ */
         .tooltipped {
             position: relative
         }
@@ -2777,7 +2796,7 @@ div.modal-dialog {
                             .input.overlayButton {
                                 padding-top: 8px;
                                 padding-bottom: 30px;
-                                //border-bottom: 1px #ddd solid;
+                                /* border-bottom: 1px #ddd solid; */
                                 margin-bottom: 10px;
 
                                 a.button {
@@ -2804,10 +2823,10 @@ div.modal-dialog {
                             }
 
                             .filters {
-                                //border-bottom: 1px #ddd solid;
+                                /* border-bottom: 1px #ddd solid; */
 
                                 .input.link {
-                                    //padding-bottom: 0;
+                                    /* padding-bottom: 0; */
                                 }
 
                                 .input.textarea {

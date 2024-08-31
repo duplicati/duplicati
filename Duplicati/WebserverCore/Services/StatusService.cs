@@ -36,7 +36,7 @@ public class StatusService(
             HasError = settingsService.GetSettings().UnackedError,
             EstimatedPauseEnd = liveControls.EstimatedPauseEnd,
             SuggestedStatusIcon = MapStateToIcon(),
-            UpdateDownloadLink = settingsService.GetSettings().UpdateCheckNewVersion
+            UpdateDownloadLink = settingsService.GetSettings().NewVersionUpdateUrl
         };
         PullSettings(status);
         PullLiveControls(status);
@@ -77,7 +77,7 @@ public class StatusService(
     {
         status.HasError = settingsService.GetSettings().UnackedError;
         status.HasWarning = settingsService.GetSettings().UnackedWarning;
-        status.UpdateDownloadLink = settingsService.GetSettings().UpdateCheckNewVersion;
+        status.UpdateDownloadLink = settingsService.GetSettings().NewVersionUpdateUrl;
     }
 
     private string? GetUpdatedVersion()

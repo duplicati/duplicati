@@ -20,6 +20,7 @@ public class ServerSetting : IEndpointV1
     private static readonly string[] GUARDED_OUTPUT = [
         Server.Database.ServerSettings.CONST.JWT_CONFIG,
         Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
         // Not used anymore, but not completely removed
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
@@ -31,9 +32,12 @@ public class ServerSetting : IEndpointV1
     private static readonly string[] GUARDED_INPUT = [
         Server.Database.ServerSettings.CONST.JWT_CONFIG,
         Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
         Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
+        Server.Database.ServerSettings.CONST.DISABLE_VISUAL_CAPTCHA,
+        Server.Database.ServerSettings.CONST.ENCRYPTED_FIELDS,
         "ServerSSLCertificate",
         "server-passphrase-trayicon-hash",
         "server-passphrase-trayicon-salt"
@@ -127,6 +131,12 @@ public class ServerSetting : IEndpointV1
 
     private static void UpdateSetting(string key, string value, Connection connection)
     {
+        if (key == Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)
+        {
+            connection.ApplicationSettings.SetWebserverPassword(value);
+            return;
+        }
+
         if (GUARDED_INPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
             throw new BadRequestException($"Cannot update {key} setting");
 

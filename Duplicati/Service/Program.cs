@@ -28,7 +28,9 @@ namespace Duplicati.Service
         [STAThread]
         public static int Main(string[] args)
         {
-            using(var runner = new Runner(args))
+            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.Service);
+
+            using (var runner = new Runner(args))
                 runner.Wait();
 
             return 0;

@@ -70,7 +70,7 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName { get { return LC.L("S3 IAM support module"); } }
 
-        public string Description { get { return LC.L("Exposes S3 IAM manipulation as a web module"); } }
+        public string Description { get { return LC.L("Expose S3 IAM manipulation as a web module"); } }
 
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -78,7 +78,7 @@ namespace Duplicati.Library.Backend
             get
             {
                 return new List<ICommandLineArgument>([
-                    new CommandLineArgument(KEY_OPERATION, CommandLineArgument.ArgumentType.Enumeration, LC.L("The operation to perform"), LC.L("Selects the operation to perform"), null, Enum.GetNames(typeof(Operation))),
+                    new CommandLineArgument(KEY_OPERATION, CommandLineArgument.ArgumentType.Enumeration, LC.L("The operation to perform"), LC.L("Select the operation to perform"), null, Enum.GetNames(typeof(Operation))),
                     new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.String, LC.L("The username"), LC.L("The Amazon Access Key ID")),
                     new CommandLineArgument(KEY_PASSWORD, CommandLineArgument.ArgumentType.String, LC.L("The password"), LC.L("The Amazon Secret Key")),
                 ]);
@@ -235,4 +235,3 @@ namespace Duplicati.Library.Backend
         }
     }
 }
-

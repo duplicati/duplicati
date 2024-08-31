@@ -26,7 +26,8 @@ public static class WebApplicationExtensions
         foreach (var endpoint in endpoints)
         {
             var group = application.MapGroup("/api/v1")
-                .AddEndpointFilter<LanguageFilter>();
+                .AddEndpointFilter<LanguageFilter>()
+                .AddEndpointFilter<HostnameFilter>();
 
             var methodMap = endpoint.GetMethod(nameof(IEndpointV1.Map), BindingFlags.Static | BindingFlags.Public);
             methodMap!.Invoke(null, [group]);

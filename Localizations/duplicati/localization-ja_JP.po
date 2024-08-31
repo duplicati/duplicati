@@ -5,8 +5,8 @@
 # 
 # Translators:
 # AlbireoGT, 2017
-# yu hi <yuhisa@gmail.com>, 2019
-# あわしろいくや <ikunya@gmail.com>, 2020
+# あわしろいくや <ikunya@gmail.com>, 2024
+# yu hi <yuhisa@gmail.com>, 2024
 # Suguru Hirahara, 2024
 # 
 #, fuzzy
@@ -14,7 +14,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-14 09:15+0200\n"
+"POT-Creation-Date: 2024-08-30 15:22+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Suguru Hirahara, 2024\n"
 "Language-Team: Japanese (Japan) (https://app.transifex.com/duplicati/teams/67655/ja_JP/)\n"
@@ -131,8 +131,8 @@ msgid "Use GPG Armor"
 msgstr "GPG Armorを使用"
 
 #: Library/Encryption/Strings.cs:52
-msgid "Overrides the GPG command supplied for decryption."
-msgstr "復号に使用するGPGのコマンドを上書きします。"
+msgid "Override the GPG command supplied for decryption."
+msgstr ""
 
 #: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
@@ -141,9 +141,9 @@ msgstr "GPGの復号用のコマンド"
 #: Library/Encryption/Strings.cs:54
 #, csharp-format
 msgid ""
-"Overrides the default GPG encryption command \"{0}\". Normal usage is to "
+"Override the default GPG encryption command \"{0}\". Normal usage is to "
 "request asymetric encryption with the setting {1}."
-msgstr "既定のGPG暗号化のコマンド「{0}」を上書きします。通常は、{1}の設定で非対称暗号化を要求する際に使用されます。"
+msgstr ""
 
 #: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
@@ -225,6 +225,11 @@ msgstr "要求されたフォルダーは存在しません"
 #: Library/Interface/Strings.cs:43
 msgid "Cancelled"
 msgstr "キャンセル済"
+
+#: Library/Interface/Strings.cs:44
+msgid ""
+"Encryption key used to encrypt target settings does not match current key."
+msgstr ""
 
 #: Library/Interface/CustomExceptions.cs:84
 #: Library/Interface/CustomExceptions.cs:92
@@ -330,6 +335,8 @@ msgid ""
 "This backend can read and write data to Swift (OpenStack Object Storage). "
 "Allowed format is \"openstack://container/folder\"."
 msgstr ""
+"このバックエンドでは、Swift（OpenStack "
+"オブジェクトストレージ）との間でデータの読み書きを実行できます。許可されている形式は、「openstack://コンテナー/フォルダー」となります。"
 
 #: Library/Backend/OpenStack/Strings.cs:28
 msgid "OpenStack Simple Storage"
@@ -357,16 +364,16 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:38 Library/Backend/Mega/Strings.cs:28
 #: Library/Backend/SharePoint/Strings.cs:29
 #: Library/Backend/WEBDAV/Strings.cs:29
-msgid "Supplies the password used to connect to the server"
-msgstr "サーバーの接続に使用するパスワードを指定"
+msgid "Supply the password used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
 msgstr "サーバーの接続に使用するユーザーのドメイン名。"
 
 #: Library/Backend/OpenStack/Strings.cs:33
-msgid "Supplies the domain used to connect to the server"
-msgstr "サーバーの接続に使用するドメインを指定"
+msgid "Supply the domain used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/FTP/Strings.cs:35
 #: Library/Backend/CloudFiles/Strings.cs:30 Library/Backend/S3/Strings.cs:34
@@ -389,8 +396,8 @@ msgstr "サーバーの接続に使用するユーザー名。環境変数「AUT
 #: Library/Backend/AzureBlob/Strings.cs:40 Library/Backend/Mega/Strings.cs:30
 #: Library/Backend/SharePoint/Strings.cs:31
 #: Library/Backend/WEBDAV/Strings.cs:31
-msgid "Supplies the username used to connect to the server"
-msgstr "サーバーの接続に使用するユーザー名を指定"
+msgid "Supply the username used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
@@ -401,8 +408,8 @@ msgstr ""
 "テナント名は一般に、料金の支払いを行うユーザーのアカウント名です。このオプションは、パスワードで認証する際には必須となりますが、APIキーで認証する際には必要ありません。"
 
 #: Library/Backend/OpenStack/Strings.cs:37
-msgid "Supplies the Tenant Name used to connect to the server"
-msgstr "サーバーとの接続に使用するテナント名を指定"
+msgid "Supply the Tenant Name used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid ""
@@ -411,8 +418,8 @@ msgid ""
 msgstr "APIキーを入力すると、パスワードとテナントIDを指定せずにサービス提供者に接続できます。"
 
 #: Library/Backend/OpenStack/Strings.cs:39
-msgid "Supplies the API key used to connect to the server"
-msgstr "サーバーの接続に使用するAPIキーを指定"
+msgid "Supply the API key used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:40
 #, csharp-format
@@ -423,12 +430,12 @@ msgstr ""
 "認証用URLでユーザーの認証と、ストレージサービスの検知を行えます。URLは通常「/v2.0」で終わります。既知のサービス提供者は{0}{1}です。"
 
 #: Library/Backend/OpenStack/Strings.cs:41
-msgid "Supplies the authentication URL"
-msgstr "認証用URLを指定"
+msgid "Supply the authentication URL"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:42
 msgid "The keystone API version to use. Valid values are 'v2' and 'v3'."
-msgstr ""
+msgstr "使用するKeystone APIのバージョン。有効な値は「v2」と「v3」です。"
 
 #: Library/Backend/OpenStack/Strings.cs:43
 msgid "The keystone API version to use"
@@ -443,16 +450,16 @@ msgstr ""
 "このオプションはコンテナーの作成時に、コンテナーを作成するリージョンの指定にのみ使用されます。リージョンの一覧についてはサービス提供者に確認してください。指定しない場合は既定のリージョンが設定されます。"
 
 #: Library/Backend/OpenStack/Strings.cs:45
-msgid "Supplies the region used for creating a container"
-msgstr "コンテナーの作成に使用するリージョンを指定"
+msgid "Supply the region used for creating a container"
+msgstr ""
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:67
 msgid "OpenStack configuration module"
 msgstr "OpenStackの設定モジュール"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:69
-msgid "Exposes OpenStack configuration as a web module"
-msgstr "OpenStackの設定をウェブモジュールとして公開"
+msgid "Expose OpenStack configuration as a web module"
+msgstr ""
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
 #: Library/Backend/GoogleServices/GCSConfig.cs:81
@@ -463,8 +470,8 @@ msgstr "取得する設定"
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
 #: Library/Backend/GoogleServices/GCSConfig.cs:81
 #: Library/Backend/S3/S3Config.cs:84 Library/Backend/Storj/StorjConfig.cs:53
-msgid "Provides different config values"
-msgstr "異なる設定値を指定"
+msgid "Provide different config values"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:27
 msgid ""
@@ -472,6 +479,7 @@ msgid ""
 "formats are \"ftp://hostname/folder\" and "
 "\"ftp://username:password@hostname/folder\"."
 msgstr ""
+"このバックエンドでは、FTPをベースとしたバックエンドとの間でデータの読み書きを実行できます。許可されている形式は、「ftp://ホスト名/フォルダー」と「ftp://ユーザー名:パスワード@ホスト名/フォルダー」となります。"
 
 #: Library/Backend/FTP/Strings.cs:28
 msgid "FTP"
@@ -483,10 +491,12 @@ msgid ""
 "Activate this option to make the FTP connection in active mode. Even if the "
 "option --{0} is also set, the connection will be made in active mode."
 msgstr ""
+"このオプションを有効にすると、FTP接続はアクティブモードで行われます。オプション --{0} "
+"が同時に設定されている場合でも、接続はアクティブモードで行われます。"
 
 #: Library/Backend/FTP/Strings.cs:30 Library/Backend/FTP/Strings.cs:32
-msgid "Toggles the FTP connections method"
-msgstr "FTP接続の方法を切り替える"
+msgid "Toggle the FTP connections method"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:31
 #, csharp-format
@@ -495,6 +505,8 @@ msgid ""
 " better with some firewalls. If the option --{0} is set, this option is "
 "ignored."
 msgstr ""
+"このオプションを有効にすると、FTP接続はパッシブモードで行われます。一部のファイヤーウォールではそれにより動作が改善する場合があります。オプション "
+"--{0} が同時に設定されている場合、このオプションは無視されます。"
 
 #: Library/Backend/FTP/Strings.cs:33 Library/Backend/CloudFiles/Strings.cs:28
 #: Library/Backend/S3/Strings.cs:32
@@ -513,11 +525,11 @@ msgstr "サーバーの接続に使用するパスワード。環境変数「AUT
 msgid ""
 "Use this option to communicate using Secure Socket Layer (SSL) over ftp "
 "(ftps)."
-msgstr ""
+msgstr "このオプションを有効にすると、FTP通信にSecure Socket Layer（SSL）を使用します（ftps）。"
 
 #: Library/Backend/FTP/Strings.cs:38
-msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr "DuplicatiにSSL（ftps）接続を行うよう設定"
+msgid "Instruct Duplicati to use an SSL (ftps) connection"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:39
 msgid ""
@@ -558,14 +570,16 @@ msgid "Google Cloud Storage configuration module"
 msgstr "Google クラウドストレージの設定モジュール"
 
 #: Library/Backend/GoogleServices/GCSConfig.cs:73
-msgid "Exposes Google Cloud Storage configuration as a web module"
-msgstr "Google クラウドストレージの設定をウェブモジュールとして公開"
+msgid "Expose Google Cloud Storage configuration as a web module"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:27
 msgid ""
 "This backend can read and write data to Google Cloud Storage. Allowed format"
 " is \"gcs://bucket/folder\"."
 msgstr ""
+"このバックエンドでは、Google "
+"クラウドストレージとの間でデータの読み書きを実行できます。許可されている形式は、「gcs://バケット/フォルダー」となります。"
 
 #: Library/Backend/GoogleServices/Strings.cs:28
 msgid "Google Cloud Storage"
@@ -575,7 +589,7 @@ msgstr "Google クラウドストレージ"
 #: Library/Backend/OAuthHelper/Strings.cs:26
 #, csharp-format
 msgid "You need an AuthID. You can get it from: {0}"
-msgstr ""
+msgstr "認証IDが必要です。{0}で取得できます。"
 
 #: Library/Backend/GoogleServices/Strings.cs:30
 #, csharp-format
@@ -611,8 +625,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:35
-msgid "Specifies location option for creating a bucket"
-msgstr "バケットの作成場所のオプションを指定"
+msgid "Specify location option for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:36
 #, csharp-format
@@ -624,8 +638,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:38
-msgid "Specifies storage class for creating a bucket"
-msgstr "バケットを作成する保存領域のクラスを指定"
+msgid "Specify storage class for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:39
 msgid ""
@@ -636,14 +650,15 @@ msgstr ""
 "このオプションは新しいバケットの作成時にのみ使用されます。このオプションで、バケットが存在するプロジェクトのIDを指定できます。利用料金の請求先は、プロジェクトにより決定されます。"
 
 #: Library/Backend/GoogleServices/Strings.cs:40
-msgid "Specifies project for creating a bucket"
-msgstr "バケットを作成するプロジェクトを指定"
+msgid "Specify project for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid ""
 "This backend can read and write data to Google Drive. Allowed format is "
 "\"googledrive://folder/subfolder\"."
 msgstr ""
+"このバックエンドでは、Googleドライブとの間でデータの読み書きを実行できます。許可されている形式は、「googledrive://フォルダー/サブフォルダー」となります。"
 
 #: Library/Backend/GoogleServices/Strings.cs:45
 msgid "Google Drive"
@@ -669,6 +684,7 @@ msgid ""
 "This backend can read and write data to CloudFiles. Allowed format is "
 "\"cloudfiles://container/folder\"."
 msgstr ""
+"このバックエンドでは、CloudFilesとの間でデータの読み書きを実行できます。許可されている形式は、「cloudfiles://コンテナー/フォルダー」となります。"
 
 #: Library/Backend/CloudFiles/Strings.cs:25
 msgid "Rackspace CloudFiles"
@@ -681,6 +697,7 @@ msgid ""
 "account resides. Use this option to set an alternate authentication URL. "
 "This option overrides --{0}."
 msgstr ""
+"CloudFilesはアカウントの所在地に応じて異なるサーバーを認証に使用しています。このオプションで、別の認証用URLを指定できます。このオプションは--{0}を上書きします。"
 
 #: Library/Backend/CloudFiles/Strings.cs:27
 msgid "Provide another authentication URL"
@@ -688,11 +705,11 @@ msgstr "別の認証用URLを指定"
 
 #: Library/Backend/CloudFiles/Strings.cs:32
 msgid "The API Access Key used to authenticate with CloudFiles."
-msgstr ""
+msgstr "CloudFilesとの認証用に使用するAPIアクセスキー。"
 
 #: Library/Backend/CloudFiles/Strings.cs:33
-msgid "Supplies the access key used to connect to the server"
-msgstr "サーバーとの接続に使用するアクセスキーを指定"
+msgid "Supply the access key used to connect to the server"
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:34
 #, csharp-format
@@ -701,6 +718,7 @@ msgid ""
 "this option if the account is a UK based account. Note that this is "
 "equivalent to setting --{0}={1}."
 msgstr ""
+"Duplicatiは、指定されるログイン情報がアメリカ合衆国向けのアカウントのものであると想定します。イギリス向けのアカウントを使用している場合は、このオプションを有効にしてください。なおこれは「--{0}={1}」の設定と同じものです。"
 
 #: Library/Backend/CloudFiles/Strings.cs:35
 msgid "Use a UK account"
@@ -708,11 +726,11 @@ msgstr "イギリスのアカウントを使用"
 
 #: Library/Backend/CloudFiles/Strings.cs:36
 msgid "The username used to authenticate with CloudFiles."
-msgstr ""
+msgstr "CloudFilesの認証時に使用するユーザー名。"
 
 #: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Supplies the username used to authenticate with CloudFiles"
-msgstr "CloudFilesの認証時に使用するユーザー名を指定"
+msgid "Supply the username used to authenticate with CloudFiles"
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:38
 msgid "MD5 Hash (ETag) verification failed"
@@ -737,21 +755,22 @@ msgstr "CloudFilesのユーザーIDが指定されていません"
 
 #: Library/Backend/CloudFiles/Strings.cs:43
 msgid "Unexpected CloudFiles response. Perhaps the API has changed?"
-msgstr ""
+msgstr "CloudFilesから予期しない応答がありました。APIが変更されている可能性があります。"
 
 #: Library/Backend/S3/S3Config.cs:75
 msgid "S3 configuration module"
 msgstr "S3の設定モジュール"
 
 #: Library/Backend/S3/S3Config.cs:77
-msgid "Exposes S3 configuration as a web module"
-msgstr "S3の設定をウェブモジュールとして公開"
+msgid "Expose S3 configuration as a web module"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
 "format is \"s3://bucketname/prefix\"."
 msgstr ""
+"このバックエンドでは、S3互換サーバーとの間でデータの読み書きを実行できます。許可されている形式は、「s3://バケット名/プレフィックス」となります。"
 
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
@@ -762,7 +781,7 @@ msgstr "S3互換"
 msgid ""
 "AWS Secret Access Key can be obtained after logging into your AWS account. "
 "This can also be supplied through the option --{0}."
-msgstr ""
+msgstr "AWSの秘密アクセスキーは、AWSのアカウントにログインしてから取得できます。オプション --{0} でも指定できます。"
 
 #: Library/Backend/S3/Strings.cs:29
 msgid "AWS Secret Access Key"
@@ -773,7 +792,7 @@ msgstr "AWSの秘密アクセスキー"
 msgid ""
 "AWS Access Key ID can be obtained after logging into your AWS account. This "
 "can also be supplied through the option --{0}."
-msgstr ""
+msgstr "AWSのアクセスキーのIDは、AWSのアカウントにログインしてから取得できます。オプション --{0} でも指定できます。"
 
 #: Library/Backend/S3/Strings.cs:31
 msgid "AWS Access Key ID"
@@ -797,8 +816,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:40
-msgid "Specifies S3 location constraints"
-msgstr "S3の場所に関する制約を指定"
+msgid "Specify S3 location constraints"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:41
 #, csharp-format
@@ -810,8 +829,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:43
-msgid "Specifies an alternate S3 server name"
-msgstr "代替のS3サーバー名を指定"
+msgid "Specify an alternate S3 server name"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:44
 msgid ""
@@ -821,8 +840,8 @@ msgstr ""
 "awsまたはminioを設定してください。設定に応じて、AWS SDKまたはMinio SDKのいずれかを使用して、S3互換サービスとの通信を行います。"
 
 #: Library/Backend/S3/Strings.cs:45
-msgid "Specifies the S3 client library to use"
-msgstr "使用するS3のクライアントライブラリーを指定"
+msgid "Specify the S3 client library to use"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:46
 msgid ""
@@ -830,11 +849,13 @@ msgid ""
 "(https). Note that bucket names containing a period has problems with SSL "
 "connections."
 msgstr ""
+"このオプションを有効にすると、HTTP通信にSecure Socket "
+"Layer（SSL）を使用します（https）。なおSSL接続では、バケット名にドット（.）がある場合、適切に接続を行うことができません。"
 
 #: Library/Backend/S3/Strings.cs:47 Library/Backend/WEBDAV/Strings.cs:40
 #: Library/Backend/TahoeLAFS/Strings.cs:27
-msgid "Instructs Duplicati to use an SSL (https) connection"
-msgstr "DuplicatiにSSL（https）接続を使用するよう指示"
+msgid "Instruct Duplicati to use an SSL (https) connection"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:48
 msgid ""
@@ -861,16 +882,16 @@ msgid "S3 IAM support module"
 msgstr "S3 IAMのサポートモジュール"
 
 #: Library/Backend/S3/S3IAM.cs:73
-msgid "Exposes S3 IAM manipulation as a web module"
-msgstr "S3のIAMの変更をウェブモジュールとして公開"
+msgid "Expose S3 IAM manipulation as a web module"
+msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:81
 msgid "The operation to perform"
 msgstr "実行する操作"
 
 #: Library/Backend/S3/S3IAM.cs:81
-msgid "Selects the operation to perform"
-msgstr "実行する操作を選択"
+msgid "Select the operation to perform"
+msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:82
 msgid "The username"
@@ -894,6 +915,7 @@ msgid ""
 "alternative FTP client. Allowed formats are \"aftp://hostname/folder\" and "
 "\"aftp://username:password@hostname/folder\"."
 msgstr ""
+"このバックエンドでは、代替のFTPクライアントを使用して、FTPをベースとしたバックエンドとの間でデータの読み書きを実行できます。サポートされている形式は、「aftp://ホスト名/フォルダー」と「aftp://ユーザー名:パスワード@ホスト名/フォルダー」となります。"
 
 #: Library/Backend/AlternativeFTP/Strings.cs:31
 msgid "Alternative FTP"
@@ -1059,6 +1081,7 @@ msgid ""
 "Allowed formats are \"ssh://hostname/folder\" and "
 "\"ssh://username:password@hostname/folder\"."
 msgstr ""
+"このバックエンドでは、SFTPクライアントを使用して、SSHをベースとしたバックエンドとの間でデータの読み書きを実行できます。サポートされている形式は、「ssh://ホスト名/フォルダー」と「ssh://ユーザー名:パスワード@ホスト名/フォルダー」となります。"
 
 #: Library/Backend/SSHv2/Strings.cs:47
 msgid "SFTP (SSH)"
@@ -1073,8 +1096,8 @@ msgstr ""
 "11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66」のような形式です。"
 
 #: Library/Backend/SSHv2/Strings.cs:53
-msgid "Supplies server fingerprint used for validation of server identity"
-msgstr "サーバーのIDの検証用のフィンガープリントを指定。"
+msgid "Supply server fingerprint used for validation of server identity"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:54
 msgid ""
@@ -1085,19 +1108,19 @@ msgstr ""
 "中間者攻撃を防ぐために、サーバーのフィンガープリントを接続時に検証します。このオプションを有効にすると、ホストの鍵のフィンガープリントは検証されなくなります。テスト用にのみ使用してください。"
 
 #: Library/Backend/SSHv2/Strings.cs:55
-msgid "Disables fingerprint validation"
-msgstr "フィンガープリントの検証を無効にする"
+msgid "Disable fingerprint validation"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:56
 msgid ""
-"Points to a valid OpenSSH keyfile. If the file is encrypted, the password "
+"Point to a valid OpenSSH keyfile. If the file is encrypted, the password "
 "supplied is used to decrypt it. If the keyfile is specified, the password is"
 " not used to authenticate."
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:57 Library/Backend/SSHv2/Strings.cs:59
-msgid "Uses a SSH private key to authenticate"
-msgstr "SSHの秘密鍵で認証"
+msgid "Use a SSH private key to authenticate"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:58
 #, csharp-format
@@ -1106,16 +1129,17 @@ msgid ""
 "If the key is encrypted, the password supplied is used to decrypt it. If the"
 " private key is specified, the password is not used to authenticate."
 msgstr ""
+"URL形式にエンコードしたSSHの秘密鍵を指定できます。秘密鍵の先頭には{0}を付ける必要があります。秘密鍵が暗号化されている場合は、指定されたパスワードで復号します。秘密鍵が指定されている場合は、パスワードによる認証は行いません。"
 
 #: Library/Backend/SSHv2/Strings.cs:60
 msgid ""
 "Use this option to manage the internal timeout for SSH operations. If the "
 "value is set to zero, the operations will not time out."
-msgstr ""
+msgstr "SSH経由の操作に関してDuplicatiで指定するタイムアウトの数値を調整できます。0を設定した場合、タイムアウトは無効となります。"
 
 #: Library/Backend/SSHv2/Strings.cs:61
-msgid "Sets the operation timeout value"
-msgstr "操作のタイムアウトの数値を設定"
+msgid "Set the operation timeout value"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:62
 msgid ""
@@ -1124,10 +1148,12 @@ msgid ""
 "Using keep-alive will keep the connection open in this scenario. If this "
 "value is set to zero, the keep-alive is disabled."
 msgstr ""
+"SSH接続用にkeep-aliveを送信する間隔を指定できます。接続がアイドルの場合、ファイヤーウォールの中には接続を切断するものがあります。Keep-"
+"aliveを設定すると、そうした状況でも接続を維持できます。数値を0に設定すると、keep-aliveは無効となります。"
 
 #: Library/Backend/SSHv2/Strings.cs:63
-msgid "Sets a keepalive value"
-msgstr "keepaliveの値を設定"
+msgid "Set a keepalive value"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:64
 #, csharp-format
@@ -1155,6 +1181,7 @@ msgid ""
 "This backend can read and write data to Box.com. Allowed format is "
 "\"box://folder/subfolder\"."
 msgstr ""
+"このバックエンドでは、Box.comとの間でデータの読み書きを実行できます。許可されている形式は、「box://フォルダー/サブフォルダー」となります。"
 
 #: Library/Backend/Box/Strings.cs:26
 msgid "Box.com"
@@ -1236,6 +1263,7 @@ msgid ""
 "(e.g.: \"file://\\\\server\\folder\") or local paths (e.g.: (win) "
 "\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
 msgstr ""
+"このバックエンドでは、ファイルをベースとしたバックエンドとの間でデータの読み書きを実行できます。サポートされている形式は、「file://ホスト名/フォルダー」と「file://ユーザー名:パスワード@ホスト名/フォルダー」となります。UNCのパス（例：「file://\\\\サーバー\\フォルダー」）またはローカルのパス（例：Windowsの場合は「file://c:\\フォルダー」、Linuxの場合は「file:///usr/pub/files」）も指定できます。"
 
 #: Library/Backend/File/Strings.cs:25
 msgid "Local folder or drive"
@@ -1329,6 +1357,8 @@ msgid ""
 "This backend can read and write data to the Backblaze B2 Cloud Storage. "
 "Allowed format is \"b2://bucketname/prefix\"."
 msgstr ""
+"このバックエンドでは、Backblaze B2 "
+"クラウドストレージとの間でデータの読み書きを実行できます。許可されている形式は、「b2://バケット名/プレフィックス」となります。"
 
 #: Library/Backend/Backblaze/Strings.cs:26
 msgid "B2 Cloud Storage"
@@ -1340,6 +1370,8 @@ msgid ""
 "B2 Cloud Storage Application Key can be obtained after logging into your "
 "Backblaze account. This can also be supplied through the option --{0}."
 msgstr ""
+"B2 クラウドストレージのアプリケーションキーは、Backblazeのアカウントにログインしてから取得できます。オプション --{0} "
+"でも指定できます。"
 
 #: Library/Backend/Backblaze/Strings.cs:28
 msgid "B2 Cloud Storage Application Key"
@@ -1351,6 +1383,7 @@ msgid ""
 "B2 Cloud Storage Account ID can be obtained after logging into your "
 "Backblaze account. This can also be supplied through the option --{0}."
 msgstr ""
+"B2 クラウドストレージのアカウントのIDは、Backblazeのアカウントにログインしてから取得できます。オプション --{0} でも指定できます。"
 
 #: Library/Backend/Backblaze/Strings.cs:30
 msgid "B2 Cloud Storage Account ID"
@@ -1487,12 +1520,10 @@ msgstr "HttpClientクラスの使用を選択"
 #: Library/Backend/OneDrive/Strings.cs:41
 #, csharp-format
 msgid ""
-"Stores files in Microsoft OneDrive or Microsoft OneDrive for Business via "
-"the Microsoft Graph API. Usage of this backend requires that you agree to "
-"the terms in {0} ({1}) and {2} ({3})."
+"Store files in Microsoft OneDrive or Microsoft OneDrive for Business via the"
+" Microsoft Graph API. Usage of this backend requires that you agree to the "
+"terms in {0} ({1}) and {2} ({3})."
 msgstr ""
-"Microsoft Graph APIでファイルをMicrosoft OneDriveまたはMicrosoft OneDrive for "
-"Businessに保存します。このバックエンドを使用するには{0}（{1}）と{2}（{3}）の利用規約に同意する必要があります。"
 
 #: Library/Backend/OneDrive/Strings.cs:42
 msgid "Microsoft OneDrive v2"
@@ -1514,12 +1545,10 @@ msgstr "ドライブのID（オプション）"
 #: Library/Backend/OneDrive/Strings.cs:49
 #, csharp-format
 msgid ""
-"Stores files in a Microsoft SharePoint site via the Microsoft Graph API. "
+"Store files in a Microsoft SharePoint site via the Microsoft Graph API. "
 "Usage of this backend requires that you agree to the terms in {0} ({1}) and "
 "{2} ({3})."
 msgstr ""
-"Microsoft Graph APIでファイルをMicrosoft "
-"SharePointのサイトに保存します。このバックエンドを使用するには{0}（{1}）と{2}（{3}）の利用規約に同意する必要があります。"
 
 #: Library/Backend/OneDrive/Strings.cs:50
 msgid "Microsoft SharePoint v2"
@@ -1545,7 +1574,7 @@ msgstr "サイトIDが衝突しています。{0}が指定されましたが、{
 #: Library/Backend/OneDrive/Strings.cs:59
 #, csharp-format
 msgid ""
-"Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. "
+"Store files in a Microsoft Office 365 Group via the Microsoft Graph API. "
 "Allowed formats are "
 "\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
 " (with \"//\" being optionally used to indicate the root document folder) "
@@ -1631,7 +1660,7 @@ msgstr ""
 #: Library/Backend/AliyunOSS/Strings.cs:14
 #: Library/Backend/TencentCOS/Strings.cs:36
 msgid "Bucket name"
-msgstr ""
+msgstr "バケット名"
 
 #: Library/Backend/AliyunOSS/Strings.cs:15
 msgid "Region indicates the physical location of the OSS data center."
@@ -1656,6 +1685,8 @@ msgid ""
 "This backend can read and write data to Azure blob storage. Allowed format "
 "is \"azure://bucketname\"."
 msgstr ""
+"このバックエンドでは、Azure "
+"blobストレージとの間でデータの読み書きを実行できます。許可されている形式は、「azure://バケット名」となります。"
 
 #: Library/Backend/AzureBlob/Strings.cs:26
 msgid "Azure blob"
@@ -1744,7 +1775,7 @@ msgstr "秘密鍵"
 
 #: Library/Backend/TencentCOS/Strings.cs:35
 msgid "Bucket name, format: BucketName-APPID"
-msgstr ""
+msgstr "バケット名。形式：BucketName-APPID"
 
 #: Library/Backend/TencentCOS/Strings.cs:37
 msgid ""
@@ -1752,10 +1783,12 @@ msgid ""
 " The object storage COS data is stored in the storage buckets of these "
 "regions. https://intl.cloud.tencent.com/document/product/436/6224."
 msgstr ""
+"リージョンは、Tencentのクラウドホスティングコンピュータールームが分散して設置される際のエリアのことを指します。オブジェクトストレージのCOSのデータは、リージョンのストレージのバケットに保存されます。詳細については"
+" https://intl.cloud.tencent.com/document/product/436/6224 で確認してください。"
 
 #: Library/Backend/TencentCOS/Strings.cs:38
-msgid "Specifies COS location constraints"
-msgstr "COSの場所に関する制約を指定"
+msgid "Specify COS location constraints"
+msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:39
 msgid ""
@@ -1774,6 +1807,7 @@ msgid ""
 "This backend can read and write data to Jottacloud using its REST protocol. "
 "Allowed format is \"jottacloud://folder/subfolder\"."
 msgstr ""
+"このバックエンドでは、Jottacloudとの間でRESTプロトコルを使い、データの読み書きを実行できます。許可されている形式は、「jottacloud://フォルダー/サブフォルダー」となります。"
 
 #: Library/Backend/Jottacloud/Strings.cs:26
 msgid "Jottacloud"
@@ -1785,7 +1819,7 @@ msgstr "ユーザー名が見つかりません"
 
 #: Library/Backend/Jottacloud/Strings.cs:30
 msgid "No path given. Files cannot be uploaded to the root folder"
-msgstr ""
+msgstr "パスが指定されていません。ルートフォルダーにはファイルをアップロードできません"
 
 #: Library/Backend/Jottacloud/Strings.cs:31
 msgid "Illegal mount point given."
@@ -1802,8 +1836,8 @@ msgstr ""
 "使用するバックアップ用のデバイス。存在しない場合はこれを作成します。デバイスはJottacloudのウェブインターフェースのバックアップパネルで管理できます。ユーザー定義のデバイスを指定する場合は、「{0}」オプションで、デバイスで使用するマウントポイントも指定してください。"
 
 #: Library/Backend/Jottacloud/Strings.cs:34
-msgid "Supplies the backup device to use"
-msgstr "使用するバックアップ用デバイスを指定"
+msgid "Supply the backup device to use"
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:35
 #, csharp-format
@@ -1817,8 +1851,8 @@ msgstr ""
 "サーバーで使用するマウントポイント。既定では、組み込み型のアーカイブのマウントポイントを使用するように「Archive」が設定されます。「Sync」に設定すると、組み込み型の同期用マウントポイントが設定されます。「{0}」でカスタムデバイスを指定した場合は、任意に名前を設定して構いません。"
 
 #: Library/Backend/Jottacloud/Strings.cs:36
-msgid "Supplies the mount point to use on the server"
-msgstr "サーバーで使用するマウントポイントを指定"
+msgid "Supply the mount point to use on the server"
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:37
 msgid ""
@@ -1847,6 +1881,7 @@ msgid ""
 "This backend can read and write data to Mega.co.nz. Allowed format is "
 "\"mega://folder/subfolder\"."
 msgstr ""
+"このバックエンドでは、Mega.co.czとの間でデータの読み書きを実行できます。許可されている形式は、「mega://フォルダー/サブフォルダー」となります。"
 
 #: Library/Backend/Mega/Strings.cs:26
 msgid "mega.nz"
@@ -1856,7 +1891,7 @@ msgstr "mega.nz"
 msgid ""
 "For accounts with two-factor authentication enabled, set the shared secret "
 "used to generate the two-factor TOTP codes."
-msgstr ""
+msgstr "2要素認証が有効とされているアカウントの場合は、ここにTOTPコードを生成する共有のシークレットを設定してください。"
 
 #: Library/Backend/Mega/Strings.cs:32
 msgid "The shared secret used to generate two-factor TOTP codes"
@@ -1872,7 +1907,7 @@ msgstr "ユーザー名が入力されていません"
 
 #: Library/Backend/Idrivee2/Strings.cs:24
 msgid "This backend can read and write data to IDrive e2."
-msgstr ""
+msgstr "このバックエンドでは、IDrive e2との間でデータの読み書きを実行できます。"
 
 #: Library/Backend/Idrivee2/Strings.cs:25
 msgid "IDrive e2"
@@ -1883,14 +1918,14 @@ msgstr "IDrive e2"
 msgid ""
 "Access Key Secret can be obtained after logging into your IDrive e2 account."
 " This can also be supplied through the option --{0}."
-msgstr ""
+msgstr "アクセスキーのシークレットは、IDrive e2のアカウントにログインしてから取得できます。オプション --{0} でも指定できます。"
 
 #: Library/Backend/Idrivee2/Strings.cs:28
 #, csharp-format
 msgid ""
 "Access Key ID can be obtained after logging into your IDrive e2 account. "
 "This can also be supplied through the option --{0}."
-msgstr ""
+msgstr "アクセスキーのIDは、IDrive e2のアカウントにログインしてから取得できます。オプション --{0} でも指定できます。"
 
 #: Library/Backend/Idrivee2/Strings.cs:31
 msgid ""
@@ -1919,6 +1954,8 @@ msgid ""
 " Use a double slash '//' in the path to denote the web from the documents "
 "library."
 msgstr ""
+"このバックエンドでは、SharePoint Server（OneDrive for "
+"Businessを含む）との間でデータの読み書きを実行できます。許可されている形式は、「mssp://tennant.sharepoint.com/ウェブへのパス//BaseDocLibrary/サブフォルダー」と「mssp://ユーザー名:パスワード@tennant.sharepoint.com/ウェブへのパス//BaseDocLibrary/サブフォルダー」となります。パスに二重スラッシュ（//）を使うと、ドキュメントのライブラリーからウェブを示すことができます。"
 
 #: Library/Backend/SharePoint/Strings.cs:27
 msgid "Microsoft SharePoint"
@@ -2011,6 +2048,8 @@ msgid ""
 " You can use a double slash '//' in the path to denote the base path from "
 "the documents folder."
 msgstr ""
+"このバックエンドでは、Microsoft OneDrive for "
+"Businessとの間でデータの読み書きを実行できます。許可されている形式は、「od4b://tennant.sharepoint.com/personal/ユーザー名_ドメイン/ドキュメント/サブフォルダー」と「od4b://ユーザー名:パスワード@tennant.sharepoint.com/personal/ユーザー名_ドメイン/ドキュメント/フォルダー」となります。パスに二重スラッシュ（//）を使うと、ドキュメントのフォルダーからの基本パスを示すことができます。"
 
 #: Library/Backend/SharePoint/Strings.cs:54
 msgid "Microsoft OneDrive for Business"
@@ -2021,6 +2060,7 @@ msgid ""
 "This backend can read and write data to Dropbox. Allowed format is "
 "\"dropbox://folder/subfolder\"."
 msgstr ""
+"このバックエンドでは、Dropboxとの間でデータの読み書きを実行できます。許可されている形式は、「dropbox://フォルダー/サブフォルダー」となります。"
 
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
@@ -2032,6 +2072,7 @@ msgid ""
 "the HTTP protocol. Allowed formats are \"webdav://hostname/folder\" and "
 "\"webdav://username:password@hostname/folder\"."
 msgstr ""
+"このバックエンドでは、WebDAVが有効に設定されているサーバーとの間でHTTPプロトコルを使い、データの読み書きを実行できます。サポートされている形式は、「webdav://ホスト名/フォルダー」と「webdav://ユーザー名:パスワード@ホスト名/フォルダー」となります。"
 
 #: Library/Backend/WEBDAV/Strings.cs:25
 msgid "WebDAV"
@@ -2046,6 +2087,7 @@ msgid ""
 "attacker. Using this option, the client does not accept this, and always "
 "uses Digest authentication or fails to connect."
 msgstr ""
+"HTTPのDigest認証を使用すると、ユーザーは、パスワードを平文で送信せずにサーバーと認証を行うことができます。ただし、HTTPではBasic認証をフォールバックとしており、Basic認証ではクライアントに対してパスワードを攻撃者に送信するよう設定できてしまうため、中間者攻撃を容易に行うことができます。このオプションを有効にすると、クライアントはBasic認証をフォールバックとせず、常にDigest認証を行い、認証に成功しなかった場合は、接続しないように指示できます。"
 
 #: Library/Backend/WEBDAV/Strings.cs:27
 msgid "Force the use of the HTTP Digest authentication method"
@@ -2074,7 +2116,7 @@ msgstr ""
 msgid ""
 "Use this option to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
-msgstr ""
+msgstr "このオプションを有効にすると、HTTP通信にSecure Socket Layer（SSL）を使用します（https）。"
 
 #: Library/Backend/WEBDAV/Strings.cs:41
 msgid ""
@@ -2107,8 +2149,8 @@ msgid "Storj DCS configuration module"
 msgstr "Storj DCSの設定モジュール"
 
 #: Library/Backend/Storj/StorjConfig.cs:46
-msgid "Exposes Storj DCS configuration as a web module"
-msgstr "Storj DCSの設定をウェブモジュールとして公開"
+msgid "Expose Storj DCS configuration as a web module"
+msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:27
 msgid "This backend can read and write data to the Storj DCS."
@@ -2120,17 +2162,17 @@ msgstr "Storj DCS（分散型クラウドストレージ）"
 
 #: Library/Backend/Storj/Strings.cs:29
 msgid "Connection-test failed."
-msgstr ""
+msgstr "接続試験に失敗しました。"
 
 #: Library/Backend/Storj/Strings.cs:30
 msgid ""
 "Specify the authentication method which describes which way to use to "
 "connect to the network - either via API key or via an access grant."
-msgstr ""
+msgstr "APIキーまたはアクセス権のどちらで認証し、ネットワークに接続するかを指定。"
 
 #: Library/Backend/Storj/Strings.cs:31
 msgid "Authentication method"
-msgstr ""
+msgstr "認証方法"
 
 #: Library/Backend/Storj/Strings.cs:32
 msgid ""
@@ -2138,10 +2180,12 @@ msgid ""
 "server for high-performance SLA-backed connectivity or use a community "
 "server. Or even host your own."
 msgstr ""
+"全メタデータを管理するサテライトを指定。Storj "
+"DCSのサーバーを使用すると、サービスレベル合意（SLA）に基づく高性能な接続を達成できます。コミュニティーによるサーバーを使用したり、自身でサテライトをホストしたりすることもできます。"
 
 #: Library/Backend/Storj/Strings.cs:33
 msgid "Satellite"
-msgstr ""
+msgstr "サテライト"
 
 #: Library/Backend/Storj/Strings.cs:34
 msgid ""
@@ -2149,10 +2193,11 @@ msgid ""
 "satellite. Head over to the dashboard of your satellite to create one if you"
 " do not already have an API key."
 msgstr ""
+"APIキーを指定。APIキーで、選択したサテライトの特定のプロジェクトにアクセスできます。APIキーが無い場合は、あなたのサテライトのダッシュボードで作成することができます。"
 
 #: Library/Backend/Storj/Strings.cs:35
 msgid "API key"
-msgstr ""
+msgstr "APIキー"
 
 #: Library/Backend/Storj/Strings.cs:36
 msgid ""
@@ -2161,24 +2206,25 @@ msgid ""
 "for Storj you do not necessary need any additional encryption (from "
 "Duplicati) in place."
 msgstr ""
+"暗号化用のパスフレーズを指定。パスフレーズは、Storjのネットワークにデータを送信する前に、データを暗号化するために使用されます。Storjを使用する場合、このパスフレーズを設定すれば、それで暗号化には十分です。Duplicatiの側で追加の暗号化を行う必要はありません。"
 
 #: Library/Backend/Storj/Strings.cs:37
 msgid "Encryption passphrase"
-msgstr ""
+msgstr "暗号化用のパスフレーズ"
 
 #: Library/Backend/Storj/Strings.cs:38
 msgid ""
 "Supply the access grant which contains all information in one encrypted "
 "string. You may use it instead of a satellite, API key and secret."
-msgstr ""
+msgstr "アクセス権を指定。アクセス権は、必要な全ての情報を暗号化した文字列からなります。サテライト、APIキー、秘密鍵の代わりに使用できます。"
 
 #: Library/Backend/Storj/Strings.cs:39
 msgid "Access grant"
-msgstr ""
+msgstr "アクセス権"
 
 #: Library/Backend/Storj/Strings.cs:40
 msgid "Specify the bucket for storing the backup."
-msgstr ""
+msgstr "バックアップを保存するバケットを指定。"
 
 #: Library/Backend/Storj/Strings.cs:41
 msgid "Bucket"
@@ -2186,11 +2232,11 @@ msgstr "バケット"
 
 #: Library/Backend/Storj/Strings.cs:42
 msgid "Specify the folder in the bucket for storing the backup."
-msgstr ""
+msgstr "バックアップを保存する、バケット内のフォルダーを指定。"
 
 #: Library/Backend/Storj/Strings.cs:43
 msgid "Folder"
-msgstr ""
+msgstr "フォルダー"
 
 #: Library/Backend/OAuthHelper/Strings.cs:27
 #, csharp-format
@@ -2206,7 +2252,318 @@ msgstr "予期されていないエラーコード：{0} - {1}"
 
 #: Library/Backend/OAuthHelper/Strings.cs:31
 msgid "The OAuth service is currently over quota. Try again in a few hours"
+msgstr "現在OAuthのサービスは割り当て量を超えています。数時間後に再度試してください"
+
+#: Library/RestAPI/Strings.cs:9
+msgid "Another instance is running, and was notified"
+msgstr "他のインスタンスが存在しています。通知しました"
+
+#: Library/RestAPI/Strings.cs:10
+#, csharp-format
+msgid ""
+"Failed to create, open or upgrade the database.\n"
+"Error message: {0}"
 msgstr ""
+"データベースを作成、アップグレード、または開けませんでした。\n"
+"エラーメッセージ：{0}"
+
+#: Library/RestAPI/Strings.cs:12
+msgid "Display this help"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:13
+msgid ""
+"Supported commandline arguments:\n"
+"\n"
+msgstr ""
+"サポートするコマンドラインの引数：\n"
+"\n"
+
+#: Library/RestAPI/Strings.cs:16
+#, csharp-format
+msgid "--{0}: {1}"
+msgstr "--{0}: {1}"
+
+#: Library/RestAPI/Strings.cs:17
+#, csharp-format
+msgid ""
+"Use this option to store some or all of the options given to the commandline"
+" client. The file must be a plain text file, and UTF-8 encoding is "
+"preferred. Each line in the file should be of the format --option=value. Use"
+" the special options --{0} and --{1} to override the localpath and the "
+"remote destination uri, respectively. The options in this file take "
+"precedence over the options provided on the commandline. You cannot specify "
+"filters in both the file and on the commandline. Instead, you can use the "
+"special --{2}, --{3}, or --{4} options to specify filters inside the "
+"parameter file. Each filter must be prefixed with either a + or a -, and "
+"multiple filters must be joined with {5} "
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:18 CommandLine/CLI/Strings.cs:45
+msgid "Path to a file with parameters"
+msgstr "パラメーターのファイルへのパス"
+
+#: Library/RestAPI/Strings.cs:19
+#, csharp-format
+msgid ""
+"Filters cannot be specified on the commandline if filters are also present "
+"in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
+"specify filters inside the parameter file. Each filter must be prefixed with"
+" either a + or a -, and multiple filters must be joined with {3}"
+msgstr ""
+"パラメーターのファイルにフィルターが指定されている場合、フィルターをコマンドラインで指定することはできません。--{0}、--{1}、または--{2}の特殊オプションを使用すると、パラメーターのファイルでフィルターを設定できます。各フィルターの先頭には+または-"
+"が付いていなければならず、複数のフィルターがある場合は{3}で結合する必要があります。"
+
+#: Library/RestAPI/Strings.cs:20 CommandLine/CLI/Strings.cs:41
+#, csharp-format
+msgid "Unable to read the parameters file \"{0}\", reason: {1}"
+msgstr "パラメーターのファイル「{0}」を読み込めません。理由：{1}"
+
+#: Library/RestAPI/Strings.cs:22
+msgid "Output log information to the file given"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:23
+msgid "Determine the amount of information written in the log file"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:24
+msgid ""
+"Activate portable mode where the database is placed below the program "
+"executable"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:25
+#, csharp-format
+msgid "A serious error occurred in Duplicati: {0}"
+msgstr "Duplicatiで深刻なエラーが発生しました: {0}"
+
+#: Library/RestAPI/Strings.cs:26
+#, csharp-format
+msgid "An error occurred on server tear down: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:27
+#, csharp-format
+msgid ""
+"Unable to start up. Perhaps another process is already running?\n"
+"Error message: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:29 Library/RestAPI/Strings.cs:51
+msgid "Disable database encryption"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:30
+#, csharp-format
+msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
+msgstr "サポートされていないSQLiteのバージョンが検知されました（{0}）。{1}以上のバージョンを使用してください"
+
+#: Library/RestAPI/Strings.cs:31
+msgid ""
+"The path to the folder where the static files for the webserver is present. "
+"The folder must be located beneath the installation folder."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:32
+msgid ""
+"The port the webserver listens on. Multiple values may be supplied with a "
+"comma in between."
+msgstr "ウェブサーバーがリクエストを受け付けるポート番号。複数の値をコンマで区切って指定できます。"
+
+#: Library/RestAPI/Strings.cs:33
+msgid ""
+"The certificate and key file in PKCS #12 format the webserver use for SSL. "
+"Only RSA/DSA keys are supported."
+msgstr "ウェブサーバーがSSL通信に使用するPKCS #12形式の証明書と鍵のファイル。RSAまたはDSAの鍵のみをサポートします。"
+
+#: Library/RestAPI/Strings.cs:34
+msgid "The password for decryption of certificate PKCS #12 file."
+msgstr "PKCS #12 ファイルの証明書を復号するためのパスワード"
+
+#: Library/RestAPI/Strings.cs:35
+msgid ""
+"The interface the webserver listens on. The special values \"*\" and \"any\""
+" means any interface. The special value \"loopback\" means the loopback "
+"adapter."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:36
+msgid ""
+"The password required to access the webserver. This option is saved so you "
+"do not need to set it on each run. Setting an empty value disables the "
+"password."
+msgstr ""
+"ウェブサーバーにアクセスする際に必要となるパスワード。このオプションは保存されるため毎回入力する必要はありません。値を入力しない場合、パスワードは無効となります。"
+
+#: Library/RestAPI/Strings.cs:37
+msgid ""
+"The hostnames that are accepted, separated with semicolons. If any of the "
+"hostnames are \"*\", all hostnames are allowed and the hostname checking is "
+"disabled."
+msgstr "許可するホスト名。セミコロンで分けて入力。ホスト名に「*」を設定した場合、全てのホスト名が許可され、ホスト名の確認は行いません。"
+
+#: Library/RestAPI/Strings.cs:38
+msgid ""
+"When running as a server, the service daemon must verify that the process is"
+" responding. If this option is enabled, the server reads stdin and writes a "
+"reply to each line read."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:39
+msgid "Enable the ping-pong responder"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:40 Library/Main/Strings.cs:250
+msgid "Set the time after which log data will be purged from the database."
+msgstr "データベースからログデータを削除するまでの時間を設定できます。"
+
+#: Library/RestAPI/Strings.cs:41 Library/Main/Strings.cs:251
+msgid "Clean up old log data"
+msgstr "古いログデータを消去"
+
+#: Library/RestAPI/Strings.cs:42
+#, csharp-format
+msgid ""
+"Duplicati needs to store a small database with all settings. Use this option"
+" to choose where the settings are stored. This option can also be set with "
+"the environment variable {0}."
+msgstr ""
+"Duplicatiは全ての設定に関してデータベースを保存する必要があります。このオプションで、設定を保存する場所を指定できます。このオプションは環境変数"
+" {0} でも設定できます。"
+
+#: Library/RestAPI/Strings.cs:43
+msgid "Set the folder where settings are stored"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:44
+#, csharp-format
+msgid ""
+"This option sets the encryption key used to scramble the local settings "
+"database. This option can also be set with the environment variable {0}. Use"
+" the option --{1} to disable the database scrambling."
+msgstr ""
+"このオプションは、ローカルの設定のデータベースを暗号化するための鍵を設定します。このオプションは環境変数の{0}でも設定できます。オプションの--{1}でデータベースの暗号化を無効にできます。"
+
+#: Library/RestAPI/Strings.cs:45
+msgid "Set the database encryption key"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:46 Library/Main/Strings.cs:96
+msgid ""
+"Use this option to supply an alternative folder for temporary storage. By "
+"default the system default temporary folder is used. Note that also SQLite "
+"will put temporary files in this temporary folder."
+msgstr ""
+"一時的な保存領域として使うフォルダーを指定できます。既定ではシステムの一時フォルダーを使用します。SQLiteも一時ファイルをここで設定したフォルダーに保存します。"
+
+#: Library/RestAPI/Strings.cs:47 Library/Main/Strings.cs:97
+msgid "Temporary storage folder"
+msgstr "一時的な保存フォルダー"
+
+#: Library/RestAPI/Strings.cs:48
+msgid "Reset the JWT configuration, invalidating any issued login tokens"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:49
+msgid "Disable the visual captcha"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:50
+msgid "Use this option to disable database encryption of sensitive fields"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:52
+msgid "Log to the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:53
+msgid "Use this option to log to the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:54
+msgid "Set the log level for the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:55
+msgid "Use this option to set the log level for the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:56
+#, csharp-format
+msgid ""
+"The Windows event log source {0} was not found. The source must be "
+"registered before the log can be written."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:57
+msgid "The Windows event log is not supported on this platform"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:58
+#, csharp-format
+msgid "Server has started and is listening on port {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:59
+#, csharp-format
+msgid "Use the following link to sign in: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:60
+#, csharp-format
+msgid "The server crashed: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:61
+msgid "Require database encryption"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:62
+msgid ""
+"Use this option to require a custom provided key for database encryption of "
+"sensitive fields and not rely on the serial number"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:63
+#, csharp-format
+msgid ""
+"Database encryption key is required. Supply an encryption key via the "
+"environment variable {0} or disable database encryption with the option "
+"--{1}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:64
+#, csharp-format
+msgid ""
+"The encryption key is blacklisted and cannot be used. The database has been "
+"decrypted. Supply a new encryption key via the environment variable {0} or "
+"disable database encryption with the option --{1}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:68
+#, csharp-format
+msgid ""
+"Unable to find a valid date, given the start date {0}, the repetition "
+"interval {1} and the allowed days {2}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:73
+#, csharp-format
+msgid "Server has started and is listening on {0}, port {1}"
+msgstr "サーバーが起動しました。{0}のポート{1}でリクエストを待ち受けています"
+
+#: Library/RestAPI/Strings.cs:74
+#, csharp-format
+msgid ""
+"Unable to create SSL certificate using provided parameters. Exception "
+"detail: {0}"
+msgstr "指定されたパラメーターでSSL証明書を作成できません。例外に関する詳細：{0}"
+
+#: Library/RestAPI/Strings.cs:75
+#, csharp-format
+msgid "Unable to open a socket for listening, tried ports: {0}"
+msgstr "待ち受け用のソケットを設定できません。試したポート番号：{0}"
 
 #: Library/DynamicLoader/Strings.cs:24
 #, csharp-format
@@ -2223,10 +2580,11 @@ msgid ""
 "This module provides the industry standard ZIP compression. Files created "
 "with this module can be read by any standard-compliant ZIP application."
 msgstr ""
+"このモジュールは業界標準のZIP圧縮をサポートします。このモジュールで作成したファイルは、標準に準拠するZIPアプリケーションで読み込むことができます。"
 
 #: Library/Compression/Strings.cs:25
 msgid "ZIP compression"
-msgstr ""
+msgstr "ZIP圧縮"
 
 #: Library/Compression/Strings.cs:26 Library/Main/Strings.cs:202
 #, csharp-format
@@ -2240,7 +2598,7 @@ msgid ""
 msgstr "使用する圧縮レベルを操作できます。0に設定すると圧縮は行わず、9に設定すると圧縮を最大限に行います。"
 
 #: Library/Compression/Strings.cs:28
-msgid "Sets the ZIP compression level"
+msgid "Set the ZIP compression level"
 msgstr ""
 
 #: Library/Compression/Strings.cs:29
@@ -2249,20 +2607,20 @@ msgid ""
 "Use this option to set an alternative compressor method, such as LZMA. Note "
 "that using another value than Deflate will cause the option --{0} to be "
 "ignored."
-msgstr ""
+msgstr "LZMAなど別の圧縮方法を設定できます。Deflate以外の値を設定するとオプション --{0} は無視されます。"
 
 #: Library/Compression/Strings.cs:30
-msgid "Sets the ZIP compression method"
+msgid "Set the ZIP compression method"
 msgstr ""
 
 #: Library/Compression/Strings.cs:31
 msgid ""
 "The ZIP64 format is required for files larger than 4GiB. Use this option to "
 "toggle it."
-msgstr ""
+msgstr "ZIP64のフォーマットには4GiB以上のファイルが必要となります。このオプションで、フォーマットのサポートを切り替えられます。"
 
 #: Library/Compression/Strings.cs:32
-msgid "Toggles ZIP64 support"
+msgid "Toggle ZIP64 support"
 msgstr ""
 
 #: Library/Compression/Strings.cs:33
@@ -2301,8 +2659,8 @@ msgid "Number of threads used in compression"
 msgstr "圧縮に使用するスレッド数"
 
 #: Library/Compression/Strings.cs:44
-msgid "Sets the 7z compression level"
-msgstr "7z圧縮のレベルを設定"
+msgid "Set the 7z compression level"
+msgstr ""
 
 #: Library/Compression/Strings.cs:45
 msgid ""
@@ -2312,8 +2670,8 @@ msgid ""
 msgstr "使用する圧縮アルゴリズムを制御します。このオプションを有効にすると、7zは、圧縮率がわずかに下がる高速アルゴリズムを使用します。"
 
 #: Library/Compression/Strings.cs:46
-msgid "Sets the 7z fast algorithm usage"
-msgstr "7zの高速アルゴリズムを使用"
+msgid "Set the 7z fast algorithm usage"
+msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:24
 msgid "backup"
@@ -2369,13 +2727,13 @@ msgstr "ファイル {0} をダウンロードしましたが、サイズ {1} �
 #: Library/Main/Strings.cs:30
 #, csharp-format
 msgid "The option --{0} has been deprecated: {1}"
-msgstr ""
+msgstr "オプション --{0} は非推奨となりました：{1}"
 
 #: Library/Main/Strings.cs:31
 #, csharp-format
 msgid ""
 "The option --{0} exists more than once. Please report this to the developers"
-msgstr ""
+msgstr "オプション--{0}が2つ以上存在しています。この問題を開発者に報告してください"
 
 #: Library/Main/Strings.cs:32
 msgid "No source folders specified for backup"
@@ -2401,21 +2759,21 @@ msgstr "バックアップ元のフォルダー {0} へのアクセスが承認�
 msgid ""
 "The value \"{1}\" supplied to --{0} does not parse into a valid boolean. "
 "This will be treated as if it was set to \"true\""
-msgstr ""
+msgstr "--{0}に指定された値「{1}」は、有効なブール値に変換できません。ここでは、この値は「true」に設定されていると仮定して扱われます。"
 
 #: Library/Main/Strings.cs:36
 #, csharp-format
 msgid ""
 "The option --{0} does not support the value \"{1}\". Supported values are: "
 "{2}"
-msgstr ""
+msgstr "オプション --{0} は値「{1}」をサポートしていません。サポートしている値は{2}です。"
 
 #: Library/Main/Strings.cs:37
 #, csharp-format
 msgid ""
 "The option --{0} does not support the value \"{1}\". Supported flag values "
 "are: {2}"
-msgstr ""
+msgstr "オプション --{0} は値「{1}」をサポートしていません。サポートしている値は{2}です。"
 
 #: Library/Main/Strings.cs:38
 #, csharp-format
@@ -2502,10 +2860,11 @@ msgid ""
 " backend. Using this option, Duplicati will automatically remove such files "
 "when encountered."
 msgstr ""
+"バックアップが中断された場合、バックエンドには未処理のファイルが残る可能性があります。このオプションを有効にすると、Duplicatiはそうしたファイルを検出した場合に、これを自動的に削除します。"
 
 #: Library/Main/Strings.cs:57
 msgid "Remove unused files"
-msgstr ""
+msgstr "使用されていないファイルを削除"
 
 #: Library/Main/Strings.cs:58
 msgid ""
@@ -2527,6 +2886,7 @@ msgid ""
 "modified. If some application deliberately modifies this information, "
 "Duplicati won't work correctly unless this option is set."
 msgstr ""
+"オペレーティングシステムには、ファイルが書き込まれた最終日時が記録されます。この情報を使用することによって、Duplicatiはファイルが変更されているかどうかを高速に確認する仕組みとなっています。ファイルの最終更新日時に関する情報を変更する場合、このオプションを有効にしない限り、Duplicatiは適切に機能しません。"
 
 #: Library/Main/Strings.cs:61
 msgid "Disable checks based on file time"
@@ -2549,8 +2909,8 @@ msgid ""
 msgstr "バックアップまたは復元中にシステムが非アクティブの場合、システムがスリープモードに入ることを許可（WindowsまたはmacOSのみ）"
 
 #: Library/Main/Strings.cs:65
-msgid "Toggles system sleep mode"
-msgstr "システムのスリープモードを切り替える"
+msgid "Toggle system sleep mode"
+msgstr ""
 
 #: Library/Main/Strings.cs:66
 msgid ""
@@ -2616,6 +2976,7 @@ msgid ""
 "backup. Use this option to select another item. You may use relative times, "
 "like \"-2M\" for a backup from two months ago."
 msgstr ""
+"既定では、Duplicatiは直近のバックアップをもとにファイルのリストを作成し、ファイルを復元します。このオプションで、別のバックアップを選択できます。時間は相対的に指定できます。例えば「-2M」とすると、2か月前のバックアップを選択できます。"
 
 #: Library/Main/Strings.cs:77
 msgid "The time to list/restore files"
@@ -2627,6 +2988,7 @@ msgid ""
 "backup. Use this option to select another item. You may enter multiple "
 "values separated with comma, and ranges using -, e.g. \"0,2-4,7\" ."
 msgstr ""
+"既定では、Duplicatiは直近のバックアップのファイルを一覧で表示または復元します。このオプションで、別のバージョンを選択できます。コンマで数値を区切ったり、半角ハイフンで範囲を指定したりできます（例：「0,2-4,7」）。"
 
 #: Library/Main/Strings.cs:79
 msgid "The version to list/restore files"
@@ -2702,10 +3064,11 @@ msgid ""
 "If the hash for the volume does not match, Duplicati will refuse to use the "
 "backup. Activate this option to allow Duplicati to proceed anyway."
 msgstr ""
+"ボリュームのハッシュ値が一致しない場合、Duplicatiはそのバックアップの使用を拒否します。このオプションを有効にすると、Duplicatiはそうしたバックアップを使用して続行できるようになります。"
 
 #: Library/Main/Strings.cs:93
 msgid "Skip hash checks"
-msgstr ""
+msgstr "ハッシュの確認をスキップ"
 
 #: Library/Main/Strings.cs:94
 msgid ""
@@ -2718,22 +3081,11 @@ msgstr ""
 msgid "Limit the size of files being backed up"
 msgstr "バックアップするファイルのサイズを制限"
 
-#: Library/Main/Strings.cs:96
-msgid ""
-"Use this option to supply an alternative folder for temporary storage. By "
-"default the system default temporary folder is used. Note that also SQLite "
-"will put temporary files in this temporary folder."
-msgstr ""
-
-#: Library/Main/Strings.cs:97
-msgid "Temporary storage folder"
-msgstr "一時的な保存フォルダー"
-
 #: Library/Main/Strings.cs:98
 msgid ""
-"Selects another thread priority for the process. Use this to set Duplicati "
-"to be more or less CPU intensive."
-msgstr "プロセスに関するスレッドの優先度を指定し、DuplicatiのCPUの使用量を調節できます。"
+"Select another thread priority for the process. Use this to set Duplicati to"
+" be more or less CPU intensive."
+msgstr ""
 
 #: Library/Main/Strings.cs:99
 msgid "Thread priority"
@@ -2753,15 +3105,14 @@ msgstr "ボリュームのサイズを制限"
 
 #: Library/Main/Strings.cs:102
 msgid ""
-"Enabling this option will disallow usage of the streaming interface, which "
-"means that transfer progress bars will not show, and bandwidth throttle "
-"settings will be ignored."
+"Use this option to disallow usage of the streaming interface, which means "
+"that transfer progress bars will not show, and bandwidth throttle settings "
+"will be ignored."
 msgstr ""
-"このオプションを有効にすると、ストリーミングインターフェースは使用されません。転送の経過は表示されなくなり、帯域の速度制限に関する設定は無視されます。"
 
 #: Library/Main/Strings.cs:103
-msgid "Disables use of the streaming transfer method"
-msgstr "ストリーミング転送法の使用を無効にする"
+msgid "Disable use of the streaming transfer method"
+msgstr ""
 
 #: Library/Main/Strings.cs:104
 msgid ""
@@ -2772,8 +3123,8 @@ msgstr ""
 "このオプションを有効にすると、マニフェストファイルの内容は読み込まれず、ファイルのハッシュ値も検証されません。緊急時の復旧にのみ使用してください。"
 
 #: Library/Main/Strings.cs:105
-msgid "Disables manifests verification"
-msgstr "マニフェストファイルの検証を無効にする"
+msgid "Disable manifests verification"
+msgstr ""
 
 #: Library/Main/Strings.cs:106
 msgid ""
@@ -2806,16 +3157,16 @@ msgid "Supply one or more module names, separated by commas to unload them."
 msgstr "無効にするモジュールを指定できます。複数ある場合はコンマで区切ってください。"
 
 #: Library/Main/Strings.cs:111
-msgid "Disables one or more modules"
-msgstr "モジュールを無効にする"
+msgid "Disable one or more modules"
+msgstr ""
 
 #: Library/Main/Strings.cs:112
 msgid "Supply one or more module names, separated by commas to load them."
 msgstr "読み込むモジュールを指定できます。複数ある場合はコンマで区切ってください。"
 
 #: Library/Main/Strings.cs:113
-msgid "Enables one or more modules"
-msgstr "モジュールを有効にする"
+msgid "Enable one or more modules"
+msgstr ""
 
 #: Library/Main/Strings.cs:114
 msgid ""
@@ -2834,8 +3185,8 @@ msgstr ""
 "この設定で、スナップショットを使用するかどうかを制御できます。スナップショットを使うと、Duplicatiは他のプログラムによりロックされているファイルをバックアップすることができます。この設定を「off」にした場合、Duplicatiはディスクのスナップショットの作成を試みません。「auto」にした場合、Duplicatiはスナップショットの作成を試み、それが許可されていなかったり失敗したりした場合は、通知を行わずにスナップショットの作成の試みを終了します。「on」に設定した場合は、スナップショットの作成を試み、失敗した場合は警告メッセージをログに出力します。「required」を設定すると、スナップショットを作成できなかった場合、Duplicatiはバックアップを中断します。Windowsでは、スナップショットの作成は「ボリュームシャドウコピーサービス」（VSS）により行い、管理者権限が必要となります。Linuxでは、スナップショットの作成は論理ボリューム管理（LVM）により行い、ルート権限が必要となります。"
 
 #: Library/Main/Strings.cs:115
-msgid "Controls the use of disk snapshots"
-msgstr "ディスクのスナップショットの使用を制御"
+msgid "Control the use of disk snapshots"
+msgstr ""
 
 #: Library/Main/Strings.cs:116
 msgid ""
@@ -2876,15 +3227,15 @@ msgstr "許可する並行アップロードの数"
 msgid ""
 "Activate this option to make some error messages more verbose, which may "
 "help you track down a particular issue."
-msgstr ""
+msgstr "このオプションを有効にすると、エラーメッセージの一部がより詳細に出力されるため、トラブルシューティングが容易になります。"
 
 #: Library/Main/Strings.cs:123
-msgid "Enables debugging output"
-msgstr "デバッグ用の出力を有効にする"
+msgid "Enable debugging output"
+msgstr ""
 
 #: Library/Main/Strings.cs:124
-msgid "Logs information to the file specified."
-msgstr "指定したファイルに情報を記録。"
+msgid "Log information to the file specified."
+msgstr ""
 
 #: Library/Main/Strings.cs:125
 msgid "Log internal information to a file"
@@ -2893,9 +3244,9 @@ msgstr "内部情報をファイルに記録"
 #: Library/Main/Strings.cs:126 Library/Main/Strings.cs:283
 #, csharp-format
 msgid ""
-"Specifies the amount of log information to write into the file specified by "
+"Specify the amount of log information to write into the file specified by "
 "the option --{0}."
-msgstr "--{0}のオプションで指定したファイルに書き込む情報の量を指定できます。"
+msgstr ""
 
 #: Library/Main/Strings.cs:127
 msgid "Log information level"
@@ -2914,8 +3265,8 @@ msgstr ""
 "バックアップの作成先のフォルダーが存在しない場合、Duplicatiは自動的にフォルダーを作成します。このオプションを有効にすると、フォルダーは自動的に作成されなくなります。"
 
 #: Library/Main/Strings.cs:130
-msgid "Disables automatic folder creation"
-msgstr "自動フォルダー作成を無効にする"
+msgid "Disable automatic folder creation"
+msgstr ""
 
 #: Library/Main/Strings.cs:131
 msgid ""
@@ -2948,8 +3299,8 @@ msgstr ""
 "この設定で、NTFSのUSN番号を使用するかどうかを制御できます。USNを使うと、Duplicatiはファイルとフォルダーの一覧をより迅速に取得できます。この設定を「off」にした場合、DuplicatiはUSNの使用を試みません。「auto」にした場合、DuplicatiはUSNの使用を試み、それが許可されていなかったり失敗したりした場合は、通知を行わずにUSNを使用する試みを終了します。「on」に設定した場合は、USNの使用を試み、失敗した場合は警告メッセージをログに出力します。「required」を設定すると、USNを使用できなかった場合、Duplicatiはバックアップを中断します。この機能はWindowsでのみサポートされており、管理者権限が必要となります。"
 
 #: Library/Main/Strings.cs:134
-msgid "Controls the use of NTFS Update Sequence Numbers"
-msgstr "NTFSのUpdate Sequence Numbersの使用を制御"
+msgid "Control the use of NTFS Update Sequence Numbers"
+msgstr ""
 
 #: Library/Main/Strings.cs:135
 #, csharp-format
@@ -2967,12 +3318,12 @@ msgstr ""
 "のオプションで1週間のバックアップを保管するように設定し、また、毎週同じ時間にバックアップを作成する場合、バックアップを行う時間がずれて、ちょうど1週間が経過してしまい、その結果Duplicatiはバックアップを予定より早く削除してしまうことがありえます。これを防ぐために、Duplicatiは1％の誤差（最大で1時間）を考慮に入れて、タイムスタンプの検証を行います。このオプションを有効にすると、誤差の考慮を行わず、時間を厳密に確認します。"
 
 #: Library/Main/Strings.cs:136
-msgid "Deactivates tolerance when comparing times"
-msgstr "時間を比較する際に許容範囲を設定しない"
+msgid "Deactivate tolerance when comparing times"
+msgstr ""
 
 #: Library/Main/Strings.cs:137
 msgid "Use this option to verify uploads by listing contents."
-msgstr ""
+msgstr "このオプションを有効にすると、ファイルのリストを作成してアップロードを検証します。"
 
 #: Library/Main/Strings.cs:138
 msgid "Verify uploads by listing contents"
@@ -2984,6 +3335,7 @@ msgid ""
 "which usually makes the backup faster. Use this option to turn the behavior "
 "off, so that Duplicati will wait for each volume to complete."
 msgstr ""
+"Duplicatiは、ディスクのスキャンとボリュームの作成と並行してファイルをアップロードすることで、バックアップの高速化を図ります。このオプションを有効にすると、Duplicatiは各ボリュームの作成が完了するまで待機します。"
 
 #: Library/Main/Strings.cs:140
 msgid "Upload files synchronously"
@@ -2996,6 +3348,7 @@ msgid ""
 "process. Use this option to ensure that each operation is performed on a "
 "seperate connection."
 msgstr ""
+"Duplicatiは、ログインを1度だけ行うことによって処理を高速化するために、1個の接続で複数の操作を実行します。このオプションを有効にすると、それぞれの操作を個別の接続で実行するように設定できます。"
 
 #: Library/Main/Strings.cs:142
 msgid "Do not re-use connections"
@@ -3039,13 +3392,12 @@ msgstr "保存領域の使用を制限"
 
 #: Library/Main/Strings.cs:149
 msgid ""
-"Sets a threshold for when to warn about the backend quota being nearly "
+"Set a threshold for when to warn about the backend quota being nearly "
 "exceeded. It is given as a percentage, and a warning is generated if the "
 "amount of available quota is less than this percentage of the total backup "
 "size. If the backend does not report the quota information, this value will "
 "be ignored."
 msgstr ""
-"バックエンドに割り当てられた容量の残りが少なくなってきた際に、どの程度まで割り当て量が減少したら警告を行うか設定できます。量はパーセントで指定してください。バックアップの全容量のうち、利用可能な割り当て量がここで指定した値よりも少なくなった場合に警告を行います。バックエンドが割り当て量に関する情報を報告しない場合、この値は無視されます。"
 
 #: Library/Main/Strings.cs:150
 msgid "Threshold for warning about low quota"
@@ -3125,7 +3477,7 @@ msgstr "スナップショットをドライブにマッピング（Windowsの�
 msgid ""
 "A display name that is attached to this backup. This can be used to identify"
 " the backup when sending mail or running scripts."
-msgstr ""
+msgstr "バックアップに与えられる表示名。電子メールを送信したり、スクリプトを実行したりする際に、バックアップを一意に特定するのに使用できます。"
 
 #: Library/Main/Strings.cs:162
 msgid "Name of the backup"
@@ -3135,7 +3487,7 @@ msgstr "バックアップの名称"
 msgid ""
 "A unique identification for this backup. This can be used to identify the "
 "backup when sending mail or running scripts."
-msgstr ""
+msgstr "バックアップの一意の識別子。メールを送信したりスクリプトを実行したりする際に、バックアップを特定するのに使うことができます。"
 
 #: Library/Main/Strings.cs:164
 msgid "Backup ID"
@@ -3146,6 +3498,7 @@ msgid ""
 "A unique identification of the machine running the backup. This can be used "
 "to identify the machine when sending mail or running scripts."
 msgstr ""
+"バックアップを実行しているコンピューターの一意の識別子。メールを送信したりスクリプトを実行したりする際に、コンピューターを特定するのに使うことができます。"
 
 #: Library/Main/Strings.cs:166
 msgid "Machine ID"
@@ -3162,6 +3515,8 @@ msgid ""
 "is supplied, that also serves as an example. The default file is placed in "
 "{0}."
 msgstr ""
+"ここで指定したテキストファイルの各行にファイルの拡張子を指定すると、指定された拡張子をもつファイルに関しては圧縮を行わず、単純にアーカイブとしてのみ保存します。ピリオド（.）で始まらない行は考慮されません。また、拡張子の後には半角スペースを追加してください。既定のファイルには設定例が含まれます。既定のファイルは"
+" {0} にあります。"
 
 #: Library/Main/Strings.cs:168
 msgid "Manage non-compressible file extensions"
@@ -3186,6 +3541,7 @@ msgid ""
 "changed. This is usually only activated in combination with a filesystem "
 "watcher that keeps track of file changes."
 msgstr ""
+"変更が検知されたファイルのみにスキャンを限定できます。これは通常、ファイルの変更を監視するファイルシステムの監視機能と併用する場合にのみ機能します。"
 
 #: Library/Main/Strings.cs:172
 msgid "List of files to examine for changes"
@@ -3205,7 +3561,7 @@ msgstr "ローカルの状態のデータベースへのパス"
 msgid ""
 "Use this option to supply a list of deleted files. This option will be "
 "ignored unless the option --{0} is also set."
-msgstr ""
+msgstr "削除したファイルの一覧を指定できます。--{0}が併せて設定されていない限り、このオプションは無視されます。"
 
 #: Library/Main/Strings.cs:176
 msgid "List of deleted files"
@@ -3215,7 +3571,7 @@ msgstr "削除されたファイルの一覧"
 msgid ""
 "Use this option to reduce the memory footprint by not keeping paths and "
 "modification timestamps in memory."
-msgstr ""
+msgstr "パスと更新日時のタイムスタンプをメモリーに保存しないように設定して、メモリーの使用量を減らすことができます。"
 
 #: Library/Main/Strings.cs:178
 msgid "Reduce memory footprint by disabling in-memory lookups"
@@ -3223,7 +3579,7 @@ msgstr "メモリー内のルックアップを無効にすることで、メモ
 
 #: Library/Main/Strings.cs:180
 msgid "Use this option to increase speed in exchange for extra memory use."
-msgstr ""
+msgstr "メモリーを追加で使用し、速度を高めることができます。"
 
 #: Library/Main/Strings.cs:181
 msgid "Store an in-memory block cache"
@@ -3235,6 +3591,7 @@ msgid ""
 "filelist on startup. The intended usage for this option is to work correctly"
 " in cases where the filelisting is broken or unavailable."
 msgstr ""
+"このオプションを有効にすると、起動時にローカルのデータベースとリモートのファイル一覧は比較されません。ファイルの一覧表示が適切に機能しない場合、このオプションが役立つ可能性があります。"
 
 #: Library/Main/Strings.cs:183
 msgid "Do not query backend at startup"
@@ -3251,8 +3608,8 @@ msgstr ""
 "インデックスファイルを使うと、ローカルのデータベースが存在しない場合に、dblockファイルをダウンロードする必要性を制限することができます。インデックスファイルに多くの情報が記録されるほど、操作はデータベースを使わず、より一層高速に実行されます。ただし、インデックスファイルのサイズが大きくなると、リモートの保存領域の使用量が増えてしまうため、注意して使用してください。"
 
 #: Library/Main/Strings.cs:185
-msgid "Determines usage of index files"
-msgstr "インデックスファイルを使用"
+msgid "Determine usage of index files"
+msgstr ""
 
 #: Library/Main/Strings.cs:186
 msgid ""
@@ -3271,11 +3628,11 @@ msgstr "余分に使用されている保存領域を許容する程度を百分
 msgid ""
 "Use this option to experiment with different settings and observe the "
 "outcome without changing actual files."
-msgstr ""
+msgstr "このオプションを有効にすると、実際にファイルを変更することなく、異なる設定を試して、その結果を確認することができます。"
 
 #: Library/Main/Strings.cs:189
-msgid "Does not perform any modifications"
-msgstr "いかなる変更も実行しない"
+msgid "Do not perform any modifications"
+msgstr ""
 
 #: Library/Main/Strings.cs:190
 msgid ""
@@ -3283,6 +3640,7 @@ msgid ""
 "algorithm with smaller or larger hash size, for performance or storage space"
 " reasons."
 msgstr ""
+"これは非常に高度な設定です！このオプションで、性能または保存領域のサイズの観点から、ハッシュのサイズが異なるブロック用ハッシュアルゴリズムを選択できます。"
 
 #: Library/Main/Strings.cs:191
 msgid "The hash algorithm used on blocks"
@@ -3294,6 +3652,7 @@ msgid ""
 "algorithm with smaller or larger hash size, for performance or storage space"
 " reasons."
 msgstr ""
+"これは非常に高度な設定です！このオプションで、性能または保存領域のサイズの観点から、ハッシュのサイズが異なるファイル用ハッシュアルゴリズムを選択できます。"
 
 #: Library/Main/Strings.cs:193
 msgid "The hash algorithm used on files"
@@ -3358,8 +3717,8 @@ msgstr ""
 "内容を一覧表示したり、ファイルを復元したりする場合、ローカルのデータベースをスキップすることができます。スキップすると、処理は通常遅くなりますが、リモートに保存している実際の内容を検証することができます。"
 
 #: Library/Main/Strings.cs:204
-msgid "Disables the local database"
-msgstr "ローカルのデータベースを無効にする"
+msgid "Disable the local database"
+msgstr ""
 
 #: Library/Main/Strings.cs:205
 msgid ""
@@ -3408,6 +3767,7 @@ msgid ""
 "Use this option to overwrite target files when restoring. If this option is "
 "not set, the files will be restored with a timestamp and a number appended."
 msgstr ""
+"このオプションを有効にすると、ファイルを復元する際に、復元先にあるファイルを上書きします。このオプションを無効にすると、タイムスタンプと数字をファイル名に付けて、ファイルを復元します。"
 
 #: Library/Main/Strings.cs:214
 msgid "Overwrite files when restoring"
@@ -3456,6 +3816,7 @@ msgid ""
 "the maximum implied by the two options. If this value is set to 0 or the "
 "option --{1} is set, no remote files are verified."
 msgstr ""
+"バックアップが完了した後で、一部のファイル（dblock、dindex、dlist）がリモートのバックエンドから検証用に選択されます。このオプションで、検証するファイル数を変更できます。--{0}のオプションが同時に指定されている場合は、テストするサンプル数の指定の方が優先されます。この値を0に設定するか、あるいは--{1}のオプションが設定されている場合は、リモートのファイルは一切検証しません。"
 
 #: Library/Main/Strings.cs:223
 msgid "The number of samples to test after a backup"
@@ -3487,10 +3848,11 @@ msgid ""
 " when then verification is performed directly. ListAndIndexes is like True "
 "but only dlist and index volumes are handled."
 msgstr ""
+"バックアップが完了した後で、一部のファイル（dblock、dindex、dlist）がリモートのバックエンドから検証用に選択されます。このオプションを有効にすると、単純にハッシュ値を検証する代わりに、ファイルを復号してそれぞれのボリュームの内容を検査し、完全な検証を実行します。オプションの--{0}が設定されている場合は、リモートのファイルは一切検証しません。検証が直接実行される場合は、このオプションは自動的に設定されます。ListAndIndexesはTrueと同様に機能しますが、dlistとインデックスのボリュームのみを対象とします。"
 
 #: Library/Main/Strings.cs:227
-msgid "Activates in-depth verification of files"
-msgstr "ファイルの詳細な検証を有効にする"
+msgid "Activate in-depth verification of files"
+msgstr ""
 
 #: Library/Main/Strings.cs:228
 msgid ""
@@ -3532,8 +3894,8 @@ msgstr ""
 "このオプションを有効にすると、ファイルのタイムスタンプなどのメタデータの保存を無効にできます。メタデータの保存を無効にすると、バックアップと復元の処理速度は向上しますが、ファイルのサイズにはあまり影響しません。"
 
 #: Library/Main/Strings.cs:237
-msgid "Don't store metadata"
-msgstr "メタデータを保存しない"
+msgid "Do not store metadata"
+msgstr ""
 
 #: Library/Main/Strings.cs:238
 msgid ""
@@ -3597,14 +3959,6 @@ msgstr ""
 msgid "Check block hashes"
 msgstr "ブロックのハッシュ値を確認"
 
-#: Library/Main/Strings.cs:250
-msgid "Set the time after which log data will be purged from the database."
-msgstr "データベースからログデータを削除するまでの時間を設定できます。"
-
-#: Library/Main/Strings.cs:251
-msgid "Clean up old log data"
-msgstr "古いログデータを消去"
-
 #: Library/Main/Strings.cs:252
 msgid ""
 "Use this option to build a searchable local database which only contains "
@@ -3625,6 +3979,7 @@ msgid ""
 " in another language. Use this option to set the locale. Supply a blank "
 "string to choose the \"Invariant Culture\"."
 msgstr ""
+"既定では、システムのロケールの設定が使用されますが、別の言語でメッセージを受信する際など、別のロケールを使用したい場合は、このオプションでロケールを設定してください。空白にするとロケールは設定されません。"
 
 #: Library/Main/Strings.cs:255
 msgid "Force the locale setting"
@@ -3640,8 +3995,8 @@ msgstr ""
 " AM」のように、実際の日時のみが表示されます。"
 
 #: Library/Main/Strings.cs:257
-msgid "Forces the display of the actual date instead of calendar date"
-msgstr "カレンダーの日付に代えて実際の日付の表示を強制"
+msgid "Force the display of the actual date instead of calendar date"
+msgstr ""
 
 #: Library/Main/Strings.cs:258
 msgid ""
@@ -3649,6 +4004,7 @@ msgid ""
 " can significantly speed up backend operations depending on the hardware "
 "you're running on and the transfer rate of your backend."
 msgstr ""
+"このオプションを有効にすると、アップロードとダウンロードのマルチスレッド化は無効となります。使用しているハードウェアと、バックエンドの転送速度に応じて、バックエンドの処理速度を大幅に向上させられる場合があります。"
 
 #: Library/Main/Strings.cs:259
 msgid "Handle file communication with backend using threaded pipes"
@@ -3693,8 +4049,8 @@ msgstr ""
 "Duplicatiは、前回のバックアップが完了しなかったことを検知した場合、直近に完了したバックアップと、未完了のバックアップのセッションでアップロードされたファイルを統合したファイルリストを生成します。"
 
 #: Library/Main/Strings.cs:267
-msgid "Disables synthetic filelist"
-msgstr "統合されたファイルリストを無効にする"
+msgid "Disable synthetic filelist"
+msgstr ""
 
 #: Library/Main/Strings.cs:268
 msgid ""
@@ -3703,10 +4059,11 @@ msgid ""
 "number of files and notice that the scanning takes a long time with "
 "unmodified files."
 msgstr ""
+"このオプションを有効にすると、変更を確認するのにファイルをスキャンするかどうかを決める際に、メタデータやファイルのサイズをチェックしなくなります。大量のファイルがあり、変更されていないファイルのスキャンに長い時間を要している場合、このオプションを有効にしてください。"
 
 #: Library/Main/Strings.cs:269
-msgid "Checks only file lastmodified"
-msgstr "ファイルの最終更新日時のみを確認"
+msgid "Check only file lastmodified"
+msgstr ""
 
 #: Library/Main/Strings.cs:270
 msgid ""
@@ -3715,10 +4072,11 @@ msgid ""
 "option to skip this compression, such that the entire original folder "
 "structure is preserved, including upper level empty folders."
 msgstr ""
+"バックアップの部分を新しいフォルダーに復元する場合には、空のフォルダーの階層が生成されないよう、出来る限り最短のパスが使用されます。このオプションを有効にすると、パスの圧縮をスキップして、上位の空のフォルダーも含めた、元々のフォルダーの全体の構造を保存します。"
 
 #: Library/Main/Strings.cs:271
-msgid "Disables path compression on restore"
-msgstr "復元時にパスの圧縮を無効にする"
+msgid "Disable path compression on restore"
+msgstr ""
 
 #: Library/Main/Strings.cs:272
 msgid ""
@@ -3727,6 +4085,7 @@ msgid ""
 "this option to disable that protection, such that all filesets can be "
 "deleted."
 msgstr ""
+"既定では、最後のファイルのセットは削除できません。これは設定ミスで全てのリモートのデータが削除されてしまうことに対する予防のためです。このオプションを有効にすると、保護は無効となり、全てのファイルセットを削除できるようになります。"
 
 #: Library/Main/Strings.cs:273
 msgid "Allow removing all filesets"
@@ -3754,6 +4113,7 @@ msgid ""
 "Using this option can speed up the backup by reducing disk access, but will "
 "give a less accurate progress indicator."
 msgstr ""
+"このオプションが有効となっている間、バックアップ元のファイルのサイズを計算するスキャナー機能は無効となり、代わりにデータベースからサイズを読み込みます。このオプションで、ディスクへのアクセスを減らし、バックアップの速度を向上させられますが、バックアップの進捗状況に関する報告の正確性は損なわれます。"
 
 #: Library/Main/Strings.cs:277
 msgid "Disable the read-ahead scanner"
@@ -3773,10 +4133,10 @@ msgstr "ファイルの一覧の一貫性の確認を無効にする"
 
 #: Library/Main/Strings.cs:280
 msgid ""
-"Use this option to run a scheduled backup if the system is detected to be "
-"running on battery power (manual or command line backups will still be run)."
-" If the detected power source is mains (e.g., AC) or unknown, then scheduled"
-" backups will proceed as normal."
+"Use this option to disable a scheduled backup if the system is detected to "
+"be running on battery power (manual or command line backups will still be "
+"run). If the detected power source is mains (e.g., AC) or unknown, then "
+"scheduled backups will proceed as normal."
 msgstr ""
 
 #: Library/Main/Strings.cs:281
@@ -3799,11 +4159,11 @@ msgstr ""
 "メッセージを取り除いたり含んだりするフィルターを設定できます。ログの水準は考慮されません。「{0}」で区切ると、複数のフィルターを設定できます。フィルターはログのタグについて設定され、半角ハイフンで始まるものについては除外されます。中括弧で正規表現をサポートします。例：「+Path*{0}+*Mail*{0}-[.*DNS]」"
 
 #: Library/Main/Strings.cs:286
-msgid "Applies filters to the file log data"
-msgstr "ファイルのログデータにフィルターを適用"
+msgid "Apply filters to the file log data"
+msgstr ""
 
 #: Library/Main/Strings.cs:287
-msgid "Specifies the amount of log information to output to the console."
+msgid "Specify the amount of log information to output to the console."
 msgstr ""
 
 #: Library/Main/Strings.cs:288
@@ -3811,8 +4171,8 @@ msgid "Console information level"
 msgstr "コンソールに表示する情報の水準"
 
 #: Library/Main/Strings.cs:290
-msgid "Applies filters to the console log data"
-msgstr "フィルターをコンソールのログデータに適用"
+msgid "Apply filters to the console log data"
+msgstr ""
 
 #: Library/Main/Strings.cs:292
 msgid ""
@@ -3820,18 +4180,19 @@ msgid ""
 " the lowest IO priority level, which can make operations run slower but will"
 " interfere less with other operations running at the same time."
 msgstr ""
+"現在のプロセスに、最も低い入出力の優先度を設定するよう、オペレーティングシステムに指示。各操作の実行速度は遅くなる場合がありますが、同時に実行している操作に干渉する程度は低くなります。"
 
 #: Library/Main/Strings.cs:293
-msgid "Sets the process to use low IO priority"
-msgstr "低い入出力の優先度をプロセスに設定"
+msgid "Set the process to use low IO priority"
+msgstr ""
 
 #: Library/Main/Strings.cs:295
 msgid "Use this option to remove all empty folders from a backup."
 msgstr "このオプションを有効にすると、全ての空のフォルダーをバックアップから削除できます。"
 
 #: Library/Main/Strings.cs:296
-msgid "Excludes empty folders"
-msgstr "空のフォルダーを除外"
+msgid "Exclude empty folders"
+msgstr ""
 
 #: Library/Main/Strings.cs:297
 msgid ""
@@ -3884,8 +4245,8 @@ msgstr ""
 " または --{1}={2} を忘れずに設定してください"
 
 #: Library/Main/Strings.cs:305
-msgid "Activates logging of all database queries"
-msgstr "データベースの全てのクエリーに関するログを記録"
+msgid "Activate logging of all database queries"
+msgstr ""
 
 #: Library/Main/Strings.cs:306
 msgid ""
@@ -4102,8 +4463,8 @@ msgstr ""
 "許可するデフォルトのSSLのバージョンを変更できます。これは高度な設定です。セキュリティーを向上したい場合、または、特定のSSLのプロトコルでの問題を回避したい場合にのみ使用してください。"
 
 #: Library/Modules/Builtin/Strings.cs:53
-msgid "Sets allowed SSL versions"
-msgstr "許可するSSLのバージョンを設定"
+msgid "Set allowed SSL versions"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:54
 msgid ""
@@ -4113,8 +4474,8 @@ msgstr ""
 "HTTPリクエストのタイムアウトの既定の値を変更できます。タイムアウトに達するまでの時間には、最初のパケットから終了までの操作全体が含まれます。"
 
 #: Library/Modules/Builtin/Strings.cs:55
-msgid "Sets the default operation timeout"
-msgstr "操作に関する既定のタイムアウトの値を設定"
+msgid "Set the default operation timeout"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:56
 msgid ""
@@ -4125,8 +4486,8 @@ msgstr ""
 "データの読み書きに関するタイムアウトの既定の値を変更できます。タイムアウトは、処理が停止しているリクエストの検知に使用されます。このオプションで、接続している回線で行われる処理間で許容される最大の時間を設定できます。"
 
 #: Library/Modules/Builtin/Strings.cs:57
-msgid "Sets readwrite"
-msgstr "リードライトを設定"
+msgid "Set readwrite"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:58
 #, csharp-format
@@ -4137,8 +4498,8 @@ msgstr ""
 "このオプションを有効にすると、HTTPバッファリングを設定します。「{0}」に設定するとメモリーのリークが生じる可能性がありますが、パフォーマンスが改善される場合もあります。"
 
 #: Library/Modules/Builtin/Strings.cs:59
-msgid "Sets HTTP buffering"
-msgstr "HTTPバッファリングを設定"
+msgid "Set HTTP buffering"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:63
 msgid ""
@@ -4161,9 +4522,8 @@ msgid "Configure Microsoft SQL Server module"
 msgstr "Microsoft SQLサーバーモジュールを設定"
 
 #: Library/Modules/Builtin/Strings.cs:73
-msgid ""
-"Executes a script before starting an operation, and again on completion"
-msgstr "バックアップの操作を開始する前と、バックアップの完了後に実行するスクリプトを設定できます"
+msgid "Execute a script before starting an operation, and again on completion"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:74
 msgid "Run script"
@@ -4171,9 +4531,9 @@ msgstr "スクリプトを実行"
 
 #: Library/Modules/Builtin/Strings.cs:75
 msgid ""
-"Executes a script after performing an operation. The script will receive the"
-" operation results written to stdout."
-msgstr "バックアップの操作を行った後に実行するスクリプトを設定できます。スクリプトは、標準出力に書き込まれたバックアップの結果を受け取ります。"
+"Execute a script after performing an operation. The script will receive the "
+"operation results written to stdout."
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:76
 msgid "Run a script on exit"
@@ -4191,28 +4551,27 @@ msgstr "スクリプトの「{0}」は終了コード {1}{2} を返しました"
 
 #: Library/Modules/Builtin/Strings.cs:79
 msgid ""
-"Executes a script before performing an operation. The operation will block "
+"Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
-"バックアップの操作を行う前に実行するスクリプトを設定できます。スクリプトが完了するかタイムアウトになるまで、バックアップの操作は実行されません。スクリプトが0以外のエラーコードを返すか、タイムアウトになった場合、バックアップの操作は中断されます。"
 
 #: Library/Modules/Builtin/Strings.cs:80
 msgid "Run a required script on startup"
 msgstr "必要なスクリプトを開始時に実行"
 
 #: Library/Modules/Builtin/Strings.cs:81
-#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:237
 #, csharp-format
 msgid ""
 "Use this option to select the output format for results. Available formats: "
 "{0}"
-msgstr ""
+msgstr "結果を出力する形式を選択できます。利用可能な形式は{0}です。"
 
 #: Library/Modules/Builtin/Strings.cs:82
-#: Library/Modules/Builtin/Strings.cs:209
-msgid "Selects the output format for results"
-msgstr "結果の出力形式を選択"
+#: Library/Modules/Builtin/Strings.cs:238
+msgid "Select the output format for results"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:83
 #, csharp-format
@@ -4226,10 +4585,9 @@ msgstr "スクリプト「{0}」の実行がタイムアウトしました"
 
 #: Library/Modules/Builtin/Strings.cs:85
 msgid ""
-"Executes a script before performing an operation. The operation will block "
+"Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
-"バックアップの操作を行う前に実行するスクリプトを設定できます。スクリプトが完了するかタイムアウトになるまで、バックアップの操作は実行されません。"
 
 #: Library/Modules/Builtin/Strings.cs:86
 msgid "Run a script on startup"
@@ -4242,15 +4600,14 @@ msgstr "スクリプト「{0}」はエラーメッセージを返しました：
 
 #: Library/Modules/Builtin/Strings.cs:88
 msgid ""
-"Sets the maximum time a script is allowed to execute. If the script has not "
+"Set the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr ""
-"スクリプトが実行できる最大の時間を設定。スクリプトがここで設定した時間内に完了しない場合、完了を待たずにバックアップの操作も継続します。また、スクリプトの実行結果も処理されません。"
 
 #: Library/Modules/Builtin/Strings.cs:89
-msgid "Sets the script timeout"
-msgstr "スクリプトのタイムアウトを設定"
+msgid "Set the script timeout"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:90
 msgid ""
@@ -4258,6 +4615,7 @@ msgid ""
 "script arguments are treated as commandline strings. Use single or double "
 "quotes to separate arguments."
 msgstr ""
+"スクリプトの引数を有効にします。このオプションを有効にすると、スクリプトの引数は、コマンドラインの文字列として扱われます。引数を分けるには、一重引用符または二重引用符を使用してください。"
 
 #: Library/Modules/Builtin/Strings.cs:91
 msgid "Enable script arguments"
@@ -4275,7 +4633,7 @@ msgstr "メールを送信"
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup. Please use the"
-" option {0} to specify what smtp server to use."
+" option --{0} to specify what SMTP server to use."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:98
@@ -4308,7 +4666,7 @@ msgstr "メッセージの本文"
 msgid ""
 "Use this option to set the password used to authenticate with the SMTP "
 "server if required."
-msgstr ""
+msgstr "SMTPサーバーの認証が必要な場合に使用するパスワードを設定。"
 
 #: Library/Modules/Builtin/Strings.cs:109
 msgid "SMTP Password"
@@ -4339,6 +4697,12 @@ msgid ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 msgstr ""
+"電子メールの送信元のアドレスを設定。ホストが指定されていない場合は、最初の受信者のホスト名を使用します。以下に、許可されている形式の例を示します。\n"
+"\n"
+"sender\n"
+"sender@example.com\n"
+"メールの送信者 <sender>\n"
+"メールの送信者 <sender@example.com>"
 
 #: Library/Modules/Builtin/Strings.cs:121
 msgid "Email sender"
@@ -4355,7 +4719,8 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:124
 #: Library/Modules/Builtin/Strings.cs:160
-#: Library/Modules/Builtin/Strings.cs:188
+#: Library/Modules/Builtin/Strings.cs:189
+#: Library/Modules/Builtin/Strings.cs:217
 msgid "The messages to send"
 msgstr "送信するメッセージ"
 
@@ -4366,6 +4731,11 @@ msgid ""
 "\n"
 "To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
 msgstr ""
+"SMTPサーバーのURLを指定できます（例：smtp://example.com:25）。複数のサーバーを優先度順に、セミコロンで区切って指定できます。メールが送信されるまで、先頭のサーバーから順番に接続を試みます。\n"
+"サーバーが指定されていない場合は、DNSルックアップで、最初の受信者のMXレコードを検索し、メッセージが送信されるまで、それが指定する優先度に従って全てのSMTPサーバーへの接続を試みます。\n"
+"\n"
+"SMTP over SSLを有効にする場合は smtps://example.com の形式でURLを指定してください。SMTP STARTTLSを有効にする場合は smtp://example.com:25/?starttls=when-available または smtp://example.com:25/?starttls=always の形式で指定してください。\n"
+"ポートが指定されていない場合は、SSLを有効にしない場合は25番ポート、SSL接続の場合は465番ポートを使用します。また、STARTTLSの使用を無効にする場合は smtp://example.com:25/?starttls=never の形式でURLを指定してください。"
 
 #: Library/Modules/Builtin/Strings.cs:129
 msgid "SMTP Url"
@@ -4386,7 +4756,7 @@ msgstr "メールの題名"
 msgid ""
 "Use this option to set the username used to authenticate with the SMTP "
 "server if required."
-msgstr ""
+msgstr "SMTPサーバーの認証が必要な場合に使用するユーザー名を設定。"
 
 #: Library/Modules/Builtin/Strings.cs:133
 msgid "SMTP Username"
@@ -4420,7 +4790,7 @@ msgstr "XMPPのレポートモジュール"
 msgid ""
 "Use this option to set the users who should have the messages sent. You can "
 "specify multiple users separated with commas."
-msgstr ""
+msgstr "メッセージの送信先となるユーザーを設定。コンマで区切って複数のユーザーを指定できます。"
 
 #: Library/Modules/Builtin/Strings.cs:143
 msgid "XMPP recipient email"
@@ -4428,6 +4798,7 @@ msgstr "XMPPのメッセージの受信者"
 
 #: Library/Modules/Builtin/Strings.cs:144
 #: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:201
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -4451,6 +4822,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:153
 #: Library/Modules/Builtin/Strings.cs:181
+#: Library/Modules/Builtin/Strings.cs:210
 msgid "The message template"
 msgstr "メッセージのひな型"
 
@@ -4458,7 +4830,7 @@ msgstr "メッセージのひな型"
 msgid ""
 "Use this option to set a username for the account that will send the "
 "message, including the hostname, e.g. \"account@jabber.org/Home\""
-msgstr ""
+msgstr "メッセージの送信を行うアカウントのユーザー名を設定（ホスト名も含む）。例：「account@jabber.org/Home」"
 
 #: Library/Modules/Builtin/Strings.cs:155
 msgid "The XMPP username"
@@ -4468,14 +4840,15 @@ msgstr "XMPPのユーザー名"
 msgid ""
 "Use this option to set a password for the account that will send the "
 "message."
-msgstr ""
+msgstr "メッセージの送信を行うアカウントのパスワードを設定。"
 
 #: Library/Modules/Builtin/Strings.cs:157
 msgid "The XMPP password"
 msgstr "XMPPのパスワード"
 
 #: Library/Modules/Builtin/Strings.cs:158
-#: Library/Modules/Builtin/Strings.cs:186
+#: Library/Modules/Builtin/Strings.cs:187
+#: Library/Modules/Builtin/Strings.cs:215
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -4485,14 +4858,16 @@ msgstr ""
 "「{0},{1}」のようにコンマで分けて複数のオプションを指定できます。「{4}」は「{0},{1},{2},{3}」の省略形で、バックアップに関する全ての操作についてメッセージを送信します。"
 
 #: Library/Modules/Builtin/Strings.cs:161
-#: Library/Modules/Builtin/Strings.cs:189
+#: Library/Modules/Builtin/Strings.cs:190
+#: Library/Modules/Builtin/Strings.cs:218
 msgid ""
 "By default, messages will only be sent after a backup operation. Use this "
 "option to send messages for all operations."
-msgstr ""
+msgstr "既定では、メッセージはバックアップの実行後にしか送信されません。このオプションを有効にすると、全ての操作についてメッセージを送信します。"
 
 #: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:190
+#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:219
 msgid "Send messages for all operations"
 msgstr "全ての操作に関してメッセージを送信"
 
@@ -4502,104 +4877,146 @@ msgstr "Jabberサーバーのログイン中にタイムアウトになりまし
 
 #: Library/Modules/Builtin/Strings.cs:168
 msgid ""
-"This module provides support for sending status reports via HTTP messages"
-msgstr "このモジュールを使用すると、状態に関する報告をHTTPによるメッセージで送信できるようになります"
+"This module provides support for sending status reports via Telegram "
+"messages"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:169
-msgid "HTTP report module"
-msgstr "HTTPのレポートモジュール"
+msgid "Telegram report module"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:170
-msgid "Use this option to set a HTTP report URL."
+msgid "Use this option to set the channel ID."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:171
-msgid "HTTP report URL"
-msgstr "HTTPのレポートのURL"
-
-#: Library/Modules/Builtin/Strings.cs:182
-msgid "Use this option to set a name of the parameter to send the message as."
+msgid "Telegram channel id"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:183
-msgid "The name of the parameter to send the message as"
-msgstr "メッセージを送信する際のパラメーターの名称"
+#: Library/Modules/Builtin/Strings.cs:182
+msgid ""
+"Use this option to set a bot ID for the bot that will send the message."
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:184
-msgid ""
-"Use this option to set extra parameters to add to the http message, e.g. "
-"\"parameter1=value1&parameter2=value2\""
+msgid "The Telegram bot ID"
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:185
+msgid ""
+"Use this option to set a API key for the bot that will send the message."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:186
+msgid "The Telegram API key"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:192
+msgid "Timeout occurred while sending to Telegram server"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:197
+msgid ""
+"This module provides support for sending status reports via HTTP messages"
+msgstr "このモジュールを使用すると、状態に関する報告をHTTPによるメッセージで送信できるようになります"
+
+#: Library/Modules/Builtin/Strings.cs:198
+msgid "HTTP report module"
+msgstr "HTTPのレポートモジュール"
+
+#: Library/Modules/Builtin/Strings.cs:199
+msgid "Use this option to set a HTTP report URL."
+msgstr "HTTPのレポート用URLを設定。"
+
+#: Library/Modules/Builtin/Strings.cs:200
+msgid "HTTP report URL"
+msgstr "HTTPのレポートのURL"
+
+#: Library/Modules/Builtin/Strings.cs:211
+msgid "Use this option to set a name of the parameter to send the message as."
+msgstr "メッセージを送信する際のパラメーターの名称を設定。"
+
+#: Library/Modules/Builtin/Strings.cs:212
+msgid "The name of the parameter to send the message as"
+msgstr "メッセージを送信する際のパラメーターの名称"
+
+#: Library/Modules/Builtin/Strings.cs:213
+msgid ""
+"Use this option to set extra parameters to add to the http message, e.g. "
+"\"parameter1=value1&parameter2=value2\""
+msgstr "HTTPのメッセージに追加するパラメーターを設定。例：「parameter1=value1&parameter2=value2」"
+
+#: Library/Modules/Builtin/Strings.cs:214
 msgid "Extra parameters to add to the http message"
 msgstr "HTTPのメッセージに追加するパラメーター"
 
-#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:220
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report."
 msgstr "レポートを送信する際に使用する既定のHTTPリクエストのメソッドを変更できます。"
 
-#: Library/Modules/Builtin/Strings.cs:192
-msgid "Sets the HTTP verb to use"
-msgstr "使用するHTTPリクエストのメソッドを設定"
+#: Library/Modules/Builtin/Strings.cs:221
+msgid "Set the HTTP verb to use"
+msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:193
+#: Library/Modules/Builtin/Strings.cs:222
 msgid ""
 "Use this option to set HTTP report URLs for sending form-encoded data. This "
 "option accepts multiple URLs, seperated by a semi-colon. All URLs will "
 "receive the same data. Note that this option ignores the format and verb "
 "settings."
 msgstr ""
+"フォームにエンコードしたデータを送信する際のHTTPのレポート用URLを設定。セミコロンで区切り、複数のURLを入力できます。全てのURLは同一のデータを受信します。この設定は、フォーマットと、リクエストメソッドの設定を無視します。"
 
-#: Library/Modules/Builtin/Strings.cs:194
+#: Library/Modules/Builtin/Strings.cs:223
 msgid "HTTP report URLs for sending form data"
 msgstr "フォーム形式のデータを送信する際のHTTPのレポート用URL"
 
-#: Library/Modules/Builtin/Strings.cs:195
+#: Library/Modules/Builtin/Strings.cs:224
 msgid ""
 "Use this option to set HTTP report URLs for sending JSON data. This option "
 "accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
 "same data. Note that this option ignores the format and verb settings."
 msgstr ""
+"JSON形式のデータを送信する際のHTTPのレポート用URLを設定。セミコロンで区切り、複数のURLを入力できます。全てのURLは同一のデータを受信します。この設定は、フォーマットと、リクエストメソッドの設定を無視します。"
 
-#: Library/Modules/Builtin/Strings.cs:196
+#: Library/Modules/Builtin/Strings.cs:225
 msgid "HTTP report URLs for sending JSON data"
 msgstr "JSON形式のデータを送信する際のHTTPのレポート用URL"
 
-#: Library/Modules/Builtin/Strings.cs:201
+#: Library/Modules/Builtin/Strings.cs:230
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "メッセージを送信できませんでした: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:202
+#: Library/Modules/Builtin/Strings.cs:231
 msgid ""
 "Use this option to set the log level for messages to include in the report."
 msgstr "レポートに含むメッセージに関するログの水準を設定できます。"
 
-#: Library/Modules/Builtin/Strings.cs:203
-msgid "Defines a log level for messages"
-msgstr "メッセージに記録するログの水準を規定"
+#: Library/Modules/Builtin/Strings.cs:232
+msgid "Define a log level for messages"
+msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:233
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report."
 msgstr "レポートに含むオプションを定めるフィルターの表現を設定できます。"
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:234
 msgid "Log message filter"
 msgstr "ログメッセージのフィルター"
 
-#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:235
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
 msgstr "レポートに含むログの最大行数を設定できます。0または負の値を設定すると、最大行数は無制限になります。"
 
-#: Library/Modules/Builtin/Strings.cs:207
-msgid "Limits log lines"
-msgstr "ログの行を制限"
+#: Library/Modules/Builtin/Strings.cs:236
+msgid "Limit log lines"
+msgstr ""
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:39
 #, csharp-format
@@ -4818,11 +5235,6 @@ msgstr "モジュールは自動的に読み込まれません。--{0}のオプ�
 msgid "Supported generic modules:"
 msgstr "サポートする一般モジュール："
 
-#: CommandLine/CLI/Strings.cs:41
-#, csharp-format
-msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr "パラメーターのファイル「{0}」を読み込めません。理由：{1}"
-
 #: CommandLine/CLI/Strings.cs:42
 #, csharp-format
 msgid ""
@@ -4855,10 +5267,11 @@ msgid ""
 "parameter file. Each filter must be prefixed with either a + or a -, and "
 "multiple filters must be joined with {5}."
 msgstr ""
-
-#: CommandLine/CLI/Strings.cs:45
-msgid "Path to a file with parameters"
-msgstr "パラメーターのファイルへのパス"
+"コマンドラインのクライアントに指定されたオプションを保存できます。ファイルはプレーンテキストファイルでなければならず、UTF-8エンコーディングが推奨されます。ファイルのそれぞれの行は「オプション=値」の形式で記入してください。特殊オプション"
+" --{0} と --{1} "
+"で、ローカルのパスとバックアップ先のURIをそれぞれ上書きできます。このファイルで指定されるオプションは、コマンドラインで指定されるオプションに優先します。ファイルとコマンドラインの両方でフィルターを設定することはできません。特殊オプション"
+" --{2}、--{3}、または --{4} を使用すると、パラメーターのファイルでフィルターを設定できます。各フィルターの先頭には+または-"
+"が付いていなければならず、複数のフィルターがある場合は、{5}で結合する必要があります。"
 
 #: CommandLine/CLI/Strings.cs:46
 #, csharp-format
@@ -4880,6 +5293,7 @@ msgid ""
 "files and folders) can be specified by using curly braces, e.g. "
 "{{Applications}}."
 msgstr ""
+"このフィルターに合致するファイルを含めます。特殊文字の「*」は任意の数の文字を指し、「?」は任意の1文字を指します。例えば「*.txt」を設定すると、txtの拡張子をもつ全てのファイルが含まれます。[.*\\.txt]のように、角括弧で正規表現を使用することができます。また、{{Applications}}のように、波括弧でフィルターのグループ（よく使われるファイルやフォルダーのセット）を指定することもできます。"
 
 #: CommandLine/CLI/Strings.cs:49
 msgid "Include files"
@@ -4895,6 +5309,7 @@ msgid ""
 "files and folders) can be specified by using curly braces, e.g. "
 "{{TemporaryFiles}}."
 msgstr ""
+"このフィルターに合致するファイルを除外します。特殊文字の「*」は任意の数の文字を指し、「?」は任意の1文字を指します。例えば「*.txt」を設定すると、txtの拡張子をもつ全てのファイルが除外されます。[.*\\.txt]のように、角括弧で正規表現を使用することができます。また、{{TemporaryFiles}}のように、波括弧でフィルターのグループ（よく使われるファイルやフォルダーのセット）を指定することもできます。"
 
 #: CommandLine/CLI/Strings.cs:51
 msgid "Exclude files"
@@ -4927,11 +5342,11 @@ msgstr "コンソールの出力を無効にする"
 msgid "This link may provide additional information: {0}"
 msgstr "このリンクから追加の情報を確認できる可能性があります：{0}"
 
-#: CommandLine/CLI/Program.cs:288
+#: CommandLine/CLI/Program.cs:290
 msgid "Toggle automatic updates"
 msgstr "自動アップデートを切り替える"
 
-#: CommandLine/CLI/Program.cs:288
+#: CommandLine/CLI/Program.cs:290
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"

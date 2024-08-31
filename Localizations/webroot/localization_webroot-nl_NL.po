@@ -54,20 +54,24 @@ msgid ""
 "<b>Note:</b> Sia will still boost redundancy later as long as you're "
 "connected to your hosts."
 msgstr ""
+"<b>Let op:</b> Sia zal later nog steeds de redundantie verhogen zolang u "
+"verbonden bent met uw hosts."
 
 #: templates/commandline.html:25
 msgid "<i class=\"fa fa-check\"></i> Edit as text"
-msgstr ""
+msgstr "<i class=\"fa fa-check\"></i> Bewerk als tekst"
 
 #: templates/commandline.html:32
 msgid "<i class=\"fa\"></i> Edit as text"
-msgstr ""
+msgstr "<i class=\"fa\"></i> Bewerk als tekst"
 
-#: index.html:294
+#: index.html:295
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
 "                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
 msgstr ""
+"<p>Verbinding met server is afgewezen vanwege ongeldige authenticatie.</p>\n"
+"                <p>Meld u opnieuw aan of open de pagina opnieuw vanuit het Systeemvak (indien van toepassing)</p>"
 
 #: scripts/services/EditUriBuiltins.js:1167
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
@@ -89,7 +93,7 @@ msgstr "AWS Toegangssleutel"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Beleid"
 
-#: index.html:223 index.html:239
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "Over"
 
@@ -142,7 +146,7 @@ msgstr "Voeg een pad rechtstreeks toe"
 msgid "Add advanced option"
 msgstr "Voeg geavanceerde optie toe"
 
-#: index.html:211
+#: index.html:212
 msgid "Add backup"
 msgstr "Back-up toevoegen"
 
@@ -282,7 +286,7 @@ msgstr "Automatisch gegenereerde wachtwoordzin"
 
 #: templates/addoredit.html:258
 msgid "Automatically run backups"
-msgstr ""
+msgstr "Automatisch back-ups uitvoeren"
 
 #: templates/backends/b2.html:12
 msgid "B2 Application ID"
@@ -313,6 +317,8 @@ msgid ""
 "Backend modules: <p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.BackendModules\">{{item.Key}} </p>"
 msgstr ""
+"Backend modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}} </p>"
 
 #: scripts/services/ServerStatus.js:46
 msgid "Backup complete!"
@@ -328,6 +334,11 @@ msgid ""
 "to use for restoring your files, or, in case of GPG encryption, leave blank "
 "to let gpg retrieve the passphrase by invoking your system's keychain."
 msgstr ""
+"Back-up is gecodeerd maar er is geen wachtwoordzin beschikbaar. Typ "
+"hieronder een wachtwoordzin om te gebruiken voor het herstellen van uw "
+"bestanden, of, in het geval van GPG-codering, laat dit leeg om de gpg-code "
+"de wachtwoordzin op te laten halen door een beroep te doen op de keychain "
+"van uw systeem."
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
@@ -464,8 +475,9 @@ msgstr "Cache bestanden"
 msgid "Canary"
 msgstr "Canary"
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -504,6 +516,10 @@ msgstr "Kan geen in- of uitsluitingsfilters opnemen in extra opties"
 msgid "Change server passphrase"
 msgstr "Wijzig server wachtwoordzin"
 
+#: scripts/controllers/AppController.js:194
+msgid "Change server password"
+msgstr ""
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "Aanpassingen-log"
@@ -524,7 +540,7 @@ msgstr "Controleer nu op updates"
 msgid "Checking for updates …"
 msgstr "Controleren op updates ..."
 
-#: templates/captcha.html:10
+#: templates/captcha.html:11
 msgid "Checking …"
 msgstr "Controleren …"
 
@@ -546,7 +562,7 @@ msgstr "Kies een opslagtype om aan de slag te gaan"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Klik op de AuthID link om een AuthID aan te maken"
 
-#: index.html:148 index.html:199
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
 msgstr "Klik om bandbreedte-opties in te stellen"
 
@@ -564,11 +580,11 @@ msgstr "Cloud API Geheime Sleutel"
 
 #: templates/commandline.html:8
 msgid "Command"
-msgstr ""
+msgstr "Commando"
 
 #: templates/commandline.html:18
 msgid "Commandline arguments"
-msgstr ""
+msgstr "Opdrachtregel-argumenten"
 
 #: templates/home.html:40
 msgid "Commandline …"
@@ -603,6 +619,8 @@ msgid ""
 "Compression modules: <p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.CompressionModules\">{{item.Key}} </p>"
 msgstr ""
+"Compressiemodules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
 
 #: scripts/directives/sourceFolderPicker.js:533
 msgid "Computer"
@@ -630,7 +648,7 @@ msgstr "Bevestig verwijderen"
 msgid "Confirm encryption passphrase"
 msgstr "Bevestig wachtwoordzin voor versleuteling"
 
-#: templates/settings.html:15
+#: templates/changepassword.html:14 templates/settings.html:15
 msgid "Confirm new password"
 msgstr "Bevestig nieuw wachtwoord"
 
@@ -646,11 +664,11 @@ msgstr "Bevestiging vereist"
 msgid "Connect"
 msgstr "Verbind"
 
-#: index.html:307
+#: index.html:308
 msgid "Connect now"
 msgstr "Verbind nu"
 
-#: index.html:301
+#: index.html:302
 msgid "Connecting to server …"
 msgstr "Verbinden met server ..."
 
@@ -658,11 +676,11 @@ msgstr "Verbinden met server ..."
 msgid "Connecting to task …"
 msgstr "Verbinden met taak …"
 
-#: index.html:308
+#: index.html:309
 msgid "Connecting …"
 msgstr "Verbinden …"
 
-#: index.html:293
+#: index.html:294
 msgid "Connection lost"
 msgstr "Verbinding verbroken"
 
@@ -703,7 +721,7 @@ msgstr "Kopieer doel URL naar Klembord"
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/RestoreDirectController.js:33
 msgid "Copy URL"
-msgstr ""
+msgstr "Kopie URL"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
@@ -815,7 +833,7 @@ msgstr "Aangepaste opslagklasse ({{class}})"
 
 #: templates/advancedoptionseditor.html:43
 msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
-msgstr ""
+msgstr "VEROUDERD: {{getDeprecationMessage(item)}}"
 
 #: templates/home.html:37
 msgid "Database …"
@@ -843,7 +861,7 @@ msgstr "Standaard opties"
 
 #: templates/advancedoptionseditor.html:44
 msgid "Default value: \"{{getDefaultValue(item)}}\""
-msgstr ""
+msgstr "Standaardwaarde: \"{{getDefaultValue(item)}}\""
 
 #: templates/localdatabase.html:16
 msgid "Delete"
@@ -986,15 +1004,15 @@ msgstr "Update downloaden ..."
 msgid "Duplicate option {{opt}}"
 msgstr "Dubbele optie {{opt}}"
 
-#: index.html:254
+#: index.html:255
 msgid "Duplicati Website"
 msgstr "Duplicati Website"
 
-#: index.html:248
+#: index.html:249
 msgid "Duplicati forum"
 msgstr "Duplicati forum"
 
-#: scripts/controllers/AppController.js:181
+#: scripts/controllers/AppController.js:184
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1082,6 +1100,8 @@ msgid ""
 "Encryption modules: <p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.EncryptionModules\">{{item.Key}} </p>"
 msgstr ""
+"Coderingsmodules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
 
 #: scripts/services/EditUriBuiltins.js:1168 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
@@ -1110,7 +1130,7 @@ msgstr "Geef URL in"
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter a backup destination URL:"
-msgstr ""
+msgstr "Voer de URL van een back-updoel in:"
 
 #: templates/addoredit.html:339
 msgid ""
@@ -1129,7 +1149,7 @@ msgstr ""
 
 #: templates/commandline.html:14
 msgid "Enter a url, or click the &quot;Target URL &gt;&quot; link"
-msgstr ""
+msgstr "Geef een URL in, of klik de &quot;Doel-URL &gt;&quot; link"
 
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
@@ -1369,7 +1389,7 @@ msgstr "Filters"
 msgid "Finished!"
 msgstr "Klaar!"
 
-#: scripts/controllers/AppController.js:180
+#: scripts/controllers/AppController.js:183
 msgid "First run setup"
 msgstr "Instellen voor eerste gebruik"
 
@@ -1379,7 +1399,7 @@ msgstr "Map"
 
 #: templates/backends/storj.html:42
 msgid "Folder in the bucket"
-msgstr ""
+msgstr "Map in de bucket"
 
 #: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
 #: templates/backends/cos.html:30 templates/backends/e2.html:16
@@ -1456,7 +1476,7 @@ msgstr "Verberg"
 msgid "Hide hidden folders"
 msgstr "Verberg verborgen bestanden"
 
-#: index.html:208 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "Start"
 
@@ -1534,6 +1554,9 @@ msgid ""
 "href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
 " as …&quot;</a>."
 msgstr ""
+"Als het back-upbestand niet automatisch is gedownload, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">klik met rechts en kies "
+"&quot;Opslaan als ...&quot;</a>."
 
 #: templates/notificationarea.html:7
 msgid ""
@@ -1541,6 +1564,9 @@ msgid ""
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
 "&quot;Save as …&quot;</a>."
 msgstr ""
+"Als het back-upbestand niet automatisch is gedownload, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">klik met rechts en kies "
+"&quot;Opslaan als ...&quot;</a>."
 
 #: scripts/services/EditUriBackendConfig.js:113
 msgid ""
@@ -1559,6 +1585,8 @@ msgid ""
 "If you want to use the backup later, you can export the configuration before"
 " deleting it."
 msgstr ""
+"Als u de back-up later wilt gebruiken, kunt u de configuratie exporteren "
+"alvorens hem te verwijderen."
 
 #: templates/import.html:29
 msgid "Import"
@@ -1571,7 +1599,7 @@ msgstr "Importeer Doel URL"
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Import URL"
-msgstr ""
+msgstr "Import URL"
 
 #: templates/import.html:3
 msgid "Import backup configuration"
@@ -1601,7 +1629,7 @@ msgstr "Uitdrukking opnemen"
 msgid "Include regular expression"
 msgstr "Reguliere expressie opnemen"
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
 msgstr "Incorrect antwoord, probeer opnieuw"
 
@@ -1721,7 +1749,7 @@ msgstr "Gebruik van externe opslag laden …"
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
-#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "Laden ..."
@@ -1736,6 +1764,9 @@ msgid ""
 "show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
 "hide=\"Backup.Backup.Name\">…loading…</b>"
 msgstr ""
+"Lokale database voor <b ng-"
+"show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…laden…</b>"
 
 #: templates/localdatabase.html:23
 msgid "Local database path:"
@@ -1765,11 +1796,11 @@ msgstr "Log gegevens voor <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Log gegevens van de server"
 
-#: index.html:306
+#: index.html:307
 msgid "Log in"
-msgstr ""
+msgstr "Inloggen"
 
-#: index.html:226
+#: index.html:227
 msgid "Log out"
 msgstr "Uitloggen"
 
@@ -1793,7 +1824,7 @@ msgstr ""
 "Zorg ervoor vat rclone zich in uw pad bevindt, of voeg de locatie van rclone"
 " toe via de geavanceerde opties."
 
-#: index.html:259
+#: index.html:260
 msgid "Manual"
 msgstr "Handmatig"
 
@@ -1813,7 +1844,7 @@ msgstr "Max downloadsnelheid"
 msgid "Max upload speed"
 msgstr "Max Uploadsnelheid"
 
-#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1896,7 +1927,7 @@ msgstr "Naam"
 msgid "Never"
 msgstr "Nooit"
 
-#: templates/settings.html:11
+#: templates/changepassword.html:5 templates/settings.html:11
 msgid "New Password"
 msgstr "Nieuw Wachtwoord"
 
@@ -1925,11 +1956,11 @@ msgstr "Volgende"
 msgid "Next scheduled run:"
 msgstr "Volgende geplande uitvoering:"
 
-#: index.html:183
+#: index.html:184
 msgid "Next scheduled task:"
 msgstr "Volgende geplande taak:"
 
-#: index.html:180
+#: index.html:181
 msgid "Next task:"
 msgstr "Volgende taak:"
 
@@ -1937,7 +1968,7 @@ msgstr "Volgende taak:"
 msgid "Next time"
 msgstr "Volgende keer"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1988,7 +2019,7 @@ msgstr "Geen items om te herstellen, selecteer één of meer items"
 msgid "No passphrase entered"
 msgstr "Geen wachtwoordzin ingegeven"
 
-#: index.html:185
+#: index.html:186
 msgid "No scheduled tasks"
 msgstr "Geen geplande taken"
 
@@ -2021,8 +2052,9 @@ msgstr ""
 "Er zal niets verwijderd worden. De back-upgrootte zal toenemen met iedere "
 "verandering."
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2048,7 +2080,7 @@ msgstr "OSS Bucket-regio"
 
 #: templates/backends/aliyunoss.html:25 templates/backends/aliyunoss.html:26
 msgid "OSS Bucket name"
-msgstr ""
+msgstr "OSS Bucket-naam"
 
 #: templates/backends/aliyunoss.html:2
 msgid "OSS Endpoint"
@@ -2088,7 +2120,7 @@ msgstr "Geopend"
 
 #: scripts/services/EditUriBuiltins.js:1016
 msgid "Openstack API key are not supported in v3 keystone API"
-msgstr ""
+msgstr "Openstack API Sleutels worden niet ondersteund in v3 keystone API"
 
 #: scripts/services/AppUtils.js:197
 msgid "Operating System"
@@ -2132,6 +2164,8 @@ msgid ""
 "Options added here are applied to all backups, but can be overridden in each"
 " individual backup."
 msgstr ""
+"Opties die hier worden toegevoegd, worden toegepast op alle back-ups, maar "
+"kunnen worden overschreven in iedere afzonderlijke back-up."
 
 #: templates/restore.html:81
 msgid "Original location"
@@ -2215,7 +2249,7 @@ msgstr "Pauze"
 msgid "Pause after startup or hibernation"
 msgstr "Pauzeer na opstarten of slaapmodus"
 
-#: scripts/controllers/AppController.js:50
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr "Pauzeer-opties"
 
@@ -2301,7 +2335,7 @@ msgstr "Registreren tijdelijke back-up ..."
 msgid "Relative paths not allowed"
 msgstr "Relatieve paden zijn  niet toegestaan"
 
-#: index.html:305 templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr "Andere code"
 
@@ -2365,7 +2399,7 @@ msgstr "Rapportage:"
 msgid "Reset"
 msgstr "Reset"
 
-#: index.html:214 templates/restore.html:137
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
 msgstr "Herstellen"
 
@@ -2423,7 +2457,7 @@ msgstr "Herstelde Symbolische Links"
 msgid "Restoring files …"
 msgstr "Bestanden worden hersteld ..."
 
-#: index.html:217
+#: index.html:218
 msgid "Resume"
 msgstr "Hervat"
 
@@ -2443,7 +2477,7 @@ msgstr "Nu uitvoeren"
 msgid "Running commandline entry"
 msgstr "Opdrachtregelinvoer in uitvoering"
 
-#: index.html:172
+#: index.html:173
 msgid "Running task:"
 msgstr "Taak in uitvoering:"
 
@@ -2454,6 +2488,8 @@ msgstr "In uitvoering ..."
 #: templates/commandline.html:54
 msgid "Running … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">stop now</a>"
 msgstr ""
+"In uitvoering … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">nu "
+"stoppen</a>"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
@@ -2542,6 +2578,8 @@ msgid ""
 "Server is currently paused, <a style=\"cursor: pointer\" ng-"
 "click=\"ServerStatus.resume()\">resume now</a>"
 msgstr ""
+"Server is momenteel gepauzeerd, <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">nu hervatten</a>"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server is currently paused, do you want to resume now?"
@@ -2559,7 +2597,7 @@ msgstr "Server gepauzeerd"
 msgid "Server state properties"
 msgstr "Server status eigenschappen"
 
-#: index.html:220 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
 msgstr "Instellingen"
 
@@ -2690,11 +2728,11 @@ msgstr "Stop de back-up in uitvoering"
 msgid "Stop running task"
 msgstr "Stop de taak in uitvoering"
 
-#: index.html:168
+#: index.html:169
 msgid "Stopping after the current file:"
 msgstr "Stoppen na het huidige bestand:"
 
-#: index.html:173
+#: index.html:174
 msgid "Stopping task:"
 msgstr "Taak wordt gestopt:"
 
@@ -2761,7 +2799,7 @@ msgstr "TByte/s"
 
 #: templates/commandline.html:13
 msgid "Target URL &gt;"
-msgstr ""
+msgstr "Doel-URL &gt;"
 
 #: templates/backends/sia.html:7
 msgid "Target path. Example: /backup"
@@ -2840,6 +2878,11 @@ msgid ""
 "link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-"
 "size'\">See this page for more information.</external-link>"
 msgstr ""
+"De back-ups worden opgesplitst in meerdere bestanden die volumes worden "
+"genoemd. Hier kunt u de maximale grootte van de individuele volumebestanden "
+"instellen. <external-link "
+"link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-"
+"size'\">Zie deze pagina voor meer informatie.</external-link>"
 
 #: scripts/services/EditUriBuiltins.js:1068
 msgid "The bucket name should be all lower-case, convert automatically?"
@@ -2854,7 +2897,7 @@ msgstr ""
 "De configuratie moet op een veilige plaats bewaard worden. Weet u zeker dat "
 "u een onversleuteld bestand wilt opslaan dat uw wachtwoorden bevat?"
 
-#: index.html:298
+#: index.html:299
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 "De verbinding met de server is verbroken, opnieuw proberen over {{time}} …"
@@ -2983,7 +3026,7 @@ msgstr "Afgelopen maand"
 msgid "This week"
 msgstr "Afgelopen week"
 
-#: scripts/controllers/AppController.js:65
+#: scripts/controllers/AppController.js:67
 msgid "Throttle settings"
 msgstr "Bandbreedte-instellingen"
 
@@ -3019,6 +3062,9 @@ msgid ""
 "To prevent bucket naming conflicts, it is recommended to prepend your "
 "account ID to the bucket name. Prepend automatically?"
 msgstr ""
+"Om problemen met de bucketnaamgeving te voorkomen, wordt aanbevolen om het "
+"account-ID vooraf te laten gaan door de bucketnaam. Automatisch vooraf laten"
+" gaan?"
 
 #: templates/settings.html:26
 msgid ""
@@ -3085,6 +3131,9 @@ msgid ""
 "click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> is available."
 " <a href=\"{{state.updateDownloadLink}}\">Download now</a>"
 msgstr ""
+"Update <a href ng-"
+"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> is "
+"beschikbaar. <a href=\"{{state.updateDownloadLink}}\">Download nu</a>"
 
 #: templates/settings.html:78
 msgid "Update channel"
@@ -3110,8 +3159,7 @@ msgstr "Uploaden controlebestand ..."
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | "
-"translate}}</external-link>."
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3220,7 +3268,7 @@ msgstr "Erg sterk"
 msgid "Very weak"
 msgstr "Erg zwak"
 
-#: index.html:245
+#: index.html:246
 msgid "Visit us on"
 msgstr "Bezoek ons op"
 
@@ -3229,6 +3277,8 @@ msgid ""
 "WARNING: The remote database is found to be in use by the commandline "
 "library."
 msgstr ""
+"WAARSCHUWING: De remote database blijkt in gebruik te zijn door de "
+"opdrachtregel bibliotheek."
 
 #: templates/delete.html:44
 msgid "WARNING: This will prevent you from restoring the data in the future."
@@ -3286,7 +3336,7 @@ msgstr "Waarheen wilt u de bestanden herstellen?"
 msgid "Years"
 msgstr "Jaren"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3426,7 +3476,7 @@ msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1027
 msgid "You must enter a tenant name if you do not provide an API key"
-msgstr ""
+msgstr "U moet een tenant naam ingeven als u de API sleutel niet verstrekt"
 
 #: scripts/controllers/EditBackupController.js:289
 msgid "You must enter a valid duration for the time to keep backups"
@@ -3440,11 +3490,11 @@ msgstr "Er moet een geldige waarde voor retentiebeleid worden opgegeven"
 
 #: scripts/services/EditUriBuiltins.js:1024
 msgid "You must enter either a password or an API key"
-msgstr ""
+msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven"
 
 #: scripts/services/EditUriBuiltins.js:1031
 msgid "You must enter either a password or an API key, not both"
-msgstr ""
+msgstr "U moet òf een wachtwoord, òf een API sleutel ingeven, niet beide"
 
 #: scripts/services/EditUriBackendConfig.js:122
 msgid "You must fill in the password"
@@ -3554,10 +3604,6 @@ msgstr "oss_endpoint"
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr "oss_region"
-
-#: templates/settings.html:125
-msgid "public usage statistics"
-msgstr "openbare gebruikstatistieken"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

@@ -58,7 +58,7 @@ msgstr ""
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr ""
 
-#: index.html:294
+#: index.html:295
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
 "                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
@@ -84,7 +84,7 @@ msgstr "AWS Access Key"
 msgid "AWS IAM Policy"
 msgstr "AWS IAM Policy"
 
-#: index.html:223 index.html:239
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "Névjegy"
 
@@ -137,7 +137,7 @@ msgstr "Útvonal hozzáadás közvetlenül"
 msgid "Add advanced option"
 msgstr "Haladó beállítás hozzáadása"
 
-#: index.html:211
+#: index.html:212
 msgid "Add backup"
 msgstr "Mentés hozzáadás"
 
@@ -455,8 +455,9 @@ msgstr "Gyorsítótás Fájlok"
 msgid "Canary"
 msgstr ""
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:345
 #: scripts/controllers/EditBackupController.js:360
 #: scripts/controllers/EditBackupController.js:394
@@ -495,6 +496,10 @@ msgstr ""
 msgid "Change server passphrase"
 msgstr ""
 
+#: scripts/controllers/AppController.js:194
+msgid "Change server password"
+msgstr ""
+
 #: templates/about.html:5
 msgid "Changelog"
 msgstr "Váztozások"
@@ -515,7 +520,7 @@ msgstr "Frissítés ellenőrzése most"
 msgid "Checking for updates …"
 msgstr "Frissítések ellenőrzése ..."
 
-#: templates/captcha.html:10
+#: templates/captcha.html:11
 msgid "Checking …"
 msgstr ""
 
@@ -535,7 +540,7 @@ msgstr "A kezdéshez válassz tárhely típust"
 msgid "Click the AuthID link to create an AuthID"
 msgstr ""
 
-#: index.html:148 index.html:199
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
 msgstr "Kattints a sebességkorlátozás beállításához"
 
@@ -619,7 +624,7 @@ msgstr "Törlés megerősítése"
 msgid "Confirm encryption passphrase"
 msgstr "Titkosítási jelszó megerősítése"
 
-#: templates/settings.html:15
+#: templates/changepassword.html:14 templates/settings.html:15
 msgid "Confirm new password"
 msgstr ""
 
@@ -635,11 +640,11 @@ msgstr "Megerősítés szükséges"
 msgid "Connect"
 msgstr "Csatlakozás"
 
-#: index.html:307
+#: index.html:308
 msgid "Connect now"
 msgstr "Csatlakozás most"
 
-#: index.html:301
+#: index.html:302
 msgid "Connecting to server …"
 msgstr "Csatlakozás a kiszolgálóhoz..."
 
@@ -647,11 +652,11 @@ msgstr "Csatlakozás a kiszolgálóhoz..."
 msgid "Connecting to task …"
 msgstr ""
 
-#: index.html:308
+#: index.html:309
 msgid "Connecting …"
 msgstr ""
 
-#: index.html:293
+#: index.html:294
 msgid "Connection lost"
 msgstr "Csatlakozás megszakadt"
 
@@ -974,15 +979,15 @@ msgstr "Frissítés letöltése..."
 msgid "Duplicate option {{opt}}"
 msgstr "Dupla beállítás: {{opt}}"
 
-#: index.html:254
+#: index.html:255
 msgid "Duplicati Website"
 msgstr "Duplicati webodal"
 
-#: index.html:248
+#: index.html:249
 msgid "Duplicati forum"
 msgstr "Duplicati fórum"
 
-#: scripts/controllers/AppController.js:181
+#: scripts/controllers/AppController.js:184
 msgid ""
 "Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
 "If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
@@ -1353,7 +1358,7 @@ msgstr "Szürők"
 msgid "Finished!"
 msgstr "Kész!"
 
-#: scripts/controllers/AppController.js:180
+#: scripts/controllers/AppController.js:183
 msgid "First run setup"
 msgstr "Első futtatáskori beállítás"
 
@@ -1440,7 +1445,7 @@ msgstr "Elrejt"
 msgid "Hide hidden folders"
 msgstr "Rejtett mappák elrejtése"
 
-#: index.html:208 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
 msgstr "Kezdőlap"
 
@@ -1579,7 +1584,7 @@ msgstr ""
 msgid "Include regular expression"
 msgstr ""
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
 msgstr "Érvénytelen válasz, próbáld újra"
 
@@ -1693,7 +1698,7 @@ msgstr ""
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
-#: templates/captcha.html:14 templates/log.html:12 templates/log.html:23
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "Betöltés..."
@@ -1737,11 +1742,11 @@ msgstr ""
 msgid "Log data from the server"
 msgstr ""
 
-#: index.html:306
+#: index.html:307
 msgid "Log in"
 msgstr ""
 
-#: index.html:226
+#: index.html:227
 msgid "Log out"
 msgstr "Kijelentkezés"
 
@@ -1763,7 +1768,7 @@ msgid ""
 " advanced options."
 msgstr ""
 
-#: index.html:259
+#: index.html:260
 msgid "Manual"
 msgstr ""
 
@@ -1783,7 +1788,7 @@ msgstr "Maximális letöltési sebesség"
 msgid "Max upload speed"
 msgstr "Maximális feltöltési sebesség"
 
-#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
@@ -1866,7 +1871,7 @@ msgstr "Név"
 msgid "Never"
 msgstr "Soha"
 
-#: templates/settings.html:11
+#: templates/changepassword.html:5 templates/settings.html:11
 msgid "New Password"
 msgstr ""
 
@@ -1891,11 +1896,11 @@ msgstr "Következő"
 msgid "Next scheduled run:"
 msgstr "Következő időzített futtatás:"
 
-#: index.html:183
+#: index.html:184
 msgid "Next scheduled task:"
 msgstr "Következő időzített feladat:"
 
-#: index.html:180
+#: index.html:181
 msgid "Next task:"
 msgstr "Következő feladat:"
 
@@ -1903,7 +1908,7 @@ msgstr "Következő feladat:"
 msgid "Next time"
 msgstr "Következő dátum"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -1949,7 +1954,7 @@ msgstr ""
 msgid "No passphrase entered"
 msgstr "Nincs megadva jelszó"
 
-#: index.html:185
+#: index.html:186
 msgid "No scheduled tasks"
 msgstr "Nincs ütemezett feladat"
 
@@ -1976,8 +1981,9 @@ msgstr ""
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr "Semmi sem lesz törölve. A mentés minden változáskor növekedni fog."
 
-#: scripts/controllers/AppController.js:52
-#: scripts/controllers/AppController.js:67
+#: scripts/controllers/AppController.js:196
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:69
 #: scripts/controllers/EditBackupController.js:104
 #: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
@@ -2169,7 +2175,7 @@ msgstr "Szünet"
 msgid "Pause after startup or hibernation"
 msgstr "Szünet indítás vagy hibernálás után"
 
-#: scripts/controllers/AppController.js:50
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
 msgstr "Szünet beállítások"
 
@@ -2255,7 +2261,7 @@ msgstr "Ideiglenes mentés regisztrálása..."
 msgid "Relative paths not allowed"
 msgstr "Relatív útvonalak nem engedélyezettek"
 
-#: index.html:305 templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr "Újratöltés"
 
@@ -2319,7 +2325,7 @@ msgstr "Jelentés:"
 msgid "Reset"
 msgstr "Visszaállítás"
 
-#: index.html:214 templates/restore.html:137
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
 msgstr "Visszaállítás"
 
@@ -2377,7 +2383,7 @@ msgstr "Visszaállított szimbolikus linkek"
 msgid "Restoring files …"
 msgstr "Fájlok visszaállítása..."
 
-#: index.html:217
+#: index.html:218
 msgid "Resume"
 msgstr "Folytatás"
 
@@ -2397,7 +2403,7 @@ msgstr "Futtatás most"
 msgid "Running commandline entry"
 msgstr "Parancssori bejegyzés futtatása"
 
-#: index.html:172
+#: index.html:173
 msgid "Running task:"
 msgstr "Futó feladat:"
 
@@ -2513,7 +2519,7 @@ msgstr "Kiszolgáló szünetel"
 msgid "Server state properties"
 msgstr "Kiszolgáló állapot tulajdonságok"
 
-#: index.html:220 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
 msgstr "Beállítások"
 
@@ -2638,11 +2644,11 @@ msgstr "Mentés futtatásának leállítása"
 msgid "Stop running task"
 msgstr "Feladat futtatásának leállítása"
 
-#: index.html:168
+#: index.html:169
 msgid "Stopping after the current file:"
 msgstr "Leállítás az aktuális fájl után:"
 
-#: index.html:173
+#: index.html:174
 msgid "Stopping task:"
 msgstr "Feladat leállítása:"
 
@@ -2795,7 +2801,7 @@ msgid ""
 "unencrypted file containing your passwords?"
 msgstr ""
 
-#: index.html:298
+#: index.html:299
 msgid "The connection to the server is lost, attempting again in {{time}} …"
 msgstr ""
 
@@ -2900,7 +2906,7 @@ msgstr "Ez a hónap"
 msgid "This week"
 msgstr "Ez a hét"
 
-#: scripts/controllers/AppController.js:65
+#: scripts/controllers/AppController.js:67
 msgid "Throttle settings"
 msgstr "Sebességkorlátozás beállítások"
 
@@ -3013,8 +3019,7 @@ msgstr "Ellenőrző fájl feltöltése..."
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | "
-"translate}}</external-link>."
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
 
 #: templates/settings.html:113
@@ -3123,7 +3128,7 @@ msgstr "Nagyon erős"
 msgid "Very weak"
 msgstr "Nagyon gyenge"
 
-#: index.html:245
+#: index.html:246
 msgid "Visit us on"
 msgstr "Látogass meg minket itt"
 
@@ -3188,7 +3193,7 @@ msgstr "Hova szeretnéd visszaállítani a fájlokat?"
 msgid "Years"
 msgstr "Év"
 
-#: scripts/controllers/AppController.js:182
+#: scripts/controllers/AppController.js:185
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/EditBackupController.js:154
 #: scripts/controllers/EditBackupController.js:164
@@ -3432,10 +3437,6 @@ msgstr ""
 #: scripts/services/EditUriBuiltins.js:1215
 msgid "oss_region"
 msgstr ""
-
-#: templates/settings.html:125
-msgid "public usage statistics"
-msgstr "nyilvános használati statisztikák"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

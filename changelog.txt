@@ -1,3 +1,124 @@
+2024-08-29 - 2.0.9.105_canary_2024-08-29
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v8
+- Encrypting data in `Duplicati-server.sqlite` with machine serial number
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+The new tool can pause/resume a backup, run a backup, change the password and more:
+https://github.com/duplicati/duplicati/pull/5483
+
+# Encrypting database fields
+To reduce the risk of leaking encryption passphrases and credentials, 
+many fields in the `Duplicati-server.sqlite` file will be encrypted after running this version.
+The key used to encrypt is derived from the machine serial number, so **the database cannot be decrypted on another machine**.
+
+If your strategy relies on being able to read this database, you must take action.
+These two setups are vulnerable:
+- If you do not store a copy of the passphrase elsewhere
+- If you make a copy of the settings database
+
+We strongly recommend that you store a copy of the passphrase(s) securely, regardless of your setup.
+
+If you want to choose the settings encryption key, you can set the environment variable `SETTINGS_ENCRYPTION_KEY` to a custom value.
+If you want to never use the serial number as the passphrase, set the environment 
+variable `DUPLICATI__REQUIRE_DB_ENCRYPTION_KEY=true`, which will prevent Duplicati from starting without a user provided key.
+
+If you need to change the key, you can temporarily decrypt the database by starting the server with `--disable-db-encryption`.
+After starting, stop the instance again, set `SETTINGS_ENCRYPTION_KEY` and start again without the argument, to have it re-encrypted.
+
+To downgrade from this version, run once with `--disable-db-encryption`, and change the version number to 7, then install the previous version.
+
+As always, feedback is appreciated!
+
+## Detailed list of changes:
+- Simplified logic for finding the folder containing the settings database
+- Encrypting settings in database with machine serial number
+- Fixed issue with server not responding to CTRL+C or stop commands
+- Fixed issue with TrayIcon not trying multiple ports
+- Added utility program to control a running server
+- Improved the initial password setup experience
+- Added support for logging to Windows Event Log and added Description to Windows Service
+- Fixed an issue where the retention value could not be saved if it was a number
+- Fixed an upgrade issue where `%HOME%` would not resolve correctly on Linux
+- Fixed an issue with parsing `--send-http-result-output-format`
+- Updated Docker image to use environment variables and not use settings encryption by default
+- Added support for pre-loading default settings on a machine or installation
+
+2024-08-21 - 2.0.9.104_canary_2024-08-21
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v7
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+## Detailed list of changes:
+- Removed some console logging in JS
+- Updates to localization, thanks @luixxiul
+- Improved navigation in UI, thanks @luixxiul
+- Fixed some issues with using TrayIcon detached from Server
+- Made hostname validation more backwards compatible
+
+2024-08-15 - 2.0.9.103_canary_2024-08-15
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+** Important changes from last Beta **
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v7
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+## Detailed list of changes:
+- Multiple updates for styling and visual consistency, thanks @luixxiul
+- Extensive work on making all documentation strings follow a consistent logic, thanks @luixxiul
+- Fixed support for Websocket over https, thanks @Riches
+- Fixed an issue with `--webservice-allowed-hostnames` being renamed
+- Fixed support for captcha on systems without the Arial font
+- Using different default filenames for logging with TrayIcon and Server
+- Fixed issue with livelog not showing contents
+- Fixed an issue where a login issue would not show an option to log in
+- Fixed showing correct port number in log output
+- Fixed not showing scheduler state and next backup
+- Fixed an issue where a crash would show the wrong stack trace
+- Fixed an issue with generating massive number of inotify watchers
+- Re-enabled the button to log out
+- Added option to disable the visual captcha
+- Added support for providing server commandline arguments via environment variables
+- Fixed log error message related to update download url
+- Added Telegram reporting module
+
 2024-08-02 - 2.0.9.102_canary_2024-08-02
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.

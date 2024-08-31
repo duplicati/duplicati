@@ -37,6 +37,7 @@ public static class GenericModules
         new RunScript(),
         new SendHttpMessage(),
         new SendJabberMessage(),
+        new SendTelegramMessage(),
         new SendMail(),
     ];
 }

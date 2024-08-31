@@ -69,17 +69,18 @@ backupApp.service('DialogService', function(gettextCatalog) {
         });
     };
 
-    this.htmlDialog = function(title, htmltemplate, buttons, callback, onshow) {
+    this.htmlDialog = function(title, htmltemplate, buttons, callback, onshow, validate) {
         return this.enqueueDialog({
             'htmltemplate': htmltemplate,
             'title': title,
             'callback': callback,
             'buttons': buttons,
-            'onshow': onshow
+            'onshow': onshow,
+            'validate': validate
         });
     };
 
-    this.textareaDialog = function(title, message, placeholder, textarea, buttons, buttonTemplate, callback, onshow) {
+    this.textareaDialog = function(title, message, placeholder, textarea, buttons, buttonTemplate, callback, onshow, validate) {
         return this.enqueueDialog({
             'enableTextarea': true,
             'title': title,
@@ -89,7 +90,8 @@ backupApp.service('DialogService', function(gettextCatalog) {
             'callback': callback,
             'buttons': buttons,
             'buttonTemplate': buttonTemplate,
-            'onshow': onshow
+            'onshow': onshow,
+            'validate': validate
         });
     };
 

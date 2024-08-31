@@ -40,6 +40,8 @@ namespace Duplicati.CommandLine
         /// </summary>
         public static int Main(string[] args)
         {
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.CommandLine);
+
             Library.UsageReporter.Reporter.Initialize();
             FROM_COMMANDLINE = true;
             try
@@ -85,7 +87,7 @@ namespace Duplicati.CommandLine
                         ["systeminfo"] = Commands.SystemInfo,
                         ["send-mail"] = Commands.SendMail
                     };
-                
+
                 return knownCommands;
             }
         }

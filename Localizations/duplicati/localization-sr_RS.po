@@ -4,18 +4,18 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Milan Marinković <xaoc994@gmail.com>, 2017
 # Stefan Kostic <reddevilserbia@gmail.com>, 2017
 # Zoran Tasić <sagitarion.tasic@gmail.com>, 2024
+# Milan Marinković <xaoc994@gmail.com>, 2024
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-14 09:15+0200\n"
+"POT-Creation-Date: 2024-08-30 15:22+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Zoran Tasić <sagitarion.tasic@gmail.com>, 2024\n"
+"Last-Translator: Milan Marinković <xaoc994@gmail.com>, 2024\n"
 "Language-Team: Serbian (Serbia) (https://app.transifex.com/duplicati/teams/67655/sr_RS/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -127,7 +127,7 @@ msgid "Use GPG Armor"
 msgstr "Koristite GPG Armor kodiranje"
 
 #: Library/Encryption/Strings.cs:52
-msgid "Overrides the GPG command supplied for decryption."
+msgid "Override the GPG command supplied for decryption."
 msgstr ""
 
 #: Library/Encryption/Strings.cs:53
@@ -137,7 +137,7 @@ msgstr "GPG komanda za dešifrovanje"
 #: Library/Encryption/Strings.cs:54
 #, csharp-format
 msgid ""
-"Overrides the default GPG encryption command \"{0}\". Normal usage is to "
+"Override the default GPG encryption command \"{0}\". Normal usage is to "
 "request asymetric encryption with the setting {1}."
 msgstr ""
 
@@ -221,6 +221,11 @@ msgstr "Zahtevana fascikla ne postoji"
 #: Library/Interface/Strings.cs:43
 msgid "Cancelled"
 msgstr "Otkazano"
+
+#: Library/Interface/Strings.cs:44
+msgid ""
+"Encryption key used to encrypt target settings does not match current key."
+msgstr ""
 
 #: Library/Interface/CustomExceptions.cs:84
 #: Library/Interface/CustomExceptions.cs:92
@@ -362,16 +367,16 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:38 Library/Backend/Mega/Strings.cs:28
 #: Library/Backend/SharePoint/Strings.cs:29
 #: Library/Backend/WEBDAV/Strings.cs:29
-msgid "Supplies the password used to connect to the server"
-msgstr "Daje lozinku koja se koristi za povezivanje sa serverom"
+msgid "Supply the password used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
 msgstr "Ime domena korisnika koji se koristi za povezivanje sa serverom."
 
 #: Library/Backend/OpenStack/Strings.cs:33
-msgid "Supplies the domain used to connect to the server"
-msgstr "Obezbeđuje domen koji se koristi za povezivanje sa serverom"
+msgid "Supply the domain used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/FTP/Strings.cs:35
 #: Library/Backend/CloudFiles/Strings.cs:30 Library/Backend/S3/Strings.cs:34
@@ -396,8 +401,8 @@ msgstr ""
 #: Library/Backend/AzureBlob/Strings.cs:40 Library/Backend/Mega/Strings.cs:30
 #: Library/Backend/SharePoint/Strings.cs:31
 #: Library/Backend/WEBDAV/Strings.cs:31
-msgid "Supplies the username used to connect to the server"
-msgstr "Daje korisničko ime koje se koristi za povezivanje sa serverom"
+msgid "Supply the username used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
@@ -410,8 +415,8 @@ msgstr ""
 "kada se koristi API ključ."
 
 #: Library/Backend/OpenStack/Strings.cs:37
-msgid "Supplies the Tenant Name used to connect to the server"
-msgstr "Daje Ime zakupca koji se koristi za povezivanje sa serverom"
+msgid "Supply the Tenant Name used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid ""
@@ -422,8 +427,8 @@ msgstr ""
 "zakupca sa nekim provajderima."
 
 #: Library/Backend/OpenStack/Strings.cs:39
-msgid "Supplies the API key used to connect to the server"
-msgstr "Obezbeđuje API ključ koji se koristi za povezivanje sa serverom"
+msgid "Supply the API key used to connect to the server"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:40
 #, csharp-format
@@ -436,8 +441,8 @@ msgstr ""
 " dobavljači su: {0}{1}"
 
 #: Library/Backend/OpenStack/Strings.cs:41
-msgid "Supplies the authentication URL"
-msgstr "Obezbeđuje URL za autentifikaciju"
+msgid "Supply the authentication URL"
+msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:42
 msgid "The keystone API version to use. Valid values are 'v2' and 'v3'."
@@ -458,15 +463,15 @@ msgstr ""
 "za listu važećih regiona ili ostavite prazno za podrazumevani region."
 
 #: Library/Backend/OpenStack/Strings.cs:45
-msgid "Supplies the region used for creating a container"
-msgstr "Snabdeva region koji se koristi za kreiranje kontejnera"
+msgid "Supply the region used for creating a container"
+msgstr ""
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:67
 msgid "OpenStack configuration module"
 msgstr ""
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:69
-msgid "Exposes OpenStack configuration as a web module"
+msgid "Expose OpenStack configuration as a web module"
 msgstr ""
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
@@ -478,7 +483,7 @@ msgstr ""
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
 #: Library/Backend/GoogleServices/GCSConfig.cs:81
 #: Library/Backend/S3/S3Config.cs:84 Library/Backend/Storj/StorjConfig.cs:53
-msgid "Provides different config values"
+msgid "Provide different config values"
 msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:27
@@ -500,8 +505,8 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:30 Library/Backend/FTP/Strings.cs:32
-msgid "Toggles the FTP connections method"
-msgstr "Uključuje metod FTP veze"
+msgid "Toggle the FTP connections method"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:31
 #, csharp-format
@@ -533,8 +538,8 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:38
-msgid "Instructs Duplicati to use an SSL (ftps) connection"
-msgstr "Naređuje Duplicati-ju da koristi SSL (ftps) vezu"
+msgid "Instruct Duplicati to use an SSL (ftps) connection"
+msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:39
 msgid ""
@@ -577,7 +582,7 @@ msgid "Google Cloud Storage configuration module"
 msgstr ""
 
 #: Library/Backend/GoogleServices/GCSConfig.cs:73
-msgid "Exposes Google Cloud Storage configuration as a web module"
+msgid "Expose Google Cloud Storage configuration as a web module"
 msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:27
@@ -630,8 +635,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:35
-msgid "Specifies location option for creating a bucket"
-msgstr "Određuje opciju lokacije za kreiranje segmenta"
+msgid "Specify location option for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:36
 #, csharp-format
@@ -643,8 +648,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:38
-msgid "Specifies storage class for creating a bucket"
-msgstr "Određuje klasu skladištenja za kreiranje segmenta"
+msgid "Specify storage class for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:39
 msgid ""
@@ -654,8 +659,8 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:40
-msgid "Specifies project for creating a bucket"
-msgstr "Određuje projekat za kreiranje segmenta"
+msgid "Specify project for creating a bucket"
+msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid ""
@@ -709,8 +714,8 @@ msgid "The API Access Key used to authenticate with CloudFiles."
 msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:33
-msgid "Supplies the access key used to connect to the server"
-msgstr "Obezbeđuje pristupni ključ koji se koristi za povezivanje sa serverom"
+msgid "Supply the access key used to connect to the server"
+msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:34
 #, csharp-format
@@ -729,9 +734,8 @@ msgid "The username used to authenticate with CloudFiles."
 msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:37
-msgid "Supplies the username used to authenticate with CloudFiles"
+msgid "Supply the username used to authenticate with CloudFiles"
 msgstr ""
-"Pruža korisničko ime koje se koristi za autentifikaciju pomoću CloudFiles-a"
 
 #: Library/Backend/CloudFiles/Strings.cs:38
 msgid "MD5 Hash (ETag) verification failed"
@@ -763,7 +767,7 @@ msgid "S3 configuration module"
 msgstr ""
 
 #: Library/Backend/S3/S3Config.cs:77
-msgid "Exposes S3 configuration as a web module"
+msgid "Expose S3 configuration as a web module"
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:26
@@ -816,8 +820,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:40
-msgid "Specifies S3 location constraints"
-msgstr "Određuje S3 ograničenja lokacije"
+msgid "Specify S3 location constraints"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:41
 #, csharp-format
@@ -829,8 +833,8 @@ msgstr ""
 "{0}"
 
 #: Library/Backend/S3/Strings.cs:43
-msgid "Specifies an alternate S3 server name"
-msgstr "Određuje ime alternativnog S3 servera"
+msgid "Specify an alternate S3 server name"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:44
 msgid ""
@@ -839,8 +843,8 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/S3/Strings.cs:45
-msgid "Specifies the S3 client library to use"
-msgstr "Određuje S3 klijent biblioteku koju treba koristiti"
+msgid "Specify the S3 client library to use"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:46
 msgid ""
@@ -851,8 +855,8 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:47 Library/Backend/WEBDAV/Strings.cs:40
 #: Library/Backend/TahoeLAFS/Strings.cs:27
-msgid "Instructs Duplicati to use an SSL (https) connection"
-msgstr "Naređuje Duplicati-ju da koristi SSL (https) vezu"
+msgid "Instruct Duplicati to use an SSL (https) connection"
+msgstr ""
 
 #: Library/Backend/S3/Strings.cs:48
 msgid ""
@@ -881,7 +885,7 @@ msgid "S3 IAM support module"
 msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:73
-msgid "Exposes S3 IAM manipulation as a web module"
+msgid "Expose S3 IAM manipulation as a web module"
 msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:81
@@ -889,7 +893,7 @@ msgid "The operation to perform"
 msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:81
-msgid "Selects the operation to perform"
+msgid "Select the operation to perform"
 msgstr ""
 
 #: Library/Backend/S3/S3IAM.cs:82
@@ -1105,9 +1109,8 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:53
-msgid "Supplies server fingerprint used for validation of server identity"
+msgid "Supply server fingerprint used for validation of server identity"
 msgstr ""
-"Snabdeva otisak prsta servera koji se koristi za proveru identiteta servera"
 
 #: Library/Backend/SSHv2/Strings.cs:54
 msgid ""
@@ -1121,19 +1124,19 @@ msgstr ""
 "za testiranje."
 
 #: Library/Backend/SSHv2/Strings.cs:55
-msgid "Disables fingerprint validation"
-msgstr "Onemogućava proveru otiska prsta"
+msgid "Disable fingerprint validation"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:56
 msgid ""
-"Points to a valid OpenSSH keyfile. If the file is encrypted, the password "
+"Point to a valid OpenSSH keyfile. If the file is encrypted, the password "
 "supplied is used to decrypt it. If the keyfile is specified, the password is"
 " not used to authenticate."
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:57 Library/Backend/SSHv2/Strings.cs:59
-msgid "Uses a SSH private key to authenticate"
-msgstr "Koristi SSH privatni ključ za autentifikaciju"
+msgid "Use a SSH private key to authenticate"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:58
 #, csharp-format
@@ -1150,8 +1153,8 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:61
-msgid "Sets the operation timeout value"
-msgstr "Postavlja vrednost vremenskog ograničenja operacije"
+msgid "Set the operation timeout value"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:62
 msgid ""
@@ -1162,8 +1165,8 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:63
-msgid "Sets a keepalive value"
-msgstr "Postavlja vrednost održavanja"
+msgid "Set a keepalive value"
+msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:64
 #, csharp-format
@@ -1539,9 +1542,9 @@ msgstr "Da li treba koristiti klasu HttpClient"
 #: Library/Backend/OneDrive/Strings.cs:41
 #, csharp-format
 msgid ""
-"Stores files in Microsoft OneDrive or Microsoft OneDrive for Business via "
-"the Microsoft Graph API. Usage of this backend requires that you agree to "
-"the terms in {0} ({1}) and {2} ({3})."
+"Store files in Microsoft OneDrive or Microsoft OneDrive for Business via the"
+" Microsoft Graph API. Usage of this backend requires that you agree to the "
+"terms in {0} ({1}) and {2} ({3})."
 msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:42
@@ -1565,7 +1568,7 @@ msgstr "Opcioni ID disk jedinice"
 #: Library/Backend/OneDrive/Strings.cs:49
 #, csharp-format
 msgid ""
-"Stores files in a Microsoft SharePoint site via the Microsoft Graph API. "
+"Store files in a Microsoft SharePoint site via the Microsoft Graph API. "
 "Usage of this backend requires that you agree to the terms in {0} ({1}) and "
 "{2} ({3})."
 msgstr ""
@@ -1595,7 +1598,7 @@ msgstr ""
 #: Library/Backend/OneDrive/Strings.cs:59
 #, csharp-format
 msgid ""
-"Stores files in a Microsoft Office 365 Group via the Microsoft Graph API. "
+"Store files in a Microsoft Office 365 Group via the Microsoft Graph API. "
 "Allowed formats are "
 "\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
 " (with \"//\" being optionally used to indicate the root document folder) "
@@ -1680,7 +1683,7 @@ msgstr ""
 #: Library/Backend/AliyunOSS/Strings.cs:14
 #: Library/Backend/TencentCOS/Strings.cs:36
 msgid "Bucket name"
-msgstr ""
+msgstr "Ime segmenta"
 
 #: Library/Backend/AliyunOSS/Strings.cs:15
 msgid "Region indicates the physical location of the OSS data center."
@@ -1801,7 +1804,7 @@ msgid ""
 msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:38
-msgid "Specifies COS location constraints"
+msgid "Specify COS location constraints"
 msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:39
@@ -1850,8 +1853,8 @@ msgstr ""
 "tačku montiranja koja će se koristiti na ovom uređaju sa opcijom \"{0}\"."
 
 #: Library/Backend/Jottacloud/Strings.cs:34
-msgid "Supplies the backup device to use"
-msgstr "Obezbeđuje uređaj rezervne kopije za korišćenje"
+msgid "Supply the backup device to use"
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:35
 #, csharp-format
@@ -1869,8 +1872,8 @@ msgstr ""
 "slobodni ste da imenujete tačku montiranja kako želite."
 
 #: Library/Backend/Jottacloud/Strings.cs:36
-msgid "Supplies the mount point to use on the server"
-msgstr "Obezbeđuje tačku montiranja za korišćenje na serveru"
+msgid "Supply the mount point to use on the server"
+msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:37
 msgid ""
@@ -2181,7 +2184,7 @@ msgid "Storj DCS configuration module"
 msgstr ""
 
 #: Library/Backend/Storj/StorjConfig.cs:46
-msgid "Exposes Storj DCS configuration as a web module"
+msgid "Expose Storj DCS configuration as a web module"
 msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:27
@@ -2204,7 +2207,7 @@ msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:31
 msgid "Authentication method"
-msgstr ""
+msgstr "Metoda autentifikacije"
 
 #: Library/Backend/Storj/Strings.cs:32
 msgid ""
@@ -2215,7 +2218,7 @@ msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:33
 msgid "Satellite"
-msgstr ""
+msgstr "Satelit"
 
 #: Library/Backend/Storj/Strings.cs:34
 msgid ""
@@ -2226,7 +2229,7 @@ msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:35
 msgid "API key"
-msgstr ""
+msgstr "API ključ"
 
 #: Library/Backend/Storj/Strings.cs:36
 msgid ""
@@ -2238,7 +2241,7 @@ msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:37
 msgid "Encryption passphrase"
-msgstr ""
+msgstr "Šifrovanje pristupne fraze"
 
 #: Library/Backend/Storj/Strings.cs:38
 msgid ""
@@ -2248,7 +2251,7 @@ msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:39
 msgid "Access grant"
-msgstr ""
+msgstr "Dozvola za pristup"
 
 #: Library/Backend/Storj/Strings.cs:40
 msgid "Specify the bucket for storing the backup."
@@ -2264,7 +2267,7 @@ msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:43
 msgid "Folder"
-msgstr ""
+msgstr "Fascikla"
 
 #: Library/Backend/OAuthHelper/Strings.cs:27
 #, csharp-format
@@ -2283,6 +2286,343 @@ msgstr "Neočekivan kod greške: {0} - {1}"
 #: Library/Backend/OAuthHelper/Strings.cs:31
 msgid "The OAuth service is currently over quota. Try again in a few hours"
 msgstr ""
+
+#: Library/RestAPI/Strings.cs:9
+msgid "Another instance is running, and was notified"
+msgstr "Još jedna instanca je pokrenuta i obaveštena je"
+
+#: Library/RestAPI/Strings.cs:10
+#, csharp-format
+msgid ""
+"Failed to create, open or upgrade the database.\n"
+"Error message: {0}"
+msgstr ""
+"Pravljenje, otvaranje ili ažuriranje baze podataka nije uspelo.\n"
+"Poruka greške: {0}"
+
+#: Library/RestAPI/Strings.cs:12
+msgid "Display this help"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:13
+msgid ""
+"Supported commandline arguments:\n"
+"\n"
+msgstr ""
+"Podržani argumenti komandne linije:\n"
+"\n"
+
+#: Library/RestAPI/Strings.cs:16
+#, csharp-format
+msgid "--{0}: {1}"
+msgstr "--{0}: {1}"
+
+#: Library/RestAPI/Strings.cs:17
+#, csharp-format
+msgid ""
+"Use this option to store some or all of the options given to the commandline"
+" client. The file must be a plain text file, and UTF-8 encoding is "
+"preferred. Each line in the file should be of the format --option=value. Use"
+" the special options --{0} and --{1} to override the localpath and the "
+"remote destination uri, respectively. The options in this file take "
+"precedence over the options provided on the commandline. You cannot specify "
+"filters in both the file and on the commandline. Instead, you can use the "
+"special --{2}, --{3}, or --{4} options to specify filters inside the "
+"parameter file. Each filter must be prefixed with either a + or a -, and "
+"multiple filters must be joined with {5} "
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:18 CommandLine/CLI/Strings.cs:45
+msgid "Path to a file with parameters"
+msgstr "Putanja do datoteke sa parametrima"
+
+#: Library/RestAPI/Strings.cs:19
+#, csharp-format
+msgid ""
+"Filters cannot be specified on the commandline if filters are also present "
+"in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
+"specify filters inside the parameter file. Each filter must be prefixed with"
+" either a + or a -, and multiple filters must be joined with {3}"
+msgstr ""
+"Filteri se ne mogu navesti na komandnoj liniji ako su filteri prisutni i u "
+"datoteci parametara. Koristite posebne opcije --{0}, --{1} ili --{2} da "
+"biste naveli filtere unutar datoteke parametara. Svaki filter mora imati "
+"prefiks sa + ili -, a više filtera mora biti spojeno sa {3}"
+
+#: Library/RestAPI/Strings.cs:20 CommandLine/CLI/Strings.cs:41
+#, csharp-format
+msgid "Unable to read the parameters file \"{0}\", reason: {1}"
+msgstr "Nije moguće pročitati parametre datoteke \"{0}\", razlog: {1}"
+
+#: Library/RestAPI/Strings.cs:22
+msgid "Output log information to the file given"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:23
+msgid "Determine the amount of information written in the log file"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:24
+msgid ""
+"Activate portable mode where the database is placed below the program "
+"executable"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:25
+#, csharp-format
+msgid "A serious error occurred in Duplicati: {0}"
+msgstr "Došlo je do ozbiljne greške u Duplicati-ju: {0}"
+
+#: Library/RestAPI/Strings.cs:26
+#, csharp-format
+msgid "An error occurred on server tear down: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:27
+#, csharp-format
+msgid ""
+"Unable to start up. Perhaps another process is already running?\n"
+"Error message: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:29 Library/RestAPI/Strings.cs:51
+msgid "Disable database encryption"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:30
+#, csharp-format
+msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
+msgstr ""
+"Nepodržana verzija SQLite-a je otkrivena ({0}), mora biti {1} ili viša"
+
+#: Library/RestAPI/Strings.cs:31
+msgid ""
+"The path to the folder where the static files for the webserver is present. "
+"The folder must be located beneath the installation folder."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:32
+msgid ""
+"The port the webserver listens on. Multiple values may be supplied with a "
+"comma in between."
+msgstr ""
+"Port koji osluškuje web server. Moguće je navesti više vrednosti sa zarezom "
+"između."
+
+#: Library/RestAPI/Strings.cs:33
+msgid ""
+"The certificate and key file in PKCS #12 format the webserver use for SSL. "
+"Only RSA/DSA keys are supported."
+msgstr ""
+"Fajl sertifikata i ključa u PKCS #12 formatu koji veb server koristi za SSL."
+" Podržani su samo RSA/DSA ključevi."
+
+#: Library/RestAPI/Strings.cs:34
+msgid "The password for decryption of certificate PKCS #12 file."
+msgstr "Lozinka za dešifrovanje datoteke PKCS #12 sertifikata."
+
+#: Library/RestAPI/Strings.cs:35
+msgid ""
+"The interface the webserver listens on. The special values \"*\" and \"any\""
+" means any interface. The special value \"loopback\" means the loopback "
+"adapter."
+msgstr ""
+"Interfejs koji veb server sluša. Posebne vrednosti \"*\" i \"any\" "
+"označavaju bilo koji interfejs. Posebna vrednost \"loopback\" označava "
+"adapter za hvatanje petlje."
+
+#: Library/RestAPI/Strings.cs:36
+msgid ""
+"The password required to access the webserver. This option is saved so you "
+"do not need to set it on each run. Setting an empty value disables the "
+"password."
+msgstr ""
+"Lozinka potrebna za pristup veb serveru. Ova opcija je sačuvana tako da ne "
+"morate da je postavljate pri svakom pokretanju. Postavljanje prazne "
+"vrednosti onemogućava lozinku."
+
+#: Library/RestAPI/Strings.cs:37
+msgid ""
+"The hostnames that are accepted, separated with semicolons. If any of the "
+"hostnames are \"*\", all hostnames are allowed and the hostname checking is "
+"disabled."
+msgstr ""
+"Imena hostova koja su prihvaćena odvojena su tačkom i zarezom. Ako je neko "
+"od imena hosta \"*\", sva imena hostova su dozvoljena i provera imena hosta "
+"je onemogućena."
+
+#: Library/RestAPI/Strings.cs:38
+msgid ""
+"When running as a server, the service daemon must verify that the process is"
+" responding. If this option is enabled, the server reads stdin and writes a "
+"reply to each line read."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:39
+msgid "Enable the ping-pong responder"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:40 Library/Main/Strings.cs:250
+msgid "Set the time after which log data will be purged from the database."
+msgstr ""
+"Podesite vreme nakon kojeg će podaci dnevnika biti očišćeni iz baze "
+"podataka."
+
+#: Library/RestAPI/Strings.cs:41 Library/Main/Strings.cs:251
+msgid "Clean up old log data"
+msgstr "Očistite stare podatke dnevnika"
+
+#: Library/RestAPI/Strings.cs:42
+#, csharp-format
+msgid ""
+"Duplicati needs to store a small database with all settings. Use this option"
+" to choose where the settings are stored. This option can also be set with "
+"the environment variable {0}."
+msgstr ""
+"Program Duplicati treba da uskladišti malu bazu podataka sa svim "
+"podešavanjima. Koristite ovu opciju da izaberete gde će se podešavanja "
+"čuvati. Ova opcija se takođe može podesiti pomoću promenljive okruženja "
+"{0}."
+
+#: Library/RestAPI/Strings.cs:43
+msgid "Set the folder where settings are stored"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:44
+#, csharp-format
+msgid ""
+"This option sets the encryption key used to scramble the local settings "
+"database. This option can also be set with the environment variable {0}. Use"
+" the option --{1} to disable the database scrambling."
+msgstr ""
+"Ova opcija postavlja ključ za enkripciju koji se koristi za skremblovanje "
+"lokalnih podešavanja baze podataka. Ova opcija se takođe može podesiti "
+"pomoću promenljive okruženja {0}. Koristite opciju --{1} da biste "
+"onemogućili skremblovanje baze podataka."
+
+#: Library/RestAPI/Strings.cs:45
+msgid "Set the database encryption key"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:46 Library/Main/Strings.cs:96
+msgid ""
+"Use this option to supply an alternative folder for temporary storage. By "
+"default the system default temporary folder is used. Note that also SQLite "
+"will put temporary files in this temporary folder."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:47 Library/Main/Strings.cs:97
+msgid "Temporary storage folder"
+msgstr "Fascikla privremenog skladišta"
+
+#: Library/RestAPI/Strings.cs:48
+msgid "Reset the JWT configuration, invalidating any issued login tokens"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:49
+msgid "Disable the visual captcha"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:50
+msgid "Use this option to disable database encryption of sensitive fields"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:52
+msgid "Log to the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:53
+msgid "Use this option to log to the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:54
+msgid "Set the log level for the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:55
+msgid "Use this option to set the log level for the Windows event log"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:56
+#, csharp-format
+msgid ""
+"The Windows event log source {0} was not found. The source must be "
+"registered before the log can be written."
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:57
+msgid "The Windows event log is not supported on this platform"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:58
+#, csharp-format
+msgid "Server has started and is listening on port {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:59
+#, csharp-format
+msgid "Use the following link to sign in: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:60
+#, csharp-format
+msgid "The server crashed: {0}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:61
+msgid "Require database encryption"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:62
+msgid ""
+"Use this option to require a custom provided key for database encryption of "
+"sensitive fields and not rely on the serial number"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:63
+#, csharp-format
+msgid ""
+"Database encryption key is required. Supply an encryption key via the "
+"environment variable {0} or disable database encryption with the option "
+"--{1}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:64
+#, csharp-format
+msgid ""
+"The encryption key is blacklisted and cannot be used. The database has been "
+"decrypted. Supply a new encryption key via the environment variable {0} or "
+"disable database encryption with the option --{1}"
+msgstr ""
+
+#: Library/RestAPI/Strings.cs:68
+#, csharp-format
+msgid ""
+"Unable to find a valid date, given the start date {0}, the repetition "
+"interval {1} and the allowed days {2}"
+msgstr ""
+"Nije moguće pronaći važeći datum, s obzirom na datum početka {0}, "
+"interval ponavljanja {1} i dozvoljene dane {2}"
+
+#: Library/RestAPI/Strings.cs:73
+#, csharp-format
+msgid "Server has started and is listening on {0}, port {1}"
+msgstr "Server je pokrenut i osluškuje na {0}, port {1}"
+
+#: Library/RestAPI/Strings.cs:74
+#, csharp-format
+msgid ""
+"Unable to create SSL certificate using provided parameters. Exception "
+"detail: {0}"
+msgstr ""
+"Nije moguće napraviti SSL sertifikat pomoću navedenih parametara. Detalji "
+"izuzetka: {0}"
+
+#: Library/RestAPI/Strings.cs:75
+#, csharp-format
+msgid "Unable to open a socket for listening, tried ports: {0}"
+msgstr ""
+"Nije moguće otvoriti priključak za slušanje, pokušali su portovi: {0}"
 
 #: Library/DynamicLoader/Strings.cs:24
 #, csharp-format
@@ -2319,7 +2659,7 @@ msgstr ""
 "bez kompresije, a postavljanje 9 daje najveću moguću kompresiju."
 
 #: Library/Compression/Strings.cs:28
-msgid "Sets the ZIP compression level"
+msgid "Set the ZIP compression level"
 msgstr ""
 
 #: Library/Compression/Strings.cs:29
@@ -2331,7 +2671,7 @@ msgid ""
 msgstr ""
 
 #: Library/Compression/Strings.cs:30
-msgid "Sets the ZIP compression method"
+msgid "Set the ZIP compression method"
 msgstr ""
 
 #: Library/Compression/Strings.cs:31
@@ -2341,7 +2681,7 @@ msgid ""
 msgstr ""
 
 #: Library/Compression/Strings.cs:32
-msgid "Toggles ZIP64 support"
+msgid "Toggle ZIP64 support"
 msgstr ""
 
 #: Library/Compression/Strings.cs:33
@@ -2382,8 +2722,8 @@ msgid "Number of threads used in compression"
 msgstr "Broj niti korišćen u kompresiji"
 
 #: Library/Compression/Strings.cs:44
-msgid "Sets the 7z compression level"
-msgstr "Postavlja nivo 7z kompresije"
+msgid "Set the 7z compression level"
+msgstr ""
 
 #: Library/Compression/Strings.cs:45
 msgid ""
@@ -2396,8 +2736,8 @@ msgstr ""
 "manje kompresije."
 
 #: Library/Compression/Strings.cs:46
-msgid "Sets the 7z fast algorithm usage"
-msgstr "Postavlja upotrebu brzog algoritma 7z"
+msgid "Set the 7z fast algorithm usage"
+msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:24
 msgid "backup"
@@ -2645,8 +2985,8 @@ msgstr ""
 "pravljenja rezervnih kopija/vraćanja (samo za Vindouz/OSX)"
 
 #: Library/Main/Strings.cs:65
-msgid "Toggles system sleep mode"
-msgstr "Uključuje režim mirovanja sistema"
+msgid "Toggle system sleep mode"
+msgstr ""
 
 #: Library/Main/Strings.cs:66
 msgid ""
@@ -2833,24 +3173,11 @@ msgstr ""
 msgid "Limit the size of files being backed up"
 msgstr "Ograničite veličinu fajlova za koje se pravi rezervna kopija"
 
-#: Library/Main/Strings.cs:96
-msgid ""
-"Use this option to supply an alternative folder for temporary storage. By "
-"default the system default temporary folder is used. Note that also SQLite "
-"will put temporary files in this temporary folder."
-msgstr ""
-
-#: Library/Main/Strings.cs:97
-msgid "Temporary storage folder"
-msgstr "Fascikla privremenog skladišta"
-
 #: Library/Main/Strings.cs:98
 msgid ""
-"Selects another thread priority for the process. Use this to set Duplicati "
-"to be more or less CPU intensive."
+"Select another thread priority for the process. Use this to set Duplicati to"
+" be more or less CPU intensive."
 msgstr ""
-"Bira drugi prioritet niti za proces. Koristite ovo da podesite Duplicati da "
-"bude više ili manje CPU intenzivan."
 
 #: Library/Main/Strings.cs:99
 msgid "Thread priority"
@@ -2869,17 +3196,14 @@ msgstr "Ograničite veličinu volumena"
 
 #: Library/Main/Strings.cs:102
 msgid ""
-"Enabling this option will disallow usage of the streaming interface, which "
-"means that transfer progress bars will not show, and bandwidth throttle "
-"settings will be ignored."
+"Use this option to disallow usage of the streaming interface, which means "
+"that transfer progress bars will not show, and bandwidth throttle settings "
+"will be ignored."
 msgstr ""
-"Omogućavanje ove opcije će onemogućiti korišćenje interfejsa za "
-"striming, što znači da se trake napetka prenosa neće prikazivati, a "
-"podešavanja opsega propusnog opsega će biti zanemarena."
 
 #: Library/Main/Strings.cs:103
-msgid "Disables use of the streaming transfer method"
-msgstr "Onemogućava upotrebu metode prenosa strimovanja"
+msgid "Disable use of the streaming transfer method"
+msgstr ""
 
 #: Library/Main/Strings.cs:104
 msgid ""
@@ -2889,7 +3213,7 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:105
-msgid "Disables manifests verification"
+msgid "Disable manifests verification"
 msgstr ""
 
 #: Library/Main/Strings.cs:106
@@ -2929,16 +3253,16 @@ msgid "Supply one or more module names, separated by commas to unload them."
 msgstr ""
 
 #: Library/Main/Strings.cs:111
-msgid "Disables one or more modules"
-msgstr "Onemogućava jedan ili više modula"
+msgid "Disable one or more modules"
+msgstr ""
 
 #: Library/Main/Strings.cs:112
 msgid "Supply one or more module names, separated by commas to load them."
 msgstr ""
 
 #: Library/Main/Strings.cs:113
-msgid "Enables one or more modules"
-msgstr "Omogućava jedan ili više modula"
+msgid "Enable one or more modules"
+msgstr ""
 
 #: Library/Main/Strings.cs:114
 msgid ""
@@ -2968,8 +3292,8 @@ msgstr ""
 " upravljanje logičkim volumenom (LVM) i zahteva root privilegije."
 
 #: Library/Main/Strings.cs:115
-msgid "Controls the use of disk snapshots"
-msgstr "Kontroliše upotrebu snimaka diska"
+msgid "Control the use of disk snapshots"
+msgstr ""
 
 #: Library/Main/Strings.cs:116
 msgid ""
@@ -3013,11 +3337,11 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:123
-msgid "Enables debugging output"
-msgstr "Omogućava izlaz za otklanjanje grešaka"
+msgid "Enable debugging output"
+msgstr ""
 
 #: Library/Main/Strings.cs:124
-msgid "Logs information to the file specified."
+msgid "Log information to the file specified."
 msgstr ""
 
 #: Library/Main/Strings.cs:125
@@ -3027,7 +3351,7 @@ msgstr "Zabeležite interne informacije u fajl"
 #: Library/Main/Strings.cs:126 Library/Main/Strings.cs:283
 #, csharp-format
 msgid ""
-"Specifies the amount of log information to write into the file specified by "
+"Specify the amount of log information to write into the file specified by "
 "the option --{0}."
 msgstr ""
 
@@ -3049,8 +3373,8 @@ msgstr ""
 "kreirati. Aktivirajte ovu opciju da sprečite automatsko kreiranje fascikli."
 
 #: Library/Main/Strings.cs:130
-msgid "Disables automatic folder creation"
-msgstr "Onemogućava automatsko kreiranje fascikli"
+msgid "Disable automatic folder creation"
+msgstr ""
 
 #: Library/Main/Strings.cs:131
 msgid ""
@@ -3097,8 +3421,8 @@ msgstr ""
 "privilegije."
 
 #: Library/Main/Strings.cs:134
-msgid "Controls the use of NTFS Update Sequence Numbers"
-msgstr "Kontroliše upotrebu rednih brojeva ažuriranja NTFS-a"
+msgid "Control the use of NTFS Update Sequence Numbers"
+msgstr ""
 
 #: Library/Main/Strings.cs:135
 #, csharp-format
@@ -3114,8 +3438,8 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:136
-msgid "Deactivates tolerance when comparing times"
-msgstr "Deaktivira toleranciju prilikom upoređivanja vremena"
+msgid "Deactivate tolerance when comparing times"
+msgstr ""
 
 #: Library/Main/Strings.cs:137
 msgid "Use this option to verify uploads by listing contents."
@@ -3186,7 +3510,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:149
 msgid ""
-"Sets a threshold for when to warn about the backend quota being nearly "
+"Set a threshold for when to warn about the backend quota being nearly "
 "exceeded. It is given as a percentage, and a warning is generated if the "
 "amount of available quota is less than this percentage of the total backup "
 "size. If the backend does not report the quota information, this value will "
@@ -3410,8 +3734,8 @@ msgstr ""
 "udaljenog prostora i koji se možda nikada neće koristiti."
 
 #: Library/Main/Strings.cs:185
-msgid "Determines usage of index files"
-msgstr "Određuje upotrebu indeksnih fajlova"
+msgid "Determine usage of index files"
+msgstr ""
 
 #: Library/Main/Strings.cs:186
 msgid ""
@@ -3436,8 +3760,8 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:189
-msgid "Does not perform any modifications"
-msgstr "Ne vrši nikakve modifikacije"
+msgid "Do not perform any modifications"
+msgstr ""
 
 #: Library/Main/Strings.cs:190
 msgid ""
@@ -3530,8 +3854,8 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:204
-msgid "Disables the local database"
-msgstr "Onemogućava lokalnu bazu podataka"
+msgid "Disable the local database"
+msgstr ""
 
 #: Library/Main/Strings.cs:205
 msgid ""
@@ -3678,8 +4002,8 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:227
-msgid "Activates in-depth verification of files"
-msgstr "Aktivira detaljnu verifikaciju fajlova"
+msgid "Activate in-depth verification of files"
+msgstr ""
 
 #: Library/Main/Strings.cs:228
 msgid ""
@@ -3723,8 +4047,8 @@ msgstr ""
 "mnogo na veličinu fajla."
 
 #: Library/Main/Strings.cs:237
-msgid "Don't store metadata"
-msgstr "Ne skladišti metapodatke"
+msgid "Do not store metadata"
+msgstr ""
 
 #: Library/Main/Strings.cs:238
 msgid ""
@@ -3796,16 +4120,6 @@ msgstr ""
 msgid "Check block hashes"
 msgstr "Proveri heševe blokova"
 
-#: Library/Main/Strings.cs:250
-msgid "Set the time after which log data will be purged from the database."
-msgstr ""
-"Podesite vreme nakon kojeg će podaci dnevnika biti očišćeni iz baze "
-"podataka."
-
-#: Library/Main/Strings.cs:251
-msgid "Clean up old log data"
-msgstr "Očistite stare podatke dnevnika"
-
 #: Library/Main/Strings.cs:252
 msgid ""
 "Use this option to build a searchable local database which only contains "
@@ -3846,8 +4160,8 @@ msgstr ""
 "samo stvarni datumi, na primer „12. novembar 2018, 20:01“."
 
 #: Library/Main/Strings.cs:257
-msgid "Forces the display of the actual date instead of calendar date"
-msgstr "Forsira prikaz stvarnog datuma umesto kalendarskog datuma"
+msgid "Force the display of the actual date instead of calendar date"
+msgstr ""
 
 #: Library/Main/Strings.cs:258
 msgid ""
@@ -3909,8 +4223,8 @@ msgstr ""
 "rezervne kopije."
 
 #: Library/Main/Strings.cs:267
-msgid "Disables synthetic filelist"
-msgstr "Onemogućava sintetičku listu fajlova"
+msgid "Disable synthetic filelist"
+msgstr ""
 
 #: Library/Main/Strings.cs:268
 msgid ""
@@ -3921,8 +4235,8 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:269
-msgid "Checks only file lastmodified"
-msgstr "Proverava samo poslednji izmenjeni fajl"
+msgid "Check only file lastmodified"
+msgstr ""
 
 #: Library/Main/Strings.cs:270
 msgid ""
@@ -3933,8 +4247,8 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:271
-msgid "Disables path compression on restore"
-msgstr "Onemogućava kompresiju putanje pri vraćanju"
+msgid "Disable path compression on restore"
+msgstr ""
 
 #: Library/Main/Strings.cs:272
 msgid ""
@@ -3997,10 +4311,10 @@ msgstr "Onemogućite proveru doslednosti liste fajlova"
 
 #: Library/Main/Strings.cs:280
 msgid ""
-"Use this option to run a scheduled backup if the system is detected to be "
-"running on battery power (manual or command line backups will still be run)."
-" If the detected power source is mains (e.g., AC) or unknown, then scheduled"
-" backups will proceed as normal."
+"Use this option to disable a scheduled backup if the system is detected to "
+"be running on battery power (manual or command line backups will still be "
+"run). If the detected power source is mains (e.g., AC) or unknown, then "
+"scheduled backups will proceed as normal."
 msgstr ""
 
 #: Library/Main/Strings.cs:281
@@ -4027,11 +4341,11 @@ msgstr ""
 "zagradama. Primer: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
 #: Library/Main/Strings.cs:286
-msgid "Applies filters to the file log data"
-msgstr "Primenjuje filtere na podatke evidencije fajla"
+msgid "Apply filters to the file log data"
+msgstr ""
 
 #: Library/Main/Strings.cs:287
-msgid "Specifies the amount of log information to output to the console."
+msgid "Specify the amount of log information to output to the console."
 msgstr ""
 
 #: Library/Main/Strings.cs:288
@@ -4039,8 +4353,8 @@ msgid "Console information level"
 msgstr "Nivo informacija konzole"
 
 #: Library/Main/Strings.cs:290
-msgid "Applies filters to the console log data"
-msgstr "Primenjuje filtere na podatke dnevnika konzole"
+msgid "Apply filters to the console log data"
+msgstr ""
 
 #: Library/Main/Strings.cs:292
 msgid ""
@@ -4050,15 +4364,15 @@ msgid ""
 msgstr ""
 
 #: Library/Main/Strings.cs:293
-msgid "Sets the process to use low IO priority"
-msgstr "Podešava proces da koristi niski IO prioritet"
+msgid "Set the process to use low IO priority"
+msgstr ""
 
 #: Library/Main/Strings.cs:295
 msgid "Use this option to remove all empty folders from a backup."
 msgstr ""
 
 #: Library/Main/Strings.cs:296
-msgid "Excludes empty folders"
+msgid "Exclude empty folders"
 msgstr ""
 
 #: Library/Main/Strings.cs:297
@@ -4115,8 +4429,8 @@ msgstr ""
 "ili --{1}={2} da biste prijavili dodatne podatke evidencije"
 
 #: Library/Main/Strings.cs:305
-msgid "Activates logging of all database queries"
-msgstr "Aktivira evidentiranje svih upita baze podataka"
+msgid "Activate logging of all database queries"
+msgstr ""
 
 #: Library/Main/Strings.cs:306
 msgid ""
@@ -4335,8 +4649,8 @@ msgstr ""
 "ili da rešite problem sa određenim SSL protokolom."
 
 #: Library/Modules/Builtin/Strings.cs:53
-msgid "Sets allowed SSL versions"
-msgstr "Postavlja dozvoljene SSL verzije"
+msgid "Set allowed SSL versions"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:54
 msgid ""
@@ -4345,8 +4659,8 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:55
-msgid "Sets the default operation timeout"
-msgstr "Postavlja podrazumevano vremensko ograničenje operacije"
+msgid "Set the default operation timeout"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:56
 msgid ""
@@ -4360,8 +4674,8 @@ msgstr ""
 "aktivnosti na vezi."
 
 #: Library/Modules/Builtin/Strings.cs:57
-msgid "Sets readwrite"
-msgstr "Postavlja čitanje i pisanje"
+msgid "Set readwrite"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:58
 #, csharp-format
@@ -4373,8 +4687,8 @@ msgstr ""
 "izazove curenje memorije, ali i da poboljša performanse u nekim slučajevima."
 
 #: Library/Modules/Builtin/Strings.cs:59
-msgid "Sets HTTP buffering"
-msgstr "Postavlja HTTP baferovanje"
+msgid "Set HTTP buffering"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:63
 msgid ""
@@ -4401,9 +4715,8 @@ msgid "Configure Microsoft SQL Server module"
 msgstr "Podesi Microsoft SQL Server modul"
 
 #: Library/Modules/Builtin/Strings.cs:73
-msgid ""
-"Executes a script before starting an operation, and again on completion"
-msgstr "Izvršava skriptu pre pokretanja operacije, i ponovo nakon završetka"
+msgid "Execute a script before starting an operation, and again on completion"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:74
 msgid "Run script"
@@ -4411,11 +4724,9 @@ msgstr "Pokreni skriptu"
 
 #: Library/Modules/Builtin/Strings.cs:75
 msgid ""
-"Executes a script after performing an operation. The script will receive the"
-" operation results written to stdout."
+"Execute a script after performing an operation. The script will receive the "
+"operation results written to stdout."
 msgstr ""
-"Izvršava skriptu nakon izvođenja operacije. Skripta će dobiti rezultate "
-"operacije zapisane u stdout."
 
 #: Library/Modules/Builtin/Strings.cs:76
 msgid "Run a script on exit"
@@ -4433,21 +4744,17 @@ msgstr "Skripta \"{0}\" se vratila sa izlaznim kodom {1}{2}"
 
 #: Library/Modules/Builtin/Strings.cs:79
 msgid ""
-"Executes a script before performing an operation. The operation will block "
+"Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
-"Izvršava skriptu pre izvođenja operacije. Operacija će se blokirati dok se "
-"skripta ne završi ili ne istekne vremensko ograničenje. Ako skripta vrati "
-"kod greške različit od nule ili istekne vremensko ograničenje, operacija će"
-" biti prekinuta."
 
 #: Library/Modules/Builtin/Strings.cs:80
 msgid "Run a required script on startup"
 msgstr "Pokreni zahtevanu skriptu prilikom pokretanja"
 
 #: Library/Modules/Builtin/Strings.cs:81
-#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:237
 #, csharp-format
 msgid ""
 "Use this option to select the output format for results. Available formats: "
@@ -4455,9 +4762,9 @@ msgid ""
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:82
-#: Library/Modules/Builtin/Strings.cs:209
-msgid "Selects the output format for results"
-msgstr "Bira izlazni format za rezultate"
+#: Library/Modules/Builtin/Strings.cs:238
+msgid "Select the output format for results"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:83
 #, csharp-format
@@ -4471,11 +4778,9 @@ msgstr "Isteklo je vreme za izvršavanje skripte \"{0}\"."
 
 #: Library/Modules/Builtin/Strings.cs:85
 msgid ""
-"Executes a script before performing an operation. The operation will block "
+"Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr ""
-"Izvršava skriptu pre izvođenja operacije. Operacija će se blokirati dok se "
-"skripta ne završi ili ne istekne vremensko ograničenje."
 
 #: Library/Modules/Builtin/Strings.cs:86
 msgid "Run a script on startup"
@@ -4488,17 +4793,14 @@ msgstr "Skripta \"{0}\" je prijavila poruke grešaka: {1}"
 
 #: Library/Modules/Builtin/Strings.cs:88
 msgid ""
-"Sets the maximum time a script is allowed to execute. If the script has not "
+"Set the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr ""
-"Postavlja maksimalno vreme koje je skripti dozvoljeno da se izvrši. Ako se "
-"skripta ne dovrši u tom roku, nastaviće da se izvršava, ali će se i "
-"operacija nastaviti i nijedan izlaz skripte neće biti obrađen."
 
 #: Library/Modules/Builtin/Strings.cs:89
-msgid "Sets the script timeout"
-msgstr "Postavlja vremensko ograničenje skripte"
+msgid "Set the script timeout"
+msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:90
 msgid ""
@@ -4523,7 +4825,7 @@ msgstr "Pošalji mail"
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup. Please use the"
-" option {0} to specify what smtp server to use."
+" option --{0} to specify what SMTP server to use."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:98
@@ -4592,7 +4894,8 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:124
 #: Library/Modules/Builtin/Strings.cs:160
-#: Library/Modules/Builtin/Strings.cs:188
+#: Library/Modules/Builtin/Strings.cs:189
+#: Library/Modules/Builtin/Strings.cs:217
 msgid "The messages to send"
 msgstr "Poruke za slanje"
 
@@ -4670,6 +4973,7 @@ msgstr "XMPP adresa e-pošte primaoca"
 
 #: Library/Modules/Builtin/Strings.cs:144
 #: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:201
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -4684,6 +4988,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:153
 #: Library/Modules/Builtin/Strings.cs:181
+#: Library/Modules/Builtin/Strings.cs:210
 msgid "The message template"
 msgstr "Šablon poruke"
 
@@ -4708,7 +5013,8 @@ msgid "The XMPP password"
 msgstr "XMPP lozinka"
 
 #: Library/Modules/Builtin/Strings.cs:158
-#: Library/Modules/Builtin/Strings.cs:186
+#: Library/Modules/Builtin/Strings.cs:187
+#: Library/Modules/Builtin/Strings.cs:215
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\". \n"
@@ -4718,14 +5024,16 @@ msgstr ""
 "Možete da navedete više opcija sa zarezom, npr. \"{0},{1}\". Posebna vrednost \"{4}\" je skraćenica za \"{0},{1},{2},{3}\" i dovešće do slanja poruke svim operacijama rezervnih kopija."
 
 #: Library/Modules/Builtin/Strings.cs:161
-#: Library/Modules/Builtin/Strings.cs:189
+#: Library/Modules/Builtin/Strings.cs:190
+#: Library/Modules/Builtin/Strings.cs:218
 msgid ""
 "By default, messages will only be sent after a backup operation. Use this "
 "option to send messages for all operations."
 msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:190
+#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:219
 msgid "Send messages for all operations"
 msgstr "Šalji poruke za sve operacije"
 
@@ -4736,50 +5044,90 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:168
 msgid ""
+"This module provides support for sending status reports via Telegram "
+"messages"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:169
+msgid "Telegram report module"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:170
+msgid "Use this option to set the channel ID."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:171
+msgid "Telegram channel id"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:182
+msgid ""
+"Use this option to set a bot ID for the bot that will send the message."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:184
+msgid "The Telegram bot ID"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:185
+msgid ""
+"Use this option to set a API key for the bot that will send the message."
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:186
+msgid "The Telegram API key"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:192
+msgid "Timeout occurred while sending to Telegram server"
+msgstr ""
+
+#: Library/Modules/Builtin/Strings.cs:197
+msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Ovaj modul pruža podršku za slanje izveštaja o statusu putem HTTP poruka"
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:198
 msgid "HTTP report module"
 msgstr "HTTP modul izveštaja"
 
-#: Library/Modules/Builtin/Strings.cs:170
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "Use this option to set a HTTP report URL."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:200
 msgid "HTTP report URL"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:211
 msgid "Use this option to set a name of the parameter to send the message as."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:212
 msgid "The name of the parameter to send the message as"
 msgstr "Naziv parametra za slanje poruke"
 
-#: Library/Modules/Builtin/Strings.cs:184
+#: Library/Modules/Builtin/Strings.cs:213
 msgid ""
 "Use this option to set extra parameters to add to the http message, e.g. "
 "\"parameter1=value1&parameter2=value2\""
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:214
 msgid "Extra parameters to add to the http message"
 msgstr "Dodatni parametri za dodavanje u http poruku"
 
-#: Library/Modules/Builtin/Strings.cs:191
+#: Library/Modules/Builtin/Strings.cs:220
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:192
-msgid "Sets the HTTP verb to use"
-msgstr "Postavlja HTTP glagol za upotrebu"
+#: Library/Modules/Builtin/Strings.cs:221
+msgid "Set the HTTP verb to use"
+msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:193
+#: Library/Modules/Builtin/Strings.cs:222
 msgid ""
 "Use this option to set HTTP report URLs for sending form-encoded data. This "
 "option accepts multiple URLs, seperated by a semi-colon. All URLs will "
@@ -4787,46 +5135,46 @@ msgid ""
 "settings."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:194
+#: Library/Modules/Builtin/Strings.cs:223
 msgid "HTTP report URLs for sending form data"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:195
+#: Library/Modules/Builtin/Strings.cs:224
 msgid ""
 "Use this option to set HTTP report URLs for sending JSON data. This option "
 "accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
 "same data. Note that this option ignores the format and verb settings."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:196
+#: Library/Modules/Builtin/Strings.cs:225
 msgid "HTTP report URLs for sending JSON data"
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:201
+#: Library/Modules/Builtin/Strings.cs:230
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Slanje poruke nije uspelo: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:202
+#: Library/Modules/Builtin/Strings.cs:231
 msgid ""
 "Use this option to set the log level for messages to include in the report."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:203
-msgid "Defines a log level for messages"
-msgstr "Definiše nivo dnevnika za poruke"
+#: Library/Modules/Builtin/Strings.cs:232
+msgid "Define a log level for messages"
+msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:233
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report."
 msgstr ""
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:234
 msgid "Log message filter"
 msgstr "Filter za poruke dnevnika"
 
-#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:235
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
@@ -4834,9 +5182,9 @@ msgstr ""
 "Koristite ovu opciju da biste podesili maksimalan broj redova dnevnika koji "
 "će se uključiti u izveštaj. Nula ili negativna vrednost znači neograničeno."
 
-#: Library/Modules/Builtin/Strings.cs:207
-msgid "Limits log lines"
-msgstr "Ograničava linije dnevnika"
+#: Library/Modules/Builtin/Strings.cs:236
+msgid "Limit log lines"
+msgstr ""
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:39
 #, csharp-format
@@ -5071,11 +5419,6 @@ msgstr ""
 msgid "Supported generic modules:"
 msgstr "Podržani generički moduli:"
 
-#: CommandLine/CLI/Strings.cs:41
-#, csharp-format
-msgid "Unable to read the parameters file \"{0}\", reason: {1}"
-msgstr "Nije moguće pročitati parametre datoteke \"{0}\", razlog: {1}"
-
 #: CommandLine/CLI/Strings.cs:42
 #, csharp-format
 msgid ""
@@ -5106,10 +5449,6 @@ msgid ""
 "parameter file. Each filter must be prefixed with either a + or a -, and "
 "multiple filters must be joined with {5}."
 msgstr ""
-
-#: CommandLine/CLI/Strings.cs:45
-msgid "Path to a file with parameters"
-msgstr "Putanja do datoteke sa parametrima"
 
 #: CommandLine/CLI/Strings.cs:46
 #, csharp-format
@@ -5183,11 +5522,11 @@ msgstr "Onemogući ispis u konzolu"
 msgid "This link may provide additional information: {0}"
 msgstr "Ova veza može da pruži dodatne informacije: {0}"
 
-#: CommandLine/CLI/Program.cs:288
+#: CommandLine/CLI/Program.cs:290
 msgid "Toggle automatic updates"
 msgstr "Uključi automatsko ažuriranje"
 
-#: CommandLine/CLI/Program.cs:288
+#: CommandLine/CLI/Program.cs:290
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"

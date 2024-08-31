@@ -31,6 +31,8 @@ namespace Duplicati.WindowsService
         [STAThread]
         public static int Main(string[] args)
         {
+            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.WindowsService);
+
             if (!OperatingSystem.IsWindows())
             {
                 throw new NotSupportedException("Unsupported Operating System");
@@ -83,7 +85,7 @@ namespace Duplicati.WindowsService
                     //The path can also include arguments for an auto-start service. For example, "d:\myshare\myservice.exe arg1 arg2". These arguments are passed to the service entry point (typically the main function).
                     try
                     {
-                        ServiceInstaller.InstallService(ServiceControl.SERVICE_NAME, ServiceControl.DISPLAY_NAME, "\"" + selfexec + "\"" + " " + commandline);
+                        ServiceInstaller.InstallService(ServiceControl.SERVICE_NAME, ServiceControl.DISPLAY_NAME, ServiceControl.SERVICE_DESCRIPTION, "\"" + selfexec + "\"" + " " + commandline);
                         Console.WriteLine("Duplicati service installation succeeded.");
                     }
                     catch (Exception ex)
@@ -95,7 +97,7 @@ namespace Duplicati.WindowsService
             }
             else
             {
-                ServiceBase.Run(new ServiceBase[] { new ServiceControl(args) });
+                ServiceBase.Run([new ServiceControl(args)]);
             }
 
             return 0;

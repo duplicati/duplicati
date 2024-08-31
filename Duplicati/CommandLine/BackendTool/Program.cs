@@ -39,6 +39,8 @@ namespace Duplicati.CommandLine.BackendTool
             bool debugoutput = false;
             try
             {
+                Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.BackendTool);
+
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -77,8 +79,8 @@ namespace Duplicati.CommandLine.BackendTool
                     {
                         Console.WriteLine("Unsupported command: {0}", args[0]);
                         Console.WriteLine();
-                    }   
-                    
+                    }
+
                     Console.WriteLine("Usage: <command> <protocol>://<username>:<password>@<path> [filename]");
                     Console.WriteLine("Example: LIST ftp://user:pass@server/folder");
                     Console.WriteLine();
@@ -89,37 +91,39 @@ namespace Duplicati.CommandLine.BackendTool
                 }
 
                 var modules = (from n in Library.DynamicLoader.GenericLoader.Modules
-                     where n is Library.Interface.IConnectionModule
-                     select n).ToArray();
+                               where n is Library.Interface.IConnectionModule
+                               select n).ToArray();
 
-                 var uri = new Library.Utility.Uri(args[1]);
-                 var qp = uri.QueryParameters;
+                var uri = new Library.Utility.Uri(args[1]);
+                var qp = uri.QueryParameters;
 
-                 var backendOpts = new Dictionary<string, string>();
-                 foreach (var k in qp.Keys.Cast<string>())
-                     backendOpts[k] = qp[k];
+                var backendOpts = new Dictionary<string, string>();
+                foreach (var k in qp.Keys.Cast<string>())
+                    backendOpts[k] = qp[k];
 
-                 foreach (var k in backendOpts.Keys) {
-                     options.Remove(k);
-                 }
+                foreach (var k in backendOpts.Keys)
+                {
+                    options.Remove(k);
+                }
 
-                 foreach (var n in modules) {
-                     n.Configure(options);
-                     n.Configure(backendOpts);
-                 }                
-                
-                using(var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[1], options))
+                foreach (var n in modules)
+                {
+                    n.Configure(options);
+                    n.Configure(backendOpts);
+                }
+
+                using (var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[1], options))
                 {
                     if (backend == null)
                         throw new UserInformationException("Backend not supported", "InvalidBackend");
-                        
+
                     if (command == "list")
                     {
                         if (args.Count != 2)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                         Console.WriteLine("{0}\t{1}\t{2}\t{3}", "Name", "Dir/File", "LastChange", "Size");
-                    
-                        foreach(var e in backend.List())
+
+                        foreach (var e in backend.List())
                             Console.WriteLine("{0}\t{1}\t{2}\t{3}", e.Name, e.IsFolder ? "Dir" : "File", e.LastModification, e.Size < 0 ? "" : Library.Utility.Utility.FormatSizeString(e.Size));
 
                         return 0;
@@ -130,7 +134,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
                         backend.CreateFolder();
-                        
+
                         return 0;
                     }
                     else if (command == "delete")
@@ -140,7 +144,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
                         backend.Delete(Path.GetFileName(args[2]));
-                        
+
                         return 0;
                     }
                     else if (command == "get")
@@ -152,21 +156,21 @@ namespace Duplicati.CommandLine.BackendTool
                         if (File.Exists(args[2]))
                             throw new UserInformationException("File already exists, not overwriting!", "BackendToolFileAlreadyExists");
                         backend.Get(Path.GetFileName(args[2]), args[2]);
-                        
+
                         return 0;
                     }
                     else if (command == "put")
                     {
                         if (args.Count < 3)
-                            throw new UserInformationException("PUT requires a filename argument","BackendToolPutRequiresAndArgument");
+                            throw new UserInformationException("PUT requires a filename argument", "BackendToolPutRequiresAndArgument");
                         if (args.Count > 3)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
-                           
+
                         backend.PutAsync(Path.GetFileName(args[2]), args[2], CancellationToken.None).Wait();
-                        
+
                         return 0;
                     }
-                    
+
                     throw new Exception("Internal error");
                 }
             }

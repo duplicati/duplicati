@@ -243,7 +243,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             } else {
                 state[varname] = data[dataname];
             }
-            console.log("state changed: ", "serverstatechanged." + varname)
             $rootScope.$broadcast('serverstatechanged.' + varname, state[varname]);
             return true;
         }
