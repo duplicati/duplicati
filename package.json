@@ -2,7 +2,7 @@
   "devDependencies": {
     "less": "^4.2.0",
     "less-plugin-clean-css": "^1.6.0",
-    "stylelint": "^16.8.1",
+    "stylelint": "^16.9.0",
     "stylelint-config-standard-less": "^3.0.1"
   },
   "scripts": {
