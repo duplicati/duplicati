@@ -49,17 +49,17 @@ Error message: {0}", error); }
         public static string WebserverDisableVisualCaptchaDescription { get { return LC.L(@"Disable the visual captcha"); } }
         public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
         public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
+        public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log."); } }
         public static string LogwindowseventlogShort { get { return LC.L(@"Log to the Windows event log"); } }
-        public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log"); } }
+        public static string LogwindowseventloglevelLong { get { return LC.L(@"Use this option to set the log level for the Windows event log."); } }
         public static string LogwindowseventloglevelShort { get { return LC.L(@"Set the log level for the Windows event log"); } }
-        public static string LogwindowseventloglevelLong { get { return LC.L(@"Use this option to set the log level for the Windows event log"); } }
         public static string WindowsEventLogSourceNotFound(string source) { return LC.L(@"The Windows event log source {0} was not found. The source must be registered before the log can be written.", source); }
         public static string WindowsEventLogNotSupported { get { return LC.L(@"The Windows event log is not supported on this platform"); } }
         public static string ServerStarted(int port) { return LC.L(@"Server has started and is listening on port {0}", port); }
         public static string ServerStartedSignin(string url) { return LC.L(@"Use the following link to sign in: {0}", url); }
         public static string ServerCrashed(string message) { return LC.L(@"The server crashed: {0}", message); }
+        public static string RequiredbencryptionLong { get { return LC.L(@"Use this option to require a custom provided key for database encryption of sensitive fields and not rely on the serial number."); } }
         public static string RequiredbencryptionShort { get { return LC.L(@"Require database encryption"); } }
-        public static string RequiredbencryptionLong { get { return LC.L(@"Use this option to require a custom provided key for database encryption of sensitive fields and not rely on the serial number"); } }
         public static string DatabaseEncryptionKeyRequired(string envkey, string disableoptionname) { return LC.L(@"Database encryption key is required. Supply an encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
         public static string BlacklistedEncryptionKey(string envkey, string disableoptionname) { return LC.L(@"The encryption key is blacklisted and cannot be used. The database has been decrypted. Supply a new encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
     }

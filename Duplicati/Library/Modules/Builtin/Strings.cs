@@ -168,7 +168,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string Description { get { return LC.L(@"This module provides support for sending status reports via Telegram messages"); } }
         public static string DisplayName { get { return LC.L(@"Telegram report module"); } }
         public static string SendtelegramchannelLong { get { return LC.L(@"Use this option to set the channel ID."); } }
-        public static string SendtelegramchannelShort { get { return LC.L(@"Telegram channel id"); } }
+        public static string SendtelegramchannelShort { get { return LC.L(@"Telegram channel ID"); } }
         public static string SendtelegrammessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
 
 In the message, certain tokens are replaced:
