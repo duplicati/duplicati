@@ -258,11 +258,7 @@ namespace Duplicati.Server
             var terminated = false;
             try
             {
-                DataConnection = GetDatabaseConnection(commandlineOptions);
-
-                // Replicate the check from within the database connection, to emit the message to the console as well
-                if (writeToConsole && EncryptedFieldHelper.IsCurrentKeyBlacklisted && !Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION))
-                    Console.WriteLine(Strings.Program.BlacklistedEncryptionKey(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
+                DataConnection = GetDatabaseConnection(commandlineOptions, writeToConsole);
 
                 if (!DataConnection.ApplicationSettings.FixedInvalidBackupId)
                     DataConnection.FixInvalidBackupId();
@@ -693,7 +689,7 @@ namespace Duplicati.Server
                 return Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
         }
 
-        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions)
+        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions, bool writeToConsole)
         {
             DataFolder = GetDataFolderPath(commandlineOptions);
 
@@ -731,15 +727,51 @@ namespace Duplicati.Server
             var disableDbEncryption = Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION);
             var requireDbEncryptionKey = Library.Utility.Utility.ParseBoolOption(commandlineOptions, REQUIRE_DB_ENCRYPTION_KEY_OPTION);
             var hasEncryptionKey = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-            var usingBlacklistedKey = Library.Encryption.EncryptedFieldHelper.IsCurrentKeyBlacklisted;
+            var usingBlacklistedKey = Library.Encryption.EncryptedFieldHelper.IsDefaultKeyBlacklisted;
+            var hasValidEncryptionKey = Library.Encryption.EncryptedFieldHelper.HasValidDefaultKey;
 
             if (requireDbEncryptionKey && !(hasEncryptionKey || disableDbEncryption))
                 throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
 
+            if (!hasValidEncryptionKey)
+            {
+                try
+                {
+                    var hasEncryptedFields = false;
+                    using (var cmd = con.CreateCommand())
+                    {
+                        cmd.CommandText = @$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = '{Database.ServerSettings.CONST.ENCRYPTED_FIELDS}' AND ""BackupID"" = {Connection.SERVER_SETTINGS_ID}";
+                        hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd.ExecuteScalar()?.ToString(), false);
+                    }
+
+                    if (hasEncryptedFields)
+                    {
+                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+                        if (writeToConsole)
+                            Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+                    }
+                }
+                catch
+                {
+                    // Ignore errors here, as we are just checking for a potential issue
+                    // Only negative effect is that we do not show a potentially helpful warning
+                }
+            }
+
+            if (!hasValidEncryptionKey && !disableDbEncryption)
+            {
+                disableDbEncryption = true;
+                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingEncryptionKey", null, Strings.Program.NoEncryptionKeySpecified(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
+                if (writeToConsole)
+                    Console.WriteLine(Strings.Program.NoEncryptionKeySpecified(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
+            }
+
             if (usingBlacklistedKey && !disableDbEncryption)
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "BlacklistedEncryptionKey", null, Strings.Program.BlacklistedEncryptionKey(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
                 disableDbEncryption = true;
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "BlacklistedEncryptionKey", null, Strings.Program.BlacklistedEncryptionKey(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
+                if (writeToConsole)
+                    Console.WriteLine(Strings.Program.BlacklistedEncryptionKey(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
             }
 
             return new Database.Connection(con, disableDbEncryption);

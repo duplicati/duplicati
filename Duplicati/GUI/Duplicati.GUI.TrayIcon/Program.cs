@@ -132,7 +132,7 @@ namespace Duplicati.GUI.TrayIcon
             {
                 if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(options), Server.Program.SERVER_DATABASE_FILENAME)))
                 {
-                    databaseConnection = Server.Program.GetDatabaseConnection(options);
+                    databaseConnection = Server.Program.GetDatabaseConnection(options, true);
 
                     if (databaseConnection != null)
                     {

@@ -51,13 +51,21 @@ public static class EncryptedFieldHelper
         public static KeyInstance CreateKey(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentNullException(nameof(key));
+                throw new ArgumentNullException(nameof(key), Strings.EncryptedFieldHelper.KeyEmptyError);
             if (key.Length < 8)
-                throw new ArgumentException("Key must be at least 8 characters long", nameof(key));
+                throw new ArgumentException(Strings.EncryptedFieldHelper.KeyTooShortError, nameof(key));
 
             using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
             return new KeyInstance(key, key.ComputeHashToHex(hasher), IsKeyBlacklisted(key));
         }
+
+        /// <summary>
+        /// Creates a key instance if the key is valid
+        /// </summary>
+        /// <param name="key">The key to create</param>
+        /// <returns>The key instance or <c>null</c> if the key is invalid</returns>
+        public static KeyInstance? CreateKeyIfValid(string? key)
+            => string.IsNullOrWhiteSpace(key) ? null : CreateKey(key);
     }
 
     /// <summary>
@@ -70,23 +78,29 @@ public static class EncryptedFieldHelper
 
 
     /// <summary>
-    /// The key supplied by the user
+    /// The key based on the device ID
     /// </summary>
-    private static string? SUPPLIED_KEY = Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME);
+    private static readonly KeyInstance? DeviceIdKey = KeyInstance.CreateKeyIfValid(DeviceIDHelper.HasTrustedDeviceID ? DeviceIDHelper.GetDeviceIDHash() : null);
 
     /// <summary>
-    /// The default key to be used for encryption
+    /// The default key to use for encryption
     /// </summary>
-    private static readonly KeyInstance DefaultKey = KeyInstance.CreateKey(
-        string.IsNullOrWhiteSpace(SUPPLIED_KEY)
-            ? DeviceIDHelper.GetDeviceIDHash()
-            : SUPPLIED_KEY
-    );
+    private static readonly KeyInstance? SuppliedKey = KeyInstance.CreateKeyIfValid(Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME));
+
+    /// <summary>
+    /// The default key to use for encryption
+    /// </summary>
+    private static readonly KeyInstance? DefaultKey = SuppliedKey ?? DeviceIdKey;
 
     /// <summary>
     /// Returns a value indicating if the default key is blacklisted and cannot be used
     /// </summary>
-    public static bool IsCurrentKeyBlacklisted => DefaultKey.IsBlacklisted;
+    public static bool IsDefaultKeyBlacklisted => DefaultKey?.IsBlacklisted ?? false;
+
+    /// <summary>
+    /// Returns a value indicating if the default key is valid
+    /// </summary>
+    public static bool HasValidDefaultKey => DefaultKey != null;
 
     /// <summary>
     /// Prefix used to identify an encrypted field
@@ -132,11 +146,14 @@ public static class EncryptedFieldHelper
     /// <param name="key">The key to use for decryption</param>
     /// <returns>Unencrypted data of the field</returns>
     [return: NotNullIfNotNull("value")]
-    public static string? Decrypt(string? value, KeyInstance key)
+    public static string? Decrypt(string? value, KeyInstance? key)
     {
         // If the value is not encrypted, it will be returned as is.
         if (string.IsNullOrEmpty(value) || !value.StartsWith(HEADER_PREFIX))
             return value;
+
+        if (key == null)
+            throw new InvalidOperationException(Strings.EncryptedFieldHelper.KeyMissingError);
 
         value = value.Substring(HEADER_PREFIX.Length);
 
@@ -185,10 +202,13 @@ public static class EncryptedFieldHelper
     /// <param name="value"></param>
     /// <param name="key">The key to use for encryption</param>
     /// <returns>The encrypted string</returns>
-    public static string Encrypt(string value, KeyInstance key)
+    public static string Encrypt(string value, KeyInstance? key)
     {
+        if (key == null)
+            throw new InvalidOperationException(Strings.EncryptedFieldHelper.KeyMissingError);
+
         if (key.IsBlacklisted)
-            throw new InvalidOperationException("Refusing to encrypt with a blacklisted key");
+            throw new InvalidOperationException(Strings.EncryptedFieldHelper.KeyBlacklistedError);
 
         using var hasher = HashFactory.CreateHasher(HashFactory.SHA256);
         var encrypted = AESStringEncryption.EncryptToHex(key.Key, value);

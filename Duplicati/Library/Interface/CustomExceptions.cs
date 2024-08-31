@@ -195,11 +195,11 @@ namespace Duplicati.Library.Interface
     {
         public RemoteListVerificationException(string message, string helpId)
             : base(message, helpId)
-        {}
+        { }
 
         public RemoteListVerificationException(string message, string helpId, Exception innerException)
             : base(message, helpId, innerException)
-        {}
+        { }
     }
 
     /// <summary>
@@ -211,8 +211,18 @@ namespace Duplicati.Library.Interface
     {
         public SettingsEncryptionKeyMismatchException()
             : base(Strings.Common.SettingsKeyMismatchExceptionError, "SettingsKeyMismatch")
-        {}
-
+        { }
     }
 
+    /// <summary>
+    /// An exception indicating that the current encryption key does not match the key
+    /// used to encrypt the settings.
+    /// </summary>
+    [Serializable]
+    public class SettingsEncryptionKeyMissingException : UserInformationException
+    {
+        public SettingsEncryptionKeyMissingException()
+            : base(Strings.Common.SettingsKeyMissingExceptionError, "SettingsKeyMissing")
+        { }
+    }
 }

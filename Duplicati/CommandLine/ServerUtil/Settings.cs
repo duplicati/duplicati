@@ -74,15 +74,20 @@ public sealed record Settings(
     /// </summary>
     public void Save()
     {
-        if (!string.IsNullOrWhiteSpace(RefreshToken) && EncryptedFieldHelper.IsCurrentKeyBlacklisted)
-            Console.WriteLine("Warning: The current encryption key is blacklisted and cannot be used, saving login token without encryption");
+        if (!string.IsNullOrWhiteSpace(RefreshToken))
+        {
+            if (!EncryptedFieldHelper.HasValidDefaultKey)
+                Console.WriteLine("Warning: The encryption key is missing, saving login token without encryption");
+            else if (EncryptedFieldHelper.IsDefaultKeyBlacklisted)
+                Console.WriteLine("Warning: The current encryption key is blacklisted and cannot be used, saving login token without encryption");
+        }
 
         File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile)
             .Where(x => x.HostUrl != HostUrl)
             .Append(new PersistedSettings(RefreshToken, HostUrl, ServerDatafolder))
             .Select(x => x with
             {
-                RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || EncryptedFieldHelper.IsCurrentKeyBlacklisted
+                RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || EncryptedFieldHelper.IsDefaultKeyBlacklisted || !EncryptedFieldHelper.HasValidDefaultKey
                     ? x.RefreshToken
                     : EncryptedFieldHelper.Encrypt(x.RefreshToken)
             })
