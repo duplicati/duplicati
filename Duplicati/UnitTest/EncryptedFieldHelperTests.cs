@@ -134,6 +134,9 @@ namespace Duplicati.UnitTest
         [Category("FieldEncryption")]
         public static void EncryptAndDecryptUsingDeviceID()
         {
+            // If there is no trusted device ID, this test cannot be performed
+            if (!DeviceIDHelper.HasTrustedDeviceID)
+                return;
 
             var sampleTargerURL = "s3://awsid-bucket/folder/?s3-location-constraint=us-east-2&s3-storage-class=&s3-client=aws&auth-username=AWSID&auth-password=AWSACCESSKEY";
             var key = EncryptedFieldHelper.KeyInstance.CreateKey(DeviceIDHelper.GetDeviceIDHash());
@@ -183,11 +186,13 @@ namespace Duplicati.UnitTest
                 var secondtest = EncryptedFieldHelper.Decrypt(encrypted);
 
             }
-            catch (SettingsEncryptionKeyMismatchException)
+            catch (Exception ex)
+                when (ex is SettingsEncryptionKeyMismatchException || ex is SettingsEncryptionKeyMissingException)
             {
                 // Expected
                 Assert.True(true);
             }
+
             catch (Exception e)
             {
                 Assert.Fail("Expected SettingsEncryptionKeyMismatchException, got: " + e);

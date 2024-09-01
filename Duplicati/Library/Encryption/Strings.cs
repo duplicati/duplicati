@@ -65,7 +65,5 @@ namespace Duplicati.Library.Encryption.Strings
         public static string KeyTooShortError { get { return LC.L(@"Key must be at least 8 characters long"); } }
         public static string KeyEmptyError { get { return LC.L(@"Key must not be empty"); } }
         public static string KeyBlacklistedError { get { return LC.L(@"Refusing to encrypt with blacklisted key"); } }
-        public static string KeyMissingError { get { return LC.L(@"No key available to decrypt the value"); } }
-
     }
 }

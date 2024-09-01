@@ -153,7 +153,7 @@ public static class EncryptedFieldHelper
             return value;
 
         if (key == null)
-            throw new InvalidOperationException(Strings.EncryptedFieldHelper.KeyMissingError);
+            throw new SettingsEncryptionKeyMissingException();
 
         value = value.Substring(HEADER_PREFIX.Length);
 
@@ -205,7 +205,7 @@ public static class EncryptedFieldHelper
     public static string Encrypt(string value, KeyInstance? key)
     {
         if (key == null)
-            throw new InvalidOperationException(Strings.EncryptedFieldHelper.KeyMissingError);
+            throw new SettingsEncryptionKeyMissingException();
 
         if (key.IsBlacklisted)
             throw new InvalidOperationException(Strings.EncryptedFieldHelper.KeyBlacklistedError);
