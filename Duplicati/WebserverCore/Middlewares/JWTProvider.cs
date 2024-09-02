@@ -17,6 +17,8 @@ public record JWTConfig
     public int RefreshTokenDurationInMinutes { get; init; } = 60 * 24 * 30;
     public int SigninTokenDurationInMinutes { get; init; } = 5;
     public int SingleOperationTokenDurationInMinutes { get; init; } = 1;
+    public int MaxRefreshTokenDrift { get; init; } = 1;
+    public int MaxRefreshTokenDriftSeconds { get; init; } = 30;
     public SymmetricSecurityKey SymmetricSecurityKey() => new(Encoding.UTF8.GetBytes(SigningKey));
 
     public static JWTConfig Create() => new()
