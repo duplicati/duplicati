@@ -53,6 +53,7 @@ public interface ITokenFamilyStore
     /// </summary>
     /// <param name="Id">The ID.</param>
     /// <param name="UserId">The user ID.</param>
-    /// <param name="Counter">The counter.</param>    
-    public record TokenFamily(string Id, string UserId, int Counter);
+    /// <param name="Counter">The counter.</param>  
+    /// <param name="LastUpdated">The last updated timestamp.</param>
+    public record TokenFamily(string Id, string UserId, int Counter, DateTime LastUpdated);
 }

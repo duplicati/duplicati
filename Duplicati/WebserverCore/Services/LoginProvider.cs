@@ -30,8 +30,13 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         var tokenFamily = await repo.GetTokenFamily(refreshToken.UserId, refreshToken.TokenFamilyId, ct)
             ?? throw new UnauthorizedAccessException("Invalid refresh token");
 
+        // Allow slight drift to adjust for cases where the browser refreshes
+        // just before the token is received, so the server is ahead
         var counterDiff = tokenFamily.Counter - refreshToken.Counter;
-        if (counterDiff < 0 || counterDiff > jwtConfig.MaxRefreshTokenDrift)
+        var maxDrift = (DateTime.UtcNow - tokenFamily.LastUpdated).TotalSeconds > jwtConfig.MaxRefreshTokenDriftSeconds
+            ? 0
+            : jwtConfig.MaxRefreshTokenDrift;
+        if (counterDiff < 0 || counterDiff > maxDrift)
         {
             Log.WriteWarningMessage(LOGTAG, "TokenFamilyReuse", null, $"Invalid refresh token counter: {tokenFamily.Counter} != {refreshToken.Counter}");
             await repo.InvalidateTokenFamily(tokenFamily.UserId, tokenFamily.Id, ct);
