@@ -177,8 +177,8 @@ public partial class DuplicatiWebserver
         {
             app.Run(async context =>
             {
-                var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-                if (exceptionHandlerPathFeature?.Error is UserReportedHttpException userReportedHttpException)
+                var thrownException = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
+                if (thrownException is UserReportedHttpException userReportedHttpException)
                 {
                     context.Response.StatusCode = userReportedHttpException.StatusCode;
                     context.Response.ContentType = userReportedHttpException.ContentType;
@@ -186,6 +186,12 @@ public partial class DuplicatiWebserver
                         await context.Response.WriteAsync(userReportedHttpException.Message);
                     else
                         await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userReportedHttpException.Message, Code = userReportedHttpException.StatusCode }));
+                }
+                else if (thrownException is UnauthorizedAccessException unauthorizedAccessException)
+                {
+                    context.Response.StatusCode = 401;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = unauthorizedAccessException.Message, Code = 401 }));
                 }
                 else
                 {
