@@ -142,7 +142,7 @@ public class Connection
             if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(opts), Server.Program.SERVER_DATABASE_FILENAME)))
             {
                 string? cfg = null;
-                using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts))
+                using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts, true))
                     cfg = connection.ApplicationSettings.JWTConfig;
 
                 if (!string.IsNullOrWhiteSpace(cfg))

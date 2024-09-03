@@ -61,7 +61,9 @@ Error message: {0}", error); }
         public static string RequiredbencryptionLong { get { return LC.L(@"Use this option to require a custom provided key for database encryption of sensitive fields and not rely on the serial number."); } }
         public static string RequiredbencryptionShort { get { return LC.L(@"Require database encryption"); } }
         public static string DatabaseEncryptionKeyRequired(string envkey, string disableoptionname) { return LC.L(@"Database encryption key is required. Supply an encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
-        public static string BlacklistedEncryptionKey(string envkey, string disableoptionname) { return LC.L(@"The encryption key is blacklisted and cannot be used. The database has been decrypted. Supply a new encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
+        public static string BlacklistedEncryptionKey(string envkey, string disableoptionname) { return LC.L(@"The database encryption key is blacklisted and cannot be used. The database has been decrypted. Supply a new encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
+        public static string NoEncryptionKeySpecified(string envkey, string disableoptionname) { return LC.L(@"No database encryption key was found. The database will be stored unencrypted. Supply an encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
+        public static string EncryptionKeyMissing(string envkey) { return LC.L(@"The database appears to be encrypted, but no key was specified. Opening the database will likely fail. Use the environment variable {0} to specify the key.", envkey); }
     }
     internal static class Scheduler
     {

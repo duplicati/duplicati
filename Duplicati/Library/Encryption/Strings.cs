@@ -60,4 +60,10 @@ namespace Duplicati.Library.Encryption.Strings
         public static string GPGFlushError { get { return LC.L(@"Failure while invoking GnuPG, program won't flush output"); } }
         public static string GPGTerminateError { get { return LC.L(@"Failure while invoking GnuPG, program won't terminate"); } }
     }
+    internal static class EncryptedFieldHelper
+    {
+        public static string KeyTooShortError { get { return LC.L(@"Key must be at least 8 characters long"); } }
+        public static string KeyEmptyError { get { return LC.L(@"Key must not be empty"); } }
+        public static string KeyBlacklistedError { get { return LC.L(@"Refusing to encrypt with blacklisted key"); } }
+    }
 }

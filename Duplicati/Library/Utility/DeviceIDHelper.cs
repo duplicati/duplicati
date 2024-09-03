@@ -21,40 +21,24 @@
 #nullable enable
 
 using Duplicati.Library.Utility;
-using DeviceId;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 /// <summary>
 /// Helper class to get the device ID string and computed hash
 /// </summary>
 public static class DeviceIDHelper
 {
-    /// <summary>
-    /// Generates an empty ID
-    /// </summary>
-    /// <returns>An empty ID</returns>
-    private static string? GenerateEmptyId()
-    {
-        var builder = new DeviceIdBuilder();
-        builder.Components.Clear();
-        return builder.ToString();
-    }
 
     /// <summary>
     /// The empty ID produced by DeviceIdBuilder if no information is available
     /// </summary>
-    private static readonly HashSet<string> EMPTY_DEVICE_IDS = new[] {
+    private static readonly string[] EMPTY_DEVICE_IDS = [
         // Known empty Id
         "WERC8GMRZGE196QVYK49JVXS4GKTWGF4CJDS6K54JPCHPY2JQ1AG",
-        // In case the library changes
-        GenerateEmptyId()
-    }
-    .Where(x => !string.IsNullOrWhiteSpace(x))
-    .Select(x => x!)
-    // Don't allow empty strings either
-    .Append(string.Empty)
-    .ToHashSet();
+        string.Empty
+    ];
 
     /// <summary>
     /// Hashes a set of device IDs
@@ -73,49 +57,15 @@ public static class DeviceIDHelper
     public static readonly HashSet<string> EMPTY_DEVICE_ID_HASHES = HashDeviceIds(EMPTY_DEVICE_IDS);
 
     /// <summary>
-    /// Returns a configured builder
-    /// </summary>
-    /// <returns>The builder</returns>
-    private static DeviceIdBuilder GetBuilder()
-        => new DeviceIdBuilder()
-            .OnWindows(deviceid => deviceid
-                .AddMotherboardSerialNumber())
-            .OnLinux(deviceid => deviceid
-                .AddMotherboardSerialNumber())
-            .OnMac(deviceid => deviceid
-                .AddPlatformSerialNumber());
-
-    /// <summary>
-    /// Get the device ID string (motherboard serial number on Windows and Linux, platform serial number on Mac)
-    /// </summary>
-    /// <returns>The device Id</returns>
-    public static string? GetDeviceID()
-    {
-        var id = GetBuilder().ToString();
-        if (string.IsNullOrWhiteSpace(id))
-            return EMPTY_DEVICE_IDS.First();
-
-        return id;
-    }
-
-    /// <summary>
-    /// Checks if the deviceId is a meaningful value
-    /// </summary>
-    /// <returns><c>true</c> if a deviceId can be obtained, <c>false</c> otherwise</returns>
-    public static bool CanGetDeviceId()
-    {
-        var builder = GetBuilder();
-        builder.UseFormatter(new DeviceId.Formatters.StringDeviceIdFormatter(new DeviceId.Encoders.PlainTextDeviceIdComponentEncoder()));
-        return !string.IsNullOrWhiteSpace(builder.ToString());
-    }
-
-    /// <summary>
     /// Get the device ID hashed in SHA256 and in hex format 
     /// </summary>
     /// <returns></returns>
     public static string GetDeviceIDHash()
-    {
-        using var hasher = HashFactory.CreateHasher("SHA256");
-        return (GetDeviceID() ?? "").ComputeHashToHex(hasher);
-    }
+        => throw new InvalidOperationException("Device ID is not available");
+
+
+    /// <summary>
+    /// Returns a value indicating if the device ID is available on this system
+    /// </summary>
+    public static bool HasTrustedDeviceID => false;
 }

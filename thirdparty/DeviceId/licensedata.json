@@ -1,7 +1,0 @@
-{
-  "name": "DeviceId",
-  "description": "A simple library providing functionality to generate a 'device ID' that can be used to uniquely identify a computer.",
-  "link": "https://github.com/MatthewKing/DeviceId",
-  "license": "MIT",
-  "notes": ""
-}
