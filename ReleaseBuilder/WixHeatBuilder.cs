@@ -15,7 +15,7 @@ public static class WixHeatBuilder
     /// <param name="componentGroupId">The name of the component group</param>
     /// <param name="fileIdGenerator">A function to generate file IDs.</param>
     /// <returns>The wix file xml contents</returns>
-    public static string CreateWixFilelist(string sourceFolder, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", Func<string, string>? fileIdGenerator = null)
+    public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", Func<string, string>? fileIdGenerator = null)
     {
         var itemIds = new Dictionary<string, string>();
         fileIdGenerator ??= (x) => Path.GetRelativePath(sourceFolder, x).Replace("\\", "_").Replace("/", "_").Replace(":", "_").Replace(" ", "_");
@@ -32,9 +32,9 @@ public static class WixHeatBuilder
 
         foreach (var f in Directory.EnumerateFileSystemEntries(sourceFolder))
             if (File.Exists(f))
-                AddFile(doc, directoryRef, f, itemIds, fileIdGenerator, pathTransformer);
+                AddFile(doc, directoryRef, f, version, itemIds, fileIdGenerator, pathTransformer);
             else if (Directory.Exists(f))
-                AddDirectory(doc, directoryRef, f, itemIds, fileIdGenerator, pathTransformer);
+                AddDirectory(doc, directoryRef, f, version, itemIds, fileIdGenerator, pathTransformer);
 
         var fragment2 = doc.CreateElement("Fragment");
         root.AppendChild(fragment2);
@@ -59,9 +59,10 @@ public static class WixHeatBuilder
     /// <param name="doc">The XML document.</param>
     /// <param name="directoryRef">The XML element representing the directory reference.</param>
     /// <param name="file">The file to be added.</param>
+    /// <param name="version">The version of the file.</param>
     /// <param name="itemIds">The dictionary containing the item IDs.</param>
     /// <param name="fileIdGenerator">The function to generate file IDs.</param>
-    private static void AddFile(XmlDocument doc, XmlElement directoryRef, string file, Dictionary<string, string> itemIds, Func<string, string> fileIdGenerator, Func<string, string> pathTransformer)
+    private static void AddFile(XmlDocument doc, XmlElement directoryRef, string file, string version, Dictionary<string, string> itemIds, Func<string, string> fileIdGenerator, Func<string, string> pathTransformer)
     {
         var id = fileIdGenerator.Invoke(file);
         itemIds.Add(file, id);
@@ -74,6 +75,7 @@ public static class WixHeatBuilder
         var fileElement = doc.CreateElement("File");
         fileElement.SetAttribute("Id", id);
         fileElement.SetAttribute("KeyPath", "yes");
+        fileElement.SetAttribute("DefaultVersion", version);
         fileElement.SetAttribute("Source", pathTransformer(file));
         component.AppendChild(fileElement);
     }
@@ -84,9 +86,10 @@ public static class WixHeatBuilder
     /// <param name="doc">The XML document to add the directory to.</param>
     /// <param name="directoryRef">The parent directory reference element.</param>
     /// <param name="dir">The directory path to add.</param>
+    /// <param name="version">The version of the directory.</param>
     /// <param name="itemIds">A dictionary to store the mapping between directory paths and their generated IDs.</param>
     /// <param name="fileIdGenerator">A function to generate file IDs.</param>
-    private static void AddDirectory(XmlDocument doc, XmlElement directoryRef, string dir, Dictionary<string, string> itemIds, Func<string, string> fileIdGenerator, Func<string, string> pathTransformer)
+    private static void AddDirectory(XmlDocument doc, XmlElement directoryRef, string dir, string version, Dictionary<string, string> itemIds, Func<string, string> fileIdGenerator, Func<string, string> pathTransformer)
     {
         var id = fileIdGenerator.Invoke(dir);
 
@@ -97,9 +100,9 @@ public static class WixHeatBuilder
         directoryRef.AppendChild(directory);
 
         foreach (var file in Directory.GetFiles(dir))
-            AddFile(doc, directory, file, itemIds, fileIdGenerator, pathTransformer);
+            AddFile(doc, directory, file, version, itemIds, fileIdGenerator, pathTransformer);
 
         foreach (var subDir in Directory.GetDirectories(dir))
-            AddDirectory(doc, directory, subDir, itemIds, fileIdGenerator, pathTransformer);
+            AddDirectory(doc, directory, subDir, version, itemIds, fileIdGenerator, pathTransformer);
     }
 }

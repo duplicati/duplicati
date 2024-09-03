@@ -258,7 +258,7 @@ public static partial class Command
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
-            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles));
+            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles, version: rtcfg.ReleaseInfo.Version.ToString()));
 
             var msiArch = target.Arch switch
             {

@@ -1,7 +1,4 @@
-using System.IO.Compression;
-using System.Net;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Utility;
 
 namespace ReleaseBuilder.Build;
 
