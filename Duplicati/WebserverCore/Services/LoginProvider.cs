@@ -1,6 +1,7 @@
 using Duplicati.Library.Logging;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Middlewares;
 
 namespace Duplicati.WebserverCore.Services;
@@ -28,7 +29,7 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
     {
         var refreshToken = tokenProvider.ReadRefreshToken(refreshTokenString);
         var tokenFamily = await repo.GetTokenFamily(refreshToken.UserId, refreshToken.TokenFamilyId, ct)
-            ?? throw new UnauthorizedAccessException("Invalid refresh token");
+            ?? throw new UnauthorizedException("Invalid refresh token");
 
         // Allow slight drift to adjust for cases where the browser refreshes
         // just before the token is received, so the server is ahead
@@ -40,7 +41,7 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         {
             Log.WriteWarningMessage(LOGTAG, "TokenFamilyReuse", null, $"Invalid refresh token counter: {tokenFamily.Counter} != {refreshToken.Counter}");
             await repo.InvalidateTokenFamily(tokenFamily.UserId, tokenFamily.Id, ct);
-            throw new UnauthorizedAccessException("Token family re-use detected");
+            throw new UnauthorizedException("Token family re-use detected");
         }
 
         tokenFamily = await repo.IncrementTokenFamily(tokenFamily, ct);
@@ -54,7 +55,7 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
     public async Task<(string AccessToken, string? RefreshToken)> PerformLoginWithPassword(string password, bool issueRefreshToken, CancellationToken ct)
     {
         if (!connection.ApplicationSettings.VerifyWebserverPassword(password))
-            throw new UnauthorizedAccessException("Invalid password");
+            throw new UnauthorizedException("Invalid password");
 
         var userId = "webserver";
         if (!issueRefreshToken)

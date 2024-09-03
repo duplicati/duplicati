@@ -187,12 +187,6 @@ public partial class DuplicatiWebserver
                     else
                         await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userReportedHttpException.Message, Code = userReportedHttpException.StatusCode }));
                 }
-                else if (thrownException is UnauthorizedAccessException unauthorizedAccessException)
-                {
-                    context.Response.StatusCode = 401;
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = unauthorizedAccessException.Message, Code = 401 }));
-                }
                 else
                 {
                     context.Response.StatusCode = 500;
