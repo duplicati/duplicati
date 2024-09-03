@@ -177,8 +177,8 @@ public partial class DuplicatiWebserver
         {
             app.Run(async context =>
             {
-                var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-                if (exceptionHandlerPathFeature?.Error is UserReportedHttpException userReportedHttpException)
+                var thrownException = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
+                if (thrownException is UserReportedHttpException userReportedHttpException)
                 {
                     context.Response.StatusCode = userReportedHttpException.StatusCode;
                     context.Response.ContentType = userReportedHttpException.ContentType;
