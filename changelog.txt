@@ -1,3 +1,57 @@
+2024-09-03 - 2.0.9.106_canary_2024-09-03
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v8
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+The new tool can pause/resume a backup, run a backup, change the password and more:
+https://github.com/duplicati/duplicati/pull/5483
+
+# Encrypting database fields
+To reduce the risk of leaking encryption passphrases and credentials, 
+many fields in the `Duplicati-server.sqlite` file can now be encrypted with user supplied key.
+
+The following environment variables control the encryption options:
+- `SETTINGS_ENCRYPTION_KEY`: Provides the settings encryption key.
+- `DUPLICATI__REQUIRE_DB_ENCRYPTION_KEY=true`: Prevents starting with a key (also supported via `--require-db-encryption-key-true`).
+- `DUPLICATI__DISABLE_DB_ENCRYPTION=true`: Forces Duplicati to run without encryption (also supported via `--disable-db-encryption=true`).
+
+If you need to change the key, you can temporarily decrypt the database by starting the server with `--disable-db-encryption`.
+After starting, stop the instance again, change `SETTINGS_ENCRYPTION_KEY` to the new key and start again without the argument, to have it re-encrypted.
+
+To downgrade from this version, run once with `--disable-db-encryption`, and change the version number to 7, then install the previous version.
+
+**Note for users of 2.0.9.105:** The method for extracting an encryption key from the machine seriail number did not produce secure results. 
+This feature has now been removed, and will prevent you from upgrading. To upgrade from 2.0.9.105, start with `--disable-db-encryption`, then exit, then upgrade to 2.0.9.106+.
+Users from other versions than 2.0.9.105 will not have difficulties, and Docker users should not see any issues either.
+
+## Detailed list of changes:
+- Fixed console duration output including days
+- Added blacklisting of some settings encryption keys
+- Refactored the way databases are located to use shared code
+- Fixed translation consistency issues, thanks @luixxiul
+- Fixed missing commandline help on Windows
+- Added dift support for JWT expiration
+- Removed DeviceId as the source for settings encryption keys
+- Fixed an issue where an authentication issue was reported as a server error
+- Fixed MSI packages failing to upgrade
+- Re-added the `FORSERVICE=true` flag to MSI packages
+- Improved diganostics output from server-util
+
 2024-08-29 - 2.0.9.105_canary_2024-08-29
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.
