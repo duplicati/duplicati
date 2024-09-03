@@ -163,6 +163,10 @@ public class Connection
                     return CreateConnectionWithClient(client, accessToken);
                 }
             }
+            else if (!string.IsNullOrWhiteSpace(settings.ServerDatafolder))
+            {
+                Console.WriteLine($"No database found in {settings.ServerDatafolder}");
+            }
         }
         catch (Exception ex)
         {
