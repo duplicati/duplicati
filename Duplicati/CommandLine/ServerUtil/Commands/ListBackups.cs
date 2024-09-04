@@ -20,7 +20,8 @@ public static class ListBackups
             foreach (var bk in bks)
             {
                 Console.WriteLine($"{bk.ID}: {bk.Name}");
-                Console.WriteLine($"  {bk.Description}");
+                if (!string.IsNullOrEmpty(bk.Description))
+                    Console.WriteLine($"  {bk.Description}");
                 Console.WriteLine();
             }
         }));

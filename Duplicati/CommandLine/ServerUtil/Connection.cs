@@ -152,8 +152,8 @@ public class Connection
                             ?? throw new InvalidOperationException("Failed to deserialize JWTConfig")
                     ).CreateSigninToken("server-cli");
 
-                    var response = await client.PostAsync("auth/signin", JsonContent.Create(new { SigninToken = signinjwt, RememberMe = obtainRefreshToken }));
-                    var (accessToken, refreshToken) = ParseAuthResponse(response);
+                    var responseTask = client.PostAsync("auth/signin", JsonContent.Create(new { SigninToken = signinjwt, RememberMe = obtainRefreshToken }));
+                    var (accessToken, refreshToken) = await ParseAuthResponse(responseTask);
                     if (string.IsNullOrWhiteSpace(accessToken))
                         throw new InvalidOperationException("Failed to get access token");
 
@@ -218,9 +218,9 @@ public class Connection
     /// <param name="password">The password to use</param>
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
     /// <returns>The access and refresh tokens</returns>
-    private static async Task<(string? AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
+    private static Task<(string? AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
         => ParseAuthResponse(
-            await client.PostAsync($"auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
+            client.PostAsync($"auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
         );
 
     /// <summary>
@@ -229,8 +229,8 @@ public class Connection
     /// <param name="client">The HTTP client</param>
     /// <param name="refreshToken">The refresh token to use</param>
     /// <returns>The access and refresh tokens</returns>
-    private static async Task<(string? AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
-        => ParseAuthResponse(await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
+    private static Task<(string? AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
+        => ParseAuthResponse(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
         {
             Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } },
         }));
@@ -241,9 +241,10 @@ public class Connection
     /// </summary>
     /// <param name="response">The response to parse</param>
     /// <returns>The access and refresh tokens</returns>
-    private static (string? AccessToken, string? RefreshToken) ParseAuthResponse(HttpResponseMessage response)
+    private static async Task<(string? AccessToken, string? RefreshToken)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
     {
-        response.EnsureSuccessStatusCode();
+        var response = await responseTask;
+        await EnsureSuccessStatusCodeWithParsing(response);
         var json = JsonSerializer.Deserialize<Dictionary<string, string>>(response.Content.ReadAsStringAsync().Result)
             ?? throw new InvalidOperationException("Failed to parse response");
 
@@ -265,7 +266,7 @@ public class Connection
     {
         var query = string.IsNullOrWhiteSpace(duration) ? "" : $"?duration={Uri.EscapeDataString(duration)}";
         var response = await client.PostAsync($"serverstate/pause{query}", null);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
     }
 
     /// <summary>
@@ -275,7 +276,7 @@ public class Connection
     public async Task Resume()
     {
         var response = await client.PostAsync($"serverstate/resume", null);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
     }
 
     /// <summary>
@@ -285,7 +286,7 @@ public class Connection
     public async Task<IEnumerable<BackupEntry>> ListBackups()
     {
         var response = await client.GetAsync("backups");
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
 
         return (JsonSerializer.Deserialize<IEnumerable<ResponseBackupEntry>>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response"))
@@ -301,7 +302,7 @@ public class Connection
     public async Task<BackupEntry> GetBackup(string backupId)
     {
         var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}");
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
 
         return (JsonSerializer.Deserialize<ResponseBackupEntry>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response"))
@@ -316,7 +317,7 @@ public class Connection
     public async Task RunBackup(string backupId)
     {
         var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/run", null);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
     }
 
     /// <summary>
@@ -326,7 +327,7 @@ public class Connection
     public async Task<IEnumerable<TaskEntry>> ListTasks()
     {
         var response = await client.GetAsync("tasks");
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
 
         return JsonSerializer.Deserialize<IEnumerable<TaskEntry>>(await response.Content.ReadAsStringAsync())
             ?? throw new InvalidOperationException("Failed to parse response");
@@ -348,7 +349,7 @@ public class Connection
             _ => throw new ArgumentOutOfRangeException(nameof(level)),
         };
         var response = await client.PostAsync($"task/{Uri.EscapeDataString(taskId)}/{levelString}", null);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
     }
 
     /// <summary>
@@ -362,7 +363,7 @@ public class Connection
         {
             Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={settings.RefreshToken}" } }
         });
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
         (settings with { RefreshToken = null }).Save();
     }
 
@@ -374,7 +375,7 @@ public class Connection
     public async Task ChangePassword(string newPassword)
     {
         var response = await client.PutAsync("serversetting/server-passphrase", JsonContent.Create(newPassword));
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
     }
 
     /// <summary>
@@ -394,7 +395,7 @@ public class Connection
             direct = true
         });
         var response = await client.PostAsync("backups/import", payload);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithParsing(response);
 
         var json = JsonSerializer.Deserialize<Dictionary<string, string>>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response");
@@ -402,5 +403,44 @@ public class Connection
             throw new UserReportedException("Added backup but failed to get from response");
 
         return await GetBackup(id);
+    }
+
+    /// <summary>
+    /// The server error structure for JSON deserialization
+    /// </summary>
+    /// <param name="Error">The error message</param>
+    /// <param name="Code">The error code</param>
+    private sealed record ServerError(string Error, int Code);
+
+    /// <summary>
+    /// Ensures the response is successful or extracts an error message
+    /// </summary>
+    /// <param name="message">The message to check</param>
+    /// <returns>The task</returns>
+    private static async Task EnsureSuccessStatusCodeWithParsing(HttpResponseMessage? message)
+    {
+        if (message is null)
+            throw new UserReportedException("No response received");
+
+        if (message.IsSuccessStatusCode)
+            return;
+
+        var content = await message.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(content))
+            message.EnsureSuccessStatusCode();
+
+        ServerError? errMsg = null;
+        try
+        {
+            errMsg = JsonSerializer.Deserialize<ServerError>(content);
+        }
+        catch
+        {
+        }
+
+        if (errMsg is not null)
+            throw new UserReportedException($"Server error ({errMsg.Code}): {errMsg.Error}");
+
+        throw new UserReportedException($"Failed to parse response ({message.StatusCode}): {content}");
     }
 }

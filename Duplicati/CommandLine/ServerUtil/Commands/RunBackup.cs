@@ -17,12 +17,12 @@ public static class RunBackup
             var connection = await settings.GetConnection();
 
             var matchingBackup = (await connection.ListBackups())
-                .FirstOrDefault(b => string.Equals(b.Name == backup, StringComparison.OrdinalIgnoreCase) || string.Equals(b.ID, backup));
+                .FirstOrDefault(b => string.Equals(b.Name, backup, StringComparison.OrdinalIgnoreCase) || string.Equals(b.ID, backup));
 
             if (matchingBackup == null)
                 throw new UserReportedException("No backup found with supplied ID or name");
 
-            Console.WriteLine($"Running backup {matchingBackup.Name} ({matchingBackup.ID})");
+            Console.WriteLine($"Running backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
             await connection.RunBackup(matchingBackup.ID);
         }));
 }
