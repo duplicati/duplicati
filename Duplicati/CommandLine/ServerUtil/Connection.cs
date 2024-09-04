@@ -107,9 +107,14 @@ public class Connection
         Console.WriteLine($"Connecting to {settings.HostUrl}...");
 
         // Configure the client for requests
-        var client = new HttpClient()
+        var client = new HttpClient(new HttpClientHandler()
         {
-            BaseAddress = new Uri(settings.HostUrl + "api/v1/"),
+            ServerCertificateCustomValidationCallback = settings.Insecure
+               ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+               : null
+        })
+        {
+            BaseAddress = new Uri(settings.HostUrl + "api/v1/")
         };
 
         // If we already have a refresh token, try that first
