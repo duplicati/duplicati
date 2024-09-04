@@ -26,6 +26,11 @@ public class SettingsBinder : BinderBase<Settings>
     public static readonly Option<FileInfo?> settingsFileOption = new Option<FileInfo?>("--settings-file", description: "The settings file to use", getDefaultValue: () => null);
 
     /// <summary>
+    /// The settings file option.
+    /// </summary>
+    public static readonly Option<bool> insecureOption = new Option<bool>("--insecure", description: "Accepts any TLS/SSL certificate (dangerous)", getDefaultValue: () => false);
+
+    /// <summary>
     /// Adds global options to the root command.
     /// </summary>
     /// <param name="rootCommand">The root command to add the options to.</param>
@@ -36,6 +41,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(hostUrlOption);
         rootCommand.AddGlobalOption(serverDatafolderOption);
         rootCommand.AddGlobalOption(settingsFileOption);
+        rootCommand.AddGlobalOption(insecureOption);
         return rootCommand;
     }
 
@@ -49,7 +55,8 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(passwordOption),
             bindingContext.ParseResult.GetValueForOption(hostUrlOption),
             bindingContext.ParseResult.GetValueForOption(serverDatafolderOption)?.FullName,
-            bindingContext.ParseResult.GetValueForOption(settingsFileOption)?.FullName ?? "settings.json"
+            bindingContext.ParseResult.GetValueForOption(settingsFileOption)?.FullName ?? "settings.json",
+            bindingContext.ParseResult.GetValueForOption(insecureOption)
         );
 
     /// <summary>
