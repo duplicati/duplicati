@@ -68,9 +68,15 @@
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
 
     <!-- Remove old versions -->
-  <MajorUpgrade
-      DowngradeErrorMessage="A later version of [ProductName] is already installed"
-      AllowSameVersionUpgrades="yes" />
+    <InstallExecuteSequence>
+      <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
+      <RemoveExistingProducts Before="CostInitialize" />
+    </InstallExecuteSequence>
+
+    <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
+    <Upgrade Id="$(var.UpgradeCode)">
+      <UpgradeVersion Minimum="2.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
+    </Upgrade>
 
     <Icon Id="DuplicatiIcon.exe" SourceFile="$(var.HarvestPath)Duplicati.GUI.TrayIcon.exe" />
 
