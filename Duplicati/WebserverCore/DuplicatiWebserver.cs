@@ -1,6 +1,7 @@
-﻿using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -159,9 +160,13 @@ public partial class DuplicatiWebserver
                 .AddFilter("Duplicati", LogLevel.Warning);
         }
 
+        builder.Services.AddHttpClient();
+
         Configuration = builder.Configuration;
         App = builder.Build();
         Provider = App.Services;
+
+        HttpClientHelper.Configure(App.Services.GetRequiredService<IHttpClientFactory>());
 
 #if DEBUG
         App.UseSwagger();
