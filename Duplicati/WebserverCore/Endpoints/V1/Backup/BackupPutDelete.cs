@@ -14,24 +14,9 @@ public class BackupPutDelete : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        // TODO: Figure out why the JSON deserialization is not working here
-        // group.MapPut("/backup/{id}", ([FromServices] Connection connection, [FromRoute] string id, [FromBody] Dto.BackupAndScheduleInputDto input)
-        //     => ExecutePut(connection, input);
-
-        group.MapPut("/backup/{id}", async ([FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id) =>
-        {
-            var opts = new JsonSerializerOptions()
-            {
-                Converters = { new DayOfWeekStringEnumConverter() }
-            };
-
-            var input = (await JsonSerializer.DeserializeAsync<Dto.BackupAndScheduleInputDto>(httpContextAccessor.HttpContext!.Request.Body, opts))
-                ?? throw new BadRequestException("No data found in request body");
-
-            ExecutePut(GetBackup(connection, id), connection, input);
-        })
-        .RequireAuthorization();
-
+        group.MapPut("/backup/{id}", ([FromServices] Connection connection, [FromRoute] string id, [FromBody] Dto.BackupAndScheduleInputDto input)
+            => ExecutePut(GetBackup(connection, id), connection, input))
+            .RequireAuthorization();
 
         group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] ICaptchaProvider captchaProvider, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery(Name = "captcha-token")] string? captcha_token, [FromQuery(Name = "captcha-answer")] string? captcha_answer, [FromQuery] bool? force) =>
         {
@@ -41,7 +26,6 @@ public class BackupPutDelete : IEndpointV1
             return res;
         })
         .RequireAuthorization();
-
     }
 
     private static IBackup GetBackup(Connection connection, string id)
