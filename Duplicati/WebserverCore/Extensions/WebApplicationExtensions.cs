@@ -18,17 +18,13 @@ public static class WebApplicationExtensions
             typeof(WebApplicationExtensions).Assembly.DefinedTypes
                 .Where(t => t.ImplementedInterfaces.Contains(mapperInterfaceType))
                 .ToArray();
-        if (endpoints.Length == 0)
-        {
-            return application;
-        }
+
+        var group = application.MapGroup("/api/v1")
+            .AddEndpointFilter<LanguageFilter>()
+            .AddEndpointFilter<HostnameFilter>();
 
         foreach (var endpoint in endpoints)
         {
-            var group = application.MapGroup("/api/v1")
-                .AddEndpointFilter<LanguageFilter>()
-                .AddEndpointFilter<HostnameFilter>();
-
             var methodMap = endpoint.GetMethod(nameof(IEndpointV1.Map), BindingFlags.Static | BindingFlags.Public);
             methodMap!.Invoke(null, [group]);
         }

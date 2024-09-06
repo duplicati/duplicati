@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Server.Database;
@@ -9,6 +9,7 @@ using Duplicati.WebserverCore.Middlewares;
 using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.OpenApi.Models;
 
@@ -70,23 +71,12 @@ public partial class DuplicatiWebserver
             });
         });
 
-        //builder.Host.UseRESTHandlers();
-        builder.Services.ConfigureHttpJsonOptions(opt =>
+        builder.Services.Configure<JsonOptions>(opt =>
         {
             opt.SerializerOptions.PropertyNamingPolicy = null;
-            opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             opt.SerializerOptions.Converters.Add(new DayOfWeekStringEnumConverter());
+            opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
-
-        builder.Services.AddControllers()
-            // This app gets launched by a different assembly, so we need to tell it to look in this one
-            .AddApplicationPart(GetType().Assembly)
-            .AddJsonOptions(opt =>
-            {
-                opt.JsonSerializerOptions.PropertyNamingPolicy = null;
-                opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                opt.JsonSerializerOptions.Converters.Add(new DayOfWeekStringEnumConverter());
-            });
 
         // Generate JWTConfig with signing key if not present
         if (string.IsNullOrWhiteSpace(connection.ApplicationSettings.JWTConfig))
@@ -96,7 +86,6 @@ public partial class DuplicatiWebserver
             ?? throw new Exception("Failed to deserialize JWTConfig");
 
         builder.Services
-            .AddHostedService<ApplicationPartsLogger>()
 #if DEBUG
             .AddEndpointsApiExplorer()
             .AddSwaggerGen(c =>
@@ -115,6 +104,7 @@ public partial class DuplicatiWebserver
             .AddHttpContextAccessor()
             .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
             .AddSingleton(jwtConfig)
+            .AddAuthorization()
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -162,6 +152,9 @@ public partial class DuplicatiWebserver
         Configuration = builder.Configuration;
         App = builder.Build();
         Provider = App.Services;
+
+        App.UseAuthentication();
+        App.UseAuthorization();
 
 #if DEBUG
         App.UseSwagger();
