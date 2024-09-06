@@ -108,6 +108,16 @@ namespace Duplicati.Library.AutoUpdater
         public static UpdateInfo LastUpdateCheckVersion { get; private set; }
 
         /// <summary>
+        /// The default timeout in seconds for download operations
+        /// </summary>
+        private const int DOWNLOAD_OPERATION_TIMEOUT_SECONDS = 3600;
+
+        /// <summary>
+        /// The default timeout in seconds for fast get version metadata operations
+        /// </summary>
+        private const int SHORT_OPERATION_TIMEOUT_SECONDS = 30;
+
+        /// <summary>
         /// Performs static initialization of the update manager, populating the readonly fields of the manager
         /// </summary>
         static UpdaterManager()
@@ -325,8 +335,7 @@ namespace Duplicati.Library.AutoUpdater
                         request.Headers.Add("X-Install-ID", InstallID);
 
                         using var timeoutToken = new CancellationTokenSource();
-                        timeoutToken.CancelAfter(HttpContextSettings.ReadWriteTimeout);
-
+                        timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
                         HttpClientHelper.DefaultClient.DownloadFile(request, tmpfile, null, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
 
                         using (var fs = System.IO.File.OpenRead(tmpfile))
@@ -453,7 +462,7 @@ namespace Duplicati.Library.AutoUpdater
                             request.Headers.Add("X-Install-ID", InstallID);
 
                             using var timeoutToken = new CancellationTokenSource();
-                            timeoutToken.CancelAfter(HttpContextSettings.ReadWriteTimeout);
+                            timeoutToken.CancelAfter(TimeSpan.FromSeconds(DOWNLOAD_OPERATION_TIMEOUT_SECONDS));
 
                             HttpClientHelper.DefaultClient.DownloadFile(request, tempfile, cb, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
 

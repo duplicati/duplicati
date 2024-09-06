@@ -50,6 +50,12 @@ namespace Duplicati.Library.UsageReporter
         private const string UPLOAD_URL = "https://usage-reporter.duplicati.com/api/v1/report";
 
         /// <summary>
+        /// The default timeout in seconds for report uploads
+        /// </summary>
+        private const int UPLOAD_OPERATION_TIMEOUT_SECONDS = 60;
+
+
+        /// <summary>
         /// Runs the upload process
         /// </summary>
         /// <returns>A tuple with the completion task and the channel to use</returns>
@@ -83,7 +89,7 @@ namespace Duplicati.Library.UsageReporter
                                         request.Content = new StreamContent(fs);
 
                                         using var timeoutToken = new CancellationTokenSource();
-                                        timeoutToken.CancelAfter(HttpContextSettings.ReadWriteTimeout);
+                                        timeoutToken.CancelAfter(TimeSpan.FromSeconds(UPLOAD_OPERATION_TIMEOUT_SECONDS));
                                 
                                         var response = await HttpClientHelper.DefaultClient.UploadStream(request, timeoutToken.Token);
                                         rc = (int)response.StatusCode;
