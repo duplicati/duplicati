@@ -103,6 +103,8 @@ namespace Duplicati.GUI.TrayIcon
             {
                 try
                 {
+                    // Tell the hosted server it was started by the TrayIcon
+                    Server.Program.Origin = "Tray icon";
                     hosted = new HostedInstanceKeeper(_args);
                 }
                 catch (Server.SingleInstance.MultipleInstanceException)
@@ -113,8 +115,6 @@ namespace Duplicati.GUI.TrayIcon
                 // We have a hosted server, if this is the first run, 
                 // we should open the main page
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
-                // Tell the hosted server it was started by the TrayIcon
-                Server.Program.Origin = "Tray icon";
 
                 var cert = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
                 var scheme = "http";
