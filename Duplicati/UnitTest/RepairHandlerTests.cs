@@ -37,7 +37,7 @@ namespace Duplicati.UnitTest
         [SetUp]
         public void SetUp()
         {
-            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), new byte[] {0});
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), new byte[] { 0 });
         }
 
         [Test]
@@ -55,7 +55,7 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup([this.DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -125,7 +125,7 @@ namespace Duplicati.UnitTest
             // A subsequent backup should run without errors.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                var backupResults = c.Backup([this.DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -137,29 +137,29 @@ namespace Duplicati.UnitTest
         [TestCase("false")]
         public void RepairMissingIndexFiles(string noEncryption)
         {
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) {["no-encryption"] = noEncryption};
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["no-encryption"] = noEncryption };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                var backupResults = c.Backup([this.DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
-            string[] dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            var dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
             Assert.Greater(dindexFiles.Length, 0);
-            foreach (string f in dindexFiles)
+            foreach (var f in dindexFiles)
             {
                 File.Delete(f);
             }
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = c.Repair();
                 Assert.AreEqual(0, repairResults.Errors.Count());
                 Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
-            foreach (string file in dindexFiles)
+            foreach (var file in dindexFiles)
             {
                 Assert.IsTrue(File.Exists(Path.Combine(this.TARGETFOLDER, file)));
             }
@@ -170,20 +170,21 @@ namespace Duplicati.UnitTest
         public void RepairMissingIndexFilesBlocklist()
         {
             // See issue #3202
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            var options = new Dictionary<string, string>(this.TestOptions)
             {
-                ["blocksize"] = "1KB"
+                ["blocksize"] = "1KB",
+                ["no-encryption"] = "true"
             };
-            string filename = Path.Combine(this.DATAFOLDER, "file");
+            var filename = Path.Combine(this.DATAFOLDER, "file");
             using (var s = File.Create(filename))
             {
-                int size = 1024 * 32 + 1; // Blocklist size + 1
+                var size = 1024 * 32 + 1; // Blocklist size + 1
                 s.Write(new byte[size], 0, size);
             }
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
                 using (var s = File.OpenWrite(filename))
@@ -196,21 +197,21 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
-            string[] dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            var dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
             Assert.Greater(dindexFiles.Length, 0);
-            foreach (string f in dindexFiles)
+            foreach (var f in dindexFiles)
             {
                 File.Delete(f);
             }
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = c.Repair();
                 Assert.AreEqual(0, repairResults.Errors.Count());
                 Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
-            foreach (string file in dindexFiles)
+            foreach (var file in dindexFiles)
             {
                 Assert.IsTrue(File.Exists(Path.Combine(this.TARGETFOLDER, file)));
             }

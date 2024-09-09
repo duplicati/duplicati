@@ -21,7 +21,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
@@ -245,7 +244,7 @@ namespace Duplicati.Library.Main.Volumes
                             var n = new BlockEnumerable(m_compression, m_filename);
                             if (m_blocks == null)
                                 m_blocks = n;
-                                
+
                             return n;
                         }
                     }
@@ -346,16 +345,14 @@ namespace Duplicati.Library.Main.Volumes
                     {
                         get { return m_size; }
                     }
-                    
+
                     public Stream Data
                     {
                         get { return m_compression.OpenRead(m_filename); }
                     }
 
                     public IEnumerable<string> Blocklist
-                    {
-                        get { return VolumeReaderBase.ReadBlocklistVerified(m_compression, m_filename, m_hashsize, Hash, m_blockHashAlgorithm); }
-                    }
+                        => ReadBlocklistVerified(m_compression, m_filename, m_hashsize, Hash, m_blockHashAlgorithm);
                 }
 
                 private readonly ICompression m_compression;

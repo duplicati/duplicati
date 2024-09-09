@@ -427,8 +427,7 @@ namespace Duplicati.Library.Main.Operation
                                             // If the hash is wrong, recreate will download the dblock volume with the correct file
                                             try
                                             {
-                                                IEnumerable<string> blocklist = b.Blocklist;
-                                                restoredb.AddTempBlockListHash(b.Hash, blocklist, tr);
+                                                restoredb.AddTempBlockListHash(b.Hash, b.Blocklist, tr);
                                             }
                                             catch (System.IO.InvalidDataException e)
                                             {
