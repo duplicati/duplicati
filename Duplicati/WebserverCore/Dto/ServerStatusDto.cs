@@ -1,12 +1,11 @@
 using Duplicati.Server.Serialization;
-using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.WebserverCore.Dto;
 
 /// <summary>
 /// Represents the server status DTO.
 /// </summary>
-public sealed record ServerStatusDto : IServerStatus
+public sealed record ServerStatusDto
 {
     /// <summary>
     /// Gets or sets the active task.
@@ -22,6 +21,11 @@ public sealed record ServerStatusDto : IServerStatus
     /// Gets the IDs of the tasks in the scheduler queue.
     /// </summary>
     public required IList<Tuple<long, string>> SchedulerQueueIds { get; init; } = [];
+
+    /// <summary>
+    /// Gets or sets the proposed schedule.
+    /// </summary>
+    public required IList<Tuple<string, DateTime>> ProposedSchedule { get; init; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether there is a warning.

@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj" />
+    <ProjectReference Include="..\Library\RestAPI\Duplicati.Library.RestAPI.csproj" />
   </ItemGroup>
 		
 	<ItemGroup>

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Duplicati\WindowsService\WindowsService.csproj" />
+    <ProjectReference Include="../../../Duplicati/WindowsService/Duplicati.WindowsService.csproj" />
   </ItemGroup>
   
   <ItemGroup>

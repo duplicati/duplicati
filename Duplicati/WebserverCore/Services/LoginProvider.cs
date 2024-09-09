@@ -1,10 +1,12 @@
 using Duplicati.Library.Logging;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Exceptions;
+using Duplicati.WebserverCore.Middlewares;
 
 namespace Duplicati.WebserverCore.Services;
 
-public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvider, Connection connection) : ILoginProvider
+public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvider, JWTConfig jwtConfig, Connection connection) : ILoginProvider
 {
     private static readonly string LOGTAG = Log.LogTagFromType<LoginProvider>();
 
@@ -27,13 +29,19 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
     {
         var refreshToken = tokenProvider.ReadRefreshToken(refreshTokenString);
         var tokenFamily = await repo.GetTokenFamily(refreshToken.UserId, refreshToken.TokenFamilyId, ct)
-            ?? throw new UnauthorizedAccessException("Invalid refresh token");
+            ?? throw new UnauthorizedException("Invalid refresh token");
 
-        if (tokenFamily.Counter != refreshToken.Counter)
+        // Allow slight drift to adjust for cases where the browser refreshes
+        // just before the token is received, so the server is ahead
+        var counterDiff = tokenFamily.Counter - refreshToken.Counter;
+        var maxDrift = (DateTime.UtcNow - tokenFamily.LastUpdated).TotalSeconds > jwtConfig.MaxRefreshTokenDriftSeconds
+            ? 0
+            : jwtConfig.MaxRefreshTokenDrift;
+        if (counterDiff < 0 || counterDiff > maxDrift)
         {
             Log.WriteWarningMessage(LOGTAG, "TokenFamilyReuse", null, $"Invalid refresh token counter: {tokenFamily.Counter} != {refreshToken.Counter}");
             await repo.InvalidateTokenFamily(tokenFamily.UserId, tokenFamily.Id, ct);
-            throw new UnauthorizedAccessException("Token family re-use detected");
+            throw new UnauthorizedException("Token family re-use detected");
         }
 
         tokenFamily = await repo.IncrementTokenFamily(tokenFamily, ct);
@@ -47,7 +55,7 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
     public async Task<(string AccessToken, string? RefreshToken)> PerformLoginWithPassword(string password, bool issueRefreshToken, CancellationToken ct)
     {
         if (!connection.ApplicationSettings.VerifyWebserverPassword(password))
-            throw new UnauthorizedAccessException("Invalid password");
+            throw new UnauthorizedException("Invalid password");
 
         var userId = "webserver";
         if (!issueRefreshToken)

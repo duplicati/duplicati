@@ -82,7 +82,7 @@ public class SharpCompressZipArchive : IZipArchive
     private readonly CompressionType m_compressionType;
 
     /// <summary>
-    /// Constructs a new zip instance.
+    /// Constructs a new Zip instance.
     /// Access mode is specified by mode parameter.
     /// Note that stream would not be disposed by FileArchiveZip instance so
     /// you may reuse it and have to dispose it yourself.
@@ -266,7 +266,7 @@ public class SharpCompressZipArchive : IZipArchive
                     if (d.Count < 2)
                         throw;
 
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeader", ex2, "Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeader", ex2, "ZIP archive appears to have broken records, returning the {0} records that could be recovered", d.Count);
                 }
 
                 m_entryDict = d;

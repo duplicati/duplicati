@@ -1,13 +1,18 @@
-﻿using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
+using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Configuration.Json;
+using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
 
@@ -19,7 +24,15 @@ public partial class DuplicatiWebserver
 
     public IServiceProvider Provider { get; private set; }
 
-    public int Port => App.Configuration.GetValue("Port", 8200);
+    public int Port { get; private set; }
+
+    public Task TerminationTask { get; private set; } = Task.CompletedTask;
+
+#if DEBUG
+    private static readonly bool EnableSwagger = true;
+#else
+    private static readonly bool EnableSwagger = false;
+#endif
 
     /// <summary>
     /// The settings used for stating the server
@@ -40,7 +53,22 @@ public partial class DuplicatiWebserver
 
     public void InitWebServer(InitSettings settings, Connection connection)
     {
-        var builder = WebApplication.CreateBuilder();
+        Port = settings.Port;
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
+        {
+            ContentRootPath = settings.WebRoot,
+            WebRootPath = settings.WebRoot
+        });
+
+        // Remove all appsettings sources as they are not used, but they do install FS watchers by default
+        while (true)
+        {
+            var appCfgSource = builder.Configuration.Sources.FirstOrDefault(x => x is JsonConfigurationSource { ReloadOnChange: true });
+            if (appCfgSource == null)
+                break;
+            builder.Configuration.Sources.Remove(appCfgSource);
+        }
+
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Listen(settings.Interface, settings.Port, listenOptions =>
@@ -50,23 +78,12 @@ public partial class DuplicatiWebserver
             });
         });
 
-        //builder.Host.UseRESTHandlers();
-        builder.Services.ConfigureHttpJsonOptions(opt =>
+        builder.Services.Configure<JsonOptions>(opt =>
         {
             opt.SerializerOptions.PropertyNamingPolicy = null;
-            opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             opt.SerializerOptions.Converters.Add(new DayOfWeekStringEnumConverter());
+            opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
-
-        builder.Services.AddControllers()
-            // This app gets launched by a different assembly, so we need to tell it to look in this one
-            .AddApplicationPart(GetType().Assembly)
-            .AddJsonOptions(opt =>
-            {
-                opt.JsonSerializerOptions.PropertyNamingPolicy = null;
-                opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                opt.JsonSerializerOptions.Converters.Add(new DayOfWeekStringEnumConverter());
-            });
 
         // Generate JWTConfig with signing key if not present
         if (string.IsNullOrWhiteSpace(connection.ApplicationSettings.JWTConfig))
@@ -75,17 +92,38 @@ public partial class DuplicatiWebserver
         var jwtConfig = JsonSerializer.Deserialize<JWTConfig>(connection.ApplicationSettings.JWTConfig)
             ?? throw new Exception("Failed to deserialize JWTConfig");
 
+        if (EnableSwagger)
+        {
+            // Swagger is picking up JSON settings from controllers, even though we do not use controllers
+            builder.Services.AddControllers()
+                .AddJsonOptions(opt =>
+                {
+                    opt.JsonSerializerOptions.PropertyNamingPolicy = null;
+                    opt.JsonSerializerOptions.Converters.Add(new DayOfWeekStringEnumConverter());
+                    opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
+
+            builder.Services
+                .AddEndpointsApiExplorer()
+                .AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Duplicati API Documentation", Version = "v1" });
+                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                    {
+                        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                        Name = "Authorization",
+                        In = ParameterLocation.Header,
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer"
+                    });
+                });
+        }
+
         builder.Services
-            .AddHostedService<ApplicationPartsLogger>()
-            .AddEndpointsApiExplorer()
-            .AddSwaggerGen()
             .AddHttpContextAccessor()
-            .AddHostFiltering(options =>
-            {
-                if (!settings.AllowedHostnames.Any(x => x == "*"))
-                    options.AllowedHosts = settings.AllowedHostnames.ToArray();
-            })
+            .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
             .AddSingleton(jwtConfig)
+            .AddAuthorization()
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -130,9 +168,25 @@ public partial class DuplicatiWebserver
                 .AddFilter("Duplicati", LogLevel.Warning);
         }
 
+        builder.Services.AddHttpClient();
+
         Configuration = builder.Configuration;
         App = builder.Build();
         Provider = App.Services;
+
+        HttpClientHelper.Configure(App.Services.GetRequiredService<IHttpClientFactory>());
+
+        App.UseAuthentication();
+        App.UseAuthorization();
+
+        if (EnableSwagger)
+        {
+            App.UseSwagger();
+            App.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
+            });
+        }
 
         App.UseDefaultStaticFiles(settings.WebRoot);
 
@@ -140,8 +194,8 @@ public partial class DuplicatiWebserver
         {
             app.Run(async context =>
             {
-                var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-                if (exceptionHandlerPathFeature?.Error is UserReportedHttpException userReportedHttpException)
+                var thrownException = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
+                if (thrownException is UserReportedHttpException userReportedHttpException)
                 {
                     context.Response.StatusCode = userReportedHttpException.StatusCode;
                     context.Response.ContentType = userReportedHttpException.ContentType;
@@ -162,14 +216,10 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
-        var allowedOrigins = settings.AllowedHostnames.Any(x => x == "*")
-            ? []
-            : settings.AllowedHostnames.Select(x => settings.Certificate == null ? $"http://{x}:{settings.Port}" : $"https://{x}:{settings.Port}");
-
         App.AddEndpoints()
-            .UseNotifications(allowedOrigins, "/notifications");
+            .UseNotifications("/notifications");
 
-        return App.RunAsync();
+        return TerminationTask = App.RunAsync();
     }
 
     public async Task Stop()

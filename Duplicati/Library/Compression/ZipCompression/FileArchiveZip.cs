@@ -31,13 +31,13 @@ using SharpCompress.Common;
 namespace Duplicati.Library.Compression.ZipCompression
 {
     /// <summary>
-    /// An abstraction of a zip archive as a FileArchive, based on either SharpCompress or System.IO.Compression.
+    /// An abstraction of a ZIP archive as a FileArchive, based on either SharpCompress or System.IO.Compression.
     /// Please note, duplicati does not require both Read &amp; Write access at the same time so this has not been implemented.
     /// </summary>
     public class FileArchiveZip : ICompression
     {
         /// <summary>
-        /// The compression type used by the zip archive
+        /// The compression type used by the ZIP archive
         /// </summary>
         public enum CompressionLibrary
         {
@@ -75,7 +75,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// </summary>
         private const string COMPRESSION_METHOD_OPTION = "zip-compression-method";
         /// <summary>
-        /// The commandline option for toggling the zip64 support
+        /// The commandline option for toggling the ZIP64 support
         /// </summary>
         private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
         /// <summary>
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         private const CompressionType DEFAULT_COMPRESSION_METHOD = CompressionType.Deflate;
 
         /// <summary>
-        /// The default setting for the zip64 support
+        /// The default setting for the ZIP64 support
         /// </summary>
         private const bool DEFAULT_ZIP64 = false;
 
@@ -109,7 +109,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         public FileArchiveZip() { m_archive = null!; }
 
         /// <summary>
-        /// Constructs a new zip instance.
+        /// Constructs a new Zip instance.
         /// Access mode is specified by mode parameter.
         /// Note that stream would not be disposed by FileArchiveZip instance so
         /// you may reuse it and have to dispose it yourself.
@@ -160,7 +160,7 @@ namespace Duplicati.Library.Compression.ZipCompression
                 if (mode == ArchiveMode.Write)
                     throw;
 
-                Log.WriteWarningMessage(LOGTAG, "system-io-compression-error", ex, "Failed to create built-in zip archive, falling back to SharpCompress");
+                Log.WriteWarningMessage(LOGTAG, "system-io-compression-error", ex, "Failed to create built-in ZIP archive, falling back to SharpCompress");
             }
 
             m_archive = archive ?? new SharpCompressZipArchive(stream, mode, parsedOptions);

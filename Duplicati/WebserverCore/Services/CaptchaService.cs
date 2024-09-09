@@ -12,6 +12,21 @@ public class CaptchaService : ICaptchaProvider
 {
     private readonly object m_lock = new();
     private readonly Dictionary<string, CaptchaEntry> m_captchas = [];
+    private readonly bool m_disableVisualCaptcha;
+
+    public CaptchaService(ISettingsService settings)
+    {
+        m_disableVisualCaptcha = settings.GetSettings().DisableVisualCaptcha;
+    }
+
+    /// <summary>
+    /// List of possible system fonts, ordered by preference
+    /// </summary>
+    private static readonly Dictionary<string, int> FontNamePreference = new string[] {
+        "Arial", "Verdana", "FreeSans", "Tahoma", "Helvetica", "Times New Roman", "Courier New", "Andale Mono"
+    }
+    .Select((x, i) => new { Key = x, Value = i })
+    .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
 
     private class CaptchaEntry
     {
@@ -29,7 +44,7 @@ public class CaptchaService : ICaptchaProvider
         }
     }
 
-    public string CreateCaptcha(string target)
+    public (string Token, string? Answer) CreateCaptcha(string target)
     {
         var answer = CaptchaUtil.CreateRandomAnswer(minlength: 6, maxlength: 6);
         var nonce = Guid.NewGuid().ToString();
@@ -56,11 +71,14 @@ public class CaptchaService : ICaptchaProvider
             m_captchas[token] = new CaptchaEntry(answer, target);
         }
 
-        return token;
+        return (token, m_disableVisualCaptcha ? answer : null);
     }
 
     public byte[] GetCaptchaImage(string token)
     {
+        if (m_disableVisualCaptcha)
+            throw new NotFoundException("No such entry");
+
         string? answer = null;
         lock (m_lock)
         {
@@ -93,6 +111,8 @@ public class CaptchaService : ICaptchaProvider
         }
     }
 
+    public bool VisualCaptchaDisabled => m_disableVisualCaptcha;
+
 
     public static class CaptchaUtil
     {
@@ -104,12 +124,10 @@ public class CaptchaService : ICaptchaProvider
         /// <summary>
         /// Approximate the size in pixels of text drawn at the given fontsize
         /// </summary>
-        private static int ApproxTextWidth(string text, string fontFamily, float fontSize)
-        {
-            var font = SystemFonts.CreateFont(fontFamily, fontSize);
-            var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font) { KerningMode = KerningMode.Standard });
-            return (int)textSize.Width;
-        }
+        /// <param name="text">The text to measure</param>
+        /// <param name="font">The font to use</param>
+        private static int ApproxTextWidth(string text, Font font)
+            => (int)TextMeasurer.MeasureSize(text, new TextOptions(font) { KerningMode = KerningMode.Standard }).Width;
 
         /// <summary>
         /// Creates a random answer.
@@ -138,8 +156,18 @@ public class CaptchaService : ICaptchaProvider
         /// <param name="fontsize">The size of the font used to create the captcha, in pixels.</param>
         public static Image<Rgba32> CreateCaptcha(string answer, Size size = default(Size), float fontsize = 40)
         {
-            var fontfamily = "Arial";
-            var text_width = ApproxTextWidth(answer, fontfamily, fontsize);
+            var fontFamily = SystemFonts.Collection.Families.OrderBy(x =>
+            {
+                if (FontNamePreference.TryGetValue(x.Name, out var val))
+                    return val;
+                return int.MaxValue;
+            }).FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(fontFamily.Name))
+                throw new Exception("No usable font found");
+
+            var font = fontFamily.CreateFont(fontsize);
+            var text_width = ApproxTextWidth(answer, font);
             if (size.Width == 0 || size.Height == 0)
                 size = new Size((int)(text_width * 1.2), (int)(fontsize * 1.2));
 
@@ -149,7 +177,6 @@ public class CaptchaService : ICaptchaProvider
             var stray_y = size.Height / 4;
             var ans_stray_x = (int)fontsize / 3;
             var ans_stray_y = size.Height / 6;
-            var font = SystemFonts.CreateFont(fontfamily, fontsize);
 
             image.Mutate(ctx =>
             {
@@ -158,7 +185,7 @@ public class CaptchaService : ICaptchaProvider
                 // Apply a background string to make it hard to do OCR
                 foreach (var color in new[] { Color.Yellow, Color.LightGreen, Color.GreenYellow })
                 {
-                    var backgroundFont = SystemFonts.CreateFont(fontfamily, fontsize);
+                    var backgroundFont = font;
                     ctx.DrawText(CreateRandomAnswer(minlength: answer.Length, maxlength: answer.Length), backgroundFont, color, new PointF(rnd.Next(-stray_x, stray_x), rnd.Next(-stray_y, stray_y)));
                 }
 

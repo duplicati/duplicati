@@ -44,7 +44,4 @@ Command: {1} {2}", message, executable, arguments); }
         public static string NextUsnZero { get { return LC.L(@"Next USN is zero"); } }
         public static string ConfigHashChanged { get { return LC.L(@"Backup configuration changed"); } }
     }
-    internal static class WinNativeMethod {
-        public static string MissingBackupPrivilegeError { get { return LC.L(@"Calling process does not have the backup privilege"); } }
-    }
 }

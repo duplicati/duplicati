@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using Duplicati.Library.Interface;
 using Duplicati.Server;
@@ -61,6 +62,7 @@ namespace Duplicati.GUI.TrayIcon
         [STAThread]
         public static int Main(string[] _args)
         {
+            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.TrayIcon);
             List<string> args = new List<string>(_args);
             Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -101,6 +103,8 @@ namespace Duplicati.GUI.TrayIcon
             {
                 try
                 {
+                    // Tell the hosted server it was started by the TrayIcon
+                    Server.Program.Origin = "Tray icon";
                     hosted = new HostedInstanceKeeper(_args);
                 }
                 catch (Server.SingleInstance.MultipleInstanceException)
@@ -111,8 +115,6 @@ namespace Duplicati.GUI.TrayIcon
                 // We have a hosted server, if this is the first run, 
                 // we should open the main page
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
-                // Tell the hosted server it was started by the TrayIcon
-                Server.Program.Origin = "Tray icon";
 
                 var cert = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
                 var scheme = "http";
@@ -128,23 +130,26 @@ namespace Duplicati.GUI.TrayIcon
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
-                databaseConnection = Server.Program.GetDatabaseConnection(options);
-
-                if (databaseConnection != null)
+                if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(options), Server.Program.SERVER_DATABASE_FILENAME)))
                 {
-                    disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+                    databaseConnection = Server.Program.GetDatabaseConnection(options, true);
 
-                    var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
-                    var scheme = "http";
-
-                    if (cert != null && cert.HasPrivateKey)
-                        scheme = "https";
-
-                    serverURL = new UriBuilder(serverURL)
+                    if (databaseConnection != null)
                     {
-                        Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
-                        Scheme = scheme
-                    }.Uri;
+                        disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+
+                        var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
+                        var scheme = "http";
+
+                        if (cert != null && cert.HasPrivateKey)
+                            scheme = "https";
+
+                        serverURL = new UriBuilder(serverURL)
+                        {
+                            Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
+                            Scheme = scheme
+                        }.Uri;
+                    }
                 }
             }
 
@@ -154,8 +159,22 @@ namespace Duplicati.GUI.TrayIcon
             if (options.TryGetValue(WebServerLoader.OPTION_WEBSERVICE_PASSWORD, out pwd))
                 password = pwd;
 
+            // Let the user specify the port, if they are not providing a hosturl
+            if (!options.ContainsKey(HOSTURL_OPTION) && options.TryGetValue(WebServerLoader.OPTION_PORT, out var portString) && int.TryParse(portString, out var port))
+                serverURL = new UriBuilder(serverURL) { Port = port }.Uri;
+
             if (options.TryGetValue(HOSTURL_OPTION, out var url))
                 serverURL = new Uri(url);
+
+            if (string.IsNullOrWhiteSpace(password) && databaseConnection == null && hosted == null)
+            {
+                Console.WriteLine($@"
+When running the TrayIcon without a hosted server, you must provide the server password via the option --{WebServerLoader.OPTION_WEBSERVICE_PASSWORD}=<password>.
+If the TrayIcon instance has read access to the server database, you can also or use the option --{READCONFIGFROMDB_OPTION}, possibly with --server-datafolder=<path>.
+
+No password provided, unable to connect to server, exiting");
+                return 1;
+            }
 
             StartTray(_args, options, hosted, password);
 

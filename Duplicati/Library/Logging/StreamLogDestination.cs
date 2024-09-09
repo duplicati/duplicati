@@ -20,8 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.Logging
 {
@@ -72,7 +70,7 @@ namespace Duplicati.Library.Logging
 
             m_stream.WriteLine(entry.AsString(true));
         }
-            
+
         #endregion
 
         #region IDisposable Members

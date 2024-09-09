@@ -386,20 +386,20 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(baseDateTimeUTC.AddSeconds(-1), Utility.NormalizeDateTime(baseDateTime.AddMilliseconds(-1)));
             Assert.AreEqual(baseDateTimeUTC.AddSeconds(1), Utility.NormalizeDateTime(baseDateTime.AddSeconds(1.9)));
         }
-        
+
         [Test]
         [Category("Utility")]
         public void NormalizeDateTimeToEpochSeconds()
         {
             DateTime baseDateTime = new DateTime(2000, 1, 2, 3, 4, 5);
-            long epochSeconds = (long) (baseDateTime.ToUniversalTime() - Utility.EPOCH).TotalSeconds;
+            long epochSeconds = (long)(baseDateTime.ToUniversalTime() - Utility.EPOCH).TotalSeconds;
             Assert.AreEqual(epochSeconds, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(1)));
             Assert.AreEqual(epochSeconds, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(500)));
             Assert.AreEqual(epochSeconds, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(999)));
             Assert.AreEqual(epochSeconds - 1, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddMilliseconds(-1)));
             Assert.AreEqual(epochSeconds + 1, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddSeconds(1.9)));
         }
-        
+
         [Test]
         [Category("Utility")]
         public void ParseBool()
@@ -441,7 +441,7 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void ThrottledStreamRead()
         {
-            byte[] sourceBuffer = {0x10, 0x20, 0x30, 0x40, 0x50};
+            byte[] sourceBuffer = { 0x10, 0x20, 0x30, 0x40, 0x50 };
             byte[] destinationBuffer = new byte[sourceBuffer.Length + 1];
             const int offset = 1;
             const int bytesToRead = 3;
@@ -473,8 +473,8 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void ThrottledStreamWrite()
         {
-            byte[] initialBuffer = {0x10, 0x20, 0x30, 0x40, 0x50};
-            byte[] source = {0x60, 0x70, 0x80, 0x90};
+            byte[] initialBuffer = { 0x10, 0x20, 0x30, 0x40, 0x50 };
+            byte[] source = { 0x60, 0x70, 0x80, 0x90 };
             const int offset = 1;
             const int bytesToWrite = 3;
 
@@ -509,7 +509,7 @@ namespace Duplicati.UnitTest
             TimeSpan baseDelay = TimeSpan.FromSeconds(1);
 
             int[] testValues = { 1, 2, 11, 12, int.MaxValue };
-            double[] expect =  { 1, 1,  1,  1,            1 };
+            double[] expect = { 1, 1, 1, 1, 1 };
 
             for (int i = 0; i < testValues.Length; i++)
                 Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], false));
@@ -522,8 +522,8 @@ namespace Duplicati.UnitTest
             // test boundary values
             TimeSpan baseDelay = TimeSpan.FromSeconds(1);
 
-            int[] testValues = { 1, 2,   11,   12, int.MaxValue };
-            double[] expect =  { 1, 2, 1024, 1024,         1024 };
+            int[] testValues = { 1, 2, 11, 12, int.MaxValue };
+            double[] expect = { 1, 2, 1024, 1024, 1024 };
 
             for (int i = 0; i < testValues.Length; i++)
                 Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], true));

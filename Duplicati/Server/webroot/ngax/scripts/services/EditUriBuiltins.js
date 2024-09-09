@@ -997,7 +997,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['openstack'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('Username')) &&
-            EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Bucket Name'));
+            EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Bucket name'));
 
         if (res && (scope['openstack_server'] || '').trim().length == 0 && (scope['openstack_server_custom'] || '').trim().length == 0)
             res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must select or fill in the AuthURI'));
@@ -1013,7 +1013,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                 res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant (aka project) name to use v3 API'));
 
             if (res && (scope.openstack_apikey || '').trim().length != 0)
-                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API Key are not supported in v3 keystone API.'));
+                res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Openstack API key are not supported in v3 keystone API'));
 
 
         } else {
@@ -1021,14 +1021,14 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             if (((scope.openstack_apikey) || '').trim().length == 0) {
 
                 if (res && (scope.Password || '').trim().length == 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API key'));
 
                 if (res && ((scope.openstack_tenantname) || '').trim().length == 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API Key'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter a tenant name if you do not provide an API key'));
 
             } else {
                 if (res && (scope.Password || '').trim().length != 0)
-                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API Key, not both'));
+                    res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('You must enter either a password or an API key, not both'));
             }
         }
         if (res)
@@ -1037,7 +1037,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['s3'] = function (scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket name')) &&
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('AWS Access ID')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('AWS Access Key'));
 
@@ -1049,7 +1049,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
             function checkUsernamePrefix() {
                 if (scope.Server.toLowerCase().indexOf(scope.Username.toLowerCase()) != 0 && (scope.s3_bucket_check_name != scope.Server || scope.s3_bucket_check_user != scope.Username)) {
-                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('The bucket name should start with your username, prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
+                    DialogService.dialog(gettextCatalog.getString('Adjust bucket name?'), gettextCatalog.getString('To prevent bucket naming conflicts, it is recommended to prepend your account ID to the bucket name. Prepend automatically?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function (ix) {
                         if (ix == 2)
                             scope.Server = scope.Username.toLowerCase() + '-' + scope.Server;
                         if (ix == 1 || ix == 2) {
@@ -1083,7 +1083,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['b2'] = function (scope, continuation) {
         var res =
-            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name')) &&
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket name')) &&
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('B2 Cloud Storage Account ID')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('B2 Cloud Storage Application Key'));
 
@@ -1097,7 +1097,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                     value: bucketname[ix].charCodeAt(),
                     pos: ix,
                     character: bucketname[ix],
-                    fieldname: gettextCatalog.getString('Bucket Name')
+                    fieldname: gettextCatalog.getString('Bucket name')
                 }));
                 res = false;
             }
@@ -1160,13 +1160,13 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
 		if(res && scope['storj_auth_method'] == 'Access grant'){
 			res = EditUriBackendConfig.require_field(scope, 'storj_shared_access', gettextCatalog.getString('storj_shared_access')) &&
-				  EditUriBackendConfig.require_field(scope, 'storj_bucket', gettextCatalog.getString('Bucket'));
+				  EditUriBackendConfig.require_field(scope, 'storj_bucket', gettextCatalog.getString('Bucket name'));
 		}
 		
 		if(res && scope['storj_auth_method'] == 'API key'){
 			res = EditUriBackendConfig.require_field(scope, 'storj_api_key', gettextCatalog.getString('API key')) &&
 				  EditUriBackendConfig.require_field(scope, 'storj_secret', gettextCatalog.getString('Encryption passphrase')) &&
-				  EditUriBackendConfig.require_field(scope, 'storj_bucket', gettextCatalog.getString('Bucket'));
+				  EditUriBackendConfig.require_field(scope, 'storj_bucket', gettextCatalog.getString('Bucket name'));
 		}
 		
 		if(res && scope['storj_auth_method'] == 'API key' && !scope['storj_satellite']){
@@ -1223,7 +1223,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         var res =
             EditUriBackendConfig.require_field(scope, 'Username', gettextCatalog.getString('IDrive e2 Access Key ID')) &&
             EditUriBackendConfig.require_field(scope, 'Password', gettextCatalog.getString('IDrive e2 Access Key Secret')) &&
-            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket Name'));
+            EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Bucket name'));
 
         if (res) {
             var re = new RegExp('[^A-Za-z0-9-]');
@@ -1235,7 +1235,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                     value: bucketname[ix].charCodeAt(),
                     pos: ix,
                     character: bucketname[ix],
-                    fieldname: gettextCatalog.getString('Bucket Name')
+                    fieldname: gettextCatalog.getString('Bucket name')
                 }));
                 res = false;
             }

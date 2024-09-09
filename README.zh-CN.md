@@ -1,6 +1,6 @@
 # Duplicati
 
-[English](./README.md) | **中文**
+[English](./README.md) | **中文** | [日本語](./README.ja-JP.md)
 
 [中文官网](https://duplicati.cn)
 
@@ -40,7 +40,7 @@ Duplicati 的最新版本是 Duplicati 2.0 发布的测试版。
 测试版将自动通知您更新，并允许您通过单击（或在终端中的命令）升级。
 要获取更多[前沿版本，查看最新发布](https://github.com/duplicati/duplicati/releases)或在 UI 或命令行中选择另一个更新渠道。
 
-所有发布版本都使用公钥 [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D) 进行 GPG 签名。最新的签名文件和最新的 ASCII 签名文件也可以在 [Duplicati 下载页面](https://github.com/duplicati/duplicati/releases) 获取。
+所有发布版本都使用公钥 [3DAC703D](https://keys.openpgp.org/search?q=0xC20E90473DAC703D) 进行 GPG 签名。最新的签名文件和最新的 ASCII 签名文件也可以在 [Duplicati 下载页面](https://github.com/duplicati/duplicati/releases) 获取。
 
 支持
 =======
@@ -116,4 +116,3 @@ https://www.transifex.com/duplicati/duplicati/dashboard/
 <a href="https://opencollective.com/duplicati/sponsor/7/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/7/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/8/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/8/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/9/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/9/avatar.svg"></a>
-

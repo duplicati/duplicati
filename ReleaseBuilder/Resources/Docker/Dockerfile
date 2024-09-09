@@ -13,8 +13,11 @@ ARG VERSION=
 ENV DUPLICATI_CHANNEL=${CHANNEL}
 ENV DUPLICATI_VERSION=${VERSION}
 
+ENV DUPLICATI__WEBSERVICE_PORT=8200
+ENV DUPLICATI__WEBSERVICE_INTERFACE=any
+
 ARG TARGETARCH
 COPY ./${TARGETARCH} /opt/duplicati
 
 EXPOSE 8200
-CMD ["/opt/duplicati/duplicati-server", "--webservice-port=8200", "--webservice-interface=any"]
+CMD ["/opt/duplicati/duplicati-server"]

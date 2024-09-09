@@ -106,7 +106,7 @@ namespace Duplicati.UnitTest
             }
 
             byte[] jsonByteArray;
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
+            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, true))
             {
                 jsonByteArray = BackupImportExportHandler.ExportToJSON(Program.DataConnection, backup, null);
             }
@@ -133,19 +133,19 @@ namespace Duplicati.UnitTest
             serviceCollection.AddSingleton(new EventPollNotify());
             FIXMEGlobal.Provider = new DefaultServiceProviderFactory().CreateServiceProvider(serviceCollection);
 
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions))
+            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, true))
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 File.WriteAllBytes(unencryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
-                BackupImportExportHandler.ImportBackup(unencryptedWithoutMetadata, false, () => null, advancedOptions);
+                BackupImportExportHandler.ImportBackup(Program.DataConnection, unencryptedWithoutMetadata, false, () => null);
                 Assert.AreEqual(1, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Program.DataConnection.Backups[0].Metadata.Count);
 
                 // Unencrypted file, import metadata.
                 string unencryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 File.WriteAllBytes(unencryptedWithMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
-                BackupImportExportHandler.ImportBackup(unencryptedWithMetadata, true, () => null, advancedOptions);
+                BackupImportExportHandler.ImportBackup(Program.DataConnection, unencryptedWithMetadata, true, () => null);
                 Assert.AreEqual(2, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[1].Metadata.Count);
 
@@ -153,19 +153,19 @@ namespace Duplicati.UnitTest
                 string encryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 string passphrase = "abcde";
                 File.WriteAllBytes(encryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
-                BackupImportExportHandler.ImportBackup(encryptedWithoutMetadata, false, () => passphrase, advancedOptions);
+                BackupImportExportHandler.ImportBackup(Program.DataConnection, encryptedWithoutMetadata, false, () => passphrase);
                 Assert.AreEqual(3, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(0, Program.DataConnection.Backups[2].Metadata.Count);
 
                 // Encrypted file, import metadata.
                 string encryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 File.WriteAllBytes(encryptedWithMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
-                BackupImportExportHandler.ImportBackup(encryptedWithMetadata, true, () => passphrase, advancedOptions);
+                BackupImportExportHandler.ImportBackup(Program.DataConnection, encryptedWithMetadata, true, () => passphrase);
                 Assert.AreEqual(4, Program.DataConnection.Backups.Length);
                 Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[3].Metadata.Count);
 
                 // Encrypted file, incorrect passphrase.
-                Assert.Throws(Is.InstanceOf<Exception>(), () => BackupImportExportHandler.ImportBackup(encryptedWithMetadata, true, () => passphrase + " ", advancedOptions));
+                Assert.Throws(Is.InstanceOf<Exception>(), () => BackupImportExportHandler.ImportBackup(Program.DataConnection, encryptedWithMetadata, true, () => passphrase + " "));
             }
         }
     }

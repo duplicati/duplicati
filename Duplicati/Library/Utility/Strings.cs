@@ -28,7 +28,7 @@ namespace Duplicati.Library.Utility.Strings {
     }
     internal static class SslCertificateValidator {
         public static string InvalidCallSequence { get { return LC.L(@"The SSL certificate validator was called in an incorrect order"); } }
-        public static string VerifyCertificateException(System.Net.Security.SslPolicyErrors error, string hash) { return LC.L(@"The server certificate had the error {0} and the hash {1}{2}If you trust this certificate, use the commandline option --accept-specified-ssl-hash={1} to accept the server certificate anyway.{2}You can also attempt to import the server certificate into your operating systems trust pool.", error, hash, Environment.NewLine); }
+        public static string VerifyCertificateException(System.Net.Security.SslPolicyErrors error, string hash) { return LC.L(@"The server certificate had the error {0} and the hash {1}{2}If you trust this certificate, use the commandline option --{3}={1} to accept the server certificate anyway.{2}You can also attempt to import the server certificate into your operating systems trust pool.", error, hash, Environment.NewLine, "accept-specified-ssl-hash"); }
         public static string VerifyCertificateHashError(System.Exception exception, System.Net.Security.SslPolicyErrors error) { return LC.L(@"Failed while validating certificate hash, error message: {0}, SSL error name: {1}", exception, error); }
     }
     internal static class TempFolder {

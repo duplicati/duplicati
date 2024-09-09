@@ -36,7 +36,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             'Backup_PreBackupVerify': gettextCatalog.getString('Verifying backend data …'),
             'Backup_PostBackupTest': gettextCatalog.getString('Verifying remote data …'),
             'Backup_PreviousBackupFinalize': gettextCatalog.getString('Completing previous backup …'),
-            'Backup_ProcessingFiles': null,
+            'Backup_ProcessingFiles': gettextCatalog.getString('Processing files to backup …'),
             'Backup_Finalize': gettextCatalog.getString('Completing backup …'),
             'Backup_WaitForUpload': gettextCatalog.getString('Waiting for upload to finish …'),
             'Backup_Delete': gettextCatalog.getString('Deleting unwanted files …'),
@@ -207,9 +207,11 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
         websocketReconnectTimer = window.setInterval(function () {
             state.connectionAttemptTimer = retryAt - new Date();
-            if (state.connectionAttemptTimer <= 0)
+            if (state.connectionAttemptTimer <= 0) {
+                window.clearInterval(websocketReconnectTimer);
+                websocketReconnectTimer = null;
                 m();
-            else {
+            } else {
                 $rootScope.$broadcast('serverstatechanged');
             }
         }, 1000);
@@ -241,7 +243,6 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             } else {
                 state[varname] = data[dataname];
             }
-            console.log("state changed: ", "serverstatechanged." + varname)
             $rootScope.$broadcast('serverstatechanged.' + varname, state[varname]);
             return true;
         }
@@ -318,7 +319,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             updateServerState();
-        } else if (state.failedAuthAttempts > 2 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) { 
+        } else if (state.failedAuthAttempts > 1 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) { 
             state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
@@ -340,8 +341,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     };
 
     const reconnect_websocket = function () {
-        window.clearInterval(websocketReconnectTimer);
-        const w = new WebSocket(`ws://${window.location.host}/notifications?token=${AppService.access_token}`)
+        const websocketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const w = new WebSocket(`${websocketProtocol}//${window.location.host}/notifications?token=${AppService.access_token}`);
         w.addEventListener("message", (event) => {
             const status = JSON.parse(event.data);
             handleServerState({data: status});
@@ -362,6 +363,11 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     }
 
     this.reconnect = function (fastcall) {        
+        if (websocketReconnectTimer != null) {
+            window.clearInterval(websocketReconnectTimer);
+            websocketReconnectTimer = null;
+        }
+
         AppService.getAccessToken().then(() => {
             if (useWebsocket)
                 window.websocket = reconnect_websocket();
