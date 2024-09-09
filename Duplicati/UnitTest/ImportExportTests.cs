@@ -106,7 +106,7 @@ namespace Duplicati.UnitTest
             }
 
             byte[] jsonByteArray;
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, false))
+            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, true))
             {
                 jsonByteArray = BackupImportExportHandler.ExportToJSON(Program.DataConnection, backup, null);
             }
@@ -133,7 +133,7 @@ namespace Duplicati.UnitTest
             serviceCollection.AddSingleton(new EventPollNotify());
             FIXMEGlobal.Provider = new DefaultServiceProviderFactory().CreateServiceProvider(serviceCollection);
 
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, false))
+            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, true))
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
