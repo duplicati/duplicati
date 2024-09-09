@@ -28,6 +28,12 @@ public partial class DuplicatiWebserver
 
     public Task TerminationTask { get; private set; } = Task.CompletedTask;
 
+#if DEBUG
+    private static readonly bool EnableSwagger = true;
+#else
+    private static readonly bool EnableSwagger = false;
+#endif
+
     /// <summary>
     /// The settings used for stating the server
     /// </summary>
@@ -86,22 +92,34 @@ public partial class DuplicatiWebserver
         var jwtConfig = JsonSerializer.Deserialize<JWTConfig>(connection.ApplicationSettings.JWTConfig)
             ?? throw new Exception("Failed to deserialize JWTConfig");
 
-        builder.Services
-#if DEBUG
-            .AddEndpointsApiExplorer()
-            .AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Duplicati API Documentation", Version = "v1" });
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+        if (EnableSwagger)
+        {
+            // Swagger is picking up JSON settings from controllers, even though we do not use controllers
+            builder.Services.AddControllers()
+                .AddJsonOptions(opt =>
                 {
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-                    Name = "Authorization",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer"
+                    opt.JsonSerializerOptions.PropertyNamingPolicy = null;
+                    opt.JsonSerializerOptions.Converters.Add(new DayOfWeekStringEnumConverter());
+                    opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
-            })
-#endif
+
+            builder.Services
+                .AddEndpointsApiExplorer()
+                .AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Duplicati API Documentation", Version = "v1" });
+                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                    {
+                        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                        Name = "Authorization",
+                        In = ParameterLocation.Header,
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer"
+                    });
+                });
+        }
+
+        builder.Services
             .AddHttpContextAccessor()
             .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
             .AddSingleton(jwtConfig)
@@ -161,13 +179,14 @@ public partial class DuplicatiWebserver
         App.UseAuthentication();
         App.UseAuthorization();
 
-#if DEBUG
-        App.UseSwagger();
-        App.UseSwaggerUI(c =>
+        if (EnableSwagger)
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
-        });
-#endif
+            App.UseSwagger();
+            App.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
+            });
+        }
 
         App.UseDefaultStaticFiles(settings.WebRoot);
 
