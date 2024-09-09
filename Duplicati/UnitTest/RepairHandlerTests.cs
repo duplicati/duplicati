@@ -22,11 +22,13 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -215,6 +217,109 @@ namespace Duplicati.UnitTest
             {
                 Assert.IsTrue(File.Exists(Path.Combine(this.TARGETFOLDER, file)));
             }
+        }
+
+        [Test]
+        [Category("RepairHandler"), Category("Targeted")]
+        public void RecreateWithDefectIndexBlock()
+        {
+            // See issue #3202
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["blocksize"] = "1KB",
+                ["no-encryption"] = "true"
+            };
+            var filename = Path.Combine(this.DATAFOLDER, "file");
+            using (var s = File.Create(filename))
+            {
+                var size = 1024 * 32 + 1; // Blocklist size + 1
+                s.Write(new byte[size], 0, size);
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+                using (var s = File.OpenWrite(filename))
+                {
+                    // Change first byte
+                    s.WriteByte(1);
+                }
+                backupResults = c.Backup(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            var dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            Assert.Greater(dindexFiles.Length, 0);
+
+            // Corrupt the first index file
+            using (var tmp = new TempFile())
+            {
+                using (var zip = new ZipArchive(File.Open(tmp, FileMode.Create, FileAccess.ReadWrite), ZipArchiveMode.Create))
+                using (var sourceZip = new ZipArchive(File.Open(dindexFiles[0], FileMode.Open, FileAccess.ReadWrite)))
+                {
+                    foreach (var entry in sourceZip.Entries)
+                    {
+                        using (var s = entry.Open())
+                        {
+                            var newEntry = zip.CreateEntry(entry.FullName);
+                            using (var d = newEntry.Open())
+                            {
+                                if (entry.FullName.StartsWith("list/"))
+                                {
+                                    using (var ms = new MemoryStream())
+                                    {
+                                        s.CopyTo(ms);
+                                        ms.Position = 0;
+                                        ms.WriteByte(42);
+                                        ms.Position = 0;
+                                        ms.CopyTo(d);
+                                    }
+                                }
+                                else
+                                {
+                                    s.CopyTo(d);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                File.Copy(tmp, dindexFiles[0], true);
+            }
+
+            // Delete database and recreate
+            File.Delete(options["dbpath"]);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(1, repairResults.Warnings.Count());
+            }
+
+            File.Delete(dindexFiles[0]);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
+            // Delete database and recreate
+            File.Delete(options["dbpath"]);
+
+            // No errors with recreated index file
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
         }
     }
 }
