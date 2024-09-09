@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,8 +33,6 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Common;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Main.Operation.Backup;
-using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Operation
     /// to the chosen destination
     /// </summary>
     internal class BackupHandler : IDisposable
-    {   
+    {
         /// <summary>
         /// The tag used for logging
         /// </summary>
@@ -66,11 +66,11 @@ namespace Duplicati.Library.Main.Operation
             m_options = options;
             m_result = results;
             m_backendurl = backendurl;
-                            
+
             if (options.AllowPassphraseChange)
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
-        
+
         public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options)
         {
             try
@@ -88,10 +88,18 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
             }
 
-            return Platform.IsClientPosix ?
-                (Library.Snapshots.ISnapshotService)new Duplicati.Library.Snapshots.NoSnapshotLinux()
-                    :
-                new Duplicati.Library.Snapshots.NoSnapshotWindows();
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                return new NoSnapshotLinux();
+            }
+            else if (OperatingSystem.IsWindows())
+            {
+                return new NoSnapshotWindows();
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupported Operating System");
+            }
         }
 
         /// <summary>
@@ -144,7 +152,7 @@ namespace Duplicati.Library.Main.Operation
         private void PreBackupVerify(BackendManager backend, string protectedfile)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
-            using(new Logging.Timer(LOGTAG, "PreBackupVerify", "PreBackupVerify"))
+            using (new Logging.Timer(LOGTAG, "PreBackupVerify", "PreBackupVerify"))
             {
                 try
                 {
@@ -225,6 +233,7 @@ namespace Duplicati.Library.Main.Operation
                     // append files from previous fileset, unless part of modifiedSources, which we've just scanned
                     await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
                     {
+                        // TODO: This is technically unsupported, but the method itself works cross-platform
                         if (journalService.IsPathEnumerated(path))
                             return true;
 
@@ -273,7 +282,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
-                using(var db = new LocalDeleteDatabase(m_database))
+                using (var db = new LocalDeleteDatabase(m_database))
                     new DeleteHandler(backend.BackendUrl, m_options, (DeleteResults)m_result.DeleteResults).DoRun(db, ref m_transaction, true, currentIsSmall, backend);
 
             }
@@ -281,7 +290,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
-                using(var db = new LocalDeleteDatabase(m_database))
+                using (var db = new LocalDeleteDatabase(m_database))
                     new CompactHandler(backend.BackendUrl, m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, ref m_transaction, backend);
             }
         }
@@ -289,7 +298,7 @@ namespace Duplicati.Library.Main.Operation
         private void PostBackupVerification(string currentFilelistVolume)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
-            using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
+            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
             {
                 using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
                     FilelistProcessor.VerifyRemoteList(backend, m_options, m_database, m_result.BackendWriter, new string[] { currentFilelistVolume });
@@ -297,14 +306,14 @@ namespace Duplicati.Library.Main.Operation
             }
 
             long remoteVolumeCount = m_database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
-            long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100D), MidpointRounding.AwayFromZero));
+            long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100m), MidpointRounding.AwayFromZero));
             if (samplesToTest > 0 && remoteVolumeCount > 0)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupTest);
                 m_result.TestResults = new TestResults(m_result);
 
-                using(var testdb = new LocalTestDatabase(m_database))
-                using(var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
+                using (var testdb = new LocalTestDatabase(m_database))
+                using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, testdb))
                     new TestHandler(m_backendurl, m_options, (TestResults)m_result.TestResults)
                         .DoRun(samplesToTest, testdb, backend);
             }
@@ -329,7 +338,7 @@ namespace Duplicati.Library.Main.Operation
                 // TODO: If we have a BackendManager, we should query through that
                 using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
                 {
-                    if (backend is IQuotaEnabledBackend enabledBackend)
+                    if (backend is IQuotaEnabledBackend enabledBackend && !m_options.QuotaDisable)
                     {
                         Library.Interface.IQuotaInfo quota = enabledBackend.Quota;
                         if (quota != null)
@@ -339,7 +348,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
                 }
-                
+
                 m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
             }
         }
@@ -357,7 +366,7 @@ namespace Duplicati.Library.Main.Operation
             var ex = new List<Exception>();
             ex.Add(source);
 
-            foreach(var t in tasks)
+            foreach (var t in tasks)
                 if (t != null)
                 {
                     if (!t.IsCompleted && !t.IsFaulted && !t.IsCanceled)
@@ -378,35 +387,39 @@ namespace Duplicati.Library.Main.Operation
             // Wait for upload completion
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
 
-            if (await uploadtarget.IsRetiredAsync)
+            if (!await uploadtarget.IsRetiredAsync)
             {
-                await uploader.ConfigureAwait(false);
-                return -1;
+                try
+                {
+                    var flushReq = new Backup.FlushRequest();
+                    await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
+                    await uploader.ConfigureAwait(false);
+                    // Grab the size of the last uploaded volume
+                    return await flushReq.LastWriteSizeAsync;
+                }
+                catch (RetiredException)
+                {
+                    // Retired check is not atomic, so this exception can still happen
+                }
             }
-
-            var flushReq = new Backup.FlushRequest();
-
-            await uploadtarget.WriteAsync(flushReq).ConfigureAwait(false);
             await uploader.ConfigureAwait(false);
-
-            // Grab the size of the last uploaded volume
-            return await flushReq.LastWriteSizeAsync;
+            return -1;
         }
 
         private async Task RunAsync(string[] sources, Library.Utility.IFilter filter, CancellationToken token)
         {
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);                        
-            
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);
+
             // New isolated scope for each operation
-            using(new IsolatedChannelScope())
-            using(m_database = new LocalBackupDatabase(m_options.Dbpath, m_options))
+            using (new IsolatedChannelScope())
+            using (m_database = new LocalBackupDatabase(m_options.Dbpath, m_options))
             {
                 m_result.SetDatabase(m_database);
                 m_result.Dryrun = m_options.Dryrun;
 
                 // Check the database integrity
                 Utility.UpdateOptionsFromDb(m_database, m_options);
-                Utility.VerifyParameters(m_database, m_options);
+                Utility.VerifyOptionsAndUpdateDatabase(m_database, m_options);
 
                 var probe_path = m_database.GetFirstPath();
                 if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
@@ -414,7 +427,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (m_database.PartiallyRecreated)
                     throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
-                
+
                 if (m_database.RepairInProgress)
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.", "DatabaseRepairInProgress");
 
@@ -428,12 +441,12 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     // Setup runners and instances here
-                    using(var db = new Backup.BackupDatabase(m_database, m_options))
-                    using(var backendManager = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
-                    using(var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
-                    using(var stats = new Backup.BackupStatsCollector(m_result))
+                    using (var db = new Backup.BackupDatabase(m_database, m_options))
+                    using (var backendManager = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, m_database))
+                    using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
+                    using (var stats = new Backup.BackupStatsCollector(m_result))
                     // Keep a reference to these channels to avoid shutdown
-                    using(var uploadtarget = ChannelManager.GetChannel(Backup.Channels.BackendRequest.ForWrite))
+                    using (var uploadtarget = ChannelManager.GetChannel(Backup.Channels.BackendRequest.ForWrite))
                     {
                         long filesetid;
                         var counterToken = new CancellationTokenSource();
@@ -472,7 +485,7 @@ namespace Duplicati.Library.Main.Operation
                                 var prevfileset = m_database.FilesetTimes.FirstOrDefault();
                                 if (prevfileset.Value.ToUniversalTime() > m_database.OperationTimestamp.ToUniversalTime())
                                     throw new Exception(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
-                                
+
                                 var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
 
                                 // Rebuild any index files that are missing
@@ -482,7 +495,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
 
                                 var repcnt = 0;
-                                while(repcnt < 100 && await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
+                                while (repcnt < 100 && await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
                                     filesetvolume.ResetRemoteFilename(m_options, m_database.OperationTimestamp.AddSeconds(repcnt++));
 
                                 if (await db.GetRemoteVolumeIDAsync(filesetvolume.RemoteFilename) >= 0)
@@ -538,7 +551,7 @@ namespace Duplicati.Library.Main.Operation
 
                         // TODO: Remove this later
                         m_transaction = m_database.BeginTransaction();
-    		                                        
+
                         if (await m_result.TaskReader.ProgressAsync)
                             CompactIfRequired(backendManager, lastVolumeSize);
 
@@ -555,9 +568,9 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            using(new Logging.Timer(LOGTAG, "CommitFinalizingBackup", "CommitFinalizingBackup"))
+                            using (new Logging.Timer(LOGTAG, "CommitFinalizingBackup", "CommitFinalizingBackup"))
                                 m_transaction.Commit();
-                                
+
                             m_transaction = null;
 
                             if (m_result.TaskControlRendevouz() != TaskControlState.Abort)
@@ -568,8 +581,8 @@ namespace Duplicati.Library.Main.Operation
                                     PostBackupVerification(filesetvolume.RemoteFilename);
                             }
                         }
-                        
-                        m_database.WriteResults();                    
+
+                        m_database.WriteResults();
                         m_database.PurgeLogData(m_options.LogRetention);
                         m_database.PurgeDeletedVolumes(DateTime.UtcNow);
 
@@ -588,7 +601,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteErrorMessage(LOGTAG, "FatalError", ex, "Fatal error");
                     if (aex == ex)
                         throw;
-                    
+
                     throw aex;
                 }
                 finally
@@ -599,7 +612,7 @@ namespace Duplicati.Library.Main.Operation
                     // TODO: We want to commit? always?
                     if (m_transaction != null)
                         try { m_transaction.Rollback(); }
-                        catch (Exception ex) { Logging.Log.WriteErrorMessage(LOGTAG, "RollbackError", ex, "Rollback error: {0}", ex.Message); }                
+                        catch (Exception ex) { Logging.Log.WriteErrorMessage(LOGTAG, "RollbackError", ex, "Rollback error: {0}", ex.Message); }
                 }
             }
         }

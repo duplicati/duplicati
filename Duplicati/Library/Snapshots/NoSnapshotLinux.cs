@@ -1,22 +1,26 @@
-//  Copyright (C) 2015, The Duplicati Team
-
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -24,6 +28,8 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// Handler for providing a snapshot like access to files and folders
     /// </summary>
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macOS")]
     public sealed class NoSnapshotLinux : SnapshotBase
     {
         /// <summary>
@@ -55,12 +61,12 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override bool IsBlockDevice(string localPath)
         {
-            var n = UnixSupport.File.GetFileType(SystemIOLinux.NormalizePath(localPath));
+            var n = PosixFile.GetFileType(SystemIOLinux.NormalizePath(localPath));
             switch (n)
             {
-                case UnixSupport.File.FileType.Directory:
-                case UnixSupport.File.FileType.Symlink:
-                case UnixSupport.File.FileType.File:
+                case PosixFile.FileType.Directory:
+                case PosixFile.FileType.Symlink:
+                case PosixFile.FileType.File:
                     return false;
                 default:
                     return true;
@@ -75,9 +81,9 @@ namespace Duplicati.Library.Snapshots
         public override string HardlinkTargetID(string localPath)
         {
             var normalizePath = SystemIOLinux.NormalizePath(localPath);
-            return UnixSupport.File.GetHardlinkCount(normalizePath) <= 1
+            return PosixFile.GetHardlinkCount(normalizePath) <= 1
                 ? null
-                : UnixSupport.File.GetInodeTargetID(normalizePath);
+                : PosixFile.GetInodeTargetID(normalizePath);
         }
 
         /// <inheritdoc />

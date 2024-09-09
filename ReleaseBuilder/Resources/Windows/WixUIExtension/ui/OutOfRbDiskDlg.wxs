@@ -1,0 +1,25 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.txt file in this directory for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <UI>
+            <Dialog Id="OutOfRbDiskDlg" Width="370" Height="270" Title="[ProductName] Setup">
+                <Control Id="No" Type="PushButton" X="304" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="No">
+                    <Publish Event="EndDialog" Value="Return" />
+                </Control>
+                <Control Id="Yes" Type="PushButton" X="240" Y="243" Width="56" Height="17" Text="Yes">
+                    <Publish Event="EnableRollback" Value="False" />
+                    <Publish Event="EndDialog" Value="Return" />
+                </Control>
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+                <Control Id="Text" Type="Text" X="20" Y="53" Width="330" Height="90" Text="The highlighted volumes do not have enough disk space available for the currently selected features. You can remove some files from the highlighted volumes, install fewer features, or select a different destination drive. Alternatively, you may choose to disable the installer's rollback functionality. Disabling rollback prevents the installer from restoring your computer's original state should the installation be interrupted in any way. Click Yes if you wish to take the risk of disabling rollback." />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Description" Type="Text" X="20" Y="20" Width="280" Height="20" Transparent="yes" NoPrefix="yes" Text="Disk space required for the installation exceeds available disk space." />
+                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Out of Disk Space" />
+                <Control Id="VolumeList" Type="VolumeCostList" X="20" Y="150" Width="330" Height="70" Sunken="yes" Fixed="yes" Remote="yes" ShowRollbackCost="yes" Text="{120}{70}{70}{70}{70}" />
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>

@@ -73,10 +73,10 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'dropbox': null,
                 'sia': null,
                 'storj': null,
-                'tardigrade': null,
                 'jottacloud': null,
 				'rclone': null,
-				'cos': null
+                'cos': null,
+				'aliyunoss': null
             }
         };
 

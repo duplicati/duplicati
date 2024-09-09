@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -26,7 +28,7 @@ using Duplicati.Library.Main.Database;
 namespace Duplicati.Library.Main.Operation
 {
     internal class DeleteHandler
-    {   
+    {
         /// <summary>
         /// The tag used for logging
         /// </summary>
@@ -35,33 +37,33 @@ namespace Duplicati.Library.Main.Operation
         private readonly DeleteResults m_result;
         protected readonly string m_backendurl;
         protected readonly Options m_options;
-    
+
         public DeleteHandler(string backend, Options options, DeleteResults result)
         {
             m_backendurl = backend;
             m_options = options;
             m_result = result;
         }
-        
+
         public void Run()
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
 
-            using(var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
+            using (var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
             {
                 var tr = db.BeginTransaction();
                 try
                 {
                     m_result.SetDatabase(db);
                     Utility.UpdateOptionsFromDb(db, m_options);
-                    Utility.VerifyParameters(db, m_options);
-                    
+                    Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+
                     DoRun(db, ref tr, false, false, null);
-                    
+
                     if (!m_options.Dryrun)
                     {
-                        using(new Logging.Timer(LOGTAG, "CommitDelete", "CommitDelete"))
+                        using (new Logging.Timer(LOGTAG, "CommitDelete", "CommitDelete"))
                             tr.Commit();
 
                         db.WriteResults();
@@ -83,7 +85,7 @@ namespace Duplicati.Library.Main.Operation
         public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBackend, bool forceCompact, BackendManager sharedManager)
         {
             // Workaround where we allow a running backendmanager to be used
-            using(var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
+            using (var bk = sharedManager == null ? new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db) : null)
             {
                 var backend = bk ?? sharedManager;
 
@@ -111,7 +113,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
                 var lst = db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray(), transaction).ToArray();
-                foreach(var f in lst)
+                foreach (var f in lst)
                     db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, transaction);
 
                 if (!m_options.Dryrun)
@@ -120,7 +122,7 @@ namespace Duplicati.Library.Main.Operation
                     transaction = db.BeginTransaction();
                 }
 
-                foreach(var f in lst)
+                foreach (var f in lst)
                 {
                     if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                     {
@@ -138,7 +140,7 @@ namespace Duplicati.Library.Main.Operation
                     backend.WaitForComplete(db, transaction);
                 else
                     backend.WaitForEmpty(db, transaction);
-                
+
                 var count = lst.Length;
                 if (!m_options.Dryrun)
                 {
@@ -149,7 +151,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                
+
                     if (count == 0)
                         Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteResults", "No remote filesets would be deleted");
                     else
@@ -158,7 +160,7 @@ namespace Duplicati.Library.Main.Operation
                     if (count > 0 && m_options.Dryrun)
                         Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteHelp", "Remove --dry-run to actually delete files");
                 }
-                
+
                 if (!m_options.NoAutoCompact && (forceCompact || versionsToDelete.Count > 0))
                 {
                     m_result.CompactResults = new CompactResults(m_result);

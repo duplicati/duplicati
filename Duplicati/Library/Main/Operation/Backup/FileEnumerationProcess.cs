@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using CoCoL;
 using System.Threading.Tasks;
@@ -105,7 +107,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         worklist = snapshot.EnumerateFilesAndFolders(sources, attributeFilter, (rootpath, errorpath, ex) =>
                         {
                             Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FileAccessError", ex, "Error reported while accessing file: {0}", errorpath);
-                        });
+                        }).Distinct(Library.Utility.Utility.IsFSCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
                     }
 
                     if (token.IsCancellationRequested)
@@ -175,7 +177,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // Propagate the any-flag upwards
                             if (pathstack.Count > 0)
                                 pathstack.Peek().AnyEntries = true;
-                                
+
                             yield return e.Path;
                         }
                         else
@@ -189,7 +191,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                 }
                 // Just emit files
-                else 
+                else
                 {
                     if (pathstack.Count != 0)
                         pathstack.Peek().AnyEntries = true;
@@ -200,7 +202,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             while (pathstack.Count > 0)
             {
                 var e = pathstack.Pop();
-                if (e.AnyEntries|| pathstack.Count == 0)
+                if (e.AnyEntries || pathstack.Count == 0)
                 {
                     // Propagate the any-flag upwards
                     if (pathstack.Count > 0)
@@ -247,8 +249,8 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="attributes">The file or folder attributes.</param>
         private static bool AttributeFilter(string path, FileAttributes attributes, Snapshots.ISnapshotService snapshot, Library.Utility.IFilter sourcefilter, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<string> mixinqueue)
         {
-			// Step 1, exclude block devices
-			try
+            // Step 1, exclude block devices
+            try
             {
                 if (snapshot.IsBlockDevice(path))
                 {
@@ -258,7 +260,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorBlockDevice", ex, "Failed to process path: {0}", path);
                 return false;
             }
 
@@ -301,9 +303,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorHardLink", ex, "Failed to process path: {0}", path);
                     return false;
-                }                    
+                }
             }
 
             if (ignorenames != null && (attributes & FileAttributes.Directory) != 0)
@@ -320,9 +322,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingError", ex, "Failed to process path: {0}", path);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "PathProcessingErrorIgnoreFile", ex, "Failed to process path: {0}", path);
                 }
             }
 

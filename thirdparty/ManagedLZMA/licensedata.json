@@ -1,6 +1,6 @@
 {
     "name": "ManagedLZMA",
-    "description": "An LZMA/7z compression library by Tobias Käs",
+    "description": "An LZMA/7z compression library by Tobias Käs.",
     "link": "https://github.com/weltkante/managed-lzma",
     "license": "MIT",
     "notes": ""

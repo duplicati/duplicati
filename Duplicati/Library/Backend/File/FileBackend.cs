@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -24,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -81,7 +84,7 @@ namespace Duplicati.Library.Backend
                 paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 //On windows we expand the drive letter * to all drives
-                if (!Platform.IsClientPosix)
+                if (!OperatingSystem.IsWindows())
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
 
@@ -176,15 +179,7 @@ namespace Duplicati.Library.Backend
             if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            foreach (string s in systemIO.EnumerateFiles(m_path))
-            {
-                yield return systemIO.FileEntry(s);
-            }
-
-            foreach (string s in systemIO.EnumerateDirectories(m_path))
-            {
-                yield return systemIO.DirectoryEntry(s);
-            }
+            return systemIO.EnumerateFileEntries(m_path);
         }
 
 #if DEBUG_RETRY
@@ -263,7 +258,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
                     new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
-                    new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationShort),
+                    new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationLong),
 
                 });
 
@@ -306,7 +301,7 @@ namespace Duplicati.Library.Backend
         private System.IO.DriveInfo GetDrive()
         {
             string root;
-            if (Platform.IsClientPosix)
+            if (OperatingSystem.IsWindows())
             {
                 string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
                 root = "/";
@@ -325,7 +320,7 @@ namespace Duplicati.Library.Backend
 
             // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)
             // So only attempt to get it if we aren't on Windows or if the root starts with a letter.
-            if (!Platform.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
+            if (!OperatingSystem.IsWindows() || (root.Length > 0 && char.IsLetter(root[0])))
             {
                 try
                 {
@@ -347,10 +342,15 @@ namespace Duplicati.Library.Backend
                 System.IO.DriveInfo driveInfo = this.GetDrive();
                 if (driveInfo != null)
                 {
-                    return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                    // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
+                    // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
+                    if (driveInfo.TotalSize > 0)
+                    {
+                        return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                    }
                 }
 
-                if (Platform.IsClientWindows)
+                if (OperatingSystem.IsWindows())
                 {
                     // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
                     // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
@@ -381,6 +381,7 @@ namespace Duplicati.Library.Backend
         /// <param name="directory">Directory</param>
         /// <returns>Quota info</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static QuotaInfo GetDiskFreeSpace(string directory)
         {
             ulong available;
@@ -395,6 +396,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        [SupportedOSPlatform("windows")]
         private static class WindowsDriveHelper
         {
             [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]

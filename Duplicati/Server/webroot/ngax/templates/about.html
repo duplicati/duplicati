@@ -8,8 +8,9 @@
         <li ng-class="{active: Page=='logdata'}"><a href="#/log" translate>Show log</a></li>
     </ul>
 
-    <div ng-show="Page == 'general'">
-        <div translate
+    <div ng-show="Page == 'general'" class="about-general">
+        <div class="about-general__block"
+            translate
             translate-params-appname="brandingService.appName" 
             translate-params-dev1="'Kenneth Skovhede'" 
             translate-params-dev2="'Rene Stach'" 
@@ -17,32 +18,30 @@
             translate-params-mail2="'mailto:rene@duplicati.com'"
             translate-params-websitename="'duplicati.com'" 
             translate-params-websitelink="'http://www.duplicati.com'" 
-            translate-params-licensename="'GNU Lesser General Public License'" 
-            translate-params-licenselink="'https://www.gnu.org/licenses/lgpl.html'" 
+            translate-params-licensename="'MIT license'" 
+            translate-params-licenselink="'https://raw.githubusercontent.com/duplicati/duplicati/master/LICENSE.txt'" 
             >
             {{appname}} was primarily developed by <a href="{{mail1}}">{{dev1}}</a> and <a href="{{mail2}}">{{dev2}}</a>. {{appname}} can be downloaded from <a href="{{websitelink}}">{{websitename}}</a>. {{appname}} is licensed under the <a href="{{licenselink}}">{{licensename}}</a>.
         </div>
 
-        <div>&nbsp;</div>
-        <div translate translate-params-appname="brandingService.appName" translate-params-version="sysinfo.ServerVersionName || 'unknown'">You are currently running {{appname}} {{version}}</div>
+        <div class="about-general__block">
+            <div translate translate-params-appname="brandingService.appName" translate-params-version="sysinfo.ServerVersionName || 'unknown'">You are currently running {{appname}} {{version}}</div>
 
-        <div ng-show="state.updatedVersion != null &amp;&amp; !state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
-            Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available, <a href ng-click="doStartUpdateDownload()">download now</a>
+            <div translate ng-show="state.updatedVersion != null &amp;&amp; state.updateDownloadLink != null &amp;&amp; !state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
+                Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is available. <a href="{{state.updateDownloadLink}}">Download now</a>
+            </div>
+
+            <a ng-show="state.updaterState == 'Waiting'" href ng-click="doCheckForUpdates()" translate>Check for updates now</a>
+            <div ng-show="state.updaterState == 'Checking'"  translate>Checking for updates …</div>
+
+            <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update …'", ng-progress="state.updateDownloadProgress">
+            </progress-bar>
         </div>
-        <div ng-show="state.updatedVersion != null &amp;&amp; state.updateReady &amp;&amp; state.updaterState == 'Waiting'">
-            Update <a href ng-click="doShowUpdateChangelog()">{{state.updatedVersion}}</a> is installed, <a href ng-click="doStartUpdateActivate()">activate now</a>
+
+        <div class="about-general__block">
+            <div class="prewrapped-text" ng-show="Acknowledgements">{{Acknowledgements}}</div>
+            <div class="prewrapped-text" ng-hide="Acknowledgements" translate="">Loading …</div>
         </div>
-
-        <a ng-show="state.updaterState == 'Waiting'" href ng-click="doCheckForUpdates()" translate>Check for updates now</a>
-        <div ng-show="state.updaterState == 'Checking'"  translate>Checking for updates …</div>
-
-        <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update …'", ng-progress="state.updateDownloadProgress">
-        </progress-bar>
-
-        <div>&nbsp;</div>
-
-        <div class="prewrapped-text" ng-show="Acknowledgements">{{Acknowledgements}}</div>
-        <div class="prewrapped-text" ng-hide="Acknowledgements" translate="">Loading …</div>
     </div>
 
     <div ng-show="Page == 'changelog'">
@@ -51,11 +50,11 @@
     </div>
 
     <div ng-show="Page == 'licenses'" class="licenses">
-        {{brandingService.appName}} is using the following third party libraries:
+        <span translate>{{brandingService.appName}} is using the following third party libraries:</span>
         <ul>
             <li ng-show="Licenses == null" translate>Loading …</li>
             <li ng-repeat="item in Licenses" class="licenseentry">
-                <external-link class="itemlink" link="item.link">{{item.name}}</external-link>: {{item.description}}. <external-link class="licenselink" link="item.licenselink">{{item.license}} licensed</external-link>
+                <external-link class="itemlink" link="item.link">{{item.name}}</external-link>: {{item.description}} <external-link class="licenselink" link="item.licenselink">{{item.license}} licensed</external-link>
             </li>
         </ul>
     </div>
@@ -64,9 +63,9 @@
         <h2 translate>System properties</h2>
         <ul style="overflow: auto;">
             <li ng-repeat="(key,value) in sysinfo" ng-if="key != 'Options' &amp;&amp; key != 'CompressionModules' &amp;&amp; key != 'EncryptionModules' &amp;&amp; key != 'BackendModules' &amp;&amp; key != 'GenericModules' &amp;&amp; key != 'WebModules' &amp;&amp; key != 'ConnectionModules' &amp;&amp; key != 'GroupedBackendModules'">{{key}} : {{value}}</li>
-            <li>{{'Backend modules:' | translate}} <p style="display: inline" ng-repeat="item in sysinfo.BackendModules">{{item.Key}} </p></li>
-            <li>{{'Compression modules:' | translate}} <p style="display: inline" ng-repeat="item in sysinfo.CompressionModules">{{item.Key}} </p></li>
-            <li>{{'Encryption modules:' | translate}} <p style="display: inline" ng-repeat="item in sysinfo.EncryptionModules">{{item.Key}} </p></li>
+            <li translate>Backend modules: <p style="display: inline" ng-repeat="item in sysinfo.BackendModules">{{item.Key}} </p></li>
+            <li translate>Compression modules: <p style="display: inline" ng-repeat="item in sysinfo.CompressionModules">{{item.Key}} </p></li>
+            <li translate>Encryption modules: <p style="display: inline" ng-repeat="item in sysinfo.EncryptionModules">{{item.Key}} </p></li>
         </ul>
 
         <h2 translate>Server state properties</h2>

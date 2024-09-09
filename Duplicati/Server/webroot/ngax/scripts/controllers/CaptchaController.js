@@ -1,11 +1,13 @@
 backupApp.controller('CaptchaController', function($scope, CaptchaService, DialogService, AppService, AppUtils) {
 	var entry = $scope.entry = CaptchaService.active;
 
-	function refreshImage() {
+	function refreshChallenge() {
 		entry.imageurl = null;
 
-		AppService.post('/captcha', { 'target': entry.target}).then(function(resp) {
-    		entry.token = resp.data.token;
+		AppService.postJson('/captcha', { 'target': entry.target}).then(function(resp) {
+    		entry.token = resp.data.Token;
+			entry.expectedAnswer = resp.data.Answer;
+			entry.noVisualChallenge = resp.data.NoVisualChallenge;
 			entry.imageurl = AppService.apiurl + '/captcha/' + entry.token;
 
     	}, function(err) {
@@ -15,7 +17,7 @@ backupApp.controller('CaptchaController', function($scope, CaptchaService, Dialo
 	};
 
 	if (entry.token == null)
-		refreshImage();
+		refreshChallenge();
 
-	$scope.reload = refreshImage;
+	$scope.reload = refreshChallenge;
 });

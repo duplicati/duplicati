@@ -1,3 +1,375 @@
+2024-09-03 - 2.0.9.106_canary_2024-09-03
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v8
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+The new tool can pause/resume a backup, run a backup, change the password and more:
+https://github.com/duplicati/duplicati/pull/5483
+
+# Encrypting database fields
+To reduce the risk of leaking encryption passphrases and credentials, 
+many fields in the `Duplicati-server.sqlite` file can now be encrypted with user supplied key.
+
+The following environment variables control the encryption options:
+- `SETTINGS_ENCRYPTION_KEY`: Provides the settings encryption key.
+- `DUPLICATI__REQUIRE_DB_ENCRYPTION_KEY=true`: Prevents starting with a key (also supported via `--require-db-encryption-key-true`).
+- `DUPLICATI__DISABLE_DB_ENCRYPTION=true`: Forces Duplicati to run without encryption (also supported via `--disable-db-encryption=true`).
+
+If you need to change the key, you can temporarily decrypt the database by starting the server with `--disable-db-encryption`.
+After starting, stop the instance again, change `SETTINGS_ENCRYPTION_KEY` to the new key and start again without the argument, to have it re-encrypted.
+
+To downgrade from this version, run once with `--disable-db-encryption`, and change the version number to 7, then install the previous version.
+
+**Note for users of 2.0.9.105:** The method for extracting an encryption key from the machine seriail number did not produce secure results. 
+This feature has now been removed, and will prevent you from upgrading. To upgrade from 2.0.9.105, start with `--disable-db-encryption`, then exit, then upgrade to 2.0.9.106+.
+Users from other versions than 2.0.9.105 will not have difficulties, and Docker users should not see any issues either.
+
+## Detailed list of changes:
+- Fixed console duration output including days
+- Added blacklisting of some settings encryption keys
+- Refactored the way databases are located to use shared code
+- Fixed translation consistency issues, thanks @luixxiul
+- Fixed missing commandline help on Windows
+- Added dift support for JWT expiration
+- Removed DeviceId as the source for settings encryption keys
+- Fixed an issue where an authentication issue was reported as a server error
+- Fixed MSI packages failing to upgrade
+- Re-added the `FORSERVICE=true` flag to MSI packages
+- Improved diganostics output from server-util
+
+2024-08-29 - 2.0.9.105_canary_2024-08-29
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v8
+- Encrypting data in `Duplicati-server.sqlite` with machine serial number
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+The new tool can pause/resume a backup, run a backup, change the password and more:
+https://github.com/duplicati/duplicati/pull/5483
+
+# Encrypting database fields
+To reduce the risk of leaking encryption passphrases and credentials, 
+many fields in the `Duplicati-server.sqlite` file will be encrypted after running this version.
+The key used to encrypt is derived from the machine serial number, so **the database cannot be decrypted on another machine**.
+
+If your strategy relies on being able to read this database, you must take action.
+These two setups are vulnerable:
+- If you do not store a copy of the passphrase elsewhere
+- If you make a copy of the settings database
+
+We strongly recommend that you store a copy of the passphrase(s) securely, regardless of your setup.
+
+If you want to choose the settings encryption key, you can set the environment variable `SETTINGS_ENCRYPTION_KEY` to a custom value.
+If you want to never use the serial number as the passphrase, set the environment 
+variable `DUPLICATI__REQUIRE_DB_ENCRYPTION_KEY=true`, which will prevent Duplicati from starting without a user provided key.
+
+If you need to change the key, you can temporarily decrypt the database by starting the server with `--disable-db-encryption`.
+After starting, stop the instance again, set `SETTINGS_ENCRYPTION_KEY` and start again without the argument, to have it re-encrypted.
+
+To downgrade from this version, run once with `--disable-db-encryption`, and change the version number to 7, then install the previous version.
+
+As always, feedback is appreciated!
+
+## Detailed list of changes:
+- Simplified logic for finding the folder containing the settings database
+- Encrypting settings in database with machine serial number
+- Fixed issue with server not responding to CTRL+C or stop commands
+- Fixed issue with TrayIcon not trying multiple ports
+- Added utility program to control a running server
+- Improved the initial password setup experience
+- Added support for logging to Windows Event Log and added Description to Windows Service
+- Fixed an issue where the retention value could not be saved if it was a number
+- Fixed an upgrade issue where `%HOME%` would not resolve correctly on Linux
+- Fixed an issue with parsing `--send-http-result-output-format`
+- Updated Docker image to use environment variables and not use settings encryption by default
+- Added support for pre-loading default settings on a machine or installation
+
+2024-08-21 - 2.0.9.104_canary_2024-08-21
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v7
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+## Detailed list of changes:
+- Removed some console logging in JS
+- Updates to localization, thanks @luixxiul
+- Improved navigation in UI, thanks @luixxiul
+- Fixed some issues with using TrayIcon detached from Server
+- Made hostname validation more backwards compatible
+
+2024-08-15 - 2.0.9.103_canary_2024-08-15
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+** Important changes from last Beta **
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme
+- Settings database version updated to v7
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+## Detailed list of changes:
+- Multiple updates for styling and visual consistency, thanks @luixxiul
+- Extensive work on making all documentation strings follow a consistent logic, thanks @luixxiul
+- Fixed support for Websocket over https, thanks @Riches
+- Fixed an issue with `--webservice-allowed-hostnames` being renamed
+- Fixed support for captcha on systems without the Arial font
+- Using different default filenames for logging with TrayIcon and Server
+- Fixed issue with livelog not showing contents
+- Fixed an issue where a login issue would not show an option to log in
+- Fixed showing correct port number in log output
+- Fixed not showing scheduler state and next backup
+- Fixed an issue where a crash would show the wrong stack trace
+- Fixed an issue with generating massive number of inotify watchers
+- Re-enabled the button to log out
+- Added option to disable the visual captcha
+- Added support for providing server commandline arguments via environment variables
+- Fixed log error message related to update download url
+- Added Telegram reporting module
+
+2024-08-02 - 2.0.9.102_canary_2024-08-02
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+Please see release notes for `v2.0.9.100` for a summary of changes.
+Please see list of known issues related to .NET8 upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+This build is changes the underlying webserver to Kestrel, which is common for .NET based projects.
+A big thanks to @tsuckow and @npodbielski for their contributions towards this goal.
+
+** This build changes authentication for the WebUI **
+With this build it is no longer possible to use the web-UI without a password. 
+If no password is set, a random password is generated.
+For users activating the UI via the TrayIcon, this will automatically log in, as the TrayIcon hosts the server.
+For users that rely on the WebUI without the TrayIcon, as special link is emitted during startup that allows login.
+For both cases, the password can be (re-)set with `--webservice-password=...` as a startup commandline argument.
+
+## Detailed lits of changes:
+- Updated libraries: Mega, SharpAESCrypt, Storj, FluentFTP
+- Updated Webserver to Kestrel, thanks @tsuckow and @npodbielski
+- Implemented websocket based messages in WebUI, thanks @npodbielski
+- HTTP reports now give a warning if the server rejects the message
+- Extensive changes to strings to improve localization, structure and layout in WebUI, thanks @luixxiul
+- Uplink libraries fixed on all platforms, thanks @TopperDEL
+- Fixed an issue where strings with line-breaks would not show in translated form
+- Removed remnants of Tardigrade backend in favor of Storj API
+- Added Sakura Cloud to list of S3 providers
+- Changed aFTP default SSL to `None`, meaning "System Default"
+- Added check to find Duplicati server database in old location on MacOS
+- Fixed issues with `.deb` packages overwriting options file on update
+- Fixed issue with backups using VSS and a drive letter as the source
+- Fixed issue with Arm 32bit not reading files larger than 4GiB
+
+2024-06-27 - 2.0.9.101_canary_2024-06-27
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+Please see release notes for `v2.0.9.100` for a summary of changes.
+
+## Detailed lits of changes:
+- Removed obsolete platform detection code, thanks @Jojo-1000
+- Changed XMPP library to Artalk.Xmpp, thanks @Jojo-1000
+- Fixed an issue with rendering non-ascii
+- Cleaned up some library licenses
+- Fixed SQL quotes and added quote guard to SQL queries, thanks @Jojo-1000
+- Updated AWS region list
+- Fixed compare logic not working on Linux, thanks @Jojo-1000
+- Added logic to set AWS hostname in UI based on selected region
+- Removed deprecated S3 options `--s3-european-buckets` and `--s3-use-rrs`
+- Removed support for deprecated spelling of S3 credentials
+- Removed bundled GPG Windows binaries
+- Removed unsupported AlphaFS
+- Changed restore to not use local blocks by default
+- Updated Poli Systems endpoints, thanks @IIPoliII
+- Added Debian Arm7 packages
+- Updated CoCoL to latest .NET 8 version
+- Added support for arguments for scripts
+- Improved speed of the recovery tool, using in-memory lookup and added configurable open archive cache
+- Increasing the default number of archives tested to 0.1%
+- Updated SharpAESCrypt to v2. Note this deprecates threaded encryption, and adds padding validation. Set the environment variable `AES_IGNORE_PADDING_BYTES=1` if you re-encrypt archives with an external AES Crypt tool.
+
+2024-05-30 - 2.0.9.100_canary_2024-05-30
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+** Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8. **
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+## These are some of the major changes that can cause surprises, so please review and see if any are relevant for your usage:
+
+- Changed runtime to .NET8, shipping with dependencies, no more Mono or .NET install required
+- Changed from portable executable to operating system and CPU architecture dependent packages
+- Server database with SQLite is no longer "encrypted" with RC4, running a new canary or later will decrypt the database
+- The executable `Duplicati.Library.AutoUpdater.exe` is renamed to `Duplicati.CommandLine.AutoUpdater.exe` and has limited functionality
+- The Windows MSI installer has been reduced, it offers essentially no options for now and no UI
+- The updater has been rewritten to rely on installing the packages, instead of having the "in-place" updates
+  - There are now longer a spawned secondary process
+  - The updates folder can be deleted
+  - Installing an update now requires manually downloading and running the installer (you still get a notice)
+ - To fit better with non-Windows systems the executables on non-Windows are all lower-case and prefixed with `duplicati`:
+    - `Duplicati.GUI.TrayIcon.exe` -> `duplicati`
+    - `Duplicati.CommandLine.exe` -> `duplicati-cli`
+    - `Duplicati.RecoveryTool.exe` -> `duplicati-recovery-tool`
+    - ... and similar for others
+
+## More detailed list of changes:
+- More than 300 commits for the change to .NET8, credits to @mnaiman, @tsuckow, @Jojo-1000, @npodbielski and many others
+    - These commits were done over many years an accumulated, so here is a summary
+    - Changes to support new .NET framework methods
+    - Changed to use Avalonia UI instead of WinForms
+    - Removed `mono` support and requirement
+    - Upgraded packages
+    - Reworked binaries and some queries for SQLite
+- 1MiB blocksize default, thanks @mr-russ
+- IOScheduling for RPM packages, thanks @achims311
+- Selective dynamic loading of modules to avoid loader errors
+- New manifest for updater
+- Added GNUGP to Docker, thanks @wjansenw
+- Improved cross-platform support, thanks @SimonNyvall
+- Fixed issue with custom reporting message for http-modules
+- RC4 database encryption
+- Fixed issues with recoverytool, thanks @Jojo-1000
+- Additional quota control options, thanks @Jojo-1000
+- Improved file-source picker with filters, thanks @Jojo-1000
+- Fixes to forced local, thanks @Jojo-1000
+- Fixed an issue with OpenStack loosing username and password, thanks @Jojo-1000
+- Improved handling of boolean options in the UI, thanks @Jojo-1000
+- Fixed issues with missing executables and permissions on non-Windows
+- Fixed an issue when restoring without a localdatabase, using non-default blocksize, and no parameters
+- Rebuilt the MSI proces for `wixl` support
+- Added Win-Arm64 support
+
+2024-04-19 - 2.0.7.103_canary_2024-04-19
+==========
+- Added microfix that adds a missing default value to the backup reports.
+
+2024-04-03 - 2.0.7.102_canary_2024-04-03
+==========
+This build is intended to be the last build that uses .Net4 (aka .Net Desktop).
+Future builds are expected to use .Net8 and will require a manual update,
+because the .Net builds are no longer operating system independent.
+
+The upside is that there are fewer dependencies (no more Mono),
+and execution times are greatly improved.
+
+* Removed donation messages
+* Updated MacOS Installer license text
+* Updated installer to support future manual upgrade
+* Added information to reports when encountering an exception
+
+2024-03-08 - 2.0.7.101_canary_2024-03-08
+==========
+* Updated license to MIT, thanks @kenkendk
+* Fixed crash when logging startup errors, thanks @Jojo-1000
+* Updated SSH.Net, thanks @gpatel-fr
+* Fixed exception happening when stopping the running backup, thanks @Jojo-1000
+* Fixed issue with connecting to server thanks @kellycampbe
+* Improved file-backend listing speed, thanks @Jojo-1000
+* Added support for IPv6 addresses as hostnames, thanks @Jojo-1000
+* Added AliyunOSS backend, thanks @trueai-org
+* Added fix to not show empty form on restarts, thanks @kenkendk
+* Updated Uplink for Storj to 2.12, thanks @gpatel-fr and @kenkendk
+* Added machine and backup id options for reports, thanks @kenkendk
+* Fixed issues with using alternate OAuth server url, thanks @gpatel-fr and @kenkendk
+
+2023-12-27 - 2.0.7.100_canary_2023-12-27
+==========
+This canary is a bugfix release with error reporting improvements, no database format change.
+Options changes:
+     `--s3-disable-chunk-encoding` added to the AWS backend (only useful for some providers)
+     `--full-remote-verification` changes from a boolean option to a tri-valued one. Existing configurations should not be impacted.
+     `--aftp-log-to-console` and `--aftp-log-privateinfo-to-console` added to the Alternative Ftp backend (for debugging purposes only)
+     `--repair-force-block-use` added to the database rebuild process (only for very damaged databases)
+
+Changes:
+  - Fix various bugs with backup filters, thanks @jojo-1000
+  - Fix highlighting in restore file picker, thanks @jojo-1000
+  - Update mail libraries, thanks gpatel-fr
+  - Remove dead facebook link and add doc link, thanks @jojo-1000
+  - Remove obsolete hubic backend, thanks @gpatel-fr
+  - Remove obsolete tool TlsTest, thanks @gpatel-fr
+  - Update Serbian translation, thanks @sagitarion
+  - Improve result reporting for interrupted/failed backups, thanks @jojo-1000
+  - Add return code 3 to help.txt, thanks @gpatel-fr
+  - Fix missing file error caused by interrupted compact, thanks @jojo-1000 and @warwickmm
+  - Include exception type and message in job log, thanks @jojo-1000
+  - Update thirdparty info to remove obsolete references, thanks @gpatel-fr
+  - Remove JS error in negated 'IN' expressions, fixing bad restore prompt (thanks @gorosgobe and Bloomberg)
+  - Update restsharp, thanks @gpatel-fr
+  - Update FluentFTP (Alternative FTP) to 46.0.2 and fixes for initial directory creation, thanks @taz-il
+  - Add console log to the Alternative FTP backend, thanks @gpatel-fr
+  - Fix hidden username and password options when changing backends, thanks @jojo-1000
+  - Add option to disable chunked encoding for AWS S3, thanks @jojo-1000
+  - Specify the name of the backup when reporting failures, thanks @taz-il
+  - Allow to perform tests without checking file list, thanks @gpatel-fr
+  - Enhance database rebuilding of very damaged databases, thanks @gpatel-fr
+  - Set the job state to error when post backup verification fails, thanks @gpatel-fr
+  - Allow full-remote-verification to target only list and index files, thanks @gpatel-fr
+  - Fix restore search error in RestoreController, thanks @jojo-1000
+  - Replace agsXmpp with Sharp.Xmpp, thanks @gpatel-fr
+  - Set default log level to Dryrun if dryrun option is set, thanks @gpatel-fr
+  - Enhance Python restore tool, thanks @gpatel-fr
+  - Report all filesets in error in VerifyConsistency, thanks @gpatel-fr
+  - Remove reliance on statusText for error messages (http2 proxy support), thanks @jojo-1000
+  - Keep user-defined whitespace in description field (allow multiline support), thanks @jojo-1000
+  - Force a vacuum of bug report database for privacy reasons, thanks @gpatel-fr
+
 2023-05-25 - 2.0.7.2_canary_2023-05-25
 ==========
 - update Github tests versions, thanks @taz-il

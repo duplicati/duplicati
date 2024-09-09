@@ -69,11 +69,10 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
         }
 
         options = {
-            headers: {'Content-Type': 'application/json; charset=utf-8'},
             responseType: 'text'
         };
 
-        AppService.post('/commandline', combined, options).then(
+        AppService.postJson('/commandline', combined, options).then(
             function(resp) {
                 $location.path('/commandline/view/' + resp.data.ID);
             },
@@ -162,7 +161,7 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
     }
 
     if ($routeParams.backupid != null) {
-        AppService.get('/backup/' + $routeParams.backupid + '/export?argsonly=true&export-passwords=true').then(
+        AppService.get('/backup/' + $routeParams.backupid + '/export-argsonly?export-passwords=true').then(
             function(resp) {
                 $scope.TargetURL = resp.data.Backend;
                 $scope.Arguments = resp.data.Arguments;
@@ -170,9 +169,7 @@ backupApp.controller('CommandlineController', function($scope, $routeParams, $lo
                 $scope.Command = 'backup';
             },
             function(resp) {
-                var message = resp.statusText;
-                if (resp.data != null && resp.data.Message != null)
-                    message = resp.data.Message;
+                var message = AppService.responseErrorMessage(resp);
 
                 DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to connect: {{message}}', { message: message }));
             }

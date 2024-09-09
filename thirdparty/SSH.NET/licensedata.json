@@ -1,6 +1,6 @@
 {
     "name": "SSH Client for .Net",
-    "description": "A .Net library for connecting with the SSH protocol",
+    "description": "A .Net library for connecting with the SSH protocol.",
     "link": "https://github.com/sshnet/SSH.NET",
     "license": "MIT",
     "notes": ""

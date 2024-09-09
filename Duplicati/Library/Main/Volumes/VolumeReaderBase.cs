@@ -1,4 +1,24 @@
-﻿using Duplicati.Library.Interface;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -14,7 +34,7 @@ namespace Duplicati.Library.Main.Volumes
         protected readonly bool m_disposeCompression = false;
         protected ICompression m_compression;
         protected Stream m_stream;
-        
+
         private static ICompression LoadCompressor(string compressor, Stream stream, Options options)
         {
             var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, stream, Interface.ArchiveMode.Read, options.RawOptions);
@@ -44,7 +64,7 @@ namespace Duplicati.Library.Main.Volumes
             ReadFileset();
 
             ReadManifests(options);
-            
+
             m_disposeCompression = true;
         }
 
@@ -110,6 +130,12 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
+        /// <summary>
+        /// Updates the options with data from the manifest file, but does not overwrite existing values
+        /// </summary>
+        /// <param name="compressor">The compressor to use</param>
+        /// <param name="file">The file to read the manifest from</param>
+        /// <param name="options">The options to update</param>
         public static void UpdateOptionsFromManifest(string compressor, string file, Options options)
         {
             using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -150,13 +176,13 @@ namespace Duplicati.Library.Main.Volumes
             using (var fs = compression.OpenRead(filename))
             {
                 int s;
-				var read = 0L;
+                var read = 0L;
                 while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
                 {
                     if (s != buffer.Length)
-						throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
+                        throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
 
-					read++;
+                    read++;
                     yield return Convert.ToBase64String(buffer);
                 }
             }
