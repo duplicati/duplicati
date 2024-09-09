@@ -1,7 +1,7 @@
 {
     "name": "AlphaVSS",
-    "description": "A library for accessing Windows Shadow Copy service",
-    "link": "http://alphavss.codeplex.com",
-    "license": "MIT",
+    "description": "A library for accessing Windows Shadow Copy service.",
+    "link": "https://github.com/alphaleonis/AlphaVSS/",
+    "license": "Apache 2.0",
     "notes": ""
 }

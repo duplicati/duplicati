@@ -1,0 +1,27 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.txt file in this directory for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <UI>
+            <Dialog Id="FilesInUse" Width="370" Height="270" Title="[ProductName] Setup" KeepModeless="yes">
+                <Control Id="Retry" Type="PushButton" X="304" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="Retry">
+                    <Publish Event="EndDialog" Value="Retry" />
+                </Control>
+                <Control Id="Ignore" Type="PushButton" X="235" Y="243" Width="56" Height="17" Text="Ignore">
+                    <Publish Event="EndDialog" Value="Ignore" />
+                </Control>
+                <Control Id="Exit" Type="PushButton" X="166" Y="243" Width="56" Height="17" Text="Exit">
+                    <Publish Event="EndDialog" Value="Exit" />
+                </Control>
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+                <Control Id="Text" Type="Text" X="20" Y="55" Width="330" Height="30" Text="The following applications are using files that need to be updated by this setup. Close these applications and then click Retry to continue setup or Exit to exit it." />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Description" Type="Text" X="20" Y="23" Width="280" Height="20" Transparent="yes" NoPrefix="yes" Text="Some files that need to be updated are currently in use." />
+                <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Files in Use" />
+                <Control Id="List" Type="ListBox" X="20" Y="87" Width="330" Height="130" Property="FileInUseProcess" Sunken="yes" TabSkip="yes" />
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>

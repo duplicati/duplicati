@@ -1,9 +1,9 @@
-// duplicati 2.0 less | Alex Franzelin 2015
+/* duplicati 2.0 less | Alex Franzelin 2015 */
 @import 'fonts.less';
 @import 'form.less';
 @import 'font-awesome/font-awesome.less';
 
-// https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+/* https://css-tricks.com/snippets/css/a-guide-to-flexbox/ */
 .flexbox() {
     display: -webkit-box;
     display: -moz-box;
@@ -47,6 +47,10 @@ h3 {
 
 a {
     text-decoration: none;
+}
+
+button {
+    border: none; /* Remove default border */
 }
 
 ul {
@@ -267,6 +271,10 @@ wait-area {
 
 .warning-color {
     color: #ffcc00;
+}
+
+.fatal-color {
+    color: #990000;
 }
 
 ul.tabs {
@@ -503,11 +511,27 @@ ul.notification {
         width: auto;
     }
 
+    /* Anchor link to remove an option */
+    .delete-item {
+        .button;
+    }
+
     .longdescription {
-        margin-top: 10px;
+        --margin-block: 10px; /* Magic number */
+
+        margin-top: var(--margin-block);
         margin-left: 190px;
         clear: both;
         font-style: italic;
+        white-space: pre-wrap;
+
+        .longdescription__item {
+            margin-block: 0 var(--margin-block);
+        }
+
+        .longdescription__default {
+            margin-block: var(--margin-block) 0;
+        }
     }
 }
 
@@ -556,6 +580,21 @@ ul.notification {
     }
 }
 
+.note {
+    & p {
+        /* Override default block margin */
+        margin-block: 0.5rem; /* Magic number */
+
+        &:first-child {
+            margin-top: 0;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
 .fixed-width-font {
     font-family: monospace;
 }
@@ -572,6 +611,16 @@ div.captcha {
         margin-left: auto;
         margin-right: auto;
         width: 180px;
+    }
+    .code {
+        background: lightgray;
+        color: black;
+        font-family: monospace;
+        font-size: xx-large;
+        padding: 10px;
+    }
+    .answer {
+        margin-top: 16px;
     }
 }
 
@@ -604,6 +653,13 @@ body {
             a:hover,
             a.active {
                 color: darken(@tColor, 25%);
+            }
+
+            button {
+                width: 26px;
+                height: 26px;
+                background-size: 26px;
+                cursor: pointer;
             }
 
             .logo {
@@ -667,13 +723,13 @@ body {
                     width: 26px;
                     margin: 13px 15px;
 
-                    .stop {
+                    button {
                         display: block;
-                        width: 26px;
-                        height: 26px;
+                    }
+
+                    .stop {
                         background: url('../img/progress-stop.png');
-                        background-size: 26px;
-                        cursor: pointer;
+                        background-size: 100%;
                         z-index: 10;
                         position: relative;
 
@@ -687,12 +743,8 @@ body {
                     }
 
                     .resume {
-                        display: block;
-                        width: 26px;
-                        height: 26px;
                         background: url('../img/progress-resume.png');
-                        background-size: 26px;
-                        cursor: pointer;
+                        background-size: 100%;
 
                         @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                             background-image: url('../img/progress-resume_2x.png');
@@ -741,13 +793,13 @@ body {
 
             .action-icons,
             .action-icons-small {
-                > .pause {
-                    width: 26px;
-                    height: 26px;
+                > button {
                     display: inline-block;
-                    cursor: pointer;
+                }
+
+                > .pause {
                     background: url('../img/pause.png');
-                    background-size: 26px;
+                    background-size: 100%;
 
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/pause_2x.png');
@@ -760,7 +812,7 @@ body {
 
                 > .pause.active {
                     background: url('../img/resume.png');
-                    background-size: 26px;
+                    background-size: 100%;
 
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/resume_2x.png');
@@ -772,12 +824,8 @@ body {
                 }
 
                 > .throttle {
-                    width: 26px;
-                    height: 26px;
-                    display: inline-block;
-                    cursor: pointer;
                     background: url('../img/throttle.png');
-                    background-size: 26px;
+                    background-size: 100%;
 
                     @media only screen and (-webkit-min-device-pixel-ratio: 1.25), only screen and (min-resolution: 192dpi), only screen and (min-resolution: 1.25dppx) {
                         background-image: url('../img/throttle_2x.png');
@@ -807,31 +855,6 @@ body {
                         float: right;
                         padding-right: 20px;
                     }
-                }
-            }
-
-            .donate {
-                float: right;
-
-                ul {
-                    overflow: hidden;
-                    float: right;
-                    padding-left: 20px;
-                    padding-right: 10px;
-
-                    li {
-                        float: right;
-                        margin-right: 10px;
-                        padding-top: 5px;
-                    }
-                }
-
-                img {
-                    opacity: 0.6;
-                }
-
-                img:hover {
-                    opacity: 1;
                 }
             }
         }
@@ -1275,8 +1298,8 @@ body {
 
                             dt.active,
                             dt:hover {
-                                //background: @lColor;
-                                //color: white;
+                                /* background: @lColor; */
+                                /* color: white; */
                             }
 
                             dd {
@@ -1290,13 +1313,61 @@ body {
                     }
                 }
 
+                /* TODO: merge these blocks with below */
+                div.add,
+                div.restore {
+                    --legends-width: 700px;
+                    --legends-padding-left: calc(calc(700px - var(--legends-width)) / 2);
+                    --circle-width: 43px;
+                    --step-width: calc(var(--legends-width) / var(--legends-steps));
+
+                    .steps {
+                        margin-left: calc(calc(calc(var(--step-width) - var(--circle-width)) / 2) + var(--legends-padding-left));
+
+                        & button,
+                        & div {
+                            padding-left: calc(var(--step-width) - var(--circle-width));
+                            padding-right: 0;
+
+                            &:first-child {
+                                padding-left: unset;
+                            }
+                        }
+                    }
+
+                    .steps-legend {
+                        padding-left: var(--legends-padding-left);
+
+                        li {
+                            width: var(--step-width);
+                        }
+                    }
+                }
+
+                div.add {
+                    --legends-steps: 5;
+                }
+
+                div.restore {
+                    --legends-steps: 2;
+
+                    &.restore-direct {
+                        --legends-steps: 4;
+
+                        .steps-legend {
+                            padding-left: 20px; /* Align "Backup location" */
+                        }
+                    }
+                }
+
                 div.add,
                 div.restore {
                     .steps {
                         width: 100%;
                         overflow: hidden;
 
-                        .step {
+                        & button,
+                        & div {
                             float: left;
                             background: url('../img/steps/line-out.png') no-repeat top left;
                             background-size: 485px 24px;
@@ -1311,36 +1382,35 @@ body {
                             }
 
                             span {
+                                --size: 35px;
+
                                 display: block;
-                                border: 4px #c7e5f6 solid;
+                                border-width: 4px;
+                                border-style: solid;
+                                border-color: #c7e5f6;
                                 background: white;
                                 border-radius: 50%;
-                                width: 35px;
-                                height: 35px;
+                                width: var(--size);
+                                height: var(--size);
                                 text-align: center;
                                 font-size: 22px;
-                                line-height: 35px;
+                                line-height: var(--size);
                                 cursor: pointer;
                             }
-                        }
 
-                        .step.active {
-                            color: @lColor;
-
-                            span {
-                                border: 4px @lColor solid;
-                                background: @lColor;
-                                color: white;
-                            }
-
-                            h2 {
+                            &.active {
                                 color: @lColor;
-                            }
-                        }
 
-                        .step:first-child {
-                            padding-left: 0;
-                            background: transparent;
+                                span {
+                                    border-color: @lColor;
+                                    background: @lColor;
+                                    color: white;
+                                }
+
+                                h2 {
+                                    color: @lColor;
+                                }
+                            }
                         }
                     }
 
@@ -1517,10 +1587,6 @@ body {
                                     border-top: none;
                                 }
 
-                                li > a {
-                                    .button;
-                                }
-
                                 li.advancedentry {
                                     border-bottom: 1px solid lightgray;
                                 }
@@ -1612,8 +1678,12 @@ body {
                                 margin-right: 5px;
                             }
 
+                            /* TODO: investigate if this block can be merged with one on form.less */
                             select {
-                                padding: 5px 12px;
+                                --padding-block: 5px;
+
+                                padding: var(--padding-block) 12px;
+                                line-height: calc(var(--height) - calc(var(--padding-block) * 2));
                             }
                         }
 
@@ -1662,87 +1732,51 @@ body {
                     }
                 }
 
-                div.add {
-                    @legends-steps: 5;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
+                div.add .step2,
+                div.restore .step1,
+                .commandline {
+                    /* .step2: "destination" on adding/editing backup task
+                       .step1: "backup location" on a direct restore task
+                       .commandline: the form on "Target URL >"
+                       TODO: integrate with form.less after investigation */
+                    .input.select {
+                        display: grid;
+                        grid-auto-flow: column;
+                        justify-content: flex-start;
+                        grid-template-areas:
+                            "label server"
+                            ".     custom"; /* Adding an empty block ensures the grid area 'server' and 'custom' are aligned. */
 
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
+                        label {
+                            grid-area: label;
+                        }
 
-                        .step {
-                            padding-left: @step-width - @circle-width;
+                        select {
+                            grid-area: server;
+                        }
+
+                        input {
+                            grid-area: custom;
+
+                            /* Add gap between this input area and the select
+                               element above. Avoid using the row-gap property
+                               as it sets the gap even if this input area does
+                               not exist. */
+                            margin-top: 10px; /* Magic number */
                         }
                     }
 
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
+                    .input.text {
+                        #generic_server {
+                            width: 335px;
+                        }
 
-                        li {
-                            width: @step-width;
+                        #generic_port {
+                            width: 50px;
+                            margin-left: 10px; /* Magic number */
                         }
                     }
                 }
-
-                div.restore {
-                    @legends-steps: 2;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
-
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
-
-                        .step {
-                            padding-left: @step-width - @circle-width;
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
-
-                        li {
-                            width: @step-width;
-                        }
-                    }
-                }
-
-                div.restore.restore-direct {
-                    @legends-steps: 4;
-                    @legends-width: 700px;
-                    @legends-padding-left: (700px - @legends-width) / 2;
-                    @circle-width: 43px;
-                    @step-width: @legends-width / @legends-steps;
-
-                    .steps {
-                        margin-left: (@step-width - @circle-width) / 2 + @legends-padding-left;
-
-                        .step {
-                            padding-left: @step-width - @circle-width;
-                        }
-                    }
-
-                    .steps-legend {
-                        padding-left: @legends-padding-left;
-
-                        li {
-                            width: @step-width;
-                        }
-                    }
-
-                    .step:first-child {
-                        padding-left: 0;
-                        background: transparent;
-                    }
-
-                    .steps-legend {
-                        padding-left: 20px;
-                    }
-                }
-
 
                 div.headerthreedotmenu {
                     margin: 20px 0 20px 0;
@@ -1815,6 +1849,20 @@ body {
                     }
                 }
 
+                .about-general {
+                    .about-general__block {
+                        margin-block: 1rem;
+
+                        &:first-child {
+                            margin-top: 10px; /* See: ul.tabs */
+                        }
+
+                        &:last-child {
+                            margin-bottom: 0;
+                        }
+                    }
+                }
+
                 .prewrapped-text {
                     white-space: pre-wrap;
                     overflow-x: auto;
@@ -1855,39 +1903,6 @@ body {
                     float: left;
                     padding-left: 20px;
                 }
-            }
-
-            .donate {
-                display: none;
-                float: right;
-                padding-right: 40px;
-                overflow: hidden;
-
-                ul {
-                    overflow: hidden;
-                    float: right;
-
-                    li {
-                        float: left;
-                        margin-left: 10px;
-
-                        a {
-                            img {
-                                margin-top: 24px;
-                                display: inline-block;
-                                opacity: 0.6;
-                            }
-
-                            img:hover {
-                                opacity: 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            .donate > a {
-                float: left;
             }
 
             .social {
@@ -1933,7 +1948,7 @@ body {
     }
 }
 
-// Modal windows
+/* Modal windows */
 .remodal {
     padding: 30px;
     box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.3);
@@ -2038,6 +2053,16 @@ div.modal-dialog {
         background-color: white;
         border: 1px solid white;
         padding: 20px;
+
+        /* Reset default margin */
+        & p:first-child {
+            margin-top: 0;
+        }
+
+        /* Reset default margin */
+        & p:last-child {
+            margin-bottom: 0;
+        }
     }
 
     .buttons {
@@ -2073,7 +2098,7 @@ div.modal-dialog {
         ul {
             float: right;
         }
-        // tooltipped css taken from: https://github.com/primer/primer-tooltips and https://sachinchoolur.github.io/ngclipboard/
+        /* tooltipped css taken from: https://github.com/primer/primer-tooltips and https://sachinchoolur.github.io/ngclipboard/ */
         .tooltipped {
             position: relative
         }
@@ -2513,18 +2538,6 @@ div.modal-dialog {
     }
 }
 
-// Smaller screen sizes
-@media (max-width: 1200px) {
-    body {
-        .container {
-            .header {
-                .donate {
-                }
-            }
-        }
-    }
-}
-
 @media (max-width: 1150px) {
     body {
         .container {
@@ -2591,10 +2604,6 @@ div.modal-dialog {
                     @media (-webkit-min-device-pixel-ratio: 2.25), (min-resolution: 288dpi), (min-resolution: 2.25dppx) {
                         background-image: url('../img/menu_active_3x.png');
                     }
-                }
-
-                .donate {
-                    display: none;
                 }
             }
 
@@ -2787,7 +2796,7 @@ div.modal-dialog {
                             .input.overlayButton {
                                 padding-top: 8px;
                                 padding-bottom: 30px;
-                                //border-bottom: 1px #ddd solid;
+                                /* border-bottom: 1px #ddd solid; */
                                 margin-bottom: 10px;
 
                                 a.button {
@@ -2814,10 +2823,10 @@ div.modal-dialog {
                             }
 
                             .filters {
-                                //border-bottom: 1px #ddd solid;
+                                /* border-bottom: 1px #ddd solid; */
 
                                 .input.link {
-                                    //padding-bottom: 0;
+                                    /* padding-bottom: 0; */
                                 }
 
                                 .input.textarea {
@@ -2916,27 +2925,10 @@ div.modal-dialog {
                 }
 
                 li,
-                .donate,
                 .social,
                 .about-footer {
                     padding: 8px 0;
                     border-bottom: 1px #ddd solid;
-                }
-
-                .donate {
-                    display: block;
-
-                    ul {
-                        li {
-                            display: inline-block;
-                            border: none;
-                            margin: 0 5px;
-
-                            a img {
-                                margin-top: 0;
-                            }
-                        }
-                    }
                 }
 
                 .social {
@@ -2947,7 +2939,7 @@ div.modal-dialog {
                 }
 
                 .themelink {
-                    padding: 5px 0;
+                    padding: 8px 0;
                 }
             }
         }

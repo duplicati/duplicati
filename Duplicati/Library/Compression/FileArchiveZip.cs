@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,7 +34,7 @@ using System.Linq;
 namespace Duplicati.Library.Compression
 {
     /// <summary>
-    /// An abstraction of a zip archive as a FileArchive, based on SharpCompress.
+    /// An abstraction of a ZIP archive as a FileArchive, based on SharpCompress.
     /// Please note, duplicati does not require both Read &amp; Write access at the same time so this has not been implemented.
     /// </summary>
     public class FileArchiveZip : ICompression
@@ -60,7 +62,7 @@ namespace Duplicati.Library.Compression
         /// </summary>
         private const string COMPRESSION_METHOD_OPTION = "zip-compression-method";
         /// <summary>
-        /// The commandline option for toggling the zip64 support
+        /// The commandline option for toggling the ZIP64 support
         /// </summary>
         private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
 
@@ -75,7 +77,7 @@ namespace Duplicati.Library.Compression
         private const CompressionType DEFAULT_COMPRESSION_METHOD = CompressionType.Deflate;
 
         /// <summary>
-        /// The default setting for the zip64 support
+        /// The default setting for the ZIP64 support
         /// </summary>
         private const bool DEFAULT_ZIP64 = false;
 
@@ -85,7 +87,7 @@ namespace Duplicati.Library.Compression
         private const int CENTRAL_HEADER_ENTRY_SIZE = 8 + 2 + 2 + 4 + 4 + 4 + 4 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 4;
 
         /// <summary>
-        /// The size of the extended zip64 header
+        /// The size of the extended ZIP64 header
         /// </summary>
         private const int CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA = 2 + 2 + 8 + 8 + 8 + 4;
 
@@ -135,7 +137,7 @@ namespace Duplicati.Library.Compression
         private readonly CompressionType m_compressionType;
 
         /// <summary>
-        /// A flag indicating if zip64 is in use
+        /// A flag indicating if ZIP64 is in use
         /// </summary>
         private readonly bool m_usingZip64;
 
@@ -197,7 +199,7 @@ namespace Duplicati.Library.Compression
         }
 
         /// <summary>
-        /// Constructs a new zip instance.
+        /// Constructs a new ZIP instance.
         /// Access mode is specified by mode parameter.
         /// Note that stream would not be disposed by FileArchiveZip instance so
         /// you may reuse it and have to dispose it yourself.
@@ -359,7 +361,7 @@ namespace Duplicati.Library.Compression
                     if (m_using_reader)
                         throw;
 
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeaderFallback", ex, "Zip archive appears to have a broken Central Record Header, switching to stream mode");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeaderFallback", ex, "ZIP archive appears to have a broken Central Record Header, switching to stream mode");
                     SwitchToReader();
 
                     var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
@@ -383,7 +385,7 @@ namespace Duplicati.Library.Compression
                         if (d.Count < 2)
                             throw;
 
-                        Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeader", ex2, "Zip archive appears to have broken records, returning the {0} records that could be recovered", d.Count);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BrokenCentralHeader", ex2, "ZIP archive appears to have broken records, returning the {0} records that could be recovered", d.Count);
                     }
 
                     m_entryDict = d;

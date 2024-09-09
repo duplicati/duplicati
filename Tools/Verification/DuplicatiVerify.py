@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 This file is a standalone python script that is tested with python 2.7 & 

@@ -102,6 +102,8 @@ backupApp.directive('advancedOptionsEditor', function() {
                     return 'size';
                 else if (item.Type == 'Timespan')
                     return 'timespan';
+                else if (item.Type == 'Decimal')
+                    return 'decimal';
                 else
                     return 'text';
             };

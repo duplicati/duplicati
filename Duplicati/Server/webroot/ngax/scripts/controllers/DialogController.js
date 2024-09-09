@@ -23,8 +23,11 @@ backupApp.controller('DialogController', function($scope, DialogService, gettext
     $scope.onButtonClick = function(index) {
         var cur = $scope.state.CurrentItem;
         var input = cur.textarea;
-        DialogService.dismissCurrent();
 
+        if (cur.validate && !cur.validate(index, input, cur))
+            return;
+
+        DialogService.dismissCurrent();
         if (cur.callback)
             cur.callback(index, input, cur);
     };

@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -27,15 +29,14 @@ using System.Threading;
 
 namespace Duplicati.CommandLine.BackendTester
 {
-    class Program
+    public class Program
     {
-
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
-        #pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
         private static IDisposable SystemSettings;
-        #pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
 
         class TempFile
         {
@@ -61,16 +62,12 @@ namespace Duplicati.CommandLine.BackendTester
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
-            Duplicati.Library.AutoUpdater.UpdaterManager.IgnoreWebrootFolder = true;
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args);
-        }
-
-        public static void RealMain(string[] _args)
+        public static int Main(string[] _args)
         {
             try
             {
+                Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.BackendTester);
+
                 if (_args.Length == 1)
                 {
                     try
@@ -78,8 +75,8 @@ namespace Duplicati.CommandLine.BackendTester
                         var p = Environment.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
-                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
-                                select x.Trim()
+                                     where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
+                                     select x.Trim()
                             ).ToArray();
                     }
                     catch
@@ -105,12 +102,12 @@ namespace Duplicati.CommandLine.BackendTester
                     foreach (string s in lines)
                         Console.WriteLine(s);
 
-                    return;
+                    return 0;
                 }
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
-                
+
                 SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
 
                 if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
@@ -127,14 +124,17 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     Console.WriteLine("Starting run no {0}", i);
                     if (!Run(args, options, i == 0))
-                        return;
+                        return 1;
                 }
                 Console.WriteLine("Unittest complete!");
+                return 0;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Unittest failed: " + ex);
             }
+
+            return 1;
         }
 
         static bool Run(List<string> args, Dictionary<string, string> options, bool first)
@@ -596,11 +596,11 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this value is the upper bound", "50mb"),
                     new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the lower bound", "5"),
                     new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
-                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trims whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
-                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
-                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypasses the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
-                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Removes any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
-                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activates file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
+                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trim whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
+                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allow automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
+                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
+                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Remove any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
+                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activate file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
                 });
             }
         }

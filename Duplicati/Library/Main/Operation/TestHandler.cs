@@ -1,25 +1,31 @@
-//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using Duplicati.Library.Main.Database;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using System.Security.Cryptography;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -33,33 +39,33 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private readonly string m_backendurl;
         private readonly TestResults m_results;
-        
+
         public TestHandler(string backendurl, Options options, TestResults results)
         {
             m_options = options;
             m_backendurl = backendurl;
             m_results = results;
         }
-        
+
         public void Run(long samples)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
-                                
-            using(var db = new LocalTestDatabase(m_options.Dbpath))
-            using(var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
+
+            using (var db = new LocalTestDatabase(m_options.Dbpath))
+            using (var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
             {
                 db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyParameters(db, m_options);
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
                 FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter, true, null);
 
                 DoRun(samples, db, backend);
                 db.WriteResults();
             }
         }
-        
+
         public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
         {
             var files = db.SelectTestTargets(samples, m_options).ToList();
@@ -67,10 +73,10 @@ namespace Duplicati.Library.Main.Operation
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
             m_results.OperationProgressUpdater.UpdateProgress(0);
             var progress = 0L;
-            
-            if (m_options.FullRemoteVerification)
+
+            if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
-                foreach(var vol in new AsyncDownloader(files, backend))
+                foreach (var vol in new AsyncDownloader(files, backend))
                 {
                     try
                     {
@@ -79,13 +85,13 @@ namespace Duplicati.Library.Main.Operation
                             backend.WaitForComplete(db, null);
                             m_results.EndTime = DateTime.UtcNow;
                             return;
-                        }    
+                        }
 
                         progress++;
                         m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                        using(var tf = vol.TempFile)
+                        using (var tf = vol.TempFile)
                             res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
@@ -112,7 +118,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                             }
                         }
-                        
+
                         db.UpdateVerificationCount(vol.Name);
                     }
                     catch (Exception ex)
@@ -129,7 +135,7 @@ namespace Duplicati.Library.Main.Operation
             }
             else
             {
-                foreach(var f in files)
+                foreach (var f in files)
                 {
                     try
                     {
@@ -171,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                             backend.GetForTesting(f.Name, f.Size, f.Hash);
-                        
+
                         db.UpdateVerificationCount(f.Name);
                         m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
                     }
@@ -189,6 +195,17 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_results.EndTime = DateTime.UtcNow;
+            // generate a backup error status when any test is failing - except for 'extra' status
+            // because these problems don't block database rebuilding.
+            var filtered = from n in m_results.Verifications where n.Value.Any(x => x.Key != TestEntryStatus.Extra) select n;
+            if (!filtered.Any())
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "Test results", "Successfully verified {0} remote files", m_results.VerificationsActualLength);
+            }
+            else
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "Test results", null, "Verified {0} remote files with {1} problem(s)", m_results.VerificationsActualLength, filtered.Count());
+            }
         }
 
         /// <summary>
@@ -199,14 +216,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
         public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent)
         {
-            var blockhasher = Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm);
- 
-            if (blockhasher == null)
-                throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm), "BlockHashAlgorithmInvalid");
-            if (!blockhasher.CanReuseTransform)
-                throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm), "BlockHashAlgorithmInvalid");
-                
-            var hashsize = blockhasher.HashSize / 8;
+            var hashsize = HashFactory.HashSizeBytes(options.BlockHashAlgorithm);
             var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
             sample_percent = Math.Min(1, Math.Max(sample_percent, 0.01));
 
@@ -252,6 +262,7 @@ namespace Duplicati.Library.Main.Operation
 
                     return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined.ToList());
                 case RemoteVolumeType.Blocks:
+                    using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
                     using (var bl = db.CreateBlocklist(vol.Name))
                     using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                     {

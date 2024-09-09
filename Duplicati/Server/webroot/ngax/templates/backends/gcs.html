@@ -11,7 +11,7 @@
     <input type="text" name="gcs_authid" id="gcs_authid" ng-model="$parent.AuthID"  placeholder="{{'Click the AuthID link to create an AuthID' | translate}}" />
 </div>
 
-<div class="input text">
+<div class="input select">
     <label for="gcs_location" translate>Bucket create location</label>
 
     <select name="gcs_location" id="gcs_location" ng-model="$parent.gcs_location" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_locations | orderBy: k">
@@ -22,7 +22,7 @@
 
 </div>
 
-<div class="input text">
+<div class="input select">
     <label for="gcs_storageclass" translate>Bucket storage class</label>
 
     <select name="gcs_storageclass" id="gcs_storageclass" ng-model="$parent.gcs_storageclass" ng-options="v as k + ' (' + v + ')' for (k, v) in gcs_storageclasses | orderBy: k">
@@ -38,4 +38,3 @@
     <label for="gcs_path" translate>GCS Project ID</label>
     <input type="text" name="s3_path" id="s3_path" ng-model="$parent.gcs_projectid" placeholder="{{'ProjectID is optional if the bucket exist' | translate}}" />
 </div>
-

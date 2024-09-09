@@ -1,0 +1,28 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.txt file in this directory for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <UI>
+            <Dialog Id="WelcomeDlg" Width="370" Height="270" Title="[ProductName] Setup">
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Next">
+                    <Publish Property="WixUI_InstallMode" Value="Update" Condition="Installed AND PATCH" />
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+                    <Publish Event="SpawnDialog" Value="CancelDlg" />
+                </Control>
+                <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="WixUI_Bmp_Dialog" />
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="Back" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Description" Type="Text" X="135" Y="80" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="The Setup Wizard will install [ProductName] on your computer. Click Next to continue or Cancel to exit the Setup Wizard." ShowCondition="NOT Installed OR NOT PATCH" HideCondition="Installed AND PATCH" />
+                <Control Id="PatchDescription" Type="Text" X="135" Y="80" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="The Setup Wizard will update [ProductName] on your computer. Click Next to continue or Cancel to exit the Setup Wiz
+                ard." ShowCondition="Installed AND PATCH" HideCondition="NOT Installed OR NOT PATCH" />
+                <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Welcome to the [ProductName] Setup Wizard" />
+            </Dialog>
+
+            <InstallUISequence>
+                <Show Dialog="WelcomeDlg" Before="ProgressDlg" Overridable="yes" Condition="NOT Installed OR PATCH" />
+            </InstallUISequence>
+        </UI>
+    </Fragment>
+</Wix>

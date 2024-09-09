@@ -1,7 +1,0 @@
-{
-    "name": "Signer",
-    "description": "A tool for signing assemblies",
-    "link": "http://signer.codeplex.com/",
-    "license": "LGPL",
-    "notes": "Not distributed, only used to sign assemblies"
-}

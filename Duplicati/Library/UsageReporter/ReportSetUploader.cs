@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using CoCoL;
 using System.Threading.Tasks;
@@ -21,6 +26,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using Duplicati.Library.Utility;
+using System.Threading;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -40,6 +48,12 @@ namespace Duplicati.Library.UsageReporter
         /// The target upload url
         /// </summary>
         private const string UPLOAD_URL = "https://usage-reporter.duplicati.com/api/v1/report";
+
+        /// <summary>
+        /// The default timeout in seconds for report uploads
+        /// </summary>
+        private const int UPLOAD_OPERATION_TIMEOUT_SECONDS = 60;
+
 
         /// <summary>
         /// Runs the upload process
@@ -65,23 +79,20 @@ namespace Duplicati.Library.UsageReporter
                         {
                             if (File.Exists(f))
                             {
-                                var req = (HttpWebRequest)WebRequest.Create(UPLOAD_URL);
-                                req.Method = "POST";
-                                req.ContentType = "application/json; charset=utf-8";
-
                                 int rc;
                                 using (var fs = File.OpenRead(f))
                                 {
                                     if (fs.Length > 0)
                                     {
-                                        req.ContentLength = fs.Length;
-                                        var areq = new Library.Utility.AsyncHttpRequest(req);
+                                        using var request = new HttpRequestMessage(HttpMethod.Post, UPLOAD_URL);
+                  
+                                        request.Content = new StreamContent(fs);
 
-                                        using (var rs = areq.GetRequestStream())
-                                            Library.Utility.Utility.CopyStream(fs, rs);
-
-                                        using (var resp = (HttpWebResponse)areq.GetResponse())
-                                            rc = (int)resp.StatusCode;
+                                        using var timeoutToken = new CancellationTokenSource();
+                                        timeoutToken.CancelAfter(TimeSpan.FromSeconds(UPLOAD_OPERATION_TIMEOUT_SECONDS));
+                                
+                                        var response = await HttpClientHelper.DefaultClient.UploadStream(request, timeoutToken.Token);
+                                        rc = (int)response.StatusCode;
                                     }
                                     else
                                         rc = 200;

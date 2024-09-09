@@ -21,6 +21,7 @@ backupApp.directive('restoreFilePicker', function() {
 
             $scope.systeminfo = SystemInfo.watch($scope);
             $scope.treedata = [];
+            $scope.AppUtils = AppUtils;
 
             function compareablePath(path) {
                 return scope.systeminfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
@@ -38,7 +39,7 @@ backupApp.directive('restoreFilePicker', function() {
                     // Prefix filter with "@" to prevent Duplicati from
                     // mistaking literal '*' and '?' characters in paths
                     // for glob wildcard characters
-                    AppService.get('/backup/' + $scope.ngBackupId + '/files/' + encodeURIComponent(node.id) + '?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent('@' + node.id)).then(function(data) {
+                    AppService.get('/backup/' + $scope.ngBackupId + '/files?prefix-only=false&folder-contents=true&time=' + encodeURIComponent($scope.ngTimestamp) + '&filter=' + encodeURIComponent('@' + node.id)).then(function(data) {
                         var children = []
 
                          for(var n in data.data.Files)
