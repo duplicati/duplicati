@@ -31,8 +31,8 @@ using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
 using Duplicati.Library.Logging;
+using Duplicati.Library.Main.Operation.Backup;
 
 namespace Duplicati.Library.Main.Operation
 {
