@@ -427,7 +427,10 @@ namespace Duplicati.Library.Main.Operation
                                             // If the hash is wrong, recreate will download the dblock volume with the correct file
                                             try
                                             {
-                                                restoredb.AddTempBlockListHash(b.Hash, b.Blocklist, tr);
+                                                // We need to instantiate the list to ensure the verification is
+                                                // done before we add it to the database, since we do not have nested transactions
+                                                var list = b.Blocklist.ToList();
+                                                restoredb.AddTempBlockListHash(b.Hash, list, tr);
                                             }
                                             catch (System.IO.InvalidDataException e)
                                             {
