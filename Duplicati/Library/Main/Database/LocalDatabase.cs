@@ -1343,12 +1343,21 @@ ORDER BY
             m_insertIndexBlockLink.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Returns all unique blocklists for a given volume
+        /// </summary>
+        /// <param name="volumeid">The volume ID to get blocklists for</param>
+        /// <param name="blocksize">The blocksize</param>
+        /// <param name="hashsize">The size of the hash</param>
+        /// <param name="transaction">An optional external transaction</param>
+        /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
         public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, System.Data.IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
+                // Group subquery by hash to ensure that each blocklist hash appears only once in the result
                 var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " +
-                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ?) A, " +
+                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", ""BlocklistHash"".""Index"" FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ? GROUP BY ""Block"".""Hash"", ""Block"".""Size"") A, " +
                     @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " +
                     @" ""B"".""Index"" >= (""A"".""Index"" * {0}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {0}) AND ""C"".""ID"" = ""B"".""BlockID"" " +
                     @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
@@ -1356,28 +1365,28 @@ ORDER BY
                 );
 
                 string curHash = null;
-                int index = 0;
+                int count = 0;
                 byte[] buffer = new byte[blocksize];
 
                 using (var rd = cmd.ExecuteReader(sql, volumeid))
                     while (rd.Read())
                     {
                         var blockhash = rd.GetValue(0).ToString();
-                        if ((blockhash != curHash && curHash != null) || index + hashsize > buffer.Length)
+                        if ((blockhash != curHash && curHash != null) || count + hashsize > buffer.Length)
                         {
-                            yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                            yield return new Tuple<string, byte[], int>(curHash, buffer, count);
                             buffer = new byte[blocksize];
-                            index = 0;
+                            count = 0;
                         }
 
                         var hash = Convert.FromBase64String(rd.GetValue(1).ToString());
-                        Array.Copy(hash, 0, buffer, index, hashsize);
+                        Array.Copy(hash, 0, buffer, count, hashsize);
                         curHash = blockhash;
-                        index += hashsize;
+                        count += hashsize;
                     }
 
                 if (curHash != null)
-                    yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                    yield return new Tuple<string, byte[], int>(curHash, buffer, count);
             }
         }
 
