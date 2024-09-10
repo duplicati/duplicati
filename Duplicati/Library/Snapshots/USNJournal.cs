@@ -27,9 +27,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 using System.Runtime.Versioning;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
 
@@ -286,7 +284,7 @@ namespace Duplicati.Library.Snapshots
 
                     if (m_offset >= m_entryData.Count)
                         return false;
-                    
+
                     var entry = GetBufferedEntry(m_bufferPointer, m_offset, out var fileName);
                     Current = new Record(entry, fileName);
                     m_offset += entry.RecordLength;
@@ -384,7 +382,7 @@ namespace Duplicati.Library.Snapshots
                 records.AddRange(EnumerateRecords(entryData)
                                     .TakeWhile(rec => rec.UsnRecord.Usn < m_journal.NextUsn)
                                     .Where(rec => rec.UsnRecord.Usn >= startUsn && (inclusionPredicate == null || inclusionPredicate(rec))));
-                readData.StartUsn = Marshal.ReadInt64(entryData, 0);
+                readData.StartUsn = BitConverter.ToInt64(entryData, 0);
             }
 
             return records;
@@ -410,7 +408,7 @@ namespace Duplicati.Library.Snapshots
                 ref enumData, bufferSize, out entryData))
             {
                 var e = Marshal.GetLastWin32Error();
-                if (e != Win32USN.ERROR_INSUFFICIENT_BUFFER) 
+                if (e != Win32USN.ERROR_INSUFFICIENT_BUFFER)
                     return null;
 
                 // retry, increasing buffer size
@@ -651,7 +649,7 @@ namespace Duplicati.Library.Snapshots
                 Sort();
 
                 // perform binary search
-                int index = m_records.BinarySearch(usnRecord, 
+                int index = m_records.BinarySearch(usnRecord,
                     Comparer<Record>.Create(
                         (left, right) =>
                         {
@@ -718,10 +716,6 @@ namespace Duplicati.Library.Snapshots
         }
 
         public UsnJournalSoftFailureException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected UsnJournalSoftFailureException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }
