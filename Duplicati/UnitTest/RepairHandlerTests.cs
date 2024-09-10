@@ -177,6 +177,7 @@ namespace Duplicati.UnitTest
                 ["no-encryption"] = "true",
                 ["auto-cleanup"] = "true"
             };
+            var delaytime = TimeSpan.FromSeconds(3);
             var filename = Path.Combine(this.DATAFOLDER, "file");
             using (var s = File.Create(filename))
                 s.SetLength(1024 * 38); // Random size
@@ -198,6 +199,7 @@ namespace Duplicati.UnitTest
 
             File.Copy(Path.Combine(this.TARGETFOLDER, sourcename), Path.Combine(this.TARGETFOLDER, newname));
 
+            System.Threading.Thread.Sleep(delaytime);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 var backupResults = c.Backup([this.DATAFOLDER]);
@@ -216,6 +218,7 @@ namespace Duplicati.UnitTest
             File.Delete(options["dbpath"]);
 
             // Recreate with an extra volume
+            System.Threading.Thread.Sleep(delaytime);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 var backupResults = c.Backup([this.DATAFOLDER]);
