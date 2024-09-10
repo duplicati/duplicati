@@ -420,8 +420,28 @@ namespace Duplicati.Library.Main.Operation
                                         }
 
                                         //If there are blocklists in the index file, add them to the temp blocklist hashes table
+                                        int wrongHashes = 0;
                                         foreach (var b in svr.BlockLists)
-                                            restoredb.AddTempBlockListHash(b.Hash, b.Blocklist, tr);
+                                        {
+                                            // Compact might have created undetected invalid blocklist entries in index files due to broken LocalDatabase.GetBlocklists
+                                            // If the hash is wrong, recreate will download the dblock volume with the correct file
+                                            try
+                                            {
+                                                // We need to instantiate the list to ensure the verification is
+                                                // done before we add it to the database, since we do not have nested transactions
+                                                var list = b.Blocklist.ToList();
+                                                restoredb.AddTempBlockListHash(b.Hash, list, tr);
+                                            }
+                                            catch (System.IO.InvalidDataException e)
+                                            {
+                                                Logging.Log.WriteVerboseMessage(LOGTAG, "InvalidDataBlocklist", e, "Exception while processing blocklists in {0}", sf.Name);
+                                                ++wrongHashes;
+                                            }
+                                        }
+                                        if (wrongHashes != 0)
+                                        {
+                                            Logging.Log.WriteWarningMessage(LOGTAG, "WrongBlocklistHashes", null, "{0} had invalid blocklists which could not be used. Consider deleting this index file and run repair to recreate it.", sf.Name);
+                                        }
                                     }
                                 }
                             }
