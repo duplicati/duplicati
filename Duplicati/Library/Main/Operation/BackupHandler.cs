@@ -170,14 +170,9 @@ namespace Duplicati.Library.Main.Operation
         /// and returned to the caller in an open state in either case.
         /// </summary>
         /// <returns>Results from the pre-backup verification</returns>
-        private async Task<PreBackupVerifyResult> PreBackupVerify()
+        private static async Task<PreBackupVerifyResult> PreBackupVerify(string backendurl, Options options, BackupResults result)
         {
-            // TODO: The m_result has a connection to the database, and so does the backend manager
-            // this creates a complicated state management situation
-
-            // This method should be static, but this cannot be done due to m_result,
-            // as passing it would still retain the connection to the database
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
+            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
 
             // Setup variables
             LocalBackupDatabase database = null;
@@ -191,15 +186,15 @@ namespace Duplicati.Library.Main.Operation
             {
                 try
                 {
-                    database = new LocalBackupDatabase(m_options.Dbpath, m_options);
-                    backendManager = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, database);
+                    database = new LocalBackupDatabase(options.Dbpath, options);
+                    backendManager = new BackendManager(backendurl, options, result.BackendWriter, database);
 
-                    m_result.SetDatabase(database);
-                    m_result.Dryrun = m_options.Dryrun;
+                    result.SetDatabase(database);
+                    result.Dryrun = options.Dryrun;
 
                     // Check the database integrity
-                    Utility.UpdateOptionsFromDb(database, m_options);
-                    Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
+                    Utility.UpdateOptionsFromDb(database, options);
+                    Utility.VerifyOptionsAndUpdateDatabase(database, options);
 
                     var probe_path = database.GetFirstPath();
                     if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
@@ -211,12 +206,12 @@ namespace Duplicati.Library.Main.Operation
                     if (database.RepairInProgress)
                         throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.", "DatabaseRepairInProgress");
 
-                    using (var db = new Backup.BackupDatabase(database, m_options))
+                    using (var db = new Backup.BackupDatabase(database, options))
                     {
                         // Make sure the database is sane
-                        await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
+                        await db.VerifyConsistencyAsync(options.Blocksize, options.BlockhashSize, !options.DisableFilelistConsistencyChecks);
 
-                        if (!m_options.DisableSyntheticFilelist)
+                        if (!options.DisableSyntheticFilelist)
                         {
                             var candidates = (await db.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToArray();
                             if (candidates.Any())
@@ -229,20 +224,20 @@ namespace Duplicati.Library.Main.Operation
 
                     try
                     {
-                        if (m_options.NoBackendverification)
+                        if (options.NoBackendverification)
                         {
                             FilelistProcessor.VerifyLocalList(backendManager, database);
-                            UpdateStorageStatsFromDatabase();
+                            UpdateStorageStatsFromDatabase(result, database, options, backendManager);
                         }
                         else
-                            FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, new string[] { lastTempFilelist }, logErrors: false);
+                            FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, new string[] { lastTempFilelist }, logErrors: false);
                     }
                     catch (RemoteListVerificationException ex)
                     {
-                        if (m_options.AutoCleanup)
+                        if (options.AutoCleanup)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "BackendVerifyFailedAttemptingCleanup", ex, "Backend verification failed, attempting automatic cleanup");
-                            m_result.RepairResults = new RepairResults(m_result);
+                            result.RepairResults = new RepairResults(result);
 
                             // Close the database to allow the repair to run, it may create a new database
                             backendManager.Dispose();
@@ -250,16 +245,16 @@ namespace Duplicati.Library.Main.Operation
 
                             database = null;
                             backendManager = null;
-                            m_result.SetDatabase(null);
-                            new RepairHandler(m_backendurl, m_options, (RepairResults)m_result.RepairResults).Run();
+                            result.SetDatabase(null);
+                            new RepairHandler(backendurl, options, (RepairResults)result.RepairResults).Run();
 
                             // Re-open the database and backend manager
-                            database = new LocalBackupDatabase(m_options.Dbpath, m_options);
-                            backendManager = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, database);
-                            m_result.SetDatabase(database);
+                            database = new LocalBackupDatabase(options.Dbpath, options);
+                            backendManager = new BackendManager(backendurl, options, result.BackendWriter, database);
+                            result.SetDatabase(database);
 
                             Logging.Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
-                            FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, new string[] { lastTempFilelist });
+                            FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, new string[] { lastTempFilelist });
                         }
                         else
                             throw;
@@ -417,34 +412,30 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Handler for computing backend statistics, without relying on a remote folder listing
         /// </summary>
-        private void UpdateStorageStatsFromDatabase()
+        private static void UpdateStorageStatsFromDatabase(BackupResults result, LocalBackupDatabase database, Options options, BackendManager backendManager)
         {
-            if (m_result.BackendWriter != null)
+            if (result.BackendWriter != null)
             {
-                m_result.BackendWriter.KnownFileCount = m_database.GetRemoteVolumes().Count();
-                m_result.BackendWriter.KnownFileSize = m_database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
+                result.BackendWriter.KnownFileCount = database.GetRemoteVolumes().Count();
+                result.BackendWriter.KnownFileSize = database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
 
-                m_result.BackendWriter.UnknownFileCount = 0;
-                m_result.BackendWriter.UnknownFileSize = 0;
+                result.BackendWriter.UnknownFileCount = 0;
+                result.BackendWriter.UnknownFileSize = 0;
 
-                m_result.BackendWriter.BackupListCount = m_database.FilesetTimes.Count();
-                m_result.BackendWriter.LastBackupDate = m_database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
+                result.BackendWriter.BackupListCount = database.FilesetTimes.Count();
+                result.BackendWriter.LastBackupDate = database.FilesetTimes.FirstOrDefault().Value.ToLocalTime();
 
-                // TODO: If we have a BackendManager, we should query through that
-                using (var backend = DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions))
+                if (!options.QuotaDisable)
                 {
-                    if (backend is IQuotaEnabledBackend enabledBackend && !m_options.QuotaDisable)
+                    var quota = backendManager.Quota;
+                    if (quota != null)
                     {
-                        Library.Interface.IQuotaInfo quota = enabledBackend.Quota;
-                        if (quota != null)
-                        {
-                            m_result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
-                            m_result.BackendWriter.FreeQuotaSpace = quota.FreeQuotaSpace;
-                        }
+                        result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
+                        result.BackendWriter.FreeQuotaSpace = quota.FreeQuotaSpace;
                     }
                 }
 
-                m_result.BackendWriter.AssignedQuotaSpace = m_options.QuotaSize;
+                result.BackendWriter.AssignedQuotaSpace = options.QuotaSize;
             }
         }
 
@@ -506,7 +497,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);
 
             // Do a remote verification, unless disabled
-            var (database, backendManager, lastTempFilelist, lastTempFilesetId) = await PreBackupVerify();
+            var (database, backendManager, lastTempFilelist, lastTempFilesetId) = await PreBackupVerify(m_backendurl, m_options, m_result);
 
             // New isolated scope for each operation
             using (new IsolatedChannelScope())
@@ -637,7 +628,7 @@ namespace Duplicati.Library.Main.Operation
                             if (m_result.TaskControlRendevouz() != TaskControlState.Abort)
                             {
                                 if (m_options.NoBackendverification)
-                                    UpdateStorageStatsFromDatabase();
+                                    UpdateStorageStatsFromDatabase(m_result, m_database, m_options, backendManager);
                                 else
                                     PostBackupVerification(filesetvolume.RemoteFilename);
                             }
