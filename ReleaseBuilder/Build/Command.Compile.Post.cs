@@ -1,7 +1,4 @@
-using System.IO.Compression;
-using System.Net;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Utility;
 
 namespace ReleaseBuilder.Build;
 
@@ -39,6 +36,7 @@ public static partial class Command
 
                 case OSType.Linux:
                     await ReplaceLibMonoUnix(baseDir, buildDir, arch);
+                    await ReplaceSQLiteInterop(baseDir, buildDir, arch);
                     break;
 
                 default:
@@ -273,6 +271,28 @@ public static partial class Command
 
             var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "libMono.Unix.so");
             var targetFile = Path.Combine(buildDir, "libMono.Unix.so");
+            if (!File.Exists(targetFile))
+                throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
+
+            File.Copy(sourceFile, targetFile, overwrite: true);
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Replaces the library SQLiteInterop.dll with a version that is built against GLIBC_2.33 for ARM7
+        /// </summary>
+        /// <param name="baseDir">The base directory</param>
+        /// <param name="buildDir">The build directory</param>
+        /// <param name="arch">The architecture to build for</param>
+        /// <returns>An awaitable task</returns>
+        static Task ReplaceSQLiteInterop(string baseDir, string buildDir, ArchType arch)
+        {
+            if (arch != ArchType.Arm7)
+                return Task.CompletedTask;
+
+            var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "SQLite.Interop.dll");
+            var targetFile = Path.Combine(buildDir, "SQLite.Interop.dll");
             if (!File.Exists(targetFile))
                 throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
 

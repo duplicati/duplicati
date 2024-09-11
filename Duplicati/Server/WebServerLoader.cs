@@ -7,10 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.IO;
 using Duplicati.Server.Database;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using SharpCompress.Common;
-using Amazon.Util.Internal.PlatformServices;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Connections;
 
 namespace Duplicati.Server;
 
@@ -50,9 +47,18 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_RESET_JWT_CONFIG = "webservice-reset-jwt-config";
 
     /// <summary>
+    /// Option for disabling the visual captcha
+    /// </summary>
+    public const string OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA = "webservice-disable-visual-captcha";
+
+    /// <summary>
     /// Option for setting the webservice allowed hostnames
     /// </summary>
-    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowedhostnames";
+    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowed-hostnames";
+    /// <summary>
+    /// Option for setting the webservice allowed hostnames, alternative name
+    /// </summary>
+    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT = "webservice-allowedhostnames";
 
     /// <summary>
     /// The default path to the web root
@@ -219,8 +225,13 @@ public static class WebServerLoader
             Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE),
             connection.ApplicationSettings.ServerSSLCertificatePassword,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
-            options.GetValueOrDefault(OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, "").Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+            (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
+
+        // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first
+        ports = ports.ToList();
+        if (ports.Contains(connection.ApplicationSettings.LastWebserverPort))
+            ports = ports.Where(x => x != connection.ApplicationSettings.LastWebserverPort).Prepend(connection.ApplicationSettings.LastWebserverPort).ToList();
 
         // If we are in hosted mode with no specified port, 
         // then try different ports
@@ -237,9 +248,11 @@ public static class WebServerLoader
 
                 return server;
             }
-            catch (System.Net.Sockets.SocketException)
-            {
-            }
+            catch (Exception ex) when
+                (ex is System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AddressAlreadyInUse }
+                || ex is System.IO.IOException { InnerException: AddressInUseException })
+            { }
+
 
         throw new Exception(Strings.Server.ServerStartFailure(ports));
     }

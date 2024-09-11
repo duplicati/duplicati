@@ -34,9 +34,9 @@ namespace Duplicati.CommandLine.BackendTester
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
-        #pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
         private static IDisposable SystemSettings;
-        #pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
 
         class TempFile
         {
@@ -66,6 +66,8 @@ namespace Duplicati.CommandLine.BackendTester
         {
             try
             {
+                Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.BackendTester);
+
                 if (_args.Length == 1)
                 {
                     try
@@ -73,8 +75,8 @@ namespace Duplicati.CommandLine.BackendTester
                         var p = Environment.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
-                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
-                                select x.Trim()
+                                     where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
+                                     select x.Trim()
                             ).ToArray();
                     }
                     catch
@@ -105,7 +107,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
-                
+
                 SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
 
                 if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
@@ -594,11 +596,11 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this value is the upper bound", "50mb"),
                     new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the lower bound", "5"),
                     new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
-                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trims whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
-                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
-                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypasses the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
-                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Removes any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
-                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activates file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
+                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trim whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
+                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allow automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
+                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
+                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Remove any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
+                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activate file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
                 });
             }
         }

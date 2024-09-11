@@ -30,6 +30,7 @@ using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
 using System.Threading;
 using System.Net;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main
 {
@@ -235,7 +236,7 @@ namespace Duplicati.Library.Main
             {
                 if (this.LocalTempfile != null)
                     try { this.LocalTempfile.Dispose(); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
                     finally { this.LocalTempfile = null; }
             }
 
@@ -418,7 +419,8 @@ namespace Duplicati.Library.Main
             }
 
             if (m_taskControl != null)
-                m_taskControl.StateChangedEvent += (state) => {
+                m_taskControl.StateChangedEvent += (state) =>
+                {
                     if (state == TaskControlState.Abort)
                         m_thread.Interrupt();
                 };
@@ -548,7 +550,7 @@ namespace Duplicati.Library.Main
                                     try
                                     {
                                         var names = m_backend.DNSName ?? new string[0];
-                                        foreach(var name in names)
+                                        foreach (var name in names)
                                             if (!string.IsNullOrWhiteSpace(name))
                                                 System.Net.Dns.GetHostEntry(name);
                                     }
@@ -1464,6 +1466,8 @@ namespace Duplicati.Library.Main
             if (m_lastException != null)
                 throw m_lastException;
         }
+
+        public IQuotaInfo Quota => (m_backend as IQuotaEnabledBackend)?.Quota;
 
         public bool FlushDbMessages()
         {

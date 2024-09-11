@@ -52,6 +52,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     m_runnerException = ex;
                     Duplicati.Server.Program.ServerStartedEvent.Set();
+                    Duplicati.Server.Program.ApplicationExitEvent.Set();
                 }
                 finally
                 {
@@ -73,13 +74,13 @@ namespace Duplicati.GUI.TrayIcon
             if (!Duplicati.Server.Program.ServerStartedEvent.WaitOne(TimeSpan.FromSeconds(100), true))
             {
                 if (m_runnerException != null)
-                    throw m_runnerException;
+                    throw new Duplicati.Library.Interface.UserInformationException("Server crashed on startup", "HostedStartupErrorCrash", m_runnerException);
                 else
                     throw new Duplicati.Library.Interface.UserInformationException("Hosted server startup timed out", "HostedStartupError");
             }
 
             if (m_runnerException != null)
-                throw m_runnerException;
+                throw new Duplicati.Library.Interface.UserInformationException("Server crashed on startup", "HostedStartupErrorCrash", m_runnerException);
         }
 
         public void Dispose()

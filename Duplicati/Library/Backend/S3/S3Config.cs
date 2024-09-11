@@ -74,14 +74,14 @@ namespace Duplicati.Library.Backend
 
         public string DisplayName { get { return LC.L("S3 configuration module"); } }
 
-        public string Description { get { return LC.L("Exposes S3 configuration as a web module"); } }
+        public string Description { get { return LC.L("Expose S3 configuration as a web module"); } }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
                 return new List<ICommandLineArgument>([
-                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provides different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
+                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provide different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
 
                 ]);
             }

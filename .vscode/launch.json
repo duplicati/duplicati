@@ -49,22 +49,22 @@
             "console": "internalConsole"
         },
         {
-            "name": "Launch ConfigurationImporter executable",
+            "name": "Launch RecoveryTool executable",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.ConfigurationImporter/bin/Debug/net8.0/Duplicati.CommandLine.ConfigurationImporter",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.RecoveryTool/bin/Debug/net8.0/Duplicati.CommandLine.RecoveryTool",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole"
         },
         {
-            "name": "Launch RecoveryTool executable",
+            "name": "Launch ServerUtil executable",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.RecoveryTool/bin/Debug/net8.0/Duplicati.CommandLine.RecoveryTool",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.ServerUtil/bin/Debug/net8.0/Duplicati.CommandLine.ServerUtil",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,

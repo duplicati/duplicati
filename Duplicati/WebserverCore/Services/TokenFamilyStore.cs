@@ -11,17 +11,18 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
     {
         var familyId = System.Security.Cryptography.RandomNumberGenerator.GetHexString(16);
         var counter = System.Security.Cryptography.RandomNumberGenerator.GetInt32(1024) % 1024;
+        var lastUpdated = DateTime.UtcNow;
         connection.ExecuteWithCommand(cmd =>
         {
             cmd.CommandText = @"INSERT INTO TokenFamily (""Id"", ""UserId"", ""Counter"", ""LastUpdated"") VALUES (?, ?, ?, ?)";
             cmd.AddParameter(familyId);
             cmd.AddParameter(userId);
             cmd.AddParameter(counter);
-            cmd.AddParameter(DateTime.UtcNow.Ticks);
+            cmd.AddParameter(lastUpdated.Ticks);
             cmd.ExecuteNonQuery();
         });
 
-        return Task.FromResult(new ITokenFamilyStore.TokenFamily(familyId, userId, counter));
+        return Task.FromResult(new ITokenFamilyStore.TokenFamily(familyId, userId, counter, lastUpdated));
     }
 
     public Task<ITokenFamilyStore.TokenFamily> GetTokenFamily(string userId, string familyId, CancellationToken ct)
@@ -29,14 +30,14 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         ITokenFamilyStore.TokenFamily? family = null;
         connection.ExecuteWithCommand(cmd =>
         {
-            cmd.CommandText = @"SELECT ""Id"", ""UserId"", ""Counter"" FROM ""TokenFamily"" WHERE ""Id"" = ? AND ""UserId"" = ?";
+            cmd.CommandText = @"SELECT ""Id"", ""UserId"", ""Counter"", ""LastUpdated"" FROM ""TokenFamily"" WHERE ""Id"" = ? AND ""UserId"" = ?";
             cmd.AddParameter(familyId);
             cmd.AddParameter(userId);
             using var reader = cmd.ExecuteReader();
             if (!reader.Read())
                 return;
 
-            family = new ITokenFamilyStore.TokenFamily(reader.GetString(0), reader.GetString(1), reader.GetInt32(2));
+            family = new ITokenFamilyStore.TokenFamily(reader.GetString(0), reader.GetString(1), reader.GetInt32(2), new DateTime(reader.GetInt64(3)));
         });
         return Task.FromResult(family ?? throw new Exceptions.UnauthorizedException("Token family not found"));
     }
@@ -44,11 +45,12 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
     public Task<ITokenFamilyStore.TokenFamily> IncrementTokenFamily(ITokenFamilyStore.TokenFamily tokenFamily, CancellationToken ct)
     {
         var nextCounter = tokenFamily.Counter + 1;
+        var lastUpdated = DateTime.UtcNow;
         connection.ExecuteWithCommand(cmd =>
         {
             cmd.CommandText = @"UPDATE ""TokenFamily"" SET ""Counter"" = ?, ""LastUpdated"" = ? WHERE ""Id"" = ? AND ""UserId"" = ? AND ""Counter"" = ?";
             cmd.AddParameter(nextCounter);
-            cmd.AddParameter(DateTime.UtcNow.Ticks);
+            cmd.AddParameter(lastUpdated.Ticks);
             cmd.AddParameter(tokenFamily.Id);
             cmd.AddParameter(tokenFamily.UserId);
             cmd.AddParameter(tokenFamily.Counter);
@@ -56,7 +58,7 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
                 throw new Exceptions.ConflictException("Token family counter mismatch or not found");
         });
 
-        return Task.FromResult(new ITokenFamilyStore.TokenFamily(tokenFamily.Id, tokenFamily.UserId, nextCounter));
+        return Task.FromResult(new ITokenFamilyStore.TokenFamily(tokenFamily.Id, tokenFamily.UserId, nextCounter, lastUpdated));
     }
 
     public Task InvalidateTokenFamily(string userId, string familyId, CancellationToken ct)

@@ -325,7 +325,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
             result.Backup.Settings.push({
                 Name: k,
-                Value: opts[k],
+                Value: opts[k]?.toString(),
                 Filter: origfilter,
                 Argument: origarg
             });
@@ -480,7 +480,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         } else {
 
             function putDb() {
-                AppService.put('/backup/' + $routeParams.backupid, result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
+                AppService.put('/backup/' + $routeParams.backupid, result).then(function() {
                     $location.path('/');
                 }, AppUtils.connectionError);
             }

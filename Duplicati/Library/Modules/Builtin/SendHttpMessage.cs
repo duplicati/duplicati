@@ -212,7 +212,7 @@ namespace Duplicati.Library.Modules.Builtin
                 if (!commandlineOptions.TryGetValue(OPTION_RESULT_FORMAT, out var format))
                     format = ResultExportFormat.Duplicati.ToString();
 
-                if (!Enum.TryParse<ResultExportFormat>(format, out var exportFormat))
+                if (!Enum.TryParse<ResultExportFormat>(format, true, out var exportFormat))
                     exportFormat = ResultExportFormat.Duplicati;
 
                 commandlineOptions.TryGetValue(OPTION_VERB, out var verb);

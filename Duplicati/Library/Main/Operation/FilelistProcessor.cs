@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
         public static void VerifyLocalList(BackendManager backend, LocalDatabase database)
         {
             var locallist = database.GetRemoteVolumes();
-            foreach(var i in locallist)
+            foreach (var i in locallist)
             {
                 switch (i.State)
                 {
@@ -95,19 +95,20 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
         /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles = null)
+        /// <param name="logErrors">Disable the logging of errors to prevent spamming the log; exceptions will be thrown regardless</param>
+        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles = null, bool logErrors = true)
         {
             var tp = RemoteListAnalysis(backend, options, database, log, protectedFiles);
             long extraCount = 0;
             long missingCount = 0;
 
-            foreach(var n in tp.ExtraVolumes)
+            foreach (var n in tp.ExtraVolumes)
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "ExtraUnknownFile", null, "Extra unknown file: {0}", n.File.Name);
                 extraCount++;
             }
 
-            foreach(var n in tp.MissingVolumes)
+            foreach (var n in tp.MissingVolumes)
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "MissingFile", null, "Missing file: {0}", n.Name);
                 missingCount++;
@@ -116,7 +117,8 @@ namespace Duplicati.Library.Main.Operation
             if (extraCount > 0)
             {
                 var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
-                Logging.Log.WriteErrorMessage(LOGTAG, "ExtraRemoteFiles", null, s);
+                if (logErrors)
+                    Logging.Log.WriteErrorMessage(LOGTAG, "ExtraRemoteFiles", null, s);
                 throw new RemoteListVerificationException(s, "ExtraRemoteFiles");
             }
 
@@ -126,7 +128,8 @@ namespace Duplicati.Library.Main.Operation
             if (doubles.Count > 0)
             {
                 var s = string.Format("Found remote files reported as duplicates, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {0}", string.Join(", ", doubles));
-                Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, s);
+                if (logErrors)
+                    Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, s);
                 throw new RemoteListVerificationException(s, "DuplicateRemoteFiles");
             }
 
@@ -138,7 +141,8 @@ namespace Duplicati.Library.Main.Operation
                 else
                     s = string.Format("Found {0} files that are missing from the remote storage, please run repair", missingCount);
 
-                Logging.Log.WriteErrorMessage(LOGTAG, "MissingRemoteFiles", null, s);
+                if (logErrors)
+                    Logging.Log.WriteErrorMessage(LOGTAG, "MissingRemoteFiles", null, s);
                 throw new RemoteListVerificationException(s, "MissingRemoteFiles");
             }
         }
@@ -176,11 +180,11 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="transaction">An optional transaction object</param>
         public static void UploadVerificationFile(string backendurl, Options options, IBackendWriter result, LocalDatabase db, System.Data.IDbTransaction transaction)
         {
-            using(var backend = new BackendManager(backendurl, options, result, db))
-            using(var tempfile = new Library.Utility.TempFile())
+            using (var backend = new BackendManager(backendurl, options, result, db))
+            using (var tempfile = new Library.Utility.TempFile())
             {
                 var remotename = options.Prefix + "-verification.json";
-                using(var stream = new System.IO.StreamWriter(tempfile, false, System.Text.Encoding.UTF8))
+                using (var stream = new System.IO.StreamWriter(tempfile, false, System.Text.Encoding.UTF8))
                     FilelistProcessor.CreateVerificationFile(db, stream);
 
                 if (options.Dryrun)
@@ -210,23 +214,24 @@ namespace Duplicati.Library.Main.Operation
             protectedFiles = protectedFiles ?? Enumerable.Empty<string>();
 
             var remotelist = (from n in rawlist
-                                       let p = Volumes.VolumeBase.ParseFilename(n)
-                                        where p != null && p.Prefix == options.Prefix
-                                       select p).ToList();
+                              let p = Volumes.VolumeBase.ParseFilename(n)
+                              where p != null && p.Prefix == options.Prefix
+                              select p).ToList();
 
             var otherlist = (from n in rawlist
-                                let p = Volumes.VolumeBase.ParseFilename(n)
-                                where p != null && p.Prefix != options.Prefix
-                                select p).ToList();
+                             let p = Volumes.VolumeBase.ParseFilename(n)
+                             where p != null && p.Prefix != options.Prefix
+                             select p).ToList();
 
             var unknownlist = (from n in rawlist
-                                        let p = Volumes.VolumeBase.ParseFilename(n)
-                                        where p == null
-                                        select n).ToList();
+                               let p = Volumes.VolumeBase.ParseFilename(n)
+                               where p == null
+                               select n).ToList();
 
             var filesets = (from n in remotelist
-                                     where n.FileType == RemoteVolumeType.Files orderby n.Time descending
-                                     select n).ToList();
+                            where n.FileType == RemoteVolumeType.Files
+                            orderby n.Time descending
+                            select n).ToList();
 
             log.KnownFileCount = remotelist.Count;
             long knownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
@@ -245,7 +250,7 @@ namespace Duplicati.Library.Main.Operation
             var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();
             var cleanupRemovedRemoteVolumes = new HashSet<string>();
 
-            foreach(var e in database.DuplicateRemoteVolumes())
+            foreach (var e in database.DuplicateRemoteVolumes())
             {
                 if (e.Value == RemoteVolumeState.Uploading || e.Value == RemoteVolumeState.Temporary)
                     database.UnlinkRemoteVolume(e.Key, e.Value);
@@ -254,7 +259,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             var locallist = database.GetRemoteVolumes();
-            foreach(var i in locallist)
+            foreach (var i in locallist)
             {
                 Volumes.IParsedVolume r;
                 var remoteFound = lookup.TryGetValue(i.Name, out r);
@@ -360,7 +365,7 @@ namespace Duplicati.Library.Main.Operation
             // cleanup deleted volumes in DB en block
             database.RemoveRemoteVolumes(cleanupRemovedRemoteVolumes, null);
 
-            foreach(var i in missingHash)
+            foreach (var i in missingHash)
                 Logging.Log.WriteWarningMessage(LOGTAG, "MissingRemoteHash", null, "remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash);
 
             return new RemoteAnalysisResult()

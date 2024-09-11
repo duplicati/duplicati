@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Main
@@ -56,7 +57,7 @@ namespace Duplicati.Library.Main
         {
             if (target == null)
                 return;
-            
+
             m_targets.Add(new Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>(target, loglevel, filter ?? new Library.Utility.FilterExpression()));
         }
 
@@ -77,10 +78,16 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the minimum log level of all the targets
+        /// </summary>
+        public LogMessageType MinimumLevel
+            => m_targets.Select(x => x.Item2).DefaultIfEmpty(LogMessageType.Error).Min();
+
+        /// <summary>
         /// Writes the message to all the destinations.
         /// </summary>
         /// <param name="entry">Entry.</param>
-		public void WriteMessage(LogEntry entry)
+        public void WriteMessage(LogEntry entry)
         {
             foreach (var e in m_targets)
             {
