@@ -149,15 +149,15 @@ public static class WebServerLoader
         options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
         certificateFilePassword = certificateFilePassword?.Trim() ?? "";
 
-        if (!string.IsNullOrEmpty(certificateFile) && string.IsNullOrEmpty(certificateFilePassword))
-            throw new ArgumentException(Strings.Server.SSLCertificatePasswordEmpty);
-        else if (string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
+        if (string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
             Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerCertificate", Strings.Server.SSLCertificateFileMissingOption);
 
         if (!string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
         {
-            connection.ApplicationSettings.ServerSSLCertificate = Convert.ToBase64String(File.ReadAllBytes(certificateFile));
-            connection.ApplicationSettings.ServerSSLCertificatePassword = certificateFilePassword;
+            var cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
+
+            connection.ApplicationSettings.ServerSSLCertificate = Convert.ToBase64String(cert.Export(X509ContentType.Pkcs12, connection.ApplicationSettings.ServerSSLCertificatePassword));
+            connection.ApplicationSettings.ServerSSLCertificatePassword = Guid.NewGuid().ToString().ToLowerInvariant();
         }
         else if (certificateFile != null && certificateFile.Length == 0)
         {
