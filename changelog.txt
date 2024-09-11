@@ -1,3 +1,43 @@
+2024-09-11 - 2.0.9.107_canary_2024-09-11
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+The builds are self-contained so Mono or .NET installations are not required to install.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Upgrade from `v2.0.9.105`
+If you are upgrading from 2.0.9.105 please see the release notes from 2.0.9.106 for how to prepare the database. 
+Upgrades from other versions do not need special steps.
+
+## Detailed list of changes:
+- Prepared some additional localization strings
+- Fixed a bug with server-util not finding backups by name
+- Added support for insecure connections from server-util
+- Embedding backwards compatible ARMv7 binaries in builds
+- Another fix for MSI packages breaking on upgrade
+- Improved Swagger output to include types
+- Replaced `WebRequest` for WebDAV with `HttpClient`
+- Reduced log output from server-util and TrayIcon
+- Microfix for USN parsing
+- Fixed a case where almost identical files could cause broken index files, thanks @Jojo-1000
+- Also improved handling when reading index files with broken lists, thanks @Jojo-1000
+- Fixed auto-repair failing due to locked databases, thanks @Jojo-1000
+
 2024-09-03 - 2.0.9.106_canary_2024-09-03
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.
