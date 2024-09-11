@@ -27,6 +27,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
@@ -57,7 +58,7 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup([this.DATAFOLDER]);
+                var backupResults = c.Backup([this.DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -320,6 +321,68 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
+        }
+
+        [Test]
+        [Category("RepairHandler"), Category("Targeted")]
+        public void AutoCleanupRepairDoesNotLockDatabase()
+        {
+            // See issue #3635, #4631
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["blocksize"] = "1KB",
+                ["no-encryption"] = "true",
+                ["auto-cleanup"] = "true"
+            };
+            var delaytime = TimeSpan.FromSeconds(3);
+            var filename = Path.Combine(this.DATAFOLDER, "file");
+            using (var s = File.Create(filename))
+                s.SetLength(1024 * 38); // Random size
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var backupResults = c.Backup([this.DATAFOLDER]);
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            var dblockFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dblock*").ToArray();
+            Assert.Greater(dblockFiles.Length, 0);
+            var sourcename = Path.GetFileName(dblockFiles.First());
+            var p = VolumeBase.ParseFilename(sourcename);
+            var guid = VolumeWriterBase.GenerateGuid();
+            var time = p.Time.Ticks == 0 ? p.Time : p.Time.AddSeconds(1);
+            var newname = VolumeBase.GenerateFilename(p.FileType, p.Prefix, guid, time, p.CompressionModule, p.EncryptionModule);
+
+            File.Copy(Path.Combine(this.TARGETFOLDER, sourcename), Path.Combine(this.TARGETFOLDER, newname));
+
+            System.Threading.Thread.Sleep(delaytime);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var backupResults = c.Backup([this.DATAFOLDER]);
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                // 1 extra file + 1 warning
+                Assert.AreEqual(2, backupResults.Warnings.Count());
+            }
+
+            // Auto-cleanup should have removed the renamed file
+            Assert.IsFalse(File.Exists(Path.Combine(this.TARGETFOLDER, newname)));
+
+            // Insert the extra file back
+            File.Copy(Path.Combine(this.TARGETFOLDER, sourcename), Path.Combine(this.TARGETFOLDER, newname));
+
+            // Delete the database
+            File.Delete(options["dbpath"]);
+
+            // Recreate with an extra volume
+            System.Threading.Thread.Sleep(delaytime);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var backupResults = c.Backup([this.DATAFOLDER]);
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                // First will recreate (4 files + 1 warning)
+                Assert.AreEqual(5, backupResults.Warnings.Count());
+            }
         }
     }
 }
