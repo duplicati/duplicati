@@ -29,6 +29,7 @@ public static class Program
                 ChangePassword.Create(),
                 Logout.Create(),
                 Import.Create(),
+                Export.Create(),
             };
 
         rootCmd = SettingsBinder.AddGlobalOptions(rootCmd);
