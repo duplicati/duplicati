@@ -21,10 +21,12 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Modules.Builtin;
 using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -82,12 +84,9 @@ namespace Duplicati.Library.Backend
         //  "An empty PROPFIND request body MUST be treated as a request for the names and values of all properties."
         //
         //private static readonly byte[] PROPFIND_BODY = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
-        private static readonly byte[] PROPFIND_BODY = new byte[0];
+        private static readonly byte[] PROPFIND_BODY = [];
 
-        /// <summary>
-        /// The default timeout in seconds for PUT/GET file operations
-        /// </summary>
-        private const int LONG_OPERATION_TIMEOUT_SECONDS = 30000;
+        private readonly HttpOptions.HttpModuleSettings m_httpModuleSettings;
 
         /// <summary>
         /// The default timeout in seconds for LIST/CreateFolder operations
@@ -150,6 +149,7 @@ namespace Duplicati.Library.Backend
             m_rawurlPort = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path, null, null, null, port).ToString();
             m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
             m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http" : "https", u.Host, m_path).ToString();
+            m_httpModuleSettings = HttpOptions.ParseSettings(options);
         }
 
         #region IBackend Members
@@ -308,13 +308,13 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new[] {
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.WEBDAV.DescriptionAuthPasswordShort, Strings.WEBDAV.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionAuthUsernameShort, Strings.WEBDAV.DescriptionAuthUsernameLong),
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseSSLShort, Strings.WEBDAV.DescriptionUseSSLLong),
-                 });
+                }.Concat(HttpOptions.GetHttpArguments(includeSsl: true, includeReadWrite: true)).ToList();
             }
         }
 
@@ -363,14 +363,14 @@ namespace Duplicati.Library.Backend
 
             if (m_useIntegratedAuthentication)
             {
-                httpClient = HttpClientHelper.CreateClient(new HttpClientHandler
+                httpClient = HttpOptions.CreateHttpClient(m_httpModuleSettings, new HttpClientHandler
                 {
                     UseDefaultCredentials = true
                 });
             }
             else if (m_forceDigestAuthentication)
             {
-                httpClient = HttpClientHelper.CreateClient(new HttpClientHandler
+                httpClient = HttpOptions.CreateHttpClient(m_httpModuleSettings, new HttpClientHandler
                 {
                     Credentials = new CredentialCache
                     {
@@ -380,14 +380,12 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                httpClient = HttpClientHelper.CreateClient();
+                httpClient = HttpOptions.CreateHttpClient(m_httpModuleSettings);
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{m_userInfo.UserName}:{m_userInfo.Password}"))
                 );
             }
-
-            httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.Uri.UrlEncode(remotename).Replace("+", "%20")}");
             request.Headers.Add(HttpRequestHeader.UserAgent.ToString(), "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
@@ -406,17 +404,14 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using var timeoutToken = new CancellationTokenSource();
-                timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
-                using var combinedTokens = CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancelToken);
-
                 using var requestResources = CreateRequest(remotename, HttpMethod.Put);
-
-                requestResources.RequestMessage.Content = new StreamContent(stream);
+                using var timeoutStream = new TimeoutObservingStream(stream) { ReadTimeout = m_httpModuleSettings.ReadWriteTimeoutMilliseconds };
+                requestResources.RequestMessage.Content = new StreamContent(timeoutStream);
                 requestResources.RequestMessage.Content.Headers.ContentLength = stream.Length;
                 requestResources.RequestMessage.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
                 requestResources.RequestMessage.Version = HttpVersion.Version11;
 
+                using var combinedTokens = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, timeoutStream.TimeoutToken);
                 using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, HttpCompletionOption.ResponseHeadersRead, combinedTokens.Token);
 
                 response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
@@ -434,12 +429,10 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                using var timeoutToken = new CancellationTokenSource();
-                timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
-
                 using var requestResources = CreateRequest(remotename, HttpMethod.Get);
 
-                requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                using var timeoutStream = new TimeoutObservingStream(stream) { WriteTimeout = m_httpModuleSettings.ReadWriteTimeoutMilliseconds };
+                requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutStream.TimeoutToken).ConfigureAwait(false).GetAwaiter().GetResult();
 
             }
             catch (HttpRequestException wex)

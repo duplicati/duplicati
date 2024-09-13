@@ -21,8 +21,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -36,24 +39,24 @@ namespace Duplicati.Library.Modules.Builtin
         private const string OPTION_SSL_VERSIONS = "allowed-ssl-versions";
 
         private const string OPTION_BUFFER_REQUESTS = "http-enable-buffering";
-		private const string OPTION_OPERATION_TIMEOUT = "http-operation-timeout";
-		private const string OPTION_READWRITE_TIMEOUT = "http-readwrite-timeout";
+        private const string OPTION_OPERATION_TIMEOUT = "http-operation-timeout";
+        private const string OPTION_READWRITE_TIMEOUT = "http-readwrite-timeout";
 
 
         private bool m_useNagle;
         private bool m_useExpect;
         private System.Net.SecurityProtocolType m_securityProtocol;
 
-		private bool m_dispose;
+        private bool m_dispose;
 
         private bool m_resetNagle;
         private bool m_resetExpect;
         private bool m_resetSecurity;
 
-		/// <summary>
-		/// The handle to the call-context http settings
-		/// </summary>
-		private IDisposable m_httpsettings;
+        /// <summary>
+        /// The handle to the call-context http settings
+        /// </summary>
+        private IDisposable m_httpsettings;
 
         /// <summary>
         /// The handle to the call-context oauth settings
@@ -76,7 +79,7 @@ namespace Duplicati.Library.Modules.Builtin
         {
             var ptr = SecurityProtocols;
             var res = 0;
-            foreach (var s in names.Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()))
+            foreach (var s in names.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()))
                 if (ptr.ContainsKey(s))
                     res = res | ptr[s];
 
@@ -105,26 +108,108 @@ namespace Duplicati.Library.Modules.Builtin
             get { return true; }
         }
 
-        public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
+        private static Interface.ICommandLineArgument[] GetArguments()
         {
-            get { 
-                var sslnames = SecurityProtocols.Select(x => x.Key).ToArray();
-                var defaultssl = System.Net.SecurityProtocolType.SystemDefault.ToString();
+            var sslnames = SecurityProtocols.Select(x => x.Key).ToArray();
+            var defaultssl = System.Net.SecurityProtocolType.SystemDefault.ToString();
 
-                return new List<Duplicati.Library.Interface.ICommandLineArgument>( new Duplicati.Library.Interface.ICommandLineArgument[] {
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_EXPECT100, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableExpect100Short, Strings.HttpOptions.DisableExpect100Long, "false"),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_NAGLING, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableNagleShort, Strings.HttpOptions.DisableNagleLong, "false"),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.DescriptionAcceptHashShort, Strings.HttpOptions.DescriptionAcceptHashLong2),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DescriptionAcceptAnyCertificateShort, Strings.HttpOptions.DescriptionAcceptAnyCertificateLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_OAUTH_URL, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.OauthurlShort, Strings.HttpOptions.OauthurlLong, OAuthHelper.DUPLICATI_OAUTH_SERVICE),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_SSL_VERSIONS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags, Strings.HttpOptions.SslversionsShort, Strings.HttpOptions.SslversionsLong, defaultssl, null, sslnames),
+            return [
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_EXPECT100, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableExpect100Short, Strings.HttpOptions.DisableExpect100Long, "false"),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_NAGLING, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableNagleShort, Strings.HttpOptions.DisableNagleLong, "false", null, null, "This option is deprecated and no longer has any effect."),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.DescriptionAcceptHashShort, Strings.HttpOptions.DescriptionAcceptHashLong2),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DescriptionAcceptAnyCertificateShort, Strings.HttpOptions.DescriptionAcceptAnyCertificateLong),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_OAUTH_URL, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.OauthurlShort, Strings.HttpOptions.OauthurlLong, OAuthHelper.DUPLICATI_OAUTH_SERVICE),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_SSL_VERSIONS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags, Strings.HttpOptions.SslversionsShort, Strings.HttpOptions.SslversionsLong, defaultssl, null, sslnames),
 
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_OPERATION_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.OperationtimeoutShort, Strings.HttpOptions.OperationtimeoutLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_READWRITE_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.ReadwritetimeoutShort, Strings.HttpOptions.ReadwritetimeoutLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(OPTION_BUFFER_REQUESTS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.BufferrequestsShort, Strings.HttpOptions.BufferrequestsLong, "false"),
-                }); 
-            }
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_OPERATION_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.OperationtimeoutShort, Strings.HttpOptions.OperationtimeoutLong),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_READWRITE_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.ReadwritetimeoutShort, Strings.HttpOptions.ReadwritetimeoutLong),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_BUFFER_REQUESTS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.BufferrequestsShort, Strings.HttpOptions.BufferrequestsLong, "false"),
+            ];
         }
+
+        private static readonly Duplicati.Library.Interface.ICommandLineArgument[] ARGUMENTS = GetArguments();
+
+        public static IEnumerable<Duplicati.Library.Interface.ICommandLineArgument> GetHttpArguments(bool includeSsl = false, bool includeBuffer = false, bool includeReadWrite = false, bool includeOAuth = false)
+        {
+            var res = new List<string>();
+            res.AddRange([OPTION_DISABLE_EXPECT100, OPTION_OPERATION_TIMEOUT]);
+            if (includeReadWrite)
+                res.Add(OPTION_READWRITE_TIMEOUT);
+            if (includeBuffer)
+                res.Add(OPTION_BUFFER_REQUESTS);
+            if (includeSsl)
+                res.AddRange([OPTION_ACCEPT_ANY_CERTIFICATE, OPTION_ACCEPT_SPECIFIED_CERTIFICATE, OPTION_SSL_VERSIONS]);
+            if (includeOAuth)
+                res.Add(OPTION_OAUTH_URL);
+
+            return ARGUMENTS.Where(x => res.Contains(x.Name));
+        }
+
+        public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands => ARGUMENTS;
+
+        public sealed record HttpModuleSettings(
+            TimeSpan OperationTimeout,
+            TimeSpan ReadWriteTimeout,
+            bool BufferRequests,
+            bool AcceptAllCertificates,
+            string[] AcceptCertificates,
+            bool EnableExpect100,
+            System.Net.SecurityProtocolType SecurityProtocols
+        )
+        {
+            public int ReadWriteTimeoutMilliseconds
+                => ReadWriteTimeout == Timeout.InfiniteTimeSpan
+                    ? Timeout.Infinite
+                    : (int)ReadWriteTimeout.TotalMilliseconds;
+        }
+
+        public static HttpModuleSettings ParseSettings(IDictionary<string, string> options)
+        {
+            var operationTimeout = options.TryGetValue(OPTION_OPERATION_TIMEOUT, out var timetmp) && !string.IsNullOrWhiteSpace(timetmp)
+                ? Utility.Timeparser.ParseTimeSpan(timetmp)
+                : Timeout.InfiniteTimeSpan;
+
+            var readwriteTimeout = options.TryGetValue(OPTION_READWRITE_TIMEOUT, out timetmp) && !string.IsNullOrWhiteSpace(timetmp)
+                ? Utility.Timeparser.ParseTimeSpan(timetmp)
+                : Timeout.InfiniteTimeSpan;
+
+            options.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out var certHash);
+            options.TryGetValue(OPTION_SSL_VERSIONS, out var sslprotocol);
+
+            return new HttpModuleSettings(
+                operationTimeout,
+                readwriteTimeout,
+                Utility.Utility.ParseBoolOption(options, OPTION_BUFFER_REQUESTS),
+                Utility.Utility.ParseBoolOption(options, OPTION_ACCEPT_ANY_CERTIFICATE),
+                certHash == null ? null : certHash.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries),
+                // Legacy handling, the "default" was enabled, but now the default is "disabled"
+                options.ContainsKey(OPTION_DISABLE_EXPECT100) ? !Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_EXPECT100) : false,
+                string.IsNullOrWhiteSpace(sslprotocol) ? System.Net.SecurityProtocolType.SystemDefault : ParseSSLProtocols(sslprotocol)
+            );
+        }
+
+        public static HttpClient CreateHttpClient(HttpModuleSettings settings, HttpClientHandler handler = null)
+        {
+            handler ??= new HttpClientHandler();
+            if (settings.AcceptAllCertificates)
+                handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            else if (settings.AcceptCertificates != null && settings.AcceptCertificates.Length > 0)
+                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => settings.AcceptCertificates.Contains(cert.GetCertHashString());
+
+            var client = HttpClientHelper.CreateClient(new HttpClientHandler()
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
+            });
+
+            client.Timeout = settings.OperationTimeout == Timeout.InfiniteTimeSpan ? Timeout.InfiniteTimeSpan : settings.OperationTimeout;
+            client.DefaultRequestHeaders.Add(HttpRequestHeader.UserAgent.ToString(), "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+            client.DefaultRequestHeaders.ExpectContinue = settings.EnableExpect100;
+
+            return client;
+        }
+
+        // TODO: The configure method below is legacy code and should be removed
+        // once all code is updated to use the HttpClientFactory pattern
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
@@ -138,13 +223,13 @@ namespace Duplicati.Library.Modules.Builtin
                 operationTimeout = Utility.Timeparser.ParseTimeSpan(timetmp);
 
             commandlineOptions.TryGetValue(OPTION_READWRITE_TIMEOUT, out timetmp);
-			if (!string.IsNullOrWhiteSpace(timetmp))
+            if (!string.IsNullOrWhiteSpace(timetmp))
                 readwriteTimeout = Utility.Timeparser.ParseTimeSpan(timetmp);
 
-			bool accepAllCertificates = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_ACCEPT_ANY_CERTIFICATE);
+            bool accepAllCertificates = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_ACCEPT_ANY_CERTIFICATE);
 
-			string certHash;
-			commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
+            string certHash;
+            commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
 
             m_httpsettings = Duplicati.Library.Utility.HttpContextSettings.StartSession(
                 operationTimeout,

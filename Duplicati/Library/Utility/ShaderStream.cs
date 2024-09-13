@@ -19,58 +19,43 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
+using System.IO;
 
 namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// A small utility stream that allows to keep streams open and counts the bytes sent through.
     /// </summary>
-    public class ShaderStream : System.IO.Stream
+    public class ShaderStream : WrappingStream
     {
-        private readonly System.IO.Stream m_baseStream;
         private readonly bool m_keepBaseOpen;
         private long m_read = 0;
         private long m_written = 0;
 
-        public ShaderStream(System.IO.Stream baseStream, bool keepBaseOpen)
+        public ShaderStream(Stream baseStream, bool keepBaseOpen)
+            : base(baseStream)
         {
-            if (baseStream == null)
-                throw new ArgumentNullException(nameof(baseStream));
-            this.m_baseStream = baseStream;
-            this.m_keepBaseOpen = keepBaseOpen;
+            m_keepBaseOpen = keepBaseOpen;
         }
 
         public long TotalBytesRead { get { return m_read; } }
         public long TotalBytesWritten { get { return m_written; } }
 
-        public override bool CanRead { get { return m_baseStream.CanRead; } }
-        public override bool CanSeek { get { return m_baseStream.CanSeek; } }
-        public override bool CanWrite { get { return m_baseStream.CanWrite; } }
-        public override long Length { get { return m_baseStream.Length; } }
-        public override long Position
-        {
-            get { return m_baseStream.Position; }
-            set { m_baseStream.Position = value; }
-        }
-        public override void Flush() { m_baseStream.Flush(); }
-        public override long Seek(long offset, System.IO.SeekOrigin origin) { return m_baseStream.Seek(offset, origin); }
-        public override void SetLength(long value) { m_baseStream.SetLength(value); }
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int r = m_baseStream.Read(buffer, offset, count);
+            int r = BaseStream.Read(buffer, offset, count);
             m_read += r;
             return r;
         }
         public override void Write(byte[] buffer, int offset, int count)
         {
-            m_baseStream.Write(buffer, offset, count);
+            BaseStream.Write(buffer, offset, count);
             m_written += count;
         }
         protected override void Dispose(bool disposing)
         {
             if (disposing && !m_keepBaseOpen)
-                m_baseStream.Close();
+                BaseStream.Close();
             base.Dispose(disposing);
         }
     }
