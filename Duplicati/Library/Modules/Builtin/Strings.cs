@@ -53,6 +53,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string SslversionsShort { get { return LC.L(@"Set allowed SSL versions"); } }
         public static string OperationtimeoutLong { get { return LC.L(@"This option changes the default timeout for any HTTP request, the time covers the entire operation from initial packet to shutdown."); } }
         public static string OperationtimeoutShort { get { return LC.L(@"Set the default operation timeout"); } }
+        public static string OperationshorttimeoutLong { get { return LC.L(@"This option changes the default timeout for HTTP requests that are expected to finish quickly, the time covers the entire operation from initial packet to shutdown."); } }
+        public static string OperationshorttimeoutShort { get { return LC.L(@"Set the default operation timeout for short HTTP requests"); } }
         public static string ReadwritetimeoutLong { get { return LC.L(@"This option changes the default read-write timeout. Read-write timeouts are used to detect a stalled requests, and this option configures the maximum time between activity on a connection."); } }
         public static string ReadwritetimeoutShort { get { return LC.L(@"Set readwrite"); } }
         public static string BufferrequestsLong { get { return LC.L(@"This option sets the HTTP buffering. Setting this to ""{0}"" can cause memory leaks, but can also improve performance in some cases.", "true"); } }

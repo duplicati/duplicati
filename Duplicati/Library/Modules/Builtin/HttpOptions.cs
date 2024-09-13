@@ -40,6 +40,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         private const string OPTION_BUFFER_REQUESTS = "http-enable-buffering";
         private const string OPTION_OPERATION_TIMEOUT = "http-operation-timeout";
+        private const string OPTION_OPERATION_SHORT_TIMEOUT = "http-operation-short-timeout";
         private const string OPTION_READWRITE_TIMEOUT = "http-readwrite-timeout";
 
 
@@ -122,6 +123,7 @@ namespace Duplicati.Library.Modules.Builtin
                 new Duplicati.Library.Interface.CommandLineArgument(OPTION_SSL_VERSIONS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Flags, Strings.HttpOptions.SslversionsShort, Strings.HttpOptions.SslversionsLong, defaultssl, null, sslnames),
 
                 new Duplicati.Library.Interface.CommandLineArgument(OPTION_OPERATION_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.OperationtimeoutShort, Strings.HttpOptions.OperationtimeoutLong),
+                new Duplicati.Library.Interface.CommandLineArgument(OPTION_OPERATION_SHORT_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.OperationshorttimeoutShort, Strings.HttpOptions.OperationshorttimeoutLong),
                 new Duplicati.Library.Interface.CommandLineArgument(OPTION_READWRITE_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.ReadwritetimeoutShort, Strings.HttpOptions.ReadwritetimeoutLong),
                 new Duplicati.Library.Interface.CommandLineArgument(OPTION_BUFFER_REQUESTS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.BufferrequestsShort, Strings.HttpOptions.BufferrequestsLong, "false"),
             ];
@@ -129,10 +131,12 @@ namespace Duplicati.Library.Modules.Builtin
 
         private static readonly Duplicati.Library.Interface.ICommandLineArgument[] ARGUMENTS = GetArguments();
 
-        public static IEnumerable<Duplicati.Library.Interface.ICommandLineArgument> GetHttpArguments(bool includeSsl = false, bool includeBuffer = false, bool includeReadWrite = false, bool includeOAuth = false)
+        public static IEnumerable<Duplicati.Library.Interface.ICommandLineArgument> GetHttpArguments(bool includeSsl = false, bool includeBuffer = false, bool includeReadWrite = false, bool includeOAuth = false, bool includeShortTimeout = false)
         {
             var res = new List<string>();
             res.AddRange([OPTION_DISABLE_EXPECT100, OPTION_OPERATION_TIMEOUT]);
+            if (includeShortTimeout)
+                res.Add(OPTION_OPERATION_SHORT_TIMEOUT);
             if (includeReadWrite)
                 res.Add(OPTION_READWRITE_TIMEOUT);
             if (includeBuffer)
@@ -149,6 +153,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public sealed record HttpModuleSettings(
             TimeSpan OperationTimeout,
+            TimeSpan ShortOperationTimeout,
             TimeSpan ReadWriteTimeout,
             bool BufferRequests,
             bool AcceptAllCertificates,
@@ -161,6 +166,16 @@ namespace Duplicati.Library.Modules.Builtin
                 => ReadWriteTimeout == Timeout.InfiniteTimeSpan
                     ? Timeout.Infinite
                     : (int)ReadWriteTimeout.TotalMilliseconds;
+
+            public int OperationTimeoutMilliseconds
+                => OperationTimeout == Timeout.InfiniteTimeSpan
+                    ? Timeout.Infinite
+                    : (int)OperationTimeout.TotalMilliseconds;
+
+            public int ShortOperationTimeoutMilliseconds
+                => ShortOperationTimeout == Timeout.InfiniteTimeSpan
+                    ? Timeout.Infinite
+                    : (int)ShortOperationTimeout.TotalMilliseconds;
         }
 
         public static HttpModuleSettings ParseSettings(IDictionary<string, string> options)
@@ -168,6 +183,10 @@ namespace Duplicati.Library.Modules.Builtin
             var operationTimeout = options.TryGetValue(OPTION_OPERATION_TIMEOUT, out var timetmp) && !string.IsNullOrWhiteSpace(timetmp)
                 ? Utility.Timeparser.ParseTimeSpan(timetmp)
                 : Timeout.InfiniteTimeSpan;
+
+            var shortOperationTimeout = options.TryGetValue(OPTION_OPERATION_SHORT_TIMEOUT, out timetmp) && !string.IsNullOrWhiteSpace(timetmp)
+                ? Utility.Timeparser.ParseTimeSpan(timetmp)
+                : operationTimeout;
 
             var readwriteTimeout = options.TryGetValue(OPTION_READWRITE_TIMEOUT, out timetmp) && !string.IsNullOrWhiteSpace(timetmp)
                 ? Utility.Timeparser.ParseTimeSpan(timetmp)
@@ -178,6 +197,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             return new HttpModuleSettings(
                 operationTimeout,
+                shortOperationTimeout,
                 readwriteTimeout,
                 Utility.Utility.ParseBoolOption(options, OPTION_BUFFER_REQUESTS),
                 Utility.Utility.ParseBoolOption(options, OPTION_ACCEPT_ANY_CERTIFICATE),

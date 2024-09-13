@@ -88,11 +88,6 @@ namespace Duplicati.Library.Backend
 
         private readonly HttpOptions.HttpModuleSettings m_httpModuleSettings;
 
-        /// <summary>
-        /// The default timeout in seconds for LIST/CreateFolder operations
-        /// </summary>
-        private const int SHORT_OPERATION_TIMEOUT_SECONDS = 30;
-
         public WEBDAV()
         {
         }
@@ -179,7 +174,7 @@ namespace Duplicati.Library.Backend
         private IEnumerable<IFileEntry> ListWithouExceptionCatch()
         {
             using var timeoutToken = new CancellationTokenSource();
-            timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
+            timeoutToken.CancelAfter(m_httpModuleSettings.ShortOperationTimeout);
 
             using var requestResources = CreateRequest(string.Empty, new HttpMethod("PROPFIND"));
             requestResources.RequestMessage.Headers.Add("Depth", "1");
@@ -285,7 +280,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 using var timeoutToken = new CancellationTokenSource();
-                timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
+                timeoutToken.CancelAfter(m_httpModuleSettings.ShortOperationTimeout);
 
                 using var requestResources = CreateRequest(remotename);
                 requestResources.RequestMessage.Method = HttpMethod.Delete;
@@ -314,7 +309,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseSSLShort, Strings.WEBDAV.DescriptionUseSSLLong),
-                }.Concat(HttpOptions.GetHttpArguments(includeSsl: true, includeReadWrite: true)).ToList();
+                }.Concat(HttpOptions.GetHttpArguments(includeSsl: true, includeReadWrite: true, includeShortTimeout: true)).ToList();
             }
         }
 
@@ -337,7 +332,7 @@ namespace Duplicati.Library.Backend
         {
 
             using var timeoutToken = new CancellationTokenSource();
-            timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
+            timeoutToken.CancelAfter(m_httpModuleSettings.ShortOperationTimeout);
 
             using var requestResources = CreateRequest(string.Empty, new HttpMethod("MKCOL"));
 
