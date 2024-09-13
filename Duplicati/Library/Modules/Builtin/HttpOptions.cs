@@ -216,11 +216,7 @@ namespace Duplicati.Library.Modules.Builtin
             else if (settings.AcceptCertificates != null && settings.AcceptCertificates.Length > 0)
                 handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => settings.AcceptCertificates.Contains(cert.GetCertHashString());
 
-            var client = HttpClientHelper.CreateClient(new HttpClientHandler()
-            {
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
-            });
-
+            var client = HttpClientHelper.CreateClient(handler);
             client.Timeout = settings.OperationTimeout == Timeout.InfiniteTimeSpan ? Timeout.InfiniteTimeSpan : settings.OperationTimeout;
             client.DefaultRequestHeaders.Add(HttpRequestHeader.UserAgent.ToString(), "Duplicati v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
             client.DefaultRequestHeaders.ExpectContinue = settings.EnableExpect100;
