@@ -41,8 +41,8 @@ public static class HttpClientHelper
     /// Reference to the HttpClientFactory instance so we can create specific clients
     /// when the singleton pattnern is not desirable.
     /// </summary>
-    private static IHttpClientFactory _factory {get;set;}
-    
+    private static IHttpClientFactory _factory { get; set; }
+
     /// <summary>
     /// Sets the factory reference.
     /// </summary>
@@ -60,7 +60,7 @@ public static class HttpClientHelper
     /// <returns></returns>
     public static HttpClient CreateClient()
     {
-        return _factory.CreateClient();
+        return _factory?.CreateClient() ?? new HttpClient();
     }
 
     /// <summary>
