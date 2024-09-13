@@ -52,7 +52,7 @@ public static class HttpClientExtensions
         if (progressReportingAction != null)
         {
             using var ProgressReportingStream = new ProgressReportingStream(stream, progressReportingAction);
-            await ProgressReportingStream.CopyToAsync(fileStream,cancellationToken);
+            await ProgressReportingStream.CopyToAsync(fileStream, cancellationToken);
         }
         else
         {
@@ -92,8 +92,8 @@ public static class HttpClientExtensions
     /// <param name="client">The Http client reference</param>
     /// <param name="request">A prepared HttpRequestMessage (Presumably with a stream)</param>
     /// <param name="cancellationToken">Cancelation token</param>
-    public static async Task<HttpResponseMessage> UploadStream(this HttpClient client, HttpRequestMessage request,CancellationToken cancellationToken = default)
+    public static async Task<HttpResponseMessage> UploadStream(this HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
-        return await client.SendAsync(request,  HttpCompletionOption.ResponseContentRead, cancellationToken);    
+        return await client.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken);
     }
 }
