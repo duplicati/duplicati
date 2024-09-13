@@ -11,7 +11,7 @@ public class SettingsBinder : BinderBase<Settings>
     /// <summary>
     /// The password option.
     /// </summary>
-    public static readonly Option<string?> passwordOption = new Option<string?>("--password", description: "The password to use", getDefaultValue: () => null);
+    public static readonly Option<string?> passwordOption = new Option<string?>("--password", description: "The password to use for connecting to the server", getDefaultValue: () => null);
     /// <summary>
     /// The host URL option.
     /// </summary>
