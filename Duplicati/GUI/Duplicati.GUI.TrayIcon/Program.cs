@@ -116,10 +116,9 @@ namespace Duplicati.GUI.TrayIcon
                 // we should open the main page
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
 
-                var cert = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
                 var scheme = "http";
 
-                if (cert != null && cert.HasPrivateKey)
+                if (!string.IsNullOrEmpty(databaseConnection.ApplicationSettings.ServerSSLCertificate))
                     scheme = "https";
 
                 serverURL = (new UriBuilder(serverURL)
@@ -138,11 +137,10 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
 
-                        var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
-                        var scheme = "http";
+                    var scheme = "http";
 
-                        if (cert != null && cert.HasPrivateKey)
-                            scheme = "https";
+                    if (!string.IsNullOrEmpty(databaseConnection.ApplicationSettings.ServerSSLCertificate))
+                        scheme = "https";
 
                         serverURL = new UriBuilder(serverURL)
                         {
