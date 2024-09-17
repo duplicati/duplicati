@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
@@ -156,6 +157,9 @@ public partial class DuplicatiWebserver
                 };
             });
 
+        builder.Services.AddHealthChecks()
+            .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
+
         builder.Services.AddDuplicati(connection);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
@@ -216,6 +220,7 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
+        App.MapHealthChecks("/health");
         App.AddEndpoints()
             .UseNotifications("/notifications");
 
