@@ -21,9 +21,8 @@
 
 using System;
 using System.Collections.Generic;
-using Duplicati.Library.Interface;
 using System.Linq;
-using Duplicati.Library.Common;
+using System.Globalization;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -51,8 +50,8 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Machinename: {0}", Environment.MachineName);
             yield return string.Format("Processors: {0}", Environment.ProcessorCount);
             yield return string.Format(".Net Version: {0}", Environment.Version);
-            yield return string.Format("Locale: {0}, {1}, {2}", System.Threading.Thread.CurrentThread.CurrentCulture, System.Threading.Thread.CurrentThread.CurrentUICulture, System.Globalization.CultureInfo.InstalledUICulture);
-            yield return string.Format("Date/time strings: {0} - {1}", System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongDatePattern, System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.LongTimePattern);
+            yield return string.Format("Locale: {0}, {1}, {2}", CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture, CultureInfo.InstalledUICulture);
+            yield return string.Format("Date/time strings: {0} - {1}", CultureInfo.CurrentCulture.DateTimeFormat.LongDatePattern, CultureInfo.CurrentCulture.DateTimeFormat.LongTimePattern);
             yield return string.Format("Tempdir: {0}", Library.Utility.TempFolder.SystemTempPath);
 
             Type sqlite = null;

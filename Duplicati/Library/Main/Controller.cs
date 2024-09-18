@@ -574,7 +574,7 @@ namespace Duplicati.Library.Main
                 m_resetPriority = null;
             }
 
-            if(m_localeChange != null)
+            if (m_localeChange != null)
             {
                 m_localeChange.Dispose();
                 m_localeChange = null;
@@ -1043,7 +1043,7 @@ namespace Duplicati.Library.Main
             {
                 bool found = false;
                 foreach (string v in arg.ValidValues ?? new string[0])
-                    if (string.Equals(v, value, StringComparison.CurrentCultureIgnoreCase))
+                    if (string.Equals(v, value, StringComparison.OrdinalIgnoreCase))
                     {
                         found = true;
                         break;
@@ -1061,7 +1061,7 @@ namespace Duplicati.Library.Main
 
                 foreach (var flag in flags)
                 {
-                    if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.CurrentCultureIgnoreCase)))
+                    if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.OrdinalIgnoreCase)))
                     {
                         validatedAllFlags = false;
                         break;

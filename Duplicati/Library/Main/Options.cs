@@ -612,20 +612,18 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the forced locale for the current user
         /// </summary>
-        public System.Globalization.CultureInfo ForcedLocale
+        public CultureInfo ForcedLocale
         {
             get
             {
                 if (!m_options.ContainsKey("force-locale"))
-                    return System.Threading.Thread.CurrentThread.CurrentCulture;
-                else
-                {
-                    var localestring = m_options["force-locale"];
-                    if (string.IsNullOrWhiteSpace(localestring))
-                        return System.Globalization.CultureInfo.InvariantCulture;
-                    else
-                        return new System.Globalization.CultureInfo(localestring);
-                }
+                    return CultureInfo.CurrentCulture;
+
+                var localestring = m_options["force-locale"];
+                if (string.IsNullOrWhiteSpace(localestring))
+                    return CultureInfo.InvariantCulture;
+
+                return new CultureInfo(localestring);
             }
         }
 
