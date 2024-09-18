@@ -153,7 +153,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The cached set of options
         /// </summary>
-        protected IDictionary<string, string> m_options;
+        protected IReadOnlyDictionary<string, string> m_options;
         /// <summary>
         /// The parsed result level
         /// </summary>
@@ -220,13 +220,13 @@ namespace Duplicati.Library.Modules.Builtin
             if (!ConfigureModule(commandlineOptions))
                 return;
 
+            m_options = commandlineOptions.AsReadOnly();
             m_isConfigured = true;
-            commandlineOptions.TryGetValue(SubjectOptionName, out m_subject);
-            commandlineOptions.TryGetValue(BodyOptionName, out m_body);
-            m_options = commandlineOptions;
+            m_options.TryGetValue(SubjectOptionName, out m_subject);
+            m_options.TryGetValue(BodyOptionName, out m_body);
 
             string tmp;
-            commandlineOptions.TryGetValue(ActionLevelOptionName, out tmp);
+            m_options.TryGetValue(ActionLevelOptionName, out tmp);
             if (!string.IsNullOrEmpty(tmp))
                 m_levels =
                     tmp
@@ -243,17 +243,17 @@ namespace Duplicati.Library.Modules.Builtin
                     .Select(x => x.Trim())
                     .ToArray();
 
-            m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, ActionOnAnyOperationOptionName);
+            m_sendAll = Utility.Utility.ParseBoolOption(m_options, ActionOnAnyOperationOptionName);
 
             ResultExportFormat resultFormat;
-            if (!commandlineOptions.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
+            if (!m_options.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
             else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
 
             m_resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
 
-            commandlineOptions.TryGetValue(LogLinesOptionName, out var loglinestr);
+            m_options.TryGetValue(LogLinesOptionName, out var loglinestr);
             if (!int.TryParse(loglinestr, out m_maxmimumLogLines))
                 m_maxmimumLogLines = DEFAULT_LOGLINES;
 
