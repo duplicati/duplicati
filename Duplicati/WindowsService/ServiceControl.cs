@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Service;
 using System;
 using System.Linq;
@@ -34,6 +35,9 @@ namespace Duplicati.WindowsService
         public const string SERVICE_NAME = "Duplicati";
         public const string DISPLAY_NAME = "Duplicati service";
         public const string SERVICE_DESCRIPTION = "Duplicati running as a Windows Service";
+        public const string SERVICE_NAME_AGENT = "Duplicati.Agent";
+        public const string DISPLAY_NAME_AGENT = "Duplicati Agent service";
+        public const string SERVICE_DESCRIPTION_AGENT = "The Duplicati Agent service";
 
         private readonly System.Diagnostics.EventLog m_eventLog;
 
@@ -41,10 +45,14 @@ namespace Duplicati.WindowsService
         private Runner m_runner = null;
         private readonly string[] m_cmdargs;
         private readonly bool m_verbose_messages;
+        private readonly PackageHelper.NamedExecutable m_executable;
 
-        public ServiceControl(string[] args)
+        public ServiceControl(string[] args, PackageHelper.NamedExecutable executable)
         {
-            this.ServiceName = SERVICE_NAME;
+            m_executable = executable;
+            this.ServiceName = executable == PackageHelper.NamedExecutable.Agent
+                ? SERVICE_NAME_AGENT
+                : SERVICE_NAME;
 
             if (!System.Diagnostics.EventLog.SourceExists(LOG_SOURCE))
                 System.Diagnostics.EventLog.CreateEventSource(LOG_SOURCE, LOG_NAME);
@@ -100,6 +108,7 @@ namespace Duplicati.WindowsService
                         m_eventLog.WriteEntry("Starting runner...");
 
                     m_runner = new Runner(
+                        m_executable,
                         startargs,
                         () =>
                         {

@@ -220,7 +220,7 @@ namespace Duplicati.Library.Compression
 
                 m_usingZip64 = compression.UseZip64 =
                     options.ContainsKey(COMPRESSION_ZIP64_OPTION)
-                    ? Duplicati.Library.Utility.Utility.ParseBoolOption(options, COMPRESSION_ZIP64_OPTION)
+                    ? Duplicati.Library.Utility.Utility.ParseBoolOption(options.AsReadOnly(), COMPRESSION_ZIP64_OPTION)
                     : DEFAULT_ZIP64;
 
                 string cpmethod;

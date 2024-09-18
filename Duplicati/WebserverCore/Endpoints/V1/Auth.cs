@@ -1,3 +1,24 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Logging;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -41,8 +62,11 @@ public partial class Auth : IEndpointV1
             throw new UnauthorizedException("Authorization failed due to missing cookie.");
         });
 
-        group.MapPost("auth/signin", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, [FromBody] Dto.SigninInputDto input, CancellationToken ct) =>
+        group.MapPost("auth/signin", async ([FromServices] ILoginProvider loginProvider, [FromServices] JWTConfig jWTConfig, [FromServices] IHttpContextAccessor httpContextAccessor, [FromServices] Connection connection, [FromBody] Dto.SigninInputDto input, CancellationToken ct) =>
         {
+            if (connection.ApplicationSettings.DisableSigninTokens)
+                throw new UnauthorizedException("Signin tokens are disabled");
+
             var cookieName = GetCookieName(httpContextAccessor);
             try
             {
@@ -83,6 +107,9 @@ public partial class Auth : IEndpointV1
 
         group.MapPost("auth/issuesignintoken", ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider, [FromBody] Dto.IssueSigninTokenInputDto input) =>
         {
+            if (connection.ApplicationSettings.DisableSigninTokens)
+                throw new UnauthorizedException("Signin tokens are disabled");
+
             if (!connection.ApplicationSettings.VerifyWebserverPassword(input.Password))
                 throw new UnauthorizedException("Incorrect password");
 
