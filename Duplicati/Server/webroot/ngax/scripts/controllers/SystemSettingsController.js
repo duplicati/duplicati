@@ -109,7 +109,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
         }
 
         // If we are registering, we need to keep checking until the registration is claimed
-        if ($scope.remoteControlState == 'registering' || $scope.remoteControlState == 'registered')
+        if ($scope.remoteControlState == 'registering' )
         {
             $scope.repeatRegisterTimer = setTimeout(function() {
                 AppService.post('/remotecontrol/register', { RegistrationUrl: "" }).then(function(data) {
@@ -123,7 +123,8 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
         }
 
         // If we are enabled, poll to see if we become connected
-        if ($scope.remoteControlState == 'enabled')
+        // If we are registered, poll to see if we become disabled
+        if ($scope.remoteControlState == 'enabled' || $scope.remoteControlState == 'registered')
         {
             $scope.repeatRegisterTimer = setTimeout(function() {
                 AppService.get('/remotecontrol/status').then(function(data) {

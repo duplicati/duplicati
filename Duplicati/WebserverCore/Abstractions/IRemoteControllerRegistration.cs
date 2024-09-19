@@ -9,8 +9,8 @@ public interface IRemoteControllerRegistration
     /// Begin the registration of a machine
     /// </summary>
     /// <param name="registrationUrl">The URL to register the machine with</param>
-    /// <returns>The claim URL</returns>
-    Task<string> RegisterMachine(string registrationUrl);
+    /// <returns>The task to wait on</returns>
+    Task RegisterMachine(string registrationUrl);
 
     /// <summary>
     /// Waits for the registration to complete.
@@ -22,12 +22,6 @@ public interface IRemoteControllerRegistration
     /// Cancels the registration of the machine
     /// </summary>
     void CancelRegisterMachine();
-
-    /// <summary>
-    /// Attempts to end the registration of a machine
-    /// </summary>
-    /// <returns>If the registration was successful</returns>
-    Task<bool> EndRegisterMachine();
 
     /// <summary>
     /// A flag indicating if the machine is currently registering

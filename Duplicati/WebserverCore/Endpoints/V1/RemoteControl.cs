@@ -42,21 +42,13 @@ public class RemoteControl : IEndpointV1
             ? registration.WaitForRegistration()
             : registration.RegisterMachine(registrationUrl);
 
-        // Assume client timeout is 5 seconds, so we return a status before
-        var requestTimeout = DateTime.Now.AddSeconds(4.5);
-
         // Wait for registration, or at most 5 seconds
         // Client must poll if the registration is not completed by then
-        await Task.WhenAny(task, Task.Delay(requestTimeout - DateTime.Now, cancellationToken));
+        await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(4.5), cancellationToken));
 
         // Rethrow any exceptions
         if (task.IsCompleted)
-        {
             await task;
-            var timeleft = requestTimeout - DateTime.Now;
-            if (timeleft.TotalSeconds > 0.5)
-                await Task.WhenAny(registration.EndRegisterMachine(), Task.Delay(timeleft, cancellationToken));
-        }
 
         return GetStatus(registration, remoteController);
     }

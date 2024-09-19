@@ -66,10 +66,6 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
     /// The registration process controller this service is wrapping.
     /// </summary>
     private RegisterForRemote? _registerForRemote;
-    /// <summary>
-    /// The registration completion task.
-    /// </summary>
-    private Task<ClaimedClientData>? _claimTask;
 
     /// <summary>
     /// Token for cancelling the operation.
@@ -79,7 +75,7 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
     /// <summary>
     /// The registration completion task.
     /// </summary>
-    private Task<string>? _registrationTask;
+    private Task? _registrationTask;
 
     /// <summary>
     /// A flag indicating if the machine is currently registering
@@ -97,7 +93,7 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
     public string? RegistrationUrl { get; private set; }
 
     /// <inheritdoc />
-    public Task<string> RegisterMachine(string registrationUrl)
+    public Task RegisterMachine(string registrationUrl)
     {
         if (_registerForRemote != null)
             throw new InvalidOperationException("Already registering");
@@ -111,9 +107,20 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
         {
             _registerForRemote = new RegisterForRemote(registrationUrl, httpClientFactory.CreateClient(), _operationCancellation.Token);
             var data = await _registerForRemote.Register(maxRetries: 3, retryInterval: TimeSpan.FromSeconds(5));
+
+            // Make the link visible to outside
             RegistrationUrl = data.ClaimLink;
-            _claimTask = _registerForRemote.Claim();
-            return data.ClaimLink;
+
+            // Grab the claim data once it is returned
+            var claimData = await _registerForRemote.Claim();
+            connection.ApplicationSettings.RemoteControlConfig = JsonSerializer.Serialize(new RemoteControlConfig
+            {
+                Token = claimData.JWT,
+                ServerCertificates = (claimData.ServerCertificates ?? Enumerable.Empty<ServerCertificate>())
+                    .Select(x => new RemoteControlConfig.CertificateKey(x.MachineId, x.PublicKey, x.Expiry, x.Obtained)),
+                ServerUrl = claimData.ServerUrl
+            });
+
         });
     }
 
@@ -134,27 +141,5 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
         _operationCancellation?.Dispose();
         _registerForRemote = null;
         _operationCancellation = null;
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> EndRegisterMachine()
-    {
-        if (_claimTask == null)
-            throw new InvalidOperationException("Not claiming");
-
-        if (!_claimTask.IsCompleted)
-            return false;
-
-        var data = await _claimTask;
-
-        connection.ApplicationSettings.RemoteControlConfig = JsonSerializer.Serialize(new RemoteControlConfig
-        {
-            Token = data.JWT,
-            ServerCertificates = (data.ServerCertificates ?? Enumerable.Empty<ServerCertificate>())
-                .Select(x => new RemoteControlConfig.CertificateKey(x.MachineId, x.PublicKey, x.Expiry, x.Obtained)),
-            ServerUrl = data.ServerUrl
-        });
-
-        return true;
     }
 }
