@@ -9,18 +9,32 @@ public interface IRemoteControllerRegistration
     /// Begin the registration of a machine
     /// </summary>
     /// <param name="registrationUrl">The URL to register the machine with</param>
-    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The claim URL</returns>
-    public Task<string> BeginRegisterMachine(string registrationUrl, CancellationToken cancellationToken);
+    Task<string> RegisterMachine(string registrationUrl);
+
+    /// <summary>
+    /// Waits for the registration to complete.
+    /// </summary>
+    /// <returns>The task to wait on</returns>
+    public Task WaitForRegistration();
 
     /// <summary>
     /// Cancels the registration of the machine
     /// </summary>
-    public void CancelRegisterMachine();
+    void CancelRegisterMachine();
 
     /// <summary>
     /// Attempts to end the registration of a machine
     /// </summary>
     /// <returns>If the registration was successful</returns>
-    public Task<bool> EndRegisterMachine();
+    Task<bool> EndRegisterMachine();
+
+    /// <summary>
+    /// A flag indicating if the machine is currently registering
+    /// </summary>
+    bool IsRegistering { get; }
+    /// <summary>
+    /// The URL to register the machine with, if registring
+    /// </summary>
+    string? RegistrationUrl { get; }
 }

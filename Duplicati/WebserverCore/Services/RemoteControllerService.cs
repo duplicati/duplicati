@@ -43,7 +43,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
     /// <summary>
     /// Gets a value indicating whether remote control can be enabled.
     /// </summary>
-    public bool CanEnable => string.IsNullOrWhiteSpace(connection.ApplicationSettings.RemoteControlConfig);
+    public bool CanEnable => !string.IsNullOrWhiteSpace(connection.ApplicationSettings.RemoteControlConfig);
 
     /// <summary>
     /// Gets a value indicating whether the remote control is connected.
@@ -100,6 +100,10 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
             ServerUrl = data.ServerUrl
         });
 
+        // TODO: Implement changing the encryption key
+        // if (!string.IsNullOrWhiteSpace(data.LocalEncryptionKey) && data.LocalEncryptionKey != connection.ApplicationSettings.SettingsEncryptionKey)
+        //     connection.ChangeDbKey(keydata.LocalEncryptionKey);
+
         return Task.CompletedTask;
     }
 
@@ -111,7 +115,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
     private async Task OnMessage(KeepRemoteConnection.CommandMessage commandMessage)
     {
         using var httpClient = httpClientFactory.CreateClient();
-        var token = jwtTokenProvider.CreateAccessToken("remote-control", "remote-control");
+        var token = jwtTokenProvider.CreateAccessToken("remote-control", "remote-control", TimeSpan.FromMinutes(2));
 
         httpClient.BaseAddress = new Uri($"http{(connection.ApplicationSettings.ServerSSLCertificate == null ? "" : "s")}://127.0.0.1:{connection.ApplicationSettings.LastWebserverPort}");
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);

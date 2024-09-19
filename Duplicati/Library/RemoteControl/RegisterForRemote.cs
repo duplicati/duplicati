@@ -132,10 +132,12 @@ public class RegisterForRemote : IDisposable
     /// <summary>
     /// Starts the registration process and returns the data needed to claim the machine
     /// </summary>
+    /// <param name="maxRetries">The maximum number of retries when registering the machine</param>
+    /// <param name="retryInterval">The interval between retries when registering the machine</param>
     /// <returns>The data needed to claim the machine</returns>
     /// <exception cref="InvalidOperationException">Thrown if the class is not in the correct state</exception>
     /// <exception cref="Exception">Thrown if the machine could not be registered</exception>
-    public async Task<RegisterClientData> Register()
+    public async Task<RegisterClientData> Register(int? maxRetries = null, TimeSpan? retryInterval = null)
     {
         if (_state != States.NotStarted)
             throw new InvalidOperationException("Registration process has already started");
@@ -143,7 +145,7 @@ public class RegisterForRemote : IDisposable
         _state = States.Registering;
         try
         {
-            _registerClientData = await RetryHelper.Retry(() => RegisterClient(), ClientRegisterMaxRetries, ClientRegisterRetryInterval, _cancellationTokenSource.Token);
+            _registerClientData = await RetryHelper.Retry(() => RegisterClient(), maxRetries ?? ClientRegisterMaxRetries, retryInterval ?? ClientRegisterRetryInterval, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {

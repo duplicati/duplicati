@@ -231,7 +231,7 @@ public static class WebServerLoader
             cert,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
-            !Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY)
+            Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY)
         );
 
         // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first

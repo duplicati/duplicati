@@ -69,38 +69,83 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
     /// <summary>
     /// The registration completion task.
     /// </summary>
-    private Task<ClaimedClientData>? _registrationTask;
+    private Task<ClaimedClientData>? _claimTask;
+
+    /// <summary>
+    /// Token for cancelling the operation.
+    /// </summary>
+    private CancellationTokenSource? _operationCancellation;
+
+    /// <summary>
+    /// The registration completion task.
+    /// </summary>
+    private Task<string>? _registrationTask;
+
+    /// <summary>
+    /// A flag indicating if the machine is currently registering
+    /// </summary>
+    public bool IsRegistering => _registerForRemote != null;
+
+    /// <summary>
+    /// A flag indicating if the machine is currently registering
+    /// </summary>
+    public bool IsClaiming => _registerForRemote != null;
+
+    /// <summary>
+    /// The URL to register the machine with, if registring
+    /// </summary>
+    public string? RegistrationUrl { get; private set; }
 
     /// <inheritdoc />
-    public async Task<string> BeginRegisterMachine(string registrationUrl, CancellationToken cancellationToken)
+    public Task<string> RegisterMachine(string registrationUrl)
     {
         if (_registerForRemote != null)
             throw new InvalidOperationException("Already registering");
 
-        _registerForRemote = new RegisterForRemote(registrationUrl, httpClientFactory.CreateClient(), cancellationToken);
-        var registrationData = await _registerForRemote.Register();
+        if (!string.IsNullOrWhiteSpace(connection.ApplicationSettings.RemoteControlConfig))
+            throw new InvalidOperationException("An existing configuration exists, delete it first");
 
-        _registrationTask = _registerForRemote.Claim();
-        return registrationData.ClaimLink;
+        _operationCancellation = new CancellationTokenSource();
+
+        return _registrationTask = Task.Run(async () =>
+        {
+            _registerForRemote = new RegisterForRemote(registrationUrl, httpClientFactory.CreateClient(), _operationCancellation.Token);
+            var data = await _registerForRemote.Register(maxRetries: 3, retryInterval: TimeSpan.FromSeconds(5));
+            RegistrationUrl = data.ClaimLink;
+            _claimTask = _registerForRemote.Claim();
+            return data.ClaimLink;
+        });
+    }
+
+    /// </inheritdoc>
+    public Task WaitForRegistration()
+    {
+        if (_registrationTask == null)
+            throw new InvalidOperationException("Not registering");
+
+        return _registrationTask;
     }
 
     /// <inheritdoc />
     public void CancelRegisterMachine()
     {
+        _operationCancellation?.Cancel();
         _registerForRemote?.Dispose();
+        _operationCancellation?.Dispose();
         _registerForRemote = null;
+        _operationCancellation = null;
     }
 
     /// <inheritdoc />
     public async Task<bool> EndRegisterMachine()
     {
-        if (_registrationTask == null)
-            throw new InvalidOperationException("Not registering");
+        if (_claimTask == null)
+            throw new InvalidOperationException("Not claiming");
 
-        if (!_registrationTask.IsCompleted)
+        if (!_claimTask.IsCompleted)
             return false;
 
-        var data = await _registrationTask;
+        var data = await _claimTask;
 
         connection.ApplicationSettings.RemoteControlConfig = JsonSerializer.Serialize(new RemoteControlConfig
         {

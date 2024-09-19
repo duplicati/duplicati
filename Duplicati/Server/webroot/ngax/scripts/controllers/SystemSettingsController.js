@@ -6,6 +6,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
         $scope.theme = 'default';
 
     $scope.usageReporterLevel = '';
+    $scope.remoteControlState = 'unknown';
 
     function reloadOptionsList() {
         $scope.advancedOptionList = AppUtils.buildOptionList($scope.SystemInfo, false, false, false);
@@ -70,6 +71,147 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
         
     }, AppUtils.connectionError);
 
+
+    $scope.repeatRegisterTimer = null;
+
+    function mapRemoteControlStatus(data) {
+        $scope.remoteControlEnabled = data.IsEnabled;
+        $scope.remoteControlCanEnable = data.CanEnable;
+        $scope.remoteControlConnected = data.IsConnected;
+        $scope.remoteControlIsRegistering = data.IsRegistering;
+        $scope.remoteControlIsRegisteringFaulted = data.IsRegisteringFaulted;
+        $scope.remoteControlIsRegisteringCompleted = data.IsRegisteringCompleted; 
+        $scope.remoteControlClaimUrl = data.RegistrationUrl ?? '';
+
+        if (data.IsConnected)
+            $scope.remoteControlState = 'connected';
+        else if (data.IsEnabled)
+            $scope.remoteControlState = 'enabled';
+        else if (data.CanEnable)
+            $scope.remoteControlState = 'disabled';
+        else if (data.IsRegisteringFaulted)
+            $scope.remoteControlState = 'registeringfaulted';
+        else if (data.IsRegistering)
+        {
+            if (data.RegistrationUrl != null && data.RegistrationUrl.trim().length > 0)
+                $scope.remoteControlState = 'registered';
+            else
+                $scope.remoteControlState = 'registering';
+        }
+        else
+            $scope.remoteControlState = 'inactive';
+        
+        // Stop any existing timer
+        if ($scope.repeatRegisterTimer != null)
+        {
+            clearTimeout($scope.repeatRegisterTimer);
+            $scope.repeatRegisterTimer = null;
+        }
+
+        // If we are registering, we need to keep checking until the registration is claimed
+        if ($scope.remoteControlState == 'registering' || $scope.remoteControlState == 'registered')
+        {
+            $scope.repeatRegisterTimer = setTimeout(function() {
+                AppService.post('/remotecontrol/register', { RegistrationUrl: "" }).then(function(data) {
+                    mapRemoteControlStatus(data.data);
+                }, () => { 
+                    AppService.get('/remotecontrol/status').then(function(data) {
+                            mapRemoteControlStatus(data.data);
+                    }, () => { });             
+                });
+            }, 5000);
+        }
+
+        // If we are enabled, poll to see if we become connected
+        if ($scope.remoteControlState == 'enabled')
+        {
+            $scope.repeatRegisterTimer = setTimeout(function() {
+                AppService.get('/remotecontrol/status').then(function(data) {
+                        mapRemoteControlStatus(data.data);
+                }, () => { });             
+            }, 5000);
+        }
+
+        // If we can enable and are registering, there must be a lingering registration
+        if (data.IsRegistering && data.CanEnable) {
+            AppService.delete('/remotecontrol/register').then(function(data) {
+                mapRemoteControlStatus(data.data);
+            }, () => { });
+        }
+    }
+
+    function mapRemoteControlError(data) {
+        AppUtils.connectionError(data);
+
+        AppService.get('/remotecontrol/status').then(function(data) {
+            mapRemoteControlStatus(data.data);
+        }, () => { });        
+       
+    }
+
+    $scope.refreshRemoteControlStatus = function() {
+        AppService.get('/remotecontrol/status').then(function(data) {
+            mapRemoteControlStatus(data.data);
+        }, mapRemoteControlError);
+    }
+
+    $scope.beginRemoteRegistration = function() {
+        $scope.remoteControlRegisterUrl = '';
+        $scope.remoteControlState = 'registering';
+
+        AppService.post('/remotecontrol/register', { RegistrationUrl: $scope.remoteControlRegisterUrl }).then(function(data) {
+            mapRemoteControlStatus(data.data);
+        }, mapRemoteControlError);
+    }
+
+    $scope.cancelRemoteRegistration = function() {
+        AppService.delete('/remotecontrol/register').then(function(data) {
+            mapRemoteControlStatus(data.data);
+        }, mapRemoteControlError);
+    }
+
+    $scope.enableRemoteControl = function() {
+        AppService.post('/remotecontrol/enable').then(function(data) {
+            mapRemoteControlStatus(data.data);
+        }, mapRemoteControlError);
+    }
+
+    $scope.disableRemoteControl = function() {
+        AppService.post('/remotecontrol/disable').then(function(data) {
+            mapRemoteControlStatus(data.data);
+        }, mapRemoteControlError);
+    }
+
+    $scope.deleteRemoteControl = function() {
+        DialogService.confirm(gettextCatalog.getString('Are you sure you want to delete the remote control registration?'), function(ix) {
+            if (ix == 0)
+                return;            
+            AppService.delete('/remotecontrol/registration').then(function(data) {
+                mapRemoteControlStatus(data.data);
+            }, mapRemoteControlError);
+        });
+    }
+
+    $scope.getRemoteControlStatusText = function() {
+        if ($scope.remoteControlState == 'enabled')
+            return gettextCatalog.getString('Remote control is enabled but not connected');
+        if ($scope.remoteControlState == 'connected')
+            return gettextCatalog.getString('Remote control is connected');
+        if ($scope.remoteControlState == 'registering')
+            return gettextCatalog.getString('Registering machine...');
+        if ($scope.remoteControlState == 'registeringfaulted')
+            return gettextCatalog.getString('Registration failed');
+        if ($scope.remoteControlState == 'registered')
+            return gettextCatalog.getString('Registered, waiting for accept');
+        if ($scope.remoteControlState == 'disabled')
+            return gettextCatalog.getString('Remote control is configured but not enabled');
+        if ($scope.remoteControlState == 'unknown')
+            return gettextCatalog.getString('...loading...');
+
+        return gettextCatalog.getString('Remote control is not set up');
+    }
+
+    $scope.refreshRemoteControlStatus();
 
     $scope.save = function() {
 
