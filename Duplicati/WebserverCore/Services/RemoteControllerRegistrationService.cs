@@ -43,16 +43,7 @@ public sealed record RemoteControlConfig
     /// <summary>
     /// The trusted server certificates.
     /// </summary>
-    public required IEnumerable<CertificateKey> ServerCertificates { get; init; }
-
-    /// <summary>
-    /// A server certificate.
-    /// </summary>
-    /// <param name="MachineId">The machine identifier</param>
-    /// <param name="PublicKey">The machine public key</param>
-    /// <param name="Expiry">The expiry date of the certificate</param>
-    /// <param name="Obtained">The date the certificate was obtained</param>
-    public sealed record CertificateKey(string MachineId, string PublicKey, DateTimeOffset Expiry, DateTimeOffset Obtained);
+    public required IEnumerable<MiniServerCertificate> ServerCertificates { get; init; }
 }
 
 /// <summary>
@@ -116,8 +107,7 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
             connection.ApplicationSettings.RemoteControlConfig = JsonSerializer.Serialize(new RemoteControlConfig
             {
                 Token = claimData.JWT,
-                ServerCertificates = (claimData.ServerCertificates ?? Enumerable.Empty<ServerCertificate>())
-                    .Select(x => new RemoteControlConfig.CertificateKey(x.MachineId, x.PublicKey, x.Expiry, x.Obtained)),
+                ServerCertificates = claimData.ServerCertificates,
                 ServerUrl = claimData.ServerUrl
             });
 

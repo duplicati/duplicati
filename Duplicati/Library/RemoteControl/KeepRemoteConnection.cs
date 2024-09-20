@@ -102,7 +102,7 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="JWT">The JWT token to use</param>
     /// <param name="serverKey">The server key to use</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
-    private KeepRemoteConnection(string serverUrl, string JWT, IEnumerable<ServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+    private KeepRemoteConnection(string serverUrl, string JWT, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
     {
         _client = new Websocket.Client.WebsocketClient(new Uri(serverUrl));
         _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
@@ -126,7 +126,7 @@ public class KeepRemoteConnection : IDisposable
             try
             {
                 var envelope = EnvelopedMessage.ForceParse(msg.Text);
-                var machineKey = serverKeys.FirstOrDefault(x => x.MachineId == envelope.From && x.Expiry > DateTimeOffset.Now)?.PublicKey;
+                var machineKey = serverKeys.FirstOrDefault(x => x.Identifier == envelope.From && x.Expiry > DateTimeOffset.Now)?.PublicKey;
                 envelope.ValidateSignature(machineKey);
 
                 if (_state == ConnectionState.Connected)
@@ -214,7 +214,7 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="onReKey">The callback to call when rekeying</param>
     /// <param name="onMessage">The callback to call when a message is received</param>
     /// <returns></returns>
-    public static Task Start(string serverUrl, string JWT, IEnumerable<ServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+    public static Task Start(string serverUrl, string JWT, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
         => Task.Run(async () =>
         {
             using var connection = new KeepRemoteConnection(serverUrl, JWT, serverKeys, cancellationToken, onReKey, onMessage);
@@ -290,7 +290,7 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="onMessage">The callback to call when a message is received</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
     /// <returns>The connection object</returns>
-    public static KeepRemoteConnection CreateRemoteListener(string serverUrl, string JWT, IEnumerable<ServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+    public static KeepRemoteConnection CreateRemoteListener(string serverUrl, string JWT, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
         => new KeepRemoteConnection(serverUrl, JWT, serverKeys, cancellationToken, onReKey, onMessage);
 
     /// <summary>

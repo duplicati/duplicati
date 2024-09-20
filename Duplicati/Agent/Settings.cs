@@ -23,6 +23,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Main;
+using Duplicati.Library.RemoteControl;
 
 namespace Duplicati.Agent;
 
@@ -39,24 +40,9 @@ public sealed record Settings(
     string JWT,
     string ServerUrl,
     string? SettingsEncryptionKey,
-    IEnumerable<Settings.ServerCertificate> ServerCertificates
+    IEnumerable<MiniServerCertificate> ServerCertificates
 )
 {
-    /// <summary>
-    /// The persisted version of a server certificate.
-    /// This is the data that is serialized to the file.
-    /// </summary>
-    /// <param name="MachineId">The machine the key belongs to</param>
-    /// <param name="PublicKey">The public key</param>
-    /// <param name="Obtained">The date the key was obtained</param>
-    /// <param name="Expiry">The expiry date of the key</param>
-    public sealed record ServerCertificate(
-        string MachineId,
-        string PublicKey,
-        DateTimeOffset Obtained,
-        DateTimeOffset Expiry
-    );
-
     /// <summary>
     /// Gets the default settings file path
     /// </summary>
@@ -80,7 +66,7 @@ public sealed record Settings(
     {
         path ??= DefaultSettingsFile;
         var tmp = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path))
-            ?? new Settings(path, string.Empty, string.Empty, string.Empty, Array.Empty<ServerCertificate>());
+            ?? new Settings(path, string.Empty, string.Empty, string.Empty, Array.Empty<MiniServerCertificate>());
 
         return tmp with
         {

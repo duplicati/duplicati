@@ -47,21 +47,21 @@ public sealed record RegisterClientData(
 public sealed record ClaimedClientData(
     string JWT,
     string ServerUrl,
-    IEnumerable<ServerCertificate> ServerCertificates,
+    IEnumerable<MiniServerCertificate> ServerCertificates,
     string? LocalEncryptionKey
 );
 
-// TODO: Replace with a standard certificate type
-
 /// <summary>
-/// The server certificate for a machine
+/// The server certificate for a machine.
+/// This data is serialized to various files, and chosen instead of X509 certificates.
+/// If we find a non-complex certificate format, we should switch to that.
 /// </summary>
-/// <param name="MachineId">The machine identifier the key is valid for</param>
+/// <param name="Identifier">The machine identifier the key is valid for</param>
 /// <param name="PublicKey">The certificate public key</param>
 /// <param name="Obtained">The date the certificate was obtained</param>
 /// <param name="Expiry">The expiry date of the certificate</param>
-public sealed record ServerCertificate(
-    string MachineId,
+public sealed record MiniServerCertificate(
+    string Identifier,
     string PublicKey,
     DateTimeOffset Obtained,
     DateTimeOffset Expiry

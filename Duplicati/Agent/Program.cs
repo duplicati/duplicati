@@ -127,7 +127,7 @@ public static class Program
                 KeepRemoteConnection.Start(
                     settings.ServerUrl,
                     settings.JWT,
-                    ConvertCertificates(settings.ServerCertificates),
+                    settings.ServerCertificates,
                     cts.Token,
                     ReKey,
                     (m) => OnMessage(m, agentConfig)
@@ -159,7 +159,7 @@ public static class Program
         if (!string.IsNullOrWhiteSpace(keydata.JWT) && settings.JWT != keydata.JWT)
             settings = settings with { JWT = keydata.JWT };
         if (keydata.ServerCertificates.Any())
-            settings = settings with { ServerCertificates = ConvertCertificates(keydata.ServerCertificates).Concat(settings.ServerCertificates).DistinctBy(x => x.MachineId).ToArray() };
+            settings = settings with { ServerCertificates = (keydata.ServerCertificates ?? []).Concat(settings.ServerCertificates).DistinctBy(x => x.Identifier).ToArray() };
 
         if (!string.IsNullOrWhiteSpace(keydata.LocalEncryptionKey) && settings.SettingsEncryptionKey != keydata.LocalEncryptionKey)
         {
@@ -172,11 +172,6 @@ public static class Program
 
         return Task.CompletedTask;
     }
-
-    private static IEnumerable<ServerCertificate> ConvertCertificates(IEnumerable<Settings.ServerCertificate> certificates)
-        => (certificates ?? []).Select(cert => new ServerCertificate(cert.MachineId, cert.PublicKey, cert.Obtained, cert.Expiry)).ToArray();
-    private static IEnumerable<Settings.ServerCertificate> ConvertCertificates(IEnumerable<ServerCertificate> certificates)
-        => (certificates ?? []).Select(cert => new Settings.ServerCertificate(cert.MachineId, cert.PublicKey, cert.Obtained, cert.Expiry)).ToArray();
 
     private static async Task RunServer(string[] args, CancellationToken cancellationToken)
     {
@@ -234,7 +229,7 @@ public static class Program
                     JWT = claimedClientData.JWT,
                     ServerUrl = claimedClientData.ServerUrl,
                     SettingsEncryptionKey = claimedClientData.LocalEncryptionKey,
-                    ServerCertificates = ConvertCertificates(claimedClientData.ServerCertificates)
+                    ServerCertificates = claimedClientData.ServerCertificates
                 };
 
                 settings.Save();
