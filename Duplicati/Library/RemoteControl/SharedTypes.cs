@@ -60,9 +60,26 @@ public sealed record ClaimedClientData(
 /// <param name="PublicKey">The certificate public key</param>
 /// <param name="Obtained">The date the certificate was obtained</param>
 /// <param name="Expiry">The expiry date of the certificate</param>
+/// <param name="Revoked">The date the certificate was revoked, or null if not revoked</param>
 public sealed record MiniServerCertificate(
     string Identifier,
     string PublicKey,
     DateTimeOffset Obtained,
-    DateTimeOffset Expiry
-);
+    DateTimeOffset Expiry,
+    DateTimeOffset? Revoked
+)
+{
+    /// <summary>
+    /// Merges two sets of certificates, keeping the newest
+    /// </summary>
+    /// <param name="newcerts">The new certificates</param>
+    /// <param name="oldcerts">The old certificates</param>
+    /// <returns>The merged certificates</returns>
+    public static IEnumerable<MiniServerCertificate> MergeCertificates(IEnumerable<MiniServerCertificate>? newcerts, IEnumerable<MiniServerCertificate>? oldcerts)
+        => (newcerts ?? []).Concat(oldcerts ?? [])
+            .DistinctBy(x => x.Identifier)
+            .Where(x => x.Revoked == null)
+            .Where(x => x.Expiry > DateTimeOffset.UtcNow)
+            .ToArray();
+
+}

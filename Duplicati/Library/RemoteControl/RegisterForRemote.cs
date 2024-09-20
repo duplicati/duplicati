@@ -161,6 +161,17 @@ public class RegisterForRemote : IDisposable
         return _registerClientData!;
     }
 
+    private JsonContent CreateMachineData()
+        => JsonContent.Create(new
+        {
+            InstanceId = ClientInstanceId,
+            MachineId = AutoUpdater.UpdaterManager.MachineID,
+            InstallId = AutoUpdater.UpdaterManager.InstallID,
+            LocalTime = DateTimeOffset.Now,
+            Version = AutoUpdater.UpdaterManager.SelfVersion?.Version,
+            PackageTypeId = AutoUpdater.UpdaterManager.PackageTypeId
+        });
+
     /// <summary>
     /// Registers the machine with the server
     /// </summary>
@@ -216,13 +227,7 @@ public class RegisterForRemote : IDisposable
     /// <exception cref="Exception">Thrown if the machine could not be claimed</exception>
     private async Task<ClaimedClientData> CheckClientClaimed()
     {
-        var response = await _httpClient.PostAsync(_registerClientData!.StatusLink, JsonContent.Create(new
-        {
-            InstanceId = ClientInstanceId,
-            MachineId = AutoUpdater.UpdaterManager.MachineID,
-            InstallId = AutoUpdater.UpdaterManager.InstallID,
-            LocalTime = DateTimeOffset.Now
-        }), _cancellationTokenSource.Token);
+        var response = await _httpClient.PostAsync(_registerClientData!.StatusLink, CreateMachineData(), _cancellationTokenSource.Token);
 
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ClaimedClientData>()

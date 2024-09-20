@@ -93,10 +93,14 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
     /// <returns>An awaitable task</returns>
     private Task ReKey(ClaimedClientData data)
     {
+        var oldCerts = connection.ApplicationSettings.RemoteControlConfig == null
+            ? null
+            : JsonConvert.DeserializeObject<RemoteControlConfig>(connection.ApplicationSettings.RemoteControlConfig)?.ServerCertificates;
+
         connection.ApplicationSettings.RemoteControlConfig = JsonConvert.SerializeObject(new RemoteControlConfig
         {
             Token = data.JWT,
-            ServerCertificates = data.ServerCertificates,
+            ServerCertificates = MiniServerCertificate.MergeCertificates(data.ServerCertificates, oldCerts),
             ServerUrl = data.ServerUrl
         });
 

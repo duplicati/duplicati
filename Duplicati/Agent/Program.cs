@@ -159,7 +159,7 @@ public static class Program
         if (!string.IsNullOrWhiteSpace(keydata.JWT) && settings.JWT != keydata.JWT)
             settings = settings with { JWT = keydata.JWT };
         if (keydata.ServerCertificates.Any())
-            settings = settings with { ServerCertificates = (keydata.ServerCertificates ?? []).Concat(settings.ServerCertificates).DistinctBy(x => x.Identifier).ToArray() };
+            settings = settings with { ServerCertificates = MiniServerCertificate.MergeCertificates(keydata.ServerCertificates, settings.ServerCertificates) };
 
         if (!string.IsNullOrWhiteSpace(keydata.LocalEncryptionKey) && settings.SettingsEncryptionKey != keydata.LocalEncryptionKey)
         {
