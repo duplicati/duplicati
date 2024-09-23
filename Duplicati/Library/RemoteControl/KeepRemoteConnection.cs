@@ -22,6 +22,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.RemoteControl;
@@ -37,19 +38,31 @@ public class KeepRemoteConnection : IDisposable
     private static readonly string LogTag = Log.LogTagFromType<KeepRemoteConnection>();
 
     /// <summary>
+    /// The interval between reconnect attempts
+    /// </summary>
+    private static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(30);
+
+    /// <summary>
     /// The interval between heartbeats
     /// </summary>
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(5);
 
     /// <summary>
+    /// The interval between certificate refreshes
+    /// </summary>
+    private static readonly TimeSpan CertificateRefreshInterval = TimeSpan.FromDays(7);
+
+    /// <summary>
     /// The client key to use for signing messages
     /// </summary>
-    private static readonly string? ClientKey = null; // TODO: Fill in
+    private static readonly RSA ClientKey = RSA.Create(2048);
 
     /// <summary>
     /// The client ID to use for identifying the client
     /// </summary>
-    private static readonly string ClientId = AutoUpdater.UpdaterManager.MachineID;
+    private static readonly string ClientId = string.IsNullOrWhiteSpace(AutoUpdater.UpdaterManager.MachineID)
+        ? Guid.NewGuid().ToString()
+        : AutoUpdater.UpdaterManager.MachineID;
 
     /// <summary>
     /// The stats the connection can be in
@@ -94,6 +107,43 @@ public class KeepRemoteConnection : IDisposable
     /// The task that runs the connection
     /// </summary>
     private Task _runnerTask;
+    /// <summary>
+    /// The currently negotiated server certificate
+    /// </summary>
+    private MiniServerCertificate? _serverCertificate;
+    /// <summary>
+    /// The time the certificate was last refreshed
+    /// </summary>
+    private DateTime _lastCertificateRefresh = DateTime.UnixEpoch;
+    /// <summary>
+    /// Task for requesting certificate refresh
+    /// </summary>
+    private TaskCompletionSource<bool> _refreshCertificates = new TaskCompletionSource<bool>();
+    /// <summary>
+    /// The callback to call when rekeying
+    /// </summary>
+    private readonly Func<ClaimedClientData, Task> _onReKey;
+    /// <summary>
+    /// The callback to call when a message is received
+    /// </summary>
+    private readonly Func<CommandMessage, Task> _onMessage;
+
+    /// <summary>
+    /// The current JWT token
+    /// </summary>
+    private string _token;
+    /// <summary>
+    /// The server URL
+    /// </summary>
+    private string _serverUrl;
+    /// <summary>
+    /// The certificate URL
+    /// </summary>
+    private string _certificateUrl;
+    /// <summary>
+    /// The server keys
+    /// </summary>
+    private IEnumerable<MiniServerCertificate> _serverKeys;
 
     /// <summary>
     /// Creates a new connection to the remote server
@@ -104,8 +154,24 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="cancellationToken">The token to cancel the connection</param>
     private KeepRemoteConnection(string serverUrl, string JWT, string certificateUrl, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
     {
+        _serverUrl = serverUrl;
+        _certificateUrl = certificateUrl;
+        _token = JWT;
+        _serverKeys = serverKeys;
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _onReKey = onReKey;
+        _onMessage = onMessage;
+
         _client = new Websocket.Client.WebsocketClient(new Uri(serverUrl));
-        _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
+        _runnerTask = RunMainLoop();
+    }
+
+    /// <summary>
+    /// Runs the inner loop of the connection
+    /// </summary>
+    private Task RunMainLoop()
+    {
+        _client.ReconnectTimeout = ReconnectInterval;
 
         _client.ReconnectionHappened.Subscribe(info =>
         {
@@ -115,8 +181,8 @@ public class KeepRemoteConnection : IDisposable
 
         _client.DisconnectionHappened.Subscribe(info =>
         {
-            // TODO: If disconnected due to certifiate error, we should try to get fresh certificates
             _state = ConnectionState.NotConnected;
+            _serverCertificate = null;
             Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "Disconnected from the server");
         });
 
@@ -127,8 +193,28 @@ public class KeepRemoteConnection : IDisposable
             try
             {
                 var envelope = EnvelopedMessage.ForceParse(msg.Text);
-                var machineKey = serverKeys.FirstOrDefault(x => x.Identifier == envelope.From && x.Expiry > DateTimeOffset.Now)?.PublicKey;
-                envelope.ValidateSignature(machineKey);
+                if (_serverCertificate == null || _state == ConnectionState.Connected)
+                {
+                    if (envelope.GetMessageType() != MessageType.Welcome)
+                        throw new ProtocolViolationException("Expected welcome message");
+                    if (string.IsNullOrWhiteSpace(envelope.PublicKeyHash))
+                        throw new ProtocolViolationException("No public key hash in welcome message");
+                    _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == envelope.PublicKeyHash && x.Expiry > DateTimeOffset.Now);
+
+                    if (_serverCertificate == null)
+                    {
+                        _refreshCertificates.TrySetResult(true);
+                        throw new ProtocolViolationException("No valid server certificate");
+                    }
+                }
+
+                if (_serverCertificate == null)
+                {
+                    _refreshCertificates.TrySetResult(true);
+                    throw new ProtocolViolationException("No valid server certificate");
+                }
+
+                envelope.ValidateSignature(_serverCertificate?.PublicKey);
 
                 if (_state == ConnectionState.Connected)
                 {
@@ -140,7 +226,7 @@ public class KeepRemoteConnection : IDisposable
                     Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketAuthenticated", "Connected with the server");
 
                     _challenge = RandomNumberGenerator.GetHexString(64);
-                    SendEnvelope(envelope.RespondWith(new AuthMessage(JWT, _challenge)));
+                    SendEnvelope(envelope.RespondWith(new AuthMessage(_token, _challenge)));
                 }
                 else if (_state == ConnectionState.WelcomeReceived)
                 {
@@ -155,12 +241,15 @@ public class KeepRemoteConnection : IDisposable
                         throw new ProtocolViolationException("Invalid Json message");
 
                     using RSA rsa = RSA.Create();
-                    rsa.ImportFromPem(machineKey);
+                    rsa.ImportFromPem(_serverCertificate?.PublicKey);
                     if (!rsa.VerifyData(Encoding.UTF8.GetBytes(_challenge!), Convert.FromHexString(authMessage.SignedChallenge), HashAlgorithmName.SHA256, RSASignaturePadding.Pss))
                         throw new EnvelopeJsonParsingException("Invalid Json message");
 
                     if ((authMessage.WillReplaceToken ?? false) && authMessage.NewToken != null)
-                        await onReKey(new ClaimedClientData(authMessage.NewToken, serverUrl, certificateUrl, serverKeys, null));
+                    {
+                        _token = authMessage.NewToken;
+                        await InvokeReKey();
+                    }
 
                     _state = ConnectionState.Authenticated;
                 }
@@ -172,7 +261,7 @@ public class KeepRemoteConnection : IDisposable
                             break;
 
                         case MessageType.Command:
-                            await onMessage(new CommandMessage(envelope.GetPayload<CommandRequestMessage>(), response =>
+                            await _onMessage(new CommandMessage(envelope.GetPayload<CommandRequestMessage>(), response =>
                             {
                                 SendEnvelope(envelope.RespondWith(response));
                                 return true;
@@ -198,12 +287,15 @@ public class KeepRemoteConnection : IDisposable
             }
         });
 
-        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _runnerTask = Task.WhenAny(
+        return Task.WhenAny(
             _client.Start(),
-            RunHeartbeatLoop()
+            RunHeartbeatLoop(),
+            RunCertificateRefreshLoop()
         );
     }
+
+    private Task InvokeReKey()
+        => _onReKey(new ClaimedClientData(_token, _serverUrl, _certificateUrl, _serverKeys, null));
 
     /// <summary>
     /// Creates a new connection to the remote server
@@ -314,6 +406,40 @@ public class KeepRemoteConnection : IDisposable
                 Type = "ping",
                 MessageId = Guid.NewGuid().ToString()
             });
+        }
+    }
+
+    /// <summary>
+    /// Runs a loop that refreshes the server certificates
+    /// </summary>
+    /// <returns>An awaitable task</returns>
+    private async Task RunCertificateRefreshLoop()
+    {
+        while (!_cancellationTokenSource.Token.IsCancellationRequested)
+        {
+            var t = await Task.WhenAny(_refreshCertificates.Task, Task.Delay(CertificateRefreshInterval, _cancellationTokenSource.Token));
+            if (_cancellationTokenSource.Token.IsCancellationRequested)
+                return;
+
+            if (t == _refreshCertificates.Task)
+                Interlocked.Exchange(ref _refreshCertificates, new TaskCompletionSource<bool>());
+
+            if (_lastCertificateRefresh.AddMinutes(5) < DateTime.Now)
+            {
+                using var client = new HttpClient();
+                var response = await client.GetAsync(_certificateUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    using var stream = await response.Content.ReadAsStreamAsync(_cancellationTokenSource.Token);
+                    var serverKeys = await JsonSerializer.DeserializeAsync<IEnumerable<MiniServerCertificate>>(stream, cancellationToken: _cancellationTokenSource.Token);
+                    if (serverKeys != null && serverKeys.Any())
+                    {
+                        _lastCertificateRefresh = DateTime.Now;
+                        _serverKeys = serverKeys;
+                        await InvokeReKey();
+                    }
+                }
+            }
         }
     }
 

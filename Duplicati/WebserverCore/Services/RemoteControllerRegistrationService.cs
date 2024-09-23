@@ -112,6 +112,7 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
             {
                 Token = claimData.JWT,
                 ServerCertificates = claimData.ServerCertificates,
+                CertificateUrl = claimData.CertificateUrl,
                 ServerUrl = claimData.ServerUrl
             });
 

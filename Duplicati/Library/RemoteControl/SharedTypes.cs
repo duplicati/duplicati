@@ -40,6 +40,8 @@ public sealed record RegisterClientData(
 /// <summary>
 /// Data returned when the machine is claimed
 /// </summary>
+/// <param name="Success">True if the claim was successful</param>
+/// <param name="StatusMessage">The status message for the claim</param>
 /// <param name="JWT">The JWT token for the machine</param>
 /// <param name="ServerUrl">The URL for the remote server</param>
 /// <param name="CertificateUrl">The URL for getting new server certificates</param>
@@ -58,30 +60,13 @@ public sealed record ClaimedClientData(
 /// This data is serialized to various files, and chosen instead of X509 certificates.
 /// If we find a non-complex certificate format, we should switch to that.
 /// </summary>
-/// <param name="Identifier">The machine identifier the key is valid for</param>
+/// <param name="PublicKeyHash">The hash of the certificate public key</param>
 /// <param name="PublicKey">The certificate public key</param>
 /// <param name="Obtained">The date the certificate was obtained</param>
 /// <param name="Expiry">The expiry date of the certificate</param>
-/// <param name="Revoked">The date the certificate was revoked, or null if not revoked</param>
 public sealed record MiniServerCertificate(
-    string Identifier,
+    string PublicKeyHash,
     string PublicKey,
     DateTimeOffset Obtained,
-    DateTimeOffset Expiry,
-    DateTimeOffset? Revoked
-)
-{
-    /// <summary>
-    /// Merges two sets of certificates, keeping the newest
-    /// </summary>
-    /// <param name="newcerts">The new certificates</param>
-    /// <param name="oldcerts">The old certificates</param>
-    /// <returns>The merged certificates</returns>
-    public static IEnumerable<MiniServerCertificate> MergeCertificates(IEnumerable<MiniServerCertificate>? newcerts, IEnumerable<MiniServerCertificate>? oldcerts)
-        => (newcerts ?? []).Concat(oldcerts ?? [])
-            .DistinctBy(x => x.Identifier)
-            .Where(x => x.Revoked == null)
-            .Where(x => x.Expiry > DateTimeOffset.UtcNow)
-            .ToArray();
-
-}
+    DateTimeOffset Expiry
+);

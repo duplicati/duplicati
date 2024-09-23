@@ -85,6 +85,26 @@ public class RegisterForRemote : IDisposable
     }
 
     /// <summary>
+    /// Data returned when the machine is claimed
+    /// </summary>
+    /// <param name="Success">True if the claim was successful</param>
+    /// <param name="StatusMessage">The status message for the claim</param>
+    /// <param name="JWT">The JWT token for the machine</param>
+    /// <param name="ServerUrl">The URL for the remote server</param>
+    /// <param name="CertificateUrl">The URL for getting new server certificates</param>
+    /// <param name="ServerCertificates">The certificates for the remote server</param>
+    /// <param name="LocalEncryptionKey">The encryption key for the local settings</param>
+    private sealed record EnvelopedClaimedClientData(
+        bool Success,
+        string StatusMessage,
+        string JWT,
+        string ServerUrl,
+        string CertificateUrl,
+        IEnumerable<MiniServerCertificate> ServerCertificates,
+        string? LocalEncryptionKey
+    );
+
+    /// <summary>
     /// The current state of the registration process
     /// </summary>
     private States _state;
@@ -230,8 +250,13 @@ public class RegisterForRemote : IDisposable
         var response = await _httpClient.PostAsync(_registerClientData!.StatusLink, CreateMachineData(), _cancellationTokenSource.Token);
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ClaimedClientData>()
+        var result = await response.Content.ReadFromJsonAsync<EnvelopedClaimedClientData>()
             ?? throw new Exception("Failed to read machine claim data");
+
+        if (!result.Success)
+            throw new Exception($"Failed to claim machine: {result.StatusMessage}");
+
+        return new ClaimedClientData(result.JWT, result.ServerUrl, result.CertificateUrl, result.ServerCertificates, result.LocalEncryptionKey);
     }
 
     /// </inheritdoc>

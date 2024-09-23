@@ -79,6 +79,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
         _keepRemoteConnection = KeepRemoteConnection.CreateRemoteListener(
             config.ServerUrl,
             config.Token,
+            config.CertificateUrl,
             config.ServerCertificates,
             CancellationToken.None,
             ReKey,
@@ -100,7 +101,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
         connection.ApplicationSettings.RemoteControlConfig = JsonConvert.SerializeObject(new RemoteControlConfig
         {
             Token = data.JWT,
-            ServerCertificates = MiniServerCertificate.MergeCertificates(data.ServerCertificates, oldCerts),
+            ServerCertificates = data.ServerCertificates ?? oldCerts ?? [],
             ServerUrl = data.ServerUrl,
             CertificateUrl = data.CertificateUrl
         });

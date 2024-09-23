@@ -110,6 +110,10 @@ internal sealed record EnvelopedMessage
     /// </summary>
     public string? Payload { get; init; }
     /// <summary>
+    /// The public key hash
+    /// </summary>
+    public string? PublicKeyHash { get; init; }
+    /// <summary>
     /// The signature of the payload
     /// </summary>
     public string? Signature { get; init; }
@@ -186,6 +190,21 @@ internal sealed record EnvelopedMessage
     }
 
     /// <summary>
+    /// Computes the signature of the payload
+    /// </summary>
+    /// <param name="key">The private key to use</param>
+    /// <returns>The computed signature</returns>
+    public string? ComputePayloadSignature(RSA key)
+    {
+        if (key is null || Payload is null && MessageId is null)
+            return null;
+
+        return BitConverter.ToString(
+            key.SignData(Encoding.UTF8.GetBytes($"{Payload}::{MessageId}"), HashAlgorithmName.SHA256, RSASignaturePadding.Pss)
+        ).Replace("-", "").ToLower();
+    }
+
+    /// <summary>
     /// Validates the message signature
     /// </summary>
     /// <param name="pemPublicKey">The public key for the server that sent</param>
@@ -203,10 +222,10 @@ internal sealed record EnvelopedMessage
     /// <summary>
     /// Creates the signature on the returned message
     /// </summary>
-    /// <param name="pemPrivatekey">The private key to use</param>
+    /// <param name="key">The private key to use</param>
     /// <returns>The signed message</returns>
-    public EnvelopedMessage WithSignature(string? pemPrivatekey)
-        => this with { Signature = ComputePayloadSignature(pemPrivatekey) };
+    public EnvelopedMessage WithSignature(RSA key)
+        => this with { Signature = ComputePayloadSignature(key) };
 
     /// <summary>
     /// Creates a new message with a payload

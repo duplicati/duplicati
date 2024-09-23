@@ -146,7 +146,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
 
         AppService.get('/remotecontrol/status').then(function(data) {
             mapRemoteControlStatus(data.data);
-        }, () => { });        
+        }, () => { });
        
     }
 

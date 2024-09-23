@@ -159,12 +159,12 @@ public static class Program
         var settings = Settings.Load();
         if (!string.IsNullOrWhiteSpace(keydata.JWT) && settings.JWT != keydata.JWT)
             settings = settings with { JWT = keydata.JWT };
-        if (keydata.ServerCertificates.Any())
-            settings = settings with { ServerCertificates = MiniServerCertificate.MergeCertificates(keydata.ServerCertificates, settings.ServerCertificates) };
+        if (keydata.ServerCertificates != null && keydata.ServerCertificates.Any())
+            settings = settings with { ServerCertificates = keydata.ServerCertificates };
 
         if (!string.IsNullOrWhiteSpace(keydata.LocalEncryptionKey) && settings.SettingsEncryptionKey != keydata.LocalEncryptionKey)
         {
-            Log.WriteMessage(LogMessageType.Information, LogTag, "ReKey", "Changing the local settings encryption key");
+            // Log.WriteMessage(LogMessageType.Information, LogTag, "ReKey", "Changing the local settings encryption key");
             // TODO: Implement changing the database encryption key
             // FIXMEGlobal.Provider.GetRequiredService<Connection>().ChangeDbKey(keydata.LocalEncryptionKey);
             // settings = settings with { SettingsEncryptionKey = keydata.LocalEncryptionKey };
