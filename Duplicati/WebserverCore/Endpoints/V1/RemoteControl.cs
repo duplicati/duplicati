@@ -38,6 +38,9 @@ public class RemoteControl : IEndpointV1
         if (remoteController.CanEnable)
             throw new BadRequestException("Existing remote control must be removed before registering");
 
+        if (!registration.IsRegistering && string.IsNullOrWhiteSpace(registrationUrl))
+            throw new BadRequestException("Registration URL must be provided");
+
         var task = registration.IsRegistering
             ? registration.WaitForRegistration()
             : registration.RegisterMachine(registrationUrl);

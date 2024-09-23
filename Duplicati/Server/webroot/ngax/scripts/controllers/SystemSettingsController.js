@@ -157,7 +157,6 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
     }
 
     $scope.beginRemoteRegistration = function() {
-        $scope.remoteControlRegisterUrl = '';
         $scope.remoteControlState = 'registering';
 
         AppService.post('/remotecontrol/register', { RegistrationUrl: $scope.remoteControlRegisterUrl }).then(function(data) {
