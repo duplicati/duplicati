@@ -101,7 +101,8 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
         {
             Token = data.JWT,
             ServerCertificates = MiniServerCertificate.MergeCertificates(data.ServerCertificates, oldCerts),
-            ServerUrl = data.ServerUrl
+            ServerUrl = data.ServerUrl,
+            CertificateUrl = data.CertificateUrl
         });
 
         // TODO: Implement changing the encryption key

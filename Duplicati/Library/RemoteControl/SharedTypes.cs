@@ -42,11 +42,13 @@ public sealed record RegisterClientData(
 /// </summary>
 /// <param name="JWT">The JWT token for the machine</param>
 /// <param name="ServerUrl">The URL for the remote server</param>
-/// <param name="ServerCertificateKey">The certificate key for the remote server</param>
+/// <param name="CertificateUrl">The URL for getting new server certificates</param>
+/// <param name="ServerCertificates">The certificates for the remote server</param>
 /// <param name="LocalEncryptionKey">The encryption key for the local settings</param>
 public sealed record ClaimedClientData(
     string JWT,
     string ServerUrl,
+    string CertificateUrl,
     IEnumerable<MiniServerCertificate> ServerCertificates,
     string? LocalEncryptionKey
 );

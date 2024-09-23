@@ -127,6 +127,7 @@ public static class Program
                 KeepRemoteConnection.Start(
                     settings.ServerUrl,
                     settings.JWT,
+                    settings.CertificateUrl,
                     settings.ServerCertificates,
                     cts.Token,
                     ReKey,

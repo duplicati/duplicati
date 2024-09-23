@@ -41,6 +41,10 @@ public sealed record RemoteControlConfig
     /// </summary>
     public required string ServerUrl { get; init; }
     /// <summary>
+    /// The URL for getting new server certificates.
+    /// </summary>
+    public required string CertificateUrl { get; init; }
+    /// <summary>
     /// The trusted server certificates.
     /// </summary>
     public required IEnumerable<MiniServerCertificate> ServerCertificates { get; init; }

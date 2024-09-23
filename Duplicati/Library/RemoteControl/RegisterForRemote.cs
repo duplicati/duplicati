@@ -203,10 +203,10 @@ public class RegisterForRemote : IDisposable
             throw new InvalidOperationException("Resgistration process is not in the registered state");
 
         _state = States.WaitingForClaim;
-        _cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(_registerClientData!.MaxLifetimeSeconds));
+        _cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(Math.Min(3600, Math.Max(1, _registerClientData!.MaxLifetimeSeconds))));
         try
         {
-            _claimedClientData = await RetryHelper.Retry(() => CheckClientClaimed(), _registerClientData!.MaxRetries, TimeSpan.FromSeconds(_registerClientData!.RetrySeconds), _cancellationTokenSource.Token);
+            _claimedClientData = await RetryHelper.Retry(() => CheckClientClaimed(), Math.Min(100, Math.Max(1, _registerClientData!.MaxRetries)), TimeSpan.FromSeconds(_registerClientData!.RetrySeconds), _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {

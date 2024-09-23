@@ -100,9 +100,9 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <param name="serverUrl">The url to use</param>
     /// <param name="JWT">The JWT token to use</param>
-    /// <param name="serverKey">The server key to use</param>
+    /// <param name="serverKeys">The server keys to use</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
-    private KeepRemoteConnection(string serverUrl, string JWT, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+    private KeepRemoteConnection(string serverUrl, string JWT, string certificateUrl, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
     {
         _client = new Websocket.Client.WebsocketClient(new Uri(serverUrl));
         _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
@@ -115,6 +115,7 @@ public class KeepRemoteConnection : IDisposable
 
         _client.DisconnectionHappened.Subscribe(info =>
         {
+            // TODO: If disconnected due to certifiate error, we should try to get fresh certificates
             _state = ConnectionState.NotConnected;
             Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "Disconnected from the server");
         });
@@ -159,7 +160,7 @@ public class KeepRemoteConnection : IDisposable
                         throw new EnvelopeJsonParsingException("Invalid Json message");
 
                     if ((authMessage.WillReplaceToken ?? false) && authMessage.NewToken != null)
-                        await onReKey(new ClaimedClientData(authMessage.NewToken, serverUrl, serverKeys, null));
+                        await onReKey(new ClaimedClientData(authMessage.NewToken, serverUrl, certificateUrl, serverKeys, null));
 
                     _state = ConnectionState.Authenticated;
                 }
@@ -209,15 +210,16 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <param name="serverUrl">The url to use</param>
     /// <param name="JWT">The JWT to use</param>
+    /// <param name="certificateUrl">The certificate url to use</param>
     /// <param name="serverKeys">The server keys to use</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
     /// <param name="onReKey">The callback to call when rekeying</param>
     /// <param name="onMessage">The callback to call when a message is received</param>
     /// <returns></returns>
-    public static Task Start(string serverUrl, string JWT, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+    public static Task Start(string serverUrl, string JWT, string certificateUrl, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
         => Task.Run(async () =>
         {
-            using var connection = new KeepRemoteConnection(serverUrl, JWT, serverKeys, cancellationToken, onReKey, onMessage);
+            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onReKey, onMessage);
             await connection._runnerTask;
         });
 
@@ -285,13 +287,14 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <param name="serverUrl">The url to use</param>
     /// <param name="JWT">The JWT token to use</param>
-    /// <param name="serverKey">The server key to use</param>
+    /// 
+    /// <param name="serverKeys">The server keys to use</param>
     /// <param name="onReKey">The callback to call when rekeying</param>
     /// <param name="onMessage">The callback to call when a message is received</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
     /// <returns>The connection object</returns>
-    public static KeepRemoteConnection CreateRemoteListener(string serverUrl, string JWT, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
-        => new KeepRemoteConnection(serverUrl, JWT, serverKeys, cancellationToken, onReKey, onMessage);
+    public static KeepRemoteConnection CreateRemoteListener(string serverUrl, string JWT, string certificateUrl, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onReKey, onMessage);
 
     /// <summary>
     /// Sends a heartbeat message to the server

@@ -39,6 +39,7 @@ public sealed record Settings(
     string Filename,
     string JWT,
     string ServerUrl,
+    string CertificateUrl,
     string? SettingsEncryptionKey,
     IEnumerable<MiniServerCertificate> ServerCertificates
 )
@@ -66,7 +67,7 @@ public sealed record Settings(
     {
         path ??= DefaultSettingsFile;
         var tmp = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path))
-            ?? new Settings(path, string.Empty, string.Empty, string.Empty, Array.Empty<MiniServerCertificate>());
+            ?? new Settings(path, string.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<MiniServerCertificate>());
 
         return tmp with
         {
