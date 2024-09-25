@@ -225,8 +225,7 @@ public class KeepRemoteConnection : IDisposable
                     _state = ConnectionState.WelcomeReceived;
                     Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketAuthenticated", "Connected with the server");
 
-                    _challenge = RandomNumberGenerator.GetHexString(64);
-                    SendEnvelope(envelope.RespondWith(new AuthMessage(_token, _challenge)));
+                    SendEnvelope(envelope.RespondWith(new AuthMessage(_token, ClientKey.ExportSubjectPublicKeyInfoPem(), Library.AutoUpdater.UpdaterManager.SelfVersion.Version ?? "0.0.0")));
                 }
                 else if (_state == ConnectionState.WelcomeReceived)
                 {
@@ -237,21 +236,13 @@ public class KeepRemoteConnection : IDisposable
                     if (!authMessage.Accepted ?? false)
                         throw new ProtocolViolationException("Authentication failed");
 
-                    if (authMessage.SignedChallenge == null)
-                        throw new ProtocolViolationException("Invalid Json message");
-
-                    using RSA rsa = RSA.Create();
-                    rsa.ImportFromPem(_serverCertificate?.PublicKey);
-                    if (!rsa.VerifyData(Encoding.UTF8.GetBytes(_challenge!), Convert.FromHexString(authMessage.SignedChallenge), HashAlgorithmName.SHA256, RSASignaturePadding.Pss))
-                        throw new EnvelopeJsonParsingException("Invalid Json message");
+                    _state = ConnectionState.Authenticated;
 
                     if ((authMessage.WillReplaceToken ?? false) && authMessage.NewToken != null)
                     {
                         _token = authMessage.NewToken;
                         await InvokeReKey();
                     }
-
-                    _state = ConnectionState.Authenticated;
                 }
                 else if (_state == ConnectionState.Authenticated)
                 {
@@ -294,6 +285,10 @@ public class KeepRemoteConnection : IDisposable
         );
     }
 
+    /// <summary>
+    /// Helper method to invoke the rekey callback
+    /// </summary>
+    /// <returns>An awaitable task</returns>
     private Task InvokeReKey()
         => _onReKey(new ClaimedClientData(_token, _serverUrl, _certificateUrl, _serverKeys, null));
 

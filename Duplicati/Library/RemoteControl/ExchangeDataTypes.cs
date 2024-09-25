@@ -55,9 +55,11 @@ internal enum MessageType
 /// <summary>
 /// A message to authenticate with
 /// </summary>
-/// <param name="Token">The server token</param>
-/// <param name="Challenge">The server challenge</param>
-internal sealed record AuthMessage(string? Token, string? Challenge);
+/// <param name="JwToken">The client token</param>
+/// <param name="PublicKey">The client public key</param>
+/// <param name="Version">The version of the client</param>
+public record AuthMessage(string JwToken, string PublicKey, string ClientVersion);
+
 /// <summary>
 /// A message authentication response
 /// </summary>
@@ -65,7 +67,7 @@ internal sealed record AuthMessage(string? Token, string? Challenge);
 /// <param name="WillReplaceToken">Whether the token will be replaced</param>
 /// <param name="NewToken">The new token</param>
 /// <param name="SignedChallenge">The signed challenge</param>
-internal sealed record AuthResultMessage(bool? Accepted, bool? WillReplaceToken, string? NewToken, string? SignedChallenge);
+internal sealed record AuthResultMessage(bool? Accepted, bool? WillReplaceToken, string? NewToken);
 
 /// <summary>
 /// A message to send a command
