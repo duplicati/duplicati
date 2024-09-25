@@ -20,6 +20,7 @@ backupApp.controller('SystemSettingsController', function($rootScope, $scope, $r
             }
 
         $scope.ServerModules = mods;
+        $scope.remoteControlRegisterUrl = $scope.SystemInfo.RemoteControlRegistrationUrl;
         AppUtils.extractServerModuleOptions($scope.advancedOptions, $scope.ServerModules, $scope.servermodulesettings, 'SupportedGlobalCommands');
     };
 

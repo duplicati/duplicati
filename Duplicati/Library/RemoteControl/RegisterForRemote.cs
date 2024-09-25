@@ -50,6 +50,20 @@ public class RegisterForRemote : IDisposable
     private static readonly string ClientInstanceId = Guid.NewGuid().ToString();
 
     /// <summary>
+    /// The default URL to register the machine with
+    /// </summary>
+    public static string DefaultRegisterationUrl
+    {
+        get
+        {
+            var envvalue = Environment.GetEnvironmentVariable("DUPLICATI_REMOTE_CONTROL_URL");
+            return string.IsNullOrWhiteSpace(envvalue)
+                ? "https://api.duplicati.com/remotecontrol/register"
+                : envvalue;
+        }
+    }
+
+    /// <summary>
     /// The states that the process can be in
     /// </summary>
     public enum States
@@ -203,7 +217,9 @@ public class RegisterForRemote : IDisposable
             InstanceId = ClientInstanceId,
             MachineId = AutoUpdater.UpdaterManager.MachineID,
             InstallId = AutoUpdater.UpdaterManager.InstallID,
-            LocalTime = DateTimeOffset.Now
+            PackageTypeId = AutoUpdater.UpdaterManager.PackageTypeId,
+            LocalTime = DateTimeOffset.Now,
+
         }), _cancellationTokenSource.Token);
 
         response.EnsureSuccessStatusCode();

@@ -25,6 +25,7 @@ public class SystemInfo : IEndpointV1
             ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
             ServerVersionName = Duplicati.License.VersionNumbers.Version,
             ServerVersionType = Duplicati.Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
+            RemoteControlRegistrationUrl = Duplicati.Library.RemoteControl.RegisterForRemote.DefaultRegisterationUrl,
             StartedBy = FIXMEGlobal.Origin,
             DefaultUpdateChannel = Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel.ToString(),
             DefaultUsageReportLevel = Duplicati.Library.UsageReporter.Reporter.DefaultReportLevel,
