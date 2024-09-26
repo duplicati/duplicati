@@ -19,18 +19,34 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Generic;
-using Duplicati.Library.Interface;
+namespace Duplicati.Library.Compression.ZipCompression;
 
-namespace Duplicati.Library.Compression;
-
-public static class CompressionModules
+/// <summary>
+/// Constants used in the ZipCompression namespace
+/// </summary>
+internal class Constants
 {
     /// <summary>
-    /// The list of all built-in compression modules
+    /// The size of the local header entry
     /// </summary>
-    public static IReadOnlyList<ICompression> BuiltInCompressionModules => [
-        new ZipCompression.FileArchiveZip(),
-        new SevenZipCompression()
-    ];
+    public const string CannotReadWhileWriting = "Cannot read while writing";
+    /// <summary>
+    /// The size of the local header entry
+    /// </summary>
+    public const string CannotWriteWhileReading = "Cannot write while reading";
+
+    /// <summary>
+    /// Size of endheader, taken from SharpCompress ZipWriter
+    /// </summary>
+    public const int END_OF_CENTRAL_DIRECTORY_SIZE = 8 + 2 + 2 + 4 + 4 + 2 + 0;
+
+    /// <summary>
+    /// Taken from SharpCompress ZipCentralDirectorEntry.cs
+    /// </summary>
+    public const int CENTRAL_HEADER_ENTRY_SIZE = 8 + 2 + 2 + 4 + 4 + 4 + 4 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 4;
+
+    /// <summary>
+    /// The size of the extended zip64 header
+    /// </summary>
+    public const int CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA = 2 + 2 + 8 + 8 + 8 + 4;
 }
