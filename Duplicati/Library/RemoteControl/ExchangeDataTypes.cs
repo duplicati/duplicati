@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -55,10 +54,10 @@ internal enum MessageType
 /// <summary>
 /// A message to authenticate with
 /// </summary>
-/// <param name="JwToken">The client token</param>
+/// <param name="Token">The client token</param>
 /// <param name="PublicKey">The client public key</param>
 /// <param name="Version">The version of the client</param>
-public record AuthMessage(string JwToken, string PublicKey, string ClientVersion);
+public record AuthMessage(string Token, string PublicKey, string ClientVersion);
 
 /// <summary>
 /// A message authentication response
@@ -77,6 +76,14 @@ internal sealed record AuthResultMessage(bool? Accepted, bool? WillReplaceToken,
 /// <param name="Body">The optional body to send</param>
 /// <param name="Headers">The optional headers to add</param>
 public sealed record CommandRequestMessage(string Method, string Path, byte[]? Body, Dictionary<string, string>? Headers);
+
+/// <summary>
+/// The welcome message from the server
+/// </summary>
+/// <param name="PublicKeyHash">The public key hash of the server key</param>
+/// <param name="MachineName">The name of the machine</param>
+/// <param name="ServerVersion">The version of the server</param>
+public sealed record WelcomeMessage(string PublicKeyHash, string MachineName, string ServerVersion);
 
 /// <summary>
 /// A message to respond to a command
@@ -111,14 +118,6 @@ internal sealed record EnvelopedMessage
     /// The payload of the message
     /// </summary>
     public string? Payload { get; init; }
-    /// <summary>
-    /// The public key hash
-    /// </summary>
-    public string? PublicKeyHash { get; init; }
-    /// <summary>
-    /// The signature of the payload
-    /// </summary>
-    public string? Signature { get; init; }
 
     /// <summary>
     /// Parses a raw message into an envelope, throwing on error
@@ -132,15 +131,6 @@ internal sealed record EnvelopedMessage
     /// <summary>
     /// Parses a raw message into an envelope, returning null on error
     /// </summary>
-    /// <param name="rawMessageBytes">The raw message to parse</param>
-    /// <returns>The parsed envelope or null</returns>
-    /// <exception cref="EnvelopeJsonParsingException">Thrown when the message is invalid</exception>
-    public static EnvelopedMessage? FromBytes(byte[] rawMessageBytes)
-        => FromString(Encoding.UTF8.GetString(rawMessageBytes));
-
-    /// <summary>
-    /// Parses a raw message into an envelope, returning null on error
-    /// </summary>
     /// <param name="rawMessage">The raw message to parse</param>
     /// <returns>The parsed envelope or null</returns>
     /// <exception cref="EnvelopeJsonParsingException">Thrown when the message is invalid</exception>
@@ -148,7 +138,7 @@ internal sealed record EnvelopedMessage
     {
         try
         {
-            return JsonSerializer.Deserialize<EnvelopedMessage>(rawMessage);
+            return JsonSerializer.Deserialize<EnvelopedMessage>(rawMessage, options: KeepRemoteConnection.JsonOptions);
         }
         catch (JsonException jex)
         {
@@ -162,7 +152,7 @@ internal sealed record EnvelopedMessage
     /// <returns>The Json string representation of the envelope</returns>
     public string ToJson()
     {
-        return JsonSerializer.Serialize(this);
+        return JsonSerializer.Serialize(this, options: KeepRemoteConnection.JsonOptions);
     }
 
     /// <summary>
@@ -172,91 +162,8 @@ internal sealed record EnvelopedMessage
     /// <returns>The parsed payload</returns>
     /// <exception cref="EnvelopeJsonParsingException">Thrown when the message is invalid</exception>
     public T GetPayload<T>()
-        => JsonSerializer.Deserialize<T>(Payload ?? throw new EnvelopeJsonParsingException("Invalid Json message")) ?? throw new EnvelopeJsonParsingException("Invalid Json message");
-
-    /// <summary>
-    /// Computes the signature of the payload
-    /// </summary>
-    /// <param name="pemPrivatekey">The private key to use</param>
-    /// <returns>The computed signature</returns>
-    public string? ComputePayloadSignature(string? pemPrivatekey)
-    {
-        if (string.IsNullOrWhiteSpace(pemPrivatekey) || (Payload is null && MessageId is null))
-            return null;
-
-        using RSA rsa = RSA.Create();
-        rsa.ImportFromPem(pemPrivatekey);
-        return BitConverter.ToString(
-            rsa.SignData(Encoding.UTF8.GetBytes($"{Payload}::{MessageId}"), HashAlgorithmName.SHA256, RSASignaturePadding.Pss)
-        ).Replace("-", "").ToLower();
-    }
-
-    /// <summary>
-    /// Computes the signature of the payload
-    /// </summary>
-    /// <param name="key">The private key to use</param>
-    /// <returns>The computed signature</returns>
-    public string? ComputePayloadSignature(RSA key)
-    {
-        if (key is null || Payload is null && MessageId is null)
-            return null;
-
-        return BitConverter.ToString(
-            key.SignData(Encoding.UTF8.GetBytes($"{Payload}::{MessageId}"), HashAlgorithmName.SHA256, RSASignaturePadding.Pss)
-        ).Replace("-", "").ToLower();
-    }
-
-    /// <summary>
-    /// Validates the message signature
-    /// </summary>
-    /// <param name="pemPublicKey">The public key for the server that sent</param>
-    public void ValidateSignature(string? pemPublicKey)
-    {
-        if (string.IsNullOrWhiteSpace(Signature) || string.IsNullOrWhiteSpace(pemPublicKey) || (Payload is null && MessageId is null))
-            throw new EnvelopeJsonParsingException("Invalid Json message");
-
-        using RSA rsa = RSA.Create();
-        rsa.ImportFromPem(pemPublicKey);
-        if (!rsa.VerifyData(Encoding.UTF8.GetBytes($"{Payload}::{MessageId}"), Convert.FromHexString(Signature), HashAlgorithmName.SHA256, RSASignaturePadding.Pss))
-            throw new EnvelopeJsonParsingException("Invalid Json message");
-    }
-
-    /// <summary>
-    /// Creates the signature on the returned message
-    /// </summary>
-    /// <param name="key">The private key to use</param>
-    /// <returns>The signed message</returns>
-    public EnvelopedMessage WithSignature(RSA key)
-        => this with { Signature = ComputePayloadSignature(key) };
-
-    /// <summary>
-    /// Creates a new message with a payload
-    /// </summary>
-    /// <typeparam name="T">The type of payload</typeparam>
-    /// <param name="payload">The payload to add</param>
-    /// <param name="pemPrivatekey">The private key to use for signing</param>
-    /// <returns>The new message</returns>
-    public EnvelopedMessage WithPayload<T>(T payload, string? pemPrivatekey = null)
-        => this with { Payload = JsonSerializer.Serialize(payload), Signature = ComputePayloadSignature(pemPrivatekey) };
-
-    /// <summary>
-    /// Creates a new envelope to respond to the current message
-    /// </summary>
-    /// <typeparam name="T">The type of payload</typeparam>
-    /// <param name="payload">The payload to add</param>
-    /// <param name="type">The type of message to send</param>
-    /// <param name="pemPrivatekey">The private key to use for signing</param>
-    /// <returns>The new message</returns>
-    public EnvelopedMessage RespondWith<T>(T payload, string? type = null, string? pemPrivatekey = null)
-        => new EnvelopedMessage
-        {
-            From = To,
-            To = From,
-            Type = type ?? Type,
-            MessageId = MessageId,
-            Payload = JsonSerializer.Serialize(payload),
-            Signature = ComputePayloadSignature(pemPrivatekey)
-        };
+        => JsonSerializer.Deserialize<T>(Payload ?? throw new EnvelopeJsonParsingException("Invalid Json message"), options: KeepRemoteConnection.JsonOptions)
+            ?? throw new EnvelopeJsonParsingException("Invalid Json message");
 
     /// <summary>
     /// Gets the type of message
@@ -273,4 +180,21 @@ internal sealed record EnvelopedMessage
             _ => MessageType.Unknown
         };
     }
+
+    /// <summary>
+    /// Responds to the message with a payload
+    /// </summary>
+    /// <typeparam name="T">The type of payload to respond with</typeparam>
+    /// <param name="payload">The payload to respond with</param>
+    /// <param name="type">The type of message to respond with</param>
+    /// <returns>The response message</returns>
+    public EnvelopedMessage RespondWith<T>(T payload, string? type = null)
+        => new EnvelopedMessage
+        {
+            From = To,
+            To = From,
+            Type = type ?? Type,
+            MessageId = MessageId,
+            Payload = JsonSerializer.Serialize(payload, options: KeepRemoteConnection.JsonOptions)
+        };
 }

@@ -69,4 +69,11 @@ public sealed record MiniServerCertificate(
     string PublicKey,
     DateTimeOffset Obtained,
     DateTimeOffset Expiry
-);
+)
+{
+    /// <summary>
+    /// Checks if the certificate has expired
+    /// </summary>
+    /// <returns><c>true</c> if the certificate has expired; otherwise, <c>false</c></returns>
+    public bool HasExpired() => DateTimeOffset.UtcNow > Expiry;
+}

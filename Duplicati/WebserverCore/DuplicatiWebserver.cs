@@ -237,6 +237,9 @@ public partial class DuplicatiWebserver
                 }
             });
         });
+
+        if (connection.ApplicationSettings.RemoteControlEnabled)
+            App.Services.GetRequiredService<IRemoteController>().Enable();
     }
 
     public Task Start(InitSettings settings)

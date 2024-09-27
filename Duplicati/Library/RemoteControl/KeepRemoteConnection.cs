@@ -21,7 +21,6 @@
 
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Duplicati.Library.Logging;
 
@@ -45,7 +44,7 @@ public class KeepRemoteConnection : IDisposable
     /// <summary>
     /// The interval between heartbeats
     /// </summary>
-    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(15);
 
     /// <summary>
     /// The interval between certificate refreshes
@@ -65,6 +64,15 @@ public class KeepRemoteConnection : IDisposable
         : AutoUpdater.UpdaterManager.MachineID;
 
     /// <summary>
+    /// The JSON options to use for deserialization
+    /// </summary>
+    internal static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = null,
+        PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>
     /// The stats the connection can be in
     /// </summary>
     public enum ConnectionState
@@ -73,10 +81,6 @@ public class KeepRemoteConnection : IDisposable
         /// The connection is not established
         /// </summary>
         NotConnected,
-        /// <summary>
-        /// The connection is established, but not authenticated
-        /// </summary>
-        Connected,
         /// <summary>
         /// We received a welcome message
         /// </summary>
@@ -100,10 +104,6 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     private ConnectionState _state = ConnectionState.NotConnected;
     /// <summary>
-    /// The nonce challenge
-    /// </summary>
-    private string? _challenge;
-    /// <summary>
     /// The task that runs the connection
     /// </summary>
     private Task _runnerTask;
@@ -111,6 +111,11 @@ public class KeepRemoteConnection : IDisposable
     /// The currently negotiated server certificate
     /// </summary>
     private MiniServerCertificate? _serverCertificate;
+    /// <summary>
+    /// The public key of the server
+    /// </summary>
+    private RSA? _serverPublicKey;
+
     /// <summary>
     /// The time the certificate was last refreshed
     /// </summary>
@@ -171,18 +176,16 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     private Task RunMainLoop()
     {
+        //TODO: If we close the socket, it reconnects immediately
+        // casuing excessive usage
         _client.ReconnectTimeout = ReconnectInterval;
-
-        _client.ReconnectionHappened.Subscribe(info =>
-        {
-            _state = ConnectionState.Connected;
-            Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketReconnect", "Reconnected to the server");
-        });
+        _client.IsReconnectionEnabled = true;
 
         _client.DisconnectionHappened.Subscribe(info =>
         {
             _state = ConnectionState.NotConnected;
             _serverCertificate = null;
+            _serverPublicKey = null;
             Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "Disconnected from the server");
         });
 
@@ -192,42 +195,65 @@ public class KeepRemoteConnection : IDisposable
 
             try
             {
-                var envelope = EnvelopedMessage.ForceParse(msg.Text);
-                if (_serverCertificate == null || _state == ConnectionState.Connected)
+                if (string.IsNullOrWhiteSpace(msg.Text))
+                    throw new ProtocolViolationException("Empty message");
+
+                if (_serverCertificate == null || _serverPublicKey == null || _state == ConnectionState.NotConnected)
                 {
-                    if (envelope.GetMessageType() != MessageType.Welcome)
+                    // Should be safe from replay, as the response is encrypted with the server public key
+                    // So even a replay attack would not let the attacker know the client's token
+                    var welcomeEnvelope = EnvelopedMessage.ForceParse(msg.Text);
+                    if (welcomeEnvelope.GetMessageType() != MessageType.Welcome)
                         throw new ProtocolViolationException("Expected welcome message");
-                    if (string.IsNullOrWhiteSpace(envelope.PublicKeyHash))
+                    if (string.IsNullOrWhiteSpace(welcomeEnvelope.Payload))
+                        throw new ProtocolViolationException("No payload in welcome message");
+
+                    var welcomeMessage = welcomeEnvelope.GetPayload<WelcomeMessage>()
+                        ?? throw new ProtocolViolationException("Invalid welcome message");
+
+                    if (string.IsNullOrWhiteSpace(welcomeMessage.PublicKeyHash))
                         throw new ProtocolViolationException("No public key hash in welcome message");
-                    _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == envelope.PublicKeyHash && x.Expiry > DateTimeOffset.Now);
+                    _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == welcomeMessage.PublicKeyHash && x.Expiry > DateTimeOffset.Now);
 
                     if (_serverCertificate == null)
                     {
                         _refreshCertificates.TrySetResult(true);
                         throw new ProtocolViolationException("No valid server certificate");
                     }
+
+                    try
+                    {
+                        var tmp = RSA.Create();
+                        tmp.ImportFromPem(_serverCertificate.PublicKey);
+                        _serverPublicKey = tmp;
+                    }
+                    catch
+                    {
+                        _refreshCertificates.TrySetResult(true);
+                        throw new ProtocolViolationException("Invalid server certificate");
+                    }
+
+                    _state = ConnectionState.WelcomeReceived;
+                    SendEnvelope(
+                        welcomeEnvelope.RespondWith(
+                            new AuthMessage(
+                                _token,
+                                ClientKey.ExportRSAPublicKeyPem(),
+                                AutoUpdater.UpdaterManager.SelfVersion?.Version ?? "0.0.0"),
+                            "auth"
+                        ),
+                        force: true);
+                    return;
                 }
 
-                if (_serverCertificate == null)
+                if (_serverCertificate == null || _serverPublicKey == null || _serverCertificate.HasExpired())
                 {
                     _refreshCertificates.TrySetResult(true);
                     throw new ProtocolViolationException("No valid server certificate");
                 }
 
-                envelope.ValidateSignature(_serverCertificate?.PublicKey);
-
-                if (_state == ConnectionState.Connected)
-                {
-                    // TODO: The message could be a replay attack
-                    if (envelope.GetMessageType() != MessageType.Welcome)
-                        throw new ProtocolViolationException("Expected welcome message");
-
-                    _state = ConnectionState.WelcomeReceived;
-                    Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketAuthenticated", "Connected with the server");
-
-                    SendEnvelope(envelope.RespondWith(new AuthMessage(_token, ClientKey.ExportSubjectPublicKeyInfoPem(), Library.AutoUpdater.UpdaterManager.SelfVersion.Version ?? "0.0.0")));
-                }
-                else if (_state == ConnectionState.WelcomeReceived)
+                var envelope = TransportHelper.ParseFromEncryptedMessage(msg.Text, ClientKey);
+                if (_state == ConnectionState.WelcomeReceived)
                 {
                     if (envelope.GetMessageType() != MessageType.Auth)
                         throw new ProtocolViolationException("Expected welcome message");
@@ -252,11 +278,10 @@ public class KeepRemoteConnection : IDisposable
                             break;
 
                         case MessageType.Command:
-                            await _onMessage(new CommandMessage(envelope.GetPayload<CommandRequestMessage>(), response =>
-                            {
-                                SendEnvelope(envelope.RespondWith(response));
-                                return true;
-                            }));
+                            await _onMessage(new CommandMessage(
+                                envelope.GetPayload<CommandRequestMessage>(),
+                                response => SendEnvelope(envelope.RespondWith(response))
+                            ));
                             break;
 
                         default:
@@ -332,12 +357,12 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <param name="envelope">The envelope to send</param>
     /// <returns>True if the message was sent</returns>
-    private bool SendEnvelope(EnvelopedMessage envelope)
+    private bool SendEnvelope(EnvelopedMessage envelope, bool force = true)
     {
-        if (_state != ConnectionState.Authenticated)
+        if ((_state != ConnectionState.Authenticated && !force) || _serverPublicKey == null)
             return false;
 
-        _client.Send((envelope with { From = ClientId }).WithSignature(ClientKey).ToJson());
+        _client.Send(TransportHelper.CreateEncryptedMessage(envelope with { From = ClientId }, _serverPublicKey));
         return true;
     }
 
@@ -348,18 +373,17 @@ public class KeepRemoteConnection : IDisposable
     /// <returns>True if the message was sent</returns>
     public bool SendCommand(CommandRequestMessage message)
     {
-        if (_state != ConnectionState.Authenticated)
+        if (_state != ConnectionState.Authenticated || _serverPublicKey == null)
             return false;
 
-        _client.Send(new EnvelopedMessage()
+        _client.Send(TransportHelper.CreateEncryptedMessage(new EnvelopedMessage()
         {
             From = ClientId,
             To = "server",
             Type = "command",
-            MessageId = Guid.NewGuid().ToString()
-        }
-        .WithPayload(message)
-        .WithSignature(ClientKey).ToJson());
+            MessageId = Guid.NewGuid().ToString(),
+            Payload = JsonSerializer.Serialize(message, options: JsonOptions)
+        }, _serverPublicKey));
 
         return true;
     }
@@ -426,11 +450,14 @@ public class KeepRemoteConnection : IDisposable
                 if (response.IsSuccessStatusCode)
                 {
                     using var stream = await response.Content.ReadAsStreamAsync(_cancellationTokenSource.Token);
-                    var serverKeys = await JsonSerializer.DeserializeAsync<IEnumerable<MiniServerCertificate>>(stream, cancellationToken: _cancellationTokenSource.Token);
+                    var serverKeys = await JsonSerializer.DeserializeAsync<IEnumerable<MiniServerCertificate>>(stream, options: RegisterForRemote.JsonOptions, cancellationToken: _cancellationTokenSource.Token);
                     if (serverKeys != null && serverKeys.Any())
                     {
                         _lastCertificateRefresh = DateTime.Now;
-                        _serverKeys = serverKeys;
+                        _serverKeys = serverKeys
+                            .Where(x => !x.HasExpired() && !string.IsNullOrWhiteSpace(x.PublicKeyHash) && !string.IsNullOrWhiteSpace(x.PublicKey))
+                            .ToList();
+
                         await InvokeReKey();
                     }
                 }

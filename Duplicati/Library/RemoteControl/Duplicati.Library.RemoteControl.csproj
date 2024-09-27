@@ -9,6 +9,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <PackageReference Include="jose-jwt" Version="5.0.0" />
     <PackageReference Include="Websocket.Client" Version="5.1.2" />
   </ItemGroup>
   

@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net.Http.Json;
+using System.Text.Json;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 
@@ -62,6 +63,15 @@ public class RegisterForRemote : IDisposable
                 : envvalue;
         }
     }
+
+    /// <summary>
+    /// The Json options to use for serialization
+    /// </summary>
+    internal static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
 
     /// <summary>
     /// The states that the process can be in
@@ -223,7 +233,7 @@ public class RegisterForRemote : IDisposable
         }), _cancellationTokenSource.Token);
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<RegisterClientData>()
+        return await response.Content.ReadFromJsonAsync<RegisterClientData>(options: JsonOptions, _cancellationTokenSource.Token)
             ?? throw new Exception("Failed to read client registration data");
     }
 
@@ -266,7 +276,7 @@ public class RegisterForRemote : IDisposable
         var response = await _httpClient.PostAsync(_registerClientData!.StatusLink, CreateMachineData(), _cancellationTokenSource.Token);
 
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<EnvelopedClaimedClientData>()
+        var result = await response.Content.ReadFromJsonAsync<EnvelopedClaimedClientData>(options: JsonOptions, _cancellationTokenSource.Token)
             ?? throw new Exception("Failed to read machine claim data");
 
         if (!result.Success)

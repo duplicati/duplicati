@@ -38,7 +38,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
     /// <summary>
     /// Gets a value indicating whether remote control is enabled.
     /// </summary>
-    public bool IsEnabled => _keepRemoteConnection != null;
+    public bool IsEnabled => connection.ApplicationSettings.RemoteControlEnabled;
 
     /// <summary>
     /// Gets a value indicating whether remote control can be enabled.
@@ -67,7 +67,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
     /// </inheritdoc>
     public void Enable()
     {
-        if (IsEnabled)
+        if (_keepRemoteConnection != null)
             return;
 
         if (!CanEnable)
@@ -85,6 +85,8 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
             ReKey,
             OnMessage
         );
+
+        connection.ApplicationSettings.RemoteControlEnabled = true;
     }
 
     /// <summary>
@@ -134,6 +136,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
     {
         _keepRemoteConnection?.Dispose();
         _keepRemoteConnection = null;
+        connection.ApplicationSettings.RemoteControlEnabled = false;
     }
 
     /// </inheritdoc>
