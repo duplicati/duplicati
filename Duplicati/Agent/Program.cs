@@ -22,6 +22,7 @@
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using System.Reactive.Linq;
+using System.Security.Cryptography;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 using Duplicati.Library.RemoteControl;
@@ -40,10 +41,27 @@ public static class Program
     private static readonly string LogTag = Log.LogTagFromType(typeof(Program));
 
     /// <summary>
+    /// Create a random pre-shared key for the agent
+    /// </summary>
+    private static string? PreSharedKey = null;
+
+
+    /// <summary>
     /// Commandline arguments for the agent
     /// </summary>
-    /// <param name="Url">The server URL to connect to</param>
-    /// <param name="Jwt">The JWT value to use for authentication</param>
+    /// <param name="RegistrationUrl">The server URL to connect to</param>
+    /// <param name="AgentSettingsFile">The file to use for the agent settings</param>
+    /// <param name="WebserviceListenInterface">The interface to listen on for the webserver</param>
+    /// <param name="WebservicePort">The port to listen on for the webserver</param>
+    /// <param name="WebservicePassword">The password for the webserver, random if none supplied</param>
+    /// <param name="WindowsEventLog">The Windows event log to write to</param>
+    /// <param name="DisableDbEncryption">Disable database encryption</param>
+    /// <param name="WebserviceResetJwtConfig">Reset the JWT configuration</param>
+    /// <param name="WebserviceAllowedHostnames">The allowed hostnames for the webserver</param>
+    /// <param name="WebserviceApiOnly">Only allow API access to the webserver</param>
+    /// <param name="WebserviceDisableSigninTokens">Disable signin tokens for the webserver</param>
+    /// <param name="PingPongKeepalive">Enable ping-pong keepalive</param>
+    /// <param name="DisablePreSharedKey">Disable the pre-shared key</param>
     private sealed record CommandLineArguments(
         string RegistrationUrl,
         FileInfo AgentSettingsFile,
@@ -56,7 +74,8 @@ public static class Program
         string WebserviceAllowedHostnames,
         bool WebserviceApiOnly,
         bool WebserviceDisableSigninTokens,
-        bool PingPongKeepalive
+        bool PingPongKeepalive,
+        bool DisablePreSharedKey
     );
 
     [STAThread]
@@ -99,6 +118,10 @@ public static class Program
         // Prevent access to the webserver interface from anything but the agent
         if (string.IsNullOrWhiteSpace(agentConfig.WebservicePassword))
             agentConfig = agentConfig with { WebservicePassword = System.Security.Cryptography.RandomNumberGenerator.GetHexString(128) };
+
+        // Set the pre-shared key for the agent
+        if (!agentConfig.DisablePreSharedKey)
+            WebserverCore.Middlewares.PreSharedKeyFilter.PreSharedKey = PreSharedKey = RandomNumberGenerator.GetHexString(128);
 
         using var cts = new CancellationTokenSource();
 
@@ -149,6 +172,9 @@ public static class Program
         using var httpClient = FIXMEGlobal.Provider.GetRequiredService<IHttpClientFactory>().CreateClient();
         httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         httpClient.BaseAddress = new Uri($"http://127.0.0.1:{agentConfig.WebservicePort}");
+
+        if (!string.IsNullOrWhiteSpace(WebserverCore.Middlewares.PreSharedKeyFilter.PreSharedKey))
+            httpClient.DefaultRequestHeaders.Add(WebserverCore.Middlewares.PreSharedKeyFilter.HeaderName, PreSharedKey);
 
         await message.Handle(httpClient);
     }
