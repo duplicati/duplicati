@@ -57,7 +57,7 @@ internal enum MessageType
 /// <param name="Token">The client token</param>
 /// <param name="PublicKey">The client public key</param>
 /// <param name="Version">The version of the client</param>
-public record AuthMessage(string Token, string PublicKey, string ClientVersion);
+public record AuthMessage(string Token, string PublicKey, string ClientVersion, int ProtocolVersion);
 
 /// <summary>
 /// A message authentication response
@@ -83,7 +83,7 @@ public sealed record CommandRequestMessage(string Method, string Path, byte[]? B
 /// <param name="PublicKeyHash">The public key hash of the server key</param>
 /// <param name="MachineName">The name of the machine</param>
 /// <param name="ServerVersion">The version of the server</param>
-public sealed record WelcomeMessage(string PublicKeyHash, string MachineName, string ServerVersion);
+public sealed record WelcomeMessage(string PublicKeyHash, string MachineName, string ServerVersion, IEnumerable<int> SupportedProtocolVersions);
 
 /// <summary>
 /// A message to respond to a command

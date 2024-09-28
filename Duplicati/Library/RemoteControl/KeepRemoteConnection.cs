@@ -32,6 +32,10 @@ namespace Duplicati.Library.RemoteControl;
 public class KeepRemoteConnection : IDisposable
 {
     /// <summary>
+    /// The protocol version to use
+    /// </summary>
+    private const int PROTOCOL_VERSION = 1;
+    /// <summary>
     /// The log tag for messages from this class
     /// </summary>
     private static readonly string LogTag = Log.LogTagFromType<KeepRemoteConnection>();
@@ -68,7 +72,7 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     internal static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
     {
-        PropertyNamingPolicy = null,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true
     };
 
@@ -239,7 +243,9 @@ public class KeepRemoteConnection : IDisposable
                             new AuthMessage(
                                 _token,
                                 ClientKey.ExportRSAPublicKeyPem(),
-                                AutoUpdater.UpdaterManager.SelfVersion?.Version ?? "0.0.0"),
+                                AutoUpdater.UpdaterManager.SelfVersion?.Version ?? "0.0.0",
+                                PROTOCOL_VERSION
+                            ),
                             "auth"
                         ),
                         force: true);
