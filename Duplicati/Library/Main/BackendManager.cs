@@ -224,7 +224,7 @@ namespace Duplicati.Library.Main
             {
                 if (Hash == null || Size < 0)
                 {
-                    Hash = CalculateFileHash(this.LocalFilename);
+                    Hash = CalculateFileHash(this.LocalFilename, options);
                     Size = new System.IO.FileInfo(this.LocalFilename).Length;
                     return true;
                 }
@@ -431,38 +431,17 @@ namespace Duplicati.Library.Main
             m_thread.Start();
         }
 
-        public static string CalculateFileHash(string filename)
+        public static string CalculateFileHash(string filename, Options options)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-            using (var hasher = VolumeHashFactory.CreateHasher())
-                return Convert.ToBase64String(hasher.ComputeHash(fs));
+                return CalculateFileHash(fs, options);
         }
 
         /// <summary> Calculate file hash directly on stream object (for piping) </summary>
-        public static string CalculateFileHash(System.IO.Stream stream)
+        public static string CalculateFileHash(System.IO.Stream stream, Options options)
         {
-            using (var hasher = VolumeHashFactory.CreateHasher())
+            using (var hasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
                 return Convert.ToBase64String(hasher.ComputeHash(stream));
-        }
-
-        /// <summary>
-        /// Returns a stream for hashing that can be part of a stream stack together
-        /// with a callback to retrieve the hash when done.
-        /// </summary>
-        public static System.Security.Cryptography.CryptoStream GetFileHasherStream
-            (System.IO.Stream stream, System.Security.Cryptography.CryptoStreamMode mode, HashAlgorithm hasher, out Func<string> getHash)
-        {
-            System.Security.Cryptography.CryptoStream retHasherStream =
-                new System.Security.Cryptography.CryptoStream(stream, hasher, mode);
-            getHash = () =>
-            {
-                if (mode == System.Security.Cryptography.CryptoStreamMode.Write
-                    && !retHasherStream.HasFlushedFinalBlock)
-                    retHasherStream.FlushFinalBlock();
-                string retHash = Convert.ToBase64String(hasher.Hash);
-                return retHash;
-            };
-            return retHasherStream;
         }
 
 
@@ -789,8 +768,8 @@ namespace Duplicati.Library.Main
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))
-                    using (var hasher = VolumeHashFactory.CreateHasher())
-                    using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, hasher, out var getFileHash))
+                    using (var hasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
+                    using (var hs = new HashCalculatingStream(fs, hasher))
                     using (var ss = new ShaderStream(hs, true))
                     {
                         // NOTE: It is possible to hash the file in parallel with download
@@ -802,14 +781,14 @@ namespace Duplicati.Library.Main
                         { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
-                        retHashcode = getFileHash();
+                        retHashcode = Convert.ToBase64String(hs.GetFinalHash());
                     }
                 }
                 else
                 {
                     m_backend.Get(item.RemoteFilename, dlTarget);
                     retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
-                    retHashcode = CalculateFileHash(dlTarget);
+                    retHashcode = CalculateFileHash(dlTarget, m_options);
                 }
 
                 // Decryption is not placed in the stream stack because there seemed to be an effort
