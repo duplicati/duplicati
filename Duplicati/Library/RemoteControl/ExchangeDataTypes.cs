@@ -69,15 +69,6 @@ public record AuthMessage(string Token, string PublicKey, string ClientVersion, 
 internal sealed record AuthResultMessage(bool? Accepted, bool? WillReplaceToken, string? NewToken);
 
 /// <summary>
-/// A message to send a command
-/// </summary>
-/// <param name="Method">The HTTP method to use</param>
-/// <param name="Path">The path to use</param>
-/// <param name="Body">The optional body to send</param>
-/// <param name="Headers">The optional headers to add</param>
-public sealed record CommandRequestMessage(string Method, string Path, byte[]? Body, Dictionary<string, string>? Headers);
-
-/// <summary>
 /// The welcome message from the server
 /// </summary>
 /// <param name="PublicKeyHash">The public key hash of the server key</param>
@@ -86,12 +77,21 @@ public sealed record CommandRequestMessage(string Method, string Path, byte[]? B
 public sealed record WelcomeMessage(string PublicKeyHash, string MachineName, string ServerVersion, IEnumerable<int> SupportedProtocolVersions);
 
 /// <summary>
+/// A message to send a command
+/// </summary>
+/// <param name="Method">The HTTP method to use</param>
+/// <param name="Path">The path to use</param>
+/// <param name="Body">The base64 encoded optional body to send</param>
+/// <param name="Headers">The optional headers to add</param>
+public sealed record CommandRequestMessage(string Method, string Path, string? Body, Dictionary<string, string>? Headers);
+
+/// <summary>
 /// A message to respond to a command
 /// </summary>
 /// <param name="StatusCode">The status code to return</param>
-/// <param name="Body">The body to return</param>
+/// <param name="Body">The base64 encoded body to return</param>
 /// <param name="Headers">The headers to return</param>
-public sealed record CommandResponseMessage(int StatusCode, byte[]? Body, Dictionary<string, string>? Headers);
+public sealed record CommandResponseMessage(int StatusCode, string? Body, Dictionary<string, string>? Headers);
 
 /// <summary>
 /// The message envelope used for all communication

@@ -521,8 +521,8 @@ public class KeepRemoteConnection : IDisposable
         public async Task Handle(HttpClient client)
         {
             var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), CommandRequestMessage.Path);
-            if (CommandRequestMessage.Body != null)
-                request.Content = new ByteArrayContent(CommandRequestMessage.Body);
+            if (!string.IsNullOrWhiteSpace(CommandRequestMessage.Body))
+                request.Content = new ByteArrayContent(Convert.FromBase64String(CommandRequestMessage.Body));
             if (CommandRequestMessage.Headers != null)
                 foreach (var header in CommandRequestMessage.Headers)
                     request.Headers.Add(header.Key, header.Value);
@@ -531,7 +531,7 @@ public class KeepRemoteConnection : IDisposable
             var responseBody = await response.Content.ReadAsByteArrayAsync();
             var responseHeaders = response.Headers.ToDictionary(x => x.Key, x => x.Value.First());
 
-            Respond(new CommandResponseMessage((int)response.StatusCode, responseBody, responseHeaders));
+            Respond(new CommandResponseMessage((int)response.StatusCode, responseBody == null ? null : Convert.ToBase64String(responseBody), responseHeaders));
         }
     }
 }
