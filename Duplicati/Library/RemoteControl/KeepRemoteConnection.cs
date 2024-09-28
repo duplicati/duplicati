@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Duplicati.Library.Logging;
@@ -63,9 +64,7 @@ public class KeepRemoteConnection : IDisposable
     /// <summary>
     /// The client ID to use for identifying the client
     /// </summary>
-    private static readonly string ClientId = string.IsNullOrWhiteSpace(AutoUpdater.UpdaterManager.MachineID)
-        ? Guid.NewGuid().ToString()
-        : AutoUpdater.UpdaterManager.MachineID;
+    private static readonly string ClientId = Guid.NewGuid().ToString();
 
     /// <summary>
     /// The JSON options to use for deserialization
@@ -520,18 +519,32 @@ public class KeepRemoteConnection : IDisposable
         /// <returns>An awaitable task</returns>
         public async Task Handle(HttpClient client)
         {
-            var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), CommandRequestMessage.Path);
-            if (!string.IsNullOrWhiteSpace(CommandRequestMessage.Body))
-                request.Content = new ByteArrayContent(Convert.FromBase64String(CommandRequestMessage.Body));
-            if (CommandRequestMessage.Headers != null)
-                foreach (var header in CommandRequestMessage.Headers)
-                    request.Headers.Add(header.Key, header.Value);
+            try
+            {
+                var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), CommandRequestMessage.Path);
+                if (!string.IsNullOrWhiteSpace(CommandRequestMessage.Body))
+                    request.Content = new ByteArrayContent(Convert.FromBase64String(CommandRequestMessage.Body));
+                if (CommandRequestMessage.Headers != null)
+                {
+                    foreach (var header in CommandRequestMessage.Headers)
+                    {
+                        if (header.Key == "Content-Type" && request.Content != null)
+                            request.Content.Headers.ContentType = new MediaTypeHeaderValue(header.Value);
+                        else
+                            request.Headers.Add(header.Key, header.Value);
+                    }
+                }
 
-            var response = await client.SendAsync(request);
-            var responseBody = await response.Content.ReadAsByteArrayAsync();
-            var responseHeaders = response.Headers.ToDictionary(x => x.Key, x => x.Value.First());
+                var response = await client.SendAsync(request);
+                var responseBody = await response.Content.ReadAsByteArrayAsync();
+                var responseHeaders = response.Headers.ToDictionary(x => x.Key, x => x.Value.First());
 
-            Respond(new CommandResponseMessage((int)response.StatusCode, responseBody == null ? null : Convert.ToBase64String(responseBody), responseHeaders));
+                Respond(new CommandResponseMessage((int)response.StatusCode, responseBody == null ? null : Convert.ToBase64String(responseBody), responseHeaders));
+            }
+            catch (Exception ex)
+            {
+                Respond(new CommandResponseMessage(500, ex.Message, null));
+            }
         }
     }
 }
