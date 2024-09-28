@@ -168,7 +168,8 @@ public static class Program
     {
         Log.WriteMessage(LogMessageType.Information, LogTag, "OnMessage", "Received message: {0}", message);
 
-        var token = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>().CreateAccessToken("agent", "agent", TimeSpan.FromMinutes(2));
+        var provider = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>();
+        var token = provider.CreateAccessToken("agent", provider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
         using var httpClient = FIXMEGlobal.Provider.GetRequiredService<IHttpClientFactory>().CreateClient();
         httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         httpClient.BaseAddress = new Uri($"http://127.0.0.1:{agentConfig.WebservicePort}");
