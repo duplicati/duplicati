@@ -243,7 +243,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             var bucketName = _ossOptions.BucketName;
 
@@ -261,14 +261,19 @@ namespace Duplicati.Library.Backend.AliyunOSS
             {
                 // copy file
                 var req = new CopyObjectRequest(sourceBucket, sourceObject, targetBucket, targetObject);
-                var res = client.CopyObject(req);
+
+                var res = await Task.Factory.FromAsync(
+                    (cb, state) => client.BeginCopyObject(req, cb, state),
+                    client.EndCopyResult,
+                    null).ConfigureAwait(false);
+
                 if (res?.HttpStatusCode != HttpStatusCode.OK)
                 {
                     throw new Exception("file rename failed");
                 }
 
                 // del old file
-                DeleteAsync(oldname, CancellationToken.None).Await();
+                await DeleteAsync(oldname, cancelToken).ConfigureAwait(false);
             }
             catch (OssException ex)
             {

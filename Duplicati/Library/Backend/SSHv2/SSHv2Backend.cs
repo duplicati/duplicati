@@ -236,35 +236,35 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Implementation
 
-        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            await Task.Factory.FromAsync(
+            return Task.Factory.FromAsync(
                 (cb, state) => m_con.BeginUploadFile(stream, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                 m_con.EndUploadFile,
-                null).ConfigureAwait(false);
+                null);
         }
 
-        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            await Task.Factory.FromAsync(
+            return Task.Factory.FromAsync(
                 (cb, state) => m_con.BeginDownloadFile(remotename, stream, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                 m_con.EndDownloadFile,
-                null).ConfigureAwait(false);
+                null);
         }
 
         #endregion
 
         #region IRenameEnabledBackend Implementation
 
-        public void Rename(string source, string target)
+        public Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            m_con.RenameFile(source, target);
+            return m_con.RenameFileAsync(source, target, cancelToken);
         }
 
         #endregion

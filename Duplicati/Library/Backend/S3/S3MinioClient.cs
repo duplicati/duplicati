@@ -103,12 +103,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void RenameFile(string bucketName, string source, string target)
+        public async Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken)
         {
             try
             {
-                m_client.CopyObjectAsync(bucketName, source,
-                    bucketName, target).Await();
+                await m_client.CopyObjectAsync(bucketName, source,
+                    bucketName, target, cancellationToken: cancelToken).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Backend
                     source, target, bucketName, e.ToString());
             }
 
-            DeleteObjectAsync(bucketName, source, CancellationToken.None).Await();
+            await DeleteObjectAsync(bucketName, source, cancelToken).ConfigureAwait(false);
         }
 
         public async Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken)

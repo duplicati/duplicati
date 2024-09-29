@@ -303,8 +303,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     TempFile originalRenamedFile = null;
                     string renamedFileNewName = null;
-                    IRenameEnabledBackend renameEnabledBackend = backend as IRenameEnabledBackend;
-                    if (renameEnabledBackend != null)
+                    if (backend is IRenameEnabledBackend renameEnabledBackend)
                     {
                         // Rename the second file in the list, if there are more than one. If not, just do the first one.
                         int renameIndex = files.Count > 1 ? 1 : 0;
@@ -314,7 +313,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                         Console.WriteLine("Renaming file {0} from {1} to {2}", renameIndex, originalRenamedFile.remotefilename, renamedFileNewName);
 
-                        renameEnabledBackend.Rename(originalRenamedFile.remotefilename, renamedFileNewName);
+                        renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None).Await();
                         files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
                     }
 

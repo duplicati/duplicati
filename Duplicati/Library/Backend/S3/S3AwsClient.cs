@@ -226,7 +226,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void RenameFile(string bucketName, string source, string target)
+        public async Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken)
         {
             var copyObjectRequest = new CopyObjectRequest
             {
@@ -236,9 +236,8 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            m_client.CopyObjectAsync(copyObjectRequest).Await();
-
-            DeleteObjectAsync(bucketName, source, CancellationToken.None).Await();
+            await m_client.CopyObjectAsync(copyObjectRequest, cancelToken).ConfigureAwait(false);
+            await DeleteObjectAsync(bucketName, source, cancelToken).ConfigureAwait(false);
         }
 
         #region IDisposable Members

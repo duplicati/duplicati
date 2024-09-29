@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend
 
         Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 
-        void RenameFile(string bucketName, string source, string target);
+        Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
 
         Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken);
 

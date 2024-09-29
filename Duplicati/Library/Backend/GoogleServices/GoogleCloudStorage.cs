@@ -271,7 +271,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new BucketResourceItem
             {
@@ -285,9 +285,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
             var areq = new AsyncHttpRequest(req);
             using (var rs = areq.GetRequestStream())
-                rs.Write(data, 0, data.Length);
+                await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
 
-            m_oauth.ReadJSONResponse<BucketResourceItem>(req);
+            await m_oauth.ReadJSONResponseAsync<BucketResourceItem>(req, cancelToken).ConfigureAwait(false);
         }
 
         #region IDisposable implementation

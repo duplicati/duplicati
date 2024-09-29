@@ -365,13 +365,15 @@ namespace Duplicati.Library.Backend
             get { return null; }
         }
 
-        public void Rename(string oldname, string newname)
+        public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
             var source = GetRemoteName(oldname);
             var target = GetRemoteName(newname);
             if (systemIO.FileExists(target))
                 systemIO.FileDelete(target);
             systemIO.FileMove(source, target);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

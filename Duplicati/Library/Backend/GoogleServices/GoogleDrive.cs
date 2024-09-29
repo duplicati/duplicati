@@ -366,7 +366,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         #endregion
 
         #region IRenameEnabledBackend implementation
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
             try
             {
@@ -375,13 +375,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     throw new UserInformationException(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)),
                                                        "GoogleDriveMultipleEntries");
 
-                using (var cToken = new CancellationTokenSource())
-                {
-                    Stream stream = new MemoryStream();
-                    GetAsync(oldname, stream, cToken.Token).Wait(cToken.Token);
-                    PutAsync(newname, stream, cToken.Token).Wait(cToken.Token);
-                    DeleteAsync(oldname, cToken.Token).Wait(cToken.Token);
-                }
+                using var stream = new MemoryStream();
+                await GetAsync(oldname, stream, cancellationToken).ConfigureAwait(false);
+                await PutAsync(newname, stream, cancellationToken).ConfigureAwait(false);
+                await DeleteAsync(oldname, cancellationToken).ConfigureAwait(false);
 
                 m_filecache.Remove(oldname);
             }

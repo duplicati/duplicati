@@ -381,31 +381,32 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             try
             {
                 cosXml = GetCosXml();
-                string sourceAppid = _cosOptions.Appid;
-                string sourceBucket = _cosOptions.Bucket;
-                string sourceRegion = _cosOptions.Region;
-                string sourceKey = GetFullKey(oldname);
+                var sourceAppid = _cosOptions.Appid;
+                var sourceBucket = _cosOptions.Bucket;
+                var sourceRegion = _cosOptions.Region;
+                var sourceKey = GetFullKey(oldname);
 
-                CopySourceStruct copySource = new CopySourceStruct(sourceAppid, sourceBucket, sourceRegion, sourceKey);
+                var copySource = new CopySourceStruct(sourceAppid, sourceBucket, sourceRegion, sourceKey);
 
-                string bucket = _cosOptions.Bucket;
-                string key = GetFullKey(newname);
-                CopyObjectRequest request = new CopyObjectRequest(bucket, key);
+                var bucket = _cosOptions.Bucket;
+                var key = GetFullKey(newname);
+                var request = new CopyObjectRequest(bucket, key);
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
                 request.SetCopySource(copySource);
                 request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.COPY);
+                cancelToken.Register(() => request.Cancel());
 
-                CopyObjectResult result = cosXml.CopyObject(request);
+                var result = cosXml.CopyObject(request);
 
                 //Console.WriteLine(result.GetResultInfo());
 
-                DeleteAsync(oldname, CancellationToken.None).Await();
+                await DeleteAsync(oldname, cancelToken).ConfigureAwait(false);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {

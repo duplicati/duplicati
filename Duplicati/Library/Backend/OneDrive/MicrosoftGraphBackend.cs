@@ -412,7 +412,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             try
             {
@@ -423,6 +423,8 @@ namespace Duplicati.Library.Backend
                 // If the item wasn't found, wrap the exception so normal handling can occur.
                 throw new FileMissingException(ex);
             }
+
+            return Task.CompletedTask;
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
