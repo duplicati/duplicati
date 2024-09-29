@@ -206,7 +206,7 @@ namespace Duplicati.CommandLine.BackendTester
                             if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                             {
                                 Console.WriteLine("Auto clean, removing file: {0}", fe.Name);
-                                backend.Delete(fe.Name);
+                                backend.DeleteAsync(fe.Name, CancellationToken.None).Await();
                                 continue;
                             }
                             else
@@ -405,7 +405,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine("Deleting files...");
 
                     foreach (TempFile tx in files)
-                        try { backend.Delete(tx.remotefilename); }
+                        try { backend.DeleteAsync(tx.remotefilename, CancellationToken.None).Await(); }
                         catch (Exception ex)
                         {
                             Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);

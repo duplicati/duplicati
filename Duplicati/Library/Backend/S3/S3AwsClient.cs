@@ -23,6 +23,7 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,7 +80,7 @@ namespace Duplicati.Library.Backend
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
-            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
+            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
             m_useChunkEncoding = !disableChunkEncoding;
         }
 
@@ -161,7 +162,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void DeleteObject(string bucketName, string keyName)
+        public Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancellationToken)
         {
             var objectDeleteRequest = new DeleteObjectRequest
             {
@@ -169,7 +170,7 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            m_client.DeleteObjectAsync(objectDeleteRequest).GetAwaiter().GetResult();
+            return m_client.DeleteObjectAsync(objectDeleteRequest, cancellationToken);
         }
 
         public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -197,7 +198,7 @@ namespace Duplicati.Library.Backend
                 ListObjectsResponse listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjectsAsync(listRequest).GetAwaiter().GetResult();
+                    listResponse = m_client.ListObjectsAsync(listRequest).Await();
                 }
                 catch (AmazonS3Exception e)
                 {
@@ -235,9 +236,9 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            m_client.CopyObjectAsync(copyObjectRequest).GetAwaiter().GetResult();
+            m_client.CopyObjectAsync(copyObjectRequest).Await();
 
-            DeleteObject(bucketName, source);
+            DeleteObjectAsync(bucketName, source, CancellationToken.None).Await();
         }
 
         #region IDisposable Members

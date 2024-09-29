@@ -587,10 +587,10 @@ namespace Duplicati.Library.Backend.OpenStack
             using (FileStream fs = File.Create(filename))
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
-            m_helper.ReadJSONResponse<object>(url, null, "DELETE");
+            return m_helper.ReadJSONResponseAsync<object>(url, cancelToken, null, "DELETE");
         }
         public void Test()
         {

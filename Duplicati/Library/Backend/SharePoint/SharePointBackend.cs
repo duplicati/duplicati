@@ -721,8 +721,9 @@ namespace Duplicati.Library.Backend
             catch { if (!useNewContext) /* retry */ doCreateFolder(true); else throw; }
         }
 
-        public void Delete(string remotename) { doDelete(remotename, false); }
-        private void doDelete(string remotename, bool useNewContext)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
+            => doDeleteAsync(remotename, false, cancellationToken);
+        private async Task doDeleteAsync(string remotename, bool useNewContext, CancellationToken cancellationToken)
         {
             SP.ClientContext ctx = getSpClientContext(useNewContext);
             try
@@ -730,20 +731,25 @@ namespace Duplicati.Library.Backend
                 string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
                 SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
                 ctx.Load(remoteFile);
-                wrappedExecuteQueryOnContext(ctx, fileurl, false);
+                await wrappedExecuteQueryOnContextAsync(ctx, fileurl, false, cancellationToken).ConfigureAwait(false);
                 if (!remoteFile.Exists)
                     throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
 
                 if (m_deleteToRecycler) remoteFile.Recycle();
                 else remoteFile.DeleteObject();
 
-                ctx.ExecuteQuery();
+                await ctx.ExecuteQueryAsync().ConfigureAwait(false);
 
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ doDelete(remotename, true); else throw; }
+            catch
+            {
+                if (useNewContext)
+                    throw;
+                await doDeleteAsync(remotename, true, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         #endregion

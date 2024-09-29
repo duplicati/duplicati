@@ -291,14 +291,14 @@ namespace Duplicati.Library.Backend
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public async Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
         {
-            await Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken).ConfigureAwait(false);
+            return Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
+            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands

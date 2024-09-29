@@ -490,7 +490,7 @@ namespace Duplicati.Library.Main
                                         DoList(item);
                                         break;
                                     case OperationType.Delete:
-                                        DoDelete(item);
+                                        DoDeleteAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.CreateFolder:
                                         DoCreateFolder(item);
@@ -947,14 +947,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
         }
 
-        private void DoDelete(FileEntryItem item)
+        private async Task DoDeleteAsync(FileEntryItem item, CancellationToken cancellationToken)
         {
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             string result = null;
             try
             {
-                m_backend.Delete(item.RemoteFilename);
+                await m_backend.DeleteAsync(item.RemoteFilename, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

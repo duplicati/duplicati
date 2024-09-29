@@ -131,9 +131,9 @@ namespace Duplicati.Library.Backend.AzureBlob
             return _azureBlob.GetFileStreamAsync(remotename, output, cancellationToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            _azureBlob.DeleteObject(remotename);
+            return _azureBlob.DeleteObjectAsync(remotename, cancellationToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands

@@ -168,7 +168,7 @@ namespace Duplicati.Library.Backend.Mega
 
                 var el = await Client.UploadAsync(stream, remotename, CurrentFolder, new Progress(), null, cancelToken).ConfigureAwait(false);
                 if (m_filecache.ContainsKey(remotename))
-                    Delete(remotename);
+                    await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
 
                 m_filecache[remotename] = [el];
             }
@@ -212,7 +212,7 @@ namespace Duplicati.Library.Backend.Mega
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -223,7 +223,7 @@ namespace Duplicati.Library.Backend.Mega
                     throw new FileMissingException();
 
                 foreach (var n in m_filecache[remotename])
-                    Client.Delete(n, false);
+                    await Client.DeleteAsync(n, false).ConfigureAwait(false);
 
                 m_filecache.Remove(remotename);
             }

@@ -260,13 +260,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             //this will actually delete the folder if remotename is a folder... 
             // Will give a "directory not found" error if the file does not exist, need to change that to a missing file exception
             try
             {
-                RcloneCommandExecuter(rclone_executable, $"delete {remote_repo}:{Path.Combine(remote_path, remotename)}", CancellationToken.None).Await();
+                await RcloneCommandExecuter(rclone_executable, $"delete {remote_repo}:{Path.Combine(remote_path, remotename)}", cancelToken).ConfigureAwait(false);
             }
             catch (FolderMissingException ex)
             {

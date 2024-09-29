@@ -323,13 +323,15 @@ namespace Duplicati.Library.Backend
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             System.Net.FtpWebRequest req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DeleteFile;
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (areq.GetResponse())
             { }
+
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands

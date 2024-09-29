@@ -74,7 +74,8 @@ namespace Duplicati.Library.Interface
         /// Deletes the specified file
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
-        void Delete(string remotename);
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task DeleteAsync(string remotename, CancellationToken cancellationToken);
 
         /// <summary>
         /// A localized description of the backend, for display in the usage information

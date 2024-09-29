@@ -243,6 +243,36 @@ namespace Duplicati.Library
         /// <param name="item">The data to json-serialize and POST in the request</param>
         /// <param name="method">Alternate HTTP method to use</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
+        public virtual Task<T> PostAndGetJSONDataAsync<T>(string url, CancellationToken cancelToken, object item, string method = null)
+        {
+            var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
+
+            return GetJSONDataAsync<T>(
+                url,
+                cancelToken,
+                req =>
+                {
+                    req.Method = method ?? "POST";
+                    req.ContentType = "application/json; charset=utf-8";
+                    req.ContentLength = data.Length;
+                },
+
+                async (req, ct) =>
+                {
+                    using (var rs = req.GetRequestStream())
+                        await rs.WriteAsync(data, 0, data.Length, ct).ConfigureAwait(false);
+                }
+            );
+        }
+
+        /// <summary>
+        /// Executes a web request by POST'ing the supplied object and json-deserializes the results as the specified type
+        /// </summary>
+        /// <returns>The deserialized JSON data.</returns>
+        /// <param name="url">The remote URL</param>
+        /// <param name="item">The data to json-serialize and POST in the request</param>
+        /// <param name="method">Alternate HTTP method to use</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
         public virtual T PostAndGetJSONData<T>(string url, object item, string method = null)
         {
             var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
@@ -284,6 +314,22 @@ namespace Duplicati.Library
         {
             using (var resp = GetResponse(req, requestdata))
                 return ReadJSONResponse<T>(resp);
+        }
+
+        public virtual Task<T> ReadJSONResponseAsync<T>(string url, CancellationToken cancelToken, object requestdata = null, string method = null)
+        {
+            if (requestdata is string)
+                throw new ArgumentException("Cannot send string object as data");
+
+            if (method == null && requestdata != null)
+                method = "POST";
+
+            return ReadJSONResponseAsync<T>(CreateRequest(url, method), cancelToken, requestdata);
+        }
+
+        public virtual Task<T> ReadJSONResponseAsync<T>(HttpWebRequest req, CancellationToken cancelToken, object requestdata = null)
+        {
+            return ReadJSONResponseAsync<T>(new AsyncHttpRequest(req), cancelToken, requestdata);
         }
 
         public virtual async Task<T> ReadJSONResponseAsync<T>(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)

@@ -2,6 +2,7 @@
 using Aliyun.OSS.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -151,7 +152,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -172,6 +173,8 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Delete", ex, "Delete object failed. {0}", ex.Message);
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
         public void Test()
@@ -265,7 +268,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 }
 
                 // del old file
-                Delete(oldname);
+                DeleteAsync(oldname, CancellationToken.None).Await();
             }
             catch (OssException ex)
             {

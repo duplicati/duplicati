@@ -240,9 +240,10 @@ namespace Duplicati.Library.Backend
             return Task.CompletedTask;
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             systemIO.FileDelete(GetRemoteName(remotename));
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands

@@ -158,7 +158,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     if (files.Length == 1)
                         fileId = files[0].id;
                     else
-                        Delete(remotename);
+                        await DeleteAsync(remotename, cancelToken);
                 }
 
                 var isUpdate = !string.IsNullOrWhiteSpace(fileId);
@@ -270,14 +270,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 await GetAsync(remotename, fs, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 foreach (var fileid in from n in GetFileEntries(remotename) select n.id)
                 {
                     var url = WebApi.GoogleDrive.DeleteUrl(Library.Utility.Uri.UrlPathEncode(fileid), m_teamDriveID);
-                    m_oauth.GetJSONData<object>(url, x =>
+                    await m_oauth.GetJSONDataAsync<object>(url, cancelToken, x =>
                     {
                         x.Method = "DELETE";
                     });
@@ -380,7 +380,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     Stream stream = new MemoryStream();
                     GetAsync(oldname, stream, cToken.Token).Wait(cToken.Token);
                     PutAsync(newname, stream, cToken.Token).Wait(cToken.Token);
-                    Delete(oldname);
+                    DeleteAsync(oldname, cToken.Token).Wait(cToken.Token);
                 }
 
                 m_filecache.Remove(oldname);

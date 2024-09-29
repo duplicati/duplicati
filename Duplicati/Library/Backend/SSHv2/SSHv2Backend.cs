@@ -158,13 +158,13 @@ namespace Duplicati.Library.Backend
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 CreateConnection();
                 ChangeDirectory(m_path);
-                m_con.DeleteFile(remotename);
+                await m_con.DeleteFileAsync(remotename, cancelToken).ConfigureAwait(false);
             }
             catch (SftpPathNotFoundException ex)
             {
@@ -244,7 +244,6 @@ namespace Duplicati.Library.Backend
                 (cb, state) => m_con.BeginUploadFile(stream, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                 m_con.EndUploadFile,
                 null).ConfigureAwait(false);
-
         }
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)

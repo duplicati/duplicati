@@ -280,7 +280,7 @@ namespace Duplicati.Library.Backend
                 await GetAsync(remotename, fs, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -290,7 +290,7 @@ namespace Duplicati.Library.Backend
                 using var requestResources = CreateRequest(remotename);
                 requestResources.RequestMessage.Method = HttpMethod.Delete;
 
-                var response = requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token);
 
                 response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
 

@@ -222,7 +222,7 @@ namespace Duplicati.Library.Backend
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -239,6 +239,8 @@ namespace Duplicati.Library.Backend
                 else
                     throw;
             }
+
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands

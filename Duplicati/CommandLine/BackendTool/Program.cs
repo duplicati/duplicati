@@ -144,7 +144,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException("DELETE requires a filename argument", "BackendToolDeleteRequiresAnArgument");
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
-                        backend.Delete(Path.GetFileName(args[2]));
+                        backend.DeleteAsync(Path.GetFileName(args[2]), CancellationToken.None).Await();
 
                         return 0;
                     }

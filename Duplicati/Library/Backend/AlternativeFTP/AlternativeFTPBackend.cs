@@ -419,7 +419,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             var ftpClient = CreateClient();
 
@@ -432,7 +432,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 remotePath += remotename;
             }
 
-            ftpClient.DeleteFile(remotePath).Await();
+            await ftpClient.DeleteFile(remotePath, cancelToken);
 
         }
 
@@ -464,7 +464,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    Delete(TEST_FILE_NAME);
+                    DeleteAsync(TEST_FILE_NAME, CancellationToken.None).Await();
                 }
                 catch (Exception e)
                 {
@@ -507,7 +507,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             // Cleanup
             try
             {
-                Delete(TEST_FILE_NAME);
+                DeleteAsync(TEST_FILE_NAME, CancellationToken.None).Await();
             }
             catch (Exception e)
             {

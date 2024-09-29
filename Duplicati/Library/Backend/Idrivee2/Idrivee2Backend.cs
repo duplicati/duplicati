@@ -159,9 +159,9 @@ namespace Duplicati.Library.Backend
             return Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancellationToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
+            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancellationToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands

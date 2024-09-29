@@ -267,7 +267,7 @@ namespace Duplicati.Library.Backend.Backblaze
 
                 // Delete old versions
                 if (m_filecache.ContainsKey(remotename))
-                    Delete(remotename);
+                    await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
 
                 m_filecache[remotename] =
                 [
@@ -392,7 +392,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -403,8 +403,9 @@ namespace Duplicati.Library.Backend.Backblaze
                     throw new FileMissingException();
 
                 foreach (var n in m_filecache[remotename].OrderBy(x => x.UploadTimestamp))
-                    m_helper.PostAndGetJSONData<DeleteResponse>(
+                    await m_helper.PostAndGetJSONDataAsync<DeleteResponse>(
                         string.Format("{0}/b2api/v1/b2_delete_file_version", m_helper.APIUrl),
+                        cancelToken,
                         new DeleteRequest()
                         {
                             FileName = m_prefix + remotename,

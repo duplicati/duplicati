@@ -207,15 +207,15 @@ namespace Duplicati.Library.Backend
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                HttpWebRequest req = CreateRequest("/" + remotename, "");
+                var req = CreateRequest("/" + remotename, "");
 
                 req.Method = "DELETE";
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (HttpWebResponse)areq.GetResponse())
                 {
                     if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
                         throw new FileMissingException();
@@ -234,6 +234,8 @@ namespace Duplicati.Library.Backend
                 else
                     throw;
             }
+
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -385,7 +387,7 @@ namespace Duplicati.Library.Backend
                 if (md5Hash == null || !String.Equals(md5Hash, fileHash, StringComparison.OrdinalIgnoreCase))
                 {
                     //Remove the broken file
-                    try { Delete(remotename); }
+                    try { await DeleteAsync(remotename, cancelToken); }
                     catch { }
 
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
@@ -400,13 +402,13 @@ namespace Duplicati.Library.Backend
             //If this is the first call, get an authentication token
             if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
             {
-                HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
+                var authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
                 authReq.Headers.Add("X-Auth-User", m_username);
                 authReq.Headers.Add("X-Auth-Key", m_password);
                 authReq.Method = "GET";
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(authReq);
-                using (WebResponse resp = areq.GetResponse())
+                var areq = new Utility.AsyncHttpRequest(authReq);
+                using (var resp = areq.GetResponse())
                 {
                     m_storageUrl = resp.Headers["X-Storage-Url"];
                     m_authToken = resp.Headers["X-Auth-Token"];

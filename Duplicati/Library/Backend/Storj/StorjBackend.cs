@@ -173,13 +173,7 @@ namespace Duplicati.Library.Backend.Storj
             //Storj DCS has no folders
         }
 
-        public void Delete(string remotename)
-        {
-            var deleteTask = DeleteAsync(remotename);
-            deleteTask.Await();
-        }
-
-        public async Task DeleteAsync(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {

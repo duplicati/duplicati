@@ -420,7 +420,7 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
             string endpoint = "";
 
@@ -449,6 +449,8 @@ namespace Duplicati.Library.Backend.Sia
                 else
                     throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
+
+            return Task.CompletedTask;
         }
 
 

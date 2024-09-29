@@ -74,9 +74,9 @@ namespace Duplicati.UnitTest
         {
             await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
         }
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            m_backend.Delete(remotename);
+            await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
         }
         public void Test()
         {

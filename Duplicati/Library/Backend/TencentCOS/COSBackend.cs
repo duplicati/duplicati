@@ -26,6 +26,7 @@ using COSXML.Model.Tag;
 using COSXML.Utils;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -241,7 +242,7 @@ namespace Duplicati.Library.Backend.TencentCOS
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -249,11 +250,12 @@ namespace Duplicati.Library.Backend.TencentCOS
                 string bucket = _cosOptions.Bucket;
                 string key = GetFullKey(remotename);
 
-                DeleteObjectRequest request = new DeleteObjectRequest(bucket, key);
+                var request = new DeleteObjectRequest(bucket, key);
+                cancelToken.Register(() => request.Cancel());
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
 
-                DeleteObjectResult result = cosXml.DeleteObject(request);
+                var result = cosXml.DeleteObject(request);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -265,6 +267,8 @@ namespace Duplicati.Library.Backend.TencentCOS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Delete", serverEx, "Delete failed: {0}, {1}", remotename, serverEx.GetInfo());
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
         public void Test()
@@ -401,7 +405,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
                 //Console.WriteLine(result.GetResultInfo());
 
-                Delete(oldname);
+                DeleteAsync(oldname, CancellationToken.None).Await();
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {

@@ -155,13 +155,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
 
             var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)));
             req.Method = "DELETE";
 
-            m_oauth.ReadJSONResponse<object>(req);
+            return m_oauth.ReadJSONResponseAsync<object>(req, cancelToken);
         }
 
         public void Test()

@@ -139,12 +139,12 @@ namespace Duplicati.Library.Backend
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 string path = String.Format("{0}/{1}", m_path, remotename);
-                dbx.Delete(path);
+                await dbx.DeleteAsync(path, cancelToken).ConfigureAwait(false);
             }
             catch (DropboxException)
             {

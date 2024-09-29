@@ -816,22 +816,22 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                m_retryAfter.WaitForRetryAfter();
+                await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                 string deleteUrl = string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
-                    using (var response = this.m_client.DeleteAsync(deleteUrl).Await())
+                    using (var response = await this.m_client.DeleteAsync(deleteUrl, cancelToken).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
                     }
                 }
                 else
                 {
-                    using (var response = this.m_oAuthHelper.GetResponseWithoutException(deleteUrl, null, HttpMethod.Delete.ToString()))
+                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(deleteUrl, cancelToken, null, HttpMethod.Delete.ToString()).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
                     }

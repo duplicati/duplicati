@@ -89,11 +89,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void DeleteObject(string bucketName, string keyName)
+        public async Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken)
         {
             try
             {
-                m_client.RemoveObjectAsync(bucketName, keyName).Await();
+                await m_client.RemoveObjectAsync(bucketName, keyName, cancelToken).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Backend
                     source, target, bucketName, e.ToString());
             }
 
-            DeleteObject(bucketName, source);
+            DeleteObjectAsync(bucketName, source, CancellationToken.None).Await();
         }
 
         public async Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken)

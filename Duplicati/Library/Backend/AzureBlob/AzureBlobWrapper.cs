@@ -113,9 +113,9 @@ namespace Duplicati.Library.Backend.AzureBlob
             return _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default, default, _operationContext, cancelToken);
         }
 
-        public void DeleteObject(string keyName)
+        public Task DeleteObjectAsync(string keyName, CancellationToken cancelToken)
         {
-            _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync(default, default, default, _operationContext).GetAwaiter().GetResult();
+            return _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync(default, default, default, _operationContext, cancelToken);
         }
 
         private async Task<List<IListBlobItem>> ListContainerEntriesAsync()

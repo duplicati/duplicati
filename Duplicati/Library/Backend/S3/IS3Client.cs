@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend
 
         void AddBucket(string bucketName);
 
-        void DeleteObject(string bucketName, string keyName);
+        Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 
         void RenameFile(string bucketName, string source, string target);
 

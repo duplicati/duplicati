@@ -88,10 +88,10 @@ namespace Duplicati.UnitTest
             await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Delete(remotename);
+            await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
         public void Test()

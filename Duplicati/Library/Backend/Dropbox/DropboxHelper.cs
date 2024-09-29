@@ -208,12 +208,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Delete(string path)
+        public async Task DeleteAsync(string path, CancellationToken cancelToken)
         {
             try
             {
                 var pa = new PathArg() { path = path };
-                using (var response = GetResponse(WebApi.Dropbox.DeleteUrl(), pa))
+                using (var response = await GetResponseAsync(WebApi.Dropbox.DeleteUrl(), cancelToken, pa).ConfigureAwait(false))
                 using (var sr = new StreamReader(response.GetResponseStream()))
                     sr.ReadToEnd();
             }

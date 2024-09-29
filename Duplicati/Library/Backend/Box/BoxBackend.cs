@@ -279,17 +279,17 @@ namespace Duplicati.Library.Backend.Box
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             var fileid = GetFileID(remotename);
             try
             {
-                using (var r = m_oauth.GetResponse(string.Format("{0}/files/{1}", BOX_API_URL, fileid), null, "DELETE"))
+                using (var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false))
                 {
                 }
 
                 if (m_deleteFromTrash)
-                    using (var r = m_oauth.GetResponse(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), null, "DELETE"))
+                    using (var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false))
                     {
                     }
             }
