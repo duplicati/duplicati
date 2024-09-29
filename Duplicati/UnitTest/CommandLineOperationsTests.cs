@@ -77,7 +77,7 @@ namespace Duplicati.UnitTest
         }
 
         private void DownloadS3FileIfNewer(string destinationFilePath, string url, int retries = 5)
-            => DownloadS3FileIfNewerAsync(destinationFilePath, url, retries).Wait();
+            => DownloadS3FileIfNewerAsync(destinationFilePath, url, retries).Await();
 
         private async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
         {

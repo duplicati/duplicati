@@ -185,7 +185,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // Prevent repeated download url lookups
             if (m_filecache.Count == 0)
@@ -197,7 +197,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var areq = new AsyncHttpRequest(req);
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
-                Duplicati.Library.Utility.Utility.CopyStream(rs, stream);
+                await Duplicati.Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken);
         }
 
         #endregion
@@ -260,14 +260,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+            using (var fs = System.IO.File.OpenRead(filename))
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = System.IO.File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken);
         }
 
         public void Delete(string remotename)
@@ -378,7 +378,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 using (var cToken = new CancellationTokenSource())
                 {
                     Stream stream = new MemoryStream();
-                    Get(oldname, stream);
+                    GetAsync(oldname, stream, cToken.Token).Wait(cToken.Token);
                     PutAsync(newname, stream, cToken.Token).Wait(cToken.Token);
                     Delete(oldname);
                 }

@@ -129,7 +129,7 @@ namespace Duplicati.Library.Backend
         {
             m_deleteToRecycler = Utility.Utility.ParseBoolOption(options, "delete-to-recycler");
             m_useBinaryDirectMode = Utility.Utility.ParseBoolOption(options, "binary-direct-mode");
-            
+
             try
             {
                 string strSpan;
@@ -366,9 +366,31 @@ namespace Duplicati.Library.Backend
         /// We have to check for the exceptions thrown to know about file /folder existence.
         /// Why the funny guys at MS provided an .Exists field stays a mystery...
         /// </summary>
-        private void wrappedExecuteQueryOnConext(SP.ClientContext ctx, string serverRelPathInfo, bool isFolder)
+        private void wrappedExecuteQueryOnContext(SP.ClientContext ctx, string serverRelPathInfo, bool isFolder)
         {
             try { ctx.ExecuteQuery(); }
+            catch (ServerException ex)
+            {
+                // funny: If a folder is not found, we still get a FileNotFoundException from Server...?!?
+                // Thus, we help ourselves by just passing the info if we wanted to query a folder.
+                if (ex.ServerErrorTypeName == "System.IO.DirectoryNotFoundException"
+                    || (ex.ServerErrorTypeName == "System.IO.FileNotFoundException" && isFolder))
+                    throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(serverRelPathInfo, m_spWebUrl));
+                if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
+                    throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(serverRelPathInfo, m_spWebUrl));
+                else
+                    throw;
+            }
+        }
+
+        /// <summary>
+        /// Dedicated code to wrap ExecuteQuery on file ops and check for errors.
+        /// We have to check for the exceptions thrown to know about file /folder existence.
+        /// Why the funny guys at MS provided an .Exists field stays a mystery...
+        /// </summary>
+        private async Task wrappedExecuteQueryOnContextAsync(SP.ClientContext ctx, string serverRelPathInfo, bool isFolder, CancellationToken cancelToken)
+        {
+            try { await ctx.ExecuteQueryAsync().ConfigureAwait(false); }
             catch (ServerException ex)
             {
                 // funny: If a folder is not found, we still get a FileNotFoundException from Server...?!?
@@ -443,7 +465,7 @@ namespace Duplicati.Library.Backend
             SP.ClientContext ctx = getSpClientContext(true);
             testContextForWeb(ctx, true);
         }
-        
+
         public IEnumerable<IFileEntry> List() { return doList(false); }
         private IEnumerable<IFileEntry> doList(bool useNewContext)
         {
@@ -456,7 +478,7 @@ namespace Duplicati.Library.Backend
                 ctx.Load(remoteFolder, f => f.Exists);
                 ctx.Load(remoteFolder, f => f.Files, f => f.Folders);
 
-                wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
+                wrappedExecuteQueryOnContext(ctx, m_serverRelPath, true);
                 if (!remoteFolder.Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
             }
@@ -490,14 +512,16 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, System.IO.Stream stream) { doGet(remotename, stream, false); }
-        private void doGet(string remotename, System.IO.Stream stream, bool useNewContext)
+        public Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+            => doGetAsync(remotename, stream, false, cancelToken);
+
+        private async Task doGetAsync(string remotename, System.IO.Stream stream, bool useNewContext, CancellationToken cancelToken)
         {
             string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
             SP.ClientContext ctx = getSpClientContext(useNewContext);
@@ -505,19 +529,24 @@ namespace Duplicati.Library.Backend
             {
                 SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
                 ctx.Load(remoteFile, f => f.Exists);
-                wrappedExecuteQueryOnConext(ctx, fileurl, false);
+                await wrappedExecuteQueryOnContextAsync(ctx, fileurl, false, cancelToken).ConfigureAwait(false);
                 if (!remoteFile.Exists)
                     throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
             }
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ doGet(remotename, stream, true); else throw; }
+            catch
+            {
+                if (useNewContext)
+                    throw;
 
-            byte[] copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+                await doGetAsync(remotename, stream, true, cancelToken);
+            }
+
             using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
             using (var s = fileInfo.Stream)
-                Utility.Utility.CopyStream(s, stream, true, copybuffer);
+                await Utility.Utility.CopyStreamAsync(s, stream, true, cancelToken).ConfigureAwait(false);
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
@@ -535,10 +564,10 @@ namespace Duplicati.Library.Backend
             {
                 SP.Folder remoteFolder = ctx.Web.GetFolderByServerRelativeUrl(m_serverRelPath);
                 ctx.Load(remoteFolder, f => f.Exists, f => f.ServerRelativeUrl);
-                wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
+                await wrappedExecuteQueryOnContextAsync(ctx, m_serverRelPath, true, cancelToken).ConfigureAwait(false);
                 if (!remoteFolder.Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
-                
+
                 useNewContext = true; // disable retry
                 if (!m_useBinaryDirectMode)
                     await uploadFileSlicePerSlice(ctx, remoteFolder, stream, fileurl, cancelToken).ConfigureAwait(false);
@@ -546,12 +575,16 @@ namespace Duplicati.Library.Backend
             catch (ServerException) { throw; /* rethrow if Server answered */ }
             catch (Interface.FileMissingException) { throw; }
             catch (Interface.FolderMissingException) { throw; }
-            catch { if (!useNewContext) /* retry */ { await doPut(remotename, stream, true, cancelToken).ConfigureAwait(false); } else throw; }
+            catch
+            {
+                if (useNewContext)
+                    throw;
+
+                await doPut(remotename, stream, true, cancelToken).ConfigureAwait(false);
+            }
 
             if (m_useBinaryDirectMode)
-            {
                 SP.File.SaveBinaryDirect(ctx, fileurl, stream, true);
-            }
         }
 
         /// <summary>
@@ -667,7 +700,7 @@ namespace Duplicati.Library.Backend
                     var folder = ctx.Web.GetFolderByServerRelativeUrl(folderRelPath);
                     spfolders[fi] = folder;
                     ctx.Load(folder, f => f.Exists);
-                    try { wrappedExecuteQueryOnConext(ctx, folderRelPath, true); }
+                    try { wrappedExecuteQueryOnContext(ctx, folderRelPath, true); }
                     catch (FolderMissingException)
                     { break; }
                     if (!folder.Exists) break;
@@ -677,7 +710,7 @@ namespace Duplicati.Library.Backend
                     spfolders[fi] = spfolders[fi - 1].Folders.Add(folderNames[fi]);
                 ctx.Load(spfolders[folderNames.Length - 1], f => f.Exists);
 
-                wrappedExecuteQueryOnConext(ctx, m_serverRelPath, true);
+                wrappedExecuteQueryOnContext(ctx, m_serverRelPath, true);
 
                 if (!spfolders[folderNames.Length - 1].Exists)
                     throw new Interface.FolderMissingException(Strings.SharePoint.MissingElementError(m_serverRelPath, m_spWebUrl));
@@ -697,7 +730,7 @@ namespace Duplicati.Library.Backend
                 string fileurl = m_serverRelPath + System.Web.HttpUtility.UrlPathEncode(remotename);
                 SP.File remoteFile = ctx.Web.GetFileByServerRelativeUrl(fileurl);
                 ctx.Load(remoteFile);
-                wrappedExecuteQueryOnConext(ctx, fileurl, false);
+                wrappedExecuteQueryOnContext(ctx, fileurl, false);
                 if (!remoteFile.Exists)
                     throw new Interface.FileMissingException(Strings.SharePoint.MissingElementError(fileurl, m_spWebUrl));
 

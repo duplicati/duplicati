@@ -116,19 +116,19 @@ namespace Duplicati.Library.Backend.AzureBlob
             await _azureBlob.AddFileStream(remotename, input, cancelToken);
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
             using (var fs = File.Open(localname,
                 FileMode.Create, FileAccess.Write,
                 FileShare.None))
             {
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
-            _azureBlob.GetFileStream(remotename, output);
+            return _azureBlob.GetFileStreamAsync(remotename, output, cancellationToken);
         }
 
         public void Delete(string remotename)

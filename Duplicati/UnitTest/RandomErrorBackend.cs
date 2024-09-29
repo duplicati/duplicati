@@ -60,13 +60,13 @@ namespace Duplicati.UnitTest
             var uploadError = random.NextDouble() > 0.9;
 
             using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
-                await m_backend.PutAsync(remotename, f, cancelToken);
+                await m_backend.PutAsync(remotename, f, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Get(remotename, stream);
+            await m_backend.GetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
         #endregion
@@ -79,13 +79,13 @@ namespace Duplicati.UnitTest
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            await m_backend.PutAsync(remotename, filename, cancelToken);
+            await m_backend.PutAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Get(remotename, filename);
+            await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
         public void Delete(string remotename)

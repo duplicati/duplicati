@@ -19,10 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using uplink.NET.Interfaces;
@@ -176,15 +176,15 @@ namespace Duplicati.Library.Backend.Storj
         public void Delete(string remotename)
         {
             var deleteTask = DeleteAsync(remotename);
-            deleteTask.Wait();
+            deleteTask.Await();
         }
 
         public async Task DeleteAsync(string remotename)
         {
             try
             {
-                var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-                await _objectService.DeleteObjectAsync(bucket, GetBasePath() + remotename);
+                var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+                await _objectService.DeleteObjectAsync(bucket, GetBasePath() + remotename).ConfigureAwait(false);
             }
             catch (Exception root)
             {
@@ -209,63 +209,50 @@ namespace Duplicati.Library.Backend.Storj
             }
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            var getTask = GetAsync(remotename, filename);
-            getTask.Wait();
-        }
-
-        public async Task GetAsync(string remotename, string filename)
-        {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false);
-            await download.StartDownloadAsync();
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false).ConfigureAwait(false);
+            await download.StartDownloadAsync().ConfigureAwait(false);
 
             if (download.Completed)
             {
-                using (FileStream file = new FileStream(filename, FileMode.Create))
+                using (var file = new FileStream(filename, FileMode.Create))
                 {
-                    await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived);
-                    await file.FlushAsync().ConfigureAwait(false);
+                    await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived, cancelToken).ConfigureAwait(false);
+                    await file.FlushAsync(cancelToken).ConfigureAwait(false);
                 }
             }
         }
 
-        public void Get(string remotename, Stream stream)
-        {
-            var getTask = GetAsync(remotename, stream);
-            getTask.Wait();
-        }
-
-        public async Task GetAsync(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             int index = 0;
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false);
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false).ConfigureAwait(false);
             download.DownloadOperationProgressChanged += (op) =>
             {
+                cancelToken.ThrowIfCancellationRequested();
                 int newPartLength = (int)op.BytesReceived - index;
                 byte[] newPart = new byte[newPartLength];
                 Array.Copy(op.DownloadedBytes, index, newPart, 0, newPartLength);
                 stream.Write(newPart, 0, newPartLength);
                 index = index + newPartLength;
             };
-            await download.StartDownloadAsync();
+            await download.StartDownloadAsync().ConfigureAwait(false);
         }
 
         public IEnumerable<IFileEntry> List()
         {
-            var listTask = ListAsync();
-            listTask.Wait();
-            return listTask.Result;
+            return ListAsync().Await();
         }
 
         private async Task<IEnumerable<IFileEntry>> ListAsync()
         {
             List<StorjFile> files = new List<StorjFile>();
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
             var prefix = GetBasePath();
-            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix });
+            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix }).ConfigureAwait(false);
 
             foreach (var obj in objects.Items)
             {
@@ -283,17 +270,17 @@ namespace Duplicati.Library.Backend.Storj
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
             CustomMetadata custom = new CustomMetadata();
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false);
-            await upload.StartUploadAsync();
+            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false).ConfigureAwait(false);
+            await upload.StartUploadAsync().ConfigureAwait(false);
             if (upload.Failed)
             {
                 throw new Exception(upload.ErrorMessage);
@@ -321,14 +308,14 @@ namespace Duplicati.Library.Backend.Storj
         {
             string testFileName = GetBasePath() + "duplicati_test.dat";
 
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false);
-            await upload.StartUploadAsync();
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false).ConfigureAwait(false);
+            await upload.StartUploadAsync().ConfigureAwait(false);
 
-            var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false);
-            await download.StartDownloadAsync();
+            var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false).ConfigureAwait(false);
+            await download.StartDownloadAsync().ConfigureAwait(false);
 
-            await _objectService.DeleteObjectAsync(bucket, testFileName);
+            await _objectService.DeleteObjectAsync(bucket, testFileName).ConfigureAwait(false);
 
             if (download.Failed || download.BytesReceived != 256)
             {

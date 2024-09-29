@@ -172,7 +172,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         using (var tf = new TempFile())
                         {
-                            backend.Get(remoteFile.File.Name, tf);
+                            backend.GetAsync(remoteFile.File.Name, tf, CancellationToken.None).Await();
                             originLastWriteTime = new FileInfo(tf).LastWriteTime;
                             downloaded++;
 
@@ -275,7 +275,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         if (reupload)
                         {
                             Console.Write(" reuploading ...");
-                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Wait();
+                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Await();
                             backend.Delete(remoteFile.File.Name);
                             File.Delete(localFileTarget);
                         }

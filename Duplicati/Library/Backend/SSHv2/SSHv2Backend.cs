@@ -28,7 +28,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -149,14 +148,14 @@ namespace Duplicati.Library.Backend
         {
             using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open,
                 System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create,
+            using (var fs = System.IO.File.Open(filename, System.IO.FileMode.Create,
                 System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public void Delete(string remotename)
@@ -237,19 +236,25 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Implementation
 
-        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            m_con.UploadFile(stream, remotename);
-            return Task.FromResult(true);
+            await Task.Factory.FromAsync(
+                (cb, state) => m_con.BeginUploadFile(stream, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
+                m_con.EndUploadFile,
+                null).ConfigureAwait(false);
+
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            m_con.DownloadFile(remotename, stream);
+            await Task.Factory.FromAsync(
+                (cb, state) => m_con.BeginDownloadFile(remotename, stream, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
+                m_con.EndDownloadFile,
+                null).ConfigureAwait(false);
         }
 
         #endregion

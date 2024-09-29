@@ -232,13 +232,13 @@ namespace Duplicati.Library.Backend.TencentCOS
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (var fs = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public void Delete(string remotename)
@@ -327,8 +327,9 @@ namespace Duplicati.Library.Backend.TencentCOS
                 {
                     request.SetRequestHeader("x-" + COS_STORAGE_CLASS, _cosOptions.StorageClass);
                 }
+                cancelToken.Register(() => request.Cancel());
 
-                PutObjectResult result = cosXml.PutObject(request);
+                var result = cosXml.PutObject(request);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -344,7 +345,7 @@ namespace Duplicati.Library.Backend.TencentCOS
             return Task.CompletedTask;
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -352,16 +353,17 @@ namespace Duplicati.Library.Backend.TencentCOS
                 string bucket = _cosOptions.Bucket;
                 string key = GetFullKey(remotename);
 
-                GetObjectBytesRequest request = new GetObjectBytesRequest(bucket, key);
+                var request = new GetObjectBytesRequest(bucket, key);
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                cancelToken.Register(() => request.Cancel());
 
-                GetObjectBytesResult result = cosXml.GetObject(request);
+                var result = cosXml.GetObject(request);
 
-                byte[] bytes = result.content;
+                var bytes = result.content;
 
-                Stream ms = new MemoryStream(bytes);
-                Utility.Utility.CopyStream(ms, stream);
+                using (var ms = new MemoryStream(bytes))
+                    await Utility.Utility.CopyStreamAsync(ms, stream, cancelToken).ConfigureAwait(false);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {

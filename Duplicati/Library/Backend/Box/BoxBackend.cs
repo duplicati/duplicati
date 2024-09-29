@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend.Box
     // This class is instantiated dynamically in the BackendLoader.
     public class BoxBackend : IBackend, IStreamingBackend
     {
-		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
 
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
@@ -68,13 +68,13 @@ namespace Duplicati.Library.Backend.Box
                     if (ex is WebException exception && exception.Response is HttpWebResponse hs)
                     {
                         string rawdata = null;
-                        using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
-                        using(var sr = new System.IO.StreamReader(rs))
+                        using (var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
+                        using (var sr = new System.IO.StreamReader(rs))
                             rawdata = sr.ReadToEnd();
 
                         if (string.IsNullOrWhiteSpace(rawdata))
                             return;
-                        
+
                         newex = new Exception("Raw message: " + rawdata);
 
                         var msg = JsonConvert.DeserializeObject<ErrorResponse>(rawdata);
@@ -85,13 +85,13 @@ namespace Duplicati.Library.Backend.Box
                         */
                     }
                 }
-                catch(Exception ex2)
+                catch (Exception ex2)
                 {
-					Library.Logging.Log.WriteWarningMessage(LOGTAG, "BoxErrorParser", ex2, "Failed to parse error from Box");
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "BoxErrorParser", ex2, "Failed to parse error from Box");
                 }
 
                 if (newex != null)
-                    throw newex;                
+                    throw newex;
             }
         }
 
@@ -124,7 +124,7 @@ namespace Duplicati.Library.Backend.Box
             {
                 if (m_currentfolder == null)
                     GetCurrentFolder(false);
-                
+
                 return m_currentfolder;
             }
         }
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Backend.Box
         {
             var parentid = "0";
 
-            foreach(var p in m_path.Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var p in m_path.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var el = (MiniFolder)PagedFileListResponse(parentid, true).FirstOrDefault(x => x.Name == p);
                 if (el == null)
@@ -174,7 +174,7 @@ namespace Duplicati.Library.Backend.Box
 
             if (!onlyfolders)
                 m_filecache.Clear();
-            
+
             do
             {
                 var resp = m_oauth.GetJSONData<ShortListResponse>(string.Format("{0}/folders/{1}/items?limit={2}&offset={3}&fields=name,size,modified_at", BOX_API_URL, parentid, PAGE_SIZE, offset));
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Backend.Box
                 if (resp.Entries == null || resp.Entries.Length == 0)
                     break;
 
-                foreach(var f in resp.Entries)
+                foreach (var f in resp.Entries)
                 {
                     if (onlyfolders && f.Type != "folder")
                     {
@@ -193,7 +193,7 @@ namespace Duplicati.Library.Backend.Box
                     {
                         if (!onlyfolders && f.Type == "file")
                             m_filecache[f.Name] = f.ID;
-                        
+
                         yield return f;
                     }
                 }
@@ -203,16 +203,18 @@ namespace Duplicati.Library.Backend.Box
                 if (offset >= resp.TotalCount)
                     break;
 
-            } while(!done);
+            } while (!done);
         }
 
         #region IStreamingBackend implementation
 
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            var createreq = new CreateItemRequest() {
+            var createreq = new CreateItemRequest()
+            {
                 Name = remotename,
-                Parent = new IDReference() {
+                Parent = new IDReference()
+                {
                     ID = CurrentFolder
                 }
             };
@@ -247,11 +249,11 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using (var resp = m_oauth.GetResponse(string.Format("{0}/files/{1}/content", BOX_API_URL, GetFileID(remotename))))
-            using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-                Library.Utility.Utility.CopyStream(rs, stream);
+            using (var resp = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/content", BOX_API_URL, GetFileID(remotename)), cancelToken).ConfigureAwait(false))
+            using (var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
+                await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -271,10 +273,10 @@ namespace Duplicati.Library.Backend.Box
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public void Delete(string remotename)
@@ -282,12 +284,12 @@ namespace Duplicati.Library.Backend.Box
             var fileid = GetFileID(remotename);
             try
             {
-                using(var r = m_oauth.GetResponse(string.Format("{0}/files/{1}", BOX_API_URL, fileid), null, "DELETE"))
+                using (var r = m_oauth.GetResponse(string.Format("{0}/files/{1}", BOX_API_URL, fileid), null, "DELETE"))
                 {
                 }
 
                 if (m_deleteFromTrash)
-                    using(var r = m_oauth.GetResponse(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), null, "DELETE"))
+                    using (var r = m_oauth.GetResponse(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), null, "DELETE"))
                     {
                     }
             }
@@ -326,7 +328,8 @@ namespace Duplicati.Library.Backend.Box
 
         public IList<ICommandLineArgument> SupportedCommands
         {
-            get {
+            get
+            {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Box.AuthidShort, Strings.Box.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("box.com"))),
                     new CommandLineArgument(REALLY_DELETE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Box.ReallydeleteShort, Strings.Box.ReallydeleteLong),

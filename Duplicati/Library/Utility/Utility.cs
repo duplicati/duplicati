@@ -838,7 +838,7 @@ namespace Duplicati.Library.Utility
         /// <param name="hex">The hex string</param>
         public static byte[] HexStringAsByteArray(string hex)
         {
-            byte[] data = new byte[hex.Length /2];
+            var data = new byte[hex.Length / 2];
             HexStringAsByteArray(hex, data);
             return data;
         }
@@ -1474,7 +1474,7 @@ namespace Duplicati.Library.Utility
         /// <param name="task">Task to await</param>
         public static void Await(this Task task)
         {
-            task.GetAwaiter().GetResult();
+            task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1488,7 +1488,7 @@ namespace Duplicati.Library.Utility
         /// <returns>Task result</returns>
         public static T Await<T>(this Task<T> task)
         {
-            return task.GetAwaiter().GetResult();
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>

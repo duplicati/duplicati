@@ -41,8 +41,6 @@ namespace Duplicati.Library.Backend
         private readonly bool m_passiveMode = false;
         private readonly bool m_listVerify = true;
 
-        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
-
         public FTP()
         {
         }
@@ -74,10 +72,12 @@ namespace Duplicati.Library.Backend
                 username = options["auth-username"];
             }
 
-            if (!string.IsNullOrEmpty(u.Username) && !string.IsNullOrEmpty(u.Password)) {
-                        password = u.Password;
+            if (!string.IsNullOrEmpty(u.Username) && !string.IsNullOrEmpty(u.Password))
+            {
+                password = u.Password;
             }
-            else if (options.ContainsKey("auth-password")) {
+            else if (options.ContainsKey("auth-password"))
+            {
                 password = options["auth-password"];
             }
 
@@ -101,7 +101,8 @@ namespace Duplicati.Library.Backend
             if (Utility.Utility.ParseBoolOption(options, "ftp-passive"))
             {
                 m_passiveMode = true;
-            } else m_passiveMode = !Utility.Utility.ParseBoolOption(options, "ftp-regular");
+            }
+            else m_passiveMode = !Utility.Utility.ParseBoolOption(options, "ftp-regular");
         }
 
         #region Regular expression to parse list lines
@@ -118,7 +119,7 @@ namespace Duplicati.Library.Backend
             new Regex(@"([<timestamp>]*\d{2}\-\d{2}\-\d{2}\s+\d{2}:\d{2}[Aa|Pp][mM])\s+([<dir>]*\<\w+\>){0,1}([<size>]*\d+){0,1}\s+([<name>]*.+)")
         };
         #endregion
-        
+
         private static Match MatchLine(string line)
         {
             Match m = null;
@@ -218,7 +219,7 @@ namespace Duplicati.Library.Backend
                             sr = new System.IO.StreamReader(new StreamReadHelper(rs));
                         },
                     req);
-                
+
                 string line;
                 while ((line = HandleListExceptions(sr.ReadLine, req)) != null)
                 {
@@ -264,30 +265,30 @@ namespace Duplicati.Library.Backend
                 req = CreateRequest(remotename);
                 req.Method = System.Net.WebRequestMethods.Ftp.UploadFile;
                 req.UseBinary = true;
-                
+
                 long streamLen = -1;
                 try { streamLen = input.Length; }
-                catch {}
+                catch { }
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream rs = areq.GetRequestStream(streamLen))
-                    await Utility.Utility.CopyStreamAsync(input, rs, true, cancelToken, m_copybuffer).ConfigureAwait(false);
-                
+                    await Utility.Utility.CopyStreamAsync(input, rs, true, cancelToken).ConfigureAwait(false);
+
                 if (m_listVerify)
                 {
                     IEnumerable<IFileEntry> files = List(remotename);
-                    foreach(IFileEntry fe in files)
-                        if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fe.Name.EndsWith("\\" + remotename, StringComparison.Ordinal)) 
+                    foreach (var fe in files)
+                        if (fe.Name.Equals(remotename) || fe.Name.EndsWith("/" + remotename, StringComparison.Ordinal) || fe.Name.EndsWith("\\" + remotename, StringComparison.Ordinal))
                         {
                             if (fe.Size < 0 || streamLen < 0 || fe.Size == streamLen)
                                 return;
 
                             throw new Exception(Strings.FTPBackend.ListVerifySizeFailure(remotename, fe.Size, streamLen));
-                        } 
+                        }
 
                     throw new Exception(Strings.FTPBackend.ListVerifyFailure(remotename, files.Select(n => n.Name)));
                 }
-                
+
             }
             catch (System.Net.WebException wex)
             {
@@ -301,10 +302,10 @@ namespace Duplicati.Library.Backend
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, System.IO.Stream output)
+        public async Task GetAsync(string remotename, System.IO.Stream output, CancellationToken cancelToken)
         {
             var req = CreateRequest(remotename);
             req.Method = System.Net.WebRequestMethods.Ftp.DownloadFile;
@@ -313,13 +314,13 @@ namespace Duplicati.Library.Backend
             var areq = new Utility.AsyncHttpRequest(req);
             using (var resp = areq.GetResponse())
             using (var rs = areq.GetResponseStream())
-                Utility.Utility.CopyStream(rs, output, false, m_copybuffer);
+                await Utility.Utility.CopyStreamAsync(rs, output, false, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Open(localname, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public void Delete(string remotename)
@@ -384,18 +385,18 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
-  
+
         private System.Net.FtpWebRequest CreateRequest(string remotename)
         {
             return CreateRequest(remotename, false);
         }
-        
+
         private System.Net.FtpWebRequest CreateRequest(string remotename, bool createFolder)
         {
             string url = m_url;
             if (createFolder && url.EndsWith("/", StringComparison.Ordinal))
                 url = url.Substring(0, url.Length - 1);
-            
+
             System.Net.FtpWebRequest req = (System.Net.FtpWebRequest)System.Net.WebRequest.Create(url + remotename);
 
             if (m_userInfo != null)
@@ -443,8 +444,8 @@ namespace Duplicati.Library.Backend
             {
                 int readCount = 0;
                 int a;
-                
-                while(!m_empty && count > 0)
+
+                while (!m_empty && count > 0)
                 {
                     a = base.Read(buffer, offset, count);
                     readCount += a;

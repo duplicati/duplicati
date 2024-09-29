@@ -36,7 +36,7 @@ namespace Duplicati.Library.Backend
 
         void RenameFile(string bucketName, string source, string target);
 
-        void GetFileStream(string bucketName, string keyName, System.IO.Stream target);
+        Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken);
 
         string GetDnsHost();
 

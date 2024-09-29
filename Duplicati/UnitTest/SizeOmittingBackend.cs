@@ -52,9 +52,9 @@ namespace Duplicati.UnitTest
         {
             return m_backend.PutAsync(remotename, stream, cancelToken);
         }
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            m_backend.Get(remotename, stream);
+            await m_backend.GetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
         }
         #endregion
 
@@ -70,9 +70,9 @@ namespace Duplicati.UnitTest
         {
             return m_backend.PutAsync(remotename, filename, cancelToken);
         }
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            m_backend.Get(remotename, filename);
+            await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
         }
         public void Delete(string remotename)
         {

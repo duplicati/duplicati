@@ -69,7 +69,7 @@ namespace Duplicati.Library.Backend
             {
                 yield return new Common.IO.FileEntry(
                     obj.Key,
-                    (long) obj.Size,
+                    (long)obj.Size,
                     Convert.ToDateTime(obj.LastModified),
                     Convert.ToDateTime(obj.LastModified)
                 );
@@ -107,19 +107,20 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                m_client.CopyObjectAsync(bucketName,  source,
+                m_client.CopyObjectAsync(bucketName, source,
                     bucketName, target).Await();
             }
-            catch(MinioException e)
+            catch (MinioException e)
             {
                 Logging.Log.WriteErrorMessage(Logtag, "ErrorCopyingObjectMinio", null,
                     "Error copying object {0} to {1} in bucket {2} using Minio: {3}",
-                    source, target, bucketName, e.ToString());            }
-            
+                    source, target, bucketName, e.ToString());
+            }
+
             DeleteObject(bucketName, source);
         }
 
-        public void GetFileStream(string bucketName, string keyName, Stream target)
+        public async Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken)
         {
             try
             {
@@ -127,11 +128,11 @@ namespace Duplicati.Library.Backend
                 // If the object is not found, statObject() throws an exception,
                 // else it means that the object exists.
                 // Execution is successful.
-                m_client.StatObjectAsync(bucketName, keyName).Await();
+                await m_client.StatObjectAsync(bucketName, keyName, cancellationToken: cancelToken).ConfigureAwait(false);
 
                 // Get input stream to have content of 'my-objectname' from 'my-bucketname'
-                m_client.GetObjectAsync(bucketName, keyName,
-                    (stream) => { Utility.Utility.CopyStream(stream, target); }).Await();
+                await m_client.GetObjectAsync(bucketName, keyName,
+                    (stream) => { Utility.Utility.CopyStream(stream, target); }).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
@@ -150,7 +151,7 @@ namespace Duplicati.Library.Backend
             CancellationToken cancelToken)
         {
             ThrowExceptionIfBucketDoesNotExist(bucketName);
-            
+
             try
             {
                 await m_client.PutObjectAsync(bucketName,
@@ -174,15 +175,15 @@ namespace Duplicati.Library.Backend
                 throw new FolderMissingException($"Bucket {bucketName} does not exist.");
             }
         }
-        
-                
+
+
         #region IDisposable Members
 
         public void Dispose()
         {
             m_client = null;
         }
-        
+
         #endregion
 
     }

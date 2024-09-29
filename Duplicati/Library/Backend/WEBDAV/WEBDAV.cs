@@ -274,10 +274,10 @@ namespace Duplicati.Library.Backend
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (FileStream fs = File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken);
         }
 
         public void Delete(string remotename)
@@ -430,16 +430,16 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                using var timeoutToken = new CancellationTokenSource();
+                using var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
                 timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
 
                 using var requestResources = CreateRequest(remotename, HttpMethod.Get);
 
-                requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                await requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutToken.Token).ConfigureAwait(false);
 
             }
             catch (HttpRequestException wex)

@@ -114,7 +114,7 @@ namespace Duplicati.Library
 
             using (var rs = areq.GetRequestStream())
             {
-                foreach(var p in headers)
+                foreach (var p in headers)
                 {
                     rs.Write(p.Header, 0, p.Header.Length);
                     Utility.Utility.CopyStream(p.Part.ContentData, rs);
@@ -148,7 +148,7 @@ namespace Duplicati.Library
                 foreach (var p in headers)
                 {
                     await rs.WriteAsync(p.Header, 0, p.Header.Length, cancelToken).ConfigureAwait(false);
-                    await Utility.Utility.CopyStreamAsync(p.Part.ContentData, rs, tryRewindSource: true, cancelToken:cancelToken, buf: buffer).ConfigureAwait(false);
+                    await Utility.Utility.CopyStreamAsync(p.Part.ContentData, rs, tryRewindSource: true, cancelToken: cancelToken, buf: buffer).ConfigureAwait(false);
                     await rs.WriteAsync(crlf, 0, crlf.Length, cancelToken).ConfigureAwait(false);
                 }
 
@@ -258,7 +258,7 @@ namespace Duplicati.Library
 
                 req =>
                 {
-                    using(var rs = req.GetRequestStream())
+                    using (var rs = req.GetRequestStream())
                         rs.Write(data, 0, data.Length);
                 }
             );
@@ -268,21 +268,21 @@ namespace Duplicati.Library
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
-            
+
             if (method == null && requestdata != null)
                 method = "POST";
-                
+
             return ReadJSONResponse<T>(CreateRequest(url, method), requestdata);
         }
 
         public virtual T ReadJSONResponse<T>(HttpWebRequest req, object requestdata = null)
         {
-            return ReadJSONResponse<T>(new AsyncHttpRequest(req), requestdata);   
+            return ReadJSONResponse<T>(new AsyncHttpRequest(req), requestdata);
         }
 
         public virtual T ReadJSONResponse<T>(AsyncHttpRequest req, object requestdata = null)
         {
-            using(var resp = GetResponse(req, requestdata))
+            using (var resp = GetResponse(req, requestdata))
                 return ReadJSONResponse<T>(resp);
         }
 
@@ -295,7 +295,7 @@ namespace Duplicati.Library
         public virtual T ReadJSONResponse<T>(HttpWebResponse resp)
         {
             using (var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-            using(var ps = new StreamPeekReader(rs))
+            using (var ps = new StreamPeekReader(rs))
             {
                 try
                 {
@@ -367,7 +367,7 @@ namespace Duplicati.Library
 
                 return (HttpWebResponse)req.GetResponse();
             }
-            catch(WebException wex)
+            catch (WebException wex)
             {
                 if (wex.Response is HttpWebResponse response)
                     return response;
@@ -484,7 +484,7 @@ namespace Duplicati.Library
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
-            
+
             if (method == null && requestdata != null)
                 method = "POST";
 

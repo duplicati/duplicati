@@ -374,15 +374,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (FileStream fileStream = File.OpenWrite(filename))
-            {
-                this.Get(remotename, fileStream);
-            }
+            using (var fileStream = File.OpenWrite(filename))
+                await GetAsync(remotename, fileStream, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -390,13 +388,11 @@ namespace Duplicati.Library.Backend
                 string getUrl = string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
-                    using (var response = this.m_client.GetAsync(getUrl).Await())
+                    using (var response = await this.m_client.GetAsync(getUrl, cancelToken).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
-                        using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
-                        {
-                            responseStream.CopyTo(stream);
-                        }
+                        using (var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false))
+                            await Library.Utility.Utility.CopyStreamAsync(responseStream, stream, cancelToken).ConfigureAwait(false);
                     }
                 }
                 else
@@ -404,10 +400,8 @@ namespace Duplicati.Library.Backend
                     using (var response = this.m_oAuthHelper.GetResponseWithoutException(getUrl))
                     {
                         this.CheckResponse(response);
-                        using (Stream responseStream = response.GetResponseStream())
-                        {
-                            responseStream.CopyTo(stream);
-                        }
+                        using (var responseStream = response.GetResponseStream())
+                            await Library.Utility.Utility.CopyStreamAsync(responseStream, stream, cancelToken).ConfigureAwait(false);
                     }
                 }
             }

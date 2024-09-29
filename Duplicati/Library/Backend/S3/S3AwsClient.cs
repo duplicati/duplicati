@@ -100,7 +100,7 @@ namespace Duplicati.Library.Backend
         {
             return new AmazonS3Config()
             {
-                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
+                BufferSize = (int)Utility.Utility.DEFAULT_BUFFER_SIZE,
 
                 // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
                 // to get the region endpoint. The use of ARNs (Amazon Resource Names) doesn't appear to be
@@ -110,7 +110,7 @@ namespace Duplicati.Library.Backend
             };
         }
 
-        public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
+        public virtual async Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken)
         {
             var objectGetRequest = new GetObjectRequest
             {
@@ -118,13 +118,13 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            using (GetObjectResponse objectGetResponse = m_client.GetObjectAsync(objectGetRequest).GetAwaiter().GetResult())
-            using (System.IO.Stream s = objectGetResponse.ResponseStream)
+            using (var objectGetResponse = await m_client.GetObjectAsync(objectGetRequest).ConfigureAwait(false))
+            using (var s = objectGetResponse.ResponseStream)
             {
                 try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
                 catch { }
 
-                Utility.Utility.CopyStream(s, target);
+                await Utility.Utility.CopyStreamAsync(s, target, cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -185,7 +185,7 @@ namespace Duplicati.Library.Backend
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
-                var listRequest = new ListObjectsRequest {BucketName = bucketName};
+                var listRequest = new ListObjectsRequest { BucketName = bucketName };
 
                 if (!string.IsNullOrEmpty(filename))
                     listRequest.Marker = filename;

@@ -115,7 +115,7 @@ namespace Duplicati.Library.Backend
         public IEnumerable<IFileEntry> List()
         {
             var lfr = HandleListExceptions(() => dbx.ListFiles(m_path));
-              
+
             foreach (var md in lfr.entries)
                 yield return ParseEntry(md);
 
@@ -129,14 +129,14 @@ namespace Duplicati.Library.Backend
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using(FileStream fs = File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+            using (var fs = File.OpenRead(filename))
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using(FileStream fs = File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public void Delete(string remotename)
@@ -157,9 +157,9 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Dropbox.AuthidShort, Strings.Dropbox.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("dropbox"))),
-                });
+                ]);
             }
         }
 
@@ -204,12 +204,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
                 string path = string.Format("{0}/{1}", m_path, remotename);
-                dbx.DownloadFile(path, stream);
+                await dbx.DownloadFileAsync(path, stream, cancelToken).ConfigureAwait(false);
             }
             catch (DropboxException)
             {

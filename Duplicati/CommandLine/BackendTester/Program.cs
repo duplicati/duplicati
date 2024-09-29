@@ -26,6 +26,7 @@ using Duplicati.Library.Interface;
 using System.Linq;
 using System.Globalization;
 using System.Threading;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -369,10 +370,10 @@ namespace Duplicati.CommandLine.BackendTester
                                     using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                     using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttleDownload, throttleDownload))
                                     using (NonSeekableStream nss = new NonSeekableStream(ts))
-                                        streamingBackend.Get(files[i].remotefilename, nss);
+                                        streamingBackend.GetAsync(files[i].remotefilename, nss, CancellationToken.None).Await();
                                 }
                                 else
-                                    backend.Get(files[i].remotefilename, cf);
+                                    backend.GetAsync(files[i].remotefilename, cf, CancellationToken.None).Await();
 
                                 e = null;
                             }
@@ -424,7 +425,7 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         using (Duplicati.Library.Utility.TempFile tempFile = new Duplicati.Library.Utility.TempFile())
                         {
-                            backend.Get(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name);
+                            backend.GetAsync(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name, CancellationToken.None).Await();
                         }
                     }
                     catch (FileMissingException)
@@ -519,10 +520,10 @@ namespace Duplicati.CommandLine.BackendTester
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttle, throttle))
                     using (NonSeekableStream nss = new NonSeekableStream(ts))
-                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Wait();
+                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Await();
                 }
                 else
-                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Wait();
+                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Await();
 
                 e = null;
             }

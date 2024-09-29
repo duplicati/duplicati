@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
@@ -49,8 +48,6 @@ namespace Duplicati.Library.Backend
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
         private readonly bool m_verifyDestinationLength;
-
-        private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private static readonly ISystemIO systemIO = SystemIO.IO_OS;
 
@@ -190,7 +187,7 @@ namespace Duplicati.Library.Backend
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
-                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
+                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken).ConfigureAwait(false);
             }
         }
 #else
@@ -199,17 +196,17 @@ namespace Duplicati.Library.Backend
             string targetFilePath = GetRemoteName(targetFilename);
             long copiedBytes = 0;
             using (var targetStream = systemIO.FileCreate(targetFilePath))
-                copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, targetStream, true, cancelToken, m_copybuffer);
+                copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, targetStream, true, cancelToken).ConfigureAwait(false);
 
             VerifyMatchingSize(targetFilePath, sourceStream, copiedBytes);
         }
 #endif
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
-            using (System.IO.FileStream readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
-                Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
+            using (var readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
+                await Utility.Utility.CopyStreamAsync(readstream, stream, true, cancelToken).ConfigureAwait(false);
         }
 
         public Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
@@ -234,12 +231,13 @@ namespace Duplicati.Library.Backend
                     VerifyMatchingSize(targetFilePath, sourceFilePath);
             }
 
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
-        public void Get(string remotename, string filename)
+        public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             systemIO.FileCopy(GetRemoteName(remotename), filename, true);
+            return Task.CompletedTask;
         }
 
         public void Delete(string remotename)

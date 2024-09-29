@@ -47,8 +47,6 @@ namespace Duplicati.Library.Backend
         private string m_authToken = null;
         private readonly string m_authUrl;
 
-        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
-
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public CloudFiles()
@@ -60,7 +58,7 @@ namespace Duplicati.Library.Backend
         public CloudFiles(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
-            
+
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
@@ -70,7 +68,7 @@ namespace Duplicati.Library.Backend
                 m_username = options["cloudfiles-username"];
             if (options.ContainsKey("cloudfiles-accesskey"))
                 m_password = options["cloudfiles-accesskey"];
-            
+
             if (!string.IsNullOrEmpty(uri.Username))
                 m_username = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -158,7 +156,7 @@ namespace Duplicati.Library.Backend
                     if (markerUrl == "") //Only check on first iteration
                         if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                             throw new FolderMissingException(wex);
-                    
+
                     //Other error, just re-throw
                     throw;
                 }
@@ -203,10 +201,10 @@ namespace Duplicati.Library.Backend
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public void Delete(string remotename)
@@ -240,16 +238,16 @@ namespace Duplicati.Library.Backend
 
         public IList<ICommandLineArgument> SupportedCommands
         {
-            get 
+            get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionAuthPasswordShort, Strings.CloudFiles.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthUsernameShort, Strings.CloudFiles.DescriptionAuthUsernameLong),
                     new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong, null, new string[] {"auth-username"} ),
                     new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong, null, new string[] {"auth-password"}),
                     new CommandLineArgument("cloudfiles-uk-account", CommandLineArgument.ArgumentType.Boolean, Strings.CloudFiles.DescriptionUKAccountShort, Strings.CloudFiles.DescriptionUKAccountLong("cloudfiles-authentication-url", AUTH_URL_UK)),
                     new CommandLineArgument("cloudfiles-authentication-url", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthenticationURLShort, Strings.CloudFiles.DescriptionAuthenticationURLLong_v2("cloudfiles-uk-account"), AUTH_URL_US),
-                });
+                ]);
             }
         }
 
@@ -261,7 +259,7 @@ namespace Duplicati.Library.Backend
         #endregion
 
         #region IBackend_v2 Members
-        
+
         public void Test()
         {
             //The "Folder not found" is not detectable :(
@@ -294,7 +292,7 @@ namespace Duplicati.Library.Backend
             get { return new string[] { new Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new Uri(m_storageUrl).Host }; }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var req = CreateRequest("/" + remotename, "");
             req.Method = "GET";
@@ -306,7 +304,7 @@ namespace Duplicati.Library.Backend
             using (var mds = new Utility.HashCalculatingStream(s, hasher))
             {
                 string md5Hash = resp.Headers["ETag"];
-                Utility.Utility.CopyStream(mds, stream, true, m_copybuffer);
+                await Utility.Utility.CopyStreamAsync(mds, stream, true, cancelToken).ConfigureAwait(false);
 
                 if (!String.Equals(mds.GetFinalHashString(), md5Hash, StringComparison.OrdinalIgnoreCase))
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
@@ -418,7 +416,7 @@ namespace Duplicati.Library.Backend
                     throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
             }
 
-            HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
+            var req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
             req.Headers.Add("X-Auth-Token", UrlEncode(m_authToken));
 
             req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
