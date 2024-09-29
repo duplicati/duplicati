@@ -478,7 +478,7 @@ namespace Duplicati.Library.Main
                                 switch (item.Operation)
                                 {
                                     case OperationType.Put:
-                                        DoPutAsync(item, CancellationToken.None).Await();                                            .ConfigureAwait(false).GetAwaiter().GetResult();
+                                        DoPutAsync(item, CancellationToken.None).Await();
                                         // We do not auto create folders,
                                         // because we know the folder exists
                                         uploadSuccess = true;
