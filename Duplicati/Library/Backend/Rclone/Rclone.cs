@@ -306,14 +306,15 @@ namespace Duplicati.Library.Backend
 
 
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            RcloneCommandExecuter(rclone_executable, $"mkdir {remote_repo}:{remote_path}", CancellationToken.None).Await();
+            return RcloneCommandExecuter(rclone_executable, $"mkdir {remote_repo}:{remote_path}", cancelToken);
         }
 
         #endregion

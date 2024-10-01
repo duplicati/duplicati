@@ -328,20 +328,20 @@ namespace Duplicati.Library.Backend
             get { return new string[] { m_dnsName }; }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             List();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-
-            using var timeoutToken = new CancellationTokenSource();
+            using var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
             timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
 
             using var requestResources = CreateRequest(string.Empty, new HttpMethod("MKCOL"));
 
-            using var response = requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+            using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
         }

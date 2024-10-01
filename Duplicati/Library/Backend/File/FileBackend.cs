@@ -272,17 +272,19 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (systemIO.DirectoryExists(m_path))
                 throw new FolderAreadyExistedException();
 
             systemIO.DirectoryCreate(m_path);
+            return Task.CompletedTask;
         }
 
         #endregion
@@ -334,30 +336,28 @@ namespace Duplicati.Library.Backend
             return null;
         }
 
-        public IQuotaInfo Quota
+        public Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
-            get
+            var driveInfo = this.GetDrive();
+            if (driveInfo != null)
             {
-                System.IO.DriveInfo driveInfo = this.GetDrive();
-                if (driveInfo != null)
+                // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
+                // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
+                if (driveInfo.TotalSize > 0)
                 {
-                    // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
-                    // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
-                    if (driveInfo.TotalSize > 0)
-                    {
-                        return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
-                    }
+                    return Task.FromResult<IQuotaInfo>(new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace));
                 }
-
-                if (OperatingSystem.IsWindows())
-                {
-                    // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
-                    // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
-                    return GetDiskFreeSpace(m_path);
-                }
-
-                return null;
             }
+
+            if (OperatingSystem.IsWindows())
+            {
+                // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
+                // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
+                return Task.FromResult<IQuotaInfo>(GetDiskFreeSpace(m_path));
+            }
+
+            return null;
+
         }
 
         public string[] DNSName

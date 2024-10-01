@@ -134,7 +134,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count != 2)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
-                        backend.CreateFolder();
+                        backend.CreateFolderAsync(CancellationToken.None).Await();
 
                         return 0;
                     }

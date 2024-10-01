@@ -271,16 +271,17 @@ namespace Duplicati.Library.Backend.TencentCOS
             return Task.CompletedTask;
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             var json = JsonConvert.SerializeObject(_cosOptions);
             try
             {
                 cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
-                HeadBucketRequest request = new HeadBucketRequest(bucket);
+                var request = new HeadBucketRequest(bucket);
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
-                HeadBucketResult result = cosXml.HeadBucket(request);
+                cancelToken.Register(() => request.Cancel());
+                var result = cosXml.HeadBucket(request);
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "Test", "Request complete {0}: {1}, {2}", result.httpCode, json, result.GetResultInfo());
             }
@@ -294,11 +295,14 @@ namespace Duplicati.Library.Backend.TencentCOS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Test", serverEx, "Request failed: {0}, {1}", json, serverEx.GetInfo());
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             // No need to create folders
+            return Task.CompletedTask;
         }
 
         public void Dispose()

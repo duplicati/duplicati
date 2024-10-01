@@ -78,13 +78,13 @@ namespace Duplicati.UnitTest
         {
             await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
         }
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
-            m_backend.Test();
+            return m_backend.TestAsync(cancelToken);
         }
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_backend.CreateFolder();
+            return m_backend.CreateFolderAsync(cancelToken);
         }
         public string[] DNSName
         {

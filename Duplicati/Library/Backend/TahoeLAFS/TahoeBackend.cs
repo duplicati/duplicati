@@ -113,7 +113,7 @@ namespace Duplicati.Library.Backend
 
         private System.Net.HttpWebRequest CreateRequest(string remotename, string queryparams)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
+            var req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
 
             req.KeepAlive = false;
             req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
@@ -123,18 +123,21 @@ namespace Duplicati.Library.Backend
 
         #region IBackend Members
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            System.Net.HttpWebRequest req = CreateRequest("", "t=mkdir");
+            var req = CreateRequest("", "t=mkdir");
             req.Method = System.Net.WebRequestMethods.Http.Post;
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            var areq = new Utility.AsyncHttpRequest(req);
             using (areq.GetResponse())
             { }
+
+            return Task.CompletedTask;
         }
 
         public string DisplayName

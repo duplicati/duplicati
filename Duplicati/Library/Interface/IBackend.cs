@@ -93,7 +93,8 @@ namespace Duplicati.Library.Interface
         /// If the encountered problem is a missing target &quot;folder&quot;,
         /// this method should throw a <see cref="FolderMissingException"/>.
         /// </summary>
-        void Test();
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task TestAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// The purpose of this method is to create the underlying &quot;folder&quot;.
@@ -103,6 +104,6 @@ namespace Duplicati.Library.Interface
         /// a <see cref="FolderMissingException"/> during <see cref="Test"/>, 
         /// and this method should throw a <see cref="MissingMethodException"/>.
         /// </summary>
-        void CreateFolder();
+        Task CreateFolderAsync(CancellationToken cancellationToken);
     }
 }

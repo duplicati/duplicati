@@ -427,7 +427,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!options.QuotaDisable)
                 {
-                    var quota = backendManager.Quota;
+                    var quota = backendManager.GetQuotaInfoAsync(CancellationToken.None).Await();
                     if (quota != null)
                     {
                         result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;

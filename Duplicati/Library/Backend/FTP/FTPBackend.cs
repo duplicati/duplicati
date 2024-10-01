@@ -362,12 +362,13 @@ namespace Duplicati.Library.Backend
             get { return new string[] { new Uri(m_url).Host }; }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             System.Net.FtpWebRequest req = CreateRequest("", true);
             req.Method = System.Net.WebRequestMethods.Ftp.MakeDirectory;
@@ -375,6 +376,8 @@ namespace Duplicati.Library.Backend
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (areq.GetResponse())
             { }
+
+            return Task.CompletedTask;
         }
 
         #endregion

@@ -455,7 +455,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
         /// <summary>
         /// Test FTP access permissions.
         /// </summary>
-        public void Test()
+        public async Task TestAsync(CancellationToken cancellationToken)
         {
             var list = List();
 
@@ -464,7 +464,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    DeleteAsync(TEST_FILE_NAME, CancellationToken.None).Await();
+                    await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -478,7 +478,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    PutAsync(TEST_FILE_NAME, testStream, CancellationToken.None).Await();
+                    await PutAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -492,7 +492,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    GetAsync(TEST_FILE_NAME, testStream, CancellationToken.None).Await();
+                    await GetAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
                     var readValue = System.Text.Encoding.UTF8.GetString(testStream.ToArray());
                     if (readValue != TEST_FILE_CONTENT)
                         throw new Exception("Test file corrupted.");
@@ -507,7 +507,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             // Cleanup
             try
             {
-                DeleteAsync(TEST_FILE_NAME, CancellationToken.None).Await();
+                await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -516,7 +516,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
             var client = CreateClient(false);
 
@@ -526,8 +526,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             var remotePath = this.GetUnescapedAbsolutePath(url);
 
             // Try to create the directory 
-            client.CreateDirectory(remotePath, true).Await();
-
+            return client.CreateDirectory(remotePath, true, cancellationToken);
         }
 
         public void Dispose()

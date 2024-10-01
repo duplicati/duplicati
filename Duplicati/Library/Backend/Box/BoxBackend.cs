@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -118,18 +119,15 @@ namespace Duplicati.Library.Backend.Box
             m_oauth = new BoxHelper(authid);
         }
 
-        private string CurrentFolder
+        private async Task<string> GetCurrentFolderWithCacheAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_currentfolder == null)
-                    GetCurrentFolder(false);
+            if (m_currentfolder == null)
+                await GetCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
 
-                return m_currentfolder;
-            }
+            return m_currentfolder;
         }
 
-        private void GetCurrentFolder(bool create)
+        private async Task GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
         {
             var parentid = "0";
 
@@ -141,10 +139,11 @@ namespace Duplicati.Library.Backend.Box
                     if (!create)
                         throw new FolderMissingException();
 
-                    el = m_oauth.PostAndGetJSONData<ListFolderResponse>(
+                    el = await m_oauth.PostAndGetJSONDataAsync<ListFolderResponse>(
                         string.Format("{0}/folders", BOX_API_URL),
+                        cancelToken,
                         new CreateItemRequest() { Name = p, Parent = new IDReference() { ID = parentid } }
-                    );
+                    ).ConfigureAwait(false);
                 }
 
                 parentid = el.ID;
@@ -153,13 +152,14 @@ namespace Duplicati.Library.Backend.Box
             m_currentfolder = parentid;
         }
 
-        private string GetFileID(string name)
+        private async Task<string> GetFileIDAsync(string name, CancellationToken cancelToken)
         {
             if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
 
             // Make sure we enumerate this, otherwise the m_filecache is empty.
-            PagedFileListResponse(CurrentFolder, false).LastOrDefault();
+            var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
+            PagedFileListResponse(currentFolder, false).LastOrDefault();
 
             if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
@@ -210,17 +210,18 @@ namespace Duplicati.Library.Backend.Box
 
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
+            var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
             var createreq = new CreateItemRequest()
             {
                 Name = remotename,
                 Parent = new IDReference()
                 {
-                    ID = CurrentFolder
+                    ID = currentFolder
                 }
             };
 
             if (m_filecache.Count == 0)
-                PagedFileListResponse(CurrentFolder, false);
+                PagedFileListResponse(currentFolder, false);
 
             var existing = m_filecache.ContainsKey(remotename);
 
@@ -251,7 +252,8 @@ namespace Duplicati.Library.Backend.Box
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using (var resp = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/content", BOX_API_URL, GetFileID(remotename)), cancelToken).ConfigureAwait(false))
+            var fileId = await GetFileIDAsync(remotename, cancelToken).ConfigureAwait(false);
+            using (var resp = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/content", BOX_API_URL, fileId), cancelToken).ConfigureAwait(false))
             using (var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
                 await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken).ConfigureAwait(false);
         }
@@ -262,8 +264,9 @@ namespace Duplicati.Library.Backend.Box
 
         public System.Collections.Generic.IEnumerable<IFileEntry> List()
         {
+            var currentFolder = GetCurrentFolderWithCacheAsync(CancellationToken.None).Await();
             return
-                from n in PagedFileListResponse(CurrentFolder, false)
+                from n in PagedFileListResponse(currentFolder, false)
                 select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
         }
 
@@ -281,7 +284,7 @@ namespace Duplicati.Library.Backend.Box
 
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            var fileid = GetFileID(remotename);
+            var fileid = await GetFileIDAsync(remotename, cancelToken).ConfigureAwait(false);
             try
             {
                 using (var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false))
@@ -300,14 +303,15 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            GetCurrentFolder(true);
+            return GetCurrentFolderAsync(true, cancellationToken);
         }
 
         public string DisplayName
@@ -347,7 +351,7 @@ namespace Duplicati.Library.Backend.Box
 
         public string[] DNSName
         {
-            get { return new string[] { new Uri(BOX_API_URL).Host, new Uri(BOX_UPLOAD_URL).Host }; }
+            get { return [new System.Uri(BOX_API_URL).Host, new System.Uri(BOX_UPLOAD_URL).Host]; }
         }
 
         #endregion

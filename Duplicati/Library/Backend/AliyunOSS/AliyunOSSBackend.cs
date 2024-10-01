@@ -177,15 +177,15 @@ namespace Duplicati.Library.Backend.AliyunOSS
             return Task.CompletedTask;
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             GetClient();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
-        {
+        public Task CreateFolderAsync(CancellationToken cancelToken)
             // No need to create folders
-        }
+            => Task.CompletedTask;
 
         public void Dispose()
         {

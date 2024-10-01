@@ -16,12 +16,12 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 => ExecuteDbPath(input.path))
                 .RequireAuthorization();
 
-            group.MapPost("/remoteoperation/test", ([FromQuery] bool? autocreate, [FromBody] RemoteOperationInput input)
-                => ExecuteTest(input.path, autocreate ?? false))
+            group.MapPost("/remoteoperation/test", ([FromQuery] bool? autocreate, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
+                => ExecuteTest(input.path, autocreate ?? false, cancelToken))
                 .RequireAuthorization();
 
-            group.MapPost("/remoteoperation/create", ([FromBody] RemoteOperationInput input)
-                => ExecuteCreate(input.path))
+            group.MapPost("/remoteoperation/create", ([FromBody] RemoteOperationInput input, CancellationToken cancelToken)
+                => ExecuteCreate(input.path, cancelToken))
                 .RequireAuthorization();
         }
 
@@ -74,7 +74,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new TupleDisposeWrapper(backend, modules);
         }
 
-        private static void ExecuteTest(string url, bool autoCreate)
+        private static async Task ExecuteTest(string url, bool autoCreate, CancellationToken cancelToken)
         {
             TupleDisposeWrapper? wrapper = null;
 
@@ -84,14 +84,14 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
                 using (var b = wrapper.Backend)
                 {
-                    try { b.Test(); }
+                    try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
                     catch (FolderMissingException)
                     {
                         if (!autoCreate)
                             throw;
 
-                        b.CreateFolder();
-                        b.Test();
+                        await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                        await b.TestAsync(cancelToken).ConfigureAwait(false);
                     }
 
                     return;
@@ -126,10 +126,10 @@ namespace Duplicati.WebserverCore.Endpoints.V1
         }
 
 
-        private static void ExecuteCreate(string uri)
+        private static async Task ExecuteCreate(string uri, CancellationToken cancelToken)
         {
             using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
-                b.CreateFolder();
+                await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
         }
 
     }

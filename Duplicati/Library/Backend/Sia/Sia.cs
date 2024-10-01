@@ -284,14 +284,16 @@ namespace Duplicati.Library.Backend.Sia
 
         #region IBackend Members
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             // Dummy method, Sia doesn't have folders
+            return Task.CompletedTask;
         }
 
         public string DisplayName

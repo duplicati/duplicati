@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -82,7 +83,7 @@ namespace Duplicati.Library.Backend
             //Fallback to the previous format
             if (url.Contains(DUMMY_HOSTNAME))
             {
-                Uri u = new Uri(url);
+                var u = new System.Uri(url);
 
                 if (!string.IsNullOrEmpty(u.UserInfo))
                 {
@@ -167,7 +168,7 @@ namespace Duplicati.Library.Backend
                 //The response should be 404 from the server, but it is not :(
                 if (lst.Count == 0 && markerUrl == "") //Only on first iteration
                 {
-                    try { CreateFolder(); }
+                    try { CreateFolderAsync(CancellationToken.None).Await(); }
                     catch { } //Ignore
                 }
 
@@ -262,19 +263,22 @@ namespace Duplicati.Library.Backend
 
         #region IBackend_v2 Members
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             //The "Folder not found" is not detectable :(
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            HttpWebRequest createReq = CreateRequest("", "");
+            var createReq = CreateRequest("", "");
             createReq.Method = "PUT";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(createReq);
-            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
+            var areq = new Utility.AsyncHttpRequest(createReq);
+            using (var resp = (HttpWebResponse)areq.GetResponse())
             { }
+
+            return Task.CompletedTask;
         }
 
         #endregion
@@ -291,7 +295,7 @@ namespace Duplicati.Library.Backend
 
         public string[] DNSName
         {
-            get { return new string[] { new Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new Uri(m_storageUrl).Host }; }
+            get { return [new System.Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new System.Uri(m_storageUrl).Host]; }
         }
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)

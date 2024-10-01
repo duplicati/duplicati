@@ -198,14 +198,15 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return _azureBlob.DnsNames; }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancellationToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            _azureBlob.AddContainer();
+            return _azureBlob.AddContainerAsync(cancellationToken);
         }
 
         public void Dispose()

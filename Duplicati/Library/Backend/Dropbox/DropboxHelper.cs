@@ -76,13 +76,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public FolderMetadata CreateFolder(string path)
+        public async Task<FolderMetadata> CreateFolderAsync(string path, CancellationToken cancellationToken)
         {
             var pa = new PathArg() { path = path };
 
             try
             {
-                return PostAndGetJSONData<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), pa);
+                return await PostAndGetJSONDataAsync<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), cancellationToken, pa).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

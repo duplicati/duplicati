@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend
     {
         IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix);
 
-        void AddBucket(string bucketName);
+        Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 
         Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 

@@ -28,6 +28,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OtpNet;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.Mega
 {
@@ -93,7 +94,7 @@ namespace Duplicati.Library.Backend.Mega
             m_prefix = uri.HostAndPath ?? "";
         }
 
-        private void GetCurrentFolder(bool autocreate = false)
+        private async Task FetchCurrentFolderAsync(bool autocreate, CancellationToken cancelToken)
         {
             var parts = m_prefix.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             var nodes = Client.GetNodes();
@@ -107,7 +108,7 @@ namespace Duplicati.Library.Backend.Mega
                     if (!autocreate)
                         throw new FolderMissingException();
 
-                    item = Client.CreateFolder(n, parent);
+                    item = await Client.CreateFolderAsync(n, parent).ConfigureAwait(false);
                 }
 
                 parent = item;
@@ -115,26 +116,23 @@ namespace Duplicati.Library.Backend.Mega
 
             m_currentFolder = parent;
 
-            ResetFileCache(nodes);
+            await ResetFileCacheAsync(nodes, cancelToken).ConfigureAwait(false);
         }
 
-        private INode CurrentFolder
+        private async Task<INode> GetCurrentFolderAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_currentFolder == null)
-                    GetCurrentFolder(false);
+            if (m_currentFolder == null)
+                await FetchCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
 
-                return m_currentFolder;
-            }
+            return m_currentFolder;
         }
 
-        private INode GetFileNode(string name)
+        private async Task<INode> GetFileNodeAsync(string name, CancellationToken cancelToken)
         {
             if (m_filecache != null && m_filecache.ContainsKey(name))
                 return m_filecache[name].OrderByDescending(x => x.ModificationDate).First();
 
-            ResetFileCache();
+            await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
 
             if (m_filecache != null && m_filecache.ContainsKey(name))
                 return m_filecache[name].OrderByDescending(x => x.ModificationDate).First();
@@ -142,16 +140,17 @@ namespace Duplicati.Library.Backend.Mega
             throw new FileMissingException();
         }
 
-        private void ResetFileCache(IEnumerable<INode> list = null)
+        private async Task ResetFileCacheAsync(IEnumerable<INode> list, CancellationToken cancelToken)
         {
             if (m_currentFolder == null)
             {
-                GetCurrentFolder(false);
+                await FetchCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
             }
             else
             {
+                var currentFolder = await GetCurrentFolderAsync(cancelToken).ConfigureAwait(false);
                 m_filecache =
-                    (list ?? Client.GetNodes()).Where(x => x.Type == NodeType.File && x.ParentId == CurrentFolder.Id)
+                    (list ?? Client.GetNodes()).Where(x => x.Type == NodeType.File && x.ParentId == currentFolder.Id)
                         .GroupBy(x => x.Name, x => x, (k, g) => new KeyValuePair<string, List<INode>>(k, g.ToList()))
                         .ToDictionary(x => x.Key, x => x.Value);
             }
@@ -164,9 +163,10 @@ namespace Duplicati.Library.Backend.Mega
             try
             {
                 if (m_filecache == null)
-                    ResetFileCache();
+                    await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
 
-                var el = await Client.UploadAsync(stream, remotename, CurrentFolder, new Progress(), null, cancelToken).ConfigureAwait(false);
+                var currentFolder = await GetCurrentFolderAsync(cancelToken).ConfigureAwait(false);
+                var el = await Client.UploadAsync(stream, remotename, currentFolder, new Progress(), null, cancelToken).ConfigureAwait(false);
                 if (m_filecache.ContainsKey(remotename))
                     await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
 
@@ -181,7 +181,8 @@ namespace Duplicati.Library.Backend.Mega
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using (var s = Client.Download(GetFileNode(remotename)))
+            var node = await GetFileNodeAsync(remotename, cancelToken).ConfigureAwait(false);
+            using (var s = Client.Download(node))
                 await Library.Utility.Utility.CopyStreamAsync(s, stream, cancelToken).ConfigureAwait(false);
         }
 
@@ -192,7 +193,7 @@ namespace Duplicati.Library.Backend.Mega
         public IEnumerable<IFileEntry> List()
         {
             if (m_filecache == null)
-                ResetFileCache();
+                ResetFileCacheAsync(null, CancellationToken.None).Await();
 
             return
                 from n in m_filecache.Values
@@ -217,7 +218,7 @@ namespace Duplicati.Library.Backend.Mega
             try
             {
                 if (m_filecache == null || !m_filecache.ContainsKey(remotename))
-                    ResetFileCache();
+                    await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
 
                 if (!m_filecache.ContainsKey(remotename))
                     throw new FileMissingException();
@@ -234,14 +235,15 @@ namespace Duplicati.Library.Backend.Mega
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            GetCurrentFolder(true);
+            return FetchCurrentFolderAsync(true, cancelToken);
         }
 
         public string DisplayName

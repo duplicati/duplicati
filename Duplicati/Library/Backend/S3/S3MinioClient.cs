@@ -28,7 +28,6 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Minio;
 using Minio.Exceptions;
-using Minio.DataModel;
 
 namespace Duplicati.Library.Backend
 {
@@ -76,11 +75,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void AddBucket(string bucketName)
+        public async Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             try
             {
-                m_client.MakeBucketAsync(bucketName, m_locationConstraint);
+                await m_client.MakeBucketAsync(bucketName, m_locationConstraint, cancelToken).ConfigureAwait(false);
             }
             catch (MinioException e)
             {

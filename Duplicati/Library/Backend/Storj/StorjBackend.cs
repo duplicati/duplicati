@@ -168,9 +168,10 @@ namespace Duplicati.Library.Backend.Storj
             }
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //Storj DCS has no folders
+            return Task.CompletedTask;
         }
 
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
@@ -281,14 +282,16 @@ namespace Duplicati.Library.Backend.Storj
             }
         }
 
-        public void Test()
+        public async Task TestAsync(CancellationToken cancelToken)
         {
-            var testTask = TestAsync();
-            testTask.Wait(10000);
-            if (!testTask.Result)
-            {
+            var ct = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
+            var testTask = TestImplAsync(ct.Token);
+            ct.CancelAfter(10000);
+            await Task.WhenAny(testTask, Task.Delay(Timeout.Infinite, ct.Token)).ConfigureAwait(false);
+            if (testTask.IsCompleted)
+                await testTask.ConfigureAwait(false);
+            else if (!testTask.IsCompletedSuccessfully)
                 throw new Exception(Strings.Storj.TestConnectionFailed);
-            }
         }
 
         /// <summary>
@@ -298,7 +301,7 @@ namespace Duplicati.Library.Backend.Storj
         /// - downloading the file back and expecting 256 bytes
         /// </summary>
         /// <returns>true, if the test was successfull or and exception</returns>
-        private async Task<bool> TestAsync()
+        private async Task<bool> TestImplAsync(CancellationToken cancelToken)
         {
             string testFileName = GetBasePath() + "duplicati_test.dat";
 

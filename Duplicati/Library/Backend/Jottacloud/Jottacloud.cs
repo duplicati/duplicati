@@ -329,28 +329,31 @@ namespace Duplicati.Library.Backend
             get { return Strings.Jottacloud.Description; }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             // When using custom (backup) device we must create the device first (if not already exists).
             if (!m_device_builtin)
             {
-                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 { }
             }
             // Create the folder path, and if using custom mount point it will be created as well in the same operation.
             {
-                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 { }
             }
+
+            return Task.CompletedTask;
         }
 
         #endregion

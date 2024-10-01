@@ -592,14 +592,15 @@ namespace Duplicati.Library.Backend.OpenStack
             var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
             return m_helper.ReadJSONResponseAsync<object>(url, cancelToken, null, "DELETE");
         }
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             var url = JoinUrls(SimpleStorageEndPoint, m_container);
-            using (m_helper.GetResponse(url, null, "PUT"))
+            using (await m_helper.GetResponseAsync(url, cancelToken, null, "PUT").ConfigureAwait(false))
             { }
         }
         public string DisplayName

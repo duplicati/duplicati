@@ -493,7 +493,7 @@ namespace Duplicati.Library.Main
                                         DoDeleteAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.CreateFolder:
-                                        DoCreateFolder(item);
+                                        DoCreateFolderAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.Terminate:
                                         m_queue.SetCompleted();
@@ -547,7 +547,7 @@ namespace Duplicati.Library.Main
                                 try
                                 {
                                     // If we successfully create the folder, we can re-use the connection
-                                    m_backend.CreateFolder();
+                                    m_backend.CreateFolderAsync(CancellationToken.None).Await();
                                     recovered = true;
                                 }
                                 catch (Exception dex)
@@ -997,14 +997,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
         }
 
-        private void DoCreateFolder(FileEntryItem item)
+        private async Task DoCreateFolderAsync(FileEntryItem item, CancellationToken cancelToken)
         {
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Started, null, -1);
 
             string result = null;
             try
             {
-                m_backend.CreateFolder();
+                await m_backend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -1308,7 +1308,8 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
-        public IQuotaInfo Quota => (m_backend as IQuotaEnabledBackend)?.Quota;
+        public Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
+            => (m_backend as IQuotaEnabledBackend)?.GetQuotaInfoAsync(cancelToken) ?? Task.FromResult<IQuotaInfo>(null);
 
         public bool FlushDbMessages()
         {

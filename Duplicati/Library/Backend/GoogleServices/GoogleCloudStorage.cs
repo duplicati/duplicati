@@ -164,12 +164,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             return m_oauth.ReadJSONResponseAsync<object>(req, cancelToken);
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (string.IsNullOrEmpty(m_project))
                 throw new UserInformationException(Strings.GoogleCloudStorage.ProjectIDMissingError(PROJECT_OPTION), "GoogleCloudStorageMissingProjectID");
@@ -189,9 +190,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var areq = new AsyncHttpRequest(req);
 
             using (var rs = areq.GetRequestStream())
-                rs.Write(data, 0, data.Length);
+                await rs.WriteAsync(data, 0, data.Length, cancelToken);
 
-            m_oauth.ReadJSONResponse<BucketResourceItem>(areq);
+            await m_oauth.ReadJSONResponseAsync<BucketResourceItem>(areq, cancelToken).ConfigureAwait(false);
         }
 
         public string DisplayName

@@ -422,22 +422,24 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_bucket = m_helper.PostAndGetJSONData<BucketEntity>(
+            m_bucket = await m_helper.PostAndGetJSONDataAsync<BucketEntity>(
                 string.Format("{0}/b2api/v1/b2_create_bucket", m_helper.APIUrl),
+                cancelToken,
                 new BucketEntity()
                 {
                     AccountID = m_helper.AccountID,
                     BucketName = m_bucketname,
                     BucketType = m_bucketType
                 }
-            );
+            ).ConfigureAwait(false);
         }
 
         public string DisplayName

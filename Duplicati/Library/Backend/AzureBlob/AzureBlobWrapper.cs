@@ -97,10 +97,10 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container = blobClient.GetContainerReference(containerName);
         }
 
-        public void AddContainer()
+        public async Task AddContainerAsync(CancellationToken cancellationToken)
         {
-            _container.CreateAsync(default, _operationContext).GetAwaiter().GetResult();
-            _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off });
+            await _container.CreateAsync(default, default, _operationContext, cancellationToken).ConfigureAwait(false);
+            await _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off }, default, default, _operationContext, cancellationToken).ConfigureAwait(false);
         }
 
         public virtual Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancellationToken)

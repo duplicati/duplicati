@@ -84,7 +84,7 @@ namespace Duplicati.Library.Backend
             m_useChunkEncoding = !disableChunkEncoding;
         }
 
-        public void AddBucket(string bucketName)
+        public Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             var request = new PutBucketRequest
             {
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            m_client.PutBucketAsync(request).GetAwaiter().GetResult();
+            return m_client.PutBucketAsync(request, cancelToken);
         }
 
         internal static AmazonS3Config GetDefaultAmazonS3Config()

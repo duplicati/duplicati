@@ -170,16 +170,17 @@ namespace Duplicati.Library.Backend
             get { return WebApi.Dropbox.Hosts(); }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             try
             {
-                dbx.CreateFolder(m_path);
+                await dbx.CreateFolderAsync(m_path, cancelToken).ConfigureAwait(false);
             }
             catch (DropboxException de)
             {

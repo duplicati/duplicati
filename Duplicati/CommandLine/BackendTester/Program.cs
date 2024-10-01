@@ -177,7 +177,7 @@ namespace Duplicati.CommandLine.BackendTester
                 IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
-                    backend.Test();
+                    backend.TestAsync(CancellationToken.None).Await();
                     curlist = backend.List();
                 }
                 catch (FolderMissingException)
@@ -186,7 +186,7 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         try
                         {
-                            backend.CreateFolder();
+                            backend.CreateFolderAsync(CancellationToken.None).Await();
                             curlist = backend.List();
                         }
                         catch (Exception ex)
@@ -452,7 +452,7 @@ namespace Duplicati.CommandLine.BackendTester
                     bool noException;
                     try
                     {
-                        quota = quotaEnabledBackend.Quota;
+                        quota = quotaEnabledBackend.GetQuotaInfoAsync(CancellationToken.None).Await();
                         noException = true;
                     }
                     catch (Exception ex)

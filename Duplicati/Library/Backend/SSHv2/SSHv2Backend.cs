@@ -111,12 +111,13 @@ namespace Duplicati.Library.Backend
 
         #region IBackend Members
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             CreateConnection();
 
@@ -138,6 +139,8 @@ namespace Duplicati.Library.Backend
                     this.m_con.CreateDirectory(partialPath);
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         public string DisplayName => Strings.SSHv2Backend.DisplayName;
