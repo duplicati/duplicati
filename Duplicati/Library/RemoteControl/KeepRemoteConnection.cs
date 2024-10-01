@@ -47,6 +47,11 @@ public class KeepRemoteConnection : IDisposable
     private static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(30);
 
     /// <summary>
+    /// The interval between reconnect attempts
+    /// </summary>
+    private static readonly TimeSpan NoResponseTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>
     /// The interval between heartbeats
     /// </summary>
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(15);
@@ -179,9 +184,8 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     private Task RunMainLoop()
     {
-        //TODO: If we close the socket, it reconnects immediately
-        // casuing excessive usage
-        _client.ReconnectTimeout = ReconnectInterval;
+        _client.ReconnectTimeout = NoResponseTimeout;
+        _client.LostReconnectTimeout = ReconnectInterval;
         _client.IsReconnectionEnabled = true;
 
         _client.DisconnectionHappened.Subscribe(info =>
