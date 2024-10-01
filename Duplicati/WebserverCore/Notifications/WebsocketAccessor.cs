@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using Duplicati.Library.Logging;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Abstractions.Notifications;
@@ -10,6 +11,7 @@ namespace Duplicati.WebserverCore.Notifications;
 
 public class WebsocketAccessor : IWebsocketAccessor
 {
+    private static readonly string LOGTAG = Log.LogTagFromType<WebsocketAccessor>();
     private readonly ConcurrentBag<WebSocket> _connections = new();
     private readonly JsonSerializerSettings m_jsonSettings;
     private readonly IStatusService _statusService;
@@ -55,16 +57,23 @@ public class WebsocketAccessor : IWebsocketAccessor
         }
     }
 
-    private Task Send<T>(T data, IEnumerable<WebSocket> connections)
+    private async Task Send<T>(T data, IEnumerable<WebSocket> connections)
     {
-        var json = JsonConvert.SerializeObject(data, m_jsonSettings);
-        var bytes = json.GetBytes();
+        try
+        {
+            var json = JsonConvert.SerializeObject(data, m_jsonSettings);
+            var bytes = json.GetBytes();
 
-        return Task.WhenAll(
-            connections
-                .Where(c => c.State == WebSocketState.Open)
-                .Select(c => c.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None))
-        );
+            await Task.WhenAll(
+                connections
+                    .Where(c => c.State == WebSocketState.Open)
+                    .Select(c => c.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None))
+            ).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "WebsockSendFailure", ex, $"Failed to send websocket message: {ex.Message}");
+        }
     }
 
     public Task Send<T>(T data) => Send(data, Connections);
