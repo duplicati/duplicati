@@ -24,28 +24,12 @@ using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using Duplicati.Library.Main;
 
 namespace Duplicati.Server.Database
 {
     public class Backup : IBackup
     {
-        // Sensitive information that may be stored in TargetUrl
-        private readonly string[] UrlPasswords = {
-            "authid",
-            "auth-password",
-            "sia-password",
-            "storj-secret",
-            "storj-shared-access",
-        };
-
-        // Sensitive information that may be stored in Settings
-        private readonly string[] SettingPasswords = {
-            "passphrase",
-            "--authid",
-            "--send-mail-password",
-            "--send-xmpp-password",
-        };
-
         public Backup()
         {
             this.ID = null;
@@ -135,10 +119,8 @@ namespace Duplicati.Server.Database
                 // breaks assumptions made by the decode_uri function in AppUtils.js. Since we are simply
                 // removing password parameters, we will leave the parameters as they are in the target URL.
                 filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
-                foreach (string field in this.UrlPasswords)
-                {
-                    filteredParameters.Remove(field);
-                }
+                foreach (var key in filteredParameters.AllKeys.Where(x => Options.AllPasswordOptions.Contains(x)).ToList())
+                    filteredParameters.Remove(key);
             }
             url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(filteredParameters));
             this.TargetURL = url.ToString();
@@ -149,7 +131,7 @@ namespace Duplicati.Server.Database
         /// </summary>
         public void SanitizeSettings()
         {
-            this.Settings = this.Settings.Where((setting) => !SettingPasswords.Contains(setting.Name)).ToArray();
+            this.Settings = this.Settings.Where((setting) => !Options.AllPasswordOptions.Contains(setting.Name)).ToArray();
         }
     }
 }

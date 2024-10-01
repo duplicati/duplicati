@@ -26,7 +26,6 @@ using Duplicati.Server.Serialization.Interface;
 using System.Text;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.Encryption;
-using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Main;
 
 namespace Duplicati.Server.Database
@@ -40,20 +39,12 @@ namespace Duplicati.Server.Database
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
         private readonly bool m_encryptSensitiveFields;
-        private static readonly HashSet<string> _encryptedFields =
-            BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
-                .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
-                .Concat(CompressionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
-                .Concat(GenericLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
-                .Concat(WebLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
-                .Concat(new Options(new Dictionary<string, string>()).SupportedCommands)
-                .Where(x => x.Type == Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password)
-                .SelectMany(x => new string[] { x.Name }.Concat(x.Aliases ?? []))
-                .SelectMany(x => new string[] { x, $"--{x}" })
-                .Concat([
-                    ServerSettings.CONST.JWT_CONFIG,
-                    ServerSettings.CONST.PBKDF_CONFIG
-                ])
+        private static readonly IReadOnlySet<string> _encryptedFields =
+            Options.AllPasswordOptions
+            .Concat([
+                ServerSettings.CONST.JWT_CONFIG,
+                ServerSettings.CONST.PBKDF_CONFIG
+            ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         public Connection(System.Data.IDbConnection connection, bool disableFieldEncryption)

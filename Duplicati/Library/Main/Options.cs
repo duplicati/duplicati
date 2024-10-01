@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Globalization;
+using Duplicati.Library.DynamicLoader;
 
 namespace Duplicati.Library.Main
 {
@@ -34,6 +35,21 @@ namespace Duplicati.Library.Main
     /// </summary>
     public class Options
     {
+        /// <summary>
+        /// A set of options that are considered to be password-like
+        /// </summary>
+        public static IReadOnlySet<string> AllPasswordOptions { get; } =
+            BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
+                .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(CompressionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(GenericLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(WebLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
+                .Concat(new Options(new Dictionary<string, string>()).SupportedCommands)
+                .Where(x => x.Type == CommandLineArgument.ArgumentType.Password)
+                .SelectMany(x => new string[] { x.Name }.Concat(x.Aliases ?? []))
+                .SelectMany(x => new string[] { x, $"--{x}" })
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         private const string DEFAULT_BLOCK_HASH_ALGORITHM = "SHA256";
         private const string DEFAULT_FILE_HASH_ALGORITHM = "SHA256";
 
