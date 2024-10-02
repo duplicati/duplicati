@@ -116,7 +116,11 @@ internal sealed record EnvelopedMessage
     /// <summary>
     /// The payload of the message
     /// </summary>
-    public string? Payload { get; init; }
+    public required string? Payload { get; init; }
+    /// <summary>
+    /// The optional error message
+    /// </summary>
+    public required string? ErrorMessage { get; init; }
 
     /// <summary>
     /// Parses a raw message into an envelope, throwing on error
@@ -194,6 +198,7 @@ internal sealed record EnvelopedMessage
             To = From,
             Type = type ?? Type,
             MessageId = MessageId,
+            ErrorMessage = null,
             Payload = JsonSerializer.Serialize(payload, options: KeepRemoteConnection.JsonOptions)
         };
 }
