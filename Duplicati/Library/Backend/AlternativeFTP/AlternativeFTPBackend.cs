@@ -447,10 +447,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(_url).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] { new Uri(_url).Host });
 
         /// <summary>
         /// Test FTP access permissions.

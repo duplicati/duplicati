@@ -230,13 +230,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             get { return Strings.GoogleCloudStorage.Description; }
         }
 
-        public string[] DNSName
-        {
-            get
-            {
-                return WebApi.GoogleCloudStorage.Hosts();
-            }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.GoogleCloudStorage.Hosts());
 
         #endregion
 

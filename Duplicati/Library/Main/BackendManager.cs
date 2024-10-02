@@ -528,7 +528,7 @@ namespace Duplicati.Library.Main
                                 {
                                     try
                                     {
-                                        var names = m_backend.DNSName ?? new string[0];
+                                        var names = m_backend.GetDNSNamesAsync(CancellationToken.None).Await() ?? new string[0];
                                         foreach (var name in names)
                                             if (!string.IsNullOrWhiteSpace(name))
                                                 System.Net.Dns.GetHostEntry(name);

@@ -102,13 +102,9 @@ namespace Duplicati.UnitTest
         {
             return m_backend.CreateFolderAsync(cancelToken);
         }
-        public string[] DNSName
-        {
-            get
-            {
-                return m_backend.DNSName;
-            }
-        }
+
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend.GetDNSNamesAsync(cancelToken);
+
         public string DisplayName
         {
             get

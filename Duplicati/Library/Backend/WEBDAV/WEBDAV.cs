@@ -323,10 +323,7 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { m_dnsName }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_dnsName });
 
         public Task TestAsync(CancellationToken cancelToken)
         {

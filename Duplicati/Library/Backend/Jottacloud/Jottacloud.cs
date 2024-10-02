@@ -377,10 +377,10 @@ namespace Duplicati.Library.Backend
             return CreateRequest(method, url, queryparams);
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+            new Uri(JFS_ROOT).Host,
+            new Uri(JFS_ROOT_UPLOAD).Host
+        });
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {

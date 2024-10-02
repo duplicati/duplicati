@@ -113,10 +113,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { m_orgUrl.Host, string.IsNullOrWhiteSpace(m_spWebUrl) ? null : new Utility.Uri(m_spWebUrl).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+            m_orgUrl.Host,
+            string.IsNullOrWhiteSpace(m_spWebUrl) ? null : new Utility.Uri(m_spWebUrl).Host
+        }.Where(s => !string.IsNullOrWhiteSpace(s))
+        .ToArray());
 
         #endregion
 

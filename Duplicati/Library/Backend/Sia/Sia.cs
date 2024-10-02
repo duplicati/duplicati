@@ -476,10 +476,7 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new System.Uri(m_apihost).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { new System.Uri(m_apihost).Host });
 
         #endregion
 

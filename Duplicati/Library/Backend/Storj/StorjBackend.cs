@@ -160,13 +160,7 @@ namespace Duplicati.Library.Backend.Storj
             }
         }
 
-        public string[] DNSName
-        {
-            get
-            {
-                return new string[0];
-            }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

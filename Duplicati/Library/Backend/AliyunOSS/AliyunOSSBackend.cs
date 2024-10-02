@@ -307,6 +307,6 @@ namespace Duplicati.Library.Backend.AliyunOSS
             }
         }
 
-        public string[] DNSName => null;
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
     }
 }

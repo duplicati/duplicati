@@ -479,7 +479,7 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Checking DNS names used by this backend...");
                 try
                 {
-                    string[] dnsNames = backend.DNSName;
+                    var dnsNames = backend.GetDNSNamesAsync(CancellationToken.None).Await();
                     if (dnsNames != null)
                     {
                         foreach (string dnsName in dnsNames)

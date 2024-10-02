@@ -445,7 +445,7 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public string[] DNSName => null;
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
         private string GetFullKey(string name)
         {

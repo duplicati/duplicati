@@ -165,10 +165,7 @@ namespace Duplicati.Library.Backend
 
         public string Description { get { return Strings.Dropbox.Description; } }
 
-        public string[] DNSName
-        {
-            get { return WebApi.Dropbox.Hosts(); }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.Dropbox.Hosts());
 
         public Task TestAsync(CancellationToken cancelToken)
         {

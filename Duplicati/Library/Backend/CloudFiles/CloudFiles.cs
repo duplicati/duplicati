@@ -24,6 +24,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
@@ -293,10 +294,14 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public string[] DNSName
-        {
-            get { return [new System.Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new System.Uri(m_storageUrl).Host]; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(
+            new string[] {
+                new System.Uri(m_authUrl).Host,
+                string.IsNullOrWhiteSpace(m_storageUrl) ? null : new System.Uri(m_storageUrl).Host
+            }
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray()
+        );
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {

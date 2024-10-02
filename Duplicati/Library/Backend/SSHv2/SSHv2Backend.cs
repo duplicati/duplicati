@@ -420,9 +420,6 @@ namespace Duplicati.Library.Backend
             get { return m_con; }
         }
 
-        public string[] DNSName
-        {
-            get { return new[] { m_server }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_server });
     }
 }

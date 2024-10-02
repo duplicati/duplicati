@@ -85,7 +85,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// The DNS names used to resolve the IP addresses for this backend
         /// </summary>
-        string[] DNSName { get; }
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>The DNS names</returns>
+        Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken);
 
         /// <summary>
         /// The purpose of this method is to test the connection to the remote backend.

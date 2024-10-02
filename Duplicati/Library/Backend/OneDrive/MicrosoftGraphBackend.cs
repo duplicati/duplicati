@@ -226,7 +226,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private async Task<string[]> GetDnsNamesAsync(CancellationToken cancelToken)
+        public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
         {
             if (this.dnsNames == null)
             {
@@ -267,8 +267,6 @@ namespace Duplicati.Library.Backend
 
             return this.dnsNames;
         }
-
-        public string[] DNSName => this.GetDnsNamesAsync(CancellationToken.None).Await();
 
         public async Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
         {

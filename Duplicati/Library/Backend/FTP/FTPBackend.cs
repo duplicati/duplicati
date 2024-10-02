@@ -357,10 +357,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(m_url).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] { new Uri(m_url).Host });
 
         public Task TestAsync(CancellationToken cancelToken)
         {

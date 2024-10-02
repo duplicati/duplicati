@@ -457,10 +457,12 @@ namespace Duplicati.Library.Backend.Backblaze
             get { return Strings.B2.Description; }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new System.Uri(B2AuthHelper.AUTH_URL).Host, m_helper?.APIDnsName, m_helper?.DownloadDnsName }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+            new System.Uri(B2AuthHelper.AUTH_URL).Host,
+            m_helper?.APIDnsName,
+            m_helper?.DownloadDnsName
+        }.Where(x => !string.IsNullOrEmpty(x))
+        .ToArray());
 
         public void Dispose()
         {

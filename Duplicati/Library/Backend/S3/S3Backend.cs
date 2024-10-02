@@ -391,10 +391,7 @@ namespace Duplicati.Library.Backend
             get { return s3Client; }
         }
 
-        public string[] DNSName
-        {
-            get { return new[] { s3Client.GetDnsHost() }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { s3Client.GetDnsHost() });
 
         private string GetFullKey(string name)
         {

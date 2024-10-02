@@ -193,10 +193,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public string[] DNSName
-        {
-            get { return _azureBlob.DnsNames; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
 
         public Task TestAsync(CancellationToken cancellationToken)
         {

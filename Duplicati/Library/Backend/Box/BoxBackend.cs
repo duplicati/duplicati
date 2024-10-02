@@ -349,10 +349,10 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public string[] DNSName
-        {
-            get { return [new System.Uri(BOX_API_URL).Host, new System.Uri(BOX_UPLOAD_URL).Host]; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+            new System.Uri(BOX_API_URL).Host,
+            new System.Uri(BOX_UPLOAD_URL).Host
+        });
 
         #endregion
 

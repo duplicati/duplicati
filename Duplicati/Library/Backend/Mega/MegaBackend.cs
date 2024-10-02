@@ -282,10 +282,7 @@ namespace Duplicati.Library.Backend.Mega
             }
         }
 
-        public string[] DNSName
-        {
-            get { return null; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
         #endregion
 

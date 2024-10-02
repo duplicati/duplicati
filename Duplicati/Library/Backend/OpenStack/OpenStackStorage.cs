@@ -645,16 +645,10 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public virtual string[] DNSName
-        {
-            get
-            {
-                return new string[] {
-                    new System.Uri(m_authUri).Host,
-                    string.IsNullOrWhiteSpace(m_simplestorageendpoint) ? null : new System.Uri(m_simplestorageendpoint).Host
-                };
-            }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] {
+            new System.Uri(m_authUri).Host,
+            string.IsNullOrWhiteSpace(m_simplestorageendpoint) ? null : new System.Uri(m_simplestorageendpoint).Host
+        });
 
         #endregion
         #region IDisposable implementation

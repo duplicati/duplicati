@@ -297,14 +297,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-
-
-        public string[] DNSName
-        {
-            get { return new string[] { remote_repo }; }
-        }
-
-
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { remote_repo });
 
         public Task TestAsync(CancellationToken cancelToken)
         {

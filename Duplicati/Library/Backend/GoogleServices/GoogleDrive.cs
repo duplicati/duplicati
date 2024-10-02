@@ -356,10 +356,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public string[] DNSName
-        {
-            get { return WebApi.GoogleDrive.Hosts(); }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.GoogleDrive.Hosts());
 
         #endregion
 

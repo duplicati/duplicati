@@ -357,13 +357,9 @@ namespace Duplicati.Library.Backend
             }
 
             return null;
-
         }
 
-        public string[] DNSName
-        {
-            get { return null; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
         public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
