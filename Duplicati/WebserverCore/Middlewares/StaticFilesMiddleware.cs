@@ -1,11 +1,22 @@
+using System.Text;
+using Duplicati.Library.Logging;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.FileProviders.Physical;
 using Microsoft.Net.Http.Headers;
+using Newtonsoft.Json;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
 public static class StaticFilesExtensions
 {
+#if DEBUG
+    private static readonly bool DEBUG_MODE = true;
+#else
+    private static readonly bool DEBUG_MODE = false;
+#endif
+
+
     private static readonly HashSet<string> _nonCachePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "/",
@@ -27,9 +38,105 @@ public static class StaticFilesExtensions
         MaxAge = TimeSpan.FromDays(7)
     };
 
+    private sealed record SpaConfig(string Prefix, byte[] IndexFile, string BasePath);
 
-    public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, string webroot)
+    private static byte[] ReadAndPatchIndexFile(FileInfo file, string prefix)
     {
+        if (!prefix.EndsWith("/"))
+            prefix += "/";
+
+        var index = File.ReadAllBytes(file.FullName);
+        var indexStr = Encoding.UTF8.GetString(index);
+        indexStr = indexStr.Replace("<base href=\"/\">", $"<base href=\"{prefix}\">");
+        return Encoding.UTF8.GetBytes(indexStr);
+    }
+
+    public static IApplicationBuilder UseDefaultStaticFiles(this WebApplication app, string webroot, IEnumerable<string> spaPaths)
+    {
+        var fileTypeMappings = new FileExtensionContentTypeProvider()
+        {
+            Mappings = {
+                    ["htc"] = "text/x-component",
+                    ["json"] = "application/json",
+                    ["map"] = "application/json",
+                    ["htm"] = "text/html; charset=utf-8",
+                    ["html"] = "text/html; charset=utf-8",
+                    ["hbs"] = "application/x-handlebars-template",
+                    ["woff"] = "application/font-woff",
+                    ["woff2"] = "application/font-woff"
+                }
+        };
+
+        var prefixHandlerMap = new List<SpaConfig>();
+        var missingFile = new FileInfo(Path.Combine(webroot, "missing-spa.html"));
+
+        foreach (var prefix in spaPaths)
+        {
+            var basepath = Path.Combine(webroot, prefix.TrimStart('/'));
+            if (!Directory.Exists(basepath))
+                continue;
+
+            var file = Path.Combine(basepath, "index.html");
+            var fi = new FileInfo(file);
+            if (fi.Exists)
+            {
+                prefixHandlerMap.Add(new SpaConfig(prefix, ReadAndPatchIndexFile(fi, prefix), basepath));
+            }
+            else if (DEBUG_MODE)
+            {
+                // Install from NPM in debug mode for easier development
+                var spaConfig = NpmSpaHelper.ProbeForNpmSpa(basepath);
+                if (spaConfig != null)
+                    prefixHandlerMap.Add(new SpaConfig(prefix, ReadAndPatchIndexFile(spaConfig.IndexFile, prefix), spaConfig.BasePath));
+                else if (spaConfig == null && missingFile.Exists)
+                    prefixHandlerMap.Add(new SpaConfig(prefix, File.ReadAllBytes(missingFile.FullName), basepath));
+            }
+        }
+
+        if (prefixHandlerMap.Any())
+        {
+            prefixHandlerMap = prefixHandlerMap.OrderByDescending(p => p.Prefix.Length).ToList();
+            app.Use(async (context, next) =>
+            {
+                await next();
+
+                // Not found only
+                if (context.Response.StatusCode != 404 || context.Response.HasStarted)
+                    return;
+
+                // Check if we can use the path
+                var path = context.Request.Path;
+                if (!path.HasValue)
+                    return;
+
+                // Check if the path is a SPA path
+                var spaConfig = prefixHandlerMap.FirstOrDefault(p => path.Value.StartsWith(p.Prefix));
+                if (spaConfig == null)
+                    return;
+
+                if (string.IsNullOrEmpty(Path.GetExtension(path)) || path.Value.EndsWith("/index.html"))
+                {
+                    // Serve the index file
+                    context.Response.ContentType = "text/html";
+                    context.Response.StatusCode = 200;
+                    await context.Response.Body.WriteAsync(spaConfig.IndexFile);
+                    await context.Response.CompleteAsync();
+                }
+                else
+                {
+                    // Serve the static file
+                    var file = new FileInfo(Path.Combine(spaConfig.BasePath, path.Value.Substring(spaConfig.Prefix.Length).TrimStart('/')));
+                    if (file.FullName.StartsWith(spaConfig.BasePath) && file.Exists && fileTypeMappings.Mappings.TryGetValue(Path.GetExtension(file.Extension), out var contentType))
+                    {
+                        context.Response.ContentType = contentType;
+                        context.Response.StatusCode = 200;
+                        await context.Response.SendFileAsync(new PhysicalFileInfo(file));
+                        await context.Response.CompleteAsync();
+                    }
+                }
+            });
+        }
+
         var fileProvider = new PhysicalFileProvider(Path.GetFullPath(webroot));
         var defaultFiles = GetDefaultFiles(fileProvider);
         app.UseDefaultFiles(defaultFiles);
@@ -43,23 +150,11 @@ public static class StaticFilesExtensions
                 var headers = context.Context.Response.GetTypedHeaders();
                 var path = context.Context.Request.Path.Value ?? string.Empty;
                 headers.CacheControl =
-                    (path.EndsWith("/index.html") || _nonCachePaths.Contains(path))
-                        ? _noCache
-                        : _allowCache;
+                                (path.EndsWith("/index.html") || _nonCachePaths.Contains(path))
+                                    ? _noCache
+                                    : _allowCache;
             },
-            ContentTypeProvider = new FileExtensionContentTypeProvider()
-            {
-                Mappings = {
-                    ["htc"] = "text/x-component",
-                    ["json"] = "application/json",
-                    ["map"] = "application/json",
-                    ["htm"] = "text/html; charset=utf-8",
-                    ["html"] = "text/html; charset=utf-8",
-                    ["hbs"] = "application/x-handlebars-template",
-                    ["woff"] = "application/font-woff",
-                    ["woff2"] = "application/font-woff",
-                }
-            }
+            ContentTypeProvider = fileTypeMappings
         });
 
         return app;
