@@ -464,6 +464,9 @@ public static partial class Command
         // Inject various files that will be embedded into the build artifacts
         var revertableFiles = await PrepareSourceDirectory(baseDir, releaseInfo, rtcfg);
 
+        // Record the files that are replaced by the npm package
+        revertableFiles.AddRange(await ReplaceNpmPackages(baseDir, input.BuildPath.FullName, releaseInfo, rtcfg));
+
         // Inject a version tag into the html files
         revertableFiles.AddRange(InjectVersionIntoFiles(baseDir, releaseInfo));
 
@@ -720,6 +723,61 @@ public static partial class Command
             Path.Combine(baseDir, "changelog.txt")
         });
     }
+
+    /// <summary>
+    /// Uses NPM to replace the node_modules folder in the webroot with a fresh install
+    /// </summary>
+    /// <param name="baseDir">The base directory</param>
+    /// <param name="buildDir">The build directory</param>
+    /// <param name="releaseInfo">The release info</param>
+    /// <param name="rtcfg">The runtime configuration</param>
+    /// <returns>The files that were deleted</returns>
+    static async Task<List<string>> ReplaceNpmPackages(string baseDir, string buildDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
+    {
+        var deleted = new List<string>();
+
+        // Find all webroot folders with a package.json and package-lock.json
+        var targets = Directory.EnumerateDirectories(Path.Combine(baseDir, "Duplicati", "Server", "webroot"), "*", SearchOption.TopDirectoryOnly)
+            .Where(x => File.Exists(Path.Combine(x, "package.json")) && File.Exists(Path.Combine(x, "package-lock.json")))
+            .ToList();
+
+        foreach (var target in targets)
+        {
+            if (string.IsNullOrWhiteSpace(Program.Configuration.Commands.Npm))
+                throw new Exception("NPM command not found, but required for building");
+
+            // Remove existing node_modules folder
+            if (Directory.Exists(Path.Combine(target, "node_modules")))
+                Directory.Delete(Path.Combine(target, "node_modules"), true);
+
+            // These will be deleted after the build
+            deleted.AddRange(Directory.EnumerateFiles(target, "*", SearchOption.AllDirectories));
+
+            var tmp = Path.Combine(buildDir, "tmp-npm");
+            if (Directory.Exists(tmp))
+                Directory.Delete(tmp, true);
+
+            Directory.CreateDirectory(tmp);
+            EnvHelper.CopyDirectory(target, tmp, true);
+
+            // Run npm install in the temporary folder
+            await ProcessHelper.Execute(new[] { Program.Configuration.Commands.Npm, "ci" }, workingDirectory: tmp);
+            var basefolder = Directory.EnumerateDirectories(Path.Combine(tmp, "node_modules"), "*", SearchOption.AllDirectories)
+                .Where(x => File.Exists(Path.Combine(x, "index.html")))
+                .OrderBy(x => x.Length)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(basefolder))
+                throw new Exception($"Failed to locate node_modules folder in {target}");
+
+            Directory.Delete(target, true);
+            Directory.Move(basefolder, target);
+            Directory.Delete(tmp, true);
+        }
+
+        return deleted;
+    }
+
 
     /// <summary>
     /// Loads a keyfile and decrypts the RSA key inside
