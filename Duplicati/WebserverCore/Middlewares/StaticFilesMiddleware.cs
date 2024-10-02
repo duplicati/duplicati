@@ -1,22 +1,13 @@
 using System.Text;
-using Duplicati.Library.Logging;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.FileProviders.Physical;
 using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
 
 namespace Duplicati.WebserverCore.Middlewares;
 
 public static class StaticFilesExtensions
 {
-#if DEBUG
-    private static readonly bool DEBUG_MODE = true;
-#else
-    private static readonly bool DEBUG_MODE = false;
-#endif
-
-
     private static readonly HashSet<string> _nonCachePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "/",
@@ -82,7 +73,8 @@ public static class StaticFilesExtensions
             {
                 prefixHandlerMap.Add(new SpaConfig(prefix, ReadAndPatchIndexFile(fi, prefix), basepath));
             }
-            else if (DEBUG_MODE)
+#if DEBUG            
+            else
             {
                 // Install from NPM in debug mode for easier development
                 var spaConfig = NpmSpaHelper.ProbeForNpmSpa(basepath);
@@ -91,6 +83,7 @@ public static class StaticFilesExtensions
                 else if (spaConfig == null && missingFile.Exists)
                     prefixHandlerMap.Add(new SpaConfig(prefix, File.ReadAllBytes(missingFile.FullName), basepath));
             }
+#endif
         }
 
         if (prefixHandlerMap.Any())

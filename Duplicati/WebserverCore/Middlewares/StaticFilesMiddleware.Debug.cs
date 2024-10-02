@@ -1,3 +1,4 @@
+#if DEBUG
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Text.Json;
@@ -161,3 +162,4 @@ internal static class NpmSpaHelper
     }
 
 }
+#endif
