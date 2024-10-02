@@ -60,6 +60,11 @@ public sealed record SystemInfoDto
     public required string OSType { get; init; }
 
     /// <summary>
+    /// Gets or sets the OS version.
+    /// </summary>
+    public required string OSVersion { get; init; }
+
+    /// <summary>
     /// Gets or sets the directory separator.
     /// </summary>
     public required char DirectorySeparator { get; init; }
@@ -98,11 +103,6 @@ public sealed record SystemInfoDto
     /// Gets or sets the CLR version.
     /// </summary>
     public required string CLRVersion { get; init; }
-
-    /// <summary>
-    /// Gets or sets the CLR OS information.
-    /// </summary>
-    public required CLROSInfoDto CLROSInfo { get; init; }
 
     /// <summary>
     /// Gets or sets the options.
@@ -173,32 +173,6 @@ public sealed record SystemInfoDto
     /// Gets or sets a value indicating whether the browser locale is supported.
     /// </summary>
     public required bool BrowserLocaleSupported { get; init; }
-
-    /// <summary>
-    /// Represents CLR OS information.
-    /// </summary>
-    public class CLROSInfoDto
-    {
-        /// <summary>
-        /// Gets or sets the platform.
-        /// </summary>
-        public required string Platform { get; init; }
-
-        /// <summary>
-        /// Gets or sets the service pack.
-        /// </summary>
-        public required string ServicePack { get; init; }
-
-        /// <summary>
-        /// Gets or sets the version.
-        /// </summary>
-        public required string Version { get; init; }
-
-        /// <summary>
-        /// Gets or sets the version string.
-        /// </summary>
-        public required string VersionString { get; init; }
-    }
 
     /// <summary>
     /// Represents a special folder.

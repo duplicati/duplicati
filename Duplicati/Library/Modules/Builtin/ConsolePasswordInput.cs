@@ -126,13 +126,13 @@ namespace Duplicati.Library.Modules.Builtin
                     break;
 
                 if (k.Key == ConsoleKey.Escape)
-                    throw new Library.Interface.CancelException("");
+                    throw new Interface.CancelException("");
 
-                if (k.KeyChar != '\0') passphrase.Append(k.KeyChar);
+                if (k.KeyChar != '\0')
+                    passphrase.Append(k.KeyChar);
 
-                //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                    Console.Write("*");
+                // Provide feedback to the user
+                Console.Write("*");
             }
 
             Console.WriteLine();
@@ -153,9 +153,8 @@ namespace Duplicati.Library.Modules.Builtin
 
                     password2.Append(k.KeyChar);
 
-                    //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                    if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                        Console.Write("*");
+                    // Provide feedback to the user
+                    Console.Write("*");
                 }
                 Console.WriteLine();
 
