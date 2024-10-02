@@ -72,10 +72,10 @@ namespace Duplicati.UnitTest
             Action<string, string> checkStringComparison = (x, y) => Assert.IsFalse(String.Equals(x, y, Utility.ClientFilenameStringComparison));
             Action<string, string> checkStringComparer = (x, y) => Assert.IsFalse(new HashSet<string>(new[] { x }).Contains(y, Utility.ClientFilenameStringComparer));
 
-            System.Globalization.CultureInfo originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+            CultureInfo originalCulture = CultureInfo.CurrentCulture;
             try
             {
-                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo(cultureName, false);
+                CultureInfo.CurrentCulture = new CultureInfo(cultureName, false);
 
                 // These are equivalent with respect to hu-HU, but different with respect to en-US.
                 string ddzs = "ddzs";
@@ -97,7 +97,7 @@ namespace Duplicati.UnitTest
             }
             finally
             {
-                System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+                CultureInfo.CurrentCulture = originalCulture;
             }
         }
 
