@@ -118,7 +118,7 @@ namespace Duplicati.GUI.TrayIcon
                     else
                         throw;
                 }
-
+                
                 // We have a hosted server, if this is the first run, 
                 // we should open the main page
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
