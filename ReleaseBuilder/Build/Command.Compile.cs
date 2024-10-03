@@ -14,13 +14,12 @@ public static partial class Command
         /// <param name="buildDir">The folder where builds should be placed</param>
         /// <param name="sourceProjects">The projects to build</param>
         /// <param name="windowsOnlyProjects">Projects that are only for the Windows targets</param>
-        /// <param name="guiProjects">Projects that are only needed for GUI builds</param>
         /// <param name="buildTargets">The targets to build</param>
         /// <param name="releaseInfo">The release info to use for the build</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>A task that completes when the build is done</returns>
-        public static async Task BuildProjects(string baseDir, string buildDir, IEnumerable<string> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<string> guiProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds)
+        public static async Task BuildProjects(string baseDir, string buildDir, Dictionary<InterfaceType, IEnumerable<string>> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds)
         {
             // For tracing, create a log folder and store all logs there
             var logFolder = Path.Combine(buildDir, "logs");
@@ -48,12 +47,12 @@ public static partial class Command
                     var tmpfolder = Path.Combine(buildDir, target.BuildTargetString + "-tmp");
                     Console.WriteLine($"Building {target.BuildTargetString} ...");
 
-                    foreach (var proj in sourceProjects)
+                    if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
+                        throw new InvalidOperationException($"No projects found for {target.Interface}");
+
+                    foreach (var proj in buildProjects)
                     {
                         if (target.OS != OSType.Windows && windowsOnlyProjects.Contains(proj))
-                            continue;
-
-                        if (target.Interface == InterfaceType.Cli && guiProjects.Contains(proj))
                             continue;
 
                         // TODO: Self contained builds are bloating the build size

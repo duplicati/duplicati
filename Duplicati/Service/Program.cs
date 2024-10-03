@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.Service
 {
@@ -28,9 +29,9 @@ namespace Duplicati.Service
         [STAThread]
         public static int Main(string[] args)
         {
-            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.Service);
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.Service);
 
-            using (var runner = new Runner(args))
+            using (var runner = new Runner(PackageHelper.NamedExecutable.Server, args))
                 runner.Wait();
 
             return 0;

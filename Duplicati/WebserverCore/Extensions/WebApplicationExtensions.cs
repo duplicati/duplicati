@@ -23,6 +23,9 @@ public static class WebApplicationExtensions
             .AddEndpointFilter<LanguageFilter>()
             .AddEndpointFilter<HostnameFilter>();
 
+        if (!string.IsNullOrWhiteSpace(PreSharedKeyFilter.PreSharedKey))
+            group = group.AddEndpointFilter<PreSharedKeyFilter>();
+
         foreach (var endpoint in endpoints)
         {
             var methodMap = endpoint.GetMethod(nameof(IEndpointV1.Map), BindingFlags.Static | BindingFlags.Public);

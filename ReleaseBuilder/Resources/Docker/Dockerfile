@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM debian:latest
+FROM debian:latest
 
 RUN apt update && apt install tini
 ENTRYPOINT [ "/usr/bin/tini", "--" ]

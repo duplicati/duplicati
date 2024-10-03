@@ -37,15 +37,17 @@ namespace Duplicati.Service
 
         private readonly object m_writelock = new object();
         private readonly string[] m_cmdargs;
+        private readonly PackageHelper.NamedExecutable m_executable;
 
 
         private readonly int WAIT_POLL_TIME = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
 
-        public Runner(string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null)
+        public Runner(PackageHelper.NamedExecutable executable, string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null)
         {
             m_onStartedAction = onStartedAction;
             m_onStoppedAction = onStoppedAction;
             m_reportMessage = logMessage;
+            m_executable = executable;
             if (m_reportMessage == null)
                 m_reportMessage = (x, y) => Console.WriteLine(x);
 
@@ -59,7 +61,7 @@ namespace Duplicati.Service
         private void Run()
         {
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            var exec = System.IO.Path.Combine(path, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.Server));
+            var exec = System.IO.Path.Combine(path, PackageHelper.GetExecutableName(m_executable));
             var cmdargs = "--ping-pong-keepalive=true";
             if (m_cmdargs != null && m_cmdargs.Length > 0)
                 cmdargs = Duplicati.Library.Utility.Utility.WrapAsCommandLine(new string[] { cmdargs }.Concat(m_cmdargs));
