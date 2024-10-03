@@ -303,7 +303,10 @@ public static partial class Command
             {
                 var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
                 var updates = new[] { Path.Combine(appFolder, "Contents", "MacOS", "package_type_id.txt") }
-                    .Concat(ExecutableRenames.Values.Select(x => Path.Combine(appFolder, "Contents", "MacOS", x)))
+                    .Concat(
+                            ExecutableRenames.Values.Select(x => Path.Combine(appFolder, "Contents", "MacOS", x))
+                            .Where(File.Exists)
+                    )
                     .Append(appFolder);
 
                 foreach (var x in updates)
