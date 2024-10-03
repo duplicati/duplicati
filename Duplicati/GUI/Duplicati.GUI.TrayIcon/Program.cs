@@ -25,6 +25,7 @@ using System.IO;
 using System.Net;
 using Duplicati.Library.Interface;
 using Duplicati.Server;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -107,9 +108,15 @@ namespace Duplicati.GUI.TrayIcon
                     Server.Program.Origin = "Tray icon";
                     hosted = new HostedInstanceKeeper(_args);
                 }
-                catch (Server.SingleInstance.MultipleInstanceException)
+                catch (Exception ex)
                 {
-                    return 1;
+                    if (ex.InnerException != null && ex.InnerException is Server.SingleInstance.MultipleInstanceException)
+                    {
+                        Console.WriteLine(Server.Strings.Program.AnotherInstanceDetected);
+                        return 1;
+                    }
+                    else
+                        throw;
                 }
 
                 // We have a hosted server, if this is the first run, 
