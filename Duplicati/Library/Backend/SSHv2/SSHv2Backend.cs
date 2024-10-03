@@ -249,14 +249,22 @@ namespace Duplicati.Library.Backend
                 null);
         }
 
-        public Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            return Task.Factory.FromAsync(
-                (cb, state) => m_con.BeginDownloadFile(remotename, stream, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
-                m_con.EndDownloadFile,
-                null);
+
+            try
+            {
+                await Task.Factory.FromAsync(
+                    (cb, state) => m_con.BeginDownloadFile(remotename, stream, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
+                    m_con.EndDownloadFile,
+                    null).ConfigureAwait(false);
+            }
+            catch (SftpPathNotFoundException ex)
+            {
+                throw new FileMissingException(ex);
+            }
         }
 
         #endregion
