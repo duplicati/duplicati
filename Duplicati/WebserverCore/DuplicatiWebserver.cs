@@ -43,13 +43,16 @@ public partial class DuplicatiWebserver
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">The certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
+    /// <param name="AllowedHostnames">The allowed hostnames</param>
+    /// <param name="SPAPaths">The paths to serve as SPAs</param>
     public record InitSettings(
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2? Certificate,
         string Servername,
-        IEnumerable<string> AllowedHostnames
+        IEnumerable<string> AllowedHostnames,
+        IEnumerable<string> SPAPaths
     );
 
     public void InitWebServer(InitSettings settings, Connection connection)
@@ -192,7 +195,7 @@ public partial class DuplicatiWebserver
             });
         }
 
-        App.UseDefaultStaticFiles(settings.WebRoot);
+        App.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
 
         App.UseExceptionHandler(app =>
         {

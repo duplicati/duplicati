@@ -58,9 +58,19 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT = "webservice-allowedhostnames";
 
     /// <summary>
+    /// Option for setting the webservice SPA paths
+    /// </summary>
+    public const string OPTION_WEBSERVICE_SPAPATHS = "webservice-spa-paths";
+
+    /// <summary>
     /// The default path to the web root
     /// </summary>
     public const string DEFAULT_OPTION_WEBROOT = "webroot";
+
+    /// <summary>
+    /// The default paths to serve as SPAs
+    /// </summary>
+    public const string DEFAULT_OPTION_SPAPATHS = "/ngclient";
 
     /// <summary>
     /// The default listening port
@@ -91,13 +101,15 @@ public static class WebServerLoader
     /// <param name="Certificate">The certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
+    /// <param name="SPAPaths">The paths to serve as SPAs</param>
     public record ParsedWebserverSettings(
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2? Certificate,
         string Servername,
-        IEnumerable<string> AllowedHostnames
+        IEnumerable<string> AllowedHostnames,
+        IEnumerable<string> SPAPaths
     );
 
 
@@ -191,6 +203,10 @@ public static class WebServerLoader
 #endif
         }
 
+        options.TryGetValue(OPTION_WEBSERVICE_SPAPATHS, out var spaPathsString);
+        if (string.IsNullOrWhiteSpace(spaPathsString))
+            spaPathsString = DEFAULT_OPTION_SPAPATHS;
+
         var certValid = cert != null && cert.HasPrivateKey;
         var settings = new ParsedWebserverSettings(
             webroot,
@@ -198,7 +214,8 @@ public static class WebServerLoader
             listenInterface,
             cert,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
-            (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+            (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
+            spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
 
         // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first
