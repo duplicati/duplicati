@@ -1,3 +1,45 @@
+2024-10-03 - 2.0.9.108_canary_2024-10-03
+==========
+This release is a canary release intended to be used for testing in preparation of a later stable release.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+
+For that reason, the updater in previous canary builds does not detect this update yet, but this can be activated at a later time.
+
+The builds are self-contained so Mono or .NET installations are not required to install.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Upgrade from `v2.0.9.105`
+If you are upgrading from 2.0.9.105 please see the release notes from 2.0.9.106 for how to prepare the database. 
+Upgrades from other versions do not need special steps.
+
+# New experimental UI
+This version features a new more modern UI based on Angular18 :tada:
+Not all features are implemented just yet, so the new UI is not yet default.
+The curious ones can try it by visiting `http://localhost:8200/theme.html` (or similar).
+
+## Detailed list of changes:
+- Added export feature to server-util
+- Default to using .NET built-in Zip code for performance improvements
+- Added `/health` healthcheck API to server + server-util
+- Removed unuspported use of `Thread.CurrentCulture`
+- Removed unsupported use of `Environment.OSVersion`
+- Removed support for piped download as it was slow and caused hangs
+- Fixed an issue with multi-instance detection that caused crashes
+- Added a new experimental UI
+- Added support for enabling remote control
+
 2024-09-11 - 2.0.9.107_canary_2024-09-11
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.

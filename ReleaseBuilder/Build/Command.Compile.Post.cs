@@ -234,7 +234,8 @@ public static partial class Command
 
                 // Executables cannot be signed before their dependencies are signed
                 // So they are placed last in the list
-                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x));
+                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x))
+                    .Where(File.Exists);
 
                 var signtargets = Directory.EnumerateFiles(binDir, "*", SearchOption.AllDirectories)
                     .Except(executables)
