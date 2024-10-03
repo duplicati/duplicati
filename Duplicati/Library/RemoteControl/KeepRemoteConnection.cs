@@ -158,6 +158,10 @@ public class KeepRemoteConnection : IDisposable
     /// The server keys
     /// </summary>
     private IEnumerable<MiniServerCertificate> _serverKeys;
+    /// <summary>
+    /// The last time a message was received
+    /// </summary>
+    private DateTimeOffset _lastMessageReceived = DateTimeOffset.MinValue;
 
     /// <summary>
     /// Creates a new connection to the remote server
@@ -187,7 +191,7 @@ public class KeepRemoteConnection : IDisposable
     {
         _client.ReconnectTimeout = NoResponseTimeout;
         _client.LostReconnectTimeout = ReconnectInterval;
-        _client.IsReconnectionEnabled = false;
+        _client.IsReconnectionEnabled = true;
 
         // Set up the periodic refreshers
         using var reconnectHelper = new PeriodicRefresher(
@@ -204,6 +208,19 @@ public class KeepRemoteConnection : IDisposable
             TimeSpan.FromSeconds(1),
             _ =>
             {
+                // Reconnect if we have disconnected
+                if (!_client.IsRunning)
+                {
+                    reconnectHelper.Signal();
+                }
+                // If we do not get any response from the server, we should reconnect
+                else if ((_state == ConnectionState.Authenticated || _state == ConnectionState.WelcomeReceived) && _lastMessageReceived.Add(NoResponseTimeout) < DateTimeOffset.Now)
+                {
+                    _state = ConnectionState.Error;
+                    Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "No response from server");
+                    _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "No response");
+                }
+
                 SendEnvelope(new EnvelopedMessage()
                 {
                     From = ClientId,
@@ -239,6 +256,7 @@ public class KeepRemoteConnection : IDisposable
             if (_state == ConnectionState.Error)
                 return;
 
+            _lastMessageReceived = DateTimeOffset.Now;
             Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
 
             try
