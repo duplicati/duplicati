@@ -778,7 +778,8 @@ public static partial class Command
         var deleted = new List<string>();
 
         // Find all webroot folders with a package.json and package-lock.json
-        var targets = Directory.EnumerateDirectories(Path.Combine(baseDir, "Duplicati", "Server", "webroot"), "*", SearchOption.TopDirectoryOnly)
+        var webroot = Path.Combine(baseDir, "Duplicati", "Server", "webroot");
+        var targets = Directory.EnumerateDirectories(webroot, "*", SearchOption.TopDirectoryOnly)
             .Where(x => File.Exists(Path.Combine(x, "package.json")) && File.Exists(Path.Combine(x, "package-lock.json")))
             .ToList();
 
@@ -815,6 +816,15 @@ public static partial class Command
             Directory.Move(basefolder, target);
             Directory.Delete(tmp, true);
             foldersToRemove.Add(target);
+
+            var indexfile = Path.Combine(target, "index.html");
+            if (File.Exists(indexfile))
+            {
+                var content = File.ReadAllText(indexfile);
+                var prefix = target.Substring(webroot.Length).Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+                content = content.Replace("<base href=\"/\">", $"<base href=\"/{prefix}/\">");
+                File.WriteAllText(indexfile, content);
+            }
         }
 
         return deleted.Where(x => !Path.GetFileName(x).StartsWith("."))
