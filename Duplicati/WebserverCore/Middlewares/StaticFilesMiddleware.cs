@@ -112,7 +112,11 @@ public static class StaticFilesExtensions
                     // Serve the index file
                     context.Response.ContentType = "text/html";
                     context.Response.StatusCode = 200;
+#if DEBUG
+                    await context.Response.Body.WriteAsync(ReadAndPatchIndexFile(new FileInfo(Path.Combine(spaConfig.BasePath, "index.html")), spaConfig.Prefix));
+#else
                     await context.Response.Body.WriteAsync(spaConfig.IndexFile);
+#endif                    
                     await context.Response.CompleteAsync();
                 }
                 else
