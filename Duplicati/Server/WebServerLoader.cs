@@ -86,11 +86,20 @@ public static class WebServerLoader
     /// Option for disabling the use of signin tokens
     /// </summary>
     public const string OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS = "webservice-disable-signin-tokens";
+    /// <summary>
+    /// Option for setting the webservice SPA paths
+    /// </summary>
+    public const string OPTION_WEBSERVICE_SPAPATHS = "webservice-spa-paths";
 
     /// <summary>
     /// The default path to the web root
     /// </summary>
     public const string DEFAULT_OPTION_WEBROOT = "webroot";
+
+    /// <summary>
+    /// The default paths to serve as SPAs
+    /// </summary>
+    public const string DEFAULT_OPTION_SPAPATHS = "/ngclient";
 
     /// <summary>
     /// The default listening port
@@ -122,6 +131,7 @@ public static class WebServerLoader
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
+    /// <param name="SPAPaths">The paths to serve as SPAs</param>
     public record ParsedWebserverSettings(
         string WebRoot,
         int Port,
@@ -129,7 +139,8 @@ public static class WebServerLoader
         X509Certificate2? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
-        bool DisableStaticFiles
+        bool DisableStaticFiles,
+        IEnumerable<string> SPAPaths
     );
 
 
@@ -223,6 +234,10 @@ public static class WebServerLoader
 #endif
         }
 
+        options.TryGetValue(OPTION_WEBSERVICE_SPAPATHS, out var spaPathsString);
+        if (string.IsNullOrWhiteSpace(spaPathsString))
+            spaPathsString = DEFAULT_OPTION_SPAPATHS;
+
         var certValid = cert != null && cert.HasPrivateKey;
         var settings = new ParsedWebserverSettings(
             webroot,
@@ -231,7 +246,8 @@ public static class WebServerLoader
             cert,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
-            Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY)
+            Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
+            spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
 
         // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first

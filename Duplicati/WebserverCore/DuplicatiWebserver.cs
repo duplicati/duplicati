@@ -33,6 +33,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
@@ -65,6 +66,7 @@ public partial class DuplicatiWebserver
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
+    /// <param name="SPAPaths">The paths to serve as SPAs</param>
     public record InitSettings(
         string WebRoot,
         int Port,
@@ -72,7 +74,8 @@ public partial class DuplicatiWebserver
         X509Certificate2? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
-        bool DisableStaticFiles
+        bool DisableStaticFiles,
+        IEnumerable<string> SPAPaths
     );
 
     public void InitWebServer(InitSettings settings, Connection connection)
@@ -180,6 +183,9 @@ public partial class DuplicatiWebserver
                 };
             });
 
+        builder.Services.AddHealthChecks()
+            .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
+
         builder.Services.AddDuplicati(connection);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
@@ -213,7 +219,7 @@ public partial class DuplicatiWebserver
         }
 
         if (!settings.DisableStaticFiles)
-            App.UseDefaultStaticFiles(settings.WebRoot);
+            App.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
 
         App.UseExceptionHandler(app =>
         {
@@ -244,6 +250,7 @@ public partial class DuplicatiWebserver
 
     public Task Start(InitSettings settings)
     {
+        App.MapHealthChecks("/health");
         App.AddEndpoints()
             .UseNotifications("/notifications");
 

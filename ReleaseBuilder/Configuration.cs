@@ -297,6 +297,7 @@ public record ConfigFiles(
 /// <param name="Productsign">The &quot;productsign&quot; command</param>
 /// <param name="Wix">The &quot;wix&quot; command</param>
 /// <param name="Docker">The &quot;docker&quot; command</param>
+/// <param name="Npm">The &quot;npm&quot; command</param>
 public record Commands(
     string Dotnet,
     string? Gpg,
@@ -304,7 +305,8 @@ public record Commands(
     string? Codesign,
     string? Productsign,
     string? Wix,
-    string? Docker
+    string? Docker,
+    string? Npm
 )
 {
     /// <summary>
@@ -319,7 +321,8 @@ public record Commands(
             OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null,
             OperatingSystem.IsMacOS() ? FindCommand("productsign", "PRODUCTSIGN") : null,
             FindCommand(OperatingSystem.IsWindows() ? "wix" : "wixl", "WIX"),
-            FindCommand("docker", "DOCKER")
+            FindCommand("docker", "DOCKER"),
+            FindCommand("npm", "NPM")
         );
 }
 

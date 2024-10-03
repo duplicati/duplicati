@@ -21,11 +21,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Duplicati.Library.AutoUpdater;
-using Duplicati.Library.Common;
 using FilterGroup = Duplicati.Library.Utility.FilterGroup;
 
 namespace Duplicati.CommandLine
@@ -88,8 +88,8 @@ namespace Duplicati.CommandLine
                 //Force translation off if this is from the commandline
                 if (Program.FROM_COMMANDLINE)
                 {
-                    System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-                    System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+                    CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+                    CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
                 }
             }
             catch

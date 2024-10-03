@@ -30,6 +30,7 @@ public static class Program
                 Logout.Create(),
                 Import.Create(),
                 Export.Create(),
+                Health.Create(),
             };
 
         rootCmd = SettingsBinder.AddGlobalOptions(rootCmd);
