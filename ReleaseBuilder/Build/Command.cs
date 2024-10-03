@@ -464,11 +464,12 @@ public static partial class Command
         // Inject various files that will be embedded into the build artifacts
         var revertableFiles = await PrepareSourceDirectory(baseDir, releaseInfo, rtcfg);
 
-        // Record the files that are replaced by the npm package
-        revertableFiles.AddRange(await ReplaceNpmPackages(baseDir, input.BuildPath.FullName, releaseInfo, rtcfg));
-
         // Inject a version tag into the html files
         revertableFiles.AddRange(InjectVersionIntoFiles(baseDir, releaseInfo));
+
+        // Record the files that are replaced by the npm package
+        var foldersToRemove = new List<string>();
+        revertableFiles.AddRange(await ReplaceNpmPackages(baseDir, input.BuildPath.FullName, foldersToRemove, releaseInfo, rtcfg));
 
         // Perform the main compilations
         await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, guiOnlyProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds);
@@ -591,6 +592,10 @@ public static partial class Command
         }
 
         // Clean up the source tree
+        foreach (var folder in foldersToRemove)
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+
         await ProcessHelper.Execute(new[] {
                 "git", "checkout",
             }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
@@ -729,10 +734,11 @@ public static partial class Command
     /// </summary>
     /// <param name="baseDir">The base directory</param>
     /// <param name="buildDir">The build directory</param>
+    /// <param name="foldersToRemove">The folders to remove after the build</param>
     /// <param name="releaseInfo">The release info</param>
     /// <param name="rtcfg">The runtime configuration</param>
     /// <returns>The files that were deleted</returns>
-    static async Task<List<string>> ReplaceNpmPackages(string baseDir, string buildDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
+    static async Task<List<string>> ReplaceNpmPackages(string baseDir, string buildDir, List<string> foldersToRemove, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
     {
         var deleted = new List<string>();
 
@@ -773,9 +779,11 @@ public static partial class Command
             Directory.Delete(target, true);
             Directory.Move(basefolder, target);
             Directory.Delete(tmp, true);
+            foldersToRemove.Add(target);
         }
 
-        return deleted;
+        return deleted.Where(x => !Path.GetFileName(x).StartsWith("."))
+            .ToList();
     }
 
 
