@@ -49,18 +49,10 @@ namespace Duplicati.Library.Snapshots
         [DllImport("libc", EntryPoint = "strerror", SetLastError = true)]
         private static extern IntPtr strerror(int errnum);
 
-        [DllImport("libc", EntryPoint = "__errno_location", SetLastError = true)]
-        private static extern IntPtr __errno_location();
-
-        private static int GetErrno()
-        {
-            return Marshal.ReadInt32(__errno_location());
-        }
-
         private static string GetErrorMessage(int errno)
         {
             IntPtr strPtr = strerror(errno);
-            return Marshal.PtrToStringAnsi(strPtr);
+            return Marshal.PtrToStringAnsi(strPtr) ?? $"Unknown error: {errno}";
         }
 
         private class UnixFileHandle : SafeHandleZeroOrMinusOneIsInvalid
@@ -173,10 +165,10 @@ namespace Duplicati.Library.Snapshots
         public override Stream OpenRead(string localPath)
         {
             IntPtr filePtr = fopen(localPath, "r");
+            var errorNo = Marshal.GetLastWin32Error(); // Surprisingly, this is to be used on linux/macos
             if (filePtr == IntPtr.Zero)
             {
-                int errno = GetErrno();
-                throw new IOException($"Unable to open file: {localPath}. Error: {errno} - {GetErrorMessage(errno)}");
+                throw new IOException($"Unable to open file: {localPath}. Error: {errorNo} - {GetErrorMessage(errorNo)}");
             }
             
             UnixFileHandle unixHandle = new(filePtr);
