@@ -19,9 +19,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
+using Microsoft.Win32.SafeHandles;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -32,6 +36,48 @@ namespace Duplicati.Library.Snapshots
     [SupportedOSPlatform("macOS")]
     public sealed class NoSnapshotLinux : SnapshotBase
     {
+
+        [DllImport("libc", EntryPoint = "fopen", SetLastError = true)]
+        private static extern IntPtr fopen(string path, string mode);
+
+        [DllImport("libc", EntryPoint = "fclose", SetLastError = true)]
+        private static extern int fclose(IntPtr handle);
+
+        [DllImport("libc", EntryPoint = "fileno", SetLastError = true)]
+        private static extern int fileno(IntPtr stream);
+
+        private class UnixFileHandle : SafeHandleZeroOrMinusOneIsInvalid
+        {
+            private readonly IntPtr _filePointer;
+
+            public UnixFileHandle(IntPtr filePointer) : base(true)
+            {
+                _filePointer = filePointer;
+                SetHandle(filePointer);
+            }
+
+            protected override bool ReleaseHandle()
+            {
+                if (_filePointer!= IntPtr.Zero)
+                    return fclose(_filePointer) == 0;
+                    else
+                    return true;
+            }
+
+            public override bool IsInvalid => _filePointer == IntPtr.Zero || base.IsInvalid;
+
+            public int GetFileDescriptor()
+            {
+                return fileno(_filePointer);
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                ReleaseHandle();
+                base.Dispose(disposing);
+            }
+        }
+
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
@@ -41,7 +87,7 @@ namespace Duplicati.Library.Snapshots
         {
             return SystemIO.IO_SYS.GetSymlinkTarget(localPath);
         }
-        
+
         /// <summary>
         /// Gets the metadata for the given file or folder
         /// </summary>
@@ -53,7 +99,7 @@ namespace Duplicati.Library.Snapshots
         {
             return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, followSymlink);
         }
-        
+
         /// <summary>
         /// Gets a value indicating if the path points to a block device
         /// </summary>
@@ -72,7 +118,7 @@ namespace Duplicati.Library.Snapshots
                     return true;
             }
         }
-        
+
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>
@@ -96,6 +142,43 @@ namespace Duplicati.Library.Snapshots
         public override string ConvertToSnapshotPath(string localPath)
         {
             return SystemIOLinux.NormalizePath(localPath);
+        }
+        
+
+        /// <summary>
+        /// In case of Linux without snapshot support, we just open the file directly with fopen
+        /// in order to avoid the issues related to file locks, which on linux are advisory, and
+        /// since .net 6 when using FileStream, the framework is taking the advisory as mandatory
+        /// therefore we can't open the file with FileShare.ReadWrite.
+        /// </summary>
+        /// <param name="localPath">file to be opened</param>
+        /// <returns></returns>
+        public override Stream OpenRead(string localPath)
+        {
+            IntPtr filePtr = fopen(localPath, "r");
+            if (filePtr == IntPtr.Zero)
+                throw new FileNotFoundException($"Unable to open file: {localPath}");
+
+            UnixFileHandle unixHandle = new(filePtr);
+
+            try
+            {
+                // Do not attempt to apply any using pattern here as it will cause the file to be closed
+                // FileStream class takes the handle and is responsible for closing the handle and it
+                // has been verified to do that.
+                SafeFileHandle safeFileHandle = new(unixHandle.GetFileDescriptor(), true);
+                
+                // This is important, means that the file handle is now owned by the SafeFileHandle
+                // and no longer by unixHandle
+                unixHandle.SetHandleAsInvalid();
+
+                return new FileStream(safeFileHandle, FileAccess.Read);
+            }
+            catch
+            {
+                unixHandle.Dispose();
+                throw;
+            }
         }
     }
 }
