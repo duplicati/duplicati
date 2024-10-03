@@ -22,28 +22,35 @@ using Duplicati.Library.Localization.Short;
 using System;
 
 
-namespace Duplicati.Library.Utility.Strings {
-    internal static class Sizeparser {
+namespace Duplicati.Library.Utility.Strings
+{
+    internal static class Sizeparser
+    {
         public static string InvalidSizeValueError(string value) { return LC.L(@"Invalid size value: {0}", value); }
     }
-    internal static class SslCertificateValidator {
+    internal static class SslCertificateValidator
+    {
         public static string InvalidCallSequence { get { return LC.L(@"The SSL certificate validator was called in an incorrect order"); } }
         public static string VerifyCertificateException(System.Net.Security.SslPolicyErrors error, string hash) { return LC.L(@"The server certificate had the error {0} and the hash {1}{2}If you trust this certificate, use the commandline option --{3}={1} to accept the server certificate anyway.{2}You can also attempt to import the server certificate into your operating systems trust pool.", error, hash, Environment.NewLine, "accept-specified-ssl-hash"); }
         public static string VerifyCertificateHashError(System.Exception exception, System.Net.Security.SslPolicyErrors error) { return LC.L(@"Failed while validating certificate hash, error message: {0}, SSL error name: {1}", exception, error); }
     }
-    internal static class TempFolder {
+    internal static class TempFolder
+    {
         public static string TempFolderDoesNotExistError(string path) { return LC.L(@"Temporary folder does not exist: {0}", path); }
     }
-    internal static class Timeparser {
+    internal static class Timeparser
+    {
         public static string InvalidIntegerError(string segment) { return LC.L(@"Failed to parse the segment: {0}, invalid integer", segment); }
         public static string InvalidSpecifierError(char specifier) { return LC.L(@"Invalid specifier: {0}", specifier); }
         public static string UnparsedDataFragmentError(string data) { return LC.L(@"Unparsed data: {0}", data); }
     }
-    internal static class Uri {
+    internal static class Uri
+    {
         public static string UriParseError(string uri) { return LC.L(@"The Uri is invalid: {0}", uri); }
         public static string NoHostname(string uri) { return LC.L(@"The Uri is missing a hostname: {0}", uri); }
     }
-    internal static class Utility {
+    internal static class Utility
+    {
         public static string FormatStringB(long size) { return LC.L(@"{0} bytes", size); }
         public static string FormatStringGB(double size) { return LC.L(@"{0:N} GB", size); }
         public static string FormatStringKB(double size) { return LC.L(@"{0:N} KB", size); }
@@ -51,10 +58,12 @@ namespace Duplicati.Library.Utility.Strings {
         public static string FormatStringTB(double size) { return LC.L(@"{0:N} TB", size); }
         public static string InvalidDateError(string data) { return LC.L(@"The string ""{0}"" could not be parsed into a date", data); }
     }
-    internal static class MD5CalculatingStream {
+    internal static class HashCalculatingStream
+    {
         public static string IncorrectUsageError { get { return LC.L(@"Cannot read and write on the same stream"); } }
     }
-    internal static class Filters {
+    internal static class Filters
+    {
         public static string UnknownFilterGroup(string filterSet) { return LC.L(@"The string {0} does not represent a known filter group name. Valid values are: {1}", filterSet, string.Join(", ", Enum.GetNames(typeof(FilterGroup)))); }
     }
 }
