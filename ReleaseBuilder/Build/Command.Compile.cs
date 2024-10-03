@@ -75,7 +75,15 @@ public static partial class Command
                             "--self-contained", useHostedBuilds ? "false" : "true"
                         };
 
-                        await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
+                        try
+                        {
+                            await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error building {proj} for {target.BuildTargetString}: {ex.Message}");
+                            throw;
+                        }
                     }
 
                     // Perform any post-build steps, cleaning and signing as needed
