@@ -46,6 +46,23 @@ namespace Duplicati.Library.Snapshots
         [DllImport("libc", EntryPoint = "fileno", SetLastError = true)]
         private static extern int fileno(IntPtr stream);
 
+        [DllImport("libc", EntryPoint = "strerror", SetLastError = true)]
+        private static extern IntPtr strerror(int errnum);
+
+        [DllImport("libc", EntryPoint = "__errno_location", SetLastError = true)]
+        private static extern IntPtr __errno_location();
+
+        private static int GetErrno()
+        {
+            return Marshal.ReadInt32(__errno_location());
+        }
+
+        private static string GetErrorMessage(int errno)
+        {
+            IntPtr strPtr = strerror(errno);
+            return Marshal.PtrToStringAnsi(strPtr);
+        }
+
         private class UnixFileHandle : SafeHandleZeroOrMinusOneIsInvalid
         {
             private readonly IntPtr _filePointer;
@@ -157,8 +174,11 @@ namespace Duplicati.Library.Snapshots
         {
             IntPtr filePtr = fopen(localPath, "r");
             if (filePtr == IntPtr.Zero)
-                throw new FileNotFoundException($"Unable to open file: {localPath}");
-
+            {
+                int errno = GetErrno();
+                throw new IOException($"Unable to open file: {localPath}. Error: {errno} - {GetErrorMessage(errno)}");
+            }
+            
             UnixFileHandle unixHandle = new(filePtr);
 
             try
