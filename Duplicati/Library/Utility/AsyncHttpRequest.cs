@@ -195,6 +195,8 @@ namespace Duplicati.Library.Utility
 
         public static Stream TrySetTimeout(Stream str, int timeoutmilliseconds = 30000)
         {
+            // TODO: Looks like this is no longer supported by (most) .NET streams
+            // And it throws InvalidOperationException() when trying to set it
             try { str.ReadTimeout = timeoutmilliseconds; }
             catch { }
 
