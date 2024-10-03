@@ -51,8 +51,8 @@ namespace Duplicati.GUI.TrayIcon
                 catch (Exception ex)
                 {
                     m_runnerException = ex;
-                    Duplicati.Server.Program.ServerStartedEvent.Set();
-                    Duplicati.Server.Program.ApplicationExitEvent.Set();
+                    Duplicati.Server.Program.ServerStartedEvent?.Set();
+                    Duplicati.Server.Program.ApplicationExitEvent?.Set();
                 }
                 finally
                 {

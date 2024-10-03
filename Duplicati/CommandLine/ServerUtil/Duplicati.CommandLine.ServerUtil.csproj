@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Duplicati.CommandLine.ServerUtil.Implementation</AssemblyName>
     <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
-    <DefaultNamespace>Duplicati.CommandLine.ServerUtil</DefaultNamespace>
+    <RootNamespace>Duplicati.CommandLine.ServerUtil</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

@@ -50,7 +50,7 @@ namespace Duplicati.Library.Utility
 
             int multiplier = negate ? -1 : 1;
 
-            if (string.IsNullOrEmpty(datestring)) 
+            if (string.IsNullOrEmpty(datestring))
                 return offset;
 
             if (String.Equals(datestring.Trim(), "now", StringComparison.OrdinalIgnoreCase))
@@ -59,12 +59,11 @@ namespace Duplicati.Library.Utility
             long l;
             if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out l))
                 return offset.AddSeconds(l * multiplier);
-            
-            DateTime t;
-            if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentUICulture, System.Globalization.DateTimeStyles.AssumeLocal, out t))
+
+            if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var t))
                 return t;
-            
-            if (Library.Utility.Utility.TryDeserializeDateTime(datestring, out t))
+
+            if (Utility.TryDeserializeDateTime(datestring, out t))
                 return t;
 
             char[] separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
@@ -107,7 +106,7 @@ namespace Duplicati.Library.Utility
                     default:
                         throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index]));
                 }
-                previndex = index + 1;    
+                previndex = index + 1;
             }
 
             if (datestring.Substring(previndex).Trim().Length > 0)
