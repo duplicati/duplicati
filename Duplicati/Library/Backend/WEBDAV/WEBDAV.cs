@@ -453,6 +453,10 @@ namespace Duplicati.Library.Backend
                     m_filenamelist.Contains(remotename)
                 )
                     throw new Exception(Strings.WEBDAV.SeenThenNotFoundError(m_path, remotename, Path.GetExtension(remotename), wex.Message), wex);
+
+                if (wex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+
                 throw;
             }
         }
