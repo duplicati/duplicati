@@ -113,20 +113,30 @@ namespace Duplicati.Library.Backend
 
         public virtual async Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken)
         {
-            var objectGetRequest = new GetObjectRequest
+            try
             {
-                BucketName = bucketName,
-                Key = keyName
-            };
+                var objectGetRequest = new GetObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = keyName
+                };
 
-            using (var objectGetResponse = await m_client.GetObjectAsync(objectGetRequest).ConfigureAwait(false))
-            using (var s = objectGetResponse.ResponseStream)
-            {
-                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
-                catch { }
+                using (var objectGetResponse = await m_client.GetObjectAsync(objectGetRequest).ConfigureAwait(false))
+                using (var s = objectGetResponse.ResponseStream)
+                {
+                    // TODO: This does not work and throws InvalidOperationException()
+                    try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
+                    catch { }
 
-                await Utility.Utility.CopyStreamAsync(s, target, cancelToken).ConfigureAwait(false);
+                    await Utility.Utility.CopyStreamAsync(s, target, cancelToken).ConfigureAwait(false);
+                }
             }
+            catch (AmazonS3Exception s3Ex)
+            {
+                if (s3Ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
+            }
+
         }
 
         public string GetDnsHost()
