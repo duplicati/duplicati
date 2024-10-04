@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Library\RestAPI\Duplicati.Library.RestAPI.csproj" />
+    <ProjectReference Include="..\Library\RemoteControl\Duplicati.Library.RemoteControl.csproj" />
   </ItemGroup>
 		
 	<ItemGroup>

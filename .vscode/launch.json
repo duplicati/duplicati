@@ -82,6 +82,17 @@
             "console": "internalConsole"
         },
         {
+            "name": "Launch Agent executable",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.Agent/bin/Debug/net8.0/Duplicati.Agent",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
             "name": "Launch BackendTester executable",
             "type": "coreclr",
             "request": "launch",

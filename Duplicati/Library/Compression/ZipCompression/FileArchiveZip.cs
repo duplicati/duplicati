@@ -123,7 +123,7 @@ namespace Duplicati.Library.Compression.ZipCompression
             var compressionLevel = DEFAULT_COMPRESSION_LEVEL;
 
             var usingZip64 = options.ContainsKey(COMPRESSION_ZIP64_OPTION)
-                ? Utility.Utility.ParseBoolOption(options, COMPRESSION_ZIP64_OPTION)
+                ? Utility.Utility.ParseBoolOption(options.AsReadOnly(), COMPRESSION_ZIP64_OPTION)
                 : DEFAULT_ZIP64;
 
             CompressionType tmptype;

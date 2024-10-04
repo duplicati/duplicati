@@ -97,7 +97,7 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(STARTUP_OPTION, out m_startScript);
             commandlineOptions.TryGetValue(REQUIRED_OPTION, out m_requiredScript);
             commandlineOptions.TryGetValue(FINISH_OPTION, out m_finishScript);
-            m_enableArguments = Utility.Utility.ParseBoolOption(commandlineOptions, ENABLE_ARGUMENTS_OPTION);
+            m_enableArguments = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), ENABLE_ARGUMENTS_OPTION);
 
             ResultExportFormat resultFormat;
             if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out var tmpResultFormat))
@@ -120,7 +120,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_options.TryGetValue(OPTION_LOG_FILTER, out var logfilterstring);
             var filter = FilterExpression.ParseLogFilter(logfilterstring);
-            var logLevel = Utility.Utility.ParseEnumOption(m_options, OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
+            var logLevel = Utility.Utility.ParseEnumOption(m_options.AsReadOnly(), OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
             m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>

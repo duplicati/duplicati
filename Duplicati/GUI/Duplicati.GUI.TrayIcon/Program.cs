@@ -25,7 +25,6 @@ using System.IO;
 using System.Net;
 using Duplicati.Library.Interface;
 using Duplicati.Server;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -118,7 +117,7 @@ namespace Duplicati.GUI.TrayIcon
                     else
                         throw;
                 }
-                
+
                 // We have a hosted server, if this is the first run, 
                 // we should open the main page
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;

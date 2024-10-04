@@ -45,7 +45,9 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<ICommandlineRunService, CommandlineRunService>()
             .AddTransient<IJWTTokenProvider, JWTTokenProvider>()
             .AddTransient<ITokenFamilyStore, TokenFamilyStore>()
-            .AddTransient<ILoginProvider, LoginProvider>();
+            .AddTransient<ILoginProvider, LoginProvider>()
+            .AddSingleton<IRemoteController, RemoteControllerService>()
+            .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>();
 
         return services;
     }
