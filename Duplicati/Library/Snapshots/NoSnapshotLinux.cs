@@ -56,38 +56,6 @@ namespace Duplicati.Library.Snapshots
             return Marshal.PtrToStringAnsi(strPtr) ?? $"Unknown error: {errno}";
         }
 
-        public class UnixFileHandle : SafeHandleZeroOrMinusOneIsInvalid
-        {
-            private readonly IntPtr _filePointer;
-
-            public UnixFileHandle(IntPtr filePointer) : base(true)
-            {
-                _filePointer = filePointer;
-                SetHandle(filePointer);
-            }
-
-            protected override bool ReleaseHandle()
-            {
-                if (_filePointer != IntPtr.Zero)
-                    return fclose(_filePointer) == 0;
-                else
-                    return true;
-            }
-
-            public override bool IsInvalid => _filePointer == IntPtr.Zero || base.IsInvalid;
-
-            public int GetFileDescriptor()
-            {
-                return fileno(_filePointer);
-            }
-
-            protected override void Dispose(bool disposing)
-            {
-                ReleaseHandle();
-                base.Dispose(disposing);
-            }
-        }
-
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
@@ -172,38 +140,41 @@ namespace Duplicati.Library.Snapshots
                 throw new IOException($"Unable to open file: {localPath}. Error: {errorNo} - {GetErrorMessage(errorNo)}");
             }
 
-            UnixFileHandle unixHandle = new(filePtr);
-
             try
             {
-                // Do not attempt to apply any using pattern here as it will cause the file to be closed
-                // FileStream class takes the handle and is responsible for closing the handle and it
-                // has been verified to do that.
-                SafeFileHandle safeFileHandle = new(unixHandle.GetFileDescriptor(), true);
 
-                // This is important, means that the file handle is now owned by the SafeFileHandle
-                // and no longer by unixHandle
-                unixHandle.SetHandleAsInvalid();
+                SafeFileHandle safeFileHandle = new(fileno(filePtr), false);
 
-                return new UnixFileStream(safeFileHandle, unixHandle, FileAccess.Read);
+                return new UnixFileStream(safeFileHandle, filePtr, FileAccess.Read);
             }
             catch // Catch all exceptions and rethrow
             {
-                unixHandle.Dispose();
+                if (filePtr!=IntPtr.Zero)
+                    fclose(filePtr);
+
                 throw;
             }
         }
     }
     public class UnixFileStream : FileStream
     {
-        NoSnapshotLinux.UnixFileHandle _unixHandle;
-        public UnixFileStream(SafeFileHandle handle, NoSnapshotLinux.UnixFileHandle unixHandle, FileAccess access) : base(handle, access)
+        [DllImport("libc", EntryPoint = "fclose", SetLastError = true)]
+        private static extern int fclose(IntPtr handle);
+        IntPtr _fileHandle;
+        SafeFileHandle _handle;
+        public UnixFileStream(SafeFileHandle handle, IntPtr fileHandle, FileAccess access) : base(handle, access)
         {
-            _unixHandle = unixHandle;
+            _fileHandle = fileHandle;
+            _handle = handle;
         }
         protected override void Dispose(bool disposing)
         {
-            _unixHandle.Dispose();
+            if (_fileHandle != IntPtr.Zero)
+            {
+                fclose(_fileHandle);
+                _fileHandle = IntPtr.Zero;
+            }
+            _handle?.Dispose();
             base.Dispose(disposing);
         }
 
