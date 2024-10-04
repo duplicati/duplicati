@@ -197,26 +197,16 @@ namespace Duplicati.Library.Snapshots
     public class UnixFileStream : FileStream
     {
         NoSnapshotLinux.UnixFileHandle _unixHandle;
-        SafeFileHandle _handle;
         public UnixFileStream(SafeFileHandle handle, NoSnapshotLinux.UnixFileHandle unixHandle, FileAccess access) : base(handle, access)
         {
             _unixHandle = unixHandle;
-            _handle = handle;
         }
-
         protected override void Dispose(bool disposing)
         {
             _unixHandle.Dispose();
-            _handle.Dispose();
             base.Dispose(disposing);
         }
 
-        public override ValueTask DisposeAsync()
-        {
-            _unixHandle.Dispose();
-            _handle.Dispose();
-            return base.DisposeAsync();
-        }
     }
 }
 
